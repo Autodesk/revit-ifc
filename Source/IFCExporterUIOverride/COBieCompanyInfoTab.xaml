@@ -1,0 +1,40 @@
+﻿<UserControl x:Class="BIM.IFC.Export.UI.COBieCompanyInfoTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:BIM.IFC.Export.UI"
+             mc:Ignorable="d" 
+             d:DesignHeight="271" d:DesignWidth="594" >
+   <Grid>
+      <Grid.ColumnDefinitions>
+         <ColumnDefinition Width="184*"/>
+         <ColumnDefinition Width="379*"/>
+         <ColumnDefinition Width="31*"/>
+      </Grid.ColumnDefinitions>
+      <Label x:Name="label_CompanyType" Content="{x:Static p:Resources.CompanyType}" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="26" Width="174"/>
+      <Label x:Name="label_CompanyName" Content="{x:Static p:Resources.CompanyName}" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Height="26" Width="174"/>
+      <Label x:Name="label_StreetAddress" Content="{x:Static p:Resources.StreetAddress}" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Height="26" Width="174"/>
+      <Label x:Name="label_City" Content="{x:Static p:Resources.City}" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Height="26" Width="174"/>
+      <Label x:Name="label_State" Content="{x:Static p:Resources.State}" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Height="26" Width="174"/>
+      <Label x:Name="label_PostalCode" Content="{x:Static p:Resources.PostalCode}" HorizontalAlignment="Left" Margin="10,135,0,0" VerticalAlignment="Top" Height="26" Width="174"/>
+      <Label x:Name="label_Country" Content="{x:Static p:Resources.Country}" HorizontalAlignment="Left" Margin="10,160,0,0" VerticalAlignment="Top" Height="26" Width="174"/>
+      <Label x:Name="label_CompanyPhone" Content="{x:Static p:Resources.CompanyPhone}" HorizontalAlignment="Left" Margin="10,185,0,0" VerticalAlignment="Top" Height="26" Width="174"/>
+      <Label x:Name="label_CompanyEmail" Content="{x:Static p:Resources.CompanyEmail}" HorizontalAlignment="Left" Margin="10,210,0,0" VerticalAlignment="Top" Height="26" Width="174"/>
+      <TextBox x:Name="textBox_CompanyType" Grid.Column="1" Height="23" Margin="10,10,2,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="example: [Company Type Classification Name]&lt;replace here with code&gt;" FontStyle="Italic" FontWeight="ExtraLight" GotFocus="textBox_CompanyType_GotFocus"/>
+      <TextBox x:Name="textBox_CompanyName" Grid.Column="1" Height="23" Margin="10,35,2,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_StreetAddress" Grid.Column="1" Height="23" Margin="10,60,2,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_City" Grid.Column="1" Height="23" Margin="10,85,2,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_State" Grid.Column="1" Height="23" Margin="10,110,2,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_PostalCode" Grid.Column="1" Height="23" Margin="10,135,2,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_Country" Grid.Column="1" Height="23" Margin="10,160,2,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_CompanyPhone" Grid.Column="1" Height="23" Margin="10,185,2,0" TextWrapping="Wrap" VerticalAlignment="Top" LostFocus="textBox_CompanyPhone_LostFocus" FontStyle="Italic" FontWeight="ExtraLight" Text="example: +1 (404) 123 4567" GotFocus="textBox_CompanyPhone_GotFocus"/>
+      <TextBox x:Name="textBox_CompanyEmail" Grid.Column="1" Height="23" Margin="10,210,2,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="example: &lt;email name&gt;@&lt;address&gt;" FontStyle="Italic" FontWeight="ExtraLight" GotFocus="textBox_CompanyEmail_GotFocus" LostFocus="textBox_CompanyEmail_LostFocus"/>
+      <TextBox x:Name="textBox_CompanyPhoneValidation" Grid.Column="2" HorizontalAlignment="Left" Height="23" Margin="3,185,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="18" IsEnabled="False" Foreground="#FFFB0404" FontWeight="Bold" IsReadOnly="True" AcceptsTab="True" BorderThickness="0"/>
+      <TextBox x:Name="textBox_CompanyEmailValidation" Grid.Column="2" HorizontalAlignment="Left" Height="23" Margin="3,210,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="18" Foreground="#FFFB0404" FontWeight="Bold" IsReadOnly="True" AcceptsTab="True" BorderThickness="0" SelectionOpacity="-1" IsEnabled="False"/>
+      <!--<TextBox x:Name="textBox_TypeSource" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="35,35,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="365" TextChanged="textBox_TypeSource_TextChanged"/>-->
+      <!--<Button x:Name="button_TypeSource" Content="Source ..." Grid.Column="1" HorizontalAlignment="Left" Margin="324,12,0,0" VerticalAlignment="Top" Width="76" Click="button_TypeSource_Click"/>
+      <ComboBox x:Name="comboBox_CompanyType" Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="306"/>-->
+   </Grid>
+</UserControl>

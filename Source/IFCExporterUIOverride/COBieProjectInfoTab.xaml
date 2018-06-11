@@ -1,0 +1,36 @@
+﻿<UserControl x:Class="BIM.IFC.Export.UI.COBieProjectInfoTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:BIM.IFC.Export.UI"
+             mc:Ignorable="d" 
+             d:DesignHeight="271" d:DesignWidth="594" >
+   <Grid>
+      <Grid.ColumnDefinitions>
+         <ColumnDefinition Width="92*"/>
+         <ColumnDefinition Width="205*"/>
+      </Grid.ColumnDefinitions>
+      <Label x:Name="label_BuildingName" Content="{x:Static p:Resources.BuildingName}" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="184"/>
+      <Label x:Name="label_BuildingType" Content="{x:Static p:Resources.BuildingType}" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="179"/>
+      <Label x:Name="label_BuildingDesc" Content="{x:Static p:Resources.BuildingDescription}" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="179"/>
+      <Label x:Name="label_ProjectName" Content="{x:Static p:Resources.ProjectName}" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="179"/>
+      <Label x:Name="label_ProjectDesc" Content="{x:Static p:Resources.ProjectDescription}" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="179"/>
+      <Label x:Name="label_ProjectPhase" Content="{x:Static p:Resources.ProjectPhase}" HorizontalAlignment="Left" Margin="10,135,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="179"/>
+      <Label x:Name="label_SiteLocation" Content="{x:Static p:Resources.SiteLocation}" HorizontalAlignment="Left" Margin="10,160,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="179"/>
+      <Label x:Name="label_SiteDesc" Content="{x:Static p:Resources.SiteDescription}" HorizontalAlignment="Left" Margin="10,185,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="179"/>
+      <TextBox x:Name="textBox_BuildingName" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="390"/>
+      <!--<TextBox x:Name="textBox_TypeSource" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="54,60,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="346" TextChanged="textBox_TypeSource_TextChanged"/>-->
+      <TextBox x:Name="textBox_BuildingDesc" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="10,60,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="390"/>
+      <TextBox x:Name="textBox_ProjectName" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="10,85,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="390"/>
+      <TextBox x:Name="textBox_ProjectDesc" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="10,110,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="390"/>
+      <TextBox x:Name="textBox_ProjectPhase" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="10,135,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="390"/>
+      <TextBox x:Name="textBox_SiteLocation" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="10,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="390"/>
+      <TextBox x:Name="textBox_SiteDesc" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="10,185,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="390"/>
+      <TextBox x:Name="textBox_BuildingType" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="10,35,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="390" Text="example: [Building Type Classification Name]&lt;replace here with code&gt;" FontWeight="ExtraLight" FontStyle="Italic" TextChanged="textBox_BuildingType_TextChanged" GotFocus="textBox_BuildingType_GotFocus"/>
+      <!--<ComboBox x:Name="comboBox_BuildingType" Grid.Column="1" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="291"/>
+      <Button x:Name="button_Source" Content="Source ..." Grid.Column="1" HorizontalAlignment="Left" Margin="325,35,0,0" VerticalAlignment="Top" Width="75" Click="button_Source_Click"/>-->
+
+   </Grid>
+</UserControl>
