@@ -1,0 +1,41 @@
+﻿<ui:ChildWindow x:Class="BIM.IFC.Export.UI.IFCFileHeaderInformation"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:Autodesk.Revit.WPFFramework;assembly=UserInterfaceUtility"
+        Title="{x:Static p:Resources.FileHeader}" Loaded="Window_Loaded" Name="FileHeaderTab" Initialized="FileHeaderTab_Initialized" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" SizeToContent="WidthAndHeight" HorizontalAlignment="Stretch" Margin="10,5,5,10" Height="419.499" Width="567" >
+   <Grid Name="grid1" Width="551" Margin="6,2,2,-10">
+      <Grid.RowDefinitions>
+         <RowDefinition Height="331*" />
+         <RowDefinition Height="65*" />
+      </Grid.RowDefinitions>
+      <Grid Margin="14,0,15,20" Grid.RowSpan="2">
+         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="104*" />
+            <ColumnDefinition Width="418*" />
+         </Grid.ColumnDefinitions>
+         <Label Content="{x:Static p:Resources.FileDescription}" Height="28" HorizontalAlignment="Left" Margin="16,17,0,0" Name="labelFileDescription" VerticalAlignment="Top" Grid.ColumnSpan="2" />
+         <TextBox Text="{Binding Path=FileDescription, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetByExportOption}}" Height="23" HorizontalAlignment="Stretch" Margin="64,19,35,0" Name="FileDescriptionTextBox" VerticalAlignment="Top" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
+         <Label Content="{x:Static p:Resources.SourceFileName}" Height="28" HorizontalAlignment="Left" Margin="16,46,0,0" Name="labelSourceFileName" VerticalAlignment="Top" Grid.ColumnSpan="2" />
+         <TextBox Text="{Binding Path=SourceFileName, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetOnExport}}" Height="23" HorizontalAlignment="Stretch" Margin="64,48,35,0" Name="SourceFileNameTextBox" VerticalAlignment="Top" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
+         <Label Content="{x:Static p:Resources.AuthorsName}" Height="28" HorizontalAlignment="Left" Margin="16,75,0,0" Name="labelAuthorFirstName" VerticalAlignment="Top" Grid.ColumnSpan="2" />
+         <TextBox Text="{Binding Path=AuthorName, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="64,77,35,0" Name="AuthorNameTextBox" VerticalAlignment="Top" Grid.Column="1" />
+         <Label Content="{x:Static p:Resources.AuthorsEMail}" Height="28" HorizontalAlignment="Left" Margin="16,104,0,0" Name="labelAuthorLastName" VerticalAlignment="Top" Grid.ColumnSpan="2" />
+         <TextBox Text="{Binding Path=AuthorEmail, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="64,106,35,0" Name="AuthorEmailTextBox" VerticalAlignment="Top" Grid.Column="1" />
+         <Label Content="{x:Static p:Resources.Organization}" Height="28" HorizontalAlignment="Left" Margin="16,133,0,0" Name="labelOrganization" VerticalAlignment="Top" />
+         <TextBox Text="{Binding Path=Organization, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="64,135,35,0" Name="OrganizationTextBox" VerticalAlignment="Top" Grid.Column="1" />
+         <Label Content="{x:Static p:Resources.Authorization}" Height="28" HorizontalAlignment="Left" Margin="16,162,0,0" Name="labelAuthorization" VerticalAlignment="Top" />
+         <TextBox Text="{Binding Path=Authorization, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="64,164,35,0" Name="AuthorizationTextBox" VerticalAlignment="Top" Grid.Column="1" />
+         <Label Content="{x:Static p:Resources.ApplicationName}" Height="28" HorizontalAlignment="Left" Margin="16,191,0,0" Name="labelApplicationName" VerticalAlignment="Top" Grid.ColumnSpan="2" />
+         <TextBox Text="{Binding Path=ApplicationName, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="64,193,35,0" Name="ApplicationNameTextBox" VerticalAlignment="Top" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" Opacity="0.7" />
+         <Label Content="{x:Static p:Resources.VersionNumber}" Height="28" HorizontalAlignment="Left" Margin="16,220,0,0" Name="labelVersionNumber" VerticalAlignment="Top" Grid.ColumnSpan="2" />
+         <TextBox Text="{Binding Path=VersionNumber, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="64,222,35,0" Name="VersionNumberTextBox" VerticalAlignment="Top" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" Opacity="0.7" />
+         <Label Content="{x:Static p:Resources.FileSchema}" Height="28" HorizontalAlignment="Left" Margin="16,249,0,0" Name="labelLocation" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="137" />
+         <TextBox Text="{Binding Path=FileSchema, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetByExportOption}}" Height="23" HorizontalAlignment="Stretch" Margin="64,251,35,0" Name="FileSchemaTextBox" VerticalAlignment="Top" Grid.Column="1" IsReadOnly="True" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
+         <Button Content="{x:Static p:Resources.OK}" Height="22" Name="buttonOK" Width="75" Click="buttonOK_Click" RenderTransformOrigin="0.48,-5.227" Grid.Column="1" Margin="230,343,113,11"/>
+         <Button Content="{x:Static p:Resources.Cancel}" Height="22" x:Name="buttonCancel" Width="75" Click="bottonCancel_Click" Margin="310,343,33,11" Grid.Column="1" RenderTransformOrigin="0.547,1.273"/>
+         <ComboBox x:Name="comboBoxExchangeRequirement" Grid.Column="1" HorizontalAlignment="Left" Margin="64,281,0,0" VerticalAlignment="Top" Width="319" IsEditable="True" SelectionChanged="comboBoxExchangeRequirement_SelectionChanged"/>
+         <Label Content="{x:Static p:Resources.ExchangeRequirement}" Height="28" HorizontalAlignment="Left" Margin="16,277,0,0" Name="labelExchangeRequirement" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="137" />
+      </Grid>
+   </Grid>
+</ui:ChildWindow>

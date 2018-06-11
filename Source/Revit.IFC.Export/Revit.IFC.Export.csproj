@@ -1,0 +1,352 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.props" Condition="Exists('..\..\..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{BCE5141A-291B-4CD8-A69B-7B9345AA00E9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Revit.IFC.Export</RootNamespace>
+    <AssemblyName>Revit.IFC.Export</AssemblyName>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <PublishUrl>Publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <AssociatedParentPath>Revit.IFC</AssociatedParentPath>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Slow_Debug|x64'">
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Antlr4.Runtime, Version=4.6.0.0, Culture=neutral, PublicKeyToken=09abb75b9ed49849, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Antlr4.Runtime.4.6.4\lib\net45\Antlr4.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Exporter\AreaSchemeExporter.cs" />
+    <Compile Include="Exporter\AssemblyInstanceExporter.cs" />
+    <Compile Include="Exporter\AssemblyInstanceInfo.cs" />
+    <Compile Include="Exporter\BeamExporter.cs" />
+    <Compile Include="Exporter\BodyData.cs" />
+    <Compile Include="Exporter\BodyExporterOptions.cs" />
+    <Compile Include="Exporter\BodyGroupData.cs" />
+    <Compile Include="Exporter\BodyGroupKey.cs" />
+    <Compile Include="Exporter\BoundingBoxExporter.cs" />
+    <Compile Include="Exporter\CeilingExporter.cs" />
+    <Compile Include="Exporter\ConnectorExporter.cs" />
+    <Compile Include="Exporter\CurtainSystemExporter.cs" />
+    <Compile Include="Exporter\DoorWindowExporter.cs" />
+    <Compile Include="Exporter\DuctInsulationExporter.cs" />
+    <Compile Include="Exporter\DuctLiningExporter.cs" />
+    <Compile Include="Exporter\ExporterInitializer_PsetDef.cs" />
+    <Compile Include="Exporter\ExtrusionExporter.cs" />
+    <Compile Include="Exporter\FabricSheetExporter.cs" />
+    <Compile Include="Exporter\FilledRegionExporter.cs" />
+    <Compile Include="Exporter\FootingExporter.cs" />
+    <Compile Include="Exporter\GenericMEPExporter.cs" />
+    <Compile Include="Exporter\GridExporter.cs" />
+    <Compile Include="Exporter\GroupExporter.cs" />
+    <Compile Include="Exporter\GroupInfo.cs" />
+    <Compile Include="Exporter\HandleAndData.cs" />
+    <Compile Include="Exporter\HostedSweepExporter.cs" />
+    <Compile Include="Exporter\HostObjectExporter.cs" />
+    <Compile Include="Exporter\InsulationExporter.cs" />
+    <Compile Include="Exporter\PartExporter.cs" />
+    <Compile Include="Exporter\PileExporter.cs" />
+    <Compile Include="Exporter\PipeInsulationExporter.cs" />
+    <Compile Include="Exporter\PropertySet\AttributeEntry.cs" />
+    <Compile Include="Exporter\PropertySet\AttributeEntryMap.cs" />
+    <Compile Include="Exporter\PropertySet\AttributeSetDescription.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\FireRatingCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\SpanCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\CrossSectionAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\AreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\GrossAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\GrossSurfaceAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\GrossVolumeCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\GrossWeightCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\LengthCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NetSurfaceAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NetVolumeCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NetWeightCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\OuterSurfaceAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\RollCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\FinishCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766BendingEndHookCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766BendingRadiusCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766BendingStartHookCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeCode.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterACalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterBCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterCCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterDCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterECalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\DepthCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\DiameterCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ShapeCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\SlopeCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ExtendToStructureCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ExternalCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\LoadBearingCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NumberOfStoreysCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\HeightCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ProjectedAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\TemperatureCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\SpecificZoneCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\StairRiserTreadsCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\ClassificationUtil.cs" />
+    <Compile Include="Exporter\PropertySet\ElectricalCurrentPropertyUtil.cs" />
+    <Compile Include="Exporter\PropertySet\ElectricalVoltagePropertyUtil.cs" />
+    <Compile Include="Exporter\PropertySet\EntryMap.cs" />
+    <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X2Enum.cs" />
+    <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X3TC1Enum.cs" />
+    <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC4_ADD1Enum.cs" />
+    <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC4_ADD2Enum.cs" />
+    <Compile Include="Exporter\PropertySet\FrequencyPropertyUtil.cs" />
+    <Compile Include="Exporter\PropertySet\PositivePlaneAnglePropertyUtil.cs" />
+    <Compile Include="Exporter\PropertySet\PropertySetDescription.cs" />
+    <Compile Include="Exporter\PropertySet\PropertySetEntry.cs" />
+    <Compile Include="Exporter\PropertySet\PropertySetEntryMap.cs" />
+    <Compile Include="Exporter\PropertySet\PropertySetEntryUtil.cs" />
+    <Compile Include="Exporter\PropertySet\PropertyUtil.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ReferenceCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\WidthCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\SpaceLevelAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\SpaceLevelDescriptionCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\PerimeterCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\VolumeCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\QuantityDescription.cs" />
+    <Compile Include="Exporter\PropertySet\QuantityEntry.cs" />
+    <Compile Include="Exporter\PropertySet\QuantityEntryMap.cs" />
+    <Compile Include="Exporter\ProxyElementExporter.cs" />
+    <Compile Include="Exporter\RailingExporter.cs" />
+    <Compile Include="Exporter\RampExporter.cs" />
+    <Compile Include="Exporter\RebarCouplerExporter.cs" />
+    <Compile Include="Exporter\RebarExporter.cs" />
+    <Compile Include="Exporter\RoofExporter.cs" />
+    <Compile Include="Exporter\SiteExporter.cs" />
+    <Compile Include="Exporter\SpaceBoundary.cs" />
+    <Compile Include="Exporter\SpaceOccupantInfo.cs" />
+    <Compile Include="Exporter\SpatialElementExporter.cs" />
+    <Compile Include="Exporter\StairRampContainerInfo.cs" />
+    <Compile Include="Exporter\StairsExporter.cs" />
+    <Compile Include="Exporter\StructuralMemberExporter.cs" />
+    <Compile Include="Exporter\SurfaceExporter.cs" />
+    <Compile Include="Exporter\SweptSolidExporter.cs" />
+    <Compile Include="Exporter\TextNoteExporter.cs" />
+    <Compile Include="Exporter\TypePropertyInfo.cs" />
+    <Compile Include="Exporter\WallConnectionData.cs" />
+    <Compile Include="Exporter\WallExporter.cs" />
+    <Compile Include="Exporter\WallSweepExporter.cs" />
+    <Compile Include="Exporter\ZoneExporter.cs" />
+    <Compile Include="Exporter\ZoneInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Toolkit\IFCValidateEntry.cs" />
+    <Compile Include="Toolkit\IFC4Enums.cs" />
+    <Compile Include="Toolkit\IFCEnums.cs" />
+    <Compile Include="Toolkit\IFCInstanceExporter.cs" />
+    <Compile Include="Toolkit\PlacementSetter.cs" />
+    <Compile Include="Toolkit\IFCSubElementEnums.cs" />
+    <Compile Include="Toolkit\IFCDataUtil.cs" />
+    <Compile Include="Toolkit\TransformSetter.cs" />
+    <Compile Include="Utility\AllocatedGeometryObjectCache.cs" />
+    <Compile Include="Utility\AssemblyInstanceCache.cs" />
+    <Compile Include="Utility\AttributeCache.cs" />
+    <Compile Include="Utility\BooleanPropertyInfoCache.cs" />
+    <Compile Include="Utility\CategoryUtil.cs" />
+    <Compile Include="Utility\ClassificationLocationCache.cs" />
+    <Compile Include="Utility\ClassificationCache.cs" />
+    <Compile Include="Utility\ContainmentCache.cs" />
+    <Compile Include="Utility\CurveAnnotationCache.cs" />
+    <Compile Include="Exporter\FamilyInstanceExporter.cs" />
+    <Compile Include="Exporter\PropertySet\Description.cs" />
+    <Compile Include="Exporter\PropertySet\DescriptionCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Entry.cs" />
+    <Compile Include="Exporter\PropertySet\PropertyCalculator.cs" />
+    <Compile Include="Exporter\BodyExporter.cs" />
+    <Compile Include="Exporter\CurveElementExporter.cs" />
+    <Compile Include="Exporter\Exporter.cs" />
+    <Compile Include="Exporter\ExporterInitializer.cs" />
+    <Compile Include="Exporter\FloorExporter.cs" />
+    <Compile Include="Utility\DoorWindowDelayedOpeningCreator.cs" />
+    <Compile Include="Utility\DoorWindowDelayedOpeningCreatorCache.cs" />
+    <Compile Include="Utility\DoorWindowInfo.cs" />
+    <Compile Include="Utility\DoorWindowOpeningInfo.cs" />
+    <Compile Include="Utility\DoorWindowUtil.cs" />
+    <Compile Include="Utility\DoublePropertyInfoCache.cs" />
+    <Compile Include="Utility\DummyHostCache.cs" />
+    <Compile Include="Utility\ElementFilteringUtil.cs" />
+    <Compile Include="Utility\ElementToHandleCache.cs" />
+    <Compile Include="Utility\ExporterCacheManager.cs" />
+    <Compile Include="Utility\ExporterStateManager.cs" />
+    <Compile Include="Utility\ExporterUtil.cs" />
+    <Compile Include="Utility\ExportOptionsCache.cs" />
+    <Compile Include="Utility\FamilyExporterUtil.cs" />
+    <Compile Include="Utility\FamilyTypeInfo.cs" />
+    <Compile Include="Utility\FootPrintInfo.cs" />
+    <Compile Include="Utility\GeometryUtil.cs" />
+    <Compile Include="Utility\GroupCache.cs" />
+    <Compile Include="Utility\GroupElementGeometryCache.cs" />
+    <Compile Include="Utility\GUIDOptions.cs" />
+    <Compile Include="Utility\GUIDUtil.cs" />
+    <Compile Include="Utility\HandleToElementCache.cs" />
+    <Compile Include="Utility\HostPartsCache.cs" />
+    <Compile Include="Utility\IntegerPropertyInfoCache.cs" />
+    <Compile Include="Utility\LevelInfoCache.cs" />
+    <Compile Include="Utility\LevelUtil.cs" />
+    <Compile Include="Utility\LogicalPropertyInfoCache.cs" />
+    <Compile Include="Utility\MaterialAndProfile.cs" />
+    <Compile Include="Utility\MaterialConstituentSetCache.cs" />
+    <Compile Include="Utility\MEPCache.cs" />
+    <Compile Include="Utility\NamingOptions.cs" />
+    <Compile Include="Utility\NamingUtil.cs" />
+    <Compile Include="Utility\OpeningUtil.cs" />
+    <Compile Include="Utility\ParameterElementCache.cs" />
+    <Compile Include="Utility\ParameterUtil.cs" />
+    <Compile Include="Utility\ParamExprErrorListener.cs" />
+    <Compile Include="Utility\ParamExprListener.cs" />
+    <Compile Include="Utility\ParamExprLogger.cs" />
+    <Compile Include="Utility\ParamExprResolver.cs" />
+    <Compile Include="Utility\PartExportedCache.cs" />
+    <Compile Include="Utility\PresentationLayerSetCache.cs" />
+    <Compile Include="Utility\ProductWrapper.cs" />
+    <Compile Include="Utility\PropertyInfoCache.cs" />
+    <Compile Include="Utility\PropertyMap.cs" />
+    <Compile Include="Utility\PropertySetOptions.cs" />
+    <Compile Include="Utility\RepresentationUtil.cs" />
+    <Compile Include="Utility\SimpleSweptSolidAnalyzer.cs" />
+    <Compile Include="Utility\SolidMeshGeometryInfo.cs" />
+    <Compile Include="Utility\SpaceBoundingElementUtil.cs" />
+    <Compile Include="Utility\SpaceInfo.cs" />
+    <Compile Include="Utility\SpaceOccupantInfoCache.cs" />
+    <Compile Include="Utility\StairRampContainerInfoCache.cs" />
+    <Compile Include="Utility\StringPropertyInfoCache.cs" />
+    <Compile Include="Utility\SystemsCache.cs" />
+    <Compile Include="Utility\TriangleMergeUtil.cs" />
+    <Compile Include="Utility\TypePropertyInfoCache.cs" />
+    <Compile Include="Utility\UnitsCache.cs" />
+    <Compile Include="Utility\UnitUtil.cs" />
+    <Compile Include="Utility\WallConnectionDataCache.cs" />
+    <Compile Include="Utility\ZoneInfoCache.cs" />
+    <Compile Include="Utility\MaterialHandleCache.cs" />
+    <Compile Include="Utility\MaterialLayerRelationsCache.cs" />
+    <Compile Include="Utility\MaterialLayerSetCache.cs" />
+    <Compile Include="Utility\MaterialRelationsCache.cs" />
+    <Compile Include="Utility\ParameterCache.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <AppDesigner Include="Properties\" />
+    <Compile Include="Utility\PresentationStyleAssignmentCache.cs" />
+    <Compile Include="Utility\SpaceBoundaryCache.cs" />
+    <Compile Include="Utility\TypeObjectsCache.cs" />
+    <Compile Include="Utility\TypeRelationsCache.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj">
+      <Project>{032EA4DC-181F-4453-9F93-E08DE1C07D95}</Project>
+      <Name>Revit.IFC.Common</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <Antlr4 Include="Utility\ParamExprGrammar.g4">
+      <Generator>MSBuild:Compile</Generator>
+      <CustomToolNamespace>Revit.IFC.Export.Utility</CustomToolNamespace>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Antlr4>
+  </ItemGroup>
+  <!--
+    Always Import the appropriate *.OutputPath.targets file BEFORE the
+    Revit.CSharp.targets file, otherwise VisualStudio will complain
+    about missing OutputPath tags.
+    -->
+  <Import Project=".\Revit.IFC.Export.props" />
+  <PropertyGroup>
+    <PostBuildEvent>echo call $(SolutionDir)SignFile.bat $(TargetPath)
+$(SolutionDir)..\..\ThirdParty\RevitAPI-tools\Identification\SignData\Release\SignData.exe $(TargetPath) $(SolutionDir)..\..\ThirdParty\RevitAPI-tools\Identification\pair.dat LT
+if exist $(ProjectDir)PostBuildStep.bat call $(ProjectDir)PostBuildStep.bat $(OutDir) $(SolutionDir) $(TargetName) $(ConfigurationName) $(PlatformName)
+</PostBuildEvent>
+  </PropertyGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.targets'))" />
+  </Target>
+  <Import Project="..\..\..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.targets" Condition="Exists('..\..\..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.targets')" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

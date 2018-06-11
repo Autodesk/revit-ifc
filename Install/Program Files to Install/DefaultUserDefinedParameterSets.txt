@@ -1,0 +1,34 @@
+#
+# User Defined PropertySet Definition File
+#
+# Format:
+#    PropertySet:	<Pset Name>	I[nstance]/T[ype]	<element list separated by ','>
+#	<Property Name 1>	<Data type>	<[opt] Revit parameter name, if different from IFC>
+#	<Property Name 2>	<Data type>	<[opt] Revit parameter name, if different from IFC>
+#	...
+#
+# Data types supported: Area, Boolean, ClassificationReference, ColorTemperature, Count, Currency, 
+#	ElectricalCurrent, ElectricalEfficacy, ElectricalVoltage, Force, Frequency, Identifier, 
+#	Illuminance, Integer, Label, Length, Logical, LuminousFlux, LuminousIntensity, 
+#	NormalisedRatio, PlaneAngle, PositiveLength, PositivePlaneAngle, PositiveRatio, Power, 
+#	Pressure, Ratio, Real, Text, ThermalTransmittance, ThermodynamicTemperature, Volume, 
+#	VolumetricFlowRate
+# 
+# Example property set definition for COBie:
+#
+#PropertySet:	COBie_Specification	T	IfcElementType
+#	NominalLength	Real	COBie.Type.NominalLength
+#	NominalWidth	Real	COBie.Type.NominalWidth
+#	NominalHeight	Real	COBie.Type.NominalHeight
+#	Shape		Text	COBie.Type.Shape
+#	Size		Text	COBie.Type.Size
+#	Color		Text	COBie.Type.Color
+#	Finish		Text	COBie.Type.Finish
+#	Grade		Text	COBie.Type.Grade
+#	Material	Text	COBie.Type.Material
+#	Constituents	Text	COBie.Type.Constituents
+#	Features	Text	Cobie.Type.Features
+#	AccessibilityPerformance	Text	COBie.Type.AccessibilityPerformance
+#	CodePerformance	Text	COBie.Type.CodePerformance
+#	SustainabilityPerformance	Text	COBie.Type.SustainabilityPerformance
+# 

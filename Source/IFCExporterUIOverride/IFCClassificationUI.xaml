@@ -1,0 +1,33 @@
+﻿<ui:ChildWindow x:Class="BIM.IFC.Export.UI.IFCClassificationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:Autodesk.Revit.WPFFramework;assembly=UserInterfaceUtility"
+        Title="{x:Static p:Resources.ClassificationSetting}" Name="ClassificationTab" Initialized="ClassificationTab_Initialized" Loaded="Window_Loaded" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignWidth="570" SizeToContent="WidthAndHeight" HorizontalAlignment="Stretch" Margin="10,5,5,10" Height="315" >
+    <Grid Name="grid1" Width="551" Margin="6,2,6,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="461*" />
+            <RowDefinition Height="59*" />
+        </Grid.RowDefinitions>
+        <Grid Height="276" VerticalAlignment="Top" Margin="0,7,0,0" Grid.RowSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="55*"/>
+                <ColumnDefinition Width="208*"/>
+            </Grid.ColumnDefinitions>
+            <Label Content="{x:Static p:Resources.Name}" Height="28" HorizontalAlignment="Left" Margin="16,10,0,0" Name="ClassificationName" VerticalAlignment="Top"  Width="53" />
+            <TextBox Text="{Binding Path=ClassificationName, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="98.716,10,17,0" Name="ClassificationNameTextBox" VerticalAlignment="Top" Width="300" HorizontalContentAlignment="Stretch" ToolTip="{x:Static p:Resources.ClassificationSystemName}" Grid.Column="1" />
+            <Label Content="{x:Static p:Resources.SourcePublisher}" Height="28" HorizontalAlignment="Left" Margin="16,39,0,0" Name="SourceOrPublisher" VerticalAlignment="Top" Width="105" Grid.ColumnSpan="2" />
+            <TextBox Text="{Binding Path=ClassificationSource, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="98.716,39,17,0" Name="ClassificationSourceTextBox" VerticalAlignment="Top" Width="300" HorizontalContentAlignment="Stretch" ToolTip="{x:Static p:Resources.ClassificationSystemSource}" Grid.Column="1" />
+            <Label Content="{x:Static p:Resources.Edition}" Height="28" HorizontalAlignment="Left" Margin="16,68,0,0" Name="Edition" VerticalAlignment="Top" IsEnabled="True"  Width="53" />
+            <TextBox Text="{Binding Path=ClassificationEdition, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="98.716,68,17,0" Name="ClassificationEditionTextBox" VerticalAlignment="Top" Width="300" HorizontalContentAlignment="Stretch" ToolTip="{x:Static p:Resources.ClassificationSystemEdition}" Grid.Column="1" />
+            <Label Content="{x:Static p:Resources.EditionDate}" Height="35" HorizontalAlignment="Left" Margin="16,96,0,0" Name="EditionDate" VerticalAlignment="Top" RenderTransformOrigin="0.441,0.466" Width="95" Grid.ColumnSpan="2" />
+            <DatePicker SelectedDate="{Binding Path=ClassificationEditionDate}" Height="25" HorizontalAlignment="Left" Margin="109,96,0,0" Name="datePicker1" VerticalAlignment="Top" Width="115" Grid.Column="1" />
+            <Label Content="{x:Static p:Resources.DocumentationLocation}" Height="28" HorizontalAlignment="Left" Margin="16,132,0,0" Name="location" VerticalAlignment="Top" Width="186" Grid.ColumnSpan="2" />
+            <TextBox Text="{Binding Path=ClassificationLocation, UpdateSourceTrigger=PropertyChanged}" Height="28" HorizontalAlignment="Right" Margin="0,132,27,0" Name="ClassificationLocationtextBox" VerticalAlignment="Top" Width="300" ToolTip="Location of the documentation (usually URL)" Grid.Column="1"/>
+            <Label Content="{x:Static p:Resources.ClassificationFieldName}" HorizontalAlignment="Left" Margin="16,165,0,0" x:Name="location_Copy" VerticalAlignment="Top" Width="186" Grid.ColumnSpan="2" />
+            <TextBox Text="{Binding Path=ClassificationFieldName, UpdateSourceTrigger=PropertyChanged}" Height="28" HorizontalAlignment="Right" Margin="0,165,27,0" x:Name="ClassificationFieldNameTextBox" VerticalAlignment="Top" Width="300" ToolTip="{x:Static p:Resources.ClassificationAltName}" Grid.Column="1"/>
+            <Button Content="{x:Static p:Resources.OK}" Height="22" x:Name="buttonOK" Width="75" Click="buttonOK_Click" Margin="268,242,93,12" Grid.Column="1"/>
+            <Button Content="{x:Static p:Resources.Cancel}" Height="22" Name="buttonCancel" Width="75" Click="bottonCancel_Click" RenderTransformOrigin="0.507,-4.636" Margin="348,242,13,12" Grid.Column="1"/>
+        </Grid>
+    </Grid>
+</ui:ChildWindow>
