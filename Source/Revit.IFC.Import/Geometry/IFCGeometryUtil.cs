@@ -371,7 +371,7 @@ namespace Revit.IFC.Import.Geometry
          if (curveLoop == null)
             return null;
 
-         int numCurves = curveLoop.NumberOfCurves();
+         int numCurves = curveLoop.Count();
          if (numCurves == 0)
             return null;
 
