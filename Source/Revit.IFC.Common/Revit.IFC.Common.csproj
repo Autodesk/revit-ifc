@@ -97,10 +97,7 @@
   </ItemGroup>
   <Import Project=".\Revit.IFC.Common.props" />
   <PropertyGroup>
-    <PostBuildEvent>call $(SolutionDir)SignFile.bat $(TargetPath)
-$(SolutionDir)..\..\ThirdParty\RevitAPI-tools\Identification\SignData\Release\SignData.exe $(TargetPath) $(SolutionDir)..\..\ThirdParty\RevitAPI-tools\Identification\pair.dat LT
-if exist $(ProjectDir)PostBuildStep.bat call $(ProjectDir)PostBuildStep.bat $(OutDir) $(SolutionDir) $(TargetName) $(ConfigurationName) $(PlatformName)
-</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\Program Files (x86)\Revit IFC 2019\" /F /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
