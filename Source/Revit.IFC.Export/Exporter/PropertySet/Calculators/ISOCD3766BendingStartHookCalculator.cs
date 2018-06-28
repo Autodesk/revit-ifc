@@ -64,12 +64,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// </returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         if (element is Rebar)
-         {
-            Rebar rebar = element as Rebar;
-            if (rebar.CanBeMatchedWithMultipleShapes())
-               return false; // In case of the Bent free form the hook angle should be obtain from subelement
-         }
 
          RebarBendData bendData = null;
          if (element is Rebar)

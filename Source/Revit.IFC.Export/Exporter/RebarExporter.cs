@@ -343,27 +343,6 @@ namespace Revit.IFC.Export.Exporter
 
 
                   string rebarNameFormated = origRebarName;
-                  if (rebar != null && rebar.CanBeMatchedWithMultipleShapes())
-                  {
-                     string shapeName = getShapeNameAtIndex(rebar, ii);
-                     string elementName = rebar.Name;
-                     string strVaries = "";
-                     if (!elementName.Contains(shapeName))
-                     {
-                        // it means that element name contains "Shape Varies"
-
-                        // get "Varies" string from elem name
-                        for (int iChar = elementName.Length - 1; iChar > 0; iChar--)
-                        {
-                           if (elementName[iChar] == ' ')
-                              break;
-                           strVaries = strVaries.Insert(0, elementName[iChar].ToString());
-                        }
-
-                        // Replace "Varies" with shape name.    
-                        rebarNameFormated = origRebarName.Replace(strVaries, shapeName);
-                     }
-                  }
 
                   int indexForNamingAndGUID = (itemIndex > 0) ? ii + itemIndex : ii + 1;
 
@@ -671,11 +650,6 @@ namespace Revit.IFC.Export.Exporter
          if (rebar.Document == null)
             return shapeName;
 
-         ElementId idShape = accessor.GetShapeIdAtIndex(barPositionIndex);
-         RebarShape shape = rebar.Document.GetElement(idShape) as RebarShape;
-         if (shape == null)
-            return shapeName;
-         shapeName = shape.Name;
          return shapeName;
       }
    }

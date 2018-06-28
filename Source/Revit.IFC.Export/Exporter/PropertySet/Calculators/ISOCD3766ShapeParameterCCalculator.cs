@@ -64,12 +64,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// </returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         if (element is Rebar)
-         {
-            Rebar rebar = element as Rebar;
-            if (rebar.CanBeMatchedWithMultipleShapes())
-               return false; // In case of the Bent free form the parameter should be obtain from subelement. (It can have value for another bar in set and we don't want that value). 
-         }
 
          bool ret = (ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameterGroup.PG_GEOMETRY, "C", out m_ShapeParameterC) != null);
          if (ret)

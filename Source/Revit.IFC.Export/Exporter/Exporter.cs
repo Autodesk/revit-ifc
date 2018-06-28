@@ -37,7 +37,6 @@ using Revit.IFC.Common.Enums;
 using Autodesk.Revit.DB.ExternalService;
 using Revit.IFC.Export.Properties;
 using System.Reflection;
-using Autodesk.Revit.DB.Steel;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -482,17 +481,7 @@ namespace Revit.IFC.Export.Exporter
             // In case Autodesk.Revit.DB.Steel is missing, continue the export.
             try
             {
-               SteelElementProperties cell = SteelElementProperties.GetSteelElementProperties(element);
-               if (cell != null)
-               {
-                  bool hasGraphics = false;
-                  PropertyInfo graphicsCell = cell.GetType().GetProperty("HasGraphics", BindingFlags.Instance | BindingFlags.NonPublic);
-                  if (graphicsCell != null) // Concrete elements with cell that have HasGraphics set to true, must be handled by Revit exporter.
-                     hasGraphics = (bool)graphicsCell.GetValue(cell, null);
-
-                  if (hasGraphics)
-                     return false;
-               }
+               
             }
             catch
             { }
