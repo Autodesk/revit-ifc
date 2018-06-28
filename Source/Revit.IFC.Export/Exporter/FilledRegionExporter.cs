@@ -77,8 +77,8 @@ namespace Revit.IFC.Export.Exporter
                return;
 
             FilledRegionType filledRegionType = filledRegion.Document.GetElement(filledRegion.GetTypeId()) as FilledRegionType;
-            Color color = filledRegionType != null ? CategoryUtil.GetSafeColor(filledRegionType.ForegroundPatternColor) : new Color(0, 0, 0);
-            ElementId foregroundPatternId = filledRegionType != null ? filledRegionType.ForegroundPatternId : ElementId.InvalidElementId;
+            Color color = filledRegionType != null ? CategoryUtil.GetSafeColor(filledRegionType.Color) : new Color(0, 0, 0);
+            ElementId foregroundPatternId = filledRegionType != null ? filledRegionType.FillPatternId : ElementId.InvalidElementId;
             ElementId categoryId = CategoryUtil.GetSafeCategoryId(filledRegion);
 
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, filledRegion, null, orientTrf))

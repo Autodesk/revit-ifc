@@ -223,8 +223,6 @@ namespace BIM.IFC.Export.UI
       {
          m_configMap = configurationsMap;
 
-         SetParent(app.MainWindowHandle);
-
          InitializeComponent();
 
          RestorePreviousWindow();

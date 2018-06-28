@@ -194,8 +194,8 @@ namespace Revit.IFC.Export.Utility
          if (matElem != null)
          {
             materialColor = GetSafeColor(matElem.Color);
-            surfacePatternColor = GetSafeColor(matElem.SurfaceForegroundPatternColor);
-            cutPatternColor = GetSafeColor(matElem.CutForegroundPatternColor);
+            surfacePatternColor = GetSafeColor(matElem.SurfacePatternColor);
+            cutPatternColor = GetSafeColor(matElem.CutPatternColor);
             opacity = (double) (100 - matElem.Transparency)/100;
          }
          else
@@ -521,8 +521,8 @@ namespace Revit.IFC.Export.Utility
                   Material matElem = document.GetElement(materialId) as Material;
 
                   // TODO_DOUBLE_PATTERN - deal with background pattern
-                  ElementId fillPatternId = (matElem != null) ? matElem.CutForegroundPatternId : ElementId.InvalidElementId;
-                  Autodesk.Revit.DB.Color color = (matElem != null) ? GetSafeColor(matElem.CutForegroundPatternColor) : new Color(0, 0, 0);
+                  ElementId fillPatternId = (matElem != null) ? matElem.CutPatternId : ElementId.InvalidElementId;
+                  Autodesk.Revit.DB.Color color = (matElem != null) ? GetSafeColor(matElem.CutPatternColor) : new Color(0, 0, 0);
 
                   double planScale = 100.0;
 
