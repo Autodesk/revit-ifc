@@ -64,7 +64,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\Source\Revit.IFC.Common\Revit.IFC.Common.csproj">
       <Project>{032ea4dc-181f-4453-9f93-e08de1c07d95}</Project>
-      <Name>BIM.IFC.Common</Name>
+      <Name>Revit.IFC.Common</Name>
       <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\..\Source\Revit.IFC.Export\Revit.IFC.Export.csproj">

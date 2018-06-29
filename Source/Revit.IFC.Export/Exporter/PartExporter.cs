@@ -199,7 +199,11 @@ namespace Revit.IFC.Export.Exporter
          hostElement = FindRootParent(part, part.OriginalCategoryId);
 
          // If part's level is not associated, try to get the host's level with the same category.
-         if (hostElement != null)
+         if (part.LevelId != null && part.LevelId != ElementId.InvalidElementId)
+         {
+            overrideLevelId = part.LevelId;
+         }
+         else if (hostElement != null)
          {
             overrideLevelId = hostElement.LevelId;
          }
