@@ -629,7 +629,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC2x3CV2) || (FileVersion == IFCVersion.IFC4) || (FileVersion == IFCVersion.IFC2x3FM) || (FileVersion == IFCVersion.IFC2x3BFM) || (FileVersion == IFCVersion.IFC4RV) || (FileVersion == IFCVersion.IFC4DTV);
+            return (FileVersion == IFCVersion.IFC2x3CV2) || (FileVersion == IFCVersion.IFC4) || (FileVersion == IFCVersion.IFC2x3FM) || (FileVersion == IFCVersion.IFC2x3BFM);
          }
       }
 

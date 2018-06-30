@@ -249,7 +249,6 @@ namespace Revit.IFC.Export.Exporter
          switch (type.ExportInstance)
          {
             case IFCEntityType.IfcBeam:
-            //case IFCEntityType.IfcBeamType:
                {
                   string preDefinedType = string.IsNullOrWhiteSpace(ifcEnumType) ? "BEAM" : ifcEnumType;
                   instanceHandle = IFCInstanceExporter.CreateBeam(exporterIFC, familyInstance, instanceGUID, ownerHistory,
@@ -489,11 +488,9 @@ namespace Revit.IFC.Export.Exporter
             {
                case Common.Enums.IFCEntityType.IfcBurnerType:
                   exportInfo.ExportType = Common.Enums.IFCEntityType.IfcGasTerminalType;
-                  //typeAsString = IFCEntityType.IfcGasTerminalType.ToString();
                   break;
                case Common.Enums.IFCEntityType.IfcSpaceHeaterType:
                   exportInfo.ExportType = Common.Enums.IFCEntityType.IfcElectricHeaterType;
-                  //typeAsString = IFCEntityType.IfcElectricHeaterType.ToString();
                   break;
                case Common.Enums.IFCEntityType.IfcDoorType:
                   exportInfo.ExportType = Common.Enums.IFCEntityType.IfcDoorStyle;

@@ -215,6 +215,206 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// Get validated IfcStairFlightTypeEnum from Revit StairsRun
+      /// </summary>
+      /// <param name="stairsRun">Revit StairsRun object</param>
+      /// <returns>string value of the validated IfcStairFlightTypeEnum</returns>
+      public static string GetValidatedStairFlightType(StairsRun stairsRun)
+      {
+         StairsRunStyle runStyle = stairsRun.StairsRunStyle;
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         {
+            Toolkit.IFC4.IFCStairFlightType stairFlightTypeEnum = Toolkit.IFC4.IFCStairFlightType.NOTDEFINED;
+            if (Enum.TryParse(runStyle.ToString(), true, out stairFlightTypeEnum))
+               return stairFlightTypeEnum.ToString();
+            else
+               return "NOTDEFINED";
+         }
+         else
+         {
+            Toolkit.IFCStairFlightType stairFlightTypeEnum = Toolkit.IFCStairFlightType.NOTDEFINED;
+            if (Enum.TryParse(runStyle.ToString(), true, out stairFlightTypeEnum))
+               return stairFlightTypeEnum.ToString();
+            else
+               return "NOTDEFINED";
+         }
+      }
+
+      /// <summary>
+      /// Get validated IfcStairTypeEnum of Revit stairs based on the information obtained from its components
+      /// </summary>
+      /// <param name="stairs">the Revit stair object</param>
+      /// <param name="ifcExportType">potential override value from IfcExportAs or IfcExportType</param>
+      /// <returns>string value of the validated IfcStairTypeEnum</returns>
+      public static string GetValidatedStairType(Stairs stairs, string ifcExportType)
+      {
+         string stairType = "NOTDEFINED";
+
+         ICollection<ElementId> flights = stairs.GetStairsRuns();
+         if (flights.Count == 0)
+            return stairType;
+
+         int noLandings = stairs.GetStairsLandings().Count;
+         int noStraightFlights = 0;
+         int noCurvedFlights = 0;
+         int noWinder = 0;
+         List<Line> straightFlightPaths = new List<Line>();
+
+         foreach (ElementId flight in flights)
+         {
+            StairsRun stairRun = stairs.Document.GetElement(flight) as StairsRun;
+            StairsRunStyle runStyle = stairRun.StairsRunStyle;
+            switch (runStyle)
+            {
+               case StairsRunStyle.Winder:
+                  noWinder++;
+                  break;
+               case StairsRunStyle.Straight:
+                  CurveLoop flightPath = stairRun.GetStairsPath();
+                  int lineCnt = 0;
+                  List<Line> lines = new List<Line>();
+                  foreach (Curve path in flightPath)
+                  {
+                     if (path is Line)
+                     {
+                        lineCnt++;
+                        lines.Add(path as Line);
+                     }
+                     else
+                        break;      // Ignore if it is somehow not a Line
+                  }
+                  if (lineCnt > 1)
+                     break;         // Skip if the path is made of multiple curve segments
+
+                  noStraightFlights++;
+                  straightFlightPaths.AddRange(lines);
+                  break;
+               case StairsRunStyle.Sketched:
+                  // If it is sketched, we need to evaluate the path and see whether we can infer that is is straight or curved flight
+                  CurveLoop flightPath2 = stairRun.GetStairsPath();
+                  int lineCnt2 = 0;
+                  int curveCnt = 0;
+                  List<Line> lines2 = new List<Line>();
+                  foreach (Curve curvePath in flightPath2)
+                  {
+                     if (curvePath is Line)
+                     {
+                        lineCnt2++;
+                        lines2.Add(curvePath as Line);
+                     }
+                     else
+                        curveCnt++;
+                  }
+                  // We only deal with a single curve segment in the path
+                  if (lineCnt2 == 1 && curveCnt == 0)
+                  {
+                     noStraightFlights++;
+                     straightFlightPaths.AddRange(lines2);
+                  }
+                  else if (lineCnt2 == 0 && curveCnt == 1)
+                     noCurvedFlights++;
+
+                  break;
+               case StairsRunStyle.Spiral:
+                  stairType = "SPIRAL_STAIR";
+                  break;
+               default:
+                  break;
+            }
+         }
+
+         if (stairType.Equals("NOTDEFINED"))
+         {
+            // Now use all the information we collect, i.e. no of Landing, no of flight and their type to determine the correct IfcStairTypeEnum
+            // Note that IfcStairTypeEnum only handle a limited no of flights and/or landings (see http://www.buildingsmart-tech.org/ifc/IFC4/Add2TC1/html/schema/ifcsharedbldgelements/lexical/ifcstairtypeenum.htm)
+            int noFlights = noStraightFlights + noCurvedFlights;
+            if (noFlights == 1)
+            {
+               if (noStraightFlights == 1)
+                  stairType = "STRAIGHT_RUN_STAIR";
+               else if (noCurvedFlights == 1)
+                  stairType = "CURVED_RUN_STAIR";
+            }
+            else if (noFlights == 2 && noCurvedFlights == 2 && noLandings == 1)
+            {
+               stairType = "TWO_CURVED_RUN_STAIR";
+            }
+            else if (noFlights == 2 && noStraightFlights == 2 && straightFlightPaths.Count == 2)
+            {
+               double dirLines = straightFlightPaths[0].Direction.DotProduct(straightFlightPaths[1].Direction);
+               if (MathUtil.IsAlmostEqual(dirLines, 1.0) && noLandings == 1)  //parallel in the same direction
+                  stairType = "TWO_STRAIGHT_RUN_STAIR";
+               else if (MathUtil.IsAlmostEqual(dirLines, 0.0))                     // perpendicular
+               {
+                  if (noLandings == 1)
+                     stairType = "QUARTER_TURN_STAIR";
+                  else if (noWinder == 1)
+                     stairType = "HALF_WINDING_STAIR";
+               }
+               else if (MathUtil.IsAlmostEqual(dirLines, -1.0))
+               {
+                  if (noWinder == 1)
+                     stairType = "HALF_WINDING_STAIR";
+                  else if (noLandings == 1)
+                     stairType = "HALF_TURN_STAIR";
+               }
+            }
+            else if (noFlights == 3 && noStraightFlights == 3 && straightFlightPaths.Count == 3)
+            {
+               // Directions must be 90 degree turn
+               if (MathUtil.IsAlmostZero(straightFlightPaths[0].Direction.DotProduct(straightFlightPaths[1].Direction))
+                     && MathUtil.IsAlmostZero(straightFlightPaths[1].Direction.DotProduct(straightFlightPaths[2].Direction)))
+               {
+                  if (noWinder == 2)
+                     stairType = "TWO_QUARTER_WINDING_STAIR";
+                  else if (noLandings == 2)
+                  {
+                     if (MathUtil.IsAlmostEqual(straightFlightPaths[0].GetEndPoint(0).Z, straightFlightPaths[1].GetEndPoint(0).Z)
+                        || MathUtil.IsAlmostEqual(straightFlightPaths[0].GetEndPoint(0).Z, straightFlightPaths[2].GetEndPoint(0).Z)
+                        || MathUtil.IsAlmostEqual(straightFlightPaths[1].GetEndPoint(0).Z, straightFlightPaths[2].GetEndPoint(0).Z))
+                        stairType = "DOUBLE_RETURN_STAIR";          // two of the flights have the same starting elevation
+                     else
+                        stairType = "TWO_QUARTER_TURN_STAIR";
+                  }
+               }
+            }
+            else if (noFlights == 4 && noStraightFlights == 4 && straightFlightPaths.Count == 4)
+            {
+               // Directions must be 90 degree turn
+               if (MathUtil.IsAlmostZero(straightFlightPaths[0].Direction.DotProduct(straightFlightPaths[1].Direction))
+                     && MathUtil.IsAlmostZero(straightFlightPaths[1].Direction.DotProduct(straightFlightPaths[2].Direction))
+                     && MathUtil.IsAlmostZero(straightFlightPaths[2].Direction.DotProduct(straightFlightPaths[3].Direction)))
+               {
+                  if (noWinder == 3)
+                     stairType = "THREE_QUARTER_WINDING_STAIR";
+                  else if (noLandings == 3)
+                     stairType = "THREE_QUARTER_TURN_STAIR";
+               }
+            }
+         }
+
+         // if NOTDEFINED, set to default if supplied. Validate the type enum
+         if (stairType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase) && !string.IsNullOrEmpty(ifcExportType))
+            stairType = ifcExportType;
+
+         // Now validate the string using the enum
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         {
+            Toolkit.IFC4.IFCStairType enumType = Toolkit.IFC4.IFCStairType.NOTDEFINED;
+            Enum.TryParse(stairType, true, out enumType);
+            stairType = enumType.ToString();
+         }
+         else
+         {
+            Toolkit.IFCStairType enumType = Toolkit.IFCStairType.NotDefined;
+            Enum.TryParse(stairType, true, out enumType);
+            stairType = enumType.ToString();
+         }
+
+         return stairType;
+      }
+
+      /// <summary>
       /// Gets IFCStairType from stair type name.
       /// </summary>
       /// <param name="stairTypeName">The stair type name.</param>
@@ -461,6 +661,8 @@ namespace Revit.IFC.Export.Exporter
                         componentPlacementHnds[ii], representationCopy, localStairType);
                   IFCAnyHandleUtil.OverrideNameAttribute(localComponent, localComponentNames[ii]);
                   localComponentHnds.Add(localComponent);
+
+                  //ExporterUtil.CreateGenericTypeFromElement()
                }
             }
             else if (IFCAnyHandleUtil.IsSubTypeOf(component, IFCEntityType.IfcStairFlight))
@@ -598,6 +800,7 @@ namespace Revit.IFC.Export.Exporter
                {
                   ecData.SetLocalPlacement(placementSetter.LocalPlacement);
                   ecData.ReuseLocalPlacement = false;
+                  Transform trf = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, placementSetter.LocalPlacement);
 
                   int numFlights = flightOffsets.Count;
                   GeometryElement stairsGeom = GeometryUtil.GetOneLevelGeometryElement(geometryElement, numFlights);
@@ -615,34 +818,81 @@ namespace Revit.IFC.Export.Exporter
                      return;
                   }
 
-                  string containedStairGuid = GUIDUtil.CreateSubElementGUID(stair, (int)IFCStairSubElements.ContainedStair);
+                  if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                  {
+                     IList<IFCAnyHandle> reps = IFCAnyHandleUtil.GetRepresentations(representation);
+                     Stairs theStairs = stair as Stairs;
+                     foreach (ElementId runElementId in theStairs.GetStairsRuns())
+                     {
+                        StairsRun stairRun = theStairs.Document.GetElement(runElementId) as StairsRun;
+                        CreateWalkingLineAndFootprint(exporterIFC, stairRun, bodyData, categoryId, trf, ref reps);
+                     }
+                     foreach(ElementId landingElementId in theStairs.GetStairsLandings())
+                     {
+                        StairsLanding stairLanding = theStairs.Document.GetElement(landingElementId) as StairsLanding;
+                        CreateWalkingLineAndFootprint(exporterIFC, stairLanding, bodyData, categoryId, trf, ref reps);
+                     }
+                     // Update the representations with Footprint and WalkingLine
+                     representation.SetAttribute("Representations", reps);
+                  }
+
+                  string stairGuid = GUIDUtil.CreateGUID(stair);
+                  string containedStairGuid;
+                  if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                     containedStairGuid = GUIDUtil.CreateSubElementGUID(stair, (int)IFCStairSubElements.ContainedStair);
+                  else
+                     containedStairGuid = stairGuid;
+
                   IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
                   IFCAnyHandle containedStairLocalPlacement = ExporterUtil.CreateLocalPlacement(file, ecData.GetLocalPlacement(), null);
-                  string stairType = GetIFCStairType(ifcEnumType);
+                  string predefType = GetValidatedStairType(stair as Stairs, null);
 
                   List<IFCAnyHandle> components = new List<IFCAnyHandle>();
                   IList<IFCExtrusionCreationData> componentExtrusionData = new List<IFCExtrusionCreationData>();
                   IFCAnyHandle containedStairHnd = IFCInstanceExporter.CreateStair(exporterIFC, stair, containedStairGuid, ownerHistory,
-                      containedStairLocalPlacement, representation, stairType);
-                  components.Add(containedStairHnd);
-                  componentExtrusionData.Add(ecData);
-                  //productWrapper.AddElement(containedStairHnd, placementSetter.LevelInfo, ecData, false);
+                      containedStairLocalPlacement, representation, predefType);
+
+                  // Create appropriate type
+                  IFCExportInfoPair exportType = new IFCExportInfoPair();
+                  exportType.SetValueWithPair(IFCEntityType.IfcStair);
+                  IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
+                  ExporterCacheManager.TypeRelationsCache.Add(stairTypeHnd, containedStairHnd);
                   CategoryUtil.CreateMaterialAssociation(exporterIFC, containedStairHnd, bodyData.MaterialIds);
 
-                  string guid = GUIDUtil.CreateGUID(stair);
+                  if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                  {
+                  components.Add(containedStairHnd);
+                  componentExtrusionData.Add(ecData);
+
                   IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
-                  IFCAnyHandle stairHnd = IFCInstanceExporter.CreateStair(exporterIFC, stair, guid, ownerHistory,
-                       localPlacement, null, stairType);
+                     IFCAnyHandle stairContainerHnd = IFCInstanceExporter.CreateStair(exporterIFC, stair, stairGuid, ownerHistory,
+                          localPlacement, null, predefType);
 
-                  productWrapper.AddElement(stair, stairHnd, placementSetter.LevelInfo, ecData, true);
+                     // Create appropriate type for the container
+                     string contPredefType = GetValidatedStairType(stair as Stairs, null);
+                     IFCAnyHandle stairContTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, contPredefType, productWrapper);
+                     ExporterCacheManager.TypeRelationsCache.Add(stairContTypeHnd, stairContainerHnd);
 
-                  StairRampContainerInfo stairRampInfo = new StairRampContainerInfo(stairHnd, components, localPlacement);
+                     productWrapper.AddElement(stair, stairContainerHnd, placementSetter.LevelInfo, ecData, true);
+
+                     StairRampContainerInfo stairRampInfo = new StairRampContainerInfo(stairContainerHnd, components, localPlacement);
                   ExporterCacheManager.StairRampContainerInfoCache.AddStairRampContainerInfo(stair.Id, stairRampInfo);
 
-                  ExportMultistoryStair(exporterIFC, stair, flightOffsets, stairHnd, components,
+                     ExportMultistoryStair(exporterIFC, stair, flightOffsets, stairContainerHnd, components,
                       componentExtrusionData, placementSetter, productWrapper);
+               }
+                  else
+                  {
+                     // From IFC4 onward, a single geometry Stair will be exported directly as IfcStair without container
+                     productWrapper.AddElement(stair, containedStairHnd, placementSetter.LevelInfo, ecData, true);
+                     StairRampContainerInfo stairRampInfo = new StairRampContainerInfo(containedStairHnd, components, containedStairLocalPlacement);
+                     ExporterCacheManager.StairRampContainerInfoCache.AddStairRampContainerInfo(stair.Id, stairRampInfo);
+
+                     ExportMultistoryStair(exporterIFC, stair, flightOffsets, containedStairHnd, components,
+                         componentExtrusionData, placementSetter, productWrapper);
+                  }
                }
                tr.Commit();
             }
@@ -662,6 +912,10 @@ namespace Revit.IFC.Export.Exporter
           List<double> flightOffsets, ProductWrapper productWrapper)
       {
          if (stair == null || geometryElement == null)
+            return;
+
+         // Don't process Stair that has only one Flight -> export it as a single IfcStair instead by returning immediately 
+         if (stair.GetStairsRuns().Count == 1)
             return;
 
          Document doc = stair.Document;
@@ -684,10 +938,17 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                string stairGUID = GUIDUtil.CreateGUID(stair);
                IFCAnyHandle stairLocalPlacement = placementSetter.LocalPlacement;
-               string stairType = GetIFCStairType(ifcEnumType);
+               //string stairType = GetIFCStairType(ifcEnumType);
+               string predefType = GetValidatedStairType(stair, null);
 
                IFCAnyHandle stairContainerHnd = IFCInstanceExporter.CreateStair(exporterIFC, stair, stairGUID, ownerHistory,
-                   stairLocalPlacement, null, stairType);
+                   stairLocalPlacement, null, predefType);
+
+               // Create appropriate type
+               IFCExportInfoPair exportType = new IFCExportInfoPair();
+               exportType.SetValueWithPair(IFCEntityType.IfcStair);
+               IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
+               ExporterCacheManager.TypeRelationsCache.Add(stairTypeHnd, stairContainerHnd);
 
                productWrapper.AddElement(stair, stairContainerHnd, placementSetter.LevelInfo, null, true);
 
@@ -723,40 +984,7 @@ namespace Revit.IFC.Export.Exporter
 
                      if (!ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2)
                      {
-                        Transform runBoundaryTrf = (bodyData.OffsetTransform == null) ? trf : trf.Multiply(bodyData.OffsetTransform);
-                        XYZ runBoundaryProjDir = runBoundaryTrf.BasisZ;
-
-                        CurveLoop boundary = run.GetFootprintBoundary();
-                        IFCAnyHandle boundaryHnd = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, boundary,
-                            runBoundaryTrf, runBoundaryProjDir);
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(boundaryHnd))
-                        {
-                           HashSet<IFCAnyHandle> geomSelectSet = new HashSet<IFCAnyHandle>();
-                           geomSelectSet.Add(boundaryHnd);
-
-                           HashSet<IFCAnyHandle> boundaryItems = new HashSet<IFCAnyHandle>();
-                           boundaryItems.Add(IFCInstanceExporter.CreateGeometricSet(file, geomSelectSet));
-
-                           IFCAnyHandle boundaryRep = RepresentationUtil.CreateGeometricSetRep(exporterIFC, run, categoryId, "FootPrint",
-                               contextOfItemsFootPrint, boundaryItems);
-                           reps.Add(boundaryRep);
-                        }
-
-                        CurveLoop walkingLine = run.GetStairsPath();
-                        IFCAnyHandle walkingLineHnd = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, walkingLine,
-                            runBoundaryTrf, runBoundaryProjDir);
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(walkingLineHnd))
-                        {
-                           HashSet<IFCAnyHandle> geomSelectSet = new HashSet<IFCAnyHandle>();
-                           geomSelectSet.Add(walkingLineHnd);
-
-                           HashSet<IFCAnyHandle> walkingLineItems = new HashSet<IFCAnyHandle>();
-                           walkingLineItems.Add(IFCInstanceExporter.CreateGeometricSet(file, geomSelectSet));
-
-                           IFCAnyHandle walkingLineRep = RepresentationUtil.CreateGeometricSetRep(exporterIFC, run, categoryId, "Axis",
-                               contextOfItemsAxis, walkingLineItems);
-                           reps.Add(walkingLineRep);
-                        }
+                        CreateWalkingLineAndFootprint(exporterIFC, run, bodyData, categoryId, trf, ref reps);
                      }
 
                      Transform boundingBoxTrf = (bodyData.OffsetTransform == null) ? Transform.Identity : bodyData.OffsetTransform.Inverse;
@@ -771,10 +999,18 @@ namespace Revit.IFC.Export.Exporter
                      string runName = NamingUtil.GetNameOverride(run, origRunName);
 
                      IFCAnyHandle runLocalPlacement = ecData.GetLocalPlacement();
+                     string runElementTag = NamingUtil.GetTagOverride(run, NamingUtil.CreateIFCElementId(run));
+
+                     string flightPredefType = GetValidatedStairFlightType(run);
                      
                      IFCAnyHandle stairFlightHnd = IFCInstanceExporter.CreateStairFlight(exporterIFC, run, runGUID, ownerHistory, runLocalPlacement,
-                         representation, run.ActualRisersNumber, run.ActualTreadsNumber, stair.ActualRiserHeight, stair.ActualTreadDepth, "NOTDEFINED");
+                         representation, run.ActualRisersNumber, run.ActualTreadsNumber, stair.ActualRiserHeight, stair.ActualTreadDepth, flightPredefType);
                      IFCAnyHandleUtil.OverrideNameAttribute(stairFlightHnd, runName);
+                     // Create type
+                     IFCExportInfoPair flightEportType = new IFCExportInfoPair();
+                     flightEportType.SetValueWithPair(IFCEntityType.IfcStairFlight);
+                     IFCAnyHandle flightTypeHnd = ExporterUtil.CreateGenericTypeFromElement(run, flightEportType, exporterIFC.GetFile(), ownerHistory, flightPredefType, productWrapper);
+                     ExporterCacheManager.TypeRelationsCache.Add(flightTypeHnd, stairFlightHnd);
 
                      componentHandles.Add(stairFlightHnd);
                      componentExtrusionData.Add(ecData);
@@ -820,40 +1056,7 @@ namespace Revit.IFC.Export.Exporter
 
                      if (!ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2)
                      {
-                        Transform landingBoundaryTrf = (bodyData.OffsetTransform == null) ? trf : trf.Multiply(bodyData.OffsetTransform);
-                        XYZ landingBoundaryProjDir = landingBoundaryTrf.BasisZ;
-
-                        CurveLoop boundary = landing.GetFootprintBoundary();
-                        IFCAnyHandle boundaryHnd = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, boundary,
-                            landingBoundaryTrf, landingBoundaryProjDir);
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(boundaryHnd))
-                        {
-                           HashSet<IFCAnyHandle> geomSelectSet = new HashSet<IFCAnyHandle>();
-                           geomSelectSet.Add(boundaryHnd);
-
-                           HashSet<IFCAnyHandle> boundaryItems = new HashSet<IFCAnyHandle>();
-                           boundaryItems.Add(IFCInstanceExporter.CreateGeometricSet(file, geomSelectSet));
-
-                           IFCAnyHandle boundaryRep = RepresentationUtil.CreateGeometricSetRep(exporterIFC, landing, categoryId, "FootPrint",
-                               contextOfItemsFootPrint, boundaryItems);
-                           reps.Add(boundaryRep);
-                        }
-
-                        CurveLoop walkingLine = landing.GetStairsPath();
-                        IFCAnyHandle walkingLineHnd = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, walkingLine,
-                            landingBoundaryTrf, landingBoundaryProjDir);
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(walkingLineHnd))
-                        {
-                           HashSet<IFCAnyHandle> geomSelectSet = new HashSet<IFCAnyHandle>();
-                           geomSelectSet.Add(walkingLineHnd);
-
-                           HashSet<IFCAnyHandle> walkingLineItems = new HashSet<IFCAnyHandle>();
-                           walkingLineItems.Add(IFCInstanceExporter.CreateGeometricSet(file, geomSelectSet));
-
-                           IFCAnyHandle walkingLineRep = RepresentationUtil.CreateGeometricSetRep(exporterIFC, landing, categoryId, "Axis",
-                               contextOfItemsAxis, walkingLineItems);
-                           reps.Add(walkingLineRep);
-                        }
+                        CreateWalkingLineAndFootprint(exporterIFC, landing, bodyData, categoryId, trf, ref reps);
                      }
 
                      Transform boundingBoxTrf = (bodyData.OffsetTransform == null) ? Transform.Identity : bodyData.OffsetTransform.Inverse;
@@ -868,9 +1071,16 @@ namespace Revit.IFC.Export.Exporter
                      
                      IFCAnyHandle representation = IFCInstanceExporter.CreateProductDefinitionShape(exporterIFC.GetFile(), null, null, reps);
 
+                     string landingPredefinedType = "LANDING";
                      IFCAnyHandle landingHnd = IFCInstanceExporter.CreateSlab(exporterIFC, landing, landingGUID, ownerHistory,
-                         landingLocalPlacement, representation, "LANDING");
+                         landingLocalPlacement, representation, landingPredefinedType);
                      IFCAnyHandleUtil.OverrideNameAttribute(landingHnd, landingName);
+
+                     // Create type
+                     IFCExportInfoPair landingEportType = new IFCExportInfoPair();
+                     landingEportType.SetValueWithPair(IFCEntityType.IfcSlab);
+                     IFCAnyHandle landingTypeHnd = ExporterUtil.CreateGenericTypeFromElement(landing, landingEportType, exporterIFC.GetFile(), ownerHistory, landingPredefinedType, productWrapper);
+                     ExporterCacheManager.TypeRelationsCache.Add(landingTypeHnd, landingHnd);
 
                      componentHandles.Add(landingHnd);
                      componentExtrusionData.Add(ecData);
@@ -1451,6 +1661,69 @@ namespace Revit.IFC.Export.Exporter
                walkLineReps.Add(null);
          }
          return walkLineReps;
+      }
+
+      private static void CreateWalkingLineAndFootprint(ExporterIFC exporterIFC, Element element, BodyData bodyData, ElementId categoryId, Transform trf, ref IList<IFCAnyHandle> reps)
+      {
+         // Only for StairsRun or StairsLanding
+         bool isStairRun = false;
+         if (element is StairsRun)
+            isStairRun = true;
+         else if (element is StairsLanding)
+            isStairRun = false;
+         else
+            return;
+
+         IFCFile file = exporterIFC.GetFile();
+         IFCAnyHandle contextOfItemsFootPrint = exporterIFC.Get3DContextHandle("FootPrint");
+         IFCAnyHandle contextOfItemsAxis = exporterIFC.Get3DContextHandle("Axis");
+
+         Transform trfFromBodyData = bodyData.OffsetTransform;
+         trfFromBodyData.Origin = UnitUtil.UnscaleLength(bodyData.OffsetTransform.Origin);
+         Transform boundaryTrf = (bodyData.OffsetTransform == null) ? trf : trf.Multiply(trfFromBodyData);
+         XYZ runBoundaryProjDir = boundaryTrf.BasisZ;
+
+         CurveLoop boundary;
+         if (isStairRun)
+            boundary = (element as StairsRun).GetFootprintBoundary();
+         else
+            boundary = (element as StairsLanding).GetFootprintBoundary();
+
+         IFCAnyHandle boundaryHnd = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, boundary,
+             boundaryTrf, runBoundaryProjDir);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(boundaryHnd))
+         {
+            HashSet<IFCAnyHandle> geomSelectSet = new HashSet<IFCAnyHandle>();
+            geomSelectSet.Add(boundaryHnd);
+
+            HashSet<IFCAnyHandle> boundaryItems = new HashSet<IFCAnyHandle>();
+            boundaryItems.Add(IFCInstanceExporter.CreateGeometricSet(file, geomSelectSet));
+
+            IFCAnyHandle boundaryRep = RepresentationUtil.CreateGeometricSetRep(exporterIFC, element, categoryId, "FootPrint",
+                contextOfItemsFootPrint, boundaryItems);
+            reps.Add(boundaryRep);
+         }
+
+         CurveLoop walkingLine;
+         if (isStairRun)
+            walkingLine = (element as StairsRun).GetStairsPath();
+         else
+            walkingLine = (element as StairsLanding).GetStairsPath();
+
+         IFCAnyHandle walkingLineHnd = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, walkingLine,
+             boundaryTrf, runBoundaryProjDir);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(walkingLineHnd))
+         {
+            HashSet<IFCAnyHandle> geomSelectSet = new HashSet<IFCAnyHandle>();
+            geomSelectSet.Add(walkingLineHnd);
+
+            HashSet<IFCAnyHandle> walkingLineItems = new HashSet<IFCAnyHandle>();
+            walkingLineItems.Add(IFCInstanceExporter.CreateGeometricSet(file, geomSelectSet));
+
+            IFCAnyHandle walkingLineRep = RepresentationUtil.CreateGeometricSetRep(exporterIFC, element, categoryId, "Axis",
+                contextOfItemsAxis, walkingLineItems);
+            reps.Add(walkingLineRep);
+         }
       }
    }
 }

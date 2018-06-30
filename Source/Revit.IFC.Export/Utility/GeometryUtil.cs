@@ -3412,7 +3412,7 @@ namespace Revit.IFC.Export.Utility
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {
             IList<int> segmentIndex = null;
-            IList<IList<double>> pointList = GeometryUtil.PointListFromCurve(exporterIFC, curve, null, null, out segmentIndex);
+            IList<IList<double>> pointList = GeometryUtil.PointListFromCurve(exporterIFC, curve, additionalTrf, null, out segmentIndex);
 
             IList<IList<int>> segmentIndexList = new List<IList<int>>();
             // Not using segment index for now because there is no API to create the appropriate type yet
@@ -3435,14 +3435,15 @@ namespace Revit.IFC.Export.Utility
                //ifcCurve = CreateLineSegment(exporterIFC, curveLine);
 
                // Create line based trimmed curve for Axis
-               IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints);
+               IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints, additionalTrf);
+               XYZ dir = (additionalTrf == null) ? curveLine.Direction : additionalTrf.OfVector(curveLine.Direction);
                IFCAnyHandle vector = VectorToIfcVector(exporterIFC, curveLine.Direction);
                IFCAnyHandle line = IFCInstanceExporter.CreateLine(file, curveOrigin, vector);
 
-               IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints);
+               IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints, additionalTrf);
                HashSet<IFCData> trim1 = new HashSet<IFCData>();
                trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
-               IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints);
+               IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints, additionalTrf);
                HashSet<IFCData> trim2 = new HashSet<IFCData>();
                trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
                ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, line, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
@@ -3452,9 +3453,9 @@ namespace Revit.IFC.Export.Utility
          else if (curve is Arc)
          {
             Arc curveArc = curve as Arc;
-            XYZ curveArcCenter = curveArc.Center;
-            XYZ curveArcNormal = curveArc.Normal;
-            XYZ curveArcXDirection = curveArc.XDirection;
+            XYZ curveArcCenter = (additionalTrf == null)? curveArc.Center : additionalTrf.OfPoint(curveArc.Center);
+            XYZ curveArcNormal = (additionalTrf == null)? curveArc.Normal : additionalTrf.OfVector(curveArc.Normal);
+            XYZ curveArcXDirection = (additionalTrf == null)? curveArc.XDirection : additionalTrf.OfVector(curveArc.XDirection);
 
             if (curveArcCenter == null || curveArcNormal == null || curveArcXDirection == null)
             {
@@ -3472,11 +3473,11 @@ namespace Revit.IFC.Export.Utility
             IFCAnyHandle position3D = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
             IFCAnyHandle circle = IFCInstanceExporter.CreateCircle(file, position3D, UnitUtil.ScaleLength(curveArc.Radius));
 
-            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(0), cartesianPoints);
+            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(0), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim1 = new HashSet<IFCData>();
             trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
 
-            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(1), cartesianPoints);
+            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(1), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim2 = new HashSet<IFCData>();
             trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
 
@@ -3487,10 +3488,10 @@ namespace Revit.IFC.Export.Utility
          {
             Ellipse curveEllipse = curve as Ellipse;
             IList<double> direction = new List<double>();
-            XYZ ellipseNormal = curveEllipse.Normal;
-            XYZ ellipseXDirection = curveEllipse.XDirection;
+            XYZ ellipseNormal = (additionalTrf == null)? curveEllipse.Normal : additionalTrf.OfVector(curveEllipse.Normal);
+            XYZ ellipseXDirection = (additionalTrf == null)? curveEllipse.XDirection : additionalTrf.OfVector(curveEllipse.XDirection);
 
-            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.Center, cartesianPoints);
+            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.Center, cartesianPoints, additionalTrf);
 
             IFCAnyHandle axis = VectorToIfcDirection(exporterIFC, ellipseNormal);
 
@@ -3501,11 +3502,11 @@ namespace Revit.IFC.Export.Utility
 
             IFCAnyHandle ellipse = IFCInstanceExporter.CreateEllipse(file, position, UnitUtil.ScaleLength(curveEllipse.RadiusX), UnitUtil.ScaleLength(curveEllipse.RadiusY));
 
-            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(0), cartesianPoints);
+            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(0), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim1 = new HashSet<IFCData>();
             trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
 
-            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(1), cartesianPoints);
+            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(1), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim2 = new HashSet<IFCData>();
             trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
 

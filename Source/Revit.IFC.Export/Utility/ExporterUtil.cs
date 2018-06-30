@@ -972,6 +972,7 @@ namespace Revit.IFC.Export.Utility
          IFCEntityType prodHndType = IFCAnyHandleUtil.GetEntityType(prodHnd);
          string hndTypeStr = prodHndType.ToString();
          IFCEntityType altProdHndType = IFCEntityType.UnKnown;
+         IFCEntityType altProdHndType2 = IFCEntityType.UnKnown;
 
          // PropertySetEntry will only have an information about IFC entity (or type) for the Pset definition but may not be both
          // Here we will check for both and assign Pset to create equally for both Element or ElementType
@@ -979,9 +980,19 @@ namespace Revit.IFC.Export.Utility
          if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcObject))
          {
             Enum.TryParse<IFCEntityType>(hndTypeStr + "Type", out altProdHndType);
+
+            // Need to handle backward compatibility for IFC2x3
+            if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnishingElement)
+               && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
+               Enum.TryParse<IFCEntityType>("IfcFurnitureType", out altProdHndType2);
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcTypeObject))
          {
+            // Need to handle backward compatibility for IFC2x3
+            if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnitureType)
+               && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
+               Enum.TryParse<IFCEntityType>("IfcFurnishingElement", out altProdHndType);
+            else
             Enum.TryParse<IFCEntityType>(hndTypeStr.Substring(0, hndTypeStr.Length - 4), out altProdHndType);
          }
 
@@ -997,6 +1008,15 @@ namespace Revit.IFC.Export.Utility
          if (tmpCachedPsets != null)
             psetdefListType = (List<PropertySetDescription>)tmpCachedPsets;
          psetdefListObj.Union(psetdefListType);
+
+         tmpCachedPsets = null;
+         if (altProdHndType2 != IFCEntityType.UnKnown)
+            ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(altProdHndType2, out tmpCachedPsets);
+         List<PropertySetDescription> psetdefListType2 = new List<PropertySetDescription>();
+         if (tmpCachedPsets != null)
+            psetdefListType2 = (List<PropertySetDescription>)tmpCachedPsets;
+         psetdefListObj.AddRange(psetdefListType2);
+
          cachedPsets = psetdefListObj; 
          string predefinedType = null;
 
@@ -1210,6 +1230,7 @@ namespace Revit.IFC.Export.Utility
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
             ExportPsetDraughtingFor2x2(exporterIFC, element, productWrapper);
       }
+
       internal static HashSet<IFCAnyHandle> ExtractElementTypeProperties(ExporterIFC exporterIFC, ElementType elementType, IFCAnyHandle typeHnd)
       {
          if (elementType == null)
@@ -1298,11 +1319,18 @@ namespace Revit.IFC.Export.Utility
                {
                   foreach (IFCAnyHandle prodHnd in productSet)
                   {
+                     // For an aggregate, the member product must be processed with its element and type
+                     ElementId overrideElementId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
+                     Element elementToUse = (overrideElementId == ElementId.InvalidElementId) ? element : doc.GetElement(overrideElementId);
+                     ElementType elemTypeToUse = (overrideElementId == ElementId.InvalidElementId) ? elemType : doc.GetElement(elementToUse.GetTypeId()) as ElementType;
+                     if (elemTypeToUse == null)
+                        elemTypeToUse = elemType;
+
                      if (currDesc.IsAppropriateType(prodHnd))
                      {
                         IFCExtrusionCreationData ifcParams = productWrapper.FindExtrusionCreationParameters(prodHnd);
 
-                        HashSet<IFCAnyHandle> quantities = currDesc.ProcessEntries(file, exporterIFC, ifcParams, element, elemType);
+                        HashSet<IFCAnyHandle> quantities = currDesc.ProcessEntries(file, exporterIFC, ifcParams, elementToUse, elemTypeToUse);
 
                         if (quantities.Count > 0)
                         {
@@ -2156,6 +2184,7 @@ namespace Revit.IFC.Export.Utility
                if (!string.IsNullOrEmpty(paramValue))
                {
                   IFCAnyHandle singleMaterialOverrideHnd = IFCInstanceExporter.CreateMaterial(exporterIFC.GetFile(), paramValue, null, null);
+                  ExporterCacheManager.MaterialHandleCache.Register(matIds[0], singleMaterialOverrideHnd);
                   return singleMaterialOverrideHnd;
                }
             }
@@ -2169,6 +2198,9 @@ namespace Revit.IFC.Export.Utility
                for (int ii = 0; ii < numLayersToCreate; ii++)
                {
                   // This might be null.
+                  if (matIds[ii] == ElementId.InvalidElementId)
+                     continue;
+
                   Material material = document.GetElement(matIds[ii]) as Material;
 
                   int widthIndex = widthIndices[ii];
@@ -2206,10 +2238,16 @@ namespace Revit.IFC.Export.Utility
                   layers.Add(materialLayer);
                }
 
-               string layerSetName = NamingUtil.GetFamilyAndTypeName(element);
-               materialLayerSet = IFCInstanceExporter.CreateMaterialLayerSet(file, layers, layerSetName);
+               if (layers.Count > 0)
+               {
+                  Element type = document.GetElement(typeElemId);
+                  string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", exporterIFC.GetFamilyName());
+                  string layerSetDesc = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Description", null);
+                  materialLayerSet = IFCInstanceExporter.CreateMaterialLayerSet(file, layers, layerSetName, layerSetDesc);
 
                ExporterCacheManager.MaterialSetCache.RegisterLayerSet(typeElemId, materialLayerSet);
+               }
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(primaryMaterialHnd))
                ExporterCacheManager.MaterialSetCache.RegisterPrimaryMaterialHnd(typeElemId, primaryMaterialHnd);
             }
          }

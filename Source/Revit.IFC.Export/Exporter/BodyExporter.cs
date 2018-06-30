@@ -1254,18 +1254,19 @@ namespace Revit.IFC.Export.Exporter
          }
          else
          {
-            IFCAnyHandle trimmedCurve = null;
+            //IFCAnyHandle trimmedCurve = null;
 
-            IFCData trim1data = IFCData.CreateIFCAnyHandle(curveStart);
-            HashSet<IFCData> trim1 = new HashSet<IFCData>();
-            trim1.Add(trim1data);
-            IFCData trim2data = IFCData.CreateIFCAnyHandle(curveEnd);
-            HashSet<IFCData> trim2 = new HashSet<IFCData>();
-            trim2.Add(trim2data);
-            bool senseAgreement = true;
-            trimmedCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, senseAgreement, IFCTrimmingPreference.Cartesian);
+            //IFCData trim1data = IFCData.CreateIFCAnyHandle(edgeStart);
+            //HashSet<IFCData> trim1 = new HashSet<IFCData>();
+            //trim1.Add(trim1data);
+            //IFCData trim2data = IFCData.CreateIFCAnyHandle(edgeEnd);
+            //HashSet<IFCData> trim2 = new HashSet<IFCData>();
+            //trim2.Add(trim2data);
+            //bool senseAgreement = true;
+            ////trimmedCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, senseAgreement, IFCTrimmingPreference.Cartesian);
 
-            sweptCurve = IFCInstanceExporter.CreateArbitraryOpenProfileDef(file, IFCProfileType.Curve, profileName, trimmedCurve);
+            //sweptCurve = IFCInstanceExporter.CreateArbitraryOpenProfileDef(file, IFCProfileType.Curve, profileName, trimmedCurve);
+            sweptCurve = IFCInstanceExporter.CreateArbitraryOpenProfileDef(file, IFCProfileType.Curve, profileName, ifcCurve);
          }
 
          return sweptCurve;
@@ -1835,41 +1836,44 @@ namespace Revit.IFC.Export.Exporter
                         // direction
                         IFCAnyHandle location = GeometryUtil.XYZtoIfcCartesianPoint(exporterIFC, firstProfileCurve.GetEndPoint(0), cartesianPoints);
 
+						XYZ xDir = (firstProfileCurve.GetEndPoint(1) - firstProfileCurve.GetEndPoint(0)).Normalize();
+                        XYZ v2 = xDir;
+                        double paramStart = 1.0;
+                        while (xDir.IsAlmostEqualTo(v2))
+                        {
+                           paramStart = paramStart / 2;
+                           v2 = (firstProfileCurve.Evaluate(paramStart, true) - firstProfileCurve.GetEndPoint(0)).Normalize();
+                        }
+                        XYZ zdir = xDir.CrossProduct(v2).Normalize();
+
+                        IFCAnyHandle sweptCurvePosition = CreatePositionForFace(exporterIFC, location, zdir, xDir);
+
+                        // Set the base plane of the swept curve transform
+                        Transform basePlaneTrf = Transform.Identity;
+                        basePlaneTrf.BasisZ = zdir;
+                        basePlaneTrf.BasisX = xDir;
+                        basePlaneTrf.BasisY = zdir.CrossProduct(xDir);
+
+                        IList<double> locationOrds = IFCAnyHandleUtil.GetCoordinates(location);
+                        basePlaneTrf.Origin = new XYZ(locationOrds[0], locationOrds[1], locationOrds[2]);
+
+                        // Transform the dir to follow to the face transform
                         XYZ endsDiff = secondProfileCurve.GetEndPoint(0) - firstProfileCurve.GetEndPoint(0);
 
                         double depth = endsDiff.GetLength();
 
-                        XYZ zdir = endsDiff.Normalize();
-                        if (zdir == null || MathUtil.IsAlmostZero(zdir.GetLength()))
+                        XYZ dir = endsDiff.Normalize();
+                        if (dir == null || MathUtil.IsAlmostZero(dir.GetLength()))
                         {
                            // The extrusion direction is either null or too small to normalize
                            return null;
                         }
+                        dir = basePlaneTrf.Inverse.OfVector(dir);
+                        
+                        IFCAnyHandle direction = GeometryUtil.VectorToIfcDirection(exporterIFC, dir);
+                        IFCAnyHandle sweptCurve = CreateProfileCurveFromCurve(file, exporterIFC, firstProfileCurve, Resources.RuledFaceProfileCurve, cartesianPoints, basePlaneTrf.Inverse);
 
-                        IFCAnyHandle sweptCurve = CreateProfileCurveFromCurve(file, exporterIFC, firstProfileCurve, Resources.RuledFaceProfileCurve, cartesianPoints);
-
-                        //IFCAnyHandle position = CreatePositionForFace(exporterIFC, location, zdir, arbitraryPlane.XVec);
-
-                        // Extrusion direction is fixed on the +Z axis of the local coordinate system of the extrusion
-                        //IFCAnyHandle direction = GeometryUtil.VectorToIfcDirection(exporterIFC, new XYZ(0, 0, 1));
-                        IFCAnyHandle direction = GeometryUtil.VectorToIfcDirection(exporterIFC, zdir);
-
-                        // Create arbitrary plane with z direction as normal.
-                        Plane arbitraryPlane = GeometryUtil.CreatePlaneByNormalAtOrigin(zdir);
-
-                        IFCAnyHandle position = CreatePositionForFace(exporterIFC, location, zdir, arbitraryPlane.XVec);
-                        //Transform faceTrf = Transform.Identity;
-                        //faceTrf.BasisZ = zdir;
-                        //faceTrf.BasisX = arbitraryPlane.XVec;
-                        //faceTrf.BasisY = faceTrf.BasisZ.CrossProduct(faceTrf.BasisX);
-
-                        //IList<double> locationOrds = IFCAnyHandleUtil.GetCoordinates(location);
-                        //faceTrf.Origin = new XYZ(locationOrds[0], locationOrds[1], locationOrds[2]);
-                        ////Curve curveProfile = firstProfileCurve.CreateTransformed(faceTrf.Inverse);
-
-                        //IFCAnyHandle sweptCurve = CreateProfileCurveFromCurve(file, exporterIFC, firstProfileCurve, Resources.RuledFaceProfileCurve, cartesianPoints, faceTrf.Inverse);
-
-                        surface = IFCInstanceExporter.CreateSurfaceOfLinearExtrusion(file, sweptCurve, position, direction, depth);
+                        surface = IFCInstanceExporter.CreateSurfaceOfLinearExtrusion(file, sweptCurve, sweptCurvePosition, direction, depth);
                      }
                      else
                      {
@@ -2568,7 +2572,9 @@ namespace Revit.IFC.Export.Exporter
             // However, FacetedBReps do hold more information (and aren't only triangles).
             if (!alreadyExported && canExportAsTessellatedFaceSet)
             {
-               IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, bodyData.OffsetTransform);
+               Transform trfToUse = GeometryUtil.GetScaledTransform(exporterIFC).Inverse;
+               //IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, bodyData.OffsetTransform);
+               IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
                {
                   bodyItems.Add(triangulatedBodyItem);
