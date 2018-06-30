@@ -1691,6 +1691,20 @@ namespace Revit.IFC.Export.Toolkit
    }
 
    /// <summary>
+   /// Defines the basic type of the stairflight
+   /// </summary>
+   public enum IFCStairFlightType
+   {
+      STRAIGHT,
+      WINDER,
+      SPIRAL,
+      CURVED,
+      FREEFORM,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   /// <summary>
    /// Defines suface sides for IfcSurfaceStyle
    /// </summary>
    public enum IFCSurfaceSide

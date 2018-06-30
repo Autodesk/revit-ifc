@@ -91,6 +91,7 @@
     <Compile Include="Exporter\PropertySet\AttributeEntryMap.cs" />
     <Compile Include="Exporter\PropertySet\AttributeSetDescription.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FireRatingCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\IsExternalCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\SpanCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\CrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\AreaCalculator.cs" />
@@ -119,7 +120,6 @@
     <Compile Include="Exporter\PropertySet\Calculators\ShapeCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\SlopeCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ExtendToStructureCalculator.cs" />
-    <Compile Include="Exporter\PropertySet\Calculators\ExternalCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\LoadBearingCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfStoreysCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\HeightCalculator.cs" />
@@ -329,7 +329,8 @@
     -->
   <Import Project=".\Revit.IFC.Export.props" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\Program Files (x86)\Revit IFC 2019\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>copy $(TargetPath) $(SolutionDir)$(ConfigurationName)\$(TargetFileName) /Y
+copy $(TargetDir)$(TargetName).pdb $(SolutionDir)$(ConfigurationName)\$(TargetName).pdb /Y</PostBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

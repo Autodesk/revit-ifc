@@ -712,6 +712,41 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// Initializes Stairflight base quantity
+      /// </summary>
+      /// <param name="baseQuantities">List to store quantities.</param>
+      private static void InitStairFlightBaseQuantities(IList<QuantityDescription> baseQuantities)
+      {
+         QuantityDescription ifcBaseQuantity = new QuantityDescription();
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         {
+            ifcBaseQuantity.Name = "Qto_StairFlightBaseQuantities";
+         }
+         else
+         {
+            ifcBaseQuantity.Name = "BaseQuantities";
+         }
+         ifcBaseQuantity.EntityTypes.Add(IFCEntityType.IfcStairFlight);
+
+         QuantityEntry ifcQE = new QuantityEntry("Length");
+         ifcQE.QuantityType = QuantityType.PositiveLength;
+         ifcQE.PropertyCalculator = LengthCalculator.Instance;
+         ifcBaseQuantity.AddEntry(ifcQE);
+
+         ifcQE = new QuantityEntry("GrossVolume");
+         ifcQE.QuantityType = QuantityType.Volume;
+         ifcQE.PropertyCalculator = GrossVolumeCalculator.Instance;
+         ifcBaseQuantity.AddEntry(ifcQE);
+
+         ifcQE = new QuantityEntry("NetVolume");
+         ifcQE.QuantityType = QuantityType.Volume;
+         ifcQE.PropertyCalculator = NetVolumeCalculator.Instance;
+         ifcBaseQuantity.AddEntry(ifcQE);
+
+         baseQuantities.Add(ifcBaseQuantity);
+      }
+
+      /// <summary>
       /// Initializes Building Storey base quantity
       /// </summary>
       /// <param name="baseQuantities"></param>
@@ -1151,6 +1186,7 @@ namespace Revit.IFC.Export.Exporter
          InitRailingBaseQuantities(baseQuantities);
          InitSlabBaseQuantities(baseQuantities);
          InitRampFlightBaseQuantities(baseQuantities);
+         InitStairFlightBaseQuantities(baseQuantities);
          InitBuildingStoreyBaseQuantities(baseQuantities);
          InitSpaceBaseQuantities(baseQuantities);
          InitCoveringBaseQuantities(baseQuantities);

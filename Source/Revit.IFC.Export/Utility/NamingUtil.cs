@@ -391,10 +391,16 @@ namespace Revit.IFC.Export.Utility
          string fullName = familyName;
          if (elementName != "")
          {
-            if (fullName != "")
-               fullName = fullName + ":" + elementName;
-            else
+            // if it is a type and the name is set, use the name
+            if (isType)
                fullName = elementName;
+            else
+            {
+	           if (fullName != "")
+	              fullName = fullName + ":" + elementName;
+	           else
+	              fullName = elementName;
+            }
          }
 
          if (isType)

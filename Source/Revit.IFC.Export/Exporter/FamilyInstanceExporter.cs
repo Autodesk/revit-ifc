@@ -1526,12 +1526,21 @@ namespace Revit.IFC.Export.Exporter
       static int? BeamCardinalPoint(FamilyInstance familyInstance)
       {
          Parameter yz_just = familyInstance.get_Parameter(BuiltInParameter.YZ_JUSTIFICATION);
+         if (yz_just == null)
+            return null;
+
          // Independent justification on the start and end is not supported in IFC, only the Uniform one is
          if (yz_just.AsInteger() == (int)Autodesk.Revit.DB.Structure.YZJustificationOption.Independent)
             return null;
          Parameter y_just = familyInstance.get_Parameter(BuiltInParameter.Y_JUSTIFICATION);
+         if (y_just == null)
+            return null;
+
          int yJustification = y_just.AsInteger();
          Parameter z_just = familyInstance.get_Parameter(BuiltInParameter.Z_JUSTIFICATION);
+         if (z_just == null)
+            return null;
+
          int zJustification = z_just.AsInteger();
 
          int? cardinalPoint = null;
