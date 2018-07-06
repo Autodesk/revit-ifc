@@ -264,28 +264,6 @@ namespace Revit.IFC.Import.Data
                else if (ObjectLocation != null)
                   lcs = lcs.Multiply(ObjectLocation.TotalTransform);
 
-               BasePoint basePoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_ProjectBasePoint)).First() as BasePoint;
-               if (basePoint != null)
-               {
-                  BoundingBoxXYZ bbox = basePoint.get_BoundingBox(null);
-                  XYZ xyz = bbox.Min;
-                  double elevation = basePoint.get_Parameter(BuiltInParameter.BASEPOINT_ELEVATION_PARAM).AsDouble();
-                  double x = basePoint.get_Parameter(BuiltInParameter.BASEPOINT_EASTWEST_PARAM).AsDouble();
-                  double y = basePoint.get_Parameter(BuiltInParameter.BASEPOINT_NORTHSOUTH_PARAM).AsDouble();
-                  double ang = basePoint.get_Parameter(BuiltInParameter.BASEPOINT_ANGLETON_PARAM).AsDouble();
-
-                  XYZ origin = new XYZ(x + xyz.X, y + xyz.Y, elevation + xyz.Z);
-                  XYZ vx = XYZ.BasisX, vy = XYZ.BasisY;
-                  Transform transform = Transform.CreateRotationAtPoint(XYZ.BasisZ, ang, XYZ.Zero);
-                  vx = transform.OfVector(vx);
-                  vy = transform.OfVector(vy);
-                  XYZ pt = new XYZ(origin.X * Math.Cos(ang) - origin.Y * Math.Sin(ang), origin.X * Math.Sin(ang) + origin.Y * Math.Cos(ang), origin.Z);
-                  Transform sharedTransform = Transform.CreateTranslation(-origin);
-                  sharedTransform.BasisX = vx;
-                  sharedTransform.BasisY = vy;
-                  lcs = sharedTransform.Multiply(lcs);
-               }
-
                ProductRepresentation.CreateProductRepresentation(shapeEditScope, lcs, lcs, myId);
 
                int numSolids = Solids.Count;
