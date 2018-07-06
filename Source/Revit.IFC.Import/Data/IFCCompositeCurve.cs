@@ -374,6 +374,8 @@ namespace Revit.IFC.Import.Data
          Curve firstCurve = curveIterator.Current;
          Curve returnCurve = null;
 
+         double vertexEps = IFCImportFile.TheFile.Document.Application.VertexTolerance;
+
          // We only connect the curves if they are Line, Arc or Ellipse
          if (!((firstCurve is Line) || (firstCurve is Arc) || (firstCurve is Ellipse)))
          {
@@ -425,7 +427,7 @@ namespace Revit.IFC.Import.Data
 
                // We check if this circle is similar to the first circle by checking that they have the same center, same radius,
                // and lie on the same plane
-               if (!(currentCenter.IsAlmostEqualTo(firstArc.Center) && MathUtil.IsAlmostEqual(currentRadius, firstArc.Radius)))
+               if (!(currentCenter.IsAlmostEqualTo(firstArc.Center, vertexEps) && MathUtil.IsAlmostEqual(currentRadius, firstArc.Radius, vertexEps)))
                {
                   return null;
                }
@@ -437,7 +439,7 @@ namespace Revit.IFC.Import.Data
             // If all of the curve segments are part of the same circle, then the returning curve will be a circle bounded
             // by the start point of the first curve and the end point of the last curve.
             XYZ lastPoint = currentCurve.GetEndPoint(1);
-            if (lastPoint.IsAlmostEqualTo(firstStartPoint))
+            if (lastPoint.IsAlmostEqualTo(firstStartPoint, vertexEps))
             {
                firstCurve.MakeUnbound();
             }

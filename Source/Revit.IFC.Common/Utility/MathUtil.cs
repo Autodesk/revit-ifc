@@ -51,10 +51,15 @@ namespace Revit.IFC.Common.Utility
       /// </returns>
       public static bool IsAlmostEqual(double d1, double d2)
       {
+         return IsAlmostEqual(d1, d2, Eps());
+      }
+
+      public static bool IsAlmostEqual(double d1, double d2, double eps)
+      {
          double sum = Math.Abs(d1) + Math.Abs(d2);
-         if (sum < Eps())
+         if (sum < eps)
             return true;
-         return (Math.Abs(d1 - d2) <= sum * Eps());
+         return (Math.Abs(d1 - d2) <= sum * eps);
       }
 
       /// <summary>
