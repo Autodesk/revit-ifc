@@ -261,7 +261,7 @@ namespace Revit.IFC.Import.Data
             ProjectLocation projectLocation = doc.ActiveProjectLocation;
             if (projectLocation != null)
             {
-               SiteLocation siteLocation = projectLocation.GetSiteLocation();
+               SiteLocation siteLocation = projectLocation.SiteLocation;
                if (siteLocation != null)
                {
                   // Some Tekla files may have invalid information here that would otherwise cause the
@@ -300,7 +300,7 @@ namespace Revit.IFC.Import.Data
                   ProjectPosition projectPosition = new ProjectPosition(projectLoc.X, projectLoc.Y, RefElevation, trueNorth);
 
                   XYZ origin = CanRemoveSiteLocalPlacement ? XYZ.Zero : new XYZ(projectLoc.X, projectLoc.Y, RefElevation);
-                  projectLocation.SetProjectPosition(origin, projectPosition);
+                  projectLocation.set_ProjectPosition(origin, projectPosition);
 
                   // Now that we've set the project position, remove the site relative transform, if the file is created correctly (that is, all entities contained in the site
                   // have the local placements relative to the site.

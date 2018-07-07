@@ -708,30 +708,7 @@ namespace Revit.IFC.Import.Data
             revitLinkTypeId = RevitLinkType.GetTopLevelLink(originalDocument, originalRevitFilePath);
          }
 
-         ModelPath path = ModelPathUtils.ConvertUserVisiblePathToModelPath(originalIFCFileName);
-
-         // Relative path type only works if the model isn't in the cloud.  As such, we'll try again if the
-         // routine returns an exception.
-         ExternalResourceReference ifcResource = null;
-         for (int ii = 0; ii < 2; ii++)
-         {
-            PathType pathType = (ii == 0) ? PathType.Relative : PathType.Absolute;
-            try
-            {
-               ifcResource = ExternalResourceReference.CreateLocalResource(originalDocument,
-                  ExternalResourceTypes.BuiltInExternalResourceTypes.IFCLink, path, pathType);
-               break;
-            }
-            catch
-            {
-               ifcResource = null;
-            }
-         }
-
-         if (ifcResource == null)
-            Importer.TheLog.LogError(-1, "Couldn't create local IFC cached file.  Aborting import.", true);
-
-
+        
          if (!doReloadFrom)
          {
             Transaction linkTransaction = new Transaction(originalDocument);
@@ -742,7 +719,7 @@ namespace Revit.IFC.Import.Data
                if (revitLinkTypeId == ElementId.InvalidElementId)
                {
                   RevitLinkOptions options = new RevitLinkOptions(true);
-                  LinkLoadResult loadResult = RevitLinkType.CreateFromIFC(originalDocument, ifcResource, fileName, false, options);
+                  RevitLinkLoadResult loadResult = RevitLinkType.CreateFromIFC(originalDocument, baseLocalFileName, fileName, false, options);
                   if ((loadResult != null) && (loadResult.ElementId != ElementId.InvalidElementId))
                      revitLinkTypeId = loadResult.ElementId;
                }
@@ -766,7 +743,7 @@ namespace Revit.IFC.Import.Data
             {
                RevitLinkType existingRevitLinkType = originalDocument.GetElement(revitLinkTypeId) as RevitLinkType;
                if (existingRevitLinkType != null)
-                  existingRevitLinkType.UpdateFromIFC(originalDocument, ifcResource, fileName, false);
+                  existingRevitLinkType.UpdateFromIFC(originalDocument, baseLocalFileName, fileName, false);
             }
          }
 

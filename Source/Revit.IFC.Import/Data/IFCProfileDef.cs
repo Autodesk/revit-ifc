@@ -194,7 +194,7 @@ namespace Revit.IFC.Import.Data
 
       private Curve CreateXYEllipse(XYZ center, double radiusX, double radiusY, double startAngle, double endAngle)
       {
-         return Ellipse.CreateCurve(center, radiusX, radiusY, XYZ.BasisX, XYZ.BasisY, startAngle, endAngle);
+         return Ellipse.Create(center, radiusX, radiusY, XYZ.BasisX, XYZ.BasisY, startAngle, endAngle);
       }
 
       private CurveLoop CreatePolyCurveLoop(XYZ[] corners)

@@ -85,7 +85,7 @@ namespace Revit.IFC.Import.Geometry
          if (MathUtil.IsAlmostEqual(radiusX, radiusY))
             return Arc.Create(center, radiusX, startParam, endParam, xAxis, yAxis);
          else
-            return Ellipse.CreateCurve(center, radiusX, radiusY, xAxis, yAxis, startParam, endParam);
+            return Ellipse.Create(center, radiusX, radiusY, xAxis, yAxis, startParam, endParam);
       }
 
       /// <summary>

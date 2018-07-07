@@ -41,7 +41,7 @@ namespace Revit.IFC.Export.Utility
          ProjectLocation projLoc = doc.ActiveProjectLocation;
          try
          {
-            return projLoc.GetProjectPosition(XYZ.Zero);
+            return projLoc.get_ProjectPosition(XYZ.Zero);
          }
          catch
          {

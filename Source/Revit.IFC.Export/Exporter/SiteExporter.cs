@@ -143,8 +143,8 @@ namespace Revit.IFC.Export.Exporter
             if (projLocation != null)
             {
                const double scaleToDegrees = 180 / Math.PI;
-               double latitudeInDeg = projLocation.GetSiteLocation().Latitude * scaleToDegrees;
-               double longitudeInDeg = projLocation.GetSiteLocation().Longitude * scaleToDegrees;
+               double latitudeInDeg = projLocation.SiteLocation.Latitude * scaleToDegrees;
+               double longitudeInDeg = projLocation.SiteLocation.Longitude * scaleToDegrees;
 
                ExporterUtil.GetSafeProjectPositionElevation(doc, out unscaledElevation);
 

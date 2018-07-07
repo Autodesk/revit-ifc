@@ -77,7 +77,6 @@ namespace Revit.IFC.Import.Utility
       public void StartCollectingFaceSet(BRepType brepType)
       {
          BrepBuilder = new BRepBuilder(brepType);
-         BrepBuilder.SetAllowShortEdges();
       }
 
       /// <summary>

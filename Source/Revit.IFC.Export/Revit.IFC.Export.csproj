@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.props" Condition="Exists('..\..\packages\Antlr4.CodeGenerator.4.6.4\build\Antlr4.CodeGenerator.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -329,7 +329,7 @@
     -->
   <Import Project=".\Revit.IFC.Export.props" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\Program Files (x86)\Revit IFC 2018\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\Program Files (x86)\Revit IFC 2017\" /F /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

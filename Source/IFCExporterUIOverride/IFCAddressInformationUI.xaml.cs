@@ -247,7 +247,7 @@ namespace BIM.IFC.Export.UI
             projectInfo.Address = address;    // set project address information using the IFC Address Information when requested
 
             if (String.IsNullOrEmpty(geographicMapLocation) == false)
-               IFCCommandOverrideApplication.TheDocument.ActiveProjectLocation.GetSiteLocation().PlaceName = geographicMapLocation;    // Update also Revit Site location on the Map using City, State and Country when they are not null
+               IFCCommandOverrideApplication.TheDocument.ActiveProjectLocation.SiteLocation.PlaceName = geographicMapLocation;    // Update also Revit Site location on the Map using City, State and Country when they are not null
 
             transaction.Commit();
          }
