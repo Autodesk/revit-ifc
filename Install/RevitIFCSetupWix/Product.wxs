@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="E0425E4D-F45E-4BEA-A4EA-882FB2606F79" Name="Revit IFC 2019" Language="1033" Version="19.1.0.0" Manufacturer="Autodesk" UpgradeCode="1EAE3C38-F8B4-4FA4-91DB-51A9D7A2B42B">
+   <Product Id="E0425E4D-F45E-4BEA-A4EA-882FB2606F79" Name="Revit IFC 2018" Language="1033" Version="19.1.0.0" Manufacturer="Autodesk" UpgradeCode="1EAE3C38-F8B4-4FA4-91DB-51A9D7A2B42B">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -19,7 +19,7 @@
       <WixVariable Id="WixUIDefUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt"></WixVariable>
       <WixVariable Id="WixUICOBieUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\IFC2x3 Extended FM HandOver View.txt"></WixVariable>
 
-      <Feature Id="ProductFeature" Title="Revit IFC 2019" Level="1" ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id="ProductFeature" Title="Revit IFC 2018" Level="1" ConfigurableDirectory='INSTALLDIR'>
          <ComponentGroupRef Id="ProductComponents" />
          <ComponentGroupRef Id="ProductResourceComponents" />
          <ComponentGroupRef Id="ProductFRFiles" />
@@ -38,7 +38,7 @@
    <Fragment>
       <Directory Id="TARGETDIR" Name="SourceDir">
          <Directory Id="ProgramFilesFolder">
-            <Directory Id="INSTALLDIR" Name="Revit IFC 2019">
+            <Directory Id="INSTALLDIR" Name="Revit IFC 2018">
                <Directory Id="INSTALLRESOURCE" Name="Resource" />
                <Directory Id="INSTALLFRUI" Name="fr" />
             </Directory>
@@ -48,12 +48,12 @@
             <Directory Id="DIR_ADSK" Name="Autodesk">
                <Directory Id="DIR_REVIT" Name="Revit">
                   <Directory Id="DIR_ADDINS" Name="Addins">
-                     <Directory Id="DIR_Addins" Name="2019"/>
+                     <Directory Id="DIR_Addins" Name="2018"/>
                   </Directory>
                </Directory>
                <Directory Id="DIR_REVIT_LT" Name="RevitLT">
                   <Directory Id="DIR_ADDINS_LT" Name="Addins">
-                     <Directory Id="DIR_Addins_LT" Name="2019"/>
+                     <Directory Id="DIR_Addins_LT" Name="2018"/>
                   </Directory>
                </Directory>
             </Directory>
@@ -164,7 +164,7 @@
       <!-- Wix doesn't allow the same file to be installed twice.  As such, we must copy the .addin into the RevitLT addins directory.
       Note that it copies the installed file, before the file modification from util:XmlFile, so that must be duplicated. -->
       <ComponentGroup Id="AddinComponentsLT" Directory="DIR_Addins_LT">
-         <Component Id = "COMP_IFC_ExternalUI_Addin_manifest_LT" Guid="5BA55F42-2545-4056-8050-B73FA6E6E522">
+         <Component Id = "COMP_IFC_ExternalUI_Addin_manifest_LT" Guid="5BA55F42-2545-4056-8050-B73FA6E6E522" KeyPath="yes">
             <CopyFile Id="CopyAddin" FileId ="FILE_UI_manifest" DestinationProperty="DIR_Addins_LT" />
             <util:XmlFile Id="SetKeyUI_LT"
                Action="setValue"
