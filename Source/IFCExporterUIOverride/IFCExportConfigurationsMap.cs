@@ -67,15 +67,15 @@ namespace BIM.IFC.Export.UI
       {
          // These are the built-in configurations.  Provide a more extensible means of storage.
          // Order of construction: name, version, space boundaries, QTO, split walls, internal sets, 2d elems, boundingBox
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View 2.0", IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View", IFCVersion.IFC2x3, 1, false, false, true, false, false, false, true, false, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 GSA Concept Design BIM 2010", IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, true, true, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Basic FM Handover View", IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, true, false, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View 2.0", IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Design Transfer View", IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View", IFCVersion.IFC2x3, 1, false, false, true, false, false, false, true, false, false));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 GSA Concept Design BIM 2010", IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, true, true, false));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Basic FM Handover View", IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, true, false, false));
          Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x2 Coordination View", IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false));
          Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x2 Singapore BCA e-Plan Check", IFCVersion.IFCBCA, 1, false, true, true, false, false, false, false, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 COBie 2.4 Design Deliverable", IFCVersion.IFC2x3FM, 1, true, false, false, true, true, false, true, true, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View", IFCVersion.IFC4RV, 0, false, false, false, false, false, false, false, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Design Transfer View", IFCVersion.IFC4DTV, 0, false, false, false, false, false, false, false, false, false));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 COBie 2.4 Design Deliverable", IFCVersion.IFC2x3FM, 1, true, false, false, true, true, false, true, true, false));
       }
 
       /// <summary>

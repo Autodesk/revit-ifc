@@ -2799,13 +2799,26 @@ namespace Revit.IFC.Export.Utility
       private static List<XYZ> CustomCurveTessellation(Curve curve, int intervalPercentage)
       {
          List<XYZ> tessellatedCurve = new List<XYZ>();
-         tessellatedCurve.Add(curve.GetEndPoint(0));
-         // An integer value is used here to get an accurate interval the value ranges from 0 to 100 percent
-         for (int intv = intervalPercentage; intv < 100; intv += intervalPercentage)
+         if (curve.IsBound)
          {
-            tessellatedCurve.Add(curve.Evaluate(intv / 100.0, true));
+            tessellatedCurve.Add(curve.GetEndPoint(0));
+            // An integer value is used here to get an accurate interval the value ranges from 0 to 100 percent
+            for (int intv = intervalPercentage; intv < 100; intv += intervalPercentage)
+            {
+               tessellatedCurve.Add(curve.Evaluate(intv / 100.0, true));
+            }
+            tessellatedCurve.Add(curve.GetEndPoint(1));
          }
-         tessellatedCurve.Add(curve.GetEndPoint(1));
+         else
+         {
+            if (curve is Arc || curve is Ellipse)
+            {
+               for (int intv = 0; intv <= 360; intv += intervalPercentage)
+               {
+                  tessellatedCurve.Add(curve.Evaluate(2 * Math.PI * intv / 360.0, false));
+               }
+            }
+         }
 
          return tessellatedCurve;
       }

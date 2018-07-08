@@ -728,6 +728,9 @@ namespace Revit.IFC.Export.Exporter
 
                               Curve curve = gObj as Curve;
 
+                              if (doorWindowTrf != null)
+                                 curve = curve.CreateTransformed(doorWindowTrf);
+
                               IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
                               //IList<int> segmentIndex = null;
                               //IList<IList<double>> pointList = GeometryUtil.PointListFromCurve(exporterIFC, curve, null, null, out segmentIndex);

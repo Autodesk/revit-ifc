@@ -1932,7 +1932,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="geomObject">the geometry object of the element</param>
       /// <returns>a handle to the created IFCPolygonalFaceSet</returns>
       public static IList<IFCAnyHandle> ExportBodyAsPolygonalFaceSet(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
-                  GeometryObject geomObject, Transform lcs = null)
+                  GeometryObject geomObject, Transform trfToUse = null)
       {
          IFCFile file = exporterIFC.GetFile();
          Document document = element.Document;
@@ -1990,7 +1990,7 @@ namespace Revit.IFC.Export.Exporter
                      XYZ vertex = component.GetVertex(jj);
                      XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
                      //if (lcs != null)
-                     //   vertexScaled = lcs.Inverse.OfPoint(vertexScaled);
+                     //   vertexScaled = lcs.OfPoint(vertexScaled);
 
                      vertCoord.Add(vertexScaled.X);
                      vertCoord.Add(vertexScaled.Y);
@@ -2048,7 +2048,7 @@ namespace Revit.IFC.Export.Exporter
             catch
             {
                // Failed! Likely because of the tessellation failed. Try to create from the faceset instead
-               IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, lcs);
+               IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
                if (polygonalFaceSetList == null)
                   polygonalFaceSetList = new List<IFCAnyHandle>();
                polygonalFaceSetList.Add(triangulatedMesh);
@@ -2057,7 +2057,7 @@ namespace Revit.IFC.Export.Exporter
          else
          {
             // It is not from Solid, so we will use the faces to export. It works for Surface export too
-            IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, lcs);
+            IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
             if (polygonalFaceSetList == null)
                polygonalFaceSetList = new List<IFCAnyHandle>();
             polygonalFaceSetList.Add(triangulatedMesh);
@@ -2148,7 +2148,7 @@ namespace Revit.IFC.Export.Exporter
                         XYZ vertex = component.GetVertex(ii);
                         XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
                         //if (lcs != null)
-                        //   vertexScaled = lcs.Inverse.OfPoint(vertexScaled);
+                        //   vertexScaled = lcs.OfPoint(vertexScaled);
 
                         vertCoord.Add(vertexScaled.X);
                         vertCoord.Add(vertexScaled.Y);
@@ -2245,7 +2245,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="geomObject">the geometry object</param>
       /// <returns>returns the handle</returns>
       private static IFCAnyHandle ExportSurfaceAsTriangulatedFaceSet(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
-                  GeometryObject geomObject, Transform lcsToUse = null)
+                  GeometryObject geomObject, Transform trfToUse = null)
       {
          IFCFile file = exporterIFC.GetFile();
 
@@ -2279,11 +2279,11 @@ namespace Revit.IFC.Export.Exporter
 
          if (geomObject is Solid)
          {
-            triangleList = GetTriangleListFromSolid(geomObject, options, lcsToUse);
+            triangleList = GetTriangleListFromSolid(geomObject, options, trfToUse);
          }
          else if (geomObject is Mesh)
          {
-            triangleList = GetTriangleListFromMesh(geomObject, options, lcsToUse);
+            triangleList = GetTriangleListFromMesh(geomObject, options, trfToUse);
          }
          // There is also a possibility that the geomObject is an GeometryElement thaat is a collection of GeometryObjects. Go through the collection and get the Mesh, Solid, or Face in it
          else if (geomObject is GeometryElement)
@@ -2292,13 +2292,13 @@ namespace Revit.IFC.Export.Exporter
             foreach (GeometryObject geom in (geomObject as GeometryElement))
             {
                if (geom is Solid)
-                  triangleList.AddRange(GetTriangleListFromSolid(geom, options, lcsToUse));
+                  triangleList.AddRange(GetTriangleListFromSolid(geom, options, trfToUse));
                if (geom is Mesh)
-                  triangleList.AddRange(GetTriangleListFromMesh(geom, options, lcsToUse));
+                  triangleList.AddRange(GetTriangleListFromMesh(geom, options, trfToUse));
                if (geom is Face)
                {
                   Mesh faceMesh = (geom as Face).Triangulate();
-                  triangleList.AddRange(GetTriangleListFromMesh(faceMesh, options, lcsToUse));
+                  triangleList.AddRange(GetTriangleListFromMesh(faceMesh, options, trfToUse));
                }
             }
          }
@@ -2572,7 +2572,7 @@ namespace Revit.IFC.Export.Exporter
             // However, FacetedBReps do hold more information (and aren't only triangles).
             if (!alreadyExported && canExportAsTessellatedFaceSet)
             {
-               Transform trfToUse = GeometryUtil.GetScaledTransform(exporterIFC).Inverse;
+               Transform trfToUse = GeometryUtil.GetScaledTransform(exporterIFC);
                //IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, bodyData.OffsetTransform);
                IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
@@ -3577,7 +3577,7 @@ namespace Revit.IFC.Export.Exporter
             return false;
       }
 
-      static List<List<XYZ>> GetTriangleListFromSolid(GeometryObject geomObject, BodyExporterOptions options, Transform lcsToUse)
+      static List<List<XYZ>> GetTriangleListFromSolid(GeometryObject geomObject, BodyExporterOptions options, Transform trfToUse)
       {
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Solid geomSolid = geomObject as Solid;
@@ -3600,8 +3600,8 @@ namespace Revit.IFC.Export.Exporter
                   for (int tri = 0; tri < 3; ++tri)
                   {
                      XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
-                     if (lcsToUse != null)
-                        vert = lcsToUse.Inverse.OfPoint(vert);
+                     if (trfToUse != null)
+                        vert = trfToUse.OfPoint(vert);
 
                      triangleVertices.Add(vert);
                   }
@@ -3616,7 +3616,7 @@ namespace Revit.IFC.Export.Exporter
          return triangleList;
       }
 
-      static List<List<XYZ>> GetTriangleListFromMesh(GeometryObject geomObject, BodyExporterOptions options, Transform lcsToUse)
+      static List<List<XYZ>> GetTriangleListFromMesh(GeometryObject geomObject, BodyExporterOptions options, Transform trfToUse)
       {
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Mesh geomMesh = geomObject as Mesh;
@@ -3627,8 +3627,8 @@ namespace Revit.IFC.Export.Exporter
             for (int tri = 0; tri < 3; ++tri)
             {
                XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
-               if (lcsToUse != null)
-                  vert = lcsToUse.Inverse.OfPoint(vert);
+               if (trfToUse != null)
+                  vert = trfToUse.OfPoint(vert);
 
                triangleVertices.Add(vert);
             }
