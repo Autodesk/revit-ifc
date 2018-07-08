@@ -331,9 +331,14 @@ namespace Revit.IFC.Export.Utility
          if (leftPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
          {
-            // if the arc is less than 70%of the boundingbox, treat this to be a door with partially fixed panel
-            if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.7)
-               return "SWING_FIXED_LEFT";
+            // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
+            if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
+            {
+               if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                  return "NOTDEFINED";
+               else
+                  return "SWING_FIXED_LEFT";
+            }
             else
                return "SINGLE_SWING_LEFT";
          }
@@ -341,9 +346,14 @@ namespace Revit.IFC.Export.Utility
          if (rightPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && leftPosYArcCount == 0 && rightNegYArcCount == 0)
          {
-            // if the arc is less than 70%of the boundingbox, treat this to be a door with partially fixed panel
-            if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.7)
-               return "SWING_FIXED_RIGHT";
+            // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
+            if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
+            {
+               if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                  return "NOTDEFINED";
+               else
+                  return "SWING_FIXED_RIGHT";
+            }
             else
                return "SINGLE_SWING_RIGHT";
          }
