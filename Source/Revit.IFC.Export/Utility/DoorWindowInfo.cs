@@ -33,6 +33,7 @@ namespace Revit.IFC.Export.Utility
    public class DoorWindowInfo
    {
       const double ShortDist = 1.0 / (16.0 * 12.0);
+      const double tolForArcCenter = 1.0 / 2;
 
       /// <summary>
       /// The host object associated with the door or window.
@@ -158,9 +159,16 @@ namespace Revit.IFC.Export.Utility
             return orig;
       }
 
-      private string CalculateDoorOperationStyle(FamilyInstance currElem)
+      private string CalculateDoorOperationStyle(FamilyInstance currElem, Transform trf)
       {
-         const double smallAngle = Math.PI / 36;
+         int leftPosYArcCount = 0;
+         int leftNegYArcCount = 0;
+         int rightPosYArcCount = 0;
+         int rightNegYArcCount = 0;
+         int fullCircleCount = 0;
+         int leftHalfCircleCount = 0;
+         int rightHalfCircleCount = 0;
+         double angelTol = Math.PI/360;      // 1 degree tolerance
 
          if (currElem == null)
             return "NOTDEFINED";
@@ -172,145 +180,197 @@ namespace Revit.IFC.Export.Utility
          if (fam == null)
             return "NOTDEFINED";
 
-         IList<Arc> origArcs = ExporterIFCUtils.GetDoor2DArcsFromFamily(fam);
+         Transform doorWindowTrf = ExporterIFCUtils.GetTransformForDoorOrWindow(currElem, famSymbol, FlippedX, FlippedY);
+
+         IList<Arc> origArcs = get2DArcsFromSymbol(currElem);
          if (origArcs == null || (origArcs.Count == 0))
             return "NOTDEFINED";
 
-         IList<Arc> filteredArcs = new List<Arc>();
-         IList<bool> flippedArcs = new List<bool>();
-         IList<double> offsetAngles = new List<double>();
+         // Door geometry is in WCS and therefore needs to be transformed to its local coord system 
+         BoundingBoxXYZ doorBB = currElem.get_BoundingBox(currElem.Document.ActiveView);
+         Transform doorLCSTrf = doorWindowTrf.Multiply(trf.Inverse);
+         XYZ bbMin = doorLCSTrf.OfPoint(doorBB.Min);
+         XYZ bbMax = doorLCSTrf.OfPoint(doorBB.Max);
+         // Reorganize the bbox min and max after transform
+         double xmin = bbMin.X, xmax = bbMax.X, ymin = bbMin.Y, ymax = bbMax.Y, zmin = bbMin.Z, zmax = bbMax.Z;
+         if (bbMin.X > bbMax.X)
+         {
+            xmin = bbMax.X;
+            xmax = bbMin.X;
+         }
+         if (bbMin.Y > bbMax.Y)
+         {
+            ymin = bbMax.Y;
+            ymax = bbMin.Y;
+         }
+         if (bbMin.Z > bbMax.Z)
+         {
+            zmin = bbMax.Z;
+            zmax = bbMin.Z;
+         }
+         bbMin = new XYZ(xmin - tolForArcCenter, ymin - tolForArcCenter, zmin - tolForArcCenter);
+         bbMax = new XYZ(xmax + tolForArcCenter, ymax + tolForArcCenter, zmax + tolForArcCenter);
+
+         IList<XYZ> arcCenterLocations = new List<XYZ>();
+         SortedSet<double> arcRadii = new SortedSet<double>();
+
          foreach (Arc arc in origArcs)
          {
-            XYZ zVec = arc.Normal;
-            if (!MathUtil.IsAlmostEqual(Math.Abs(zVec.Z), 1.0))
+            Arc trfArc = arc.CreateTransformed(doorWindowTrf) as Arc;
+
+            // Filter only Arcs that is on XY plane and at the Z=0 of the Door/Window transform
+            if (!(MathUtil.IsAlmostEqual(Math.Abs(trfArc.Normal.Z), 1.0) && MathUtil.IsAlmostEqual(Math.Abs(trfArc.Center.Z), Math.Abs(doorWindowTrf.Origin.Z))))
                continue;
 
-            double angleOffOfXY = 0;
-            bool flipped = false;
+            // Filter only Arcs that have center within the bounding box
+            if (trfArc.Center.X > bbMax.X || trfArc.Center.X < bbMin.X || trfArc.Center.Y > bbMax.Y || trfArc.Center.Y < bbMin.Y)
+               continue;
 
-            if (arc.IsBound)
+            if (!trfArc.IsBound)
+               fullCircleCount++;
+            else
             {
-               flipped = MathUtil.IsAlmostEqual(Math.Abs(zVec.Z), -1.0);
-               XYZ xVec = flipped ? -arc.XDirection : arc.XDirection;
-               angleOffOfXY = Math.Atan2(xVec.Y, xVec.X);
-            }
+               double angleOffOfXY = 0;
+               XYZ v1 = (trfArc.GetEndPoint(0) - trfArc.Center).Normalize();
+               XYZ v2 = (trfArc.GetEndPoint(1) - trfArc.Center).Normalize();
+               angleOffOfXY = Math.Acos(v1.DotProduct(v2));
 
-            filteredArcs.Add(arc);
-            flippedArcs.Add(flipped);
-            offsetAngles.Add(angleOffOfXY);
-         }
-
-         int numArcs = filteredArcs.Count;
-         if (numArcs == 0)
-            return "NOTDEFINED";
-
-         double angleEps = ExporterCacheManager.Document.Application.AngleTolerance;
-
-         if (numArcs == 1)
-         {
-            // single swing or revolving.
-            if (!filteredArcs[0].IsBound)
-               return "REVOLVING";
-
-            KeyValuePair<double, double> endParams = GetAdjustedEndParameters(filteredArcs[0], flippedArcs[0], offsetAngles[0]);
-            if ((endParams.Value - endParams.Key) <= Math.PI + angleEps)
-            {
-               if ((Math.Abs(endParams.Key) <= angleEps) || (Math.Abs(endParams.Key - Math.PI) <= angleEps))
-                  return "SINGLE_SWING_LEFT";
-               if ((Math.Abs(endParams.Value - Math.PI) <= angleEps) || (Math.Abs(endParams.Value - 2.0 * Math.PI) <= angleEps))
-                  return "SINGLE_SWING_RIGHT";
-            }
-         }
-         else if (numArcs == 2)
-         {
-            if (filteredArcs[0].IsBound && filteredArcs[1].IsBound)
-            {
-               XYZ ctrDiff = filteredArcs[1].Center - filteredArcs[0].Center;
-
-               bool sameX = (Math.Abs(ctrDiff.X) < ShortDist);
-               bool sameY = (Math.Abs(ctrDiff.Y) < ShortDist);
-
-               if (sameX ^ sameY)
+               if (MathUtil.IsAlmostEqual(angleOffOfXY, Math.PI, angelTol))
                {
-                  KeyValuePair<double, double> endParams1 = GetAdjustedEndParameters(filteredArcs[0], flippedArcs[0], offsetAngles[0]);
-                  double angle1 = endParams1.Value - endParams1.Key;
-                  if (angle1 <= Math.PI + 2.0 * smallAngle)
+                  if (trfArc.Center.X >= -tolForArcCenter && trfArc.Center.X <= tolForArcCenter
+                        && trfArc.Center.Y >= -tolForArcCenter && trfArc.Center.Y <= tolForArcCenter)
+                     leftHalfCircleCount++;
+                  else
+                     rightHalfCircleCount++;
+               }
+               else if (MathUtil.IsAlmostEqual(angleOffOfXY, 0.5 * Math.PI, angelTol))
+               {
+                  XYZ yDir;
+                  if (MathUtil.IsAlmostEqual(Math.Abs(v1.Y), Math.Abs(trfArc.YDirection.Y)))
+                     yDir = v1;
+                  else
+                     yDir = v2;
+
+                  // if the Normal is pointing to -Z, it is flipped. Flip the Y if it is
+                  if (MathUtil.IsAlmostEqual(trfArc.Normal.Z, -1.0))
+                     yDir = yDir.Negate();
+
+                  // Check the center location in the X-direction to determine LEFT/RIGHT
+                  if (trfArc.Center.X >= -tolForArcCenter && trfArc.Center.X <= tolForArcCenter)
                   {
-                     KeyValuePair<double, double> endParams2 = GetAdjustedEndParameters(filteredArcs[1], flippedArcs[1], offsetAngles[1]);
-                     double angle2 = endParams2.Value - endParams2.Key;
-                     if (angle2 <= Math.PI + 2.0 * smallAngle)
-                     {
-                        if (sameX)
-                        {
-                           if (((Math.Abs(endParams1.Value - Math.PI) < smallAngle) && (Math.Abs(endParams2.Key - Math.PI) < smallAngle)) ||
-                               ((Math.Abs(endParams1.Key - Math.PI) < smallAngle) && (Math.Abs(endParams2.Value - Math.PI) < smallAngle)))
-                           {
-                              return "DOUBLE_SWING_RIGHT";
-                           }
-                           else if (((Math.Abs(endParams1.Value - 2.0 * Math.PI) < smallAngle) && (Math.Abs(endParams2.Key) < smallAngle)) ||
-                               ((Math.Abs(endParams1.Key) < smallAngle) && (Math.Abs(endParams2.Value - 2.0 * Math.PI) < smallAngle)))
-                           {
-                              return "DOUBLE_SWING_LEFT";
-                           }
-                        }
-                        else // if (sameY)
-                        {
-                           return "DOUBLE_DOOR_SINGLE_SWING";
-                        }
-                     }
+                     // on the LEFT
+                     if (MathUtil.IsAlmostEqual(yDir.Y, trfArc.YDirection.Y))
+                        leftPosYArcCount++;
+                     else if (MathUtil.IsAlmostEqual(yDir.Y, -trfArc.YDirection.Y))
+                        leftNegYArcCount++;
+                     else
+                        continue;
+                  }
+                  else
+                  {
+                     // on the RIGHT
+                     if (MathUtil.IsAlmostEqual(yDir.Y, trfArc.YDirection.Y))
+                        rightPosYArcCount++;
+                     else if (MathUtil.IsAlmostEqual(yDir.Y, -trfArc.YDirection.Y))
+                        rightNegYArcCount++;
+                     else
+                        continue;
                   }
                }
-            }
-         }
-         else if (numArcs == 4)
-         {
-            IList<XYZ> ctrs = new List<XYZ>();
-            IList<KeyValuePair<double, double>> endParams = new List<KeyValuePair<double, double>>();
-            bool canContinue = true;
-
-            // "sort" by quadrant.
-            IList<int> whichQuadrant = new List<int>();
-            for (int ii = 0; ii < 4; ii++)
-               whichQuadrant.Add(-1);
-
-            for (int ii = 0; (ii < 4) && canContinue; ii++)
-            {
-               ctrs.Add(filteredArcs[ii].Center);
-               if (filteredArcs[ii].IsBound)
-               {
-                  endParams.Add(GetAdjustedEndParameters(filteredArcs[ii], flippedArcs[ii], offsetAngles[ii]));
-                  double angle = endParams[ii].Value - endParams[ii].Key;
-                  if (angle > Math.PI + 2.0 * smallAngle)
-                     canContinue = false;
-                  else if ((Math.Abs(endParams[ii].Key) < smallAngle) && whichQuadrant[0] == -1)
-                     whichQuadrant[0] = ii;
-                  else if ((Math.Abs(endParams[ii].Value - Math.PI) < smallAngle) && whichQuadrant[1] == -1)
-                     whichQuadrant[1] = ii;
-                  else if ((Math.Abs(endParams[ii].Key - Math.PI) < smallAngle) && whichQuadrant[2] == -1)
-                     whichQuadrant[2] = ii;
-                  else if ((Math.Abs(endParams[ii].Value - 2.0 * Math.PI) < smallAngle) && whichQuadrant[3] == -1)
-                     whichQuadrant[3] = ii;
-                  else
-                     canContinue = false;
-               }
                else
-                  canContinue = false;
-            }
+                  continue;
 
-            if (canContinue)
-            {
-               XYZ ctrDiff1 = ctrs[whichQuadrant[3]] - ctrs[whichQuadrant[0]];
-               XYZ ctrDiff2 = ctrs[whichQuadrant[2]] - ctrs[whichQuadrant[1]];
-               XYZ ctrDiff3 = ctrs[whichQuadrant[1]] - ctrs[whichQuadrant[0]];
-
-               if ((Math.Abs(ctrDiff1[0]) < ShortDist) &&
-                   (Math.Abs(ctrDiff2[0]) < ShortDist) &&
-                   (Math.Abs(ctrDiff3[1]) < ShortDist))
+               // Collect all distinct Arc Center if it is counted as the door opening, to ensure that for cases that there are more than 2 leafs, it is not worngly labelled
+               bool foundExisting = false;
+               foreach (XYZ existingCenter in arcCenterLocations)
                {
-                  return "DOUBLE_DOOR_DOUBLE_SWING";
+                  if ((trfArc.Center.X > existingCenter.X - tolForArcCenter) && (trfArc.Center.X <= existingCenter.X + tolForArcCenter)
+                     && (trfArc.Center.Y > existingCenter.Y - tolForArcCenter) && (trfArc.Center.Y <= existingCenter.Y + tolForArcCenter))
+                  {
+                     foundExisting = true;
+                     break;
+                  }
+               }
+               if (!foundExisting)
+               {
+                  arcCenterLocations.Add(trfArc.Center);
+                  arcRadii.Add(trfArc.Radius);
                }
             }
          }
+
+         // When only full circle(s) exists
+         if (fullCircleCount > 0 
+               && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftPosYArcCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
+            return "REVOLVING";
+
+         // There are more than 2 arc centers, no IFC Door operation type fits this, return NOTDEFINED
+         if (arcCenterLocations.Count > 2)
+            return "NOTDEFINED";
+         
+         // When half circle arc(s) exists
+         if (leftHalfCircleCount > 0 && fullCircleCount == 0)
+         {
+            if (rightHalfCircleCount == 0 && leftPosYArcCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
+               return "DOUBLE_SWING_LEFT";
+
+            if ((rightHalfCircleCount > 0 || (rightPosYArcCount > 0 && rightNegYArcCount > 0)) && leftPosYArcCount == 0 && leftNegYArcCount == 0)
+               return "DOUBLE_DOOR_DOUBLE_SWING";
+         }
+
+         if (rightHalfCircleCount > 0 && fullCircleCount == 0)
+         {
+            if (leftHalfCircleCount == 0 && leftPosYArcCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
+               return "DOUBLE_SWING_RIGHT";
+
+            if ((leftHalfCircleCount > 0 || (leftPosYArcCount > 0 && leftNegYArcCount > 0)) && rightPosYArcCount == 0 && rightNegYArcCount == 0)
+               return "DOUBLE_DOOR_DOUBLE_SWING";
+         }
+
+         // When only 90-degree arc(s) exists
+         if (leftPosYArcCount > 0
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
+         {
+            // if the arc is less than 70%of the boundingbox, treat this to be a door with partially fixed panel
+            if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.7)
+               return "SWING_FIXED_LEFT";
+            else
+               return "SINGLE_SWING_LEFT";
+         }
+
+         if (rightPosYArcCount > 0
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && leftPosYArcCount == 0 && rightNegYArcCount == 0)
+         {
+            // if the arc is less than 70%of the boundingbox, treat this to be a door with partially fixed panel
+            if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.7)
+               return "SWING_FIXED_RIGHT";
+            else
+               return "SINGLE_SWING_RIGHT";
+         }
+
+         if (leftPosYArcCount > 0 && leftNegYArcCount > 0 
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
+            return "DOUBLE_SWING_LEFT";
+
+         if (rightPosYArcCount > 0 && rightNegYArcCount > 0 
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && leftPosYArcCount == 0 )
+            return "DOUBLE_SWING_RIGHT";
+
+         if (leftPosYArcCount > 0 && rightPosYArcCount > 0
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightNegYArcCount == 0)
+            return "DOUBLE_DOOR_SINGLE_SWING";
+
+         if (leftPosYArcCount > 0 && rightPosYArcCount > 0 && leftNegYArcCount > 0 && rightNegYArcCount > 0
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 )
+            return "DOUBLE_DOOR_DOUBLE_SWING";
+
+         if (leftPosYArcCount > 0 && rightNegYArcCount > 0
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0)
+            return "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT";
+
+         if (leftNegYArcCount > 0 && rightPosYArcCount > 0
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftPosYArcCount == 0 && rightNegYArcCount == 0)
+            return "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT";
 
          return "NOTDEFINED";
       }
@@ -355,7 +415,7 @@ namespace Revit.IFC.Export.Utility
             {
                // Look at the "Operation" override first, then the built-in parameter.
                ParameterUtil.GetStringValueFromElementOrSymbol(doorType, "Operation", out doorOperationType);
-               if (!string.IsNullOrWhiteSpace(doorOperationType))
+               if (string.IsNullOrWhiteSpace(doorOperationType))
                   ParameterUtil.GetStringValueFromElement(doorType, BuiltInParameter.DOOR_OPERATION_TYPE, out doorOperationType);
             }
 
@@ -382,11 +442,13 @@ namespace Revit.IFC.Export.Utility
             if (DoorOperationTypeString == "NOTDEFINED")
             {
                // We are going to try to guess the hinge placement.
-               DoorOperationTypeString = CalculateDoorOperationStyle(famInst);
+               DoorOperationTypeString = CalculateDoorOperationStyle(famInst, trf);
             }
-
-            if (FlippedX ^ FlippedY)
-               DoorOperationTypeString = ReverseDoorStyleOperation(DoorOperationTypeString);
+            else
+            {
+               if (FlippedX ^ FlippedY)
+                  DoorOperationTypeString = ReverseDoorStyleOperation(DoorOperationTypeString);
+            }
 
             if (String.Compare(DoorOperationTypeString, "USERDEFINED", true) == 0)
             {
@@ -458,6 +520,19 @@ namespace Revit.IFC.Export.Utility
          doorWindowInfo.CalculateDoorWindowInformation(exporterIFC, famInst, overrideLevelId, trf);
 
          return doorWindowInfo;
+      }
+
+      IList<Arc> get2DArcsFromSymbol(FamilyInstance element)
+      {
+         IList<Arc> arcList = new List<Arc>();
+         GeometryElement geoms = element.Symbol.get_Geometry(GeometryUtil.GetIFCExportGeometryOptions());
+         foreach (GeometryObject geomObj in geoms)
+         {
+            if (geomObj is Arc)
+               arcList.Add(geomObj as Arc);
+         }
+
+         return arcList;
       }
    }
 }
