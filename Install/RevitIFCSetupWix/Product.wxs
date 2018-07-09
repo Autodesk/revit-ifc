@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="E0425E4D-F45E-4BEA-A4EA-882FB2606F79" Name="Revit IFC 2018" Language="1033" Version="19.1.0.0" Manufacturer="Autodesk" UpgradeCode="1EAE3C38-F8B4-4FA4-91DB-51A9D7A2B42B">
+   <Product Id="E0425E4D-F45E-4BEA-A4EA-882FB2606F79" Name="Revit IFC 2017" Language="1033" Version="19.1.0.0" Manufacturer="Autodesk" UpgradeCode="1EAE3C38-F8B4-4FA4-91DB-51A9D7A2B42B">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -19,7 +19,7 @@
       <WixVariable Id="WixUIDefUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt"></WixVariable>
       <WixVariable Id="WixUICOBieUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\IFC2x3 Extended FM HandOver View.txt"></WixVariable>
 
-      <Feature Id="ProductFeature" Title="Revit IFC 2018" Level="1" ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id="ProductFeature" Title="Revit IFC 2017" Level="1" ConfigurableDirectory='INSTALLDIR'>
          <ComponentGroupRef Id="ProductComponents" />
          <ComponentGroupRef Id="ProductResourceComponents" />
          <ComponentGroupRef Id="ProductFRFiles" />
@@ -38,7 +38,7 @@
    <Fragment>
       <Directory Id="TARGETDIR" Name="SourceDir">
          <Directory Id="ProgramFilesFolder">
-            <Directory Id="INSTALLDIR" Name="Revit IFC 2018">
+            <Directory Id="INSTALLDIR" Name="Revit IFC 2017">
                <Directory Id="INSTALLRESOURCE" Name="Resource" />
                <Directory Id="INSTALLFRUI" Name="fr" />
             </Directory>
@@ -48,12 +48,12 @@
             <Directory Id="DIR_ADSK" Name="Autodesk">
                <Directory Id="DIR_REVIT" Name="Revit">
                   <Directory Id="DIR_ADDINS" Name="Addins">
-                     <Directory Id="DIR_Addins" Name="2018"/>
+                     <Directory Id="DIR_Addins" Name="2017"/>
                   </Directory>
                </Directory>
                <Directory Id="DIR_REVIT_LT" Name="RevitLT">
                   <Directory Id="DIR_ADDINS_LT" Name="Addins">
-                     <Directory Id="DIR_Addins_LT" Name="2018"/>
+                     <Directory Id="DIR_Addins_LT" Name="2017"/>
                   </Directory>
                </Directory>
             </Directory>
@@ -84,7 +84,10 @@
          <Component Id = "COMP_IFC_ExternalUI_DLL" Guid="D7F89B58-029F-4062-B226-6F3D2EB7FE5D">
             <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExportUIOverride.dll" Source="$(var.IFCExporterUIOverride.TargetDir)IFCExportUIOverride.dll" KeyPath="yes" />
          </Component>
-         <Component Id = "COMP_LICENSE_RTF" Guid="9F0851DD-3A43-4D49-AC8C-8B8D2F394A91">
+        <Component Id = "COMP_UserInterfaceUtility_DLL" Guid="9D697BF6-A30F-4ABE-8D18-D71846C68065">
+          <File Id ="FILE_UserInterfaceUtility_DLL" Name="UserInterfaceUtility.dll" Source="C:\Program Files\Autodesk\Revit 2017\Addins\IFCExporterUI\UserInterfaceUtility.dll" KeyPath="yes" />
+        </Component>
+        <Component Id = "COMP_LICENSE_RTF" Guid="9F0851DD-3A43-4D49-AC8C-8B8D2F394A91">
             <File Id ="FILE_LICENSE_RTF" Name="LICENSE.rtf" Source="$(var.ProjectDir)..\Program Files to Install\LICENSE.rtf" KeyPath="yes" />
          </Component>
          <Component Id = "COMP_DEFAULT_USERDEF_TXT" Guid="A269554D-2E77-4DA1-8942-EBF6CC297C09">
