@@ -887,9 +887,12 @@ namespace Revit.IFC.Export.Exporter
                      // Note the general comment that we would like to revamp this whole routine to be cleaner and simpler.
                      exported = FamilyInstanceExporter.ExportGenericBuildingElement(exporterIFC, element, geomElem, exportType, ifcEnumType, productWrapper);
 
-                     // Final resort: export it as a proxy.
                      if (!exported)
-                        exported = ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper);
+                        exported = (GenericElementExporter.ExportGenericElement(exporterIFC, element, geomElem, productWrapper, exportType) != null);
+
+                     //// Final resort: export it as a proxy.
+                     //if (!exported)
+                     //   exported = ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper);
                   }
 
                   // For ducts and pipes, we will add a IfcRelCoversBldgElements during the end of export.

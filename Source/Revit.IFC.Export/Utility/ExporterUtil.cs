@@ -1580,6 +1580,10 @@ namespace Revit.IFC.Export.Utility
             entType = IFCInstanceExporter.CreateGenericIFCType(exportType, elementType, file, null, null, predefinedType);
             productWrapper.RegisterHandleWithElementType(elementType as ElementType, entType, null);
          }
+         else
+         {
+            entType = IFCInstanceExporter.CreateGenericIFCType(exportType, element, file, null, null, predefinedType);
+         }
          return entType;
       }
 
