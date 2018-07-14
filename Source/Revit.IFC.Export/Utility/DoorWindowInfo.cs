@@ -168,7 +168,7 @@ namespace Revit.IFC.Export.Utility
          int fullCircleCount = 0;
          int leftHalfCircleCount = 0;
          int rightHalfCircleCount = 0;
-         double angelTol = Math.PI/360;      // 1 degree tolerance
+         double allowance = 0.0001;
 
          if (currElem == null)
             return "NOTDEFINED";
@@ -183,15 +183,13 @@ namespace Revit.IFC.Export.Utility
          Transform doorWindowTrf = ExporterIFCUtils.GetTransformForDoorOrWindow(currElem, famSymbol, FlippedX, FlippedY);
 
          IList<Arc> origArcs = get2DArcsFromSymbol(currElem);
-         //IList<Arc> origArcs = ExporterIFCUtils.GetDoor2DArcsFromFamily(famSymbol.Family);
          if (origArcs == null || (origArcs.Count == 0))
             return "NOTDEFINED";
 
-         // Door geometry is in WCS and therefore needs to be transformed to its local coord system 
-         BoundingBoxXYZ doorBB = currElem.get_BoundingBox(currElem.Document.ActiveView);
-         Transform doorLCSTrf = doorWindowTrf.Multiply(trf.Inverse);
-         XYZ bbMin = doorLCSTrf.OfPoint(doorBB.Min);
-         XYZ bbMax = doorLCSTrf.OfPoint(doorBB.Max);
+         BoundingBoxXYZ doorBB = GetBoundingBoxFromSolids(currElem);
+         XYZ bbMin = doorWindowTrf.OfPoint(doorBB.Min);
+         XYZ bbMax = doorWindowTrf.OfPoint(doorBB.Max);
+
          // Reorganize the bbox min and max after transform
          double xmin = bbMin.X, xmax = bbMax.X, ymin = bbMin.Y, ymax = bbMax.Y, zmin = bbMin.Z, zmax = bbMax.Z;
          if (bbMin.X > bbMax.X)
@@ -232,22 +230,23 @@ namespace Revit.IFC.Export.Utility
             else
             {
                double angleOffOfXY = 0;
-               XYZ v1 = (trfArc.GetEndPoint(0) - trfArc.Center).Normalize();
-               XYZ v2 = (trfArc.GetEndPoint(1) - trfArc.Center).Normalize();
+               XYZ v1 = CorrectNearlyZeroValueToZero((trfArc.GetEndPoint(0) - trfArc.Center).Normalize());
+               XYZ v2 = CorrectNearlyZeroValueToZero((trfArc.GetEndPoint(1) - trfArc.Center).Normalize());
                angleOffOfXY = Math.Acos(v1.DotProduct(v2));
 
-               if (MathUtil.IsAlmostEqual(angleOffOfXY, Math.PI, angelTol))
+               if ((Math.Abs(angleOffOfXY) > (60.0 / 180.0) * Math.PI && Math.Abs(angleOffOfXY) < (240.0 / 180.0) * Math.PI)
+                        && ((v1.Y > 0.0 && v2.Y < 0.0) || (v1.Y < 0.0 && v2.Y > 0.0)))    // Consider the opening swing between -30 to +30 up to -120 to +120 degree, where Y axes must be at the opposite sides
                {
-                  if (trfArc.Center.X >= -tolForArcCenter && trfArc.Center.X <= tolForArcCenter
-                        && trfArc.Center.Y >= -tolForArcCenter && trfArc.Center.Y <= tolForArcCenter)
+                  if (trfArc.Center.X >= -tolForArcCenter && trfArc.Center.X <= tolForArcCenter)
                      leftHalfCircleCount++;
                   else
                      rightHalfCircleCount++;
                }
-               else if (MathUtil.IsAlmostEqual(angleOffOfXY, 0.5 * Math.PI, angelTol))
+               else if ((Math.Abs(angleOffOfXY) > (30.0/180.0) * Math.PI && Math.Abs(angleOffOfXY) < (170.0/180.0)*Math.PI)
+                        &&  (MathUtil.IsAlmostEqual(Math.Abs(v1.X), 1.0, allowance) || MathUtil.IsAlmostEqual(Math.Abs(v2.X),1.0, allowance)))    // Consider the opening swing between 30 to 170 degree, beginning at X axis
                {
                   XYZ yDir;
-                  if (MathUtil.IsAlmostEqual(Math.Abs(v1.Y), Math.Abs(trfArc.YDirection.Y)))
+                  if (MathUtil.IsAlmostEqual(Math.Abs(v1.Y), Math.Abs(Math.Sin(angleOffOfXY)), 0.01))
                      yDir = v1;
                   else
                      yDir = v2;
@@ -260,9 +259,9 @@ namespace Revit.IFC.Export.Utility
                   if (trfArc.Center.X >= -tolForArcCenter && trfArc.Center.X <= tolForArcCenter)
                   {
                      // on the LEFT
-                     if (MathUtil.IsAlmostEqual(yDir.Y, trfArc.YDirection.Y))
+                     if ((yDir.Y > 0.0 && trfArc.YDirection.Y > 0.0) || (yDir.Y < 0.0 && trfArc.YDirection.Y < 0.0))
                         leftPosYArcCount++;
-                     else if (MathUtil.IsAlmostEqual(yDir.Y, -trfArc.YDirection.Y))
+                     else if ((yDir.Y > 0.0 && trfArc.YDirection.Y < 0.0) || (yDir.Y < 0.0 && trfArc.YDirection.Y > 0.0))
                         leftNegYArcCount++;
                      else
                         continue;
@@ -270,9 +269,9 @@ namespace Revit.IFC.Export.Utility
                   else
                   {
                      // on the RIGHT
-                     if (MathUtil.IsAlmostEqual(yDir.Y, trfArc.YDirection.Y))
+                     if ((yDir.Y > 0.0 && trfArc.YDirection.Y > 0.0) || (yDir.Y < 0.0 && trfArc.YDirection.Y < 0.0))
                         rightPosYArcCount++;
-                     else if (MathUtil.IsAlmostEqual(yDir.Y, -trfArc.YDirection.Y))
+                     else if ((yDir.Y > 0.0 && trfArc.YDirection.Y < 0.0) || (yDir.Y < 0.0 && trfArc.YDirection.Y > 0.0))
                         rightNegYArcCount++;
                      else
                         continue;
@@ -544,6 +543,66 @@ namespace Revit.IFC.Export.Utility
          }
 
          return arcList;
+      }
+
+      XYZ CorrectNearlyZeroValueToZero(XYZ input)
+      {
+         double xVal = 0.0;
+         double yVal = 0.0;
+         double zVal = 0.0;
+
+         if (!MathUtil.IsAlmostZero(input.X))
+            xVal = input.X;
+
+         if (!MathUtil.IsAlmostZero(input.Y))
+            yVal = input.Y;
+
+         if (!MathUtil.IsAlmostZero(input.Z))
+            zVal = input.Z;
+
+         return new XYZ(xVal, yVal, zVal);
+      }
+
+      BoundingBoxXYZ GetBoundingBoxFromSolids(FamilyInstance element)
+      {
+         BoundingBoxXYZ bbox = new BoundingBoxXYZ();
+
+         double xmin = double.MaxValue;
+         double ymin = double.MaxValue;
+         double zmin = double.MaxValue;
+         double xmax = double.MinValue;
+         double ymax = double.MinValue;
+         double zmax = double.MinValue;
+
+         IList<Solid> arcList = new List<Solid>();
+         GeometryElement geoms = element.Symbol.get_Geometry(GeometryUtil.GetIFCExportGeometryOptions());
+         foreach (GeometryObject geomObj in geoms)
+         {
+            if (geomObj is Solid)
+            {
+               Solid geomSolid = geomObj as Solid;
+               if (geomSolid.Volume == 0.0)
+                  continue;
+
+               BoundingBoxXYZ solidBB = geomSolid.GetBoundingBox();
+               if (solidBB.Min.X < xmin)
+                  xmin = solidBB.Min.X;
+               if (solidBB.Max.X > xmax)
+                  xmax = solidBB.Max.X;
+               if (solidBB.Min.Y < ymin)
+                  ymin = solidBB.Min.Y;
+               if (solidBB.Max.Y > ymax)
+                  ymax = solidBB.Max.Y;
+               if (solidBB.Min.Z < zmin)
+                  zmin = solidBB.Min.Z;
+               if (solidBB.Max.Z > zmax)
+                  zmax = solidBB.Max.Z;
+            }
+         }
+
+         bbox.Min = new XYZ(xmin, ymin, zmin);
+         bbox.Max = new XYZ(xmax, ymax, zmax);
+         return bbox;
       }
    }
 }
