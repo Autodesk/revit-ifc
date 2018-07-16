@@ -978,8 +978,7 @@ namespace Revit.IFC.Export.Exporter
                               if (wallFunction == (int)WallFunction.Retaining || wallFunction == (int)WallFunction.Foundation)
                               {
                                  // In this case, allow potential to export foundation and retaining walls as footing.
-                                 string enumTypeValue = null;
-                                 IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, wallElement, out enumTypeValue);
+                                 IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, wallElement, out ifcEnumType);
                                  if (exportType.ExportInstance == IFCEntityType.IfcFooting)
                                     exportAsFooting = true;
                               }
