@@ -1,0 +1,26 @@
+﻿<Window x:Class="RevitIFCTools.GeneratePsetDefWin"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RevitIFCTools"
+        mc:Ignorable="d"
+        Title="GeneratePsetDefinitions" Height="300" Width="502.998">
+   <Grid>
+      <Grid.RowDefinitions>
+         <RowDefinition Height="233*"/>
+         <RowDefinition Height="37*"/>
+      </Grid.RowDefinitions>
+      <TextBox x:Name="textBox_PSDSourceDir" HorizontalAlignment="Left" Height="23" Margin="18,29,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="377"/>
+      <TextBox x:Name="textBox_OutputFile" HorizontalAlignment="Left" Height="23" Margin="18,82,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="377"/>
+      <Label x:Name="label" Content="Select top level folder to search all psd directories:" HorizontalAlignment="Left" Margin="18,3,0,0" VerticalAlignment="Top"/>
+      <Label x:Name="label_Copy" Content="Specify output file:" HorizontalAlignment="Left" Margin="18,56,0,0" VerticalAlignment="Top"/>
+      <Button x:Name="button_PSDSourceDir" Content="Browse ..." HorizontalAlignment="Left" Margin="412,29,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="button_PSDSourceDir_Click"/>
+      <Button x:Name="button_OutputDir" Content="Browse ..." HorizontalAlignment="Left" Margin="412,82,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="button_OutputFile_Click"/>
+      <TextBox x:Name="textBox_OutputMsg" HorizontalAlignment="Left" Height="94" Margin="18,130,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="377" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
+      <Button x:Name="button_Cancel" Content="Cancel" HorizontalAlignment="Left" Margin="412,10.4,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Click="button_Cancel_Click"/>
+      <Button x:Name="button_Go" Content="Go" HorizontalAlignment="Left" Margin="332,10.4,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Click="button_Go_Click"/>
+      <CheckBox x:Name="checkBox_Dump" Content="Dump&#xD;&#xA;Results" HorizontalAlignment="Left" Margin="412,130,0,0" VerticalAlignment="Top" Height="30" Width="75"/>
+
+   </Grid>
+</Window>
