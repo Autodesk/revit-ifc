@@ -1,0 +1,36 @@
+﻿<Window x:Class="RevitIFCTools.IFCEntityListWin"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RevitIFCTools"
+        mc:Ignorable="d"
+        Title="Tool to Generate IFCEntity List/Tree" Height="468.124" Width="494.397" ResizeMode="NoResize">
+   <Grid ShowGridLines="True">
+      <Grid.RowDefinitions>
+         <RowDefinition Height="295*"/>
+         <RowDefinition/>
+         <RowDefinition Height="95*"/>
+         <RowDefinition Height="46*"/>
+      </Grid.RowDefinitions>
+      <Label x:Name="label" Content="Select IFC schema (XML)" HorizontalAlignment="Left" Margin="10,10,0,0" Width="139" Height="27" VerticalAlignment="Top"/>
+      <ListBox x:Name="listBox_schemaList" Margin="17,41,0,0" SelectionChanged="listBox_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Width="362" Height="105" VerticalAlignment="Top"/>
+      <Button x:Name="button_browse" Content="Browse ..." Margin="0,169,10,0" HorizontalAlignment="Right" Width="75" Click="button_browse_Click" Height="24" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_folderLocation" TextWrapping="Wrap" Margin="17,169,0,0" HorizontalAlignment="Left" Width="362" Height="24" VerticalAlignment="Top"/>
+      <Label x:Name="label1" Content="Folder location:" HorizontalAlignment="Left" Margin="10,145,0,0" Width="92" Height="27" VerticalAlignment="Top"/>
+      <Button x:Name="button_Cancel" Content="Cancel" Margin="0,0,10,10" Grid.Row="3" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75" Click="button_Cancel_Click"/>
+      <Button x:Name="button_Go" Content="Go" Margin="0,0,90,10" RenderTransformOrigin="0.186,0.596" Grid.Row="3" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom" Click="button_Go_Click"/>
+      <Button x:Name="button_browseOutputFolder" Content="Browse ..." Margin="0,223,10,0" HorizontalAlignment="Right" Width="75" Click="button_browseOutputFolder_Click" Height="24" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_outputFolder" TextWrapping="Wrap" Margin="17,223,0,0" TextChanged="textBox_outputFolder_TextChanged" HorizontalAlignment="Left" Width="362" Height="24" VerticalAlignment="Top"/>
+      <Label x:Name="label1_Copy" Content="Output Folder:" HorizontalAlignment="Left" Margin="10,196,0,0" Width="92" Height="27" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_type1" HorizontalAlignment="Left" Margin="10,33,0,0" Grid.Row="2" TextWrapping="Wrap" Width="164" TextChanged="textBox_type1_TextChanged" Height="46" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_type2" Margin="273,31,0,0" Grid.Row="2" TextWrapping="Wrap" TextChanged="textBox_type2_TextChanged" Height="48" VerticalAlignment="Top" HorizontalAlignment="Left" Width="147"/>
+      <CheckBox x:Name="checkBox_testResult" Content="True" Margin="425,46,0,0" Grid.Row="2" IsEnabled="False" Height="16" VerticalAlignment="Top" HorizontalAlignment="Left" Width="42"/>
+      <Button x:Name="button_subtypeTest" Content="isSubTypeOf" Margin="179,33,0,0" Grid.Row="2" Click="button_subtypeTest_Click" HorizontalAlignment="Left" Width="89" Height="21" VerticalAlignment="Top"/>
+      <Button x:Name="button_supertypeTest" Content="IsSuperTypeOf" Margin="179,58,0,0" Grid.Row="2" Click="button_supertypeTest_Click" Height="21" VerticalAlignment="Top" HorizontalAlignment="Left" Width="89"/>
+      <Label x:Name="label2" Content="Test (only with a single selection of the schema)" HorizontalAlignment="Left" Margin="10,5,0,64" Grid.Row="2" Width="466"/>
+      <CheckBox x:Name="checkBox_outputSchemaEnum" Content="Output indiv. schema enum" HorizontalAlignment="Left" Margin="17,0,0,19" Width="178" UseLayoutRounding="False" Height="16" VerticalAlignment="Bottom"/>
+      <CheckBox x:Name="checkBox_outputSchemaTree" Content="Output indiv. schema tree" HorizontalAlignment="Left" Margin="212,0,0,19" Width="165" Height="15" VerticalAlignment="Bottom"/>
+
+   </Grid>
+</Window>
