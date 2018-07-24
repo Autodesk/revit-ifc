@@ -250,14 +250,14 @@ namespace Revit.IFC.Export.Exporter
          {
             case IFCEntityType.IfcBeam:
                {
-                  string preDefinedType = string.IsNullOrWhiteSpace(ifcEnumType) ? "BEAM" : ifcEnumType;
+                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "BEAM" : type.ValidatedPredefinedType;
                   instanceHandle = IFCInstanceExporter.CreateBeam(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                       localPlacementToUse, productRepresentation, preDefinedType);
                   break;
                }
             case IFCEntityType.IfcColumn:
                {
-                  string preDefinedType = string.IsNullOrWhiteSpace(ifcEnumType) ? "COLUMN" : ifcEnumType;
+                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "COLUMN" : type.ValidatedPredefinedType;
                   instanceHandle = IFCInstanceExporter.CreateColumn(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                      localPlacementToUse, productRepresentation, preDefinedType);
                   break;
@@ -265,12 +265,12 @@ namespace Revit.IFC.Export.Exporter
             case IFCEntityType.IfcCurtainWall:
                {
                   instanceHandle = IFCInstanceExporter.CreateCurtainWall(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                     localPlacementToUse, productRepresentation, ifcEnumType);
+                     localPlacementToUse, productRepresentation, type.ValidatedPredefinedType);
                   break;
                }
             case IFCEntityType.IfcMember:
                {
-                  string preDefinedType = string.IsNullOrWhiteSpace(ifcEnumType) ? "BRACE" : ifcEnumType;
+                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "BRACE" : type.ValidatedPredefinedType;
                   instanceHandle = IFCInstanceExporter.CreateMember(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                      localPlacementToUse, productRepresentation, preDefinedType);
 
@@ -287,7 +287,7 @@ namespace Revit.IFC.Export.Exporter
                      localPlacement = overrideLocalPlacement;
                   }
 
-                  string preDefinedType = string.IsNullOrWhiteSpace(ifcEnumType) ? "NOTDEFINED" : ifcEnumType;
+                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "NOTDEFINED" : type.ValidatedPredefinedType;
                   instanceHandle = IFCInstanceExporter.CreatePlate(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                       localPlacement, productRepresentation, preDefinedType);
                   break;
@@ -303,7 +303,7 @@ namespace Revit.IFC.Export.Exporter
                   if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "NominalLength", out nominalLengthVal) != null)
                      nominalLength = UnitUtil.ScaleLength(nominalLengthVal);
 
-                  string preDefinedType = string.IsNullOrWhiteSpace(ifcEnumType) ? "NOTDEFINED" : ifcEnumType;
+                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "NOTDEFINED" : type.ValidatedPredefinedType;
 
                   instanceHandle = IFCInstanceExporter.CreateMechanicalFastener(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                      localPlacementToUse, productRepresentation, nominalDiameter, nominalLength, preDefinedType);
@@ -311,18 +311,21 @@ namespace Revit.IFC.Export.Exporter
                }
             case IFCEntityType.IfcRailing:
                {
-                  string strEnumType;
-                  IFCExportInfoPair exportAs = ExporterUtil.GetExportType(exporterIFC, familyInstance, out strEnumType);
-                  if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                  {
-                     instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                         localPlacementToUse, productRepresentation, GetPreDefinedType<Toolkit.IFC4.IFCRailingType>(familyInstance, strEnumType).ToString());
-                  }
-                  else
-                  {
-                     instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                         localPlacementToUse, productRepresentation, GetPreDefinedType<Toolkit.IFCRailingType>(familyInstance, strEnumType).ToString());
-                  }
+                  //string strEnumType;
+                  //IFCExportInfoPair exportAs = ExporterUtil.GetExportType(exporterIFC, familyInstance, out strEnumType);
+                  //if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+                  //{
+                  //   instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
+                  //       localPlacementToUse, productRepresentation, GetPreDefinedType<Toolkit.IFC4.IFCRailingType>(familyInstance, strEnumType).ToString());
+                  //}
+                  //else
+                  //{
+                  //   instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
+                  //       localPlacementToUse, productRepresentation, GetPreDefinedType<Toolkit.IFCRailingType>(familyInstance, strEnumType).ToString());
+                  //}
+                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "NOTDEFINED" : type.ValidatedPredefinedType;
+                  instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
+                      localPlacementToUse, productRepresentation, preDefinedType);
                   break;
                }
             case IFCEntityType.IfcSpace:

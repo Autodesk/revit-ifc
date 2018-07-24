@@ -1371,11 +1371,13 @@ namespace Revit.IFC.Export.Exporter
 
          Document doc = element.Document;
          ElementId typeElemId = element.GetTypeId();
-         Element elementType = doc.GetElement(typeElemId);
+         ElementType elementType = doc.GetElement(typeElemId) as ElementType;
          if (elementType == null)
             return;
 
-         IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(typeElemId);
+         IFCExportInfoPair exportType = new IFCExportInfoPair();
+         exportType.SetValueWithPair(IFCEntityType.IfcWallType);
+         IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(wallType))
          {
             ExporterCacheManager.TypeRelationsCache.Add(wallType, elementHandle);
@@ -1389,7 +1391,7 @@ namespace Revit.IFC.Export.Exporter
          else
             wallType = IFCInstanceExporter.CreateWallType(exporterIFC.GetFile(), elementType, null, null, ifcTypeEnum);
 
-         wrapper.RegisterHandleWithElementType(elementType as ElementType, wallType, null);
+         wrapper.RegisterHandleWithElementType(elementType, exportType, wallType, null);
 
          if (overrideMaterialId != ElementId.InvalidElementId)
          {

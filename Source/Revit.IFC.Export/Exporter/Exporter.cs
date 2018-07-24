@@ -878,7 +878,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      // Note that we currently export FaceWalls as proxies, and that FaceWalls are HostObjects, so we need
                      // to have this check before the (element is HostObject check.
-                     exported = ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper);
+                     exported = ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper, exportType);
                   }
                   else if ((element is HostObject) || (element is DirectShape) || (element is FabricationPart))
                   {

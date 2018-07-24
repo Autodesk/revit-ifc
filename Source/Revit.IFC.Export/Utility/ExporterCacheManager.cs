@@ -107,6 +107,11 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static ElementToHandleCache m_ElementToHandleCache;
 
+      /// <summary>
+      /// The ElementTypeToHandleCache cache
+      /// </summary>
+      static ElementTypeToHandleCache m_ElementTypeToHandleCache;
+
       ///<summary>
       /// The ExportOptions cache.
       /// </summary>
@@ -373,10 +378,10 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static IDictionary<ElementId, int> m_HostObjectsLevelIndex;
 
-      /// <summary>
-      /// The ElementToTypeCache cache that maps Revit element type id to the IFC element type handle.
-      /// </summary>
-      static ElementToHandleCache m_ElementTypeToHandleCache;
+      ///// <summary>
+      ///// The ElementToTypeCache cache that maps Revit element type id to the IFC element type handle.
+      ///// </summary>
+      //static ElementToHandleCache m_ElementTypeToHandleCache;
 
       /// <summary>
       /// Keeps relationship of Ceiling to the Space(s) where it belongs to. Used to determine Space containment for Ceiling object that is fully contained in Space (for FMHandOverView)
@@ -997,12 +1002,12 @@ public static ParameterCache ParameterCache
       /// <summary>
       /// The ElementTypeToHandleCache object, used to cache Revit element type ids to IFC entity handles.
       /// </summary>
-      public static ElementToHandleCache ElementTypeToHandleCache
+      public static ElementTypeToHandleCache ElementTypeToHandleCache
       {
          get
          {
             if (m_ElementTypeToHandleCache == null)
-               m_ElementTypeToHandleCache = new ElementToHandleCache();
+               m_ElementTypeToHandleCache = new ElementTypeToHandleCache();
             return m_ElementTypeToHandleCache;
          }
       }

@@ -25,6 +25,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -371,11 +372,16 @@ namespace Revit.IFC.Export.Exporter
 
          Document doc = element.Document;
          ElementId typeElemId = element.GetTypeId();
-         Element elementType = doc.GetElement(typeElemId);
+         ElementType elementType = doc.GetElement(typeElemId) as ElementType;
          if (elementType == null)
             return;
 
-         IFCAnyHandle beamType = ExporterCacheManager.ElementTypeToHandleCache.Find(typeElemId);
+         string preDefinedTypeSearch = predefinedType;
+         if (string.IsNullOrEmpty(preDefinedTypeSearch))
+            preDefinedTypeSearch = "NULL";
+         IFCExportInfoPair exportType = new IFCExportInfoPair();
+         exportType.SetValueWithPair(IFCEntityType.IfcBeamType);
+         IFCAnyHandle beamType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(beamType))
          {
             ExporterCacheManager.TypeRelationsCache.Add(beamType, elementHandle);
@@ -385,7 +391,7 @@ namespace Revit.IFC.Export.Exporter
          // Property sets will be set later.
          beamType = IFCInstanceExporter.CreateBeamType(exporterIFC.GetFile(), elementType, null, null, predefinedType);
 
-         wrapper.RegisterHandleWithElementType(elementType as ElementType, beamType, null);
+         wrapper.RegisterHandleWithElementType(elementType, exportType, beamType, null);
 
          ExporterCacheManager.TypeRelationsCache.Add(beamType, elementHandle);
       }
@@ -456,7 +462,8 @@ namespace Revit.IFC.Export.Exporter
                   // unsuccessfully to do so.
                   bool tryToCreateBeamGeometryAsExtrusion = true;
 
-                  bool useFamilySymbolGeometry = (element is FamilyInstance) ? !ExporterIFCUtils.UsesInstanceGeometry(element as FamilyInstance) : false;
+                  //bool useFamilySymbolGeometry = (element is FamilyInstance) ? !ExporterIFCUtils.UsesInstanceGeometry(element as FamilyInstance) : false;
+                  bool useFamilySymbolGeometry = (element is FamilyInstance) ? !GeometryUtil.UsesInstanceGeometry(element as FamilyInstance) : false;
                   ElementId beamTypeId = element.GetTypeId();
                   if (useFamilySymbolGeometry)
                   {

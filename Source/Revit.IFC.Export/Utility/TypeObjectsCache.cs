@@ -28,6 +28,11 @@ using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Utility
 {
+   public sealed class TypeObjectKey : Tuple<ElementId, bool, IFCEntityType, string>
+   {
+      public TypeObjectKey(ElementId elementId, bool flipped, IFCEntityType entType, string preDefinedType) : base(elementId, flipped, entType, preDefinedType) { }
+   }
+
    /// <summary>
    /// Used to keep a cache of the FamilyTypeInfos mapping to a tuple of an ElementId, a Boolean and an IFCExportType.
    /// The ElementID is used to differentiate between elements of different family types.
@@ -36,7 +41,7 @@ namespace Revit.IFC.Export.Utility
    /// The export type is used to distinguish between two instances of the same family but have different export types, this can happen
    /// if user uses the IfcExportAs shared parameter at the instance level.
    /// </summary>
-   public class TypeObjectsCache : Dictionary<Tuple<ElementId, bool, IFCEntityType>, FamilyTypeInfo>
+   public class TypeObjectsCache : Dictionary<TypeObjectKey, FamilyTypeInfo>
    {
       /// <summary>
       /// Adds the FamilyTypeInfo to the dictionary.
@@ -50,9 +55,9 @@ namespace Revit.IFC.Export.Utility
       /// <param name="exportType">
       /// The export type of the element.
       /// </param>
-      public void Register(ElementId elementId, bool flipped, IFCEntityType exportType, FamilyTypeInfo typeInfo)
+      public void Register(ElementId elementId, bool flipped, IFCExportInfoPair exportType, FamilyTypeInfo typeInfo)
       {
-         Tuple<ElementId, bool, IFCEntityType> key = new Tuple<ElementId, bool, IFCEntityType>(elementId, flipped, exportType);
+         var key = new TypeObjectKey(elementId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType);
          this[key] = typeInfo;
       }
 
@@ -71,9 +76,9 @@ namespace Revit.IFC.Export.Utility
       /// <returns>
       /// The FamilyTypeInfo object.
       /// </returns>
-      public FamilyTypeInfo Find(ElementId elementId, bool flipped, IFCEntityType exportType)
+      public FamilyTypeInfo Find(ElementId elementId, bool flipped, IFCExportInfoPair exportType)
       {
-         Tuple<ElementId, bool, IFCEntityType> key = new Tuple<ElementId, bool, IFCEntityType>(elementId, flipped, exportType);
+         var key = new TypeObjectKey(elementId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType);
          FamilyTypeInfo typeInfo;
 
          if (TryGetValue(key, out typeInfo))

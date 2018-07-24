@@ -4006,5 +4006,87 @@ namespace Revit.IFC.Export.Utility
          Plane planeOfArc = Plane.CreateByNormalAndOrigin(normal, P1);
          return planeOfArc;
       }
+
+      /// <summary>
+      /// Function to collect Family geometry element data summary for comparison purpose
+      /// </summary>
+      /// <param name="geomElement">the family geometry element</param>
+      /// <returns>FamyGeometrySummaryData</returns>
+      public static FamilyGeometrySummaryData CollectFamilyGeometrySummaryData(GeometryElement geomElement)
+      {
+         FamilyGeometrySummaryData famGeomData = new FamilyGeometrySummaryData();
+         foreach (GeometryObject geomObj in geomElement)
+         {
+            if (geomObj is Curve)
+            {
+               famGeomData.CurveCount++;
+               famGeomData.CurveLengthTotal += (geomObj as Curve).Length;
+            }
+            else if (geomObj is Edge)
+            {
+               famGeomData.EdgeCount++;
+            }
+            else if (geomObj is Face)
+            {
+               famGeomData.FaceCount++;
+               famGeomData.FaceAreaTotal += (geomObj as Face).Area;
+            }
+            else if (geomObj is GeometryInstance)
+            {
+               famGeomData.GeometryInstanceCount++;
+            }
+            else if (geomObj is GeometryElement)
+            {
+               famGeomData.Add(CollectFamilyGeometrySummaryData(geomObj as GeometryElement));
+            }
+            else if (geomObj is Mesh)
+            {
+               famGeomData.MeshCount++;
+               famGeomData.MeshNumberOfTriangleTotal += (geomObj as Mesh).NumTriangles;
+            }
+            else if (geomObj is Point)
+            {
+               famGeomData.PointCount++;
+            }
+            else if (geomObj is PolyLine)
+            {
+               famGeomData.PolylineCount++;
+               famGeomData.PolylineNumberOfCoordinatesTotal += (geomObj as PolyLine).NumberOfCoordinates;
+            }
+            else if (geomObj is Profile)
+            {
+               famGeomData.ProfileCount++;
+            }
+            else if (geomObj is Solid)
+            {
+               famGeomData.SolidCount++;
+               famGeomData.SolidVolumeTotal += (geomObj as Solid).Volume;
+               famGeomData.SolidSurfaceAreaTotal += (geomObj as Solid).SurfaceArea;
+               famGeomData.SolidFacesCountTotal += (geomObj as Solid).Faces.Size;
+               famGeomData.SolidEdgesCountTotal += (geomObj as Solid).Edges.Size;
+            }
+         }
+         return famGeomData;
+      }
+
+      /// <summary>
+      /// Evaluate whether we should use the geomtry from the family instance, or we can use the common one from the Symbol
+      /// </summary>
+      /// <param name="familyInstance">the family instance</param>
+      /// <returns>true/false</returns>
+      public static bool UsesInstanceGeometry(FamilyInstance familyInstance)
+      {
+         GeometryElement famInstGeom = familyInstance.get_Geometry(GetIFCExportGeometryOptions());
+         FamilyGeometrySummaryData instData = CollectFamilyGeometrySummaryData(famInstGeom);
+         if (instData.OnlyContainsGeometryInstance())
+            return false;
+
+         GeometryElement famSymbolGeom = familyInstance.Symbol.get_Geometry(GetIFCExportGeometryOptions());
+         FamilyGeometrySummaryData symbolData = CollectFamilyGeometrySummaryData(famSymbolGeom);
+         if (instData.Equal(symbolData))
+            return false;
+
+         return true;
+      }
    }
 }

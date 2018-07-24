@@ -23,6 +23,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -44,10 +45,15 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper.</param>
       /// <returns>The handle if created, null otherwise.</returns>
       public static IFCAnyHandle ExportBuildingElementProxy(ExporterIFC exporterIFC, Element element,
-          GeometryElement geometryElement, ProductWrapper productWrapper)
+          GeometryElement geometryElement, ProductWrapper productWrapper, IFCExportInfoPair exportType=null)
       {
          if (element == null || geometryElement == null)
             return null;
+
+         if (exportType == null)
+         {
+            exportType = new IFCExportInfoPair(IFCEntityType.IfcBuildingElementProxy, IFCEntityType.IfcBuildingElementProxyType, "NOTDEFINED");
+         }
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
          Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcBuildingElementProxy;
@@ -81,7 +87,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
                   buildingElementProxy = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, element, guid,
-                      ownerHistory, localPlacement, representation, null);
+                      ownerHistory, localPlacement, representation, exportType.ValidatedPredefinedType);
 
                   productWrapper.AddElement(element, buildingElementProxy, placementSetter.LevelInfo, ecData, true);
                }
@@ -101,17 +107,23 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper.</param>
       /// <returns>True if exported successfully, false otherwise.</returns>
       public static bool Export(ExporterIFC exporterIFC, Element element,
-          GeometryElement geometryElement, ProductWrapper productWrapper)
+          GeometryElement geometryElement, ProductWrapper productWrapper, IFCExportInfoPair exportType=null)
       {
          bool exported = false;
          if (element == null || geometryElement == null)
             return exported;
 
+         if (exportType == null)
+         {
+            exportType = new IFCExportInfoPair(IFCEntityType.IfcBuildingElementProxy, IFCEntityType.IfcBuildingElementProxyType, "NOTDEFINED");
+         }
+
          IFCFile file = exporterIFC.GetFile();
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            exported = (ExportBuildingElementProxy(exporterIFC, element, geometryElement, productWrapper) != null);
+            //exported = (ExportBuildingElementProxy(exporterIFC, element, geometryElement, productWrapper, exportType) != null);
+            exported = (GenericElementExporter.ExportGenericElement(exporterIFC, element, geometryElement, productWrapper, exportType) != null);
             if (exported)
                tr.Commit();
          }
