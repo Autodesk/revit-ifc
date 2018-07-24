@@ -182,7 +182,7 @@ namespace Revit.IFC.Export.Exporter
 
          if (type != null)
          {
-            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeId, false, exportType.ExportType);
+            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeId, false, exportType);
 
             bool found = currentTypeInfo.IsValid();
             if (!found)
@@ -196,9 +196,9 @@ namespace Revit.IFC.Export.Exporter
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                {
                   propertySetsOpt = ExporterUtil.ExtractElementTypeProperties(exporterIFC, type, styleHandle);
-                  productWrapper.RegisterHandleWithElementType(type, styleHandle, propertySetsOpt);
+                  productWrapper.RegisterHandleWithElementType(type, exportType, styleHandle, propertySetsOpt);
                   currentTypeInfo.Style = styleHandle;
-                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeId, false, exportType.ExportType, currentTypeInfo);
+                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeId, false, exportType, currentTypeInfo);
                }
             }
             else

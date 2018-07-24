@@ -4172,10 +4172,11 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="predefinedType">The predefined types.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateMemberType(IFCFile file, Element revitType, HashSet<IFCAnyHandle> propertySets,
-          IList<IFCAnyHandle> representationMaps, IFCMemberType predefinedType)
+          IList<IFCAnyHandle> representationMaps, string predefinedType)
       {
          IFCAnyHandle memberType = CreateInstance(file, IFCEntityType.IfcMemberType, revitType);
-         IFCAnyHandleUtil.SetAttribute(memberType, "PredefinedType", predefinedType);
+         //IFCAnyHandleUtil.SetAttribute(memberType, "PredefinedType", predefinedType);
+         SetSpecificEnumAttr(memberType, "PredefinedType", predefinedType, "IfcMemberType");
          SetElementType(memberType, revitType, propertySets, representationMaps);
          return memberType;
       }
@@ -4300,10 +4301,11 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="predefinedType">The predefined types.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateColumnType(IFCFile file, Element revitType, HashSet<IFCAnyHandle> propertySets,
-          IList<IFCAnyHandle> representationMaps, IFCColumnType predefinedType)
+          IList<IFCAnyHandle> representationMaps, string predefinedType)
       {
          IFCAnyHandle columnType = CreateInstance(file, IFCEntityType.IfcColumnType, revitType);
-         IFCAnyHandleUtil.SetAttribute(columnType, "PredefinedType", predefinedType);
+         // IFCAnyHandleUtil.SetAttribute(columnType, "PredefinedType", predefinedType);
+         SetSpecificEnumAttr(columnType, "PredefinedType", predefinedType, "IfcColumnType");
          SetElementType(columnType, revitType, propertySets, representationMaps);
          return columnType;
       }
@@ -8010,6 +8012,36 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle colourRgbList = CreateInstance(file, IFCEntityType.IfcColourRgbList, null);
          IFCAnyHandleUtil.SetAttribute(colourRgbList, "ColourList", colourList, 1, null, 3, 3);
          return colourRgbList;
+      }
+
+      /// <summary>
+      /// Create IfcCoordinateReferenceSystem
+      /// </summary>
+      /// <param name="file">the File</param>
+      /// <param name="name">Coordinate reference system name</param>
+      /// <param name="description">description</param>
+      /// <param name="geodeticDatum">Geomdetic Datum</param>
+      /// <param name="verticalDatum">Vertical Datum</param>
+      /// <returns></returns>
+      public static IFCAnyHandle ProjectedCRS(IFCFile file, string name, string description, string geodeticDatum, string verticalDatum,
+            string mapProjection, string mapZone, IFCAnyHandle mapUnit)
+      {
+         IFCAnyHandle coordinateReferenceSystem = CreateInstance(file, IFCEntityType.IfcProjectedCRS, null);
+         IFCAnyHandleUtil.SetAttribute(coordinateReferenceSystem, "Name", name);
+         if (string.IsNullOrEmpty(description))
+            IFCAnyHandleUtil.SetAttribute(coordinateReferenceSystem, "Description", description);
+         if (string.IsNullOrEmpty(geodeticDatum))
+            IFCAnyHandleUtil.SetAttribute(coordinateReferenceSystem, "GeodeticDatum", geodeticDatum);
+         if (string.IsNullOrEmpty(verticalDatum))
+            IFCAnyHandleUtil.SetAttribute(coordinateReferenceSystem, "VerticalDatum", verticalDatum);
+         if (string.IsNullOrEmpty(verticalDatum))
+            IFCAnyHandleUtil.SetAttribute(coordinateReferenceSystem, "MapProjection", mapProjection);
+         if (string.IsNullOrEmpty(verticalDatum))
+            IFCAnyHandleUtil.SetAttribute(coordinateReferenceSystem, "MapZone", mapZone);
+         if (string.IsNullOrEmpty(verticalDatum))
+            IFCAnyHandleUtil.SetAttribute(coordinateReferenceSystem, "MapUnit", mapUnit);
+
+         return coordinateReferenceSystem;
       }
 
       private static bool IsDeprecatedType(string theEnumType, string validatedString)

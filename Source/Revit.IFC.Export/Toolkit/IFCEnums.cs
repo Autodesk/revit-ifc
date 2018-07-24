@@ -399,6 +399,19 @@ namespace Revit.IFC.Export.Toolkit
    }
 
    /// <summary>
+   /// Define the range of different types of Tendon that can be specified
+   /// </summary>
+   public enum IFCTendonType
+   {
+      STRAND,
+      WIRE,
+      BAR,
+      COATED,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   /// <summary>
    /// Defines the range of different types of switch that can be specified.
    /// </summary>
    public enum IFCSwitchingDeviceType

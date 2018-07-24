@@ -45,7 +45,7 @@ namespace Revit.IFC.Export.Exporter
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(memberType))
          {
             IFCFile file = exporterIFC.GetFile();
-            memberType = IFCInstanceExporter.CreateMemberType(file, stringerType, null, null, IFCMemberType.Stringer);
+            memberType = IFCInstanceExporter.CreateMemberType(file, stringerType, null, null, IFCMemberType.Stringer.ToString());
             ExporterCacheManager.ElementToHandleCache.Register(stringerType.Id, memberType);
          }
          return memberType;
@@ -249,6 +249,8 @@ namespace Revit.IFC.Export.Exporter
       public static string GetValidatedStairType(Stairs stairs, string ifcExportType)
       {
          string stairType = "NOTDEFINED";
+         if (stairs == null)
+            return stairType;
 
          ICollection<ElementId> flights = stairs.GetStairsRuns();
          if (flights.Count == 0)
@@ -822,18 +824,21 @@ namespace Revit.IFC.Export.Exporter
                   {
                      IList<IFCAnyHandle> reps = IFCAnyHandleUtil.GetRepresentations(representation);
                      Stairs theStairs = stair as Stairs;
-                     foreach (ElementId runElementId in theStairs.GetStairsRuns())
+                     if (theStairs != null)
                      {
-                        StairsRun stairRun = theStairs.Document.GetElement(runElementId) as StairsRun;
-                        CreateWalkingLineAndFootprint(exporterIFC, stairRun, bodyData, categoryId, trf, ref reps);
+                        foreach (ElementId runElementId in theStairs.GetStairsRuns())
+                        {
+                           StairsRun stairRun = theStairs.Document.GetElement(runElementId) as StairsRun;
+                           CreateWalkingLineAndFootprint(exporterIFC, stairRun, bodyData, categoryId, trf, ref reps);
+                        }
+                        foreach (ElementId landingElementId in theStairs.GetStairsLandings())
+                        {
+                           StairsLanding stairLanding = theStairs.Document.GetElement(landingElementId) as StairsLanding;
+                           CreateWalkingLineAndFootprint(exporterIFC, stairLanding, bodyData, categoryId, trf, ref reps);
+                        }
+                        // Update the representations with Footprint and WalkingLine
+                        representation.SetAttribute("Representations", reps);
                      }
-                     foreach(ElementId landingElementId in theStairs.GetStairsLandings())
-                     {
-                        StairsLanding stairLanding = theStairs.Document.GetElement(landingElementId) as StairsLanding;
-                        CreateWalkingLineAndFootprint(exporterIFC, stairLanding, bodyData, categoryId, trf, ref reps);
-                     }
-                     // Update the representations with Footprint and WalkingLine
-                     representation.SetAttribute("Representations", reps);
                   }
 
                   string stairGuid = GUIDUtil.CreateGUID(stair);
@@ -1077,9 +1082,9 @@ namespace Revit.IFC.Export.Exporter
                      IFCAnyHandleUtil.OverrideNameAttribute(landingHnd, landingName);
 
                      // Create type
-                     IFCExportInfoPair landingEportType = new IFCExportInfoPair();
-                     landingEportType.SetValueWithPair(IFCEntityType.IfcSlab);
-                     IFCAnyHandle landingTypeHnd = ExporterUtil.CreateGenericTypeFromElement(landing, landingEportType, exporterIFC.GetFile(), ownerHistory, landingPredefinedType, productWrapper);
+                     IFCExportInfoPair landingExportType = new IFCExportInfoPair();
+                     landingExportType.SetValueWithPair(IFCEntityType.IfcSlab);
+                     IFCAnyHandle landingTypeHnd = ExporterUtil.CreateGenericTypeFromElement(landing, landingExportType, exporterIFC.GetFile(), ownerHistory, landingPredefinedType, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(landingTypeHnd, landingHnd);
 
                      componentHandles.Add(landingHnd);

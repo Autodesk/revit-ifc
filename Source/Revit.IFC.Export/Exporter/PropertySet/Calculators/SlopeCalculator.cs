@@ -113,6 +113,39 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             return true;
          }
 
+         // The last attempt to compute the slope angle is to get the slope of the largest top facing face of the geometry
+         GeometryElement geomElem = element.get_Geometry(GeometryUtil.GetIFCExportGeometryOptions());
+         Face largestTopFace = null;
+         double largestArea = 0.0;
+         foreach (GeometryObject geomObj in geomElem)
+         {
+            if (geomObj is Solid)
+            {
+               Solid geomSolid = geomObj as Solid;
+               foreach (Face face in geomSolid.Faces)
+               {
+                  if (!(face is PlanarFace))
+                     continue;
+
+                  // Identifying the largest area with normal pointing up
+                  if (face.Area > largestArea && face.ComputeNormal(new UV()).Z > 0)
+                  {
+                     largestTopFace = face;
+                     largestArea = face.Area;
+                  }
+               }
+            }
+         }
+         if (largestTopFace != null)
+         {
+            XYZ faceNormal = largestTopFace.ComputeNormal(new UV());
+            XYZ faceNormalProjXYPlane = new XYZ(faceNormal.X, faceNormal.Y, 0.0).Normalize();
+            double normalAngleToXYPlane = Math.Acos(faceNormal.DotProduct(faceNormalProjXYPlane));
+            double slopeAngle = 0.5 * Math.PI - normalAngleToXYPlane;
+            m_Slope = UnitUtil.ScaleAngle(slopeAngle);
+            return true;
+         }
+
          return false;
       }
 

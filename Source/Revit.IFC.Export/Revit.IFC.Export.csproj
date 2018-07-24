@@ -72,6 +72,7 @@
     <Compile Include="Exporter\DuctInsulationExporter.cs" />
     <Compile Include="Exporter\DuctLiningExporter.cs" />
     <Compile Include="Exporter\ExporterInitializer_PsetDef.cs" />
+    <Compile Include="Exporter\GenericElementExporter.cs" />
     <Compile Include="Exporter\ExtrusionExporter.cs" />
     <Compile Include="Exporter\FabricSheetExporter.cs" />
     <Compile Include="Exporter\FilledRegionExporter.cs" />
@@ -215,6 +216,7 @@
     <Compile Include="Utility\DummyHostCache.cs" />
     <Compile Include="Utility\ElementFilteringUtil.cs" />
     <Compile Include="Utility\ElementToHandleCache.cs" />
+    <Compile Include="Utility\ElementTypeToHandleCache.cs" />
     <Compile Include="Utility\ExporterCacheManager.cs" />
     <Compile Include="Utility\ExporterStateManager.cs" />
     <Compile Include="Utility\ExporterUtil.cs" />

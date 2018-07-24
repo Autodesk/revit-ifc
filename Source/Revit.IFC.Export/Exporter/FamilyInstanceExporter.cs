@@ -212,23 +212,29 @@ namespace Revit.IFC.Export.Exporter
             {
                case IFCEntityType.IfcBeam:
                   {
-                     string beamType = "Beam";   // temporary. It might be provided through type info? or override
+                     string beamType = exportType.ValidatedPredefinedType;
+                     if (string.IsNullOrEmpty(beamType))
+                        beamType = "Beam";
                      typeStyle = IFCInstanceExporter.CreateBeamType(file, familySymbol,
-                         propertySets, repMapList, GetBeamType(familyInstance, beamType));
+                         propertySets, repMapList, beamType);
                      break;
                   }
                case IFCEntityType.IfcColumn:
                   {
-                     string columnType = "Column";
+                     string columnType = exportType.ValidatedPredefinedType;
+                     if (string.IsNullOrEmpty(columnType))
+                        columnType = "Column";
                      typeStyle = IFCInstanceExporter.CreateColumnType(file, familySymbol,
-                         propertySets, repMapList, GetColumnType(familyInstance, columnType));
+                         propertySets, repMapList, columnType);
                      break;
                   }
                case IFCEntityType.IfcMember:
                   {
-                     string memberType = "Brace";   // temporary. It might be provided through type info? or override
+                     string memberType = exportType.ValidatedPredefinedType;
+                     if (string.IsNullOrEmpty(memberType))
+                        memberType="Brace";
                      typeStyle = IFCInstanceExporter.CreateMemberType(file, familySymbol,
-                         propertySets, repMapList, GetMemberType(familyInstance, memberType));
+                         propertySets, repMapList, memberType);
                      break;
                   }
                case IFCEntityType.IfcDoor:
@@ -403,7 +409,8 @@ namespace Revit.IFC.Export.Exporter
 
          // A Family Instance can have its own copy of geometry, or use the symbol's copy with a transform.
          // The routine below tells us whether to use the Instance's copy or the Symbol's copy.
-         bool useInstanceGeometry = ExporterIFCUtils.UsesInstanceGeometry(familyInstance);
+         //bool useInstanceGeometry = ExporterIFCUtils.UsesInstanceGeometry(familyInstance);
+         bool useInstanceGeometry = GeometryUtil.UsesInstanceGeometry(familyInstance);
          Transform trf = familyInstance.GetTransform();
 
          MaterialAndProfile materialAndProfile = null;
@@ -429,7 +436,7 @@ namespace Revit.IFC.Export.Exporter
             FamilyTypeInfo typeInfo = new FamilyTypeInfo();
 
             bool flipped = doorWindowInfo != null ? doorWindowInfo.FlippedSymbol : false;
-            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(originalFamilySymbol.Id, flipped, exportType.ExportType);
+            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(originalFamilySymbol.Id, flipped, exportType);
             bool found = currentTypeInfo.IsValid();
 
             Family family = familySymbol.Family;
@@ -793,7 +800,7 @@ namespace Revit.IFC.Export.Exporter
 
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeStyle))
                {
-                  wrapper.RegisterHandleWithElementType(familySymbol, typeStyle, propertySets);
+                  wrapper.RegisterHandleWithElementType(familySymbol as ElementType, exportType, typeStyle, propertySets);
 
                   typeInfo.Style = typeStyle;
 
@@ -874,7 +881,7 @@ namespace Revit.IFC.Export.Exporter
 
             // add to the map, as long as we are not using range, not using instance geometry, and don't have extra openings.
             if ((range == null) && !useInstanceGeometry && (extraParams.GetOpenings().Count == 0))
-               ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(originalFamilySymbol.Id, flipped, exportType.ExportType, typeInfo);
+               ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(originalFamilySymbol.Id, flipped, exportType, typeInfo);
 
             // If we are using the instance geometry, ignore the transformation.
             if (useInstanceGeometry)
