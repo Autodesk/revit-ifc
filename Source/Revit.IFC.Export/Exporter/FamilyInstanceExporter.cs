@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
@@ -472,6 +473,7 @@ namespace Revit.IFC.Export.Exporter
 
                Element exportGeometryElement = useInstanceGeometry ? (Element)familyInstance : (Element)originalFamilySymbol;
                GeometryElement exportGeometry = exportGeometryElement.get_Geometry(options);
+               IList<Curve> export2DGeometry = GeometryUtil.get2DArcOrLineFromSymbol(familyInstance, allCurveType: true);
                GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
 
                // There are 2 possible paths for a Family Instance to be exported as a Swept Solid.
@@ -728,15 +730,33 @@ namespace Revit.IFC.Export.Exporter
 
                         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                         {
-                           foreach (GeometryObject gObj in exportGeometry)
+                           foreach (Curve curveGeom in export2DGeometry)
                            {
-                              if (!(gObj is Curve))
-                                 continue;
-
-                              Curve curve = gObj as Curve;
+                              Curve curve = curveGeom;
 
                               if (doorWindowTrf != null)
-                                 curve = curve.CreateTransformed(doorWindowTrf);
+                              {
+                                 Transform flipTrf = Transform.Identity;
+                                 double yTrf = 0.0;
+
+                                 if (familyInstance.FacingFlipped ^ familyInstance.HandFlipped)
+                                 {
+                                    flipTrf.BasisY = flipTrf.BasisY.Negate();
+                                 }
+
+                                 // We will move the curve into Z=0
+                                 if (curve is Arc)
+                                    flipTrf.Origin = new XYZ(0, yTrf, -(curve as Arc).Center.Z);
+                                 else if (curve is Ellipse)
+                                    flipTrf.Origin = new XYZ(0, yTrf, -(curve as Ellipse).Center.Z);
+                                 else
+                                 {
+                                    if (curve.IsBound)
+                                       flipTrf.Origin = new XYZ(0, yTrf, -curve.GetEndPoint(0).Z);
+                                 }
+
+                                 curve = curve.CreateTransformed(doorWindowTrf.Multiply(flipTrf));
+                              }
 
                               IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
                               //IList<int> segmentIndex = null;
@@ -1643,5 +1663,27 @@ namespace Revit.IFC.Export.Exporter
 
          return potentialCurves[0];
       }
+
+#if DEBUG
+      static StreamWriter outFile = null;
+      public static void PrintDbgInfo(params string[] inputArgs)
+      {
+         if (outFile == null)
+         {
+            outFile = new StreamWriter(@"e:\temp\debug2dinfo.txt");
+         }
+
+         string data = "\t\t";
+         foreach (string inputArg in inputArgs)
+            data += " " + inputArg;
+         outFile.WriteLine(data);
+         outFile.Flush();
+      }
+#else
+      public static void PrintDbgInfo(params string[] inputArgs)
+      {
+         return;
+      }
+#endif
    }
 }

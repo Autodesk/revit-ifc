@@ -4088,5 +4088,59 @@ namespace Revit.IFC.Export.Utility
 
          return true;
       }
+
+      /// <summary>
+      /// Get Arc or Line from Family Symbol given a family instance. This works by finding the related 2D geometries that can be obtained from the Plan View
+      /// </summary>
+      /// <param name="element">the family instance</param>
+      /// <param name="allCurveType">set it to true if all 2D based curves are to be included</param>
+      /// <param name="inclArc">set it to true if only the Arc to be included</param>
+      /// <param name="inclLine">set it to true if only Line to be included</param>
+      /// <param name="inclEllipse">set it to true if only Ellipse to be included</param>
+      /// <param name="inclSpline">set it to true if only Splines to be included (incl. HermitSpline and NurbSpline)</param>
+      /// <returns>the List of 2D curves found</returns>
+      public static IList<Curve> get2DArcOrLineFromSymbol(FamilyInstance element, bool allCurveType, 
+         bool inclArc = false, bool inclLine = false, bool inclEllipse = false, bool inclSpline = false)
+      {
+         IList<Curve> curveList = new List<Curve>();
+         // If all curve option is set, set all flags to true
+         if (allCurveType)
+         {
+            inclArc = true;
+            inclLine = true;
+            inclEllipse = true;
+            inclSpline = true;
+         }
+         else if (!allCurveType && !(inclArc || inclLine || inclEllipse || inclSpline))
+            return curveList;       // Nothing is marked included, return empty list
+
+         Document doc = element.Document;
+         Level level = element.Document.GetElement(element.LevelId) as Level;
+         ViewPlan planView = doc.GetElement(level.FindAssociatedPlanViewId()) as ViewPlan;
+
+         Options options = GeometryUtil.GetIFCExportGeometryOptions();
+         Options opt = new Options();
+         opt.View = planView;
+         opt.ComputeReferences = options.ComputeReferences;
+         opt.IncludeNonVisibleObjects = options.IncludeNonVisibleObjects;
+
+         GeometryElement geoms = element.Symbol.get_Geometry(opt);
+         foreach (GeometryObject geomObj in geoms)
+         {
+            if (inclArc && geomObj is Arc)
+               curveList.Add(geomObj as Arc);
+
+            if (inclLine && geomObj is Line)
+               curveList.Add(geomObj as Line);
+
+            if (inclEllipse && geomObj is Ellipse)
+               curveList.Add(geomObj as Ellipse);
+
+            if (inclSpline && (geomObj is HermiteSpline || geomObj is NurbSpline))
+               curveList.Add(geomObj as Curve);
+         }
+
+         return curveList;
+      }
    }
 }

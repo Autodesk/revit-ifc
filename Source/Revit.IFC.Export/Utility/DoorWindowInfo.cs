@@ -182,7 +182,7 @@ namespace Revit.IFC.Export.Utility
 
          Transform doorWindowTrf = ExporterIFCUtils.GetTransformForDoorOrWindow(currElem, famSymbol, FlippedX, FlippedY);
 
-         IList<Arc> origArcs = get2DArcsFromSymbol(currElem);
+         IList<Curve> origArcs = GeometryUtil.get2DArcOrLineFromSymbol(currElem, allCurveType:false, inclArc:true);
          if (origArcs == null || (origArcs.Count == 0))
             return "NOTDEFINED";
 
@@ -218,7 +218,7 @@ namespace Revit.IFC.Export.Utility
             Arc trfArc = arc.CreateTransformed(doorWindowTrf) as Arc;
 
             // Filter only Arcs that is on XY plane and at the Z=0 of the Door/Window transform
-            if (!(MathUtil.IsAlmostEqual(Math.Abs(trfArc.Normal.Z), 1.0) && MathUtil.IsAlmostEqual(Math.Abs(trfArc.Center.Z), Math.Abs(doorWindowTrf.Origin.Z))))
+            if (!(MathUtil.IsAlmostEqual(Math.Abs(trfArc.Normal.Z), 1.0) /*&& MathUtil.IsAlmostEqual(Math.Abs(trfArc.Center.Z), Math.Abs(doorWindowTrf.Origin.Z))*/))
                continue;
 
             // Filter only Arcs that have center within the bounding box
@@ -530,19 +530,6 @@ namespace Revit.IFC.Export.Utility
          doorWindowInfo.CalculateDoorWindowInformation(exporterIFC, famInst, overrideLevelId, trf);
 
          return doorWindowInfo;
-      }
-
-      IList<Arc> get2DArcsFromSymbol(FamilyInstance element)
-      {
-         IList<Arc> arcList = new List<Arc>();
-         GeometryElement geoms = element.Symbol.get_Geometry(GeometryUtil.GetIFCExportGeometryOptions());
-         foreach (GeometryObject geomObj in geoms)
-         {
-            if (geomObj is Arc)
-               arcList.Add(geomObj as Arc);
-         }
-
-         return arcList;
       }
 
       XYZ CorrectNearlyZeroValueToZero(XYZ input)
