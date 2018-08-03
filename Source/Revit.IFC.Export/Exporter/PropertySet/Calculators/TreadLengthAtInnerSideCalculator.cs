@@ -100,7 +100,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             if (ParameterUtil.GetDoubleValueFromElement(stairsType,
                 BuiltInParameter.STAIRSTYPE_MINIMUM_TREAD_WIDTH_INSIDE_BOUNDARY, out treadLengthAtInnerSide) != null)
                m_TreadLengthAtInnerSide = UnitUtil.ScaleLength(treadLengthAtInnerSide);
-            else
+
+            if (m_TreadLengthAtInnerSide <= 0)
                m_TreadLengthAtInnerSide = UnitUtil.ScaleLength(stairs.ActualTreadDepth);
          }
          else
