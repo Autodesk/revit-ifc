@@ -4119,6 +4119,9 @@ namespace Revit.IFC.Export.Utility
             return curveList;
 
          Level level = element.Document.GetElement(element.LevelId) as Level;
+         if (level.FindAssociatedPlanViewId() == ElementId.InvalidElementId)
+            return curveList;
+
          ViewPlan planView = doc.GetElement(level.FindAssociatedPlanViewId()) as ViewPlan;
 
          Options options = GeometryUtil.GetIFCExportGeometryOptions();
