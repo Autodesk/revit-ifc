@@ -4115,6 +4115,9 @@ namespace Revit.IFC.Export.Utility
             return curveList;       // Nothing is marked included, return empty list
 
          Document doc = element.Document;
+         if (element.LevelId == ElementId.InvalidElementId)
+            return curveList;
+
          Level level = element.Document.GetElement(element.LevelId) as Level;
          ViewPlan planView = doc.GetElement(level.FindAssociatedPlanViewId()) as ViewPlan;
 
