@@ -913,10 +913,6 @@ namespace Revit.IFC.Export.Utility
       /// <returns></returns>
       public static bool ProxyForMEPType(Element element, IFCExportInfoPair exportType)
       {
-         // In IFC4, the IfcBuildingElementProxy can no longer participate in the system connectivity (restricted only to IfcDistributionElement)
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-            return false;
-
          if ((exportType.ExportInstance == IFCEntityType.IfcBuildingElementProxy) || (exportType.ExportType == IFCEntityType.IfcBuildingElementProxyType))
          {
             try

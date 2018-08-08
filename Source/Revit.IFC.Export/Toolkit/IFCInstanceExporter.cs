@@ -55,7 +55,7 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle hnd = IFCAnyHandleUtil.CreateInstance(file, type);
 
          // Set the IfcRoot Name and Description override here to make it consistent accross
-         if (IFCAnyHandleUtil.IsSubTypeOf(hnd,IFCEntityType.IfcRoot) && element != null)
+         if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcRoot) && element != null)
          {
             string nameOverride = NamingUtil.GetNameOverride(element, null);
             if (!string.IsNullOrEmpty(nameOverride))
@@ -166,7 +166,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="ownerHistory">The owner history.</param>
       /// <param name="name">The name.</param>
       /// <param name="description">The description.</param>
-	  private static void SetObjectDefinition(IFCAnyHandle objectDefinition, string guid, IFCAnyHandle ownerHistory, string name, string description)
+      private static void SetObjectDefinition(IFCAnyHandle objectDefinition, string guid, IFCAnyHandle ownerHistory, string name, string description)
       {
 
          SetRoot(objectDefinition, guid, ownerHistory, name, description);
@@ -509,6 +509,20 @@ namespace Revit.IFC.Export.Toolkit
       {
          IFCAnyHandleUtil.SetAttribute(relDecomposes, "RelatingObject", relatingObject);
          IFCAnyHandleUtil.SetAttribute(relDecomposes, "RelatedObjects", relatedObjects);
+         SetRelationship(relDecomposes, guid, ownerHistory, name, description);
+      }
+
+      /// <summary>
+      /// Sets attributes to IfcRelDecomposes (for IFC4 and above), which has different attributes than the older versions
+      /// </summary>
+      /// <param name="relDecomposes">The IfcRelDecomposes</param>
+      /// <param name="guid">the GUID</param>
+      /// <param name="ownerHistory">the owner history</param>
+      /// <param name="name">the name</param>
+      /// <param name="description">the description</param>
+      private static void SetRelDecomposes(IFCAnyHandle relDecomposes,
+         string guid, IFCAnyHandle ownerHistory, string name, string description)
+      {
          SetRelationship(relDecomposes, guid, ownerHistory, name, description);
       }
 
@@ -1724,7 +1738,7 @@ namespace Revit.IFC.Export.Toolkit
          {
             curtainWallType = CreateInstance(file, IFCEntityType.IfcCurtainWallType, revitType);
             SetSpecificEnumAttr(curtainWallType, "PredefinedType", predefinedType, "IfcCurtainWallType");
-            
+
             SetElementType(curtainWallType, revitType, propertySets, representationMaps);
          }
 
@@ -4280,7 +4294,7 @@ namespace Revit.IFC.Export.Toolkit
       {
          IFCAnyHandle beamType = CreateInstance(file, IFCEntityType.IfcBeamType, revitType);
          SetSpecificEnumAttr(beamType, "PredefinedType", predefinedType, "IfcBeamType");
-         
+
          SetElementType(beamType, revitType, propertySets, representationMaps);
          return beamType;
       }
@@ -4369,7 +4383,7 @@ namespace Revit.IFC.Export.Toolkit
             return null;
 
          if (IFCAnyHandleUtil.IsSubTypeOf(genericIFCEntity, IFCEntityType.IfcElement))
-         SetElement(exporterIFC, genericIFCEntity, element, guid, ownerHistory, objectPlacement, representation);
+            SetElement(exporterIFC, genericIFCEntity, element, guid, ownerHistory, objectPlacement, representation);
 
          if (!string.IsNullOrEmpty(entityToCreate.ValidatedPredefinedType))
          {
@@ -4413,7 +4427,7 @@ namespace Revit.IFC.Export.Toolkit
             return null;
 
          // IfcBuildingElementProxyType is not supported in IFC2x2.
-         if (typeEntityToCreate.ExportType == IFCEntityType.UnKnown && 
+         if (typeEntityToCreate.ExportType == IFCEntityType.UnKnown &&
             typeEntityToCreate.ExportInstance == IFCEntityType.IfcBuildingElementProxy &&
             !ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
             genericIFCType = CreateInstance(file, IFCEntityType.IfcBuildingElementProxyType, revitType);
@@ -6301,7 +6315,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="materiallayers">The material layers.</param>
       /// <param name="name">The name.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateMaterialLayerSet(IFCFile file, IList<IFCAnyHandle> materiallayers, string name, string description=null)
+      public static IFCAnyHandle CreateMaterialLayerSet(IFCFile file, IList<IFCAnyHandle> materiallayers, string name, string description = null)
       {
          IFCAnyHandleUtil.ValidateSubTypeOf(materiallayers, false, IFCEntityType.IfcMaterialLayer);
 
@@ -6510,7 +6524,7 @@ namespace Revit.IFC.Export.Toolkit
 
          IFCAnyHandle openingElement = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcOpeningElement, element);
          SetElement(exporterIFC, openingElement, element, guid, ownerHistory, objectPlacement, representation, allowTag: allowTag);
-         
+
          // In IFC4, Recess or Opening can be set in PreDefinedType attribute 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
@@ -6721,6 +6735,31 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.SetAttribute(relConnectsPortToElement, "RelatedElement", relatedElement);
          SetRelConnects(relConnectsPortToElement, guid, ownerHistory, name, description);
          return relConnectsPortToElement;
+      }
+
+      /// <summary>
+      /// Creates an IfcRelNests and assign it to the file
+      /// </summary>
+      /// <param name="file">the File</param>
+      /// <param name="guid">the GUID</param>
+      /// <param name="ownerHistory">the owner history</param>
+      /// <param name="name">the name</param>
+      /// <param name="description">the description</param>
+      /// <param name="hostElement">the host element</param>
+      /// <param name="nestedElements">the nested elements</param>
+      /// <returns>the handle</returns>
+      public static IFCAnyHandle CreateRelNests(IFCFile file, string guid, IFCAnyHandle ownerHistory, string name, string description,
+          IFCAnyHandle hostElement, IList<IFCAnyHandle> nestedElements)
+      {
+         ValidateRelationship(guid, ownerHistory);
+         IFCAnyHandleUtil.ValidateSubTypeOf(hostElement, false, IFCEntityType.IfcObjectDefinition);
+         IFCAnyHandleUtil.ValidateSubTypeOf(nestedElements, false, IFCEntityType.IfcObjectDefinition);
+
+         IFCAnyHandle relNests = CreateInstance(file, IFCEntityType.IfcRelNests, null);
+         IFCAnyHandleUtil.SetAttribute(relNests, "RelatingObject", hostElement);
+         IFCAnyHandleUtil.SetAttribute(relNests, "RelatedObjects", nestedElements);
+         SetRelDecomposes(relNests, guid, ownerHistory, name, description);
+         return relNests;
       }
 
       /// <summary>
