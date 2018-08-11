@@ -222,6 +222,13 @@ namespace Revit.IFC.Export.Utility
             if (openingElem == null)
                openingElem = element;
 
+            FamilyInstance openingFInst = openingElem as FamilyInstance;
+            if (openingFInst != null && openingFInst.Host != null)
+            {
+               if (openingFInst.Host.Id != element.Id)
+                  continue;      // If the host is not the current Wall, skip this opening
+            }
+
             // Don't export the opening if WallSweep category has been turned off.
             // This is currently restricted to WallSweeps because the element responsible for the opening could be a variety of things, 
             // including a line as part of the elevation profile of the wall.

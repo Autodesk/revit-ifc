@@ -56,7 +56,7 @@ namespace Revit.IFC.Export.Exporter
          {
             Export(exporterIFC, connectorSet);
          }
-         // Create all the IfcRelNests relationships from the Dictionary
+         // Create all the IfcRelNests relationships from the Dictionary for Port connection in IFC4
          CreateRelNestsFromCache(exporterIFC.GetFile());
 
          // clear local cache 
@@ -136,6 +136,9 @@ namespace Revit.IFC.Export.Exporter
                guid = GUIDUtil.CreateGUID();
                string connectionName = hostElement.Id + "|" + guid;
                IFCAnyHandle connectorHandle = null;
+
+               // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+               // The following code collects the ports that are nested to the object to be assigned later
                if (isIFC4AndAbove)
                   AddNestedMembership(hostElementIFCHandle, port);
                else
@@ -320,6 +323,9 @@ namespace Revit.IFC.Export.Exporter
             guid = GUIDUtil.CreateGUID();
             string connectionName = inElement.Id + "|" + guid;
             IFCAnyHandle connectorIn = null;
+
+            // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+            // The following code collects the ports that are nested to the object to be assigned later
             if (isIFC4AndAbove)
                AddNestedMembership(inElementIFCHandle, portIn);
             else
@@ -343,6 +349,9 @@ namespace Revit.IFC.Export.Exporter
             guid = GUIDUtil.CreateGUID();
             string connectionName = outElement.Id + "|" + guid;
             IFCAnyHandle connectorOut = null;
+
+            // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+            // The following code collects the ports that are nested to the object to be assigned later
             if (isIFC4AndAbove)
                AddNestedMembership(inElementIFCHandle, portOut);
             else

@@ -2622,7 +2622,7 @@ namespace Revit.IFC.Export.Utility
          if (contains2DPoint && contains3DPoint)
          {
             // Something is not right because of a mix of 2D and 3D coordinates. It will normalize below and discard the 3rd ordinate of 3D coordinates to 2D
-            for (int ii=0; ii<pointList.Count; ++ii)
+            for (int ii = 0; ii < pointList.Count; ++ii)
             {
                if (pointList[ii].Count == 3)
                   pointList[ii].RemoveAt(2);
@@ -3466,9 +3466,9 @@ namespace Revit.IFC.Export.Utility
          else if (curve is Arc)
          {
             Arc curveArc = curve as Arc;
-            XYZ curveArcCenter = (additionalTrf == null)? curveArc.Center : additionalTrf.OfPoint(curveArc.Center);
-            XYZ curveArcNormal = (additionalTrf == null)? curveArc.Normal : additionalTrf.OfVector(curveArc.Normal);
-            XYZ curveArcXDirection = (additionalTrf == null)? curveArc.XDirection : additionalTrf.OfVector(curveArc.XDirection);
+            XYZ curveArcCenter = (additionalTrf == null) ? curveArc.Center : additionalTrf.OfPoint(curveArc.Center);
+            XYZ curveArcNormal = (additionalTrf == null) ? curveArc.Normal : additionalTrf.OfVector(curveArc.Normal);
+            XYZ curveArcXDirection = (additionalTrf == null) ? curveArc.XDirection : additionalTrf.OfVector(curveArc.XDirection);
 
             if (curveArcCenter == null || curveArcNormal == null || curveArcXDirection == null)
             {
@@ -3501,8 +3501,8 @@ namespace Revit.IFC.Export.Utility
          {
             Ellipse curveEllipse = curve as Ellipse;
             IList<double> direction = new List<double>();
-            XYZ ellipseNormal = (additionalTrf == null)? curveEllipse.Normal : additionalTrf.OfVector(curveEllipse.Normal);
-            XYZ ellipseXDirection = (additionalTrf == null)? curveEllipse.XDirection : additionalTrf.OfVector(curveEllipse.XDirection);
+            XYZ ellipseNormal = (additionalTrf == null) ? curveEllipse.Normal : additionalTrf.OfVector(curveEllipse.Normal);
+            XYZ ellipseXDirection = (additionalTrf == null) ? curveEllipse.XDirection : additionalTrf.OfVector(curveEllipse.XDirection);
 
             IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.Center, cartesianPoints, additionalTrf);
 
@@ -3845,7 +3845,7 @@ namespace Revit.IFC.Export.Utility
                compCurveHandle = GeometryUtil.CreateCompositeCurve(exporterIFC, profileCurves);
 
             IFCAnyHandle profileDef = IFCInstanceExporter.CreateArbitraryClosedProfileDef(exporterIFC.GetFile(), IFCProfileType.Curve, profileName, compCurveHandle);
-            
+
             ElementId materialId = familyInstance.GetMaterialIds(false).FirstOrDefault();
             if (materialId == null)
                materialId = ElementId.InvalidElementId;
@@ -4099,7 +4099,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="inclEllipse">set it to true if only Ellipse to be included</param>
       /// <param name="inclSpline">set it to true if only Splines to be included (incl. HermitSpline and NurbSpline)</param>
       /// <returns>the List of 2D curves found</returns>
-      public static IList<Curve> get2DArcOrLineFromSymbol(FamilyInstance element, bool allCurveType, 
+      public static IList<Curve> get2DArcOrLineFromSymbol(FamilyInstance element, bool allCurveType,
          bool inclArc = false, bool inclLine = false, bool inclEllipse = false, bool inclSpline = false)
       {
          IList<Curve> curveList = new List<Curve>();
@@ -4147,6 +4147,86 @@ namespace Revit.IFC.Export.Utility
          }
 
          return curveList;
+      }
+
+      enum NormalDirection
+      {
+         UsePosX,
+         UsePosY,
+         UsePosZ,
+         UseNegX,
+         UseNegY,
+         UseNegZ
+      }
+
+      /// <summary>
+      /// Get the largest face from a Solid
+      /// </summary>
+      /// <param name="geomObj">the geometry Solid</param>
+      /// <param name="normalDirection">Normal direction of the face to return (only accept (1,0,0), (0,1,0), or (0,0,1))</param>
+      /// <returns>the largest face</returns>
+      public static Face GetLargestFaceInSolid(GeometryObject geomObj, XYZ normalDirection)
+      {
+         Face largestFace = null;
+         double largestArea = 0.0;
+
+         if (geomObj == null)
+            return largestFace;
+
+         Solid geomSolid = geomObj as Solid;
+         if (geomSolid == null)
+            return largestFace;
+
+         foreach (Face face in geomSolid.Faces)
+         {
+            // Identifying the largest area with normal pointing up
+            XYZ faceNormal = face.ComputeNormal(new UV());
+
+            bool useThisFace = false;
+            if (MathUtil.IsAlmostEqual(normalDirection.X, 1.0) && faceNormal.X > 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.Y, 1.0) && faceNormal.Y > 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.Z, 1.0) && faceNormal.Z > 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.X, -1.0) && faceNormal.X < 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.Y, -1.0) && faceNormal.Y < 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.Z, -1.0) && faceNormal.Z < 0)
+               useThisFace = true;
+
+            if (!useThisFace)
+               continue;
+
+            if (face.Area > largestArea)
+            {
+               largestFace = face;
+               largestArea = face.Area;
+            }
+         }
+
+         return largestFace;
+      }
+
+      /// <summary>
+      /// Get face angle/slope. This will be calculated at UV (0,0)
+      /// </summary>
+      /// <param name="face">the face</param>
+      /// <param name="projection">the XYZ to which the </param>
+      /// <returns>the slope angle</returns>
+      public static double GetAngleOfFace(Face face, XYZ projection)
+      {
+         double angle = 0.0;
+
+         // Compute normal at UV (0,0)
+         XYZ faceNormal = face.ComputeNormal(new UV());
+         projection = projection.Normalize();
+         double normalAngleToProjection = Math.Acos(faceNormal.DotProduct(projection));
+         double slopeAngle = 0.5 * Math.PI - normalAngleToProjection;
+         angle = UnitUtil.ScaleAngle(slopeAngle);
+
+         return angle;
       }
    }
 }
