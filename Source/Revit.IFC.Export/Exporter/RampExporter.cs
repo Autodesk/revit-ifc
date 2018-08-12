@@ -420,8 +420,9 @@ namespace Revit.IFC.Export.Exporter
 
                         // Create type
                         IFCExportInfoPair flightEportType = new IFCExportInfoPair();
-                        flightEportType.SetValueWithPair(IFCEntityType.IfcStairFlight);
+                        flightEportType.SetValueWithPair(IFCEntityType.IfcRampFlight);
                         IFCAnyHandle flightTypeHnd = IFCInstanceExporter.CreateGenericIFCType(flightEportType, null, exporterIFC.GetFile(), null, null, flightPredefType);
+                        IFCAnyHandleUtil.OverrideNameAttribute(flightTypeHnd, flightName);
                         ExporterCacheManager.TypeRelationsCache.Add(flightTypeHnd, rampFlightHnd);
 
                         CategoryUtil.CreateMaterialAssociation(exporterIFC, rampFlightHnd, bodyData.MaterialIds);
@@ -485,6 +486,7 @@ namespace Revit.IFC.Export.Exporter
                         IFCExportInfoPair landingEportType = new IFCExportInfoPair();
                         landingEportType.SetValueWithPair(IFCEntityType.IfcSlab);
                         IFCAnyHandle landingTypeHnd = IFCInstanceExporter.CreateGenericIFCType(landingEportType, null, exporterIFC.GetFile(), null, null, landingPredefType);
+                        IFCAnyHandleUtil.OverrideNameAttribute(landingTypeHnd, landingName);
                         ExporterCacheManager.TypeRelationsCache.Add(landingTypeHnd, rampLandingHnd);
 
                         CategoryUtil.CreateMaterialAssociation(exporterIFC, rampLandingHnd, bodyData.MaterialIds);
