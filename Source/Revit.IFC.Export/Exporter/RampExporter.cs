@@ -408,7 +408,7 @@ namespace Revit.IFC.Export.Exporter
                         rampFlightIndex++;
                         string flightGUID = GUIDUtil.CreateSubElementGUID(ramp, rampFlightIndex);
                         string origFlightName = IFCAnyHandleUtil.GetStringAttribute(rampContainerHnd, "Name") + " " + rampFlightIndex;
-                        string flightName = NamingUtil.GetOverrideStringValue(ramp, "IfcRampFlight.Name", origFlightName);
+                        string flightName = NamingUtil.GetOverrideStringValue(ramp, "IfcRampFlight.Name (" + rampFlightIndex + ")", origFlightName);
 
                         IFCAnyHandle flightLocalPlacement = ecData.GetLocalPlacement();
                         string flightPredefType = NamingUtil.GetOverrideStringValue(ramp, "IfcRampFlight.PredefinedType (" + rampFlightIndex + ")", null);
@@ -472,7 +472,7 @@ namespace Revit.IFC.Export.Exporter
                         landingIndex++;
                         string landingGUID = GUIDUtil.CreateSubElementGUID(ramp, landingIndex);
                         string origLandingName = IFCAnyHandleUtil.GetStringAttribute(rampContainerHnd, "Name") + " " + landingIndex;
-                        string landingName = NamingUtil.GetOverrideStringValue(ramp, "IfcRampLanding.Name", origLandingName);
+                        string landingName = NamingUtil.GetOverrideStringValue(ramp, "IfcRampLanding.Name (" + landingIndex + ")", origLandingName);
 
                         IFCAnyHandle landingLocalPlacement = ecData.GetLocalPlacement();
                         string landingPredefType = "LANDING";
@@ -628,7 +628,7 @@ namespace Revit.IFC.Export.Exporter
          HashSet<IFCAnyHandle> properties = new HashSet<IFCAnyHandle>();
 
          string stringParam = "";
-         if (ParameterUtil.GetStringValueFromElement(element, "Pset_RampFlightCommon:Reference (" + flightIndex.ToString() + ")", out stringParam) != null)
+         if (ParameterUtil.GetStringValueFromElement(element, "Pset_RampFlightCommon.Reference (" + flightIndex.ToString() + ")", out stringParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsIdentifier(stringParam);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "Reference", null, paramVal, null);
@@ -636,7 +636,7 @@ namespace Revit.IFC.Export.Exporter
          }
 
          double doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_RampFlightCommon:HeadRoom (" + flightIndex.ToString() + ")", out doubleParam) != null)
+         if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_RampFlightCommon.HeadRoom (" + flightIndex.ToString() + ")", out doubleParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsPositiveLengthMeasure(doubleParam);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "Headroom", null, paramVal, null);
@@ -653,7 +653,7 @@ namespace Revit.IFC.Export.Exporter
          }
 
          double doubleParamOverride = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_RampFlightCommon:Slope (" + flightIndex.ToString() + ")", out doubleParamOverride) != null)
+         if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_RampFlightCommon.Slope (" + flightIndex.ToString() + ")", out doubleParamOverride) != null)
          {
             slope = doubleParamOverride;
          }
@@ -668,14 +668,14 @@ namespace Revit.IFC.Export.Exporter
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            if (ParameterUtil.GetStringValueFromElement(element, "Pset_RampFlightCommon:Status (" + flightIndex.ToString() + ")", out stringParam) != null)
+            if (ParameterUtil.GetStringValueFromElement(element, "Pset_RampFlightCommon.Status (" + flightIndex.ToString() + ")", out stringParam) != null)
             {
                IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(stringParam);
                IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "Status", null, paramVal, null);
                properties.Add(propSingleValue);
             }
 
-            if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_RampFlightCommon:ClearWidth (" + flightIndex.ToString() + ")", out doubleParam) != null)
+            if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_RampFlightCommon.ClearWidth (" + flightIndex.ToString() + ")", out doubleParam) != null)
             {
                IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsPositiveLengthMeasure(doubleParam);
                IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "ClearWidth", null, paramVal, null);
@@ -684,7 +684,7 @@ namespace Revit.IFC.Export.Exporter
 
             if (!MathUtil.IsAlmostZero(slope))
                doubleParam = UnitUtil.ScaleAngle(Math.PI / 2.0) - slope;
-            if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_RampFlightCommon:CounterSlope (" + flightIndex.ToString() + ")", out doubleParamOverride) != null)
+            if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_RampFlightCommon.CounterSlope (" + flightIndex.ToString() + ")", out doubleParamOverride) != null)
                doubleParam = doubleParamOverride;
 
             if (!MathUtil.IsAlmostZero(doubleParam))
@@ -709,28 +709,28 @@ namespace Revit.IFC.Export.Exporter
          HashSet<IFCAnyHandle> properties = new HashSet<IFCAnyHandle>();
 
          string stringParam = "";
-         if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon:Reference (" + flightIndex.ToString() + ")", out stringParam) != null)
+         if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon.Reference (" + flightIndex.ToString() + ")", out stringParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsIdentifier(stringParam);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "Reference", null, paramVal, null);
             properties.Add(propSingleValue);
          }
 
-         if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon:AcousticRating (" + flightIndex.ToString() + ")", out stringParam) != null)
+         if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon.AcousticRating (" + flightIndex.ToString() + ")", out stringParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(stringParam);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "AcousticRating", null, paramVal, null);
             properties.Add(propSingleValue);
          }
 
-         if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon:FireRating (" + flightIndex.ToString() + ")", out stringParam) != null)
+         if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon.FireRating (" + flightIndex.ToString() + ")", out stringParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(stringParam);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "FireRating", null, paramVal, null);
             properties.Add(propSingleValue);
          }
 
-         if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon:SurfaceSpreadOfFlame (" + flightIndex.ToString() + ")", out stringParam) != null)
+         if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon.SurfaceSpreadOfFlame (" + flightIndex.ToString() + ")", out stringParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(stringParam);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "SurfaceSpreadOfFlame", null, paramVal, null);
@@ -739,7 +739,7 @@ namespace Revit.IFC.Export.Exporter
 
          double doubleParam = 0.0;
          // Skip PitchAngle, it does not write the property as it should be 0 (a criteria for Landing)
-         if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_SlabCommon:ThermalTransmittance (" + flightIndex.ToString() + ")", out doubleParam) != null)
+         if (ParameterUtil.GetDoubleValueFromElement(element, null, "Pset_SlabCommon.ThermalTransmittance (" + flightIndex.ToString() + ")", out doubleParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsThermalTransmittanceMeasure(doubleParam);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "ThermalTransmittance", null, paramVal, null);
@@ -747,28 +747,28 @@ namespace Revit.IFC.Export.Exporter
          }
 
          int intParam = 0;
-         if (ParameterUtil.GetIntValueFromElement(element, "Pset_SlabCommon:Combustible (" + flightIndex.ToString() + ")", out intParam) != null)
+         if (ParameterUtil.GetIntValueFromElement(element, "Pset_SlabCommon.Combustible (" + flightIndex.ToString() + ")", out intParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsBoolean((intParam != 0)? true : false);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "Combustible", null, paramVal, null);
             properties.Add(propSingleValue);
          }
 
-         if (ParameterUtil.GetIntValueFromElement(element, "Pset_SlabCommon:Compartmentation (" + flightIndex.ToString() + ")", out intParam) != null)
+         if (ParameterUtil.GetIntValueFromElement(element, "Pset_SlabCommon.Compartmentation (" + flightIndex.ToString() + ")", out intParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsBoolean((intParam != 0) ? true : false);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "Compartmentation", null, paramVal, null);
             properties.Add(propSingleValue);
          }
 
-         if (ParameterUtil.GetIntValueFromElement(element, "Pset_SlabCommon:IsExternal (" + flightIndex.ToString() + ")", out intParam) != null)
+         if (ParameterUtil.GetIntValueFromElement(element, "Pset_SlabCommon.IsExternal (" + flightIndex.ToString() + ")", out intParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsBoolean((intParam != 0) ? true : false);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "IsExternal", null, paramVal, null);
             properties.Add(propSingleValue);
          }
 
-         if (ParameterUtil.GetIntValueFromElement(element, "Pset_SlabCommon:LoadBearing (" + flightIndex.ToString() + ")", out intParam) != null)
+         if (ParameterUtil.GetIntValueFromElement(element, "Pset_SlabCommon.LoadBearing (" + flightIndex.ToString() + ")", out intParam) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsBoolean((intParam != 0) ? true : false);
             IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "LoadBearing", null, paramVal, null);
@@ -777,7 +777,7 @@ namespace Revit.IFC.Export.Exporter
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon:Status (" + flightIndex.ToString() + ")", out stringParam) != null)
+            if (ParameterUtil.GetStringValueFromElement(element, "Pset_SlabCommon.Status (" + flightIndex.ToString() + ")", out stringParam) != null)
             {
                IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(stringParam);
                IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "Status", null, paramVal, null);
