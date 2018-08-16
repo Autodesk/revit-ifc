@@ -34,6 +34,8 @@ namespace Revit.IFC.Export.Utility
    public class TriangleMergeUtil
    {
       static TriangulatedShellComponent _geom;
+      static Mesh _meshGeom;
+      
       HashSet<int> _mergedFaceList = new HashSet<int>();
 
       IDictionary<int, IndexFace> facesColl = new Dictionary<int, IndexFace>();
@@ -45,6 +47,8 @@ namespace Revit.IFC.Export.Utility
 
       //IDictionary<int, HashSet<int>> sortedFVert = new Dictionary<int, HashSet<int>>();
 
+      public static bool IsMesh { get { return (_meshGeom != null && _geom == null); } }
+
       /// <summary>
       /// Constructor for the class, accepting the TriangulatedShellComponent from the result of body tessellation
       /// </summary>
@@ -52,6 +56,17 @@ namespace Revit.IFC.Export.Utility
       public TriangleMergeUtil(TriangulatedShellComponent triangulatedBody)
       {
          _geom = triangulatedBody;
+         _meshGeom = null;
+      }
+
+      /// <summary>
+      /// Constructor for the class, accepting a Mesh
+      /// </summary>
+      /// <param name="triangulatedMesh">the Mesh</param>
+      public TriangleMergeUtil(Mesh triangulatedMesh)
+      {
+         _geom = null;
+         _meshGeom = triangulatedMesh;
       }
 
       /// <summary>
@@ -134,7 +149,10 @@ namespace Revit.IFC.Export.Utility
          {
             get
             {
-               return _geom.GetVertex(startPindex).DistanceTo(_geom.GetVertex(endPIndex));
+               if (IsMesh)
+                  return _meshGeom.Vertices[startPindex].DistanceTo(_meshGeom.Vertices[endPIndex]);
+               else
+                  return _geom.GetVertex(startPindex).DistanceTo(_geom.GetVertex(endPIndex));
             }
          }
 
@@ -194,7 +212,10 @@ namespace Revit.IFC.Export.Utility
             IList<XYZ> vertices = new List<XYZ>();
             for (int ii = 0; ii < indexOuterBoundary.Count; ++ii)
             {
-               vertices.Add(_geom.GetVertex(indexOuterBoundary[ii]));
+               if (IsMesh)
+                  vertices.Add(_meshGeom.Vertices[indexOuterBoundary[ii]]);
+               else
+                  vertices.Add(_geom.GetVertex(indexOuterBoundary[ii]));
             }
             normal = NormalByNewellMethod(vertices);
          }
@@ -232,7 +253,10 @@ namespace Revit.IFC.Export.Utility
             IList<XYZ> vertices = new List<XYZ>();
             for (int ii = 0; ii < indexOuterBoundary.Count; ++ii)
             {
-               vertices.Add(_geom.GetVertex(indexOuterBoundary[ii]));
+               if (IsMesh)
+                  vertices.Add(_meshGeom.Vertices[indexOuterBoundary[ii]]);
+               else
+                  vertices.Add(_geom.GetVertex(indexOuterBoundary[ii]));
             }
             normal = NormalByNewellMethod(vertices);
          }
@@ -382,18 +406,29 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void SimplifyAndMergeFaces()
       {
-         int noTriangle = _geom.TriangleCount;
-         int noVertices = _geom.VertexCount;
+         int noTriangle = (IsMesh)? _meshGeom.NumTriangles : _geom.TriangleCount;
+         int noVertices = (IsMesh)? _meshGeom.Vertices.Count : _geom.VertexCount;
          IEqualityComparer<XYZ> normalComparer = new vectorCompare();
          Dictionary<XYZ, List<int>> faceSortedByNormal = new Dictionary<XYZ, List<int>>(normalComparer);
 
          for (int ef = 0; ef < noTriangle; ++ef)
          {
-            TriangleInShellComponent f = _geom.GetTriangle(ef);
             IList<int> vertIndex = new List<int>();
-            vertIndex.Add(f.VertexIndex0);
-            vertIndex.Add(f.VertexIndex1);
-            vertIndex.Add(f.VertexIndex2);
+
+            if (IsMesh)
+            {
+               MeshTriangle f = _meshGeom.get_Triangle(ef);
+               vertIndex.Add((int) f.get_Index(0));
+               vertIndex.Add((int)f.get_Index(1));
+               vertIndex.Add((int)f.get_Index(2));
+            }
+            else
+            {
+               TriangleInShellComponent f = _geom.GetTriangle(ef);
+               vertIndex.Add(f.VertexIndex0);
+               vertIndex.Add(f.VertexIndex1);
+               vertIndex.Add(f.VertexIndex2);
+            }
 
             IndexFace intF = new IndexFace(vertIndex);
             facesColl.Add(ef, intF);         // Keep faces in a dictionary and assigns ID
