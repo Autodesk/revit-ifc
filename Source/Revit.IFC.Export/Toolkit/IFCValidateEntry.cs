@@ -46,7 +46,7 @@ namespace Revit.IFC.Export.Toolkit
                }
                string desiredType = "Revit.IFC.Export.Toolkit." + desiredTypeExtra + theTypeEnumStr;
                Type theTypeEnum = Type.GetType(desiredType, false, true);
-               if (theTypeEnum != null)
+               if (theTypeEnum != null && !string.IsNullOrEmpty(typeName))
                   enumValue = Enum.Parse(theTypeEnum, typeName, true).ToString();
             }
             catch

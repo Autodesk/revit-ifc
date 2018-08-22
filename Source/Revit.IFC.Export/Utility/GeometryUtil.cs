@@ -886,7 +886,20 @@ namespace Revit.IFC.Export.Utility
             if (numBoundaries > 1)
                throw new Exception("Can't handle faces with interior boundaries.");
 
-            ICollection<ElementId> generatingElementIds = elem.GetGeneratingElementIds(currFace.Key);
+            // In some cases the native function throws an exception, skip this face if it occurs
+            ICollection<ElementId> generatingElementIds;
+            try
+            {
+               generatingElementIds = elem.GetGeneratingElementIds(currFace.Key);
+            }
+            catch
+            {
+               continue;
+            }
+
+            if (generatingElementIds == null)
+               continue;
+
             foreach (ElementId generatingElementId in generatingElementIds)
             {
                ICollection<Face> elementFaces;
@@ -2643,6 +2656,12 @@ namespace Revit.IFC.Export.Utility
       /// <returns>return true/false</returns>
       public static bool CreatePolyCurveFromCurveLoop(ExporterIFC exporterIFC, CurveLoop curveLoop, Transform lcs, XYZ projectDir, out IFCAnyHandle indexedPolyCurve)
       {
+         if (curveLoop.Count() == 0)
+         {
+            indexedPolyCurve = null;
+            return false;
+         }
+
          IFCFile file = exporterIFC.GetFile();
          List<IList<double>> pointList = new List<IList<double>>();
          //IList<IFCAnyHandle> segmentIndexList = new List<IFCAnyHandle>();
@@ -2766,6 +2785,9 @@ namespace Revit.IFC.Export.Utility
          bool use3DPoint = false;
          if (lcs == null || projectDir == null)
             use3DPoint = true;
+
+         if (curve == null)
+            return null;
 
          if (curve is Line)
          {
@@ -4227,6 +4249,35 @@ namespace Revit.IFC.Export.Utility
          angle = UnitUtil.ScaleAngle(slopeAngle);
 
          return angle;
+      }
+
+      /// <summary>
+      /// Iterate and recurse GeometryElement to find all Curves
+      /// </summary>
+      /// <param name="geomElem">the GeometryElement</param>
+      /// <returns>List of Curves found in the GeometryElement</returns>
+      public static List<Curve> GetCurvesFromGeometryElement(GeometryElement geomElem)
+      {
+         List<Curve> curveList = new List<Curve>();
+         foreach(GeometryObject geomObject in geomElem)
+         {
+            if (geomObject is GeometryElement)
+            {
+               curveList.AddRange(GetCurvesFromGeometryElement(geomObject as GeometryElement));
+            }
+            else if (geomObject is GeometryInstance)
+            {
+               GeometryElement instGeom = (geomObject as GeometryInstance).GetInstanceGeometry();
+               if (instGeom != null)
+                  curveList.AddRange(GetCurvesFromGeometryElement(instGeom));
+            }
+            else if (geomObject is Curve)
+            {
+               curveList.Add(geomObject as Curve);
+            }
+         }
+
+         return curveList;
       }
    }
 }
