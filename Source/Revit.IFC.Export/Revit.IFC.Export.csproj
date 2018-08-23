@@ -93,6 +93,11 @@
     <Compile Include="Exporter\PropertySet\AttributeSetDescription.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FireRatingCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\IsExternalCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NosingLengthCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NumberOfRiserCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NumberOfTreadsCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\RiserHeightCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\SlabLoadBearingCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\SpanCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\CrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\AreaCalculator.cs" />
@@ -128,7 +133,11 @@
     <Compile Include="Exporter\PropertySet\Calculators\ConcealCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\TemperatureCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\SpecificZoneCalculator.cs" />
-    <Compile Include="Exporter\PropertySet\Calculators\StairRiserTreadsCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\TreadLengthAtInnerSideCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\TreadLengthAtOffsetCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\TreadLengthCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\WaistThicknessCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\WalkingLineOffsetCalculator.cs" />
     <Compile Include="Exporter\PropertySet\ClassificationUtil.cs" />
     <Compile Include="Exporter\PropertySet\ElectricalCurrentPropertyUtil.cs" />
     <Compile Include="Exporter\PropertySet\ElectricalVoltagePropertyUtil.cs" />
