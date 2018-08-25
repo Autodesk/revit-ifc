@@ -563,7 +563,7 @@ namespace Revit.IFC.Export.Utility
             {
                try
                {
-                  if (solid.Volume <= MathUtil.Eps())
+                  if (solid.Volume <= MathUtil.Eps() && solid.Faces.Size == 0)
                      continue;
                }
                catch
@@ -4121,7 +4121,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="inclEllipse">set it to true if only Ellipse to be included</param>
       /// <param name="inclSpline">set it to true if only Splines to be included (incl. HermitSpline and NurbSpline)</param>
       /// <returns>the List of 2D curves found</returns>
-      public static IList<Curve> get2DArcOrLineFromSymbol(FamilyInstance element, bool allCurveType,
+      public static IList<Curve> Get2DArcOrLineFromSymbol(FamilyInstance element, bool allCurveType,
          bool inclArc = false, bool inclLine = false, bool inclEllipse = false, bool inclSpline = false)
       {
          IList<Curve> curveList = new List<Curve>();
