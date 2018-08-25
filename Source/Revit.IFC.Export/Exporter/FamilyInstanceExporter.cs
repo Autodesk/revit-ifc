@@ -473,7 +473,7 @@ namespace Revit.IFC.Export.Exporter
 
                Element exportGeometryElement = useInstanceGeometry ? (Element)familyInstance : (Element)originalFamilySymbol;
                GeometryElement exportGeometry = exportGeometryElement.get_Geometry(options);
-               IList<Curve> export2DGeometry = GeometryUtil.get2DArcOrLineFromSymbol(familyInstance, allCurveType: true);
+               IList<Curve> export2DGeometry = GeometryUtil.Get2DArcOrLineFromSymbol(familyInstance, allCurveType: true);
                GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
 
                // There are 2 possible paths for a Family Instance to be exported as a Swept Solid.
