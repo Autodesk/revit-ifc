@@ -182,7 +182,7 @@ namespace Revit.IFC.Export.Utility
 
          Transform doorWindowTrf = ExporterIFCUtils.GetTransformForDoorOrWindow(currElem, famSymbol, FlippedX, FlippedY);
 
-         IList<Curve> origArcs = GeometryUtil.get2DArcOrLineFromSymbol(currElem, allCurveType:false, inclArc:true);
+         IList<Curve> origArcs = GeometryUtil.Get2DArcOrLineFromSymbol(currElem, allCurveType:false, inclArc:true);
          if (origArcs == null || (origArcs.Count == 0))
             return "NOTDEFINED";
 
