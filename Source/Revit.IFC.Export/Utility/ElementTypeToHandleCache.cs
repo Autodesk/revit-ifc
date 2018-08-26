@@ -9,9 +9,37 @@ using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
 {
+   /// <summary>
+   /// ElementType to IFC handle key for dictionary comparer
+   /// </summary>
    public sealed class ElementTypeKey : Tuple<ElementType, IFCEntityType, string>
    {
       public ElementTypeKey(ElementType elementType, IFCEntityType entType, string preDefinedType) : base(elementType, entType, preDefinedType) { }
+   }
+
+   /// <summary>
+   /// Equality test for the ElementType IFC handle key comparer
+   /// </summary>
+   internal class TypeHndKeyCompare : IEqualityComparer<ElementTypeKey>
+   {
+      public bool Equals(ElementTypeKey key1, ElementTypeKey key2)
+      {
+         if (key1.Item1.Id.IntegerValue == key2.Item1.Id.IntegerValue
+            && key1.Item2 == key2.Item2
+            && string.Equals(key1.Item3, key2.Item3, StringComparison.InvariantCultureIgnoreCase))
+            return true;
+         else
+            return false;
+      }
+
+      public int GetHashCode(ElementTypeKey key)
+      {
+         int hash = 23;
+         hash = hash * 31 + key.Item1.Id.IntegerValue;
+         hash = hash * 31 + (int) key.Item2;
+         hash = hash * 31 + key.Item3.GetHashCode();
+         return hash;
+      }
    }
 
    /// <summary>
@@ -20,12 +48,14 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class ElementTypeToHandleCache
    {
+      static TypeHndKeyCompare keyComparer = new TypeHndKeyCompare();
+
       /// <summary>
       /// The dictionary mapping from an ElementType to an  handle.
       /// The key is made up by ElementId, IFC entity to export to, and the predefinedtype. PredefinedType will be assigned to a value "NULL" for the default if not specified
       /// </summary>
-      private Dictionary<Tuple<ElementType, IFCEntityType, string>, IFCAnyHandle> m_ElementTypeToHandleDictionary = new Dictionary<Tuple<ElementType, IFCEntityType, string>, IFCAnyHandle>();
-      private HashSet<ElementType> m_RegisteredElementType = new HashSet<ElementType>(); 
+      private Dictionary<ElementTypeKey, IFCAnyHandle> m_ElementTypeToHandleDictionary = new Dictionary<ElementTypeKey, IFCAnyHandle>(keyComparer);
+      private HashSet<ElementType> m_RegisteredElementType = new HashSet<ElementType>();
 
       /// <summary>
       /// Finds the handle from the dictionary.
