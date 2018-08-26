@@ -1377,13 +1377,13 @@ namespace Revit.IFC.Export.Exporter
 
          IFCExportInfoPair exportType = new IFCExportInfoPair();
          exportType.SetValueWithPair(IFCEntityType.IfcWallType);
+         exportType.ValidatedPredefinedType = "STANDARD";
          IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(wallType))
          {
             ExporterCacheManager.TypeRelationsCache.Add(wallType, elementHandle);
             return;
          }
-
 
          // Property sets will be set later.
          if (asFooting)
