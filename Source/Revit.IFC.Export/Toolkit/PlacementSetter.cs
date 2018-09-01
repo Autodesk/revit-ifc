@@ -278,6 +278,11 @@ namespace Revit.IFC.Export.Toolkit
          XYZ overrideOrigin = XYZ.Zero;
 
          IDictionary<ElementId, IFCLevelInfo> levelInfos = exporterIFC.GetLevelInfos();
+         SortedDictionary<double, Tuple<ElementId, IFCLevelInfo>> sortedLevelInfos = new SortedDictionary<double, Tuple<ElementId, IFCLevelInfo>>();
+         foreach(KeyValuePair<ElementId,IFCLevelInfo> levelInfo in levelInfos)
+         {
+            sortedLevelInfos.Add(levelInfo.Value.Elevation, new Tuple<ElementId, IFCLevelInfo>(levelInfo.Key, levelInfo.Value));
+         }
 
          if (overrideLevelId == ElementId.InvalidElementId)
          {
@@ -316,7 +321,7 @@ namespace Revit.IFC.Export.Toolkit
 
                   if (newLevelId == ElementId.InvalidElementId)
                   {
-                     ExporterIFCUtils.GetLevelIdByHeight(exporterIFC, hostElem);
+                     newLevelId = ExporterIFCUtils.GetLevelIdByHeight(exporterIFC, hostElem);
                   }
                }
             }
@@ -363,38 +368,128 @@ namespace Revit.IFC.Export.Toolkit
                // are placed before the level, not above.  So we have made a small modification so that anything within
                // 10cm of the 'next' level is on that level.
 
-               double leveExtension = 10.0 / (12.0 * 2.54);
-               foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
+               double levelExtension = 10.0 / (12.0 * 2.54);
+               double heightCoverage = 0.0;
+               BoundingBoxXYZ elBbox = null;
+               if (hostElem is AssemblyInstance)
                {
-                  // the cache contains levels from all the exported documents
-                  // if the export is performed for a linked document, filter the levels that are not from this document
-                  if (ExporterCacheManager.ExportOptionsCache.ExportingLink)
+                  double maxX = double.MinValue;
+                  double maxY = double.MinValue;
+                  double maxZ = double.MinValue;
+                  double minX = double.MaxValue;
+                  double minY = double.MaxValue;
+                  double minZ = double.MaxValue;
+
+                  foreach (ElementId memberId in (hostElem as AssemblyInstance).GetMemberIds())
                   {
-                     Element levelElem = doc.GetElement(levelInfoPair.Key);
-                     if (levelElem == null || !(levelElem is Level))
-                        continue;
+                     Element member = doc.GetElement(memberId);
+                     BoundingBoxXYZ memberBox = member.get_BoundingBox(null);
+                     if (elBbox == null)
+                     {
+                        elBbox = memberBox;
+                        maxX = elBbox.Max.X;
+                        maxY = elBbox.Max.Y;
+                        maxZ = elBbox.Max.Z;
+                        minX = elBbox.Min.X;
+                        minY = elBbox.Min.Y;
+                        minZ = elBbox.Min.Z;
+                     }
+                     else
+                     {
+                        if (memberBox.Max.X > maxX)
+                           maxX = memberBox.Max.X;
+                        if (memberBox.Max.Y > maxY)
+                           maxY = memberBox.Max.Y;
+                        if (memberBox.Max.Z > maxZ)
+                           maxZ = memberBox.Max.Z;
+                        if (memberBox.Min.X < minX)
+                           minX = memberBox.Min.X;
+                        if (memberBox.Min.Y < minY)
+                           minY = memberBox.Min.Y;
+                        if (memberBox.Min.Z < minZ)
+                           minZ = memberBox.Min.Z;
+                     }
                   }
 
-                  IFCLevelInfo levelInfo = levelInfoPair.Value;
-                  double startHeight = levelInfo.Elevation - leveExtension;
-                  double height = levelInfo.DistanceToNextLevel;
-                  bool useHeight = !MathUtil.IsAlmostZero(height);
-                  double endHeight = startHeight + height;
+                  elBbox.Max = new XYZ(maxX, maxY, maxZ);
+                  elBbox.Min = new XYZ(minX, minY, minZ);
+               }
+               else
+                  elBbox = hostElem.get_BoundingBox(null);
 
-                  if (originIsValid && ((originToUse[2] > (startHeight - MathUtil.Eps())) && (!useHeight || originToUse[2] < (endHeight - MathUtil.Eps()))))
+               if (elBbox != null)
+               {
+                  ElementId prevLevelId = ElementId.InvalidElementId;
+                  //foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
+                  foreach (KeyValuePair<double, Tuple<ElementId, IFCLevelInfo>> sortedLevelInfoPair in sortedLevelInfos)
                   {
-                     newLevelId = levelInfoPair.Key;
-                  }
+                     // the cache contains levels from all the exported documents
+                     // if the export is performed for a linked document, filter the levels that are not from this document
+                     if (ExporterCacheManager.ExportOptionsCache.ExportingLink)
+                     {
+                        Element levelElem = doc.GetElement(sortedLevelInfoPair.Value.Item1);
+                        if (levelElem == null || !(levelElem is Level))
+                           continue;
+                     }
 
-                  if (startHeight < (bottomHeight + MathUtil.Eps()))
-                  {
-                     bottomLevelId = levelInfoPair.Key;
-                     bottomHeight = startHeight;
+                     IFCLevelInfo levelInfo = sortedLevelInfoPair.Value.Item2;
+                     //double startHeight = levelInfo.Elevation - levelExtension;
+                     double startHeight = levelInfo.Elevation;
+                     double height = levelInfo.DistanceToNextLevel;
+                     bool useHeight = !MathUtil.IsAlmostZero(height);
+                     double endHeight = startHeight + height;
+
+                     // Keep the original logic to include object that is within the level extension below and the top box is above the level elevation
+                     //if (originIsValid && ((originToUse[2] > (startHeight - MathUtil.Eps())) && (!useHeight || originToUse[2] < (endHeight - MathUtil.Eps()))))
+                     if (originIsValid && (originToUse[2] < (levelInfo.Elevation - MathUtil.Eps())) && (originToUse[2] > (levelInfo.Elevation) - levelExtension + MathUtil.Eps())
+                        && (elBbox.Max.Z > (startHeight - MathUtil.Eps())))
+                     {
+                        newLevelId = sortedLevelInfoPair.Value.Item1;
+                        break;
+                     }
+
+                     // Clearcut case, if the object bbox is completely within the storey
+                     if (elBbox.Min.Z > (startHeight - MathUtil.Eps()) && elBbox.Max.Z < (endHeight + MathUtil.Eps()))
+                     {
+                        newLevelId = sortedLevelInfoPair.Value.Item1;
+                        break;
+                     }
+
+                     double currLevelHeightCovMin = (elBbox.Min.Z < levelInfo.Elevation) ? levelInfo.Elevation : elBbox.Min.Z;
+                     double currLevelHeightCovMax = (elBbox.Max.Z > (levelInfo.Elevation + height)) ? (levelInfo.Elevation + height) : elBbox.Max.Z;
+                     double currHeightCov = (currLevelHeightCovMax - currLevelHeightCovMin) / height;
+
+                     // Consider coverage comparison only after the first level
+                     if (prevLevelId != ElementId.InvalidElementId)
+                     {
+                        // If the current height coverage is actually smaller than the previous one, use the previous level as the container instead
+                        if (currHeightCov < heightCoverage && elBbox.Max.Z < (endHeight - MathUtil.Eps()) && prevLevelId != ElementId.InvalidElementId)
+                        {
+                           newLevelId = prevLevelId;
+                           break;
+                        }
+
+                        // If the height coverage is more than the previous level coverage, we will use the level as the base level for the object
+                        if (currHeightCov > heightCoverage && heightCoverage > 0)
+                        {
+                           newLevelId = sortedLevelInfoPair.Value.Item1;
+                           break;
+                        }
+                     }
+                     heightCoverage = currHeightCov;
+
+                     if (startHeight < (bottomHeight + MathUtil.Eps()))
+                     {
+                        bottomLevelId = sortedLevelInfoPair.Value.Item1;
+                        bottomHeight = startHeight;
+                     }
+
+                     prevLevelId = sortedLevelInfoPair.Value.Item1;
                   }
                }
             }
 
-            if (newLevelId == ElementId.InvalidElementId)
+            if (newLevelId == ElementId.InvalidElementId && bottomLevelId != ElementId.InvalidElementId)
                newLevelId = bottomLevelId;
          }
 
