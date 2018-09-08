@@ -1156,6 +1156,10 @@ namespace Revit.IFC.Export.Utility
 
             foreach (IFCAnyHandle prodHnd in productSet)
             {
+               // Need to check whether the handle is valid. In some cases object that has parts may not be complete and may have orphaned handles that are not valid
+               if (!IFCAnyHandleUtil.IsValidHandle(prodHnd))
+                  continue;
+
                IList<PropertySetDescription> currPsetsToCreate = GetCurrPSetsToCreate(prodHnd, psetsToCreate);
                if (currPsetsToCreate.Count == 0)
                   continue;

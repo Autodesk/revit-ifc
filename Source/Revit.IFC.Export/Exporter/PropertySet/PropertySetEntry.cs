@@ -245,7 +245,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       HeatFluxDensity,
       ComplexNumber,
       ThermalResistance,
-      Numeric,
+      Numeric
    }
 
    /// <summary>

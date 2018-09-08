@@ -360,5 +360,25 @@ namespace Revit.IFC.Export.Utility
       private ProductWrapper()
       {
       }
+
+      /// <summary>
+      /// Clear propertyset assignments to the internal Handle stored in the wrapper if it is incomplete
+      /// </summary>
+      /// <param name="element">the element</param>
+      public void ClearInternalHandleWrapperData(Element element)
+      {
+         if (m_InternalWrapper.Count > 0)
+         {
+            HashSet<IFCAnyHandle> propertySetToCreate = null;
+            if (m_PropertySetsToCreate.TryGetValue(element, out propertySetToCreate))
+            {
+               ICollection<IFCAnyHandle> internalObjects = m_InternalWrapper.GetAllObjects();
+               foreach (IFCAnyHandle internalObj in internalObjects)
+               {
+                  propertySetToCreate.Remove(internalObj);
+               }
+            }
+         }
+      }
    }
 }
