@@ -236,6 +236,9 @@ namespace Revit.IFC.Export.Exporter
                if (numSubcomponents == 0 || (elementIsFloor && numSubcomponents == 1))
                   return null;
 
+
+               IFCAnyHandle hostObjectHandle = null;
+
                try
                {
                   using (IFCExtrusionCreationData extrusionCreationData = new IFCExtrusionCreationData())
@@ -256,7 +259,6 @@ namespace Revit.IFC.Export.Exporter
 
                         //string hostObjectType = IFCValidateEntry.GetValidIFCPredefinedType(element, ifcEnumType);
 
-                        IFCAnyHandle hostObjectHandle = null;
                         if (elementIsRoof)
                            hostObjectHandle = IFCInstanceExporter.CreateRoof(exporterIFC, element, elementGUID, ownerHistory,
                             localPlacement, prodRepHnd, ifcEnumType);
@@ -307,7 +309,10 @@ namespace Revit.IFC.Export.Exporter
                               double scaledExtrusionDepth = scaledDepth * slope;
                               IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, extrusionDir, scaledExtrusionDepth, false);
                               if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
+                              {
+                                 productWrapper.ClearInternalHandleWrapperData(element);
                                  return null;
+                              }
 
                               ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
                               BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, shapeRep, matId);
@@ -354,6 +359,12 @@ namespace Revit.IFC.Export.Exporter
                         return hostObjectHandle;
                      }
                   }
+               }
+               catch
+               {
+                  // SOmething wrong with the above process, unable to create the extrusion data. Reset any internal handles that may have been partially created since they are not committed
+                  productWrapper.ClearInternalHandleWrapperData(element);
+                  return null;
                }
                finally
                {
