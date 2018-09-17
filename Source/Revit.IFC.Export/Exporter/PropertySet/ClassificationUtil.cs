@@ -45,6 +45,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elemHnd">The element handle.</param>
       public static void CreateUniformatClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IFCAnyHandle elemHnd)
       {
+         if (ExporterCacheManager.ClassificationCache.UniformatOverriden)
+            return;
          // Create Uniformat classification, if it is not set.
          string uniformatKeyString = "Uniformat";
          string uniformatDescription = "";
@@ -119,6 +121,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
             parseClassificationCode(paramClassificationCode, classificationCodeFieldName, out classificationName, out classificationCode, out classificationDescription);
 
+            if(String.IsNullOrEmpty(classificationDescription) && string.Compare(classificationCodeFieldName, "Assembly Code",true)== 0)
+            {
+               ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.UNIFORMAT_DESCRIPTION, false, out classificationDescription);
+            }
             // If classificationName is empty, there is no classification to export.
             if (String.IsNullOrEmpty(classificationName))
                continue;
@@ -246,14 +252,23 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="location">The location of the classification.</param>
       public static void InsertClassificationReference(ExporterIFC exporterIFC, IFCFile file, IFCAnyHandle elemHnd, string classificationKeyString, string classificationCode, string classificationDescription, string location)
       {
-         IFCAnyHandle classificationReference = CreateClassificationReference(file, classificationKeyString, classificationCode, classificationDescription, location);
+         IFCAnyHandle classificationReferenceAssociation = ExporterCacheManager.ClassificationReferenceCache.GetClassificationReferenceAssociation(classificationKeyString, classificationCode);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(classificationReferenceAssociation))
+         {
 
-         HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
-         relatedObjects.Add(elemHnd);
+            IFCAnyHandle classificationReference = CreateClassificationReference(file, classificationKeyString, classificationCode, classificationDescription, location);
 
-         IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
+            HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
+            relatedObjects.Add(elemHnd);
+
+            IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
             ExporterCacheManager.OwnerHistoryHandle, classificationKeyString + " Classification", "", relatedObjects, classificationReference);
-
+            ExporterCacheManager.ClassificationReferenceCache.AddClassificationReferenceAssociation(classificationKeyString, classificationCode, relAssociates);
+         }
+         else
+         {
+            IFCAnyHandleUtil.AssociatesAddRelated(classificationReferenceAssociation, elemHnd);
+         }
       }
 
       /// <summary>
