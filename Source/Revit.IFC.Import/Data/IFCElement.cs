@@ -262,30 +262,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
-         foreach (IFCFeatureElement opening in Openings)
-         {
-            try
-            {
-               // Create the actual Revit element based on the IFCFeatureElement here.
-               CreateElement(doc, opening);
-
-               // This gets around the issue that the Boolean operation between the void(s) in the IFCFeatureElement and 
-               // the solid(s) in the IFCElement may use the Graphics Style of the voids in the resulting Solid(s), meaning 
-               // that some faces may disappear when we turn off the visibility of IfcOpeningElements.
-               IList<IFCSolidInfo> voids = CloneElementGeometry(doc, opening, this, true);
-               if (voids != null)
-               {
-                  foreach (IFCSolidInfo voidGeom in voids)
-                  {
-                     Voids.Add(voidGeom);
-                  }
-               }
-            }
-            catch (Exception ex)
-            {
-               Importer.TheLog.LogError(opening.Id, ex.Message, false);
-            }
-         }
+         // Openings handled in product implementation 
 
          foreach (IFCPort port in Ports)
          {
