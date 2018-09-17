@@ -1630,6 +1630,30 @@ namespace Revit.IFC.Common.Utility
          }
       }
 
+      public static void AssociatesAddRelated(IFCAnyHandle relAssociates, IFCAnyHandle related)
+      {
+         if (relAssociates == null)
+            throw new ArgumentNullException("IfcRelAssociates");
+
+         if (related == null)
+            throw new ArgumentNullException("IfcRelAssociates related");
+
+         if (!relAssociates.HasValue)
+            throw new ArgumentException("Invalid handle.");
+
+         if (!IsSubTypeOf(relAssociates, IFCEntityType.IfcRelAssociatesClassification))
+            throw new ArgumentException("The operation is not valid for this handle.");
+
+         IFCAggregate aggregate = relAssociates.GetAttribute("RelatedObjects").AsAggregate();
+         if (aggregate == null)
+         {
+            relAssociates.SetAttribute("RelatedObjects", new List<IFCAnyHandle>() { related });
+         }
+         else
+         {
+            aggregate.Add(IFCData.CreateIFCAnyHandle(related));
+         }
+      }
       /// <summary>
       /// Gets Name of an IfcProductDefinitionShape handle.
       /// </summary>
