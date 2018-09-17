@@ -195,6 +195,7 @@
     <Compile Include="Utility\ClassificationLocationCache.cs" />
     <Compile Include="Utility\ClassificationCache.cs" />
     <Compile Include="Utility\ContainmentCache.cs" />
+    <Compile Include="Utility\ClassificationReferenceCache.cs" />
     <Compile Include="Utility\CurveAnnotationCache.cs" />
     <Compile Include="Exporter\FamilyInstanceExporter.cs" />
     <Compile Include="Exporter\PropertySet\Description.cs" />

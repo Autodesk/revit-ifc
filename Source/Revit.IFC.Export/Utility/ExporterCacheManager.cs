@@ -77,6 +77,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static ClassificationLocationCache m_ClassificationLocationCache;
 
+      static ClassificationReferenceCache m_ClassificationReferenceCache;
       /// <summary>
       /// The ContainmentCache object.
       /// </summary>
@@ -1055,6 +1056,17 @@ public static ParameterCache ParameterCache
          set { m_ClassificationLocationCache = value; }
       }
 
+      public static ClassificationReferenceCache ClassificationReferenceCache
+      {
+         get
+         {
+            if (m_ClassificationReferenceCache == null)
+               m_ClassificationReferenceCache = new ClassificationReferenceCache();
+            return m_ClassificationReferenceCache;
+         }
+         set { m_ClassificationReferenceCache = value; }
+      }
+
       /// <summary>
       /// The UnitsCache object.
       /// </summary>
@@ -1297,6 +1309,7 @@ public static ParameterCache ParameterCache
          m_CeilingSpaceRelCache = null;
          m_ClassificationCache = null;
          m_ClassificationLocationCache = null;
+         m_ClassificationReferenceCache = null;
          m_ConditionalPropertySetsForTypeCache = null;
          m_ContainmentCache = null;
          m_CurveAnnotationCache = null;

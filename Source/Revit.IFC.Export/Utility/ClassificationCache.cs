@@ -34,6 +34,9 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class ClassificationCache
    {
+      private bool m_UniformatOverridden = false;
+      public bool UniformatOverriden { get { return m_UniformatOverridden; } }
+
       private IDictionary<string, IFCAnyHandle> m_ClassificationHandles = null;
 
       /// <summary>
@@ -116,6 +119,8 @@ namespace Revit.IFC.Export.Utility
                   {
                      // found [<Classification Field Names>]
                      string classificationFieldName = splitResult[ii].Trim();
+                     if (string.Compare("Assembly Code", classificationFieldName, true) == 0)
+                        m_UniformatOverridden = true;
                      CustomClassificationCodeNames.Add(classificationFieldName);
                      if (classificationHasName)
                         FieldNameToClassificationNames[classificationFieldName] = classification.ClassificationName;
