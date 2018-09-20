@@ -565,17 +565,22 @@ namespace Revit.IFC.Export.Utility
             if (meshes.Count == 0)
             {
                IList<Solid> solidList = info.GetSolids();
-               foreach (Solid solid in solidList)
-               {
-                  geometryList.Add(solid);
-               }
+               //foreach (Solid solid in solidList)
+               //{
+               //   geometryList.Add(solid);
+               //}
+               geometryList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solidList, null);
+               if (geometryList.Count == 0)
+                  return null;
             }
          }
 
          if (geometryList.Count == 0)
             geometryList.Add(geometryElement);
          else
+         {
             bodyExporterOptions.TryToExportAsExtrusion = true;
+         }
 
          bodyData = BodyExporter.ExportBody(exporterIFC, element, categoryId, ElementId.InvalidElementId, geometryList,
              bodyExporterOptions, extrusionCreationData);

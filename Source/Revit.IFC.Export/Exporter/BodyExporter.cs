@@ -1965,22 +1965,23 @@ namespace Revit.IFC.Export.Exporter
          IList<int> colourIndex = new List<int>();
 
          // If the geomObject is GeometryELement or GeometryInstance, we need to collect their primitive Solid and Mesh first
+         bool allNotToBeExported = false;
          List<GeometryObject> geomObjectPrimitives = new List<GeometryObject>();
          if (geomObject is GeometryElement)
          {
-            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(geomObject as GeometryElement));
+            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(document, exporterIFC, geomObject as GeometryElement, out allNotToBeExported));
          }
          else if (geomObject is GeometryInstance)
          {
             GeometryInstance geomInst = geomObject as GeometryInstance;
-            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(geomInst.GetInstanceGeometry()));
+            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(document, exporterIFC, geomInst.GetInstanceGeometry(), out allNotToBeExported));
          }
          else if (geomObject is Solid)
             geomObjectPrimitives.Add(geomObject);
          else if (geomObject is Mesh)
             geomObjectPrimitives.Add(geomObject);
 
-         // At this point all collected geometry will only contains Solid and/or MEsh
+         // At this point all collected geometry will only contains Solid and/or Mesh
          foreach (GeometryObject geom in geomObjectPrimitives)
          {
             if (geom is Solid)
@@ -2075,7 +2076,7 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
-         if (polygonalFaceSetList == null || polygonalFaceSetList.Count == 0)
+         if ((polygonalFaceSetList == null || polygonalFaceSetList.Count == 0) && !allNotToBeExported)
          {
             // It is not from Solid, so we will use the faces to export. It works for Surface export too
             IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
@@ -2092,14 +2093,13 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="geomElement">the GeometryElement</param>
       /// <returns>list of Solid and/or Mesh</returns>
-      private static List<GeometryObject> GetGeometryObjectListFromGeometryElement(GeometryElement geomElement)
+      private static List<GeometryObject> GetGeometryObjectListFromGeometryElement(Document doc, ExporterIFC exporterIFC, GeometryElement geomElement, out bool allNotToBeExported)
       {
          List<GeometryObject> geomObjectPrimitives = new List<GeometryObject>();
          SolidMeshGeometryInfo solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(geomElement);
-         foreach (Solid solid in solidMeshCapsule.GetSolids())
-            geomObjectPrimitives.Add(solid);
-         foreach (Mesh mesh in solidMeshCapsule.GetMeshes())
-            geomObjectPrimitives.Add(mesh);
+         int initialSolidMeshCount = solidMeshCapsule.GetSolids().Count + solidMeshCapsule.GetMeshes().Count;
+         geomObjectPrimitives = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, solidMeshCapsule.GetSolids(), solidMeshCapsule.GetMeshes());
+         allNotToBeExported = initialSolidMeshCount > 0 && geomObjectPrimitives.Count == 0;
 
          return geomObjectPrimitives;
       }
@@ -2205,21 +2205,33 @@ namespace Revit.IFC.Export.Exporter
          IList<int> colourIndex = new List<int>();
 
          // We need to collect all SOlids and Meshes from the GeometryObject if it is of types GeometryElement or GeometryInstance
+         bool allNotToBeExported = false;
          List<GeometryObject> geomObjectPrimitives = new List<GeometryObject>();
          if (geomObject is GeometryElement)
          {
-            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(geomObject as GeometryElement));
+            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(document, exporterIFC, geomObject as GeometryElement, out allNotToBeExported));
          }
          else if (geomObject is GeometryInstance)
          {
             GeometryInstance geomInst = geomObject as GeometryInstance;
-            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(geomInst.GetInstanceGeometry()));
+            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(document, exporterIFC, geomInst.GetInstanceGeometry(), out allNotToBeExported));
          }
          else if (geomObject is Solid)
-            geomObjectPrimitives.Add(geomObject);
+         {
+            IList<GeometryObject> visibleSolids = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(document, exporterIFC, new List<Solid>() { geomObject as Solid }, null);
+            if (visibleSolids != null && visibleSolids.Count > 0)
+               geomObjectPrimitives.AddRange(visibleSolids);
+            else
+               allNotToBeExported = true;
+         }
          else if (geomObject is Mesh)
-            geomObjectPrimitives.Add(geomObject);
-
+         {
+            IList<GeometryObject> visibleMeshes = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(document, exporterIFC, null, new List<Mesh>() { geomObject as Mesh });
+            if (visibleMeshes != null && visibleMeshes.Count > 0)
+               geomObjectPrimitives.AddRange(visibleMeshes);
+            else
+               allNotToBeExported = true;
+         }
          // At this point the collection will only contains Solids and/or Meshes. Loop through each of them
          foreach (GeometryObject geom in geomObjectPrimitives)
          {
@@ -2365,7 +2377,7 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
-         if (triangulatedBodyList == null || triangulatedBodyList.Count == 0)
+         if ((triangulatedBodyList == null || triangulatedBodyList.Count == 0) && !allNotToBeExported)
          {
             // It is not from Solid, so we will use the faces to export. It works for Surface export too
             IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject);
@@ -3685,10 +3697,11 @@ namespace Revit.IFC.Export.Exporter
             if (meshes.Count == 0)
             {
                IList<Solid> solidList = info.GetSolids();
-               foreach (Solid solid in solidList)
-               {
-                  geomList.Add(solid);
-               }
+               geomList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solidList, null);
+               //foreach (Solid solid in solidList)
+               //{
+               //   geomList.Add(solid);
+               //}
             }
          }
 

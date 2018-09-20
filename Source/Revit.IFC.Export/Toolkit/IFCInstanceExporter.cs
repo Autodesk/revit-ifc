@@ -5357,6 +5357,34 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Create an IfcBuildingSystem and assign it to the file. This is new in IFC4
+      /// </summary>
+      /// <param name="file"></param>
+      /// <param name="guid"></param>
+      /// <param name="ownerHistory"></param>
+      /// <param name="name"></param>
+      /// <param name="description"></param>
+      /// <param name="objectType"></param>
+      /// <returns></returns>
+      public static IFCAnyHandle CreateBuildingSystem(IFCFile file, IFCExportInfoPair entityToCreate, string guid, IFCAnyHandle ownerHistory, string name,
+         string description, string objectType, string longName)
+      {
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            return null;
+
+         ValidateGroup(guid, ownerHistory, name, objectType);
+
+         IFCAnyHandle buildingSystem = CreateInstance(file, IFCEntityType.IfcBuildingSystem, null);
+         SetGroup(buildingSystem, guid, ownerHistory, name, description, objectType);
+         if (!string.IsNullOrEmpty(entityToCreate.ValidatedPredefinedType))
+            IFCAnyHandleUtil.SetAttribute(buildingSystem, "PredefinedType", entityToCreate.ValidatedPredefinedType, true);
+         if (!string.IsNullOrEmpty(longName))
+            IFCAnyHandleUtil.SetAttribute(buildingSystem, "LongName", longName, false);
+
+         return buildingSystem;
+      }
+
+      /// <summary>
       /// Creates an IfcSystemFurnitureElementType, and assigns it to the file.
       /// </summary>
       /// <param name="file">The file.</param>
@@ -7258,7 +7286,8 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.ValidateSubTypeOf(enumerationReference, true, IFCEntityType.IfcPropertyEnumeration);
 
          IFCAnyHandle propertyEnumeratedValue = CreateInstance(file, IFCEntityType.IfcPropertyEnumeratedValue, null);
-         IFCAnyHandleUtil.SetAttribute(propertyEnumeratedValue, "EnumerationValues", enumerationValues);
+         if (enumerationValues != null && enumerationValues.Count > 0)
+            IFCAnyHandleUtil.SetAttribute(propertyEnumeratedValue, "EnumerationValues", enumerationValues);
          IFCAnyHandleUtil.SetAttribute(propertyEnumeratedValue, "EnumerationReference", enumerationReference);
          SetProperty(propertyEnumeratedValue, name, description);
          return propertyEnumeratedValue;

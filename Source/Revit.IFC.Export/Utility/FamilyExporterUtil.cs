@@ -584,8 +584,10 @@ namespace Revit.IFC.Export.Exporter
       public static List<GeometryObject> RemoveInvisibleSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, IList<Solid> solids, IList<Mesh> meshes)
       {
          List<GeometryObject> geomObjectsIn = new List<GeometryObject>();
-         geomObjectsIn.AddRange(solids);
-         geomObjectsIn.AddRange(meshes);
+         if (solids != null && solids.Count > 0)
+            geomObjectsIn.AddRange(solids);
+         if (meshes != null && meshes.Count > 0)
+            geomObjectsIn.AddRange(meshes);
 
          List<GeometryObject> geomObjectsOut = new List<GeometryObject>();
 
