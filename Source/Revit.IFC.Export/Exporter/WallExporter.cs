@@ -514,7 +514,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       // Get a list of solids and meshes, but only if we haven't already done so.
-      private static void GetSolidsAndMeshes(GeometryElement geometryElement, IFCRange range, ref IList<Solid> solids, ref IList<Mesh> meshes)
+      private static void GetSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, GeometryElement geometryElement, IFCRange range, ref IList<Solid> solids, ref IList<Mesh> meshes)
       {
          if (solids.Count > 0 || meshes.Count > 0)
             return;
@@ -523,8 +523,14 @@ namespace Revit.IFC.Export.Exporter
              (range == null) ? GeometryUtil.GetSplitSolidMeshGeometry(geometryElement) :
                  GeometryUtil.GetSplitClippedSolidMeshGeometry(geometryElement, range);
 
-         solids = solidMeshInfo.GetSolids();
-         meshes = solidMeshInfo.GetMeshes();
+         IList<GeometryObject> geomList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, solidMeshInfo.GetSolids(), solidMeshInfo.GetMeshes());
+         foreach (GeometryObject gObj in geomList)
+         {
+            if (gObj is Solid)
+               solids.Add(gObj as Solid);
+            else if (gObj is Mesh)
+               meshes.Add(gObj as Mesh);
+         }
       }
 
       // Takes into account the transform, assuming any rotation.
@@ -624,7 +630,7 @@ namespace Revit.IFC.Export.Exporter
          {
             if (!(element is FamilyInstance))
             {
-               GetSolidsAndMeshes(geometryElement, range, ref solids, ref meshes);
+               GetSolidsAndMeshes(element.Document, exporterIFC, geometryElement, range, ref solids, ref meshes);
                if (solids.Count == 0 && meshes.Count == 0)
                   return null;
             }
@@ -647,8 +653,16 @@ namespace Revit.IFC.Export.Exporter
                   trf = famInstWallElem.GetTransform();
 
                SolidMeshGeometryInfo solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(geomElemToUse, trf);
-               solids = solidMeshCapsule.GetSolids();
-               meshes = solidMeshCapsule.GetMeshes();
+               //solids = solidMeshCapsule.GetSolids();
+               //meshes = solidMeshCapsule.GetMeshes();
+               IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solidMeshCapsule.GetSolids(), solidMeshCapsule.GetMeshes());
+               foreach (GeometryObject gObj in gObjs)
+               {
+                  if (gObj is Solid)
+                     solids.Add(gObj as Solid);
+                  else if (gObj is Mesh)
+                     meshes.Add(gObj as Mesh);
+               }
             }
          }
 

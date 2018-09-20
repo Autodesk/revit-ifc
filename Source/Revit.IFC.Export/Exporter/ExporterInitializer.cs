@@ -37,11 +37,14 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    partial class ExporterInitializer
    {
-      class IFCPsetList
+      class IFCEntityAndPsetList
       {
          public string Version { get; set; }
          [JsonProperty("PropertySet List")]
          public HashSet<string> PsetList { get; set; } = new HashSet<string>();
+         [JsonProperty("Entity List")]
+         public HashSet<string> EntityList { get; set; } = new HashSet<string>();
+
          public bool PsetIsInTheList(string psetName)
          {
             // return true if there is no entry
@@ -53,29 +56,41 @@ namespace Revit.IFC.Export.Exporter
             else
                return false;
          }
+
+         public bool EntityIsInTheList(string entityName)
+         {
+            // return true if there is no entry
+            if (EntityList.Count == 0)
+               return true;
+
+            if (EntityList.Contains(entityName))
+               return true;
+            else
+               return false;
+         }
       }
 
-      class IFCCertifiedPSets
+      class IFCCertifiedEntitiesAndPSets
       {
-         public IDictionary<string,IFCPsetList> CertifiedPsetList { get; set; } = new Dictionary<string,IFCPsetList>();
-         public IFCCertifiedPSets()
+         public IDictionary<string,IFCEntityAndPsetList> CertifiedEntityAndPsetList { get; set; } = new Dictionary<string,IFCEntityAndPsetList>();
+         public IFCCertifiedEntitiesAndPSets()
          {
             string fileLoc = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
-            string filePath = Path.Combine(fileLoc, "IFCCertifiedPSets.json");
+            string filePath = Path.Combine(fileLoc, "IFCCertifiedEntitiesAndPSets.json");
 
             if (File.Exists(filePath))
             {
-               CertifiedPsetList = JsonConvert.DeserializeObject<IDictionary<string, IFCPsetList>>(File.ReadAllText(filePath));
+               CertifiedEntityAndPsetList = JsonConvert.DeserializeObject<IDictionary<string, IFCEntityAndPsetList>>(File.ReadAllText(filePath));
             }
          }
 
          public bool AllowPsetToBeCreated(string mvdName, string psetName)
          {
             // OK to create if the list is empty (not defined)
-            if (CertifiedPsetList.Count == 0)
+            if (CertifiedEntityAndPsetList.Count == 0)
                return true;
-            IFCPsetList theList;
-            if (CertifiedPsetList.TryGetValue(mvdName, out theList))
+            IFCEntityAndPsetList theList;
+            if (CertifiedEntityAndPsetList.TryGetValue(mvdName, out theList))
             {
                if (theList.PsetIsInTheList(psetName))
                   return true;
@@ -87,7 +102,7 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
-      static IFCCertifiedPSets certifiedPsetList;
+      static IFCCertifiedEntitiesAndPSets certifiedEntityAndPsetList;
 
       /// <summary>
       /// Initializes Pset_ProvisionForVoid.
@@ -146,8 +161,8 @@ namespace Revit.IFC.Export.Exporter
       public static void InitPropertySets(Exporter.PropertySetsToExport propertySetsToExport)
       {
          ParameterCache cache = ExporterCacheManager.ParameterCache;
-         if (certifiedPsetList == null)
-            certifiedPsetList = new IFCCertifiedPSets();
+         if (certifiedEntityAndPsetList == null)
+            certifiedEntityAndPsetList = new IFCCertifiedEntitiesAndPSets();
 
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportIFCCommon)
          {

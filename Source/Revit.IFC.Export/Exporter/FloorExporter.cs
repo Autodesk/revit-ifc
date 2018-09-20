@@ -219,9 +219,17 @@ namespace Revit.IFC.Export.Exporter
                      // Next, try to use the ExtrusionAnalyzer for the limited cases it handles - 1 solid, no openings, end clippings only.
                      // Also limited to cases with line and arc boundaries.
                      //
+                     IList<Solid> solids = new List<Solid>();
+                     IList<Mesh> meshes = new List<Mesh>();
                      SolidMeshGeometryInfo solidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(geometryElement);
-                     IList<Solid> solids = solidMeshInfo.GetSolids();
-                     IList<Mesh> meshes = solidMeshInfo.GetMeshes();
+                     IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(floorElement.Document, exporterIFC, solidMeshInfo.GetSolids(), solidMeshInfo.GetMeshes());
+                     foreach (GeometryObject gObj in gObjs)
+                     {
+                        if (gObj is Solid)
+                           solids.Add(gObj as Solid);
+                        else if (gObj is Mesh)
+                           meshes.Add(gObj as Mesh);
+                     }
 
                      if (solids.Count == 1 && meshes.Count == 0)
                      {
