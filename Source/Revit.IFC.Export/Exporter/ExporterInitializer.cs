@@ -100,6 +100,23 @@ namespace Revit.IFC.Export.Exporter
             else
                return true;
          }
+
+         public bool IsValidEntityInMVD(string mvdName, string entityName)
+         {
+            // OK to create if the list is empty (not defined)
+            if (CertifiedEntityAndPsetList.Count == 0)
+               return true;
+            IFCEntityAndPsetList theList;
+            if (CertifiedEntityAndPsetList.TryGetValue(mvdName, out theList))
+            {
+               if (theList.EntityIsInTheList(entityName))
+                  return true;
+               else
+                  return false;
+            }
+            else
+               return true;
+         }
       }
 
       static IFCCertifiedEntitiesAndPSets certifiedEntityAndPsetList;
