@@ -35,6 +35,7 @@ namespace Revit.IFC.Export.Utility
    {
       static TriangulatedShellComponent _geom;
       static Mesh _meshGeom;
+      static IDictionary<int, XYZ> _meshVertices = new Dictionary<int, XYZ>();
       
       HashSet<int> _mergedFaceList = new HashSet<int>();
 
@@ -67,6 +68,14 @@ namespace Revit.IFC.Export.Utility
       {
          _geom = null;
          _meshGeom = triangulatedMesh;
+         // A Dictionary is created for the mesh vertices due to performance issue for very large mesh if the vertex is accessed via its index
+         _meshVertices.Clear();
+         int idx = 0;
+         foreach (XYZ vert in _meshGeom.Vertices)
+         {
+            _meshVertices.Add(idx, vert);
+            idx++;
+         }
       }
 
       /// <summary>
@@ -150,7 +159,7 @@ namespace Revit.IFC.Export.Utility
             get
             {
                if (IsMesh)
-                  return _meshGeom.Vertices[startPindex].DistanceTo(_meshGeom.Vertices[endPIndex]);
+                  return _meshVertices[startPindex].DistanceTo(_meshVertices[endPIndex]);
                else
                   return _geom.GetVertex(startPindex).DistanceTo(_geom.GetVertex(endPIndex));
             }
@@ -210,12 +219,12 @@ namespace Revit.IFC.Export.Utility
             outerAndInnerBoundaries = setupEdges(indexOuterBoundary);
 
             IList<XYZ> vertices = new List<XYZ>();
-            for (int ii = 0; ii < indexOuterBoundary.Count; ++ii)
+            foreach (int idx in indexOuterBoundary)
             {
                if (IsMesh)
-                  vertices.Add(_meshGeom.Vertices[indexOuterBoundary[ii]]);
+                  vertices.Add(_meshVertices[idx]);
                else
-                  vertices.Add(_geom.GetVertex(indexOuterBoundary[ii]));
+                  vertices.Add(_geom.GetVertex(idx));
             }
             normal = NormalByNewellMethod(vertices);
          }
@@ -251,12 +260,12 @@ namespace Revit.IFC.Export.Utility
 
             // Create normal from only the outer boundary
             IList<XYZ> vertices = new List<XYZ>();
-            for (int ii = 0; ii < indexOuterBoundary.Count; ++ii)
+            foreach (int idx in indexOuterBoundary)
             {
                if (IsMesh)
-                  vertices.Add(_meshGeom.Vertices[indexOuterBoundary[ii]]);
+                  vertices.Add(_meshVertices[idx]);
                else
-                  vertices.Add(_geom.GetVertex(indexOuterBoundary[ii]));
+                  vertices.Add(_geom.GetVertex(idx));
             }
             normal = NormalByNewellMethod(vertices);
          }
@@ -735,12 +744,6 @@ namespace Revit.IFC.Export.Utility
                }
 
                mergedFace = new IndexFace(newFaceVertsLoops);
-
-               //currEdgeIdx = 0;
-               //reversedEdge = new IndexSegment(firstF.outerAndInnerBoundaries[0].endPIndex, firstF.outerAndInnerBoundaries[0].startPindex);
-
-               // Insert the merged face idx into mergedFacesIdxList and remove it from the inputFaceList and segmentOfFacesDict
-               //mergedFacesIdxList.Add(currFaceIdx);
                inputFaceList.Remove(currFaceIdx);
 
                // Remove the merged face from segmentOfFaceDict

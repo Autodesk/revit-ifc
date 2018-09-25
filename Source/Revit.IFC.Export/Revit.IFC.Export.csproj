@@ -87,6 +87,7 @@
     <Compile Include="Exporter\HandleAndData.cs" />
     <Compile Include="Exporter\HostedSweepExporter.cs" />
     <Compile Include="Exporter\HostObjectExporter.cs" />
+    <Compile Include="Exporter\IFCEntityAndPsetList.cs" />
     <Compile Include="Exporter\InsulationExporter.cs" />
     <Compile Include="Exporter\PartExporter.cs" />
     <Compile Include="Exporter\PileExporter.cs" />
@@ -242,6 +243,7 @@
     <Compile Include="Utility\GUIDUtil.cs" />
     <Compile Include="Utility\HandleToElementCache.cs" />
     <Compile Include="Utility\HostPartsCache.cs" />
+    <Compile Include="Utility\IFCExportInfoPair.cs" />
     <Compile Include="Utility\IntegerPropertyInfoCache.cs" />
     <Compile Include="Utility\LevelInfoCache.cs" />
     <Compile Include="Utility\LevelUtil.cs" />

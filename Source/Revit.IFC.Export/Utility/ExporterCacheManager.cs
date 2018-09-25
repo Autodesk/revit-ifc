@@ -404,6 +404,11 @@ namespace Revit.IFC.Export.Utility
       static IDictionary<Tuple<string, string>, string> m_PropertyMapCache;
 
       /// <summary>
+      /// The CertifiedEntitiesAndPsetCache
+      /// </summary>
+      static IFCCertifiedEntitiesAndPSets m_CertifiedEntitiesAndPsetCache;
+
+      /// <summary>
       /// The ParameterCache object.
       /// </summary>
       public static AllocatedGeometryObjectCache AllocatedGeometryObjectCache
@@ -553,10 +558,10 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
-/// <summary>
-/// The ParameterCache object.
-/// </summary>
-public static ParameterCache ParameterCache
+      /// <summary>
+      /// The ParameterCache object.
+      /// </summary>
+      public static ParameterCache ParameterCache
       {
          get
          {
@@ -1284,6 +1289,20 @@ public static ParameterCache ParameterCache
       }
 
       /// <summary>
+      /// The CertifiedEntitiesAndPsetCache
+      /// </summary>
+      public static IFCCertifiedEntitiesAndPSets CertifiedEntitiesAndPsetsCache
+      {
+         get
+         {
+            if (m_CertifiedEntitiesAndPsetCache == null)
+               m_CertifiedEntitiesAndPsetCache = new IFCCertifiedEntitiesAndPSets();
+
+            return m_CertifiedEntitiesAndPsetCache;
+         }
+      }
+
+      /// <summary>
       /// Clear all caches contained in this manager.
       /// </summary>
       public static void Clear()
@@ -1359,6 +1378,7 @@ public static ParameterCache ParameterCache
          m_ZoneCache = null;
          m_ZoneInfoCache = null;
          BuildingHandle = null;
+         m_CertifiedEntitiesAndPsetCache = null;
       }
    }
 }

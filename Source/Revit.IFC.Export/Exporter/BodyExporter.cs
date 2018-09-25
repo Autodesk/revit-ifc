@@ -2047,11 +2047,10 @@ namespace Revit.IFC.Export.Exporter
                IList<IList<double>> coordList = new List<IList<double>>();
 
                // Collect all the vertices first from the component
-               for (int jj = 0; jj < mesh.Vertices.Count; ++jj)
+               foreach (XYZ vertex in mesh.Vertices)
                {
                   List<double> vertCoord = new List<double>();
 
-                  XYZ vertex = mesh.Vertices[jj];
                   XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
 
                   vertCoord.Add(vertexScaled.X);
@@ -2329,11 +2328,9 @@ namespace Revit.IFC.Export.Exporter
                   IList<IList<int>> coordIdx = new List<IList<int>>();
 
                   // create list of vertices first.
-                  for (int ii = 0; ii < numberOfVertices; ii++)
+                  foreach(XYZ vertex in mesh.Vertices)
                   {
                      List<double> vertCoord = new List<double>();
-
-                     XYZ vertex = mesh.Vertices[ii];
                      XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
 
                      vertCoord.Add(vertexScaled.X);
@@ -2754,7 +2751,6 @@ namespace Revit.IFC.Export.Exporter
             if (!alreadyExported && canExportAsTessellatedFaceSet)
             {
                Transform trfToUse = GeometryUtil.GetScaledTransform(exporterIFC);
-               //IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, bodyData.OffsetTransform);
                IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
                {
@@ -3781,11 +3777,11 @@ namespace Revit.IFC.Export.Exporter
                   MeshTriangle triangle = faceTriangulation.get_Triangle(ii);
                   for (int tri = 0; tri < 3; ++tri)
                   {
-                     XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
+                     XYZ vert = triangle.get_Vertex(tri);
                      if (trfToUse != null)
-                        vert = trfToUse.OfPoint(vert);
+                        vert = trfToUse.Inverse.OfPoint(vert);
 
-                     triangleVertices.Add(vert);
+                     triangleVertices.Add(UnitUtil.ScaleLength(vert));
                   }
                   triangleList.Add(triangleVertices);
                }
@@ -3808,11 +3804,11 @@ namespace Revit.IFC.Export.Exporter
             MeshTriangle triangle = geomMesh.get_Triangle(ii);
             for (int tri = 0; tri < 3; ++tri)
             {
-               XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
+               XYZ vert = triangle.get_Vertex(tri);
                if (trfToUse != null)
-                  vert = trfToUse.OfPoint(vert);
+                  vert = trfToUse.Inverse.OfPoint(vert);
 
-               triangleVertices.Add(vert);
+               triangleVertices.Add(UnitUtil.ScaleLength(vert));
             }
             triangleList.Add(triangleVertices);
          }

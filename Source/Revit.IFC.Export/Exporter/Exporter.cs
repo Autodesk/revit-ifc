@@ -1837,7 +1837,7 @@ namespace Revit.IFC.Export.Exporter
             }
             else if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             {
-               descriptions.Add("ViewDefinition [ReferenceView_V1.1]");
+               descriptions.Add("ViewDefinition [ReferenceView_V1.2]");
             }
             else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView)
             {
