@@ -37,57 +37,7 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    partial class ExporterInitializer
    {
-      class IFCPsetList
-      {
-         public string Version { get; set; }
-         [JsonProperty("PropertySet List")]
-         public HashSet<string> PsetList { get; set; } = new HashSet<string>();
-         public bool PsetIsInTheList(string psetName)
-         {
-            // return true if there is no entry
-            if (PsetList.Count == 0)
-               return true;
-
-            if (PsetList.Contains(psetName))
-               return true;
-            else
-               return false;
-         }
-      }
-
-      class IFCCertifiedPSets
-      {
-         public IDictionary<string,IFCPsetList> CertifiedPsetList { get; set; } = new Dictionary<string,IFCPsetList>();
-         public IFCCertifiedPSets()
-         {
-            string fileLoc = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
-            string filePath = Path.Combine(fileLoc, "IFCCertifiedPSets.json");
-
-            if (File.Exists(filePath))
-            {
-               CertifiedPsetList = JsonConvert.DeserializeObject<IDictionary<string, IFCPsetList>>(File.ReadAllText(filePath));
-            }
-         }
-
-         public bool AllowPsetToBeCreated(string mvdName, string psetName)
-         {
-            // OK to create if the list is empty (not defined)
-            if (CertifiedPsetList.Count == 0)
-               return true;
-            IFCPsetList theList;
-            if (CertifiedPsetList.TryGetValue(mvdName, out theList))
-            {
-               if (theList.PsetIsInTheList(psetName))
-                  return true;
-               else
-                  return false;
-            }
-            else
-               return true;
-         }
-      }
-
-      static IFCCertifiedPSets certifiedPsetList;
+      static IFCCertifiedEntitiesAndPSets certifiedEntityAndPsetList;
 
       /// <summary>
       /// Initializes Pset_ProvisionForVoid.
@@ -146,8 +96,7 @@ namespace Revit.IFC.Export.Exporter
       public static void InitPropertySets(Exporter.PropertySetsToExport propertySetsToExport)
       {
          ParameterCache cache = ExporterCacheManager.ParameterCache;
-         if (certifiedPsetList == null)
-            certifiedPsetList = new IFCCertifiedPSets();
+         certifiedEntityAndPsetList = ExporterCacheManager.CertifiedEntitiesAndPsetsCache;
 
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportIFCCommon)
          {
@@ -712,6 +661,41 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// Initializes Stairflight base quantity
+      /// </summary>
+      /// <param name="baseQuantities">List to store quantities.</param>
+      private static void InitStairFlightBaseQuantities(IList<QuantityDescription> baseQuantities)
+      {
+         QuantityDescription ifcBaseQuantity = new QuantityDescription();
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         {
+            ifcBaseQuantity.Name = "Qto_StairFlightBaseQuantities";
+         }
+         else
+         {
+            ifcBaseQuantity.Name = "BaseQuantities";
+         }
+         ifcBaseQuantity.EntityTypes.Add(IFCEntityType.IfcStairFlight);
+
+         QuantityEntry ifcQE = new QuantityEntry("Length");
+         ifcQE.QuantityType = QuantityType.PositiveLength;
+         ifcQE.PropertyCalculator = LengthCalculator.Instance;
+         ifcBaseQuantity.AddEntry(ifcQE);
+
+         ifcQE = new QuantityEntry("GrossVolume");
+         ifcQE.QuantityType = QuantityType.Volume;
+         ifcQE.PropertyCalculator = GrossVolumeCalculator.Instance;
+         ifcBaseQuantity.AddEntry(ifcQE);
+
+         ifcQE = new QuantityEntry("NetVolume");
+         ifcQE.QuantityType = QuantityType.Volume;
+         ifcQE.PropertyCalculator = NetVolumeCalculator.Instance;
+         ifcBaseQuantity.AddEntry(ifcQE);
+
+         baseQuantities.Add(ifcBaseQuantity);
+      }
+
+      /// <summary>
       /// Initializes Building Storey base quantity
       /// </summary>
       /// <param name="baseQuantities"></param>
@@ -1151,6 +1135,7 @@ namespace Revit.IFC.Export.Exporter
          InitRailingBaseQuantities(baseQuantities);
          InitSlabBaseQuantities(baseQuantities);
          InitRampFlightBaseQuantities(baseQuantities);
+         InitStairFlightBaseQuantities(baseQuantities);
          InitBuildingStoreyBaseQuantities(baseQuantities);
          InitSpaceBaseQuantities(baseQuantities);
          InitCoveringBaseQuantities(baseQuantities);

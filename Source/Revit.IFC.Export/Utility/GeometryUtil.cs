@@ -563,7 +563,7 @@ namespace Revit.IFC.Export.Utility
             {
                try
                {
-                  if (solid.Volume <= MathUtil.Eps())
+                  if (solid.Volume <= MathUtil.Eps() && solid.Faces.Size == 0)
                      continue;
                }
                catch
@@ -886,7 +886,20 @@ namespace Revit.IFC.Export.Utility
             if (numBoundaries > 1)
                throw new Exception("Can't handle faces with interior boundaries.");
 
-            ICollection<ElementId> generatingElementIds = elem.GetGeneratingElementIds(currFace.Key);
+            // In some cases the native function throws an exception, skip this face if it occurs
+            ICollection<ElementId> generatingElementIds;
+            try
+            {
+               generatingElementIds = elem.GetGeneratingElementIds(currFace.Key);
+            }
+            catch
+            {
+               continue;
+            }
+
+            if (generatingElementIds == null)
+               continue;
+
             foreach (ElementId generatingElementId in generatingElementIds)
             {
                ICollection<Face> elementFaces;
@@ -2622,7 +2635,7 @@ namespace Revit.IFC.Export.Utility
          if (contains2DPoint && contains3DPoint)
          {
             // Something is not right because of a mix of 2D and 3D coordinates. It will normalize below and discard the 3rd ordinate of 3D coordinates to 2D
-            for (int ii=0; ii<pointList.Count; ++ii)
+            for (int ii = 0; ii < pointList.Count; ++ii)
             {
                if (pointList[ii].Count == 3)
                   pointList[ii].RemoveAt(2);
@@ -2643,6 +2656,12 @@ namespace Revit.IFC.Export.Utility
       /// <returns>return true/false</returns>
       public static bool CreatePolyCurveFromCurveLoop(ExporterIFC exporterIFC, CurveLoop curveLoop, Transform lcs, XYZ projectDir, out IFCAnyHandle indexedPolyCurve)
       {
+         if (curveLoop.Count() == 0)
+         {
+            indexedPolyCurve = null;
+            return false;
+         }
+
          IFCFile file = exporterIFC.GetFile();
          List<IList<double>> pointList = new List<IList<double>>();
          //IList<IFCAnyHandle> segmentIndexList = new List<IFCAnyHandle>();
@@ -2767,6 +2786,9 @@ namespace Revit.IFC.Export.Utility
          if (lcs == null || projectDir == null)
             use3DPoint = true;
 
+         if (curve == null)
+            return null;
+
          if (curve is Line)
          {
             PointListFromLine(exporterIFC, curve as Line, lcs, projectDir, out pointList, out segmentIndex);
@@ -2799,13 +2821,26 @@ namespace Revit.IFC.Export.Utility
       private static List<XYZ> CustomCurveTessellation(Curve curve, int intervalPercentage)
       {
          List<XYZ> tessellatedCurve = new List<XYZ>();
-         tessellatedCurve.Add(curve.GetEndPoint(0));
-         // An integer value is used here to get an accurate interval the value ranges from 0 to 100 percent
-         for (int intv = intervalPercentage; intv < 100; intv += intervalPercentage)
+         if (curve.IsBound)
          {
-            tessellatedCurve.Add(curve.Evaluate(intv / 100.0, true));
+            tessellatedCurve.Add(curve.GetEndPoint(0));
+            // An integer value is used here to get an accurate interval the value ranges from 0 to 100 percent
+            for (int intv = intervalPercentage; intv < 100; intv += intervalPercentage)
+            {
+               tessellatedCurve.Add(curve.Evaluate(intv / 100.0, true));
+            }
+            tessellatedCurve.Add(curve.GetEndPoint(1));
          }
-         tessellatedCurve.Add(curve.GetEndPoint(1));
+         else
+         {
+            if (curve is Arc || curve is Ellipse)
+            {
+               for (int intv = 0; intv <= 360; intv += intervalPercentage)
+               {
+                  tessellatedCurve.Add(curve.Evaluate(2 * Math.PI * intv / 360.0, false));
+               }
+            }
+         }
 
          return tessellatedCurve;
       }
@@ -3412,7 +3447,7 @@ namespace Revit.IFC.Export.Utility
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {
             IList<int> segmentIndex = null;
-            IList<IList<double>> pointList = GeometryUtil.PointListFromCurve(exporterIFC, curve, null, null, out segmentIndex);
+            IList<IList<double>> pointList = GeometryUtil.PointListFromCurve(exporterIFC, curve, additionalTrf, null, out segmentIndex);
 
             IList<IList<int>> segmentIndexList = new List<IList<int>>();
             // Not using segment index for now because there is no API to create the appropriate type yet
@@ -3435,14 +3470,15 @@ namespace Revit.IFC.Export.Utility
                //ifcCurve = CreateLineSegment(exporterIFC, curveLine);
 
                // Create line based trimmed curve for Axis
-               IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints);
+               IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints, additionalTrf);
+               XYZ dir = (additionalTrf == null) ? curveLine.Direction : additionalTrf.OfVector(curveLine.Direction);
                IFCAnyHandle vector = VectorToIfcVector(exporterIFC, curveLine.Direction);
                IFCAnyHandle line = IFCInstanceExporter.CreateLine(file, curveOrigin, vector);
 
-               IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints);
+               IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints, additionalTrf);
                HashSet<IFCData> trim1 = new HashSet<IFCData>();
                trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
-               IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints);
+               IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints, additionalTrf);
                HashSet<IFCData> trim2 = new HashSet<IFCData>();
                trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
                ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, line, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
@@ -3452,9 +3488,9 @@ namespace Revit.IFC.Export.Utility
          else if (curve is Arc)
          {
             Arc curveArc = curve as Arc;
-            XYZ curveArcCenter = curveArc.Center;
-            XYZ curveArcNormal = curveArc.Normal;
-            XYZ curveArcXDirection = curveArc.XDirection;
+            XYZ curveArcCenter = (additionalTrf == null) ? curveArc.Center : additionalTrf.OfPoint(curveArc.Center);
+            XYZ curveArcNormal = (additionalTrf == null) ? curveArc.Normal : additionalTrf.OfVector(curveArc.Normal);
+            XYZ curveArcXDirection = (additionalTrf == null) ? curveArc.XDirection : additionalTrf.OfVector(curveArc.XDirection);
 
             if (curveArcCenter == null || curveArcNormal == null || curveArcXDirection == null)
             {
@@ -3472,11 +3508,11 @@ namespace Revit.IFC.Export.Utility
             IFCAnyHandle position3D = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
             IFCAnyHandle circle = IFCInstanceExporter.CreateCircle(file, position3D, UnitUtil.ScaleLength(curveArc.Radius));
 
-            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(0), cartesianPoints);
+            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(0), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim1 = new HashSet<IFCData>();
             trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
 
-            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(1), cartesianPoints);
+            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(1), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim2 = new HashSet<IFCData>();
             trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
 
@@ -3487,10 +3523,10 @@ namespace Revit.IFC.Export.Utility
          {
             Ellipse curveEllipse = curve as Ellipse;
             IList<double> direction = new List<double>();
-            XYZ ellipseNormal = curveEllipse.Normal;
-            XYZ ellipseXDirection = curveEllipse.XDirection;
+            XYZ ellipseNormal = (additionalTrf == null) ? curveEllipse.Normal : additionalTrf.OfVector(curveEllipse.Normal);
+            XYZ ellipseXDirection = (additionalTrf == null) ? curveEllipse.XDirection : additionalTrf.OfVector(curveEllipse.XDirection);
 
-            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.Center, cartesianPoints);
+            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.Center, cartesianPoints, additionalTrf);
 
             IFCAnyHandle axis = VectorToIfcDirection(exporterIFC, ellipseNormal);
 
@@ -3501,11 +3537,11 @@ namespace Revit.IFC.Export.Utility
 
             IFCAnyHandle ellipse = IFCInstanceExporter.CreateEllipse(file, position, UnitUtil.ScaleLength(curveEllipse.RadiusX), UnitUtil.ScaleLength(curveEllipse.RadiusY));
 
-            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(0), cartesianPoints);
+            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(0), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim1 = new HashSet<IFCData>();
             trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
 
-            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(1), cartesianPoints);
+            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(1), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim2 = new HashSet<IFCData>();
             trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
 
@@ -3831,7 +3867,7 @@ namespace Revit.IFC.Export.Utility
                compCurveHandle = GeometryUtil.CreateCompositeCurve(exporterIFC, profileCurves);
 
             IFCAnyHandle profileDef = IFCInstanceExporter.CreateArbitraryClosedProfileDef(exporterIFC.GetFile(), IFCProfileType.Curve, profileName, compCurveHandle);
-            
+
             ElementId materialId = familyInstance.GetMaterialIds(false).FirstOrDefault();
             if (materialId == null)
                materialId = ElementId.InvalidElementId;
@@ -3991,6 +4027,257 @@ namespace Revit.IFC.Export.Utility
          normal.Normalize();
          Plane planeOfArc = Plane.CreateByNormalAndOrigin(normal, P1);
          return planeOfArc;
+      }
+
+      /// <summary>
+      /// Function to collect Family geometry element data summary for comparison purpose
+      /// </summary>
+      /// <param name="geomElement">the family geometry element</param>
+      /// <returns>FamyGeometrySummaryData</returns>
+      public static FamilyGeometrySummaryData CollectFamilyGeometrySummaryData(GeometryElement geomElement)
+      {
+         FamilyGeometrySummaryData famGeomData = new FamilyGeometrySummaryData();
+         foreach (GeometryObject geomObj in geomElement)
+         {
+            if (geomObj is Curve)
+            {
+               famGeomData.CurveCount++;
+               famGeomData.CurveLengthTotal += (geomObj as Curve).Length;
+            }
+            else if (geomObj is Edge)
+            {
+               famGeomData.EdgeCount++;
+            }
+            else if (geomObj is Face)
+            {
+               famGeomData.FaceCount++;
+               famGeomData.FaceAreaTotal += (geomObj as Face).Area;
+            }
+            else if (geomObj is GeometryInstance)
+            {
+               famGeomData.GeometryInstanceCount++;
+            }
+            else if (geomObj is GeometryElement)
+            {
+               famGeomData.Add(CollectFamilyGeometrySummaryData(geomObj as GeometryElement));
+            }
+            else if (geomObj is Mesh)
+            {
+               famGeomData.MeshCount++;
+               famGeomData.MeshNumberOfTriangleTotal += (geomObj as Mesh).NumTriangles;
+            }
+            else if (geomObj is Point)
+            {
+               famGeomData.PointCount++;
+            }
+            else if (geomObj is PolyLine)
+            {
+               famGeomData.PolylineCount++;
+               famGeomData.PolylineNumberOfCoordinatesTotal += (geomObj as PolyLine).NumberOfCoordinates;
+            }
+            else if (geomObj is Profile)
+            {
+               famGeomData.ProfileCount++;
+            }
+            else if (geomObj is Solid)
+            {
+               famGeomData.SolidCount++;
+               famGeomData.SolidVolumeTotal += (geomObj as Solid).Volume;
+               famGeomData.SolidSurfaceAreaTotal += (geomObj as Solid).SurfaceArea;
+               famGeomData.SolidFacesCountTotal += (geomObj as Solid).Faces.Size;
+               famGeomData.SolidEdgesCountTotal += (geomObj as Solid).Edges.Size;
+            }
+         }
+         return famGeomData;
+      }
+
+      /// <summary>
+      /// Evaluate whether we should use the geomtry from the family instance, or we can use the common one from the Symbol
+      /// </summary>
+      /// <param name="familyInstance">the family instance</param>
+      /// <returns>true/false</returns>
+      public static bool UsesInstanceGeometry(FamilyInstance familyInstance)
+      {
+         GeometryElement famInstGeom = familyInstance.get_Geometry(GetIFCExportGeometryOptions());
+         FamilyGeometrySummaryData instData = CollectFamilyGeometrySummaryData(famInstGeom);
+         if (instData.OnlyContainsGeometryInstance())
+            return false;
+
+         GeometryElement famSymbolGeom = familyInstance.Symbol.get_Geometry(GetIFCExportGeometryOptions());
+         FamilyGeometrySummaryData symbolData = CollectFamilyGeometrySummaryData(famSymbolGeom);
+         if (instData.Equal(symbolData))
+            return false;
+
+         return true;
+      }
+
+      /// <summary>
+      /// Get Arc or Line from Family Symbol given a family instance. This works by finding the related 2D geometries that can be obtained from the Plan View
+      /// </summary>
+      /// <param name="element">the family instance</param>
+      /// <param name="allCurveType">set it to true if all 2D based curves are to be included</param>
+      /// <param name="inclArc">set it to true if only the Arc to be included</param>
+      /// <param name="inclLine">set it to true if only Line to be included</param>
+      /// <param name="inclEllipse">set it to true if only Ellipse to be included</param>
+      /// <param name="inclSpline">set it to true if only Splines to be included (incl. HermitSpline and NurbSpline)</param>
+      /// <returns>the List of 2D curves found</returns>
+      public static IList<Curve> Get2DArcOrLineFromSymbol(FamilyInstance element, bool allCurveType,
+         bool inclArc = false, bool inclLine = false, bool inclEllipse = false, bool inclSpline = false)
+      {
+         IList<Curve> curveList = new List<Curve>();
+         // If all curve option is set, set all flags to true
+         if (allCurveType)
+         {
+            inclArc = true;
+            inclLine = true;
+            inclEllipse = true;
+            inclSpline = true;
+         }
+         else if (!allCurveType && !(inclArc || inclLine || inclEllipse || inclSpline))
+            return curveList;       // Nothing is marked included, return empty list
+
+         Document doc = element.Document;
+         if (element.LevelId == ElementId.InvalidElementId)
+            return curveList;
+
+         Level level = element.Document.GetElement(element.LevelId) as Level;
+         if (level.FindAssociatedPlanViewId() == ElementId.InvalidElementId)
+            return curveList;
+
+         ViewPlan planView = doc.GetElement(level.FindAssociatedPlanViewId()) as ViewPlan;
+
+         Options options = GeometryUtil.GetIFCExportGeometryOptions();
+         Options opt = new Options();
+         opt.View = planView;
+         opt.ComputeReferences = options.ComputeReferences;
+         opt.IncludeNonVisibleObjects = options.IncludeNonVisibleObjects;
+
+         GeometryElement geoms = element.Symbol.get_Geometry(opt);
+         foreach (GeometryObject geomObj in geoms)
+         {
+            if (inclArc && geomObj is Arc)
+               curveList.Add(geomObj as Arc);
+
+            if (inclLine && geomObj is Line)
+               curveList.Add(geomObj as Line);
+
+            if (inclEllipse && geomObj is Ellipse)
+               curveList.Add(geomObj as Ellipse);
+
+            if (inclSpline && (geomObj is HermiteSpline || geomObj is NurbSpline))
+               curveList.Add(geomObj as Curve);
+         }
+
+         return curveList;
+      }
+
+      enum NormalDirection
+      {
+         UsePosX,
+         UsePosY,
+         UsePosZ,
+         UseNegX,
+         UseNegY,
+         UseNegZ
+      }
+
+      /// <summary>
+      /// Get the largest face from a Solid
+      /// </summary>
+      /// <param name="geomObj">the geometry Solid</param>
+      /// <param name="normalDirection">Normal direction of the face to return (only accept (1,0,0), (0,1,0), or (0,0,1))</param>
+      /// <returns>the largest face</returns>
+      public static Face GetLargestFaceInSolid(GeometryObject geomObj, XYZ normalDirection)
+      {
+         Face largestFace = null;
+         double largestArea = 0.0;
+
+         if (geomObj == null)
+            return largestFace;
+
+         Solid geomSolid = geomObj as Solid;
+         if (geomSolid == null)
+            return largestFace;
+
+         foreach (Face face in geomSolid.Faces)
+         {
+            // Identifying the largest area with normal pointing up
+            XYZ faceNormal = face.ComputeNormal(new UV());
+
+            bool useThisFace = false;
+            if (MathUtil.IsAlmostEqual(normalDirection.X, 1.0) && faceNormal.X > 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.Y, 1.0) && faceNormal.Y > 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.Z, 1.0) && faceNormal.Z > 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.X, -1.0) && faceNormal.X < 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.Y, -1.0) && faceNormal.Y < 0)
+               useThisFace = true;
+            else if (MathUtil.IsAlmostEqual(normalDirection.Z, -1.0) && faceNormal.Z < 0)
+               useThisFace = true;
+
+            if (!useThisFace)
+               continue;
+
+            if (face.Area > largestArea)
+            {
+               largestFace = face;
+               largestArea = face.Area;
+            }
+         }
+
+         return largestFace;
+      }
+
+      /// <summary>
+      /// Get face angle/slope. This will be calculated at UV (0,0)
+      /// </summary>
+      /// <param name="face">the face</param>
+      /// <param name="projection">the XYZ to which the </param>
+      /// <returns>the slope angle</returns>
+      public static double GetAngleOfFace(Face face, XYZ projection)
+      {
+         double angle = 0.0;
+
+         // Compute normal at UV (0,0)
+         XYZ faceNormal = face.ComputeNormal(new UV());
+         projection = projection.Normalize();
+         double normalAngleToProjection = Math.Acos(faceNormal.DotProduct(projection));
+         double slopeAngle = 0.5 * Math.PI - normalAngleToProjection;
+         angle = UnitUtil.ScaleAngle(slopeAngle);
+
+         return angle;
+      }
+
+      /// <summary>
+      /// Iterate and recurse GeometryElement to find all Curves
+      /// </summary>
+      /// <param name="geomElem">the GeometryElement</param>
+      /// <returns>List of Curves found in the GeometryElement</returns>
+      public static List<Curve> GetCurvesFromGeometryElement(GeometryElement geomElem)
+      {
+         List<Curve> curveList = new List<Curve>();
+         foreach(GeometryObject geomObject in geomElem)
+         {
+            if (geomObject is GeometryElement)
+            {
+               curveList.AddRange(GetCurvesFromGeometryElement(geomObject as GeometryElement));
+            }
+            else if (geomObject is GeometryInstance)
+            {
+               GeometryElement instGeom = (geomObject as GeometryInstance).GetInstanceGeometry();
+               if (instGeom != null)
+                  curveList.AddRange(GetCurvesFromGeometryElement(instGeom));
+            }
+            else if (geomObject is Curve)
+            {
+               curveList.Add(geomObject as Curve);
+            }
+         }
+
+         return curveList;
       }
    }
 }

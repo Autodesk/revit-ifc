@@ -1,16 +1,21 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2026
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revit.IFC.Import", "Source\Revit.IFC.Import\Revit.IFC.Import.csproj", "{7F987D09-9716-4F50-ADE0-278E4B537101}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revit.IFC.Export", "Source\Revit.IFC.Export\Revit.IFC.Export.csproj", "{BCE5141A-291B-4CD8-A69B-7B9345AA00E9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revit.IFC.Common", "Source\Revit.IFC.Common\Revit.IFC.Common.csproj", "{032EA4DC-181F-4453-9F93-E08DE1C07D95}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IFCExporterUI", "Source\IFCExporterUIOverride\IFCExporterUIOverride.csproj", "{BF694550-5BEB-4DCF-8EC2-A5904690DC17}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IFCExporterUIOverride", "Source\IFCExporterUIOverride\IFCExporterUIOverride.csproj", "{BF694550-5BEB-4DCF-8EC2-A5904690DC17}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Install", "Install", "{88C55E9A-2767-48B7-A035-E3D864C4FF09}"
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "RevitIFCSetupWix", "Install\RevitIFCSetupWix\RevitIFCSetupWix.wixproj", "{7DFBD495-C588-4C7B-B8F6-5B793ADB06F2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitIFCTools", "Source\RevitIFCTools\RevitIFCTools.csproj", "{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,12 +77,27 @@ Global
 		{7DFBD495-C588-4C7B-B8F6-5B793ADB06F2}.Release|Mixed Platforms.Build.0 = Release|x86
 		{7DFBD495-C588-4C7B-B8F6-5B793ADB06F2}.Release|x86.ActiveCfg = Release|x86
 		{7DFBD495-C588-4C7B-B8F6-5B793ADB06F2}.Release|x86.Build.0 = Release|x86
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Debug|x86.Build.0 = Debug|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Release|x86.ActiveCfg = Release|Any CPU
+		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{7DFBD495-C588-4C7B-B8F6-5B793ADB06F2} = {88C55E9A-2767-48B7-A035-E3D864C4FF09}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B668FD10-EBF0-4486-9314-7799D7850E32}
 	EndGlobalSection
 	GlobalSection(DPCodeReviewSolutionGUID) = preSolution
 		DPCodeReviewSolutionGUID = {00000000-0000-0000-0000-000000000000}

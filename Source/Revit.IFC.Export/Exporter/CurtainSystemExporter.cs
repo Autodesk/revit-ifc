@@ -55,7 +55,15 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          string overrideCADLayer = null;
-         ParameterUtil.GetStringValueFromElementOrSymbol(wallElement, "IFCCadLayer", out overrideCADLayer);
+         if (ParameterUtil.GetStringValueFromElementOrSymbol(wallElement, "IFCCadLayer", out overrideCADLayer) == null 
+            || string.IsNullOrWhiteSpace(overrideCADLayer))
+         {
+            if ((ParameterUtil.GetStringValueFromElementOrSymbol(wallElement, "IfcPresentationLayer", out overrideCADLayer) == null) 
+               || string.IsNullOrWhiteSpace(overrideCADLayer))
+            {
+               overrideCADLayer = ExporterStateManager.GetCurrentCADLayerOverride();
+            }
+         }
 
          using (ExporterStateManager.CADLayerOverrideSetter layerSetter = new ExporterStateManager.CADLayerOverrideSetter(overrideCADLayer))
          {
@@ -92,7 +100,7 @@ namespace Revit.IFC.Export.Exporter
                            if (subElem is Mullion)
                            {
                               if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
-                                 ProxyElementExporter.Export(exporterIFC, subElem, geomElem, productWrapper);
+                                 ProxyElementExporter.Export(exporterIFC, subElem, geomElem, productWrapper, exportType);
                               else
                               {
                                  IFCAnyHandle currLocalPlacement = currSetter.LocalPlacement;
@@ -102,7 +110,7 @@ namespace Revit.IFC.Export.Exporter
                                     // By default, panels and mullions are set to the same category as their parent.  In this case,
                                     // ask to get the exportType from the category id, since we don't want to inherit the parent class.
                                     exportType.SetValueWithPair(IFCEntityType.IfcMemberType);
-                                    ifcEnumType = "MULLION";
+                                    exportType.ValidatedPredefinedType = ifcEnumType = "MULLION";
                                  }
 
                                  FamilyInstanceExporter.ExportFamilyInstanceAsMappedItem(exporterIFC, subElem as Mullion, exportType, ifcEnumType, productWrapper,
@@ -674,11 +682,13 @@ namespace Revit.IFC.Export.Exporter
 
          Document doc = element.Document;
          ElementId typeElemId = element.GetTypeId();
-         Element elementType = doc.GetElement(typeElemId);
+         ElementType elementType = doc.GetElement(typeElemId) as ElementType;
          if (elementType == null)
             return;
 
-         IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(typeElemId);
+         IFCExportInfoPair exportType = new IFCExportInfoPair();
+         exportType.SetValueWithPair(IFCEntityType.IfcCurtainWallType);
+         IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(wallType))
          {
             ExporterCacheManager.TypeRelationsCache.Add(wallType, elementHandle);
@@ -692,7 +702,7 @@ namespace Revit.IFC.Export.Exporter
          wallType = IFCInstanceExporter.CreateCurtainWallType(exporterIFC.GetFile(), elementType,
              null, null, elemElementType, (elemElementType != null) ? "USERDEFINED" : "NOTDEFINED");
 
-         wrapper.RegisterHandleWithElementType(elementType as ElementType, wallType, null);
+         wrapper.RegisterHandleWithElementType(elementType, exportType, wallType, null);
 
          ExporterCacheManager.TypeRelationsCache.Add(wallType, elementHandle);
       }
