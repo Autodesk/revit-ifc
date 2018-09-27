@@ -91,116 +91,134 @@ namespace Revit.IFC.Export.Exporter
 
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet))
             {
-               // IfcMaterialLayerSetUsage is not supported for IfcWall, only IfcWallStandardCase.
-               IFCAnyHandle layerSetUsage = null;
-               for (int ii = 0; ii < elemHnds.Count; ii++)
+               // If there is an override for creating IfcMaterial instead of IfcMaterialLayer for a single material/layer, assign the material directly to type or element(s)
+               if (IFCAnyHandleUtil.IsTypeOf(materialLayerSet, IFCEntityType.IfcMaterial))
                {
-                  IFCAnyHandle elemHnd = elemHnds[ii];
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(elemHnd))
-                     continue;
-
-                  SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, elemHnd, hostObject.Id, levelId);
-
-                  // Even if it is Tessellated geometry in IFC4RV, the material layer will still be assigned
-                  if (containsBRepGeometry && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                     continue;
-
-                  HashSet<IFCAnyHandle> relDecomposesSet = IFCAnyHandleUtil.GetRelDecomposes(elemHnd);
-
-                  IList<IFCAnyHandle> subElemHnds = null;
-                  if (relDecomposesSet != null && relDecomposesSet.Count == 1)
+                  if (typeHnd != null)
                   {
-                     IFCAnyHandle relAggregates = relDecomposesSet.First();
-                     if (IFCAnyHandleUtil.IsTypeOf(relAggregates, IFCEntityType.IfcRelAggregates))
-                        subElemHnds = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(relAggregates, "RelatedObjects");
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
                   }
-
-                  bool hasSubElems = (subElemHnds != null && subElemHnds.Count != 0);
-                  bool isRoof = IFCAnyHandleUtil.IsTypeOf(elemHnd, IFCEntityType.IfcRoof);
-                  bool isDisallowedWallType = (IFCAnyHandleUtil.IsTypeOf(elemHnd, IFCEntityType.IfcWall) && !ExporterCacheManager.ExportOptionsCache.ExportAs4);
-
-                  // Create IfcMaterialLayerSetUsage unless we have sub-elements, are exporting a Roof, or are exporting a pre-IFC4 IfcWall.
-                  if (!hasSubElems && !isRoof && !isDisallowedWallType)
-                  {
-                     bool materialAlreadyAssoc = false;
-                     if (typeHnd != null)
+                  //else
+                  //{
+                     foreach (IFCAnyHandle elemHnd in elemHnds)
                      {
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
-                        materialAlreadyAssoc = true;
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                     }
+                  //}
+               }
+               else
+               {
+                  // IfcMaterialLayerSetUsage is not supported for IfcWall, only IfcWallStandardCase.
+                  IFCAnyHandle layerSetUsage = null;
+                  for (int ii = 0; ii < elemHnds.Count; ii++)
+                  {
+                     IFCAnyHandle elemHnd = elemHnds[ii];
+                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(elemHnd))
+                        continue;
+
+                     SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, elemHnd, hostObject.Id, levelId);
+
+                     // Even if it is Tessellated geometry in IFC4RV, the material layer will still be assigned
+                     if (containsBRepGeometry && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                        continue;
+
+                     HashSet<IFCAnyHandle> relDecomposesSet = IFCAnyHandleUtil.GetRelDecomposes(elemHnd);
+
+                     IList<IFCAnyHandle> subElemHnds = null;
+                     if (relDecomposesSet != null && relDecomposesSet.Count == 1)
+                     {
+                        IFCAnyHandle relAggregates = relDecomposesSet.First();
+                        if (IFCAnyHandleUtil.IsTypeOf(relAggregates, IFCEntityType.IfcRelAggregates))
+                           subElemHnds = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(relAggregates, "RelatedObjects");
                      }
 
-                     if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                     bool hasSubElems = (subElemHnds != null && subElemHnds.Count != 0);
+                     bool isRoof = IFCAnyHandleUtil.IsTypeOf(elemHnd, IFCEntityType.IfcRoof);
+                     bool isDisallowedWallType = (IFCAnyHandleUtil.IsTypeOf(elemHnd, IFCEntityType.IfcWall) && !ExporterCacheManager.ExportOptionsCache.ExportAs4);
+
+                     // Create IfcMaterialLayerSetUsage unless we have sub-elements, are exporting a Roof, or are exporting a pre-IFC4 IfcWall.
+                     if (!hasSubElems && !isRoof && !isDisallowedWallType)
                      {
-                        if (!materialAlreadyAssoc)
+                        bool materialAlreadyAssoc = false;
+                        if (typeHnd != null)
                         {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
+                              //materialAlreadyAssoc = true;
+                        }
+
+                        if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                        {
+                           if (!materialAlreadyAssoc)
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                           }
+                        }
+                        else
+                        {
+                           if (layerSetUsage == null)
+                           {
+                              bool flipDirSense = true;
+                              if (wall != null)
+                              {
+                                 // if we have flipped the center curve on export, we need to take that into account here.
+                                 // We flip the center curve on export if it is an arc and it has a negative Z direction.
+                                 LocationCurve locCurve = wall.Location as LocationCurve;
+                                 if (locCurve != null)
+                                 {
+                                    Curve curve = locCurve.Curve;
+                                    Transform lcs = Transform.Identity;
+                                    bool curveFlipped = GeometryUtil.MustFlipCurve(lcs, curve);
+                                    flipDirSense = !(wall.Flipped ^ curveFlipped);
+                                 }
+                              }
+                              else if (hostObject is CeilingAndFloor)
+                              {
+                                 flipDirSense = false;
+                              }
+
+                              double offsetFromReferenceLine = flipDirSense ? -scaledOffset : scaledOffset;
+                              IFCDirectionSense sense = flipDirSense ? IFCDirectionSense.Negative : IFCDirectionSense.Positive;
+
+                              layerSetUsage = IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet, direction, sense, offsetFromReferenceLine);
+                           }
+                           ExporterCacheManager.MaterialLayerRelationsCache.Add(layerSetUsage, elemHnd);
                         }
                      }
                      else
                      {
-                        if (layerSetUsage == null)
+                        if (hasSubElems)
                         {
-                           bool flipDirSense = true;
-                           if (wall != null)
+                           foreach (IFCAnyHandle subElemHnd in subElemHnds)
                            {
-                              // if we have flipped the center curve on export, we need to take that into account here.
-                              // We flip the center curve on export if it is an arc and it has a negative Z direction.
-                              LocationCurve locCurve = wall.Location as LocationCurve;
-                              if (locCurve != null)
+                              // TODO: still need to figure out the best way to create type for the sub elements because at this time a lot of information is not available, e.g.
+                              //    the Revit Element to get the type, other information for name, GUID, etc.
+                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(subElemHnd))
                               {
-                                 Curve curve = locCurve.Curve;
-                                 Transform lcs = Transform.Identity;
-                                 bool curveFlipped = GeometryUtil.MustFlipCurve(lcs, curve);
-                                 flipDirSense = !(wall.Flipped ^ curveFlipped);
+                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, subElemHnd, materialLayerSet);
                               }
                            }
-                           else if (hostObject is CeilingAndFloor)
-                           {
-                              flipDirSense = false;
-                           }
-
-                           double offsetFromReferenceLine = flipDirSense ? -scaledOffset : scaledOffset;
-                           IFCDirectionSense sense = flipDirSense ? IFCDirectionSense.Negative : IFCDirectionSense.Positive;
-
-                           layerSetUsage = IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet, direction, sense, offsetFromReferenceLine);
                         }
-                        ExporterCacheManager.MaterialLayerRelationsCache.Add(layerSetUsage, elemHnd);
-                     }
-                  }
-                  else
-                  {
-                     if (hasSubElems)
-                     {
-                        foreach (IFCAnyHandle subElemHnd in subElemHnds)
+                        else if (!isRoof)
                         {
-                           // TODO: still need to figure out the best way to create type for the sub elements because at this time a lot of information is not available, e.g.
-                           //    the Revit Element to get the type, other information for name, GUID, etc.
-                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(subElemHnd))
+                           if (typeHnd != null)
                            {
-                              CategoryUtil.CreateMaterialAssociation(exporterIFC, subElemHnd, materialLayerSet);
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
+                           }
+                           else
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
                            }
                         }
-                     }
-                     else if (!isRoof)
-                     {
-                        if (typeHnd != null)
+                        else if (primaryMaterialHnd != null)
                         {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
-                        }
-                        else
-                        {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
-                        }
-                     }
-                     else if (primaryMaterialHnd != null)
-                     {
-                        if (typeHnd != null)
-                        {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
-                        }
-                        else
-                        {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                           if (typeHnd != null)
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
+                           }
+                           else
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                           }
                         }
                      }
                   }

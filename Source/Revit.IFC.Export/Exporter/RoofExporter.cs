@@ -33,6 +33,8 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    class RoofExporter
    {
+      const string slabRoofPredefinedType = "ROOF";
+
       /// <summary>
       /// Exports a roof to IfcRoof.
       /// </summary>
@@ -80,22 +82,26 @@ namespace Revit.IFC.Export.Exporter
                   string guid = GUIDUtil.CreateGUID(roof);
                   IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                   IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
-                  string predefinedType = GetIFCRoofType(ifcEnumType);
-                  //roofType = IFCValidateEntry.GetValidIFCPredefinedType(roof, ifcEnumType);
+                  //string predefinedType = GetIFCRoofType(ifcEnumType);
+                  string predefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(ifcEnumType, "NOTDEFINED", IFCEntityType.IfcRoofType.ToString());
 
                   IFCAnyHandle roofHnd = IFCInstanceExporter.CreateRoof(exporterIFC, roof, guid, ownerHistory,
                       localPlacement, exportSlab ? null : representation, predefinedType);
 
                   // Export IfcRoofType
-                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcRoof, IFCEntityType.IfcRoofType, null);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcRoof, IFCEntityType.IfcRoofType, predefinedType);
                   if (exportInfo.ExportType != IFCEntityType.UnKnown)
                   {
-                     if ((ParameterUtil.GetStringValueFromElementOrSymbol(roof, "IfcExportType", out predefinedType) == null) && // change IFCType to consistent parameter of IfcExportType
-                         (ParameterUtil.GetStringValueFromElementOrSymbol(roof, "IfcType", out predefinedType) == null))  // support IFCType for legacy support
-                     {
-                        predefinedType = "NotDefined";
-                     }
-                     exportInfo.ValidatedPredefinedType = predefinedType;
+                     string overridePDefType;
+                     if (ParameterUtil.GetStringValueFromElementOrSymbol(roof, "IfcExportType", out overridePDefType) == null) // change IFCType to consistent parameter of IfcExportType
+                        if (ParameterUtil.GetStringValueFromElementOrSymbol(roof, "IfcType", out overridePDefType) == null)  // support IFCType for legacy support
+                           if (string.IsNullOrEmpty(predefinedType))
+                              predefinedType = "NOTDEFINED";
+
+                     if (!string.IsNullOrEmpty(overridePDefType))
+                        exportInfo.ValidatedPredefinedType = overridePDefType;
+                     else
+                        exportInfo.ValidatedPredefinedType = predefinedType;
 
                      IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(roof, exportInfo, file, ownerHistory, predefinedType, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(typeHnd, roofHnd);
@@ -114,7 +120,7 @@ namespace Revit.IFC.Export.Exporter
                      IFCAnyHandle slabLocalPlacementHnd = ExporterUtil.CopyLocalPlacement(file, localPlacement);
 
                      IFCAnyHandle slabHnd = IFCInstanceExporter.CreateSlab(exporterIFC, roof, slabGUID, ownerHistory,
-                        slabLocalPlacementHnd, representation, "ROOF");
+                        slabLocalPlacementHnd, representation, slabRoofPredefinedType);
                      IFCAnyHandleUtil.OverrideNameAttribute(slabHnd, slabName);
                      Transform offsetTransform = (bodyData != null) ? bodyData.OffsetTransform : Transform.Identity;
                      OpeningUtil.CreateOpeningsIfNecessary(slabHnd, roof, ecData, offsetTransform,
@@ -124,6 +130,12 @@ namespace Revit.IFC.Export.Exporter
 
                      productWrapper.AddElement(null, slabHnd, placementSetter.LevelInfo, ecData, false);
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, bodyData.MaterialIds);
+
+                     // Create type
+                     IFCExportInfoPair slabRoofExportType = new IFCExportInfoPair();
+                     slabRoofExportType.SetValueWithPair(IFCEntityType.IfcSlab);
+                     IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(roof, slabRoofExportType, exporterIFC.GetFile(), ownerHistory, slabRoofPredefinedType, productWrapper);
+                     ExporterCacheManager.TypeRelationsCache.Add(slabRoofTypeHnd, slabHnd);
                   }
                }
                tr.Commit();
@@ -224,6 +236,9 @@ namespace Revit.IFC.Export.Exporter
                if (numSubcomponents == 0 || (elementIsFloor && numSubcomponents == 1))
                   return null;
 
+
+               IFCAnyHandle hostObjectHandle = null;
+
                try
                {
                   using (IFCExtrusionCreationData extrusionCreationData = new IFCExtrusionCreationData())
@@ -244,7 +259,6 @@ namespace Revit.IFC.Export.Exporter
 
                         //string hostObjectType = IFCValidateEntry.GetValidIFCPredefinedType(element, ifcEnumType);
 
-                        IFCAnyHandle hostObjectHandle = null;
                         if (elementIsRoof)
                            hostObjectHandle = IFCInstanceExporter.CreateRoof(exporterIFC, element, elementGUID, ownerHistory,
                             localPlacement, prodRepHnd, ifcEnumType);
@@ -295,7 +309,10 @@ namespace Revit.IFC.Export.Exporter
                               double scaledExtrusionDepth = scaledDepth * slope;
                               IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, extrusionDir, scaledExtrusionDepth, false);
                               if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
+                              {
+                                 productWrapper.ClearInternalHandleWrapperData(element);
                                  return null;
+                              }
 
                               ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
                               BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, shapeRep, matId);
@@ -342,6 +359,12 @@ namespace Revit.IFC.Export.Exporter
                         return hostObjectHandle;
                      }
                   }
+               }
+               catch
+               {
+                  // SOmething wrong with the above process, unable to create the extrusion data. Reset any internal handles that may have been partially created since they are not committed
+                  productWrapper.ClearInternalHandleWrapperData(element);
+                  return null;
                }
                finally
                {

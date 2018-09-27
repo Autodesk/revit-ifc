@@ -35,172 +35,6 @@ using Revit.IFC.Export.Toolkit;
 namespace Revit.IFC.Export.Utility
 {
    /// <summary>
-   /// A class that hold information for exporting what IfcEntity and its type pair
-   /// </summary>
-   public class IFCExportInfoPair
-   {
-      /// <summary>
-      /// The IfcEntity for export
-      /// </summary>
-      public IFCEntityType ExportInstance { get; set; } = IFCEntityType.UnKnown;
-      /// <summary>
-      /// The type for export
-      /// </summary>
-      public IFCEntityType ExportType { get; set; } = IFCEntityType.UnKnown;
-      /// <summary>
-      /// Validated PredefinedType from IfcExportType (or IfcType for the old param), or from IfcExportAs
-      /// </summary>
-      public string ValidatedPredefinedType { get; set; } = null;
-
-      /// <summary>
-      /// Initialization of the class
-      /// </summary>
-      public IFCExportInfoPair()
-      {
-      }
-
-      /// <summary>
-      /// Initialize the class with the entity and the type
-      /// </summary>
-      /// <param name="instance">the entity</param>
-      /// <param name="type">the type</param>
-      public IFCExportInfoPair(IFCEntityType instance, IFCEntityType type, string predefinedType)
-      {
-         instance = ElementFilteringUtil.GetValidIFCEntityType(instance);
-         ExportInstance = instance;
-
-         type = ElementFilteringUtil.GetValidIFCEntityType(type);
-         ExportType = type;
-
-         if (!string.IsNullOrEmpty(predefinedType))
-         {
-            string newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, ExportInstance.ToString());
-            if (ExporterUtil.IsNotDefined(newValidatedPredefinedType))
-               newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, ExportType.ToString());
-            ValidatedPredefinedType = newValidatedPredefinedType;
-         }
-      }
-
-      /// <summary>
-      /// Check whether the export information is unknown type
-      /// </summary>
-      public bool IsUnKnown
-      {
-         get { return (ExportInstance == IFCEntityType.UnKnown); }
-      }
-
-      /// <summary>
-      /// set an static class to this object with default value unknown
-      /// </summary>
-      public static IFCExportInfoPair UnKnown
-      {
-         get { return new IFCExportInfoPair(); }
-      }
-
-      /// <summary>
-      /// Assign the entity and the type pair
-      /// </summary>
-      /// <param name="instance">the entity</param>
-      /// <param name="type">the type</param>
-      public void SetValue(IFCEntityType instance, IFCEntityType type, string predefinedType)
-      {
-         instance = ElementFilteringUtil.GetValidIFCEntityType(instance);
-         ExportInstance = instance;
-
-         type = ElementFilteringUtil.GetValidIFCEntityType(type);
-         ExportType = type;
-
-         if (!string.IsNullOrEmpty(predefinedType))
-         {
-            string newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, ExportInstance.ToString());
-            if (ExporterUtil.IsNotDefined(newValidatedPredefinedType))
-               newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, ExportType.ToString());
-            ValidatedPredefinedType = newValidatedPredefinedType;
-         }
-      }
-
-      /// <summary>
-      /// Set the pair information using only either the entity or the type
-      /// </summary>
-      /// <param name="entityType">the entity or type</param>
-      public void SetValueWithPair(IFCEntityType entityType)
-      {
-         string entityTypeStr = entityType.ToString();
-         bool isType = entityTypeStr.Substring(entityTypeStr.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase);
-         
-         if (isType)
-         {
-            // Get the instance
-            string instName = entityTypeStr.Substring(0, entityTypeStr.Length - 4);
-            IfcSchemaEntityNode node = IfcSchemaEntityTree.Find(instName);
-            if (node != null && !node.isAbstract)
-            {
-               IFCEntityType instType = IFCEntityType.UnKnown;
-               if (IFCEntityType.TryParse(instName, out instType))
-                  ExportInstance = instType;
-            }
-            // If not found, try non-abstract supertype derived from the type
-            node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(instName);
-            if (node != null)
-            {
-               IFCEntityType instType = IFCEntityType.UnKnown;
-               if (IFCEntityType.TryParse(node.Name, out instType))
-                  ExportInstance = instType;
-            }
-
-            // set the type
-            entityType = ElementFilteringUtil.GetValidIFCEntityType(entityType);
-            if (entityType != IFCEntityType.UnKnown)
-               ExportType = entityType;
-            else
-            {
-               node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(entityTypeStr);
-               if (node != null)
-               {
-                  IFCEntityType instType = IFCEntityType.UnKnown;
-                  if (IFCEntityType.TryParse(node.Name, out instType))
-                     ExportType = instType;
-               }
-            }
-         }
-         else
-         {
-            // set the instance
-            entityType = ElementFilteringUtil.GetValidIFCEntityType(entityType);
-            if (entityType != IFCEntityType.UnKnown)
-               ExportInstance = entityType;
-            else
-            {
-               // If not found, try non-abstract supertype derived from the type
-               IfcSchemaEntityNode node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(entityTypeStr);
-               if (node != null)
-               {
-                  IFCEntityType instType = IFCEntityType.UnKnown;
-                  if (IFCEntityType.TryParse(node.Name, out instType))
-                     ExportInstance = instType;
-               }
-            }
-
-            // set the type pair
-            string typeName = entityType.ToString() + "Type";
-            entityType = ElementFilteringUtil.GetValidIFCEntityType(typeName);
-            if (entityType != IFCEntityType.UnKnown)
-               ExportType = entityType;
-            else
-            {
-               IfcSchemaEntityNode node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(typeName);
-               if (node != null)
-               {
-                  IFCEntityType instType = IFCEntityType.UnKnown;
-                  if (IFCEntityType.TryParse(node.Name, out instType))
-                     ExportType = instType;
-               }
-            }
-         }
-      }
-   }
-
-   /// <summary>
    /// Provides static methods for filtering elements.
    /// </summary>
    class ElementFilteringUtil
@@ -547,11 +381,11 @@ namespace Revit.IFC.Export.Utility
 
             IfcSchemaEntityNode clNode = IfcSchemaEntityTree.Find(clName);
             if (clNode != null)
-               clNameValid = IfcSchemaEntityTree.IsSubTypeOf(clName, "IfcProduct") && !clNode.isAbstract;
+               clNameValid = IfcSchemaEntityTree.IsSubTypeOf(clName, "IfcObject") && !clNode.isAbstract;
 
             IfcSchemaEntityNode tyNode = IfcSchemaEntityTree.Find(tyName);
             if (tyNode != null)
-               tyNameValid = IfcSchemaEntityTree.IsSubTypeOf(tyName, "IfcTypeProduct") && !tyNode.isAbstract;
+               tyNameValid = IfcSchemaEntityTree.IsSubTypeOf(tyName, "IfcTypeObject") && !tyNode.isAbstract;
 
             if (tyNameValid)
             {
@@ -585,6 +419,8 @@ namespace Revit.IFC.Export.Utility
          }
 
          //return IFCExportType.DontExport;
+         exportInfoPair.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType("NOTDEFINED", exportInfoPair.ExportType.ToString());
+
          return exportInfoPair;
       }
 
@@ -598,7 +434,7 @@ namespace Revit.IFC.Export.Utility
       public static IFCExportInfoPair GetExportTypeFromCategoryId(ElementId categoryId, out string ifcEnumType /*, out bool exportSeparately*/)
       {
          IFCExportInfoPair exportInfoPair = new IFCExportInfoPair();
-         ifcEnumType = "";
+         ifcEnumType = "NOTDEFINED";
          //exportSeparately = true;
 
          if (categoryId == new ElementId(BuiltInCategory.OST_Cornices))
@@ -650,6 +486,7 @@ namespace Revit.IFC.Export.Utility
          {
             string typeName = exportInfoPair.ExportInstance.ToString() + "Type";
             exportInfoPair.ExportType = GetValidIFCEntityType(typeName);
+            exportInfoPair.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType(ifcEnumType, exportInfoPair.ExportType.ToString());
          }
 
          return exportInfoPair;
@@ -913,10 +750,6 @@ namespace Revit.IFC.Export.Utility
       /// <returns></returns>
       public static bool ProxyForMEPType(Element element, IFCExportInfoPair exportType)
       {
-         // In IFC4, the IfcBuildingElementProxy can no longer participate in the system connectivity (restricted only to IfcDistributionElement)
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-            return false;
-
          if ((exportType.ExportInstance == IFCEntityType.IfcBuildingElementProxy) || (exportType.ExportType == IFCEntityType.IfcBuildingElementProxyType))
          {
             try

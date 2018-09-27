@@ -35,10 +35,18 @@ namespace Revit.IFC.Export.Toolkit
          {
             try
             {
-               string desiredTypeExtra = ExporterCacheManager.ExportOptionsCache.ExportAs4 ? "IFC4." : string.Empty;
+               string desiredTypeExtra = null;
+               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+                  desiredTypeExtra = "IFC4.";
+               else
+               {
+                  // For IFC2x3, the enum uses Ifc...Type, but in some cases there is no associated type.
+                  if (!(theTypeEnumStr.Length > 4 && theTypeEnumStr.Substring(theTypeEnumStr.Length - 4, 4).Equals("TYPE", StringComparison.InvariantCultureIgnoreCase)))
+                     theTypeEnumStr = theTypeEnumStr + "Type";
+               }
                string desiredType = "Revit.IFC.Export.Toolkit." + desiredTypeExtra + theTypeEnumStr;
                Type theTypeEnum = Type.GetType(desiredType, false, true);
-               if (theTypeEnum != null)
+               if (theTypeEnum != null && !string.IsNullOrEmpty(typeName))
                   enumValue = Enum.Parse(theTypeEnum, typeName, true).ToString();
             }
             catch

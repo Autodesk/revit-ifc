@@ -65,6 +65,16 @@ namespace Revit.IFC.Export.Exporter
 
                      matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element);
                      BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+
+                     StructuralMemberAxisInfo axisInfo = StructuralMemberExporter.GetStructuralMemberAxisTransform(element);
+                     if (axisInfo != null)
+                     {
+                        ecData.CustomAxis = axisInfo.AxisDirection;
+                        ecData.PossibleExtrusionAxes = IFCExtrusionAxes.TryCustom;
+                     }
+                     else
+                        ecData.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;
+
                      prodRep = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC,
                         element, catId, geometryElement, bodyExporterOptions, null, ecData, true);
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodRep))
