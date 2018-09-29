@@ -3779,7 +3779,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      XYZ vert = triangle.get_Vertex(tri);
                      if (trfToUse != null)
-                        vert = trfToUse.Inverse.OfPoint(vert);
+                        vert = trfToUse.OfPoint(vert);
 
                      triangleVertices.Add(UnitUtil.ScaleLength(vert));
                   }
@@ -3806,7 +3806,7 @@ namespace Revit.IFC.Export.Exporter
             {
                XYZ vert = triangle.get_Vertex(tri);
                if (trfToUse != null)
-                  vert = trfToUse.Inverse.OfPoint(vert);
+                  vert = trfToUse.OfPoint(vert);
 
                triangleVertices.Add(UnitUtil.ScaleLength(vert));
             }
