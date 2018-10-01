@@ -500,7 +500,9 @@ namespace Revit.IFC.Export.Exporter
                      geomList.Add(mesh);
                foreach (GeometryObject geom in geomList)
                {
-                  IFCAnyHandle triangulatedBodyItem = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, wallElement, options, geom, wallLCS.Inverse);
+                  Transform scaledLCS = wallLCS;
+                  scaledLCS.Origin = UnitUtil.ScaleLength(scaledLCS.Origin);
+                  IFCAnyHandle triangulatedBodyItem = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, wallElement, options, geom, scaledLCS.Inverse);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
                      bodyItems.Add(triangulatedBodyItem);
                }

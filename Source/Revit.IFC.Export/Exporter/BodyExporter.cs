@@ -3777,11 +3777,11 @@ namespace Revit.IFC.Export.Exporter
                   MeshTriangle triangle = faceTriangulation.get_Triangle(ii);
                   for (int tri = 0; tri < 3; ++tri)
                   {
-                     XYZ vert = triangle.get_Vertex(tri);
+                     XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
                      if (trfToUse != null)
                         vert = trfToUse.OfPoint(vert);
 
-                     triangleVertices.Add(UnitUtil.ScaleLength(vert));
+                     triangleVertices.Add(vert);
                   }
                   triangleList.Add(triangleVertices);
                }
@@ -3804,11 +3804,11 @@ namespace Revit.IFC.Export.Exporter
             MeshTriangle triangle = geomMesh.get_Triangle(ii);
             for (int tri = 0; tri < 3; ++tri)
             {
-               XYZ vert = triangle.get_Vertex(tri);
+               XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
                if (trfToUse != null)
                   vert = trfToUse.OfPoint(vert);
 
-               triangleVertices.Add(UnitUtil.ScaleLength(vert));
+               triangleVertices.Add(vert);
             }
             triangleList.Add(triangleVertices);
          }
