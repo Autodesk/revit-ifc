@@ -183,9 +183,11 @@ namespace Revit.IFC.Export.Exporter
          }
 
          // We won't allow creating a type if we aren't creating an instance.
-         // We won't create the instance if: we are exporting to CV2.0, we have no 2D, 3D, or bounding box geometry, and we aren't exporting parts.
-         bool willCreateInstance = !(repMapList.Count == 0 && ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2 &&
-             !ExporterCacheManager.ExportOptionsCache.ExportBoundingBox && !exportParts);
+         // We won't create the instance if: we are exporting to CV2.0/RV, we have no 2D, 3D, or bounding box geometry, and we aren't exporting parts.
+         bool willCreateInstance = !(repMapList.Count == 0 
+            && !ExporterCacheManager.ExportOptionsCache.ExportBoundingBox && !exportParts
+             && (ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2
+                     || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView));
          if (!willCreateInstance)
             return null;
 
@@ -1012,8 +1014,10 @@ namespace Revit.IFC.Export.Exporter
                bool materialAlreadyAssociated = false;
 
                // We won't create the instance if: 
-               // (1) we are exporting to CV2.0, (2) we have no 2D, 3D, or bounding box geometry, and (3) we aren't exporting parts.
-               if (!(repHnd == null && ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2 && !exportParts))
+               // (1) we are exporting to CV2.0/RV, (2) we have no 2D, 3D, or bounding box geometry, and (3) we aren't exporting parts.
+               if (!(repHnd == null && !exportParts
+                     && (ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2
+                     || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)))
                {
                   string instanceGUID = null;
 
