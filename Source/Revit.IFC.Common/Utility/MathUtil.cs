@@ -63,21 +63,6 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
-      /// Check if two double variables are almost equal within a specified tolerance
-      /// </summary>
-      /// <param name="d1">1st number</param>
-      /// <param name="d2">2nd number</param>
-      /// <returns></returns>
-      public static bool IsAlmostEqual(double d1, double d2, double tol)
-      {
-         double diff = Math.Abs(d1 - d2);
-         if (diff < tol)
-            return true;
-         else
-            return false;
-      }
-
-      /// <summary>
       /// Check if two UV variables are almost equal.
       /// </summary>
       /// <returns>
