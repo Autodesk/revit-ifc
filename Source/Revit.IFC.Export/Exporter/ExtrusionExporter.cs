@@ -370,7 +370,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle defPosition = IFCInstanceExporter.CreateAxis2Placement3D(file, location, axisDirectionOpt, refDirectionOpt);
 
             IFCAnyHandle outerCurve = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoops[0], lcs, projDirToUse);
-            if (MathUtil.IsAlmostZero(innerRadius))
+            //if (MathUtil.IsAlmostZero(innerRadius))
+            if (numLoops == 1)
                return IFCInstanceExporter.CreateArbitraryClosedProfileDef(file, IFCProfileType.Area, profileName, outerCurve);
             else
             {
