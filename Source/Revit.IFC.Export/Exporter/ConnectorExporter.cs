@@ -353,7 +353,7 @@ namespace Revit.IFC.Export.Exporter
             // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
             // The following code collects the ports that are nested to the object to be assigned later
             if (isIFC4AndAbove)
-               AddNestedMembership(inElementIFCHandle, portOut);
+               AddNestedMembership(outElementIFCHandle, portOut);
             else
                connectorOut = IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portOut, outElementIFCHandle);
          }
