@@ -5818,19 +5818,20 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="objectPlacement">The object placement.</param>
       /// <param name="representation">The geometric representation of the entity.</param>
       /// <param name="flowDirection">The flow direction.</param>
+      /// <param name="predefinedType">The distribution port type.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateDistributionPort(ExporterIFC exporterIFC, Element element,
-          string guid, IFCAnyHandle ownerHistory, IFCAnyHandle objectPlacement, IFCAnyHandle representation, IFCFlowDirection? flowDirection)
+          string guid, IFCAnyHandle ownerHistory, IFCAnyHandle objectPlacement, IFCAnyHandle representation, IFCFlowDirection? flowDirection, IFC4.IFCDistributionPortType? predefinedType)
       {
          ValidateProduct(guid, ownerHistory, objectPlacement, representation);
 
          IFCAnyHandle distributionPort = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcDistributionPort, element);
          IFCAnyHandleUtil.SetAttribute(distributionPort, "FlowDirection", flowDirection);
+         IFCAnyHandleUtil.SetAttribute(distributionPort, "PredefinedType", predefinedType);
          SetProduct(exporterIFC, distributionPort, element, guid, ownerHistory, objectPlacement, representation);
 
          return distributionPort;
       }
-
       /// <summary>
       /// Creates an IfcDoor, and assigns it to the file.
       /// </summary>

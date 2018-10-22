@@ -126,7 +126,7 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, hostElementIFCHandle, flowDir);
                IFCFile ifcFile = exporterIFC.GetFile();
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-               IFCAnyHandle port = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir);
+               IFCAnyHandle port = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir, GetPredifinedType(connector));
                string portName = "Port_" + hostElement.Id;
                IFCAnyHandleUtil.OverrideNameAttribute(port, portName);
                string portType = "Flow";   // Assigned as Port.Description
@@ -315,7 +315,7 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, inElementIFCHandle, flowDir);
             string portName = "InPort_" + inElement.Id;
             string portType = "Flow";   // Assigned as Port.Description
-            portIn = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir);
+            portIn = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir, GetPredifinedType(connector));
             IFCAnyHandleUtil.OverrideNameAttribute(portIn, portName);
             IFCAnyHandleUtil.SetAttribute(portIn, "Description", portType);
 
@@ -341,7 +341,7 @@ namespace Revit.IFC.Export.Exporter
             string portName = "OutPort_" + outElement.Id;
             string portType = "Flow";   // Assigned as Port.Description
 
-            portOut = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir);
+            portOut = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir, GetPredifinedType(connector));
             IFCAnyHandleUtil.OverrideNameAttribute(portOut, portName);
             IFCAnyHandleUtil.SetAttribute(portOut, "Description", portType);
 
@@ -477,6 +477,37 @@ namespace Revit.IFC.Export.Exporter
             string guid = GUIDUtil.CreateGUID();
             IFCAnyHandle ifcRelNests = IFCInstanceExporter.CreateRelNests(file, guid, ownerHistory, name, description, relNests.Key, relNests.Value);
          }
+      }
+
+      /// <summary>
+      /// Returns type of distribution port related to a given connector.
+      /// </summary>
+      /// <param name="connector">Concerned connector.</param>
+      /// <returns>Type of distribution port (PredifinedType attribute of IfcDistributionPort).</returns>
+      private static Toolkit.IFC4.IFCDistributionPortType? GetPredifinedType(Connector connector)
+      {
+         bool isIFC4AndAbove = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
+
+         if (isIFC4AndAbove)
+         {
+            switch (connector.Domain)
+            {
+               case Domain.DomainUndefined:
+                  return Toolkit.IFC4.IFCDistributionPortType.NOTDEFINED;
+               case Domain.DomainHvac:
+                  return Toolkit.IFC4.IFCDistributionPortType.DUCT;
+               case Domain.DomainElectrical:
+                  return Toolkit.IFC4.IFCDistributionPortType.CABLE;
+               case Domain.DomainPiping:
+                  return Toolkit.IFC4.IFCDistributionPortType.PIPE;
+               case Domain.DomainCableTrayConduit:
+                  return Toolkit.IFC4.IFCDistributionPortType.CABLECARRIER;
+               default:
+                  return null;
+            }
+         }
+
+         return null;
       }
    }
 }
