@@ -37,26 +37,6 @@ namespace Revit.IFC.Export.Toolkit
    /// </remarks>
    public class PlacementSetter : IDisposable
    {
-      class TupleElevationLevelIdComparer : IComparer<Tuple<double, ElementId>>
-      {
-         public int Compare(Tuple<double, ElementId> tup1, Tuple<double, ElementId> tup2)
-         {
-            if (MathUtil.IsAlmostEqual(tup1.Item1, tup2.Item1))
-            {
-               if (tup1.Item2 > tup2.Item2)
-                  return 1;
-               else
-                  return -1;
-            }
-            else if (tup1.Item1 > tup2.Item1)
-               return 1;
-            else if (tup1.Item1 < tup2.Item1)
-               return -1;
-            else
-               return 0;
-         }
-      }
-
       ExporterIFC m_ExporterIFC = null;
       ElementId m_LevelId = ElementId.InvalidElementId;
       IFCLevelInfo m_LevelInfo = null;
@@ -139,8 +119,21 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="orientationTrf">The orientation transformation for the local coordinates being used to export the element.  
       /// Optional, can be <see langword="null"/>.</param>
       /// <param name="overrideLevelId">The level id to reference.  This is intended for use when splitting walls and columns by level.</param>
-      public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf, ElementId overrideLevelId)
+      public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf, ElementId overrideLevelId, IFCAnyHandle containerOverrideHnd)
       {
+         // Call a different PlacementSetter if the containment is overridden to the Site or the Building
+         if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && containerOverrideHnd != null)
+         {
+            if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, Common.Enums.IFCEntityType.IfcSite)
+               || IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, Common.Enums.IFCEntityType.IfcBuilding))
+               return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, containerOverrideHnd);
+            else if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, Common.Enums.IFCEntityType.IfcBuildingStorey))
+            {
+               IFCAnyHandle contHnd = null;
+               overrideLevelId = ParameterUtil.OverrideContainmentParameter(exporterIFC, elem, out contHnd);
+            }
+         }
+
          if (overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId)
             overrideLevelId = LevelUtil.GetBaseLevelIdForElement(elem);
          return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, overrideLevelId);
@@ -159,6 +152,54 @@ namespace Revit.IFC.Export.Toolkit
       public PlacementSetter(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf, ElementId overrideLevelId)
       {
          commonInit(exporterIFC, elem, instanceOffsetTrf, orientationTrf, overrideLevelId);
+      }
+
+      /// <summary>
+      /// A special PlacementSetter constructor for element to be placed to the Site or Building
+      /// </summary>
+      /// <param name="exporterIFC">the exporterIFC</param>
+      /// <param name="elem">the element</param>
+      /// <param name="familyTrf">The optional family transform.</param>
+      /// <param name="orientationTrf">The optional orientation of the element based on IFC standards or agreements.</param>
+      /// <param name="siteOrBuilding">IfcSite or IfcBuilding</param>
+      public PlacementSetter(ExporterIFC exporterIFC, Element elem, Transform familyTrf, Transform orientationTrf, IFCAnyHandle siteOrBuilding)
+      {
+         if (!IFCAnyHandleUtil.IsTypeOf(siteOrBuilding, Common.Enums.IFCEntityType.IfcSite) && !IFCAnyHandleUtil.IsTypeOf(siteOrBuilding, Common.Enums.IFCEntityType.IfcBuilding))
+            throw new ArgumentException("Argument siteOrBuilding (" + IFCAnyHandleUtil.GetEntityType(siteOrBuilding).ToString() + ") must be either IfcSite or IfcBuilding!");
+
+         ExporterIFC = exporterIFC;
+         Transform trf = Transform.Identity;
+         if (familyTrf != null)
+         {
+            XYZ origin, xDir, yDir, zDir;
+
+            xDir = familyTrf.BasisX; yDir = familyTrf.BasisY; zDir = familyTrf.BasisZ; origin = familyTrf.Origin;
+
+            trf = trf.Inverse;
+
+            origin = UnitUtil.ScaleLength(origin);
+            LocalPlacement = ExporterUtil.CreateLocalPlacement(exporterIFC.GetFile(), null, origin, zDir, xDir);
+         }
+         else if (orientationTrf != null)
+         {
+            XYZ origin, xDir, yDir, zDir;
+
+            xDir = orientationTrf.BasisX; yDir = orientationTrf.BasisY; zDir = orientationTrf.BasisZ; origin = orientationTrf.Origin;
+
+            trf = orientationTrf.Inverse;
+
+            origin = UnitUtil.ScaleLength(origin);
+            LocalPlacement = ExporterUtil.CreateLocalPlacement(exporterIFC.GetFile(), null, origin, zDir, xDir);
+         }
+         else
+         {
+            LocalPlacement = ExporterUtil.CreateLocalPlacement(exporterIFC.GetFile(), null, null, null, null);
+         }
+
+         ExporterIFC.PushTransform(trf);
+         Offset = 0.0;
+         LevelId = ElementId.InvalidElementId;
+         LevelInfo = null;
       }
 
       /// <summary>
@@ -298,11 +339,6 @@ namespace Revit.IFC.Export.Toolkit
          XYZ overrideOrigin = XYZ.Zero;
 
          IDictionary<ElementId, IFCLevelInfo> levelInfos = exporterIFC.GetLevelInfos();
-         SortedDictionary<Tuple<double, ElementId>, IFCLevelInfo> sortedLevelInfos = new SortedDictionary<Tuple<double, ElementId>, IFCLevelInfo>(new TupleElevationLevelIdComparer());
-         foreach(KeyValuePair<ElementId,IFCLevelInfo> levelInfo in levelInfos)
-         {
-            sortedLevelInfos.Add(new Tuple<double,ElementId>(levelInfo.Value.Elevation, levelInfo.Key), levelInfo.Value);
-         }
 
          if (overrideLevelId == ElementId.InvalidElementId)
          {
@@ -341,16 +377,10 @@ namespace Revit.IFC.Export.Toolkit
 
                   if (newLevelId == ElementId.InvalidElementId)
                   {
-                     newLevelId = ExporterIFCUtils.GetLevelIdByHeight(exporterIFC, hostElem);
+                     ExporterIFCUtils.GetLevelIdByHeight(exporterIFC, hostElem);
                   }
                }
             }
-
-            // Check for a special parameter to determine whether the placement will be aligned at the top instead of at the bottom
-            int intParam = 0;
-            bool alignPlacementAtTop = false;
-            if (ParameterUtil.GetIntValueFromElement(elem, "IfcAlignPlacementAtTheTop", out intParam) != null)
-               alignPlacementAtTop = (intParam != 0) ? true : false;
 
             // todo: store.
             double bottomHeight = double.MaxValue;
@@ -372,7 +402,7 @@ namespace Revit.IFC.Export.Toolkit
                   BoundingBoxXYZ bbox = elem.get_BoundingBox(null);
                   if (bbox != null)
                   {
-                     originToUse = alignPlacementAtTop ? bbox.Max : bbox.Min;
+                     originToUse = bbox.Min;
                      originIsValid = true;
                   }
                   else if (hostElem.Id != elemId)
@@ -380,12 +410,11 @@ namespace Revit.IFC.Export.Toolkit
                      bbox = hostElem.get_BoundingBox(null);
                      if (bbox != null)
                      {
-                        originToUse = alignPlacementAtTop ? bbox.Max : bbox.Min;
+                        originToUse = bbox.Min;
                         originIsValid = true;
                      }
                   }
                }
-
 
                // The original heuristic here was that the origin determined the level containment based on exact location:
                // if the Z of the origin was higher than the current level but lower than the next level, it was contained
@@ -395,146 +424,37 @@ namespace Revit.IFC.Export.Toolkit
                // 10cm of the 'next' level is on that level.
 
                double levelExtension = 10.0 / (12.0 * 2.54);
-               double heightCoverage = 0.0;
-               BoundingBoxXYZ elBbox = null;
-               if (hostElem is AssemblyInstance)
+               foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
                {
-                  double maxX = double.MinValue;
-                  double maxY = double.MinValue;
-                  double maxZ = double.MinValue;
-                  double minX = double.MaxValue;
-                  double minY = double.MaxValue;
-                  double minZ = double.MaxValue;
-
-                  foreach (ElementId memberId in (hostElem as AssemblyInstance).GetMemberIds())
+                  // the cache contains levels from all the exported documents
+                  // if the export is performed for a linked document, filter the levels that are not from this document
+                  if (ExporterCacheManager.ExportOptionsCache.ExportingLink)
                   {
-                     Element member = doc.GetElement(memberId);
-                     BoundingBoxXYZ memberBox = member.get_BoundingBox(null);
-                     if (elBbox == null)
-                     {
-                        elBbox = memberBox;
-                        maxX = elBbox.Max.X;
-                        maxY = elBbox.Max.Y;
-                        maxZ = elBbox.Max.Z;
-                        minX = elBbox.Min.X;
-                        minY = elBbox.Min.Y;
-                        minZ = elBbox.Min.Z;
-                     }
-                     else
-                     {
-                        if (memberBox.Max.X > maxX)
-                           maxX = memberBox.Max.X;
-                        if (memberBox.Max.Y > maxY)
-                           maxY = memberBox.Max.Y;
-                        if (memberBox.Max.Z > maxZ)
-                           maxZ = memberBox.Max.Z;
-                        if (memberBox.Min.X < minX)
-                           minX = memberBox.Min.X;
-                        if (memberBox.Min.Y < minY)
-                           minY = memberBox.Min.Y;
-                        if (memberBox.Min.Z < minZ)
-                           minZ = memberBox.Min.Z;
-                     }
+                     Element levelElem = doc.GetElement(levelInfoPair.Key);
+                     if (levelElem == null || !(levelElem is Level))
+                           continue;
                   }
 
-                  elBbox.Max = new XYZ(maxX, maxY, maxZ);
-                  elBbox.Min = new XYZ(minX, minY, minZ);
-               }
-               else
-                  elBbox = hostElem.get_BoundingBox(null);
+                  IFCLevelInfo levelInfo = levelInfoPair.Value;
+                  double startHeight = levelInfo.Elevation - levelExtension;
+                  double height = levelInfo.DistanceToNextLevel;
+                  bool useHeight = !MathUtil.IsAlmostZero(height);
+                  double endHeight = startHeight + height;
 
-               if (elBbox != null)
-               {
-                  double elBboxHeight = elBbox.Max.Z - elBbox.Min.Z;
-                  ElementId prevLevelId = ElementId.InvalidElementId;
-                  //foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
-                  foreach (KeyValuePair<Tuple<double, ElementId>, IFCLevelInfo> sortedLevelInfoPair in sortedLevelInfos)
+                  if (originIsValid && ((originToUse[2] > (startHeight - MathUtil.Eps())) && (!useHeight || originToUse[2] < (endHeight - MathUtil.Eps()))))
                   {
-                     // the cache contains levels from all the exported documents
-                     // if the export is performed for a linked document, filter the levels that are not from this document
-                     if (ExporterCacheManager.ExportOptionsCache.ExportingLink)
-                     {
-                        Element levelElem = doc.GetElement(sortedLevelInfoPair.Key.Item2);
-                        if (levelElem == null || !(levelElem is Level))
-                           continue;
-                     }
+                     newLevelId = levelInfoPair.Key;
+                  }
 
-                     IFCLevelInfo levelInfo = sortedLevelInfoPair.Value;
-                     //double startHeight = levelInfo.Elevation - levelExtension;
-                     double startHeight = levelInfo.Elevation;
-                     double height = levelInfo.DistanceToNextLevel;
-                     bool useHeight = !MathUtil.IsAlmostZero(height);
-                     double endHeight = startHeight + height;
-
-                     // Keep the original logic to include object that is within the level extension below and the top box is above the level elevation
-                     //if (originIsValid && ((originToUse[2] > (startHeight - MathUtil.Eps())) && (!useHeight || originToUse[2] < (endHeight - MathUtil.Eps()))))
-                     if (originIsValid && (originToUse[2] < (levelInfo.Elevation - MathUtil.Eps())) && (originToUse[2] > (levelInfo.Elevation) - levelExtension + MathUtil.Eps())
-                        && (elBbox.Max.Z > (startHeight - MathUtil.Eps())))
-                     {
-                        newLevelId = sortedLevelInfoPair.Key.Item2;
-                        break;
-                     }
-
-                     // Clearcut case, if the object bbox is completely within the storey, or completely outside of the storey
-                     if (elBbox.Min.Z > (startHeight - MathUtil.Eps()) && elBbox.Max.Z < (endHeight + MathUtil.Eps()))
-                     {
-                        newLevelId = sortedLevelInfoPair.Key.Item2;
-                        break;
-                     }
-                     else if (elBbox.Max.Z < (startHeight - MathUtil.Eps()) || elBbox.Min.Z > (endHeight + MathUtil.Eps()))
-                        continue;
-                     // if the alignment for placement is set to the top (using parameter IfcAlignPlacementAtTheTop) and this is the top level, use the level. If not the top level continue to the next level
-                     else if (alignPlacementAtTop && originToUse[2] > endHeight)
-                     {
-                        if (useHeight)
-                           continue;
-                        else
-                        {
-                           newLevelId = sortedLevelInfoPair.Key.Item2;
-                           break;
-                        }
-                     }
-
-
-                     double currLevelHeightCovMin = (elBbox.Min.Z < levelInfo.Elevation) ? levelInfo.Elevation : elBbox.Min.Z;
-                     double currLevelHeightCovMax = 0.0;
-                     if (useHeight)
-                        currLevelHeightCovMax = (elBbox.Max.Z > (levelInfo.Elevation + height)) ? (levelInfo.Elevation + height) : elBbox.Max.Z;
-
-                     double currHeightCov = (currLevelHeightCovMax - currLevelHeightCovMin) / height;
-
-                     // Consider coverage comparison only after the first level
-                     if (prevLevelId != ElementId.InvalidElementId)
-                     {
-                        // If the current height coverage is actually smaller than the previous one, use the previous level as the container instead
-                        if (currHeightCov < heightCoverage && elBbox.Max.Z < (endHeight - MathUtil.Eps()) && prevLevelId != ElementId.InvalidElementId)
-                        {
-                           newLevelId = prevLevelId;
-                           break;
-                        }
-
-                        // If the height coverage is more than the previous level coverage, we will use the level as the base level for the object
-                        if (currHeightCov > heightCoverage && heightCoverage > 0)
-                        {
-                           newLevelId = sortedLevelInfoPair.Key.Item2;
-                           break;
-                        }
-                     }
-
-                     if (startHeight < (bottomHeight + MathUtil.Eps()))
-                     {
-                        bottomLevelId = sortedLevelInfoPair.Key.Item2;
-                        bottomHeight = startHeight;
-                     }
-
-                     if (heightCoverage < currHeightCov)
-                        prevLevelId = sortedLevelInfoPair.Key.Item2;
-                     heightCoverage = currHeightCov;
+                  if (startHeight < (bottomHeight + MathUtil.Eps()))
+                  {
+                     bottomLevelId = levelInfoPair.Key;
+                     bottomHeight = startHeight;
                   }
                }
             }
 
-            if (newLevelId == ElementId.InvalidElementId && bottomLevelId != ElementId.InvalidElementId)
+            if (newLevelId == ElementId.InvalidElementId)
                newLevelId = bottomLevelId;
          }
 
@@ -554,7 +474,6 @@ namespace Revit.IFC.Export.Toolkit
                LevelInfo = levelInfoPair.Value;
                break;
             }
-            //LevelInfo = levelInfos.Values.First<IFCLevelInfo>();
          }
 
          double elevation = (LevelInfo != null) ? LevelInfo.Elevation : 0.0;

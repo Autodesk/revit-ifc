@@ -114,7 +114,11 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, curveElement))
+            // Check for containment override
+            IFCAnyHandle overrideContainerHnd = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, curveElement, out overrideContainerHnd);
+
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, curveElement, null, null, overrideContainerId, overrideContainerHnd))
             {
                IFCAnyHandle localPlacement = setter.LocalPlacement;
                IFCAnyHandle axisPlacement = GeometryUtil.GetRelativePlacementFromLocalPlacement(localPlacement);
