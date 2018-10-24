@@ -321,7 +321,12 @@ namespace Revit.IFC.Export.Exporter
                if (standaloneExport)
                {
                   Transform orientationTrf = Transform.Identity;
-                  standalonePlacementSetter = PlacementSetter.Create(exporterIFC, partElement, null, orientationTrf, partExportLevelId);
+                  IFCAnyHandle overrideContainerHnd = null;
+                  ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, partElement, out overrideContainerHnd);
+                  if (overrideContainerId != ElementId.InvalidElementId && (partExportLevelId == null || partExportLevelId == ElementId.InvalidElementId))
+                     partExportLevelId = overrideContainerId;
+
+                  standalonePlacementSetter = PlacementSetter.Create(exporterIFC, partElement, null, orientationTrf, partExportLevelId, overrideContainerHnd);
                   partPlacement = standalonePlacementSetter.LocalPlacement;
                }
                else

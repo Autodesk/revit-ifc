@@ -55,7 +55,11 @@ namespace Revit.IFC.Export.Exporter
          {
             using (IFCTransformSetter transformSetter = IFCTransformSetter.Create())
             {
-               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, slabElement))
+               // Check for containment override
+               IFCAnyHandle overrideContainerHnd = null;
+               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, slabElement, out overrideContainerHnd);
+
+               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, slabElement, null, null, overrideContainerId, overrideContainerHnd))
                {
                   using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
                   {
@@ -193,7 +197,11 @@ namespace Revit.IFC.Export.Exporter
 
             using (IFCTransformSetter transformSetter = IFCTransformSetter.Create())
             {
-               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, floorElement))
+               // Check for containment override
+               IFCAnyHandle overrideContainerHnd = null;
+               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, floorElement, out overrideContainerHnd);
+
+               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, floorElement, null, null, overrideContainerId, overrideContainerHnd))
                {
                   IFCAnyHandle localPlacement = placementSetter.LocalPlacement;
 
