@@ -2445,6 +2445,39 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Create an IfcProjectedCRS
+      /// </summary>
+      /// <param name="file">the file</param>
+      /// <param name="name">name</param>
+      /// <param name="description">description</param>
+      /// <param name="geodeticDatum">the Geodetic Datum</param>
+      /// <param name="verticalDatum">the Verical Datum</param>
+      /// <param name="mapProjection">Map Projection</param>
+      /// <param name="mapZone">Map Zone</param>
+      /// <param name="mapUnit">Map Unit</param>
+      /// <returns>the handle</returns>
+      public static IFCAnyHandle CreateProjectedCRS (IFCFile file, string name, string description, string geodeticDatum, 
+         string verticalDatum, string mapProjection, string mapZone, IFCAnyHandle mapUnit)
+      {
+         IFCAnyHandle projectedCRS = CreateInstance(file, IFCEntityType.IfcProjectedCRS, null);
+         IFCAnyHandleUtil.SetAttribute(projectedCRS, "Name", name);
+         if (!string.IsNullOrEmpty(description))
+            IFCAnyHandleUtil.SetAttribute(projectedCRS, "Description", description);
+         if (!string.IsNullOrEmpty(geodeticDatum))
+            IFCAnyHandleUtil.SetAttribute(projectedCRS, "GeodeticDatum", geodeticDatum);
+         if (!string.IsNullOrEmpty(verticalDatum))
+            IFCAnyHandleUtil.SetAttribute(projectedCRS, "VerticalDatum", verticalDatum);
+         if (!string.IsNullOrEmpty(mapProjection))
+            IFCAnyHandleUtil.SetAttribute(projectedCRS, "MapProjection", mapProjection);
+         if (!string.IsNullOrEmpty(mapZone))
+            IFCAnyHandleUtil.SetAttribute(projectedCRS, "MapZone", mapZone);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(mapUnit))
+            IFCAnyHandleUtil.SetAttribute(projectedCRS, "MapUnit", mapUnit);
+
+         return projectedCRS;
+      }
+
+      /// <summary>
       /// Creates an IfcBuilding, and assigns it to the file.
       /// </summary>
       /// <param name="file">The file.</param>
@@ -6224,6 +6257,40 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Create an IfcMapConversion
+      /// </summary>
+      /// <param name="file">the file</param>
+      /// <param name="sourceCRS">the source coordinate reference system</param>
+      /// <param name="targetCRS">the target coordinate reference system</param>
+      /// <param name="eastings">eastings</param>
+      /// <param name="northings">northings</param>
+      /// <param name="orthogonalHeight">orthogonal height</param>
+      /// <param name="xAxisAbscissa">value along the easting axis in the X-Axis</param>
+      /// <param name="xAxisOrdinate">value along the northing axis in the X-Axis</param>
+      /// <param name="scale">scale</param>
+      /// <returns>the handle</returns>
+      public static IFCAnyHandle CreateMapConversion(IFCFile file, IFCAnyHandle sourceCRS, IFCAnyHandle targetCRS, double eastings, double northings, 
+         double orthogonalHeight, double? xAxisAbscissa, double? xAxisOrdinate, double? scale)
+      {
+         IFCAnyHandleUtil.ValidateSubTypeOf(sourceCRS, false, IFCEntityType.IfcCoordinateReferenceSystem, IFCEntityType.IfcGeometricRepresentationContext);
+         IFCAnyHandleUtil.ValidateSubTypeOf(targetCRS, false, IFCEntityType.IfcCoordinateReferenceSystem);
+         IFCAnyHandle mapConversion = CreateInstance(file, IFCEntityType.IfcMapConversion, null);
+         IFCAnyHandleUtil.SetAttribute(mapConversion, "SourceCRS", sourceCRS);
+         IFCAnyHandleUtil.SetAttribute(mapConversion, "TargetCRS", targetCRS);
+         IFCAnyHandleUtil.SetAttribute(mapConversion, "Eastings", eastings);
+         IFCAnyHandleUtil.SetAttribute(mapConversion, "Northings", northings);
+         IFCAnyHandleUtil.SetAttribute(mapConversion, "OrthogonalHeight", orthogonalHeight);
+         if (xAxisAbscissa.HasValue)
+            IFCAnyHandleUtil.SetAttribute(mapConversion, "XAxisAbscissa", xAxisAbscissa.Value);
+         if (xAxisOrdinate.HasValue)
+            IFCAnyHandleUtil.SetAttribute(mapConversion, "XAxisOrdinate", xAxisOrdinate.Value);
+         if (scale.HasValue)
+            IFCAnyHandleUtil.SetAttribute(mapConversion, "Scale", scale.Value);
+
+         return mapConversion;
+      }
+
+      /// <summary>
       /// Creates an IfcMappedItem, and assigns it to the file.
       /// </summary>
       /// <param name="file">The file.</param>
@@ -6871,6 +6938,38 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.SetAttribute(relVoidsElement, "RelatedOpeningElement", relatedOpeningElement);
          SetRelConnects(relVoidsElement, guid, ownerHistory, name, description);
          return relVoidsElement;
+      }
+
+      /// <summary>
+      /// Create an IfcShapeAspect, and assign it to the file
+      /// </summary>
+      /// <param name="file">the file</param>
+      /// <param name="shapeRepresentations">list of representations</param>
+      /// <param name="name">name</param>
+      /// <param name="description">description</param>
+      /// <param name="productDefinitional">An indication that the shape aspect is on the physical boundary of the product definition shape</param>
+      /// <param name="partOfProductDefinitionShape">Reference to the IfcProductDefinitionShape or the IfcRepresentationMap of which this shape is an aspect</param>
+      /// <returns>the handle</returns>
+      public static IFCAnyHandle CreateShapeAspect(IFCFile file, IList<IFCAnyHandle> shapeRepresentations, string name, string description, IFCLogical? productDefinitional, IFCAnyHandle partOfProductDefinitionShape)
+      {
+         if (shapeRepresentations == null || shapeRepresentations.Count < 1)
+            throw new ArgumentNullException("ShapeRepresentations");
+         IFCAnyHandleUtil.ValidateSubTypeOf(shapeRepresentations[0], false, IFCEntityType.IfcShapeModel);
+         if (partOfProductDefinitionShape != null)
+            IFCAnyHandleUtil.ValidateSubTypeOf(partOfProductDefinitionShape, true, IFCEntityType.IfcProductDefinitionShape, IFCEntityType.IfcRepresentationMap);
+
+         IFCAnyHandle shapeAspect = CreateInstance(file, IFCEntityType.IfcShapeAspect, null);
+         IFCAnyHandleUtil.SetAttribute(shapeAspect, "ShapeRepresentations", shapeRepresentations);
+         if (partOfProductDefinitionShape != null && !IFCAnyHandleUtil.IsNullOrHasNoValue(partOfProductDefinitionShape))
+            IFCAnyHandleUtil.SetAttribute(shapeAspect, "PartOfProductDefinitionShape", partOfProductDefinitionShape);
+         if (!string.IsNullOrEmpty(name))
+            IFCAnyHandleUtil.SetAttribute(shapeAspect, "Name", name);
+         if (!string.IsNullOrEmpty(description))
+            IFCAnyHandleUtil.SetAttribute(shapeAspect, "Description", description);
+         if (productDefinitional.HasValue)
+            IFCAnyHandleUtil.SetAttribute(shapeAspect, "ProductDefinitional", productDefinitional.Value);
+
+         return shapeAspect;
       }
 
       /// <summary>
