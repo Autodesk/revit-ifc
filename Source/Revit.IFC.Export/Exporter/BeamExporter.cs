@@ -434,7 +434,11 @@ namespace Revit.IFC.Export.Exporter
             XYZ beamDirection = canExportAxis ? axisInfo.AxisDirection : null;
             Transform orientTrf = canExportAxis ? axisInfo.LCSAsTransform : null;
 
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientTrf))
+            // Check for containment override
+            IFCAnyHandle overrideContainerHnd = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientTrf, overrideContainerId, overrideContainerHnd))
             {
                IFCAnyHandle localPlacement = setter.LocalPlacement;
                using (IFCExtrusionCreationData extrusionCreationData = new IFCExtrusionCreationData())

@@ -81,7 +81,11 @@ namespace Revit.IFC.Export.Exporter
             ElementId foregroundPatternId = filledRegionType != null ? filledRegionType.ForegroundPatternId : ElementId.InvalidElementId;
             ElementId categoryId = CategoryUtil.GetSafeCategoryId(filledRegion);
 
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, filledRegion, null, orientTrf))
+            // Check for containment override
+            IFCAnyHandle overrideContainerHnd = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, filledRegion, out overrideContainerHnd);
+
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, filledRegion, null, orientTrf, overrideContainerId, overrideContainerHnd))
             {
                foreach (IList<CurveLoop> curveLoopList in sortedLoops)
                {

@@ -2044,6 +2044,18 @@ namespace Revit.IFC.Export.Utility
          return controls;
       }
 
+      /// <summary>
+      /// Collect information about material layer.
+      ///   For IFC4RV Architectural exchange, it will generate IfcMatrialConstituentSet along with the relevant IfcShapeAspect and the width in the quantityset
+      ///   For IFC4RV Structural exchange, it will generate multiple components as IfcBuildingElementPart for each layer
+      ///   For others IfcMaterialLayer will be created
+      /// </summary>
+      /// <param name="exporterIFC">the exporter IFC</param>
+      /// <param name="element">the element</param>
+      /// <param name="productWrapper">the product wrapper</param>
+      /// <param name="matIds">material ids (out)</param>
+      /// <param name="primaryMaterialHnd">primary material handle (out)</param>
+      /// <returns>the handle</returns>
       public static IFCAnyHandle CollectMaterialLayerSet(ExporterIFC exporterIFC, Element element, ProductWrapper productWrapper, out List<ElementId> matIds, out IFCAnyHandle primaryMaterialHnd)
       {
          ElementId typeElemId = element.GetTypeId();
@@ -2088,7 +2100,7 @@ namespace Revit.IFC.Export.Utility
                      Parameter thicknessPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_THICKNESS);
                      if (thicknessPar == null)
                      {
-                        widths.Add(ParameterUtil.getSpecialThicknessParameter(familySymbol));
+                        widths.Add(ParameterUtil.GetSpecialThicknessParameter(familySymbol));
                      }
                      else
                         widths.Add(thicknessPar.AsDouble());
@@ -2253,10 +2265,10 @@ namespace Revit.IFC.Export.Utility
                   string layerSetDesc = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Description", null);
                   materialLayerSet = IFCInstanceExporter.CreateMaterialLayerSet(file, layers, layerSetName, layerSetDesc);
 
-               ExporterCacheManager.MaterialSetCache.RegisterLayerSet(typeElemId, materialLayerSet);
+                  ExporterCacheManager.MaterialSetCache.RegisterLayerSet(typeElemId, materialLayerSet);
                }
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(primaryMaterialHnd))
-               ExporterCacheManager.MaterialSetCache.RegisterPrimaryMaterialHnd(typeElemId, primaryMaterialHnd);
+                  ExporterCacheManager.MaterialSetCache.RegisterPrimaryMaterialHnd(typeElemId, primaryMaterialHnd);
             }
          }
 

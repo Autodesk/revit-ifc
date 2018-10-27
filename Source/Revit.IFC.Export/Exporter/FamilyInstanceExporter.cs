@@ -1007,7 +1007,13 @@ namespace Revit.IFC.Export.Exporter
 
             IFCAnyHandle repHnd = (shapeReps.Count > 0) ? IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps) : null;
 
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, familyInstance, trf, null, overrideLevelId))
+            // Check for containment override
+            IFCAnyHandle overrideContainerHnd = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, familyInstance, out overrideContainerHnd);
+            if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
+               overrideLevelId = overrideContainerId;
+
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, familyInstance, trf, null, overrideLevelId, overrideContainerHnd))
             {
                IFCAnyHandle instanceHandle = null;
                IFCAnyHandle localPlacement = setter.LocalPlacement;
@@ -1222,7 +1228,7 @@ namespace Revit.IFC.Export.Exporter
                               Parameter offsetPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_OFFSET);
                               if (offsetPar == null)
                               {
-                                 maxOffset = ParameterUtil.getSpecialOffsetParameter(familySymbol);
+                                 maxOffset = ParameterUtil.GetSpecialOffsetParameter(familySymbol);
                               }
                               else
                                  maxOffset = offsetPar.AsDouble();
