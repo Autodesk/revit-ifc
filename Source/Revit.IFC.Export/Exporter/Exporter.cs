@@ -1421,9 +1421,10 @@ namespace Revit.IFC.Export.Exporter
                   buildingInvTrf = buildingTrf.Inverse;
                }
 
-               HashSet<IFCAnyHandle> relatedElementSet = new HashSet<IFCAnyHandle>(buildingElements);
+               HashSet<IFCAnyHandle> relatedElementSetForSite = new HashSet<IFCAnyHandle>();
+               HashSet<IFCAnyHandle> relatedElementSetForBuilding = new HashSet<IFCAnyHandle>();
                // If the object is supposed to be placed directly on Site or Building, change the object placement to be relative to the Site or Building
-               foreach (IFCAnyHandle elemHnd in relatedElementSet)
+               foreach (IFCAnyHandle elemHnd in buildingElements)
                {
                   ElementId elementId = ExporterCacheManager.HandleToElementCache.Find(elemHnd);
                   Element elem = document.GetElement(elementId);
@@ -1436,37 +1437,53 @@ namespace Revit.IFC.Export.Exporter
                      containerObjectPlacement = IFCAnyHandleUtil.GetObjectPlacement(overrideContainer);
                      Transform containerTrf = ExporterUtil.GetTotalTransformFromLocalPlacement(containerObjectPlacement);
                      containerInvTrf = containerTrf.Inverse;
+                     if (IFCAnyHandleUtil.IsTypeOf(overrideContainer, IFCEntityType.IfcBuilding))
+                        relatedElementSetForBuilding.Add(elemHnd);
+                     else
+                        relatedElementSetForSite.Add(elemHnd);
                   }
                   else
                   {
+                     // Default to Site (as the original behavior)
                      containerObjectPlacement = siteObjectPlacement;
                      containerInvTrf = siteInvTrf;
+                     relatedElementSetForSite.Add(elemHnd);
                   }
 
+                  Transform newTrf = Transform.Identity;
                   IFCAnyHandle elemObjectPlacementHnd = IFCAnyHandleUtil.GetObjectPlacement(elemHnd);
-                  if (!elemObjectPlacementHnd.IsTypeOf("IfcLocalPlacement"))
-                     break;
-                  Transform ecs = ExporterUtil.GetTransformFromLocalPlacementHnd(elemObjectPlacementHnd);
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(elemObjectPlacementHnd) && elemObjectPlacementHnd.IsTypeOf("IfcLocalPlacement"))
+                  {
+                     Transform ecs = ExporterUtil.GetTransformFromLocalPlacementHnd(elemObjectPlacementHnd);
 
-                  Transform newTrf = null;
-                  IFCAnyHandle refPlacement = IFCAnyHandleUtil.GetInstanceAttribute(elemObjectPlacementHnd, "PlacementRelTo");
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(refPlacement))
-                     newTrf = ecs;
+                     IFCAnyHandle refPlacement = IFCAnyHandleUtil.GetInstanceAttribute(elemObjectPlacementHnd, "PlacementRelTo");
+                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(refPlacement))
+                        newTrf = ecs;
+                     else
+                     {
+                        Transform originalTotalTrf = ExporterUtil.GetTotalTransformFromLocalPlacement(elemObjectPlacementHnd);
+                        newTrf = containerInvTrf.Multiply(originalTotalTrf);
+                     }
+
+                     IFCAnyHandle newPlacement = ExporterUtil.CreateLocalPlacement(file, containerObjectPlacement, newTrf.Origin, newTrf.BasisZ, newTrf.BasisX);
+                     IFCAnyHandleUtil.SetAttribute(elemHnd, "ObjectPlacement", newPlacement);
+                     if (refPlacement != null)
+                        refPlacement.Delete();
+                     elemObjectPlacementHnd.Delete();
+                  }
                   else
                   {
-                     Transform originalTotalTrf = ExporterUtil.GetTotalTransformFromLocalPlacement(elemObjectPlacementHnd);
-                     newTrf = containerInvTrf.Multiply(originalTotalTrf);
+                     IFCAnyHandle newPlacement = ExporterUtil.CreateLocalPlacement(file, containerObjectPlacement, newTrf.Origin, newTrf.BasisZ, newTrf.BasisX);
+                     IFCAnyHandleUtil.SetAttribute(elemHnd, "ObjectPlacement", newPlacement);
                   }
-
-                  IFCAnyHandle newPlacement = ExporterUtil.CreateLocalPlacement(file, containerObjectPlacement, newTrf.Origin, newTrf.BasisZ, newTrf.BasisX);
-                  IFCAnyHandleUtil.SetAttribute(elemHnd, "ObjectPlacement", newPlacement);
-                  if (refPlacement != null)
-                     refPlacement.Delete();
-                  elemObjectPlacementHnd.Delete();
                }
                string guid = GUIDUtil.CreateSubElementGUID(projectInfo, (int)IFCBuildingSubElements.RelContainedInSpatialStructure);
-               IFCInstanceExporter.CreateRelContainedInSpatialStructure(file, guid,
-                   ownerHistory, null, null, relatedElementSet, siteOrbuildingHnd);
+               if (relatedElementSetForBuilding.Count > 0)
+                  IFCInstanceExporter.CreateRelContainedInSpatialStructure(file, guid,
+                     ownerHistory, null, null, relatedElementSetForBuilding, ExporterCacheManager.BuildingHandle);
+               if (relatedElementSetForSite.Count > 0)
+                  IFCInstanceExporter.CreateRelContainedInSpatialStructure(file, guid,
+                     ownerHistory, null, null, relatedElementSetForSite, ExporterCacheManager.SiteHandle);
             }
 
             // create an association between the IfcBuilding and spacial elements with no other containment.
