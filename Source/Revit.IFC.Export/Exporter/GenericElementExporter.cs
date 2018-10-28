@@ -66,6 +66,9 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
                   IFCAnyHandle styleHandle = null;
 
+                  instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, element, productWrapper, placementSetter, ecData, guid, ownerHistory,
+                     representation, exportType.ValidatedPredefinedType, null);
+
                   if (exportType.ExportType != IFCEntityType.UnKnown)
                   {
                      if (element is FamilyInstance)
@@ -83,9 +86,6 @@ namespace Revit.IFC.Export.Exporter
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                         styleHandle = ExporterUtil.CreateGenericTypeFromElement(element, exportType, file, ownerHistory, exportType.ValidatedPredefinedType, productWrapper);
                   }
-
-                  instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, element, productWrapper, placementSetter, ecData, guid, ownerHistory,
-                     representation, exportType.ValidatedPredefinedType, null);
 
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
                   {
