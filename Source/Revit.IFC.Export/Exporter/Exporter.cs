@@ -1414,7 +1414,7 @@ namespace Revit.IFC.Export.Exporter
                   Transform siteTrf = ExporterUtil.GetTotalTransformFromLocalPlacement(siteObjectPlacement);
                   siteInvTrf = siteTrf.Inverse;
                }
-               else if (siteOrbuildingHnd.IsTypeOf("IfBuilding"))
+               else if (siteOrbuildingHnd.IsTypeOf("IfcBuilding"))
                {
                   buildingObjectPlacement = IFCAnyHandleUtil.GetObjectPlacement(siteOrbuildingHnd);
                   Transform buildingTrf = ExporterUtil.GetTotalTransformFromLocalPlacement(siteObjectPlacement);
