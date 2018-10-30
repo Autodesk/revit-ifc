@@ -67,6 +67,8 @@ namespace Revit.IFC.Export.Utility
             m_PropertySetsToCreate[element] = propertySetToCreate;
          }
          propertySetToCreate.Add(handle);
+
+         ExporterCacheManager.ElementToHandleCache.Register(element.Id, handle);
       }
 
       /// <summary>

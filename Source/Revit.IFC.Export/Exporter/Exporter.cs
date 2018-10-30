@@ -296,6 +296,47 @@ namespace Revit.IFC.Export.Exporter
          }
 
          SpatialElementExporter.DestroySpatialElementGeometryCalculator();
+
+         // Create IfcSite first here using TopographySurface if any, if not create a default one
+
+         Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
+         FilteredElementCollector collector = new FilteredElementCollector(document);
+         List<Type> topoSurfaceType = new List<Type>() { typeof(TopographySurface)};
+         ElementMulticlassFilter multiclassFilter = new ElementMulticlassFilter(topoSurfaceType);
+         collector.WherePasses(multiclassFilter);
+         ICollection<ElementId> filteredTopoElemments = collector.ToElementIds();
+         if (filteredTopoElemments != null && filteredTopoElemments.Count > 0)
+         {
+            foreach (ElementId topoElemId in filteredTopoElemments)
+            {
+               Element topoElem = document.GetElement(topoElemId);
+               if (topoElem is TopographySurface)
+               {
+                  GeometryElement geomElem = topoElem.get_Geometry(geomOptions);
+                  using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
+                  {
+                     SiteExporter.ExportTopographySurface(exporterIFC, (TopographySurface)topoElem, geomElem, productWrapper);
+                  }
+                  break;   // Process only the first one to create the IfcSite
+               }
+            }
+         }
+         
+         if (ExporterCacheManager.SiteHandle == null || IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
+         {
+            using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
+            {
+               SiteExporter.ExportDefaultSite(exporterIFC, document, productWrapper);
+            }
+         }
+
+         // Create IfcBuilding first here
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.BuildingHandle) && IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
+         {
+            IFCAnyHandle buildingPlacement = CreateBuildingPlacement(exporterIFC.GetFile());
+            IFCAnyHandle buildingHnd = CreateBuildingFromProjectInfo(exporterIFC, document, buildingPlacement);
+            ExporterCacheManager.BuildingHandle = buildingHnd;
+         }
       }
 
       protected void ExportNonSpatialElements(ExporterIFC exporterIFC, Autodesk.Revit.DB.Document document)
@@ -1414,7 +1455,7 @@ namespace Revit.IFC.Export.Exporter
                   Transform siteTrf = ExporterUtil.GetTotalTransformFromLocalPlacement(siteObjectPlacement);
                   siteInvTrf = siteTrf.Inverse;
                }
-               else if (siteOrbuildingHnd.IsTypeOf("IfBuilding"))
+               else if (siteOrbuildingHnd.IsTypeOf("IfcBuilding"))
                {
                   buildingObjectPlacement = IFCAnyHandleUtil.GetObjectPlacement(siteOrbuildingHnd);
                   Transform buildingTrf = ExporterUtil.GetTotalTransformFromLocalPlacement(siteObjectPlacement);
