@@ -960,37 +960,38 @@ namespace Revit.IFC.Export.Utility
          string containerOverrideName = null;
          if (ParameterUtil.GetStringValueFromElement(element, "OverrideElementContainer", out containerOverrideName) != null)
          {
-            if (containerOverrideName.Equals("IFCSITE", StringComparison.CurrentCultureIgnoreCase))
+            if (!string.IsNullOrEmpty(containerOverrideName))
             {
-               overrideContainerHnd = ExporterCacheManager.SiteHandle;
-               return containerElemId;
-            }
-            else if (containerOverrideName.Equals("IFCBUILDING", StringComparison.CurrentCultureIgnoreCase))
-            {
-               overrideContainerHnd = ExporterCacheManager.BuildingHandle;
-               return containerElemId;
-            }
-            else
-            {
-               // Find Level that is designated as the override by iterating through all the Levels for the name match
-               FilteredElementCollector collector = new FilteredElementCollector(element.Document);
-               ICollection<Element> collection = collector.OfClass(typeof(Level)).ToElements();
-               foreach (Element level in collection)
+               if (containerOverrideName.Equals("IFCSITE", StringComparison.CurrentCultureIgnoreCase))
                {
-                  if (level.Name.Equals(containerOverrideName, StringComparison.CurrentCultureIgnoreCase))
-                  {
-                     containerElemId = level.Id;
-                     break;
-                  }
+                  overrideContainerHnd = ExporterCacheManager.SiteHandle;
+                  return containerElemId;
                }
-               if (containerElemId != ElementId.InvalidElementId)
+               else if (containerOverrideName.Equals("IFCBUILDING", StringComparison.CurrentCultureIgnoreCase))
                {
-                  IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, containerElemId);
-                  if (levelInfo != null)
-                     overrideContainerHnd = levelInfo.GetBuildingStorey();
-                  if (overrideContainerHnd != null)
-                     return containerElemId;
+                  overrideContainerHnd = ExporterCacheManager.BuildingHandle;
+                  return containerElemId;
                }
+            }
+
+            // Find Level that is designated as the override by iterating through all the Levels for the name match
+            FilteredElementCollector collector = new FilteredElementCollector(element.Document);
+            ICollection<Element> collection = collector.OfClass(typeof(Level)).ToElements();
+            foreach (Element level in collection)
+            {
+               if (level.Name.Equals(containerOverrideName, StringComparison.CurrentCultureIgnoreCase))
+               {
+                  containerElemId = level.Id;
+                  break;
+               }
+            }
+            if (containerElemId != ElementId.InvalidElementId)
+            {
+               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, containerElemId);
+               if (levelInfo != null)
+                  overrideContainerHnd = levelInfo.GetBuildingStorey();
+               if (overrideContainerHnd != null)
+                  return containerElemId;
             }
          }
          return containerElemId;
