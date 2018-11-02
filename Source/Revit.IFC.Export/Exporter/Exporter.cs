@@ -245,6 +245,47 @@ namespace Revit.IFC.Export.Exporter
          ExportOptionsCache exportOptionsCache = ExporterCacheManager.ExportOptionsCache;
          View filterView = exportOptionsCache.FilterViewForExport;
 
+         // Create IfcSite first here using TopographySurface if any, if not create a default one
+         // Site and Building need to be created first to ensure containment override to work
+
+         Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
+         FilteredElementCollector collector = new FilteredElementCollector(document);
+         List<Type> topoSurfaceType = new List<Type>() { typeof(TopographySurface) };
+         ElementMulticlassFilter multiclassFilter = new ElementMulticlassFilter(topoSurfaceType);
+         collector.WherePasses(multiclassFilter);
+         ICollection<ElementId> filteredTopoElemments = collector.ToElementIds();
+         if (filteredTopoElemments != null && filteredTopoElemments.Count > 0)
+         {
+            foreach (ElementId topoElemId in filteredTopoElemments)
+            {
+               Element topoElem = document.GetElement(topoElemId);
+               if (topoElem is TopographySurface)
+               {
+                  GeometryElement geomElem = topoElem.get_Geometry(geomOptions);
+                  using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
+                  {
+                     SiteExporter.ExportTopographySurface(exporterIFC, (TopographySurface)topoElem, geomElem, productWrapper);
+                  }
+                  break;   // Process only the first one to create the IfcSite
+               }
+            }
+         }
+         if (ExporterCacheManager.SiteHandle == null || IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
+         {
+            using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
+            {
+               SiteExporter.ExportDefaultSite(exporterIFC, document, productWrapper);
+            }
+         }
+
+         // Create IfcBuilding first here
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.BuildingHandle) && IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
+         {
+            IFCAnyHandle buildingPlacement = CreateBuildingPlacement(exporterIFC.GetFile());
+            IFCAnyHandle buildingHnd = CreateBuildingFromProjectInfo(exporterIFC, document, buildingPlacement);
+            ExporterCacheManager.BuildingHandle = buildingHnd;
+         }
+
          bool exportIfBoundingBoxIsWithinViewExtent = (exportOptionsCache.ExportRoomsInView && (filterView != null) && filterView is View3D);
 
          FilteredElementCollector spatialElementCollector;
@@ -296,47 +337,6 @@ namespace Revit.IFC.Export.Exporter
          }
 
          SpatialElementExporter.DestroySpatialElementGeometryCalculator();
-
-         // Create IfcSite first here using TopographySurface if any, if not create a default one
-
-         Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
-         FilteredElementCollector collector = new FilteredElementCollector(document);
-         List<Type> topoSurfaceType = new List<Type>() { typeof(TopographySurface)};
-         ElementMulticlassFilter multiclassFilter = new ElementMulticlassFilter(topoSurfaceType);
-         collector.WherePasses(multiclassFilter);
-         ICollection<ElementId> filteredTopoElemments = collector.ToElementIds();
-         if (filteredTopoElemments != null && filteredTopoElemments.Count > 0)
-         {
-            foreach (ElementId topoElemId in filteredTopoElemments)
-            {
-               Element topoElem = document.GetElement(topoElemId);
-               if (topoElem is TopographySurface)
-               {
-                  GeometryElement geomElem = topoElem.get_Geometry(geomOptions);
-                  using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
-                  {
-                     SiteExporter.ExportTopographySurface(exporterIFC, (TopographySurface)topoElem, geomElem, productWrapper);
-                  }
-                  break;   // Process only the first one to create the IfcSite
-               }
-            }
-         }
-         
-         if (ExporterCacheManager.SiteHandle == null || IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
-         {
-            using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
-            {
-               SiteExporter.ExportDefaultSite(exporterIFC, document, productWrapper);
-            }
-         }
-
-         // Create IfcBuilding first here
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.BuildingHandle) && IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
-         {
-            IFCAnyHandle buildingPlacement = CreateBuildingPlacement(exporterIFC.GetFile());
-            IFCAnyHandle buildingHnd = CreateBuildingFromProjectInfo(exporterIFC, document, buildingPlacement);
-            ExporterCacheManager.BuildingHandle = buildingHnd;
-         }
       }
 
       protected void ExportNonSpatialElements(ExporterIFC exporterIFC, Autodesk.Revit.DB.Document document)
@@ -1528,15 +1528,6 @@ namespace Revit.IFC.Export.Exporter
             }
 
             // create an association between the IfcBuilding and spacial elements with no other containment.
-            // The name "GetRelatedProducts()" is misleading; this only covers spaces.
-            HashSet<IFCAnyHandle> buildingSpaces = RemoveContainedHandlesFromSet(ExporterCacheManager.LevelInfoCache.OrphanedSpaces);
-            buildingSpaces.UnionWith(exporterIFC.GetRelatedProducts());
-            if (buildingSpaces.Count > 0)
-            {
-               string guid = GUIDUtil.CreateSubElementGUID(projectInfo, (int)IFCBuildingSubElements.RelAggregatesProducts);
-               ExporterCacheManager.ContainmentCache.SetGUIDForRelation(siteOrbuildingHnd, guid);
-               ExporterCacheManager.ContainmentCache.AddRelations(siteOrbuildingHnd, buildingSpaces);
-            }
 
             // create a default site if we have latitude and longitude information.
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
@@ -1565,6 +1556,51 @@ namespace Revit.IFC.Export.Exporter
                // relate building and project if no site
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.BuildingHandle))
                   ExporterCacheManager.ContainmentCache.AddRelation(ExporterCacheManager.ProjectHandle, ExporterCacheManager.BuildingHandle);
+            }
+
+            // The name "GetRelatedProducts()" is misleading; this only covers spaces.
+            HashSet<IFCAnyHandle> buildingSpaces = RemoveContainedHandlesFromSet(ExporterCacheManager.LevelInfoCache.OrphanedSpaces);
+            buildingSpaces.UnionWith(exporterIFC.GetRelatedProducts());
+            if (buildingSpaces.Count > 0)
+            {
+               HashSet<IFCAnyHandle> relatedElementSetForBuilding = new HashSet<IFCAnyHandle>();
+               HashSet<IFCAnyHandle> relatedElementSetForSite = new HashSet<IFCAnyHandle>();
+               foreach (IFCAnyHandle indivSpace in buildingSpaces)
+               {
+                  // if there is override, use the override otherwise use default from site
+                  IFCAnyHandle overrideContainer = null;
+                  ElementId spaceId = ExporterCacheManager.HandleToElementCache.Find(indivSpace);
+                  Element elem = document.GetElement(spaceId);
+                  ElementId containerElemId = ParameterUtil.OverrideContainmentParameter(exporterIFC, elem, out overrideContainer);
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(overrideContainer))
+                  {
+                     if (IFCAnyHandleUtil.IsTypeOf(overrideContainer, IFCEntityType.IfcBuilding))
+                        relatedElementSetForBuilding.Add(indivSpace);
+                     else
+                        relatedElementSetForSite.Add(indivSpace);
+                  }
+                  else
+                  {
+                     // Default to Site
+                     relatedElementSetForSite.Add(indivSpace);
+                  }
+               }
+
+               if (relatedElementSetForBuilding.Count > 0)
+               {
+                  //string guid = GUIDUtil.CreateSubElementGUID(null, (int)IFCBuildingSubElements.RelAggregatesProducts);
+                  string guid = GUIDUtil.CreateGUID();
+                  ExporterCacheManager.ContainmentCache.SetGUIDForRelation(ExporterCacheManager.BuildingHandle, guid);
+                  ExporterCacheManager.ContainmentCache.AddRelations(ExporterCacheManager.BuildingHandle, relatedElementSetForBuilding);
+               }
+
+               if (relatedElementSetForSite.Count > 0)
+               {
+                  //string guid = GUIDUtil.CreateSubElementGUID(null, (int)IFCBuildingSubElements.RelAggregatesProducts);
+                  string guid = GUIDUtil.CreateGUID();
+                  ExporterCacheManager.ContainmentCache.SetGUIDForRelation(ExporterCacheManager.SiteHandle, guid);
+                  ExporterCacheManager.ContainmentCache.AddRelations(ExporterCacheManager.SiteHandle, relatedElementSetForSite);
+               }
             }
 
             // relate levels and products.
@@ -3583,7 +3619,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle buildingHnd = ExporterCacheManager.BuildingHandle;
             ProjectInfo projectInfo = document.ProjectInformation;
             string guid = GUIDUtil.CreateSubElementGUID(projectInfo, (int)IFCBuildingSubElements.RelAggregatesBuildingStoreys);
-            ExporterCacheManager.ContainmentCache.SetGUIDForRelation(buildingHnd, guid);
+            if (!ExporterCacheManager.ContainmentCache.ContainsKey(buildingHnd))
+               ExporterCacheManager.ContainmentCache.SetGUIDForRelation(buildingHnd, guid);
             ExporterCacheManager.ContainmentCache.AddRelations(buildingHnd, buildingStoreys);
          }
       }

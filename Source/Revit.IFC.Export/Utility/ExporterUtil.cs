@@ -2357,6 +2357,7 @@ namespace Revit.IFC.Export.Utility
                return null;        // the placementRelTo is not the type of IfcLocalPlacement, return null. We don't handle this
 
             totalTrf = trf.Multiply(totalTrf);
+            placementRelTo = IFCAnyHandleUtil.GetInstanceAttribute(placementRelTo, "PlacementRelTo");
          }
 
          return totalTrf;
