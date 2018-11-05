@@ -121,9 +121,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
             parseClassificationCode(paramClassificationCode, classificationCodeFieldName, out classificationName, out classificationCode, out classificationDescription);
 
-            if(String.IsNullOrEmpty(classificationDescription) && string.Compare(classificationCodeFieldName, "Assembly Code",true)== 0)
+            if (String.IsNullOrEmpty(classificationDescription))
             {
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.UNIFORMAT_DESCRIPTION, false, out classificationDescription);
+               if (string.Compare(classificationCodeFieldName, "Assembly Code", true) == 0)
+               {
+                  ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.UNIFORMAT_DESCRIPTION, false, out classificationDescription);
+               }
+               else if (string.Compare(classificationCodeFieldName, "OmniClass Number", true) == 0)
+               {
+                  ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.OMNICLASS_DESCRIPTION, false, out classificationDescription);
+               }
             }
             // If classificationName is empty, there is no classification to export.
             if (String.IsNullOrEmpty(classificationName))
