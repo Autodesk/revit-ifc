@@ -72,7 +72,11 @@ namespace Revit.IFC.Export.Exporter
                BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                if (0 == numPartsToExport)
                {
-                  using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element))
+                  // Check for containment override
+                  IFCAnyHandle overrideContainerHnd = null;
+                  ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+
+                  using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
                   {
                      IFCAnyHandle localPlacementToUse = setter.LocalPlacement;
                      BodyData bodyData = null;
@@ -98,7 +102,11 @@ namespace Revit.IFC.Export.Exporter
                {
                   for (int ii = 0; ii < numPartsToExport; ii++)
                   {
-                     using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, levels[ii]))
+                     // Check for containment override
+                     IFCAnyHandle overrideContainerHnd = null;
+                     ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+
+                     using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, levels[ii], overrideContainerHnd))
                      {
                         IFCAnyHandle localPlacementToUse = setter.LocalPlacement;
 

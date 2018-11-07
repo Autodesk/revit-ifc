@@ -98,6 +98,8 @@ namespace Revit.IFC.Export.Utility
             return;
 
          m_ElementIdToHandleDictionary[elementId] = handle;
+         // Register also handle to elementid cache at the same time in order to make the two caches consistent
+         ExporterCacheManager.HandleToElementCache.Register(handle, elementId);
       }
    }
 }

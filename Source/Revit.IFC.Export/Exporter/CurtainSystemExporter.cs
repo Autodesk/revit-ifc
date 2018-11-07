@@ -357,7 +357,12 @@ namespace Revit.IFC.Export.Exporter
             {
                Transform orientationTrf = Transform.Identity;
                IFCAnyHandle localPlacement = null;
-               setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf);
+
+               // Check for containment override
+               IFCAnyHandle overrideContainerHnd = null;
+               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+
+               setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideContainerId, overrideContainerHnd);
                localPlacement = setter.LocalPlacement;
 
                string objectType = NamingUtil.CreateIFCObjectName(exporterIFC, element);
