@@ -339,7 +339,11 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, ramp))
+            // Check for containment override
+            IFCAnyHandle overrideContainerHnd = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, ramp, out overrideContainerHnd);
+
+            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, ramp, null, null, overrideContainerId, overrideContainerHnd))
             {
                IFCAnyHandle contextOfItemsFootPrint = exporterIFC.Get3DContextHandle("FootPrint");
                IFCAnyHandle contextOfItemsAxis = exporterIFC.Get3DContextHandle("Axis");

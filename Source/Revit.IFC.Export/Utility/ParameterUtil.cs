@@ -904,7 +904,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="the familySymbol"></param>
       /// <returns>maximum Offset value if there are more than one parameters of the same name</returns>
-      public static double getSpecialOffsetParameter(FamilySymbol familySymbol)
+      public static double GetSpecialOffsetParameter(FamilySymbol familySymbol)
       {
          // This method is isolated here so that it can adopt localized parameter name as necessary
 
@@ -922,7 +922,12 @@ namespace Revit.IFC.Export.Utility
          return maxOffset;
       }
 
-      public static double getSpecialThicknessParameter(FamilySymbol familySymbol)
+      /// <summary>
+      /// This method returns a special parameter for Material Thickness found in the FamilySymbol that influence the CurtainWall Panel thickness.
+      /// </summary>
+      /// <param name="familySymbol">the familySymbol</param>
+      /// <returns>thickness</returns>
+      public static double GetSpecialThicknessParameter(FamilySymbol familySymbol)
       {
          // This method is isolated here so that it can adopt localized parameter name as necessary
 
@@ -941,5 +946,55 @@ namespace Revit.IFC.Export.Utility
          return thickestValue;
       }
 
+      /// <summary>
+      /// Get override containment value through a parameter "OverrideElementContainer". Value can be "IFCSITE", "IFCBUILDING", or the appropriate Level name
+      /// </summary>
+      /// <param name="element">the element</param>
+      /// <param name="overrideContainerHnd">the override container Handle</param>
+      /// <returns>true if there is override</returns>
+      public static ElementId OverrideContainmentParameter(ExporterIFC exporterIFC, Element element, out IFCAnyHandle overrideContainerHnd)
+      {
+         ElementId containerElemId = ElementId.InvalidElementId;
+         // Special case whether an object should be assigned to the Site or Building container
+         overrideContainerHnd = null;
+         string containerOverrideName = null;
+         if (ParameterUtil.GetStringValueFromElement(element, "OverrideElementContainer", out containerOverrideName) != null)
+         {
+            if (!string.IsNullOrEmpty(containerOverrideName))
+            {
+               if (containerOverrideName.Equals("IFCSITE", StringComparison.CurrentCultureIgnoreCase))
+               {
+                  overrideContainerHnd = ExporterCacheManager.SiteHandle;
+                  return containerElemId;
+               }
+               else if (containerOverrideName.Equals("IFCBUILDING", StringComparison.CurrentCultureIgnoreCase))
+               {
+                  overrideContainerHnd = ExporterCacheManager.BuildingHandle;
+                  return containerElemId;
+               }
+            }
+
+            // Find Level that is designated as the override by iterating through all the Levels for the name match
+            FilteredElementCollector collector = new FilteredElementCollector(element.Document);
+            ICollection<Element> collection = collector.OfClass(typeof(Level)).ToElements();
+            foreach (Element level in collection)
+            {
+               if (level.Name.Equals(containerOverrideName, StringComparison.CurrentCultureIgnoreCase))
+               {
+                  containerElemId = level.Id;
+                  break;
+               }
+            }
+            if (containerElemId != ElementId.InvalidElementId)
+            {
+               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, containerElemId);
+               if (levelInfo != null)
+                  overrideContainerHnd = levelInfo.GetBuildingStorey();
+               if (overrideContainerHnd != null)
+                  return containerElemId;
+            }
+         }
+         return containerElemId;
+      }
    }
 }

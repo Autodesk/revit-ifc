@@ -322,14 +322,13 @@ namespace Revit.IFC.Export.Exporter
             // Attach the port to the element
             guid = GUIDUtil.CreateGUID();
             string connectionName = inElement.Id + "|" + guid;
-            IFCAnyHandle connectorIn = null;
 
             // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
             // The following code collects the ports that are nested to the object to be assigned later
             if (isIFC4AndAbove)
                AddNestedMembership(inElementIFCHandle, portIn);
             else
-               connectorIn = IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portIn, inElementIFCHandle);
+               IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portIn, inElementIFCHandle);
          }
 
          // ----------------------- Out Port----------------------
@@ -348,20 +347,18 @@ namespace Revit.IFC.Export.Exporter
             // Attach the port to the element
             guid = GUIDUtil.CreateGUID();
             string connectionName = outElement.Id + "|" + guid;
-            IFCAnyHandle connectorOut = null;
 
             // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
             // The following code collects the ports that are nested to the object to be assigned later
             if (isIFC4AndAbove)
-               AddNestedMembership(inElementIFCHandle, portOut);
+               AddNestedMembership(outElementIFCHandle, portOut);
             else
-               connectorOut = IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portOut, outElementIFCHandle);
+               IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portOut, outElementIFCHandle);
          }
 
          //  ----------------------- Out Port -> In Port ----------------------
          if (portOut != null && portIn != null)
          {
-            Element elemToUse = (inElement.Id.IntegerValue < outElement.Id.IntegerValue) ? inElement : outElement;
             string guid = GUIDUtil.CreateGUID();
             IFCAnyHandle realizingElement = null;
             string connectionName = ExporterUtil.GetGlobalId(portIn) + "|" + ExporterUtil.GetGlobalId(portOut);

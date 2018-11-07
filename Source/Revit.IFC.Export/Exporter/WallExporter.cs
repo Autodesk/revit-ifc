@@ -812,7 +812,13 @@ namespace Revit.IFC.Export.Exporter
                double scaledFootprintArea = 0;
                double scaledLength = 0;
 
-               using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId))
+               // Check for containment override
+               IFCAnyHandle overrideContainerHnd = null;
+               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+               if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
+                  overrideLevelId = overrideContainerId;
+
+               using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId, overrideContainerHnd))
                {
                   IFCAnyHandle localPlacement = setter.LocalPlacement;
 
@@ -1347,7 +1353,13 @@ namespace Revit.IFC.Export.Exporter
 
             Transform orientationTrf = Transform.Identity;
 
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId))
+            // Check for containment override
+            IFCAnyHandle overrideContainerHnd = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+            if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
+               overrideLevelId = overrideContainerId;
+
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId, overrideContainerHnd))
             {
                IFCAnyHandle localPlacement = setter.LocalPlacement;
                wallHnd = IFCInstanceExporter.CreateWall(exporterIFC, element, elemGUID, ownerHistory,
