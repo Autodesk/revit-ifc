@@ -27,11 +27,12 @@ namespace Revit.IFC.Export.Utility
             CheckValidEntity();
             return m_ExportInstance;
          }
-         set
-         {
-            m_ExportInstance = value;
-            CheckValidEntity();
-         }
+         // Changed to read-only attribute. The value should not be set from outside to ensure integrity
+         //set
+         //{
+         //   m_ExportInstance = value;
+         //   CheckValidEntity();
+         //}
       }
 
       IFCEntityType m_ExportType = IFCEntityType.UnKnown;
@@ -45,13 +46,14 @@ namespace Revit.IFC.Export.Utility
             CheckValidEntity();
             return m_ExportType;
          }
-         set
-         {
-            m_ExportType = value;
-            CheckValidEntity();
-         }
+         // Changed to read-only attribute. The value should not be set from outside to ensure integrity
+         //set
+         //{
+         //   m_ExportType = value;
+         //   CheckValidEntity();
+         //}
       }
-      
+
       /// <summary>
       /// Validated PredefinedType from IfcExportType (or IfcType for the old param), or from IfcExportAs
       /// </summary>
@@ -134,29 +136,42 @@ namespace Revit.IFC.Export.Utility
       /// Set the pair information using only either the entity or the type
       /// </summary>
       /// <param name="entityType">the entity or type</param>
-      public void SetValueWithPair(IFCEntityType entityType)
+      /// <param name="predefineType">predefinedtype string</param>
+      public void SetValueWithPair(IFCEntityType entityType, string predefineType = null)
       {
          string entityTypeStr = entityType.ToString();
+         int typeLen = 4;
          bool isType = entityTypeStr.Substring(entityTypeStr.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase);
+         if (!isType)
+         {
+            if (entityType == IFCEntityType.IfcDoorStyle || entityType == IFCEntityType.IfcWindowStyle)
+            {
+               isType = true;
+               typeLen = 5;
+            }
+         }
 
          if (isType)
          {
             // Get the instance
-            string instName = entityTypeStr.Substring(0, entityTypeStr.Length - 4);
+            string instName = entityTypeStr.Substring(0, entityTypeStr.Length - typeLen);
             IfcSchemaEntityNode node = IfcSchemaEntityTree.Find(instName);
             if (node != null && !node.isAbstract)
             {
                IFCEntityType instType = IFCEntityType.UnKnown;
-               if (IFCEntityType.TryParse(instName, out instType))
+               if (IFCEntityType.TryParse(instName, true, out instType))
                   m_ExportInstance = instType;
             }
-            // If not found, try non-abstract supertype derived from the type
-            node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(instName);
-            if (node != null)
+            else
             {
-               IFCEntityType instType = IFCEntityType.UnKnown;
-               if (IFCEntityType.TryParse(node.Name, out instType))
-                  m_ExportInstance = instType;
+               // If not found, try non-abstract supertype derived from the type
+               node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(instName);
+               if (node != null)
+               {
+                  IFCEntityType instType = IFCEntityType.UnKnown;
+                  if (IFCEntityType.TryParse(node.Name, true, out instType))
+                     m_ExportInstance = instType;
+               }
             }
 
             // set the type
@@ -169,7 +184,7 @@ namespace Revit.IFC.Export.Utility
                if (node != null)
                {
                   IFCEntityType instType = IFCEntityType.UnKnown;
-                  if (IFCEntityType.TryParse(node.Name, out instType))
+                  if (IFCEntityType.TryParse(node.Name, true, out instType))
                      m_ExportType = instType;
                }
             }
@@ -187,13 +202,18 @@ namespace Revit.IFC.Export.Utility
                if (node != null)
                {
                   IFCEntityType instType = IFCEntityType.UnKnown;
-                  if (IFCEntityType.TryParse(node.Name, out instType))
+                  if (IFCEntityType.TryParse(node.Name, true, out instType))
                      m_ExportInstance = instType;
                }
             }
 
             // set the type pair
-            string typeName = entityType.ToString() + "Type";
+            string typeName = entityType.ToString();
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && (entityType == IFCEntityType.IfcDoor || entityType == IFCEntityType.IfcWindow))
+               typeName += "Style";
+            else
+               typeName += "Type";
+
             entityType = ElementFilteringUtil.GetValidIFCEntityType(typeName);
             if (entityType != IFCEntityType.UnKnown)
                m_ExportType = entityType;
@@ -203,13 +223,16 @@ namespace Revit.IFC.Export.Utility
                if (node != null)
                {
                   IFCEntityType instType = IFCEntityType.UnKnown;
-                  if (IFCEntityType.TryParse(node.Name, out instType))
+                  if (IFCEntityType.TryParse(node.Name, true, out instType))
                      m_ExportType = instType;
                }
             }
          }
 
-         ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType("NOTDEFINED", ValidatedPredefinedType, m_ExportType.ToString());
+         if (string.IsNullOrEmpty(predefineType))
+            predefineType = "NOTDEFINED";
+
+         ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, ValidatedPredefinedType, m_ExportType.ToString());
       }
 
       // Check valid entity and type set according to the MVD used in the export
@@ -224,9 +247,22 @@ namespace Revit.IFC.Export.Utility
             if (m_ExportInstance.ToString().EndsWith("StandardCase", StringComparison.InvariantCultureIgnoreCase))
             {
                string newInstanceName = m_ExportInstance.ToString().Remove(m_ExportInstance.ToString().Length - 12);
+
+               // Special handling for IfcOpeningStandardCase to turn it to IfcOpeningElement
+               if (newInstanceName.Equals("IfcOpening", StringComparison.InvariantCultureIgnoreCase))
+                  newInstanceName = newInstanceName + "Element";
+
                IFCEntityType newInst;
-               if (Enum.TryParse<IFCEntityType>(newInstanceName, out newInst))
-                  m_ExportInstance = newInst;
+               if (Enum.TryParse<IFCEntityType>(newInstanceName, true, out newInst))
+                  //m_ExportInstance = newInst;
+                  SetValueWithPair(newInst);
+            }
+            else if (m_ExportInstance.ToString().EndsWith("ElementedCase", StringComparison.InvariantCultureIgnoreCase))
+            {
+               string newInstanceName = m_ExportInstance.ToString().Remove(m_ExportInstance.ToString().Length - 13);
+               IFCEntityType newInst;
+               if (Enum.TryParse<IFCEntityType>(newInstanceName, true, out newInst))
+                  SetValueWithPair(newInst);
             }
          }
 
@@ -235,6 +271,13 @@ namespace Revit.IFC.Export.Utility
 
          if (!certEntAndPset.IsValidEntityInCurrentMVD(m_ExportInstance.ToString()))
             m_ExportInstance = IFCEntityType.UnKnown;
+
+         // IfcProxy is deprecated, we will change it to IfcBuildingElementProxy
+         if (m_ExportInstance == IFCEntityType.IfcProxy)
+         {
+            m_ExportInstance = IFCEntityType.IfcBuildingElementProxy;
+            m_ExportType = IFCEntityType.IfcBuildingElementProxyType;
+         }
       }
    }
 }

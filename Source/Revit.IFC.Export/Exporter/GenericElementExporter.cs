@@ -31,7 +31,7 @@ namespace Revit.IFC.Export.Exporter
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
          if (exportType.ExportInstance == IFCEntityType.UnKnown)
-            exportType.ExportInstance = IFCEntityType.IfcBuildingElementProxy;
+            exportType.SetValueWithPair(IFCEntityType.IfcBuildingElementProxy);
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return null;
 

@@ -119,10 +119,20 @@ namespace Revit.IFC.Export.Exporter
                   string instanceGUID = GUIDUtil.CreateGUID(element);
 
                   string footingType = GetIFCFootingType(ifcEnumType);    // need to keep it for legacy support when original data follows slightly diff naming
-                  //footingType = IFCValidateEntry.GetValidIFCPredefinedType(element, footingType, "IfcFootingType");
+                                                                          //footingType = IFCValidateEntry.GetValidIFCPredefinedType(element, footingType, "IfcFootingType");
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair();
+                  exportInfo.ValidatedPredefinedType = footingType;
+                  exportInfo.SetValueWithPair(elementClassTypeEnum);
 
                   IFCAnyHandle footing = IFCInstanceExporter.CreateFooting(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
                       ecData.GetLocalPlacement(), prodRep, footingType);
+
+                  // TODO: to allow shared geometry for Footings. For now, Footing export will not use shared geometry
+                  if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
+                  {
+                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
+                     ExporterCacheManager.TypeRelationsCache.Add(type, footing);
+                  }
 
                   if (exportParts)
                   {
