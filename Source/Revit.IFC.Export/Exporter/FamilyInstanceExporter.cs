@@ -630,7 +630,10 @@ namespace Revit.IFC.Export.Exporter
                         BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(tryToExportAsExtrusion, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                         if (exportType.ExportInstance == IFCEntityType.IfcColumn || exportType.ExportInstance == IFCEntityType.IfcMember || exportType.ExportInstance == IFCEntityType.IfcBeam)
                         {
-                           bodyExporterOptions.CollectMaterialAndProfile = true;
+                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                              bodyExporterOptions.CollectMaterialAndProfile = false;
+                           else
+                              bodyExporterOptions.CollectMaterialAndProfile = true;
                            // Get a profile name. 
                            profileName = NamingUtil.GetProfileName(familySymbol);
                         }
@@ -833,8 +836,11 @@ namespace Revit.IFC.Export.Exporter
                      if (typeInfo.materialAndProfile != null)
                      {
                         materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, typeInfo.materialAndProfile);
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, typeInfo.materialAndProfile);
-                        addedMaterialAssociation = true;
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
+                        {
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, typeInfo.materialAndProfile);
+                           addedMaterialAssociation = true;
+                        }
                      }
                      else if (basePlane != null && orig != null)
                      {
@@ -844,8 +850,11 @@ namespace Revit.IFC.Export.Exporter
                         if (matNProf.GetKeyValuePairs().Count > 0)
                         {
                            materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, matNProf);
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, matNProf);
-                           addedMaterialAssociation = true;
+                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, matNProf);
+                              addedMaterialAssociation = true;
+                           }
                         }
                      }
                   }
@@ -1425,16 +1434,17 @@ namespace Revit.IFC.Export.Exporter
                   }
                   break;
                }
-            case IFCEntityType.IfcFooting:
-               FootingExporter.ExportFooting(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
-               return true;
+               // IfcFooting and IfcPile will be handled by FamilyInstanceExporter in a more generic way
+            //case IFCEntityType.IfcFooting:
+            //   FootingExporter.ExportFooting(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
+            //   return true;
             case IFCEntityType.IfcCovering:
                CeilingExporter.ExportCovering(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
                return true;
-            case IFCEntityType.IfcPile:
-               PileExporter.ExportPile(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
-               //TODO
-               return true;
+            //case IFCEntityType.IfcPile:
+            //   PileExporter.ExportPile(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
+            //   //TODO
+            //   return true;
             case IFCEntityType.IfcRamp:
                RampExporter.ExportRamp(exporterIFC, ifcEnumTypeString, element, geometryElement, 1, productWrapper);
                return true;

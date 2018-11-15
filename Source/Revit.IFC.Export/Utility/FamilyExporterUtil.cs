@@ -476,11 +476,11 @@ namespace Revit.IFC.Export.Exporter
             {
                // For compatibility with IFC2x3 and before. IfcGasTerminalType has been removed and IfcBurnerType replaces it in IFC4
                case Common.Enums.IFCEntityType.IfcGasTerminalType:
-                  exportInfo.ExportType = Common.Enums.IFCEntityType.IfcBurnerType;
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcBurnerType);
                   break;
                // For compatibility with IFC2x3 and before. IfcElectricHeaterType has been removed and IfcSpaceHeaterType replaces it in IFC4
                case Common.Enums.IFCEntityType.IfcElectricHeaterType:
-                  exportInfo.ExportType = Common.Enums.IFCEntityType.IfcSpaceHeaterType;
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcSpaceHeaterType);
                   break;
             }
          }
@@ -490,16 +490,16 @@ namespace Revit.IFC.Export.Exporter
             switch (exportType.ExportType)
             {
                case Common.Enums.IFCEntityType.IfcBurnerType:
-                  exportInfo.ExportType = Common.Enums.IFCEntityType.IfcGasTerminalType;
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcGasTerminalType);
                   break;
                case Common.Enums.IFCEntityType.IfcSpaceHeaterType:
-                  exportInfo.ExportType = Common.Enums.IFCEntityType.IfcElectricHeaterType;
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcElectricHeaterType);
                   break;
                case Common.Enums.IFCEntityType.IfcDoorType:
-                  exportInfo.ExportType = Common.Enums.IFCEntityType.IfcDoorStyle;
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcDoorStyle);
                   break;
                case Common.Enums.IFCEntityType.IfcWindowType:
-                  exportInfo.ExportType = Common.Enums.IFCEntityType.IfcWindowStyle;
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWindowStyle);
                   break;
             }
          }

@@ -90,9 +90,19 @@ namespace Revit.IFC.Export.Exporter
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
                   //string pileType = IFCValidateEntry.GetValidIFCPredefinedType(element, ifcEnumType);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair();
+                  exportInfo.ValidatedPredefinedType = ifcEnumType;
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcPile);
 
                   IFCAnyHandle pile = IFCInstanceExporter.CreatePile(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
                       ecData.GetLocalPlacement(), prodRep, ifcEnumType, null);
+
+                  // TODO: to allow shared geometry for Piles. For now, Pile export will not use shared geometry
+                  if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
+                  {
+                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
+                     ExporterCacheManager.TypeRelationsCache.Add(type, pile);
+                  }
 
                   if (exportParts)
                   {
