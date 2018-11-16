@@ -1695,7 +1695,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle contextOfItemsFootPrint = exporterIFC.Get3DContextHandle("FootPrint");
          IFCAnyHandle contextOfItemsAxis = exporterIFC.Get3DContextHandle("Axis");
 
-         Transform trfFromBodyData = bodyData.OffsetTransform;
+         Transform trfFromBodyData = new Transform(bodyData.OffsetTransform);
          trfFromBodyData.Origin = UnitUtil.UnscaleLength(bodyData.OffsetTransform.Origin);
          Transform boundaryTrf = (bodyData.OffsetTransform == null) ? trf : trf.Multiply(trfFromBodyData);
          XYZ runBoundaryProjDir = boundaryTrf.BasisZ;
