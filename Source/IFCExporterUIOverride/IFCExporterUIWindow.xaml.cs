@@ -142,6 +142,7 @@ namespace BIM.IFC.Export.UI
          comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
          comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCBCA));
          comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4));
 
          foreach (IFCFileFormat fileType in Enum.GetValues(typeof(IFCFileFormat)))
          {

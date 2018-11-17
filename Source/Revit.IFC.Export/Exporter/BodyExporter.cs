@@ -2565,7 +2565,7 @@ namespace Revit.IFC.Export.Exporter
                      IList<IFCAnyHandle> vertexHandles = new List<IFCAnyHandle>();
                      HashSet<IFCAnyHandle> currentFaceSet = new HashSet<IFCAnyHandle>();
 
-                     if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                     if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)
                      {
                         List<List<double>> coordList = new List<List<double>>();
 
@@ -2684,7 +2684,7 @@ namespace Revit.IFC.Export.Exporter
          int numGeoms = selectiveBRepExport ? numBRepsToExport : splitGeometryList.Count;
 
          bool canExportAsAdvancedGeometry = ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView;
-         bool canExportAsTessellatedFaceSet = ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView;
+         bool canExportAsTessellatedFaceSet = ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General;
 
          // We will cycle through all of the geometries one at a time, doing the best export we can for each.
          for (int index = 0; index < numGeoms; index++)
@@ -3106,7 +3106,9 @@ namespace Revit.IFC.Export.Exporter
          // we will try to see if we can use an optimized BRep created from a swept solid.
          bool allowExportAsOptimizedBRep = (options.TessellationLevel == BodyExporterOptions.BodyTessellationLevel.Coarse ||
             ExporterCacheManager.ExportOptionsCache.LevelOfDetail < ExportOptionsCache.ExportTessellationLevel.High);
-         bool allowAdvancedBReps = ExporterCacheManager.ExportOptionsCache.ExportAs4 && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView;
+         bool allowAdvancedBReps = ExporterCacheManager.ExportOptionsCache.ExportAs4 
+                                    && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView
+                                    && !ExporterCacheManager.ExportOptionsCache.ExportAs4General;
 
          // We will try to export as a swept solid if the option is set, and we are either exporting to a schema that allows it,
          // or we are using a coarse tessellation, in which case we will export the swept solid as an optimzed BRep.

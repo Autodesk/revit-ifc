@@ -195,7 +195,7 @@ namespace Revit.IFC.Export.Exporter
                if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
                {
                   // Use tessellated geometry in IFC Reference View
-                  if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                  if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)
                   {
                      // TODO: Create CreateSimpleSweptSolidAsTessellation routine that takes advantage of the superior tessellation of this class.
                      BodyExporterOptions options = new BodyExporterOptions(false, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
