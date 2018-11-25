@@ -135,14 +135,14 @@ namespace Revit.IFC.Export.Exporter
                                  if ((exportType.ExportInstance == IFCEntityType.UnKnown) || 
                                        (exportType.ExportInstance == IFCEntityType.IfcPlate) ||
                                        (exportType.ExportInstance == IFCEntityType.IfcMember))
-                                    exportType.SetValueWithPair(IFCEntityType.IfcBuildingElementProxy);
+                                    exportType.SetValueWithPair(IFCEntityType.IfcBuildingElementProxy, ifcEnumType);
                               }
                               else
                               {
                                  if (exportType.ExportInstance == IFCEntityType.UnKnown)
                                  {
                                     ifcEnumType = "CURTAIN_PANEL";
-                                    exportType.SetValueWithPair(IFCEntityType.IfcPlateType);
+                                    exportType.SetValueWithPair(IFCEntityType.IfcPlateType, ifcEnumType);
                                  }
                               }
 

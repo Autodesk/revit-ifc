@@ -367,7 +367,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle rampContainerHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, rampGUID, ownerHistory, rampLocalPlacement, null, predefType);
                   // Create appropriate type
                   IFCExportInfoPair exportType = new IFCExportInfoPair();
-                  exportType.SetValueWithPair(IFCEntityType.IfcRamp);
+                  exportType.SetValueWithPair(IFCEntityType.IfcRamp, predefType);
                   IFCAnyHandle rampTypeHnd = ExporterUtil.CreateGenericTypeFromElement(ramp, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(rampTypeHnd, rampContainerHnd);
                   productWrapper.AddElement(ramp, rampContainerHnd, placementSetter.LevelInfo, null, true);
@@ -428,7 +428,7 @@ namespace Revit.IFC.Export.Exporter
 
                            // Create type
                            IFCExportInfoPair flightEportType = new IFCExportInfoPair();
-                           flightEportType.SetValueWithPair(IFCEntityType.IfcRampFlight);
+                           flightEportType.SetValueWithPair(IFCEntityType.IfcRampFlight, flightPredefType);
                            IFCAnyHandle flightTypeHnd = IFCInstanceExporter.CreateGenericIFCType(flightEportType, null, exporterIFC.GetFile(), null, null, flightPredefType);
                            IFCAnyHandleUtil.OverrideNameAttribute(flightTypeHnd, flightName);
                            ExporterCacheManager.TypeRelationsCache.Add(flightTypeHnd, rampFlightHnd);
@@ -497,7 +497,7 @@ namespace Revit.IFC.Export.Exporter
 
                            // Create type
                            IFCExportInfoPair landingEportType = new IFCExportInfoPair();
-                           landingEportType.SetValueWithPair(IFCEntityType.IfcSlab);
+                           landingEportType.SetValueWithPair(IFCEntityType.IfcSlab, landingPredefType);
                            IFCAnyHandle landingTypeHnd = IFCInstanceExporter.CreateGenericIFCType(landingEportType, null, exporterIFC.GetFile(), null, null, landingPredefType);
                            IFCAnyHandleUtil.OverrideNameAttribute(landingTypeHnd, landingName);
                            ExporterCacheManager.TypeRelationsCache.Add(landingTypeHnd, rampLandingHnd);

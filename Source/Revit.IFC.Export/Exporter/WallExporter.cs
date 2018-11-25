@@ -1175,7 +1175,7 @@ namespace Revit.IFC.Export.Exporter
             if (wallElement != null && geometryElement != null)
             {
                IFCExportInfoPair exportInfo = new IFCExportInfoPair();
-               exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWall);
+               exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWall, ifcEnumType);
                LevelUtil.CreateSplitLevelRangesForElement(exporterIFC, exportInfo, element, out levels, out ranges);
             }
 

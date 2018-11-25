@@ -1401,24 +1401,24 @@ namespace Revit.IFC.Export.Exporter
          // Note that this function doesn't support creating types - it exports a simple IFC instance only of a few possible types.
          switch (exportType.ExportInstance)
          {
-            case IFCEntityType.IfcBeam:
-               {
-                  // We will say that we exported the beam if either we generated an IfcBeam, or if we determined that there
-                  // was nothing to export, either because the beam had no geometry to export, or it was completely clipped.
+            //case IFCEntityType.IfcBeam:
+            //   {
+            //      // We will say that we exported the beam if either we generated an IfcBeam, or if we determined that there
+            //      // was nothing to export, either because the beam had no geometry to export, or it was completely clipped.
 
-                  // The regular Beam has been moved to the ExportFamilyInstanceAsMappedItem, to be able to export its types and also as a mapped geometry
-                  // standard building elements
+            //      // The regular Beam has been moved to the ExportFamilyInstanceAsMappedItem, to be able to export its types and also as a mapped geometry
+            //      // standard building elements
 
-                  // Limit this to IFC4, as beams no longer get axes exported if we use the code in ExportFamilyInstanceAsMappedItem.
-                  if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 || (element is DirectShape))
-                  {
-                     bool dontExport;
-                     IFCAnyHandle beamHnd = BeamExporter.ExportBeamAsStandardElement(exporterIFC, element, geometryElement, productWrapper, out dontExport);
-                     return (dontExport || !IFCAnyHandleUtil.IsNullOrHasNoValue(beamHnd));
-                  }
-                  else
-                     return false;
-               }
+            //      // Limit this to IFC4, as beams no longer get axes exported if we use the code in ExportFamilyInstanceAsMappedItem.
+            //      //if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 || (element is DirectShape))
+            //      //{
+            //      //   bool dontExport;
+            //      //   IFCAnyHandle beamHnd = BeamExporter.ExportBeamAsStandardElement(exporterIFC, element, geometryElement, productWrapper, out dontExport);
+            //      //   return (dontExport || !IFCAnyHandleUtil.IsNullOrHasNoValue(beamHnd));
+            //      //}
+            //      //else
+            //      //   return false;
+            //   }
             case IFCEntityType.IfcBuildingElementProxy:
                {
                   Element type = element.Document.GetElement(element.GetTypeId());

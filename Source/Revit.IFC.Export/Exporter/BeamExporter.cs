@@ -380,7 +380,7 @@ namespace Revit.IFC.Export.Exporter
          if (string.IsNullOrEmpty(preDefinedTypeSearch))
             preDefinedTypeSearch = "NULL";
          IFCExportInfoPair exportType = new IFCExportInfoPair();
-         exportType.SetValueWithPair(IFCEntityType.IfcBeamType);
+         exportType.SetValueWithPair(IFCEntityType.IfcBeamType, preDefinedTypeSearch);
          IFCAnyHandle beamType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(beamType))
          {
