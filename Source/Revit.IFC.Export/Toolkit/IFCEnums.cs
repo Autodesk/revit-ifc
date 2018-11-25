@@ -1235,9 +1235,7 @@ namespace Revit.IFC.Export.Toolkit
    {
       Beam,
       Joist,
-      Hollowcore,
       Lintel,
-      Spandrel,
       T_Beam,
       UserDefined,
       NotDefined
@@ -1249,7 +1247,6 @@ namespace Revit.IFC.Export.Toolkit
    public enum IFCColumnType
    {
       Column,
-      Pilaster,
       UserDefined,
       NotDefined
    }

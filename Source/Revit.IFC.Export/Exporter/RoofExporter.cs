@@ -137,7 +137,7 @@ namespace Revit.IFC.Export.Exporter
 
                      // Create type
                      IFCExportInfoPair slabRoofExportType = new IFCExportInfoPair();
-                     slabRoofExportType.SetValueWithPair(IFCEntityType.IfcSlab);
+                     slabRoofExportType.SetValueWithPair(IFCEntityType.IfcSlab, slabRoofPredefinedType);
                      IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(roof, slabRoofExportType, exporterIFC.GetFile(), ownerHistory, slabRoofPredefinedType, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(slabRoofTypeHnd, slabHnd);
                   }

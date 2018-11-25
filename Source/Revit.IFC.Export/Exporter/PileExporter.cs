@@ -92,7 +92,7 @@ namespace Revit.IFC.Export.Exporter
                   //string pileType = IFCValidateEntry.GetValidIFCPredefinedType(element, ifcEnumType);
                   IFCExportInfoPair exportInfo = new IFCExportInfoPair();
                   exportInfo.ValidatedPredefinedType = ifcEnumType;
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcPile);
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcPile, ifcEnumType);
 
                   IFCAnyHandle pile = IFCInstanceExporter.CreatePile(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
                       ecData.GetLocalPlacement(), prodRep, ifcEnumType, null);

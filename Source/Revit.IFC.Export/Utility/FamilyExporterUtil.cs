@@ -476,11 +476,11 @@ namespace Revit.IFC.Export.Exporter
             {
                // For compatibility with IFC2x3 and before. IfcGasTerminalType has been removed and IfcBurnerType replaces it in IFC4
                case Common.Enums.IFCEntityType.IfcGasTerminalType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcBurnerType);
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcBurnerType, ifcEnumType);
                   break;
                // For compatibility with IFC2x3 and before. IfcElectricHeaterType has been removed and IfcSpaceHeaterType replaces it in IFC4
                case Common.Enums.IFCEntityType.IfcElectricHeaterType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcSpaceHeaterType);
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcSpaceHeaterType, ifcEnumType);
                   break;
             }
          }
@@ -490,16 +490,16 @@ namespace Revit.IFC.Export.Exporter
             switch (exportType.ExportType)
             {
                case Common.Enums.IFCEntityType.IfcBurnerType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcGasTerminalType);
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcGasTerminalType, ifcEnumType);
                   break;
                case Common.Enums.IFCEntityType.IfcSpaceHeaterType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcElectricHeaterType);
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcElectricHeaterType, ifcEnumType);
                   break;
                case Common.Enums.IFCEntityType.IfcDoorType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcDoorStyle);
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcDoorStyle, ifcEnumType);
                   break;
                case Common.Enums.IFCEntityType.IfcWindowType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWindowStyle);
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWindowStyle, ifcEnumType);
                   break;
             }
          }

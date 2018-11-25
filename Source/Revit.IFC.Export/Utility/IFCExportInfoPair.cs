@@ -192,16 +192,16 @@ namespace Revit.IFC.Export.Utility
          else
          {
             // set the instance
-            entityType = ElementFilteringUtil.GetValidIFCEntityType(entityType);
-            if (entityType != IFCEntityType.UnKnown)
-               m_ExportInstance = entityType;
+            IFCEntityType instType = ElementFilteringUtil.GetValidIFCEntityType(entityType);
+            if (instType != IFCEntityType.UnKnown)
+               m_ExportInstance = instType;
             else
             {
                // If not found, try non-abstract supertype derived from the type
                IfcSchemaEntityNode node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(entityTypeStr);
                if (node != null)
                {
-                  IFCEntityType instType = IFCEntityType.UnKnown;
+                  instType = IFCEntityType.UnKnown;
                   if (IFCEntityType.TryParse(node.Name, true, out instType))
                      m_ExportInstance = instType;
                }
@@ -222,7 +222,7 @@ namespace Revit.IFC.Export.Utility
                IfcSchemaEntityNode node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(typeName);
                if (node != null)
                {
-                  IFCEntityType instType = IFCEntityType.UnKnown;
+                  instType = IFCEntityType.UnKnown;
                   if (IFCEntityType.TryParse(node.Name, true, out instType))
                      m_ExportType = instType;
                }

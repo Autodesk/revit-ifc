@@ -889,7 +889,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IFC 4 for General Use.
+        ///   Looks up a localized string similar to IFC4 for General Use.
         /// </summary>
         public static string IFC4 {
             get {

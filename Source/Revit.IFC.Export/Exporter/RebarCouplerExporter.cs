@@ -130,7 +130,7 @@ namespace Revit.IFC.Export.Exporter
                {
                   IFCAnyHandle instanceHandle = null;
                   IFCExportInfoPair exportMechFastener = new IFCExportInfoPair();
-                  exportMechFastener.SetValueWithPair(IFCEntityType.IfcMechanicalFastener);
+                  exportMechFastener.SetValueWithPair(IFCEntityType.IfcMechanicalFastener, ifcEnumType);
                   instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportMechFastener, exporterIFC, coupler, instanceGUID, ownerHistory,
                                       setter.LocalPlacement, productRepresentation);
                   string instanceName = NamingUtil.GetNameOverride(instanceHandle, coupler, origInstanceName + ": " + idx);
