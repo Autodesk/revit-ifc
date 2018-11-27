@@ -380,7 +380,7 @@ namespace Revit.IFC.Export.Exporter
          if (string.IsNullOrEmpty(preDefinedTypeSearch))
             preDefinedTypeSearch = "NULL";
          IFCExportInfoPair exportType = new IFCExportInfoPair();
-         exportType.SetValueWithPair(IFCEntityType.IfcBeamType);
+         exportType.SetValueWithPair(IFCEntityType.IfcBeamType, preDefinedTypeSearch);
          IFCAnyHandle beamType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(beamType))
          {
@@ -505,7 +505,10 @@ namespace Revit.IFC.Export.Exporter
                      BodyData bodyData = null;
 
                      BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-                     bodyExporterOptions.CollectMaterialAndProfile = true;
+                     if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                        bodyExporterOptions.CollectMaterialAndProfile = false;
+                     else
+                        bodyExporterOptions.CollectMaterialAndProfile = true;
 
                      if (geomObjects != null && geomObjects.Count == 1 && geomObjects[0] is Solid)
                      {

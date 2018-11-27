@@ -734,6 +734,18 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Option to be used for general IFC4 export (not specific to RV or DTV MVDs). Useful when there is a need to export entities that are not strictly valid within RV or DTV
+      /// It should work like IFC2x3, except that it will use IFC4 tessellated geometry instead of IFC2x3 BREP
+      /// </summary>
+      public bool ExportAs4General
+      {
+         get
+         {
+            return (FileVersion == IFCVersion.IFC4);
+         }
+      }
+
+      /// <summary>
       /// Identifies if the schema and MVD used is the IFC 2x3 COBie 2.4 Design Deliverable.
       /// </summary>
       public bool ExportAs2x3COBIE24DesignDeliverable

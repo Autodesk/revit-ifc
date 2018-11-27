@@ -864,7 +864,7 @@ namespace Revit.IFC.Export.Exporter
 
                   // Create appropriate type
                   IFCExportInfoPair exportType = new IFCExportInfoPair();
-                  exportType.SetValueWithPair(IFCEntityType.IfcStair);
+                  exportType.SetValueWithPair(IFCEntityType.IfcStair, predefType);
                   IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(stairTypeHnd, containedStairHnd);
                   CategoryUtil.CreateMaterialAssociation(exporterIFC, containedStairHnd, bodyData.MaterialIds);
@@ -959,7 +959,7 @@ namespace Revit.IFC.Export.Exporter
 
                // Create appropriate type
                IFCExportInfoPair exportType = new IFCExportInfoPair();
-               exportType.SetValueWithPair(IFCEntityType.IfcStair);
+               exportType.SetValueWithPair(IFCEntityType.IfcStair, predefType);
                IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
                ExporterCacheManager.TypeRelationsCache.Add(stairTypeHnd, stairContainerHnd);
 
@@ -1021,7 +1021,7 @@ namespace Revit.IFC.Export.Exporter
                      IFCAnyHandleUtil.OverrideNameAttribute(stairFlightHnd, runName);
                      // Create type
                      IFCExportInfoPair flightEportType = new IFCExportInfoPair();
-                     flightEportType.SetValueWithPair(IFCEntityType.IfcStairFlight);
+                     flightEportType.SetValueWithPair(IFCEntityType.IfcStairFlight, flightPredefType);
                      IFCAnyHandle flightTypeHnd = ExporterUtil.CreateGenericTypeFromElement(run, flightEportType, exporterIFC.GetFile(), ownerHistory, flightPredefType, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(flightTypeHnd, stairFlightHnd);
 
@@ -1091,7 +1091,7 @@ namespace Revit.IFC.Export.Exporter
 
                      // Create type
                      IFCExportInfoPair landingExportType = new IFCExportInfoPair();
-                     landingExportType.SetValueWithPair(IFCEntityType.IfcSlab);
+                     landingExportType.SetValueWithPair(IFCEntityType.IfcSlab, landingPredefinedType);
                      IFCAnyHandle landingTypeHnd = ExporterUtil.CreateGenericTypeFromElement(landing, landingExportType, exporterIFC.GetFile(), ownerHistory, landingPredefinedType, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(landingTypeHnd, landingHnd);
 
@@ -1695,7 +1695,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle contextOfItemsFootPrint = exporterIFC.Get3DContextHandle("FootPrint");
          IFCAnyHandle contextOfItemsAxis = exporterIFC.Get3DContextHandle("Axis");
 
-         Transform trfFromBodyData = bodyData.OffsetTransform;
+         Transform trfFromBodyData = new Transform(bodyData.OffsetTransform);
          trfFromBodyData.Origin = UnitUtil.UnscaleLength(bodyData.OffsetTransform.Origin);
          Transform boundaryTrf = (bodyData.OffsetTransform == null) ? trf : trf.Multiply(trfFromBodyData);
          XYZ runBoundaryProjDir = boundaryTrf.BasisZ;
