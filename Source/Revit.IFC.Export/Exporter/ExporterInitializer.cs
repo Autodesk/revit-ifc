@@ -278,6 +278,10 @@ namespace Revit.IFC.Export.Exporter
             if (ElementFilteringUtil.IsIFCExportAsSetToDontExport(schedule))
                continue;
 
+            // ViewSchedule may be a template view and it will not have the associated view and elements. Skip this type of schedule
+            if (schedule.IsTemplate)
+               continue;
+
             PropertySetDescription customPSet = new PropertySetDescription();
 
             string scheduleName = schedule.Name;
