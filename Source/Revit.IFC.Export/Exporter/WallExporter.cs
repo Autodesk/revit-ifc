@@ -424,7 +424,8 @@ namespace Revit.IFC.Export.Exporter
             hasClipping = bodyItemHnd.Id != baseBodyItemHnd.Id;
 
             // If there is clipping in IFC4 RV, it also needs to rollback
-            if ((expandedWallExtrusion && !hasClipping) || (hasClipping && ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView))
+            if ((expandedWallExtrusion && !hasClipping) 
+               || (hasClipping && ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView))
             {
                // We expanded the wall base, expecting to find cutouts, but found none.  Delete the extrusion and try again below.
                tr.RollBack();
@@ -1174,7 +1175,7 @@ namespace Revit.IFC.Export.Exporter
             if (wallElement != null && geometryElement != null)
             {
                IFCExportInfoPair exportInfo = new IFCExportInfoPair();
-               exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWall);
+               exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWall, ifcEnumType);
                LevelUtil.CreateSplitLevelRangesForElement(exporterIFC, exportInfo, element, out levels, out ranges);
             }
 

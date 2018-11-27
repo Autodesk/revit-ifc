@@ -586,7 +586,7 @@ namespace Revit.IFC.Export.Utility
             foreach (KeyValuePair<ElementId, IFCAnyHandle> MnP in materialAndProfile.GetKeyValuePairs())
             {
                IFCAnyHandle materialHnd = CategoryUtil.GetOrCreateMaterialHandle(exporterIFC, MnP.Key);
-               if (materialHnd != null && ExporterCacheManager.ExportOptionsCache.ExportAs4)
+               if (materialHnd != null && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                   matProf.Add(IFCInstanceExporter.CreateMaterialProfile(file, MnP.Value, Material: materialHnd, name: familySymbol.Name));
             }
 

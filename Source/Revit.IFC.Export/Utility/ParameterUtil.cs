@@ -947,7 +947,7 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Get override containment value through a parameter "OverrideElementContainer". Value can be "IFCSITE", "IFCBUILDING", or the appropriate Level name
+      /// Get override containment value through a parameter "IfcSpatialContainer" or "OverrideElementContainer". Value can be "IFCSITE", "IFCBUILDING", or the appropriate Level name
       /// </summary>
       /// <param name="element">the element</param>
       /// <param name="overrideContainerHnd">the override container Handle</param>
@@ -958,20 +958,19 @@ namespace Revit.IFC.Export.Utility
          // Special case whether an object should be assigned to the Site or Building container
          overrideContainerHnd = null;
          string containerOverrideName = null;
-         if (ParameterUtil.GetStringValueFromElement(element, "OverrideElementContainer", out containerOverrideName) != null)
+         if (ParameterUtil.GetStringValueFromElement(element, "OverrideElementContainer", out containerOverrideName) == null)
+            ParameterUtil.GetStringValueFromElement(element, "IfcSpatialContainer", out containerOverrideName);
+         if (!string.IsNullOrEmpty(containerOverrideName))
          {
-            if (!string.IsNullOrEmpty(containerOverrideName))
+            if (containerOverrideName.Equals("IFCSITE", StringComparison.CurrentCultureIgnoreCase))
             {
-               if (containerOverrideName.Equals("IFCSITE", StringComparison.CurrentCultureIgnoreCase))
-               {
-                  overrideContainerHnd = ExporterCacheManager.SiteHandle;
-                  return containerElemId;
-               }
-               else if (containerOverrideName.Equals("IFCBUILDING", StringComparison.CurrentCultureIgnoreCase))
-               {
-                  overrideContainerHnd = ExporterCacheManager.BuildingHandle;
-                  return containerElemId;
-               }
+               overrideContainerHnd = ExporterCacheManager.SiteHandle;
+               return containerElemId;
+            }
+            else if (containerOverrideName.Equals("IFCBUILDING", StringComparison.CurrentCultureIgnoreCase))
+            {
+               overrideContainerHnd = ExporterCacheManager.BuildingHandle;
+               return containerElemId;
             }
 
             // Find Level that is designated as the override by iterating through all the Levels for the name match
@@ -994,6 +993,7 @@ namespace Revit.IFC.Export.Utility
                   return containerElemId;
             }
          }
+
          return containerElemId;
       }
    }

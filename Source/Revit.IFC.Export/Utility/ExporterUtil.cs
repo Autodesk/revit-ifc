@@ -979,21 +979,21 @@ namespace Revit.IFC.Export.Utility
          IList<PropertySetDescription> cachedPsets = null;
          if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcObject))
          {
-            Enum.TryParse<IFCEntityType>(hndTypeStr + "Type", out altProdHndType);
+            Enum.TryParse<IFCEntityType>(hndTypeStr + "Type", true, out altProdHndType);
 
             // Need to handle backward compatibility for IFC2x3
             if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnishingElement)
                && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
-               Enum.TryParse<IFCEntityType>("IfcFurnitureType", out altProdHndType2);
+               Enum.TryParse<IFCEntityType>("IfcFurnitureType", true, out altProdHndType2);
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcTypeObject))
          {
             // Need to handle backward compatibility for IFC2x3
             if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnitureType)
                && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
-               Enum.TryParse<IFCEntityType>("IfcFurnishingElement", out altProdHndType);
+               Enum.TryParse<IFCEntityType>("IfcFurnishingElement", true, out altProdHndType);
             else
-            Enum.TryParse<IFCEntityType>(hndTypeStr.Substring(0, hndTypeStr.Length - 4), out altProdHndType);
+            Enum.TryParse<IFCEntityType>(hndTypeStr.Substring(0, hndTypeStr.Length - 4), true, out altProdHndType);
          }
 
          IList<PropertySetDescription> tmpCachedPsets = null;
@@ -2212,64 +2212,63 @@ namespace Revit.IFC.Export.Utility
             IFCFile file = exporterIFC.GetFile();
             Document document = ExporterCacheManager.Document;
 
+            IList<IFCAnyHandle> layers = new List<IFCAnyHandle>(numLayersToCreate);
+
+            // TODO: To handle materiallayer differently for RV1.2
+            for (int ii = 0; ii < numLayersToCreate; ii++)
             {
-               IList<IFCAnyHandle> layers = new List<IFCAnyHandle>(numLayersToCreate);
+               // This might be null.
+               if (matIds[ii] == ElementId.InvalidElementId)
+                  continue;
 
-               for (int ii = 0; ii < numLayersToCreate; ii++)
-               {
-                  // This might be null.
-                  if (matIds[ii] == ElementId.InvalidElementId)
-                     continue;
+               Material material = document.GetElement(matIds[ii]) as Material;
 
-                  Material material = document.GetElement(matIds[ii]) as Material;
+               int widthIndex = widthIndices[ii];
+               double scaledWidth = UnitUtil.ScaleLength(widths[widthIndex]);
 
-                  int widthIndex = widthIndices[ii];
-                  double scaledWidth = UnitUtil.ScaleLength(widths[widthIndex]);
-
-                  string layerName = null;
-                  string description = null;
-                  string category = null;
-                  int? priority = null;
+               string layerName = null;
+               string description = null;
+               string category = null;
+               int? priority = null;
                   
-                  IFCLogical? isVentilated = null;
-                  int isVentilatedValue;
-                  if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.IsVentilated", out isVentilatedValue) != null)
-                  {
-                     if (isVentilatedValue == 0)
-                        isVentilated = IFCLogical.False;
-                     else if (isVentilatedValue == 1)
-                        isVentilated = IFCLogical.True;
-                  }
-                  
-                  if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                  {
-                     layerName = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Name", 
-                        IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Name"));
-                     description = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Description", 
-                        IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Description"));
-                     category = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Category", 
-                        IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Category"));
-                     int priorityValue;
-                     if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.Priority", out priorityValue) != null)
-                        priority = priorityValue;
-                  }
-                  IFCAnyHandle materialLayer = IFCInstanceExporter.CreateMaterialLayer(file, materialHnds[ii], scaledWidth, isVentilated,
-                                                                     name: layerName, description: description, category: category, priority:priority);
-                  layers.Add(materialLayer);
-               }
-
-               if (layers.Count > 0)
+               IFCLogical? isVentilated = null;
+               int isVentilatedValue;
+               if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.IsVentilated", out isVentilatedValue) != null)
                {
-                  Element type = document.GetElement(typeElemId);
-                  string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", exporterIFC.GetFamilyName());
-                  string layerSetDesc = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Description", null);
-                  materialLayerSet = IFCInstanceExporter.CreateMaterialLayerSet(file, layers, layerSetName, layerSetDesc);
-
-                  ExporterCacheManager.MaterialSetCache.RegisterLayerSet(typeElemId, materialLayerSet);
+                  if (isVentilatedValue == 0)
+                     isVentilated = IFCLogical.False;
+                  else if (isVentilatedValue == 1)
+                     isVentilated = IFCLogical.True;
                }
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(primaryMaterialHnd))
-                  ExporterCacheManager.MaterialSetCache.RegisterPrimaryMaterialHnd(typeElemId, primaryMaterialHnd);
+                  
+               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+               {
+                  layerName = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Name", 
+                     IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Name"));
+                  description = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Description", 
+                     IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Description"));
+                  category = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Category", 
+                     IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Category"));
+                  int priorityValue;
+                  if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.Priority", out priorityValue) != null)
+                     priority = priorityValue;
+               }
+               IFCAnyHandle materialLayer = IFCInstanceExporter.CreateMaterialLayer(file, materialHnds[ii], scaledWidth, isVentilated,
+                                                                  name: layerName, description: description, category: category, priority:priority);
+               layers.Add(materialLayer);
             }
+
+            if (layers.Count > 0)
+            {
+               Element type = document.GetElement(typeElemId);
+               string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", exporterIFC.GetFamilyName());
+               string layerSetDesc = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Description", null);
+               materialLayerSet = IFCInstanceExporter.CreateMaterialLayerSet(file, layers, layerSetName, layerSetDesc);
+
+               ExporterCacheManager.MaterialSetCache.RegisterLayerSet(typeElemId, materialLayerSet);
+            }
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(primaryMaterialHnd))
+               ExporterCacheManager.MaterialSetCache.RegisterPrimaryMaterialHnd(typeElemId, primaryMaterialHnd);
          }
 
          return materialLayerSet;

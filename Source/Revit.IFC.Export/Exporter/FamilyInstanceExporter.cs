@@ -630,7 +630,10 @@ namespace Revit.IFC.Export.Exporter
                         BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(tryToExportAsExtrusion, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                         if (exportType.ExportInstance == IFCEntityType.IfcColumn || exportType.ExportInstance == IFCEntityType.IfcMember || exportType.ExportInstance == IFCEntityType.IfcBeam)
                         {
-                           bodyExporterOptions.CollectMaterialAndProfile = true;
+                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                              bodyExporterOptions.CollectMaterialAndProfile = false;
+                           else
+                              bodyExporterOptions.CollectMaterialAndProfile = true;
                            // Get a profile name. 
                            profileName = NamingUtil.GetProfileName(familySymbol);
                         }
@@ -833,8 +836,11 @@ namespace Revit.IFC.Export.Exporter
                      if (typeInfo.materialAndProfile != null)
                      {
                         materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, typeInfo.materialAndProfile);
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, typeInfo.materialAndProfile);
-                        addedMaterialAssociation = true;
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
+                        {
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, typeInfo.materialAndProfile);
+                           addedMaterialAssociation = true;
+                        }
                      }
                      else if (basePlane != null && orig != null)
                      {
@@ -844,8 +850,11 @@ namespace Revit.IFC.Export.Exporter
                         if (matNProf.GetKeyValuePairs().Count > 0)
                         {
                            materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, matNProf);
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, matNProf);
-                           addedMaterialAssociation = true;
+                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, matNProf);
+                              addedMaterialAssociation = true;
+                           }
                         }
                      }
                   }
@@ -1392,24 +1401,24 @@ namespace Revit.IFC.Export.Exporter
          // Note that this function doesn't support creating types - it exports a simple IFC instance only of a few possible types.
          switch (exportType.ExportInstance)
          {
-            case IFCEntityType.IfcBeam:
-               {
-                  // We will say that we exported the beam if either we generated an IfcBeam, or if we determined that there
-                  // was nothing to export, either because the beam had no geometry to export, or it was completely clipped.
+            //case IFCEntityType.IfcBeam:
+            //   {
+            //      // We will say that we exported the beam if either we generated an IfcBeam, or if we determined that there
+            //      // was nothing to export, either because the beam had no geometry to export, or it was completely clipped.
 
-                  // The regular Beam has been moved to the ExportFamilyInstanceAsMappedItem, to be able to export its types and also as a mapped geometry
-                  // standard building elements
+            //      // The regular Beam has been moved to the ExportFamilyInstanceAsMappedItem, to be able to export its types and also as a mapped geometry
+            //      // standard building elements
 
-                  // Limit this to IFC4, as beams no longer get axes exported if we use the code in ExportFamilyInstanceAsMappedItem.
-                  if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 || (element is DirectShape))
-                  {
-                     bool dontExport;
-                     IFCAnyHandle beamHnd = BeamExporter.ExportBeamAsStandardElement(exporterIFC, element, geometryElement, productWrapper, out dontExport);
-                     return (dontExport || !IFCAnyHandleUtil.IsNullOrHasNoValue(beamHnd));
-                  }
-                  else
-                     return false;
-               }
+            //      // Limit this to IFC4, as beams no longer get axes exported if we use the code in ExportFamilyInstanceAsMappedItem.
+            //      //if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 || (element is DirectShape))
+            //      //{
+            //      //   bool dontExport;
+            //      //   IFCAnyHandle beamHnd = BeamExporter.ExportBeamAsStandardElement(exporterIFC, element, geometryElement, productWrapper, out dontExport);
+            //      //   return (dontExport || !IFCAnyHandleUtil.IsNullOrHasNoValue(beamHnd));
+            //      //}
+            //      //else
+            //      //   return false;
+            //   }
             case IFCEntityType.IfcBuildingElementProxy:
                {
                   Element type = element.Document.GetElement(element.GetTypeId());
@@ -1425,16 +1434,17 @@ namespace Revit.IFC.Export.Exporter
                   }
                   break;
                }
-            case IFCEntityType.IfcFooting:
-               FootingExporter.ExportFooting(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
-               return true;
+               // IfcFooting and IfcPile will be handled by FamilyInstanceExporter in a more generic way
+            //case IFCEntityType.IfcFooting:
+            //   FootingExporter.ExportFooting(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
+            //   return true;
             case IFCEntityType.IfcCovering:
                CeilingExporter.ExportCovering(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
                return true;
-            case IFCEntityType.IfcPile:
-               PileExporter.ExportPile(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
-               //TODO
-               return true;
+            //case IFCEntityType.IfcPile:
+            //   PileExporter.ExportPile(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
+            //   //TODO
+            //   return true;
             case IFCEntityType.IfcRamp:
                RampExporter.ExportRamp(exporterIFC, ifcEnumTypeString, element, geometryElement, 1, productWrapper);
                return true;
