@@ -351,18 +351,19 @@ namespace Revit.IFC.Export.Exporter
                Transform trf = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, placementSetter.LocalPlacement);
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
+               string predefType = ifcEnumType;
+               IFCExportInfoPair exportTypePair = ExporterUtil.GetExportType(exporterIFC, ramp, out ifcEnumType);
+               if (!string.IsNullOrEmpty(exportTypePair.ValidatedPredefinedType))
+               {
+                  predefType = exportTypePair.ValidatedPredefinedType;
+               }
+
                SortedDictionary<double,IList<(Solid body, Face largestTopFace)>> rampFlights = null;
                SortedDictionary<double, IList<(Solid body, Face largestTopFace)>> landings = null;
                if (IdentifyRampFlightAndLanding(geometryElement, out rampFlights, out landings))
                {
                   string rampGUID = GUIDUtil.CreateGUID(ramp);
                   IFCAnyHandle rampLocalPlacement = placementSetter.LocalPlacement;
-                  string predefType = ifcEnumType;
-                  IFCExportInfoPair exportTypePair = ExporterUtil.GetExportType(exporterIFC, ramp, out ifcEnumType);
-                  if (!string.IsNullOrEmpty(exportTypePair.ValidatedPredefinedType))
-                  {
-                     predefType = exportTypePair.ValidatedPredefinedType;
-                  }
 
                   IFCAnyHandle rampContainerHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, rampGUID, ownerHistory, rampLocalPlacement, null, predefType);
                   // Create appropriate type
@@ -547,28 +548,46 @@ namespace Revit.IFC.Export.Exporter
                      IFCAnyHandle containedRampLocalPlacement = ExporterUtil.CreateLocalPlacement(file, ecData.GetLocalPlacement(), null);
                      string rampType = GetIFCRampType(ifcEnumType);
 
-                     List<IFCAnyHandle> components = new List<IFCAnyHandle>();
-                     IList<IFCExtrusionCreationData> componentExtrusionData = new List<IFCExtrusionCreationData>();
-                     IFCAnyHandle containedRampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, containedRampGuid, ownerHistory,
-                         containedRampLocalPlacement, representation, rampType);
-                     components.Add(containedRampHnd);
-                     componentExtrusionData.Add(ecData);
-                     //productWrapper.AddElement(containedRampHnd, placementSetter.LevelInfo, ecData, false);
-                     CategoryUtil.CreateMaterialAssociation(exporterIFC, containedRampHnd, bodyData.MaterialIds);
+                     if (numFlights == 1)
+                     {
+                        string guid = GUIDUtil.CreateGUID(ramp);
+                        IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
-                     string guid = GUIDUtil.CreateGUID(ramp);
-                     IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
+                        IFCAnyHandle rampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, guid, ownerHistory,
+                            localPlacement, representation, rampType);
+                        productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true);
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, rampHnd, bodyData.MaterialIds);
 
-                     IFCAnyHandle rampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, guid, ownerHistory,
-                         localPlacement, null, rampType);
+                        IFCAnyHandle rampTypeHnd = IFCInstanceExporter.CreateGenericIFCType(exportTypePair, null, exporterIFC.GetFile(), null, null, rampType);
+                        ExporterCacheManager.TypeRelationsCache.Add(rampTypeHnd, rampHnd);
+                     }
+                     else
+                     {
+                        List<IFCAnyHandle> components = new List<IFCAnyHandle>();
+                        IList<IFCExtrusionCreationData> componentExtrusionData = new List<IFCExtrusionCreationData>();
+                        IFCAnyHandle containedRampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, containedRampGuid, ownerHistory,
+                            containedRampLocalPlacement, representation, rampType);
+                        components.Add(containedRampHnd);
+                        componentExtrusionData.Add(ecData);
+                        //productWrapper.AddElement(containedRampHnd, placementSetter.LevelInfo, ecData, false);
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, containedRampHnd, bodyData.MaterialIds);
 
-                     productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true);
+                        string guid = GUIDUtil.CreateGUID(ramp);
+                        IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
-                     StairRampContainerInfo stairRampInfo = new StairRampContainerInfo(rampHnd, components, localPlacement);
-                     ExporterCacheManager.StairRampContainerInfoCache.AddStairRampContainerInfo(ramp.Id, stairRampInfo);
+                        IFCAnyHandle rampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, guid, ownerHistory,
+                            localPlacement, null, rampType);
+                        productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true);
 
-                     ExportMultistoryRamp(exporterIFC, ramp, numFlights, rampHnd, components, componentExtrusionData, placementSetter,
-                         productWrapper);
+                        IFCAnyHandle rampTypeHnd = IFCInstanceExporter.CreateGenericIFCType(exportTypePair, null, exporterIFC.GetFile(), null, null, rampType);
+                        ExporterCacheManager.TypeRelationsCache.Add(rampTypeHnd, rampHnd);
+
+                        StairRampContainerInfo stairRampInfo = new StairRampContainerInfo(rampHnd, components, localPlacement);
+                        ExporterCacheManager.StairRampContainerInfoCache.AddStairRampContainerInfo(ramp.Id, stairRampInfo);
+
+                        ExportMultistoryRamp(exporterIFC, ramp, numFlights, rampHnd, components, componentExtrusionData, placementSetter,
+                            productWrapper);
+                     }
                   }
                }
             }

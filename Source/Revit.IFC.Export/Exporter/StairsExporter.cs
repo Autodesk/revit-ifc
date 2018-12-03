@@ -750,30 +750,32 @@ namespace Revit.IFC.Export.Exporter
          }
 
          // finally add a copy of the container.
-         IList<IFCAnyHandle> stairCopyHnds = new List<IFCAnyHandle>();
-         for (int ii = 0; ii < numFlights - 1; ii++)
          {
-            string stairTypeAsString = null;
-            if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-               stairTypeAsString = IFCAnyHandleUtil.GetEnumerationAttribute(stairHnd, "PredefinedType");
-            else
-               stairTypeAsString = IFCAnyHandleUtil.GetEnumerationAttribute(stairHnd, "ShapeType");
-            string stairType = GetIFCStairType(stairTypeAsString);
+            IList<IFCAnyHandle> stairCopyHnds = new List<IFCAnyHandle>();
+            for (int ii = 0; ii < numFlights - 1; ii++)
+            {
+               string stairTypeAsString = null;
+               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+                  stairTypeAsString = IFCAnyHandleUtil.GetEnumerationAttribute(stairHnd, "PredefinedType");
+               else
+                  stairTypeAsString = IFCAnyHandleUtil.GetEnumerationAttribute(stairHnd, "ShapeType");
+               string stairType = GetIFCStairType(stairTypeAsString);
 
-            string containerStairName = IFCAnyHandleUtil.GetStringAttribute(stairHnd, "Name") + ":" + (ii + 2);
-            IFCAnyHandle containerStairHnd = IFCInstanceExporter.CreateStair(exporterIFC, stair, GUIDUtil.CreateGUID(), ownerHistory,
-                stairLocalPlacementHnds[ii], null, stairType);
-            stairCopyHnds.Add(containerStairHnd);
-            IFCAnyHandleUtil.OverrideNameAttribute(containerStairHnd, containerStairName);
+               string containerStairName = IFCAnyHandleUtil.GetStringAttribute(stairHnd, "Name") + ":" + (ii + 2);
+               IFCAnyHandle containerStairHnd = IFCInstanceExporter.CreateStair(exporterIFC, stair, GUIDUtil.CreateGUID(), ownerHistory,
+                   stairLocalPlacementHnds[ii], null, stairType);
+               stairCopyHnds.Add(containerStairHnd);
+               IFCAnyHandleUtil.OverrideNameAttribute(containerStairHnd, containerStairName);
 
-            productWrapper.AddElement(stair, stairCopyHnds[ii], levelInfos[ii], null, true);
-         }
+               productWrapper.AddElement(stair, stairCopyHnds[ii], levelInfos[ii], null, true);
+            }
 
-         for (int ii = 0; ii < numFlights - 1; ii++)
-         {
-            StairRampContainerInfo stairRampInfo = new StairRampContainerInfo(stairCopyHnds[ii], newComponents[ii],
-                stairLocalPlacementHnds[ii]);
-            ExporterCacheManager.StairRampContainerInfoCache.AppendStairRampContainerInfo(stair.Id, stairRampInfo);
+            for (int ii = 0; ii < numFlights - 1; ii++)
+            {
+               StairRampContainerInfo stairRampInfo = new StairRampContainerInfo(stairCopyHnds[ii], newComponents[ii],
+                   stairLocalPlacementHnds[ii]);
+               ExporterCacheManager.StairRampContainerInfoCache.AppendStairRampContainerInfo(stair.Id, stairRampInfo);
+            }
          }
       }
 
@@ -855,43 +857,44 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
                   IFCAnyHandle containedStairLocalPlacement = ExporterUtil.CreateLocalPlacement(file, ecData.GetLocalPlacement(), null);
-                  string predefType = GetValidatedStairType(stair as Stairs, null);
+                  //string predefType = GetValidatedStairType(stair as Stairs, ifcEnumType);
+                  IFCExportInfoPair exportType = new IFCExportInfoPair();
+                  exportType.SetValueWithPair(IFCEntityType.IfcStair, ifcEnumType);
 
                   List<IFCAnyHandle> components = new List<IFCAnyHandle>();
                   IList<IFCExtrusionCreationData> componentExtrusionData = new List<IFCExtrusionCreationData>();
                   IFCAnyHandle containedStairHnd = IFCInstanceExporter.CreateStair(exporterIFC, stair, containedStairGuid, ownerHistory,
-                      containedStairLocalPlacement, representation, predefType);
+                      containedStairLocalPlacement, representation, exportType.ValidatedPredefinedType);
 
                   // Create appropriate type
-                  IFCExportInfoPair exportType = new IFCExportInfoPair();
-                  exportType.SetValueWithPair(IFCEntityType.IfcStair, predefType);
-                  IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
+
+                  IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, exportType.ValidatedPredefinedType, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(stairTypeHnd, containedStairHnd);
                   CategoryUtil.CreateMaterialAssociation(exporterIFC, containedStairHnd, bodyData.MaterialIds);
 
                   if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                   {
-                  components.Add(containedStairHnd);
-                  componentExtrusionData.Add(ecData);
+                     components.Add(containedStairHnd);
+                     componentExtrusionData.Add(ecData);
 
-                  IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
+                     IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
                      IFCAnyHandle stairContainerHnd = IFCInstanceExporter.CreateStair(exporterIFC, stair, stairGuid, ownerHistory,
-                          localPlacement, null, predefType);
+                          localPlacement, null, exportType.ValidatedPredefinedType);
 
                      // Create appropriate type for the container
-                     string contPredefType = GetValidatedStairType(stair as Stairs, null);
-                     IFCAnyHandle stairContTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, contPredefType, productWrapper);
+                     //string contPredefType = GetValidatedStairType(stair as Stairs, ifcEnumType);
+                     IFCAnyHandle stairContTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, exportType.ValidatedPredefinedType, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(stairContTypeHnd, stairContainerHnd);
 
                      productWrapper.AddElement(stair, stairContainerHnd, placementSetter.LevelInfo, ecData, true);
 
                      StairRampContainerInfo stairRampInfo = new StairRampContainerInfo(stairContainerHnd, components, localPlacement);
-                  ExporterCacheManager.StairRampContainerInfoCache.AddStairRampContainerInfo(stair.Id, stairRampInfo);
+                     ExporterCacheManager.StairRampContainerInfoCache.AddStairRampContainerInfo(stair.Id, stairRampInfo);
 
                      ExportMultistoryStair(exporterIFC, stair, flightOffsets, stairContainerHnd, components,
-                      componentExtrusionData, placementSetter, productWrapper);
-               }
+                        componentExtrusionData, placementSetter, productWrapper);
+                  }
                   else
                   {
                      // From IFC4 onward, a single geometry Stair will be exported directly as IfcStair without container
