@@ -1678,6 +1678,17 @@ namespace Revit.IFC.Export.Toolkit
    }
 
    /// <summary>
+   /// Defines the basic configuration of the ramp flight in term of different ramp flight shapes.
+   /// </summary>
+   public enum IFCRampFlightType
+   {
+      Straight,
+      Spiral,
+      UserDefined,
+      NotDefined
+   }
+
+   /// <summary>
    /// Defines the basic configuration of the stairs in terms of the different stair shapes. 
    /// </summary>
    public enum IFCStairType
