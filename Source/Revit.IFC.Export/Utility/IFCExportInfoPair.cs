@@ -232,7 +232,14 @@ namespace Revit.IFC.Export.Utility
          if (string.IsNullOrEmpty(predefineType))
             predefineType = "NOTDEFINED";
 
-         ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, ValidatedPredefinedType, m_ExportType.ToString());
+         if (m_ExportType == IFCEntityType.UnKnown)
+         {
+            ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, ValidatedPredefinedType, m_ExportInstance.ToString());
+         }
+         else
+         {
+            ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, ValidatedPredefinedType, m_ExportType.ToString());
+         }
       }
 
       // Check valid entity and type set according to the MVD used in the export
