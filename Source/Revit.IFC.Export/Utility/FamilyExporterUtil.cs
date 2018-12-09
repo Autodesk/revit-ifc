@@ -504,7 +504,7 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
-         return IFCInstanceExporter.CreateGenericIFCType(exportInfo, symbol, file, propertySets, representationMapList, ifcEnumType);
+         return IFCInstanceExporter.CreateGenericIFCType(exportInfo, symbol, file, propertySets, representationMapList);
       }
 
       /// <summary>

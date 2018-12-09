@@ -2613,10 +2613,12 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="elementType">The type name.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateSpaceType(IFCFile file, Element revitType, HashSet<IFCAnyHandle> propertySets,
-          IList<IFCAnyHandle> representationMaps)
+          IList<IFCAnyHandle> representationMaps, string predefinedType)
       {
          IFCAnyHandle spaceType = CreateInstance(file, IFCEntityType.IfcSpaceType, revitType);
          SetElementType(spaceType, revitType, propertySets, representationMaps);
+         if (!string.IsNullOrEmpty(predefinedType))
+            IFCAnyHandleUtil.SetAttribute(spaceType, "PredefinedType", predefinedType, true);
          return spaceType;
       }
 
@@ -4450,7 +4452,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="predefinedType">preDefinedType</param>
       /// <returns></returns>
       public static IFCAnyHandle CreateGenericIFCType(IFCExportInfoPair typeEntityToCreate, Element revitType, IFCFile file,
-          HashSet<IFCAnyHandle> propertySets, IList<IFCAnyHandle> representationMaps, string predefinedType)
+          HashSet<IFCAnyHandle> propertySets, IList<IFCAnyHandle> representationMaps)
       {
          IFCAnyHandle genericIFCType = null;
 
@@ -4472,12 +4474,12 @@ namespace Revit.IFC.Export.Toolkit
 
          SetElementType(genericIFCType, revitType, propertySets, representationMaps);
 
-         if (!string.IsNullOrEmpty(predefinedType))
+         if (!string.IsNullOrEmpty(typeEntityToCreate.ValidatedPredefinedType))
          {
             // Earlier types in IFC2x_ may not have PredefinedType property. Ignore error
             try
             {
-               IFCAnyHandleUtil.SetAttribute(genericIFCType, "PredefinedType", predefinedType, true);
+               IFCAnyHandleUtil.SetAttribute(genericIFCType, "PredefinedType", typeEntityToCreate.ValidatedPredefinedType, true);
             }
             catch { }
          }
@@ -5479,22 +5481,18 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="compositionType">The element composition of the proxy.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateBuildingElementProxy(ExporterIFC exporterIFC, Element element, string guid, IFCAnyHandle ownerHistory,
-          IFCAnyHandle objectPlacement, IFCAnyHandle representation, string compositionType)
+          IFCAnyHandle objectPlacement, IFCAnyHandle representation, string predefinedType)
       {
-         string validatedType = compositionType;
-
          ValidateElement(guid, ownerHistory, objectPlacement, representation);
 
          IFCAnyHandle buildingElementProxy = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcBuildingElementProxy, element);
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
-            validatedType = IFCValidateEntry.ValidateStrEnum<IFC4.IFCBuildingElementProxyType>(compositionType);
-            IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "preDefinedType", validatedType, true);
+            IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "preDefinedType", predefinedType, true);
          }
          else
          {
-            validatedType = IFCValidateEntry.ValidateStrEnum<IFCElementComposition>(compositionType);
-            IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "CompositionType", validatedType, true);
+            IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "CompositionType", predefinedType, true);
          }
          SetElement(exporterIFC, buildingElementProxy, element, guid, ownerHistory, objectPlacement, representation);
          return buildingElementProxy;

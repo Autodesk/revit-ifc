@@ -385,18 +385,28 @@ namespace Revit.IFC.Export.Utility
          return "NOTDEFINED";
       }
 
-      private void Initialize(bool isDoor, bool isWindow, FamilyInstance famInst, HostObject hostObject)
+      private void Initialize(bool isDoor, bool isWindow, FamilyInstance famInst, HostObject hostObject, IFCExportInfoPair exportType)
       {
          HostObject = hostObject;
          InsertInstance = famInst;
 
          ExportingDoor = isDoor;
          if (isDoor)
-            PreDefinedType = "DOOR";
+         {
+            if (exportType.ValidatedPredefinedType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
+               PreDefinedType = "DOOR";
+            else
+               PreDefinedType = exportType.ValidatedPredefinedType;
+         }
 
          ExportingWindow = isWindow;
          if (isWindow)
-            PreDefinedType = "WINDOW";
+         {
+            if (exportType.ValidatedPredefinedType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
+               PreDefinedType = "WINDOW";
+            else
+               PreDefinedType = exportType.ValidatedPredefinedType;
+         }
 
          FlippedSymbol = false;
 
@@ -513,20 +523,20 @@ namespace Revit.IFC.Export.Utility
       }
 
       public static DoorWindowInfo CreateDoor(ExporterIFC exporterIFC, FamilyInstance famInst, HostObject hostObj,
-          ElementId overrideLevelId, Transform trf)
+          ElementId overrideLevelId, Transform trf, IFCExportInfoPair exportType)
       {
          DoorWindowInfo doorWindowInfo = new DoorWindowInfo();
-         doorWindowInfo.Initialize(true, false, famInst, hostObj);
+         doorWindowInfo.Initialize(true, false, famInst, hostObj, exportType);
          doorWindowInfo.CalculateDoorWindowInformation(exporterIFC, famInst, overrideLevelId, trf);
 
          return doorWindowInfo;
       }
 
       public static DoorWindowInfo CreateWindow(ExporterIFC exporterIFC, FamilyInstance famInst, HostObject hostObj,
-          ElementId overrideLevelId, Transform trf)
+          ElementId overrideLevelId, Transform trf, IFCExportInfoPair exportType)
       {
          DoorWindowInfo doorWindowInfo = new DoorWindowInfo();
-         doorWindowInfo.Initialize(false, true, famInst, hostObj);
+         doorWindowInfo.Initialize(false, true, famInst, hostObj, exportType);
          doorWindowInfo.CalculateDoorWindowInformation(exporterIFC, famInst, overrideLevelId, trf);
 
          return doorWindowInfo;

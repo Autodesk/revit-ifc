@@ -71,8 +71,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// </returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcSpaceLevelArea", out m_Area) == null)
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "SpaceLevelArea", out m_Area);
+         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "SpaceLevelArea", out m_Area);
          m_Area = UnitUtil.ScaleArea(m_Area);
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
             return true;

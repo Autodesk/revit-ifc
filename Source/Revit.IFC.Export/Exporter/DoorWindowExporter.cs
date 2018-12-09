@@ -37,15 +37,15 @@ namespace Revit.IFC.Export.Exporter
    class DoorWindowExporter
    {
       public static DoorWindowInfo CreateDoor(ExporterIFC exporterIFC, FamilyInstance famInst, HostObject hostObj,
-          ElementId overrideLevelId, Transform trf)
+          ElementId overrideLevelId, Transform trf, IFCExportInfoPair exportType)
       {
-         return DoorWindowInfo.CreateDoor(exporterIFC, famInst, hostObj, overrideLevelId, trf);
+         return DoorWindowInfo.CreateDoor(exporterIFC, famInst, hostObj, overrideLevelId, trf, exportType);
       }
 
       public static DoorWindowInfo CreateWindow(ExporterIFC exporterIFC, FamilyInstance famInst, HostObject hostObj,
-          ElementId overrideLevelId, Transform trf)
+          ElementId overrideLevelId, Transform trf, IFCExportInfoPair exportType)
       {
-         return DoorWindowInfo.CreateWindow(exporterIFC, famInst, hostObj, overrideLevelId, trf);
+         return DoorWindowInfo.CreateWindow(exporterIFC, famInst, hostObj, overrideLevelId, trf, exportType);
       }
    }
 }
