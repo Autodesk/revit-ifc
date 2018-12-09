@@ -72,7 +72,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyGrossArea", out m_Area) == null)
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcGrossArea", out m_Area) == null)
                ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "GrossArea", out m_Area);
          m_Area = UnitUtil.ScaleArea(m_Area);
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())

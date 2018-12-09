@@ -109,11 +109,11 @@ namespace Revit.IFC.Export.Exporter
                                  {
                                     // By default, panels and mullions are set to the same category as their parent.  In this case,
                                     // ask to get the exportType from the category id, since we don't want to inherit the parent class.
-                                    exportType.SetValueWithPair(IFCEntityType.IfcMemberType);
-                                    exportType.ValidatedPredefinedType = ifcEnumType = "MULLION";
+                                    ifcEnumType = "MULLION";
+                                    exportType.SetValueWithPair(IFCEntityType.IfcMemberType, ifcEnumType);
                                  }
 
-                                 FamilyInstanceExporter.ExportFamilyInstanceAsMappedItem(exporterIFC, subElem as Mullion, exportType, ifcEnumType, productWrapper,
+                                 FamilyInstanceExporter.ExportFamilyInstanceAsMappedItem(exporterIFC, subElem as Mullion, exportType, exportType.ValidatedPredefinedType, productWrapper,
                                      ElementId.InvalidElementId, null, currLocalPlacement);
                               }
                            }

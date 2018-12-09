@@ -94,7 +94,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 
          // If no value from the above, consider the parameter override
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyArea", out m_Area) == null)
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcArea", out m_Area) == null)
                ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Area", out m_Area);
          m_Area = UnitUtil.ScaleArea(m_Area);
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())

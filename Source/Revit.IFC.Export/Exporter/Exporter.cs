@@ -927,7 +927,7 @@ namespace Revit.IFC.Export.Exporter
                      // This is intended to work for any element.  However, there are some hidden elements that we likely want to ignore.
                      // As such, this is currently limited to the two types of elements that we know we want to export that aren't covered above.
                      // Note the general comment that we would like to revamp this whole routine to be cleaner and simpler.
-                     exported = FamilyInstanceExporter.ExportGenericBuildingElement(exporterIFC, element, geomElem, exportType, ifcEnumType, productWrapper);
+                     exported = FamilyInstanceExporter.ExportGenericToSpecificElement(exporterIFC, element, geomElem, exportType, ifcEnumType, productWrapper);
 
                      if (!exported)
                         exported = (GenericElementExporter.ExportGenericElement(exporterIFC, element, geomElem, productWrapper, exportType) != null);

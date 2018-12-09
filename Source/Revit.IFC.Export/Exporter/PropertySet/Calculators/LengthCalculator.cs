@@ -74,8 +74,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       {
          double lengthFromParam = 0;
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyLength", out lengthFromParam) == null)
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcLength", out lengthFromParam) == null)
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Length", out lengthFromParam);
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Length", out lengthFromParam);
          m_Length = UnitUtil.ScaleLength(lengthFromParam);
 
          // Check for Stair Run - Do special computation for the length

@@ -454,6 +454,15 @@ namespace Revit.IFC.Export.Toolkit
    }
 
    /// <summary>
+   /// Enumeration defining the functional type of space 
+   /// </summary>
+   public enum IFCSpaceType
+   {
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   /// <summary>
    /// Defines the range of different types of sensor that can be specified.
    /// </summary>
    public enum IFCSensorType
@@ -1845,6 +1854,14 @@ namespace Revit.IFC.Export.Toolkit
    {
       UserDefined,
       NotDefined
+   }
+
+   public enum IfcVibrationIsolatorType
+   {
+      COMPRESSION,
+      SPRING,
+      USERDEFINED,
+      NOTDEFINED
    }
 
    /// <summary>

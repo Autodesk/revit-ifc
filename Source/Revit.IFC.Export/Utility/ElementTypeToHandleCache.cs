@@ -37,7 +37,8 @@ namespace Revit.IFC.Export.Utility
          int hash = 23;
          hash = hash * 31 + key.Item1.Id.IntegerValue;
          hash = hash * 31 + (int) key.Item2;
-         hash = hash * 31 + key.Item3.GetHashCode();
+         if (key.Item3 != null)
+            hash = hash * 31 + key.Item3.GetHashCode();
          return hash;
       }
    }

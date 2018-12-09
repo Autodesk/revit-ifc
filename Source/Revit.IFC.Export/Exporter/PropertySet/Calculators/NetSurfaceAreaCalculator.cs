@@ -103,8 +103,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (m_Area < MathUtil.Eps() * MathUtil.Eps() || m_Area < MathUtil.Eps())
          {
             if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyNetSurfaceArea", out m_Area) == null)
-               if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcNetSurfaceArea", out m_Area) == null)
-                  ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "NetSurfaceArea", out m_Area);
+               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "NetSurfaceArea", out m_Area);
             m_Area = UnitUtil.ScaleArea(m_Area);
             if (m_Area < MathUtil.Eps() * MathUtil.Eps() || m_Area < MathUtil.Eps())
                return false;

@@ -65,7 +65,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyDepth", out m_Depth) == null)
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcDepth", out m_Depth) == null)
                ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Depth", out m_Depth);
          m_Depth = UnitUtil.ScaleLength(m_Depth);
          if (m_Depth > MathUtil.Eps() * MathUtil.Eps())

@@ -1512,17 +1512,17 @@ namespace Revit.IFC.Export.Utility
                switch (familyInstance.StructuralType)
                {
                   case Autodesk.Revit.DB.Structure.StructuralType.Beam:
-                     exportType.SetValueWithPair(IFCEntityType.IfcBeam);
+                     exportType.SetValueWithPair(IFCEntityType.IfcBeam, enumTypeValue);
                      break;
                   case Autodesk.Revit.DB.Structure.StructuralType.Brace:
-                     exportType.SetValueWithPair(IFCEntityType.IfcMember);
                      enumTypeValue = "BRACE";
+                     exportType.SetValueWithPair(IFCEntityType.IfcMember, enumTypeValue);
                      break;
                   case Autodesk.Revit.DB.Structure.StructuralType.Footing:
-                     exportType.SetValueWithPair(IFCEntityType.IfcFooting);
+                     exportType.SetValueWithPair(IFCEntityType.IfcFooting, enumTypeValue);
                      break;
                   case Autodesk.Revit.DB.Structure.StructuralType.Column:
-                     exportType.SetValueWithPair(IFCEntityType.IfcColumn);
+                     exportType.SetValueWithPair(IFCEntityType.IfcColumn, enumTypeValue);
                      break;
                }
             }
@@ -1581,12 +1581,12 @@ namespace Revit.IFC.Export.Utility
 
          if (elementType != null)
          {
-            entType = IFCInstanceExporter.CreateGenericIFCType(exportType, elementType, file, null, null, predefinedType);
+            entType = IFCInstanceExporter.CreateGenericIFCType(exportType, elementType, file, null, null);
             productWrapper.RegisterHandleWithElementType(elementType as ElementType, exportType, entType, null);
          }
          else
          {
-            entType = IFCInstanceExporter.CreateGenericIFCType(exportType, element, file, null, null, predefinedType);
+            entType = IFCInstanceExporter.CreateGenericIFCType(exportType, element, file, null, null);
          }
          return entType;
       }
