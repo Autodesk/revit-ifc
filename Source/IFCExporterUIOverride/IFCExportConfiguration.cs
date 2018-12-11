@@ -394,6 +394,7 @@ namespace BIM.IFC.Export.UI
          this.ExportIFCCommonPropertySets = other.ExportIFCCommonPropertySets;
          this.Export2DElements = other.Export2DElements;
          this.VisibleElementsOfCurrentView = other.VisibleElementsOfCurrentView;
+         this.ActiveViewId = other.ActiveViewId;
          this.Use2DRoomBoundaryForVolume = other.Use2DRoomBoundaryForVolume;
          this.UseFamilyAndTypeNameForReference = other.UseFamilyAndTypeNameForReference;
          this.ExportPartsAsBuildingElements = other.ExportPartsAsBuildingElements;
@@ -420,6 +421,9 @@ namespace BIM.IFC.Export.UI
          this.COBieProjectInfo = other.COBieProjectInfo;
          this.SitePlacement = other.SitePlacement;
          this.IncludeSteelElements = other.IncludeSteelElements;
+         this.ExcludeFilter = other.ExcludeFilter;
+         this.COBieCompanyInfo = other.COBieCompanyInfo;
+         this.COBieProjectInfo = other.COBieProjectInfo;
       }
 
       /// <summary>
@@ -449,8 +453,9 @@ namespace BIM.IFC.Export.UI
          this.ExportIFCCommonPropertySets = other.ExportIFCCommonPropertySets;
          this.Export2DElements = other.Export2DElements;
          this.VisibleElementsOfCurrentView = other.VisibleElementsOfCurrentView;
-         this.Use2DRoomBoundaryForVolume = other.Use2DRoomBoundaryForVolume;
+         this.ActiveViewId = other.ActiveViewId;
          this.UseFamilyAndTypeNameForReference = other.UseFamilyAndTypeNameForReference;
+         this.Use2DRoomBoundaryForVolume = other.Use2DRoomBoundaryForVolume;
          this.ExportPartsAsBuildingElements = other.ExportPartsAsBuildingElements;
          this.UseActiveViewGeometry = other.UseActiveViewGeometry;
          this.ExportSpecificSchedules = other.ExportSpecificSchedules;
@@ -463,6 +468,7 @@ namespace BIM.IFC.Export.UI
          this.ExportUserDefinedParameterMappingFileName = other.ExportUserDefinedParameterMappingFileName;
          this.ExportLinkedFiles = other.ExportLinkedFiles;
          this.IncludeSiteElevation = other.IncludeSiteElevation;
+         this.StoreIFCGUID = other.StoreIFCGUID;
          this.TessellationLevelOfDetail = other.TessellationLevelOfDetail;
          this.UseOnlyTriangulation = other.UseOnlyTriangulation;
          this.ActivePhaseId = other.ActivePhaseId;

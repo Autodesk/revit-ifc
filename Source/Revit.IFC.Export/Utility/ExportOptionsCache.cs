@@ -629,7 +629,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC2x3CV2) || (FileVersion == IFCVersion.IFC4) || (FileVersion == IFCVersion.IFC2x3FM) || (FileVersion == IFCVersion.IFC2x3BFM) || (FileVersion == IFCVersion.IFC4RV) || (FileVersion == IFCVersion.IFC4DTV);
+            return (FileVersion == IFCVersion.IFC2x3CV2) || (FileVersion == IFCVersion.IFC4) || (FileVersion == IFCVersion.IFC2x3FM) || (FileVersion == IFCVersion.IFC2x3BFM);
          }
       }
 
@@ -730,6 +730,18 @@ namespace Revit.IFC.Export.Utility
          get
          {
             return (FileVersion == IFCVersion.IFC4DTV);
+         }
+      }
+
+      /// <summary>
+      /// Option to be used for general IFC4 export (not specific to RV or DTV MVDs). Useful when there is a need to export entities that are not strictly valid within RV or DTV
+      /// It should work like IFC2x3, except that it will use IFC4 tessellated geometry instead of IFC2x3 BREP
+      /// </summary>
+      public bool ExportAs4General
+      {
+         get
+         {
+            return (FileVersion == IFCVersion.IFC4);
          }
       }
 

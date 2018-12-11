@@ -72,7 +72,11 @@ namespace Revit.IFC.Export.Exporter
                BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                if (0 == numPartsToExport)
                {
-                  using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element))
+                  // Check for containment override
+                  IFCAnyHandle overrideContainerHnd = null;
+                  ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+
+                  using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
                   {
                      IFCAnyHandle localPlacementToUse = setter.LocalPlacement;
                      BodyData bodyData = null;
@@ -98,7 +102,11 @@ namespace Revit.IFC.Export.Exporter
                {
                   for (int ii = 0; ii < numPartsToExport; ii++)
                   {
-                     using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, levels[ii]))
+                     // Check for containment override
+                     IFCAnyHandle overrideContainerHnd = null;
+                     ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+
+                     using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, levels[ii], overrideContainerHnd))
                      {
                         IFCAnyHandle localPlacementToUse = setter.LocalPlacement;
 
@@ -182,7 +190,7 @@ namespace Revit.IFC.Export.Exporter
 
          if (type != null)
          {
-            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeId, false, exportType.ExportType);
+            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeId, false, exportType);
 
             bool found = currentTypeInfo.IsValid();
             if (!found)
@@ -196,9 +204,9 @@ namespace Revit.IFC.Export.Exporter
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                {
                   propertySetsOpt = ExporterUtil.ExtractElementTypeProperties(exporterIFC, type, styleHandle);
-                  productWrapper.RegisterHandleWithElementType(type, styleHandle, propertySetsOpt);
+                  productWrapper.RegisterHandleWithElementType(type, exportType, styleHandle, propertySetsOpt);
                   currentTypeInfo.Style = styleHandle;
-                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeId, false, exportType.ExportType, currentTypeInfo);
+                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeId, false, exportType, currentTypeInfo);
                }
             }
             else

@@ -1,0 +1,20 @@
+﻿<Window x:Class="RevitIFCTools.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RevitIFCTools"
+        mc:Ignorable="d"
+        Title="Revit IFC Tools" Height="300" Width="300">
+   <Grid>
+      <Grid.RowDefinitions>
+         <RowDefinition Height="237*"/>
+         <RowDefinition Height="34*"/>
+      </Grid.RowDefinitions>
+      <Button x:Name="button_GenerateIFCEntityList" Content="Generate IFC EntityList" HorizontalAlignment="Left" Margin="47,23,0,0" VerticalAlignment="Top" Width="195" Height="35" Click="button_GenerateIFCEntityList_Click"/>
+      <Button x:Name="button_GeneratePsetDefs" Content="Generate Pset Definitions" HorizontalAlignment="Left" Margin="47,63,0,0" VerticalAlignment="Top" Width="195" Height="35" Click="button_GeneratePsetDefs_Click" />
+      <Button x:Name="button_Cancel" Content="Cancel" Margin="0,0,9.6,4.4" Grid.Row="1" Height="19" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75" Click="button_Cancel_Click"/>
+      <Button x:Name="button_paramexpr" Content="Test Parameter Expr" HorizontalAlignment="Left" Margin="47,103,0,0" VerticalAlignment="Top" Width="195" Height="33" Click="button_paramexpr_Click"/>
+
+   </Grid>
+</Window>

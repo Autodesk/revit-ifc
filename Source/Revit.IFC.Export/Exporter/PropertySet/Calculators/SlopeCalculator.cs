@@ -113,6 +113,26 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             return true;
          }
 
+         // The last attempt to compute the slope angle is to get the slope of the largest top facing face of the geometry
+         GeometryElement geomElem = element.get_Geometry(GeometryUtil.GetIFCExportGeometryOptions());
+         Face largestTopFace = null;
+
+         if (geomElem == null)
+            return false;
+
+         foreach (GeometryObject geomObj in geomElem)
+         {
+            largestTopFace = GeometryUtil.GetLargestFaceInSolid(geomObj, new XYZ(0,0,1));
+         }
+
+         if (largestTopFace != null)
+         {
+            XYZ faceNormal = largestTopFace.ComputeNormal(new UV());
+            XYZ faceNormalProjXYPlane = new XYZ(faceNormal.X, faceNormal.Y, 0.0).Normalize();
+            m_Slope = GeometryUtil.GetAngleOfFace(largestTopFace, faceNormalProjXYPlane);
+            return true;
+         }
+
          return false;
       }
 
