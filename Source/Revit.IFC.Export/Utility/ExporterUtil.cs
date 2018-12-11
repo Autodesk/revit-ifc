@@ -1305,6 +1305,10 @@ namespace Revit.IFC.Export.Utility
          if (productWrapper.IsEmpty())
             return;
 
+         IList<IList<QuantityDescription>> quantitiesToCreate = ExporterCacheManager.ParameterCache.Quantities;
+         if (quantitiesToCreate.Count == 0)
+            return;
+
          IFCFile file = exporterIFC.GetFile();
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
@@ -1315,7 +1319,6 @@ namespace Revit.IFC.Export.Utility
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
             ICollection<IFCAnyHandle> productSet = productWrapper.GetAllObjects();
-            IList<IList<QuantityDescription>> quantitiesToCreate = ExporterCacheManager.ParameterCache.Quantities;
 
             foreach (IList<QuantityDescription> currStandard in quantitiesToCreate)
             {
@@ -1340,8 +1343,9 @@ namespace Revit.IFC.Export.Utility
                         {
                            string paramSetName = currDesc.Name;
                            string methodName = currDesc.MethodOfMeasurement;
+                           string description = currDesc.DescriptionOfSet;
 
-                           IFCAnyHandle propertySet = IFCInstanceExporter.CreateElementQuantity(file, GUIDUtil.CreateGUID(), ownerHistory, paramSetName, methodName, null, quantities);
+                           IFCAnyHandle propertySet = IFCInstanceExporter.CreateElementQuantity(file, GUIDUtil.CreateGUID(), ownerHistory, paramSetName, description, methodName, quantities);
                            IFCAnyHandle prodHndToUse = prodHnd;
                            DescriptionCalculator ifcRDC = currDesc.DescriptionCalculator;
                            if (ifcRDC != null)
@@ -1411,8 +1415,6 @@ namespace Revit.IFC.Export.Utility
       public static void ExportRelatedProperties(ExporterIFC exporterIFC, Element element, ProductWrapper productWrapper)
       {
          ExportElementProperties(exporterIFC, element, productWrapper);
-         if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities && !(ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE))
-            ExportElementQuantities(exporterIFC, element, productWrapper);
          ExportElementClassifications(exporterIFC, element, productWrapper);                     // Exporting ClassificationCode from IFC parameter 
          ExportElementUniformatClassifications(exporterIFC, element, productWrapper);            // Default classification, if filled out.
       }

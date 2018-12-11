@@ -55,6 +55,13 @@
     <Reference Include="Antlr4.Runtime, Version=4.6.0.0, Culture=neutral, PublicKeyToken=09abb75b9ed49849, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Antlr4.Runtime.4.6.4\lib\net45\Antlr4.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="GeometryGymIFC, Version=0.0.17.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\GeometryGymIFC.0.0.17\lib\net45\GeometryGymIFC.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.XML" />
   </ItemGroup>
@@ -345,7 +352,8 @@
     -->
   <Import Project=".\Revit.IFC.Export.props" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\Program Files (x86)\Revit IFC 2019\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\Program Files (x86)\Revit IFC 2019\" /F /R /Y /I
+xcopy "$(TargetDir)GeometryGymIFC.dll" "C:\Program Files (x86)\Revit IFC 2019\" /F /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

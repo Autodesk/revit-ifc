@@ -23,57 +23,10 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Text.RegularExpressions;
-
-//using GeometryGym.Ifc;
+using GeometryGym.Ifc;
 
 namespace Revit.IFC.Export.Utility
 {
-   /// <summary>
-   /// Type or Instance enum
-   /// </summary>
-   public enum TypeOrInstance
-   {
-      Type,
-      Instance
-   }
-
-   /// <summary>
-   /// PropertSet definition struct
-   /// </summary>
-   public struct PropertySetDef
-   {
-      public string propertySetName;
-      public string propertySetDescription;
-      public IList<PropertyDef> propertyDefs;
-      public TypeOrInstance applicableTo;
-      public IList<string> applicableElements;
-   }
-
-   /// <summary>
-   /// Property 
-   /// </summary>
-   public class PropertyDef
-   {
-      public string PropertyName;
-      public string PropertyDataType;
-      public List<PropertyParameterDefinition> ParameterDefinitions = new List<PropertyParameterDefinition>();
-      //public GeometryGym.Ifc.IfcValue DefaultValue = null;
-      public PropertyDef(string propertyName)
-      {
-         PropertyName = propertyName;
-         ParameterDefinitions.Add(new PropertyParameterDefinition(propertyName));
-      }
-      public PropertyDef(string propertyName, PropertyParameterDefinition definition)
-      {
-         PropertyName = propertyName;
-         ParameterDefinitions.Add(definition);
-      }
-      public PropertyDef(string propertyName, IEnumerable<PropertyParameterDefinition> definitions)
-      {
-         PropertyName = propertyName;
-         ParameterDefinitions.AddRange(definitions);
-      }
-   }
    public class PropertyParameterDefinition
    {
       public string RevitParameterName = "";
@@ -150,10 +103,9 @@ namespace Revit.IFC.Export.Utility
       ///     #! UserDefinedPset
       /// </summary>
       /// <returns>List of property set definitions</returns>
-      public static IList<PropertySetDef> LoadUserDefinedPset()
+      public static IEnumerable<IfcPropertySetTemplate> LoadUserDefinedPset()
       {
-         IList<PropertySetDef> userDefinedPsets = new List<PropertySetDef>();
-         PropertySetDef userDefinedPset;
+         List<IfcPropertySetTemplate> userDefinedPsets = new List<IfcPropertySetTemplate>();
 
          try
          {
@@ -167,85 +119,25 @@ namespace Revit.IFC.Export.Utility
                return userDefinedPsets;
 
             string extension = Path.GetExtension(filename);
-            //if (string.Compare(extension, ".ifcxml", true) == 0 || string.Compare(extension, ".ifcjson", true) == 0 || string.Compare(extension, ".ifc", true) == 0)
-            //{
-            //DatabaseIfc db = new DatabaseIfc(filename);
-            //IfcContext context = db.Context;
-            //if (context == null)
-            //return userDefinedPsets;
-            //foreach (IfcRelDeclares relDeclares in context.Declares)
-            //{
-            //foreach (IfcPropertySetTemplate template in relDeclares.RelatedDefinitions.OfType<IfcPropertySetTemplate>())
-            //{
-            //userDefinedPset = new PropertySetDef();
-            //userDefinedPset.applicableElements = new List<string>(template.ApplicableEntity.Split(",".ToCharArray()));
-            //userDefinedPset.propertyDefs = new List<PropertyDef>();
-
-            //userDefinedPset.propertySetName = template.Name;
-            //userDefinedPset.propertySetDescription = template.Description;
-            //userDefinedPset.applicableTo = (template.TemplateType == IfcPropertySetTemplateTypeEnum.PSET_TYPEDRIVENONLY || template.TemplateType == IfcPropertySetTemplateTypeEnum.QTO_TYPEDRIVENONLY ? TypeOrInstance.Type : TypeOrInstance.Instance);
-            //userDefinedPsets.Add(userDefinedPset);
-            //foreach (IfcPropertyTemplate propTemplate in template.HasPropertyTemplates)
-            //{
-            //List<PropertyParameterDefinition> definitions = new List<PropertyParameterDefinition>();
-            //IfcValue value = null;
-            //foreach (IfcRelAssociates associates in propTemplate.HasAssociations)
-            //{
-            //IfcRelAssociatesClassification associatesClassification = associates as IfcRelAssociatesClassification;
-            //if (associatesClassification != null)
-            //{
-            //IfcClassificationReference classificationReference = associatesClassification.RelatingClassification as IfcClassificationReference;
-            //if (classificationReference != null)
-            //{
-            //string id = classificationReference.Identification;
-            //if (id.ToLower().StartsWith("builtinparameter."))
-            //{
-            //Autodesk.Revit.DB.BuiltInParameter builtInParameter = Autodesk.Revit.DB.BuiltInParameter.INVALID;
-            //id = id.Substring(17);
-            //if (Enum.TryParse<Autodesk.Revit.DB.BuiltInParameter>(id, out builtInParameter) && builtInParameter != Autodesk.Revit.DB.BuiltInParameter.INVALID)
-            //definitions.Add(new PropertyParameterDefinition(builtInParameter));
-            //else
-            //{
-            //}
-            //}
-            //else
-            //definitions.Add(new PropertyParameterDefinition(id)); 
-            //}
-            //}
-            //else
-            //{
-            //IfcRelAssociatesConstraint associatesConstraint = associates as IfcRelAssociatesConstraint;
-            //if (associatesConstraint != null)
-            //{
-            //IfcMetric metric = associatesConstraint.RelatingConstraint as IfcMetric;
-            //if (metric != null)
-            //{
-            //value = metric.DataValue as IfcValue;
-            //}
-            //}
-            //}
-            //}
-            //if (definitions.Count > 0 || value != null)
-            //{
-            //PropertyDef propertyDefUnit = new PropertyDef(propTemplate.Name, definitions);
-            //IfcSimplePropertyTemplate simple = propTemplate as IfcSimplePropertyTemplate;
-            //if (simple != null)
-            //{
-            //propertyDefUnit.PropertyDataType = simple.PrimaryMeasureType.ToLower().Replace("ifc", "");
-            //}
-            //propertyDefUnit.DefaultValue = value;
-            //userDefinedPset.propertyDefs.Add(propertyDefUnit);
-            //}
-            //}
-            //}
-            //}
-            //}
-            //else
+            if (string.Compare(extension, ".ifcxml", true) == 0 || string.Compare(extension, ".ifcjson", true) == 0 || string.Compare(extension, ".ifc", true) == 0)
             {
+               DatabaseIfc db = new DatabaseIfc(filename);
+               IfcContext context = db.Context;
+               if (context == null)
+                  return userDefinedPsets;
+               foreach (IfcRelDeclares relDeclares in context.Declares)
+               {
+                  userDefinedPsets.AddRange(relDeclares.RelatedDefinitions.OfType<IfcPropertySetTemplate>());
+               }
+            }
+            else
+            { 
                using (StreamReader sr = new StreamReader(filename))
                {
                   string line;
 
+                  DatabaseIfc db = new DatabaseIfc(false, ReleaseVersion.IFC4);
+                  IfcPropertySetTemplate userDefinedPset = null;
                   while ((line = sr.ReadLine()) != null)
                   {
                      line.TrimStart(' ', '\t');
@@ -260,47 +152,38 @@ namespace Revit.IFC.Export.Utility
                         string[] split = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         if (string.Compare(split[0], "PropertySet:", true) == 0)
                         {
-                           userDefinedPset = new PropertySetDef();
-                           userDefinedPset.applicableElements = new List<string>();
-                           userDefinedPset.propertyDefs = new List<PropertyDef>();
-
+                           userDefinedPset = new IfcPropertySetTemplate(db, split.Length > 2 ? split[1] : "Unknown");
                            if (split.Count() >= 4)         // Any entry with less than 3 par is malformed
                            {
-                              userDefinedPset.propertySetName = split[1];
                               switch (split[2][0])
                               {
                                  case 'T':
-                                    userDefinedPset.applicableTo = TypeOrInstance.Type;
+                                    userDefinedPset.TemplateType = IfcPropertySetTemplateTypeEnum.PSET_TYPEDRIVENONLY;
                                     break;
                                  case 'I':
-                                    userDefinedPset.applicableTo = TypeOrInstance.Instance;
+                                    userDefinedPset.TemplateType = IfcPropertySetTemplateTypeEnum.PSET_OCCURRENCEDRIVEN;
                                     break;
                                  default:
-                                    userDefinedPset.applicableTo = TypeOrInstance.Instance;
+                                    userDefinedPset.TemplateType = IfcPropertySetTemplateTypeEnum.PSET_OCCURRENCEDRIVEN;
                                     break;
                               }
-                              string[] elemlist = split[3].Split(new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                              foreach (string elem in elemlist)
-                                 userDefinedPset.applicableElements.Add(elem);
-
+                              userDefinedPset.ApplicableEntity = string.Join(",", split[3].Split(new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries));
                               userDefinedPsets.Add(userDefinedPset);
                            }
                         }
                         else
                         {
-                           PropertyDef propertyDefUnit = null;
+                           IfcSimplePropertyTemplate propertyDefUnit = null;
                            if (split.Count() >= 2)
                            {
-                              if (split.Count() >= 3)
+                              propertyDefUnit = new IfcSimplePropertyTemplate(db, split[0]);
+                              if (split.Count() >= 3 && !string.IsNullOrEmpty(split[2]))
                               {
-                                 propertyDefUnit = new PropertyDef(split[0], new PropertyParameterDefinition(split[2]));
+                                 new IfcRelAssociatesClassification(new IfcClassificationReference(db) { Identification = split[2] }, propertyDefUnit);
                               }
-                              else
-                              {
-                                 propertyDefUnit = new PropertyDef(split[0]);
-                              }
-                              propertyDefUnit.PropertyDataType = split[1];
-                              userDefinedPsets.Last().propertyDefs.Add(propertyDefUnit);
+                              if(!string.IsNullOrEmpty(split[1]))
+                                 propertyDefUnit.PrimaryMeasureType = "Ifc" + split[1];
+                              userDefinedPsets.Last().AddPropertyTemplate(propertyDefUnit);
                            }
                         }
                      }
