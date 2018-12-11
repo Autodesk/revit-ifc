@@ -59,6 +59,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
 
       }
+
+      public QuantityEntryMap(string revitParameterName, BuiltInParameter builtInParameter)
+          : base(revitParameterName, builtInParameter)
+      {
+
+      }
       /// <summary>
       /// Process to create element quantity.
       /// </summary>

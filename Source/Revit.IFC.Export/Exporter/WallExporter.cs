@@ -424,7 +424,8 @@ namespace Revit.IFC.Export.Exporter
             hasClipping = bodyItemHnd.Id != baseBodyItemHnd.Id;
 
             // If there is clipping in IFC4 RV, it also needs to rollback
-            if ((expandedWallExtrusion && !hasClipping) || (hasClipping && ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView))
+            if ((expandedWallExtrusion && !hasClipping) 
+               || (hasClipping && ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView))
             {
                // We expanded the wall base, expecting to find cutouts, but found none.  Delete the extrusion and try again below.
                tr.RollBack();
@@ -500,7 +501,9 @@ namespace Revit.IFC.Export.Exporter
                      geomList.Add(mesh);
                foreach (GeometryObject geom in geomList)
                {
-                  IFCAnyHandle triangulatedBodyItem = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, wallElement, options, geom);
+                  Transform scaledLCS = wallLCS;
+                  scaledLCS.Origin = UnitUtil.ScaleLength(scaledLCS.Origin);
+                  IFCAnyHandle triangulatedBodyItem = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, wallElement, options, geom, scaledLCS.Inverse);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
                      bodyItems.Add(triangulatedBodyItem);
                }
@@ -514,7 +517,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       // Get a list of solids and meshes, but only if we haven't already done so.
-      private static void GetSolidsAndMeshes(GeometryElement geometryElement, IFCRange range, ref IList<Solid> solids, ref IList<Mesh> meshes)
+      private static void GetSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, GeometryElement geometryElement, IFCRange range, ref IList<Solid> solids, ref IList<Mesh> meshes)
       {
          if (solids.Count > 0 || meshes.Count > 0)
             return;
@@ -523,8 +526,14 @@ namespace Revit.IFC.Export.Exporter
              (range == null) ? GeometryUtil.GetSplitSolidMeshGeometry(geometryElement) :
                  GeometryUtil.GetSplitClippedSolidMeshGeometry(geometryElement, range);
 
-         solids = solidMeshInfo.GetSolids();
-         meshes = solidMeshInfo.GetMeshes();
+         IList<GeometryObject> geomList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, solidMeshInfo.GetSolids(), solidMeshInfo.GetMeshes());
+         foreach (GeometryObject gObj in geomList)
+         {
+            if (gObj is Solid)
+               solids.Add(gObj as Solid);
+            else if (gObj is Mesh)
+               meshes.Add(gObj as Mesh);
+         }
       }
 
       // Takes into account the transform, assuming any rotation.
@@ -624,7 +633,7 @@ namespace Revit.IFC.Export.Exporter
          {
             if (!(element is FamilyInstance))
             {
-               GetSolidsAndMeshes(geometryElement, range, ref solids, ref meshes);
+               GetSolidsAndMeshes(element.Document, exporterIFC, geometryElement, range, ref solids, ref meshes);
                if (solids.Count == 0 && meshes.Count == 0)
                   return null;
             }
@@ -647,8 +656,16 @@ namespace Revit.IFC.Export.Exporter
                   trf = famInstWallElem.GetTransform();
 
                SolidMeshGeometryInfo solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(geomElemToUse, trf);
-               solids = solidMeshCapsule.GetSolids();
-               meshes = solidMeshCapsule.GetMeshes();
+               //solids = solidMeshCapsule.GetSolids();
+               //meshes = solidMeshCapsule.GetMeshes();
+               IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solidMeshCapsule.GetSolids(), solidMeshCapsule.GetMeshes());
+               foreach (GeometryObject gObj in gObjs)
+               {
+                  if (gObj is Solid)
+                     solids.Add(gObj as Solid);
+                  else if (gObj is Mesh)
+                     meshes.Add(gObj as Mesh);
+               }
             }
          }
 
@@ -796,7 +813,13 @@ namespace Revit.IFC.Export.Exporter
                double scaledFootprintArea = 0;
                double scaledLength = 0;
 
-               using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId))
+               // Check for containment override
+               IFCAnyHandle overrideContainerHnd = null;
+               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+               if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
+                  overrideLevelId = overrideContainerId;
+
+               using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId, overrideContainerHnd))
                {
                   IFCAnyHandle localPlacement = setter.LocalPlacement;
 
@@ -978,8 +1001,7 @@ namespace Revit.IFC.Export.Exporter
                               if (wallFunction == (int)WallFunction.Retaining || wallFunction == (int)WallFunction.Foundation)
                               {
                                  // In this case, allow potential to export foundation and retaining walls as footing.
-                                 string enumTypeValue = null;
-                                 IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, wallElement, out enumTypeValue);
+                                 IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, wallElement, out ifcEnumType);
                                  if (exportType.ExportInstance == IFCEntityType.IfcFooting)
                                     exportAsFooting = true;
                               }
@@ -1153,7 +1175,7 @@ namespace Revit.IFC.Export.Exporter
             if (wallElement != null && geometryElement != null)
             {
                IFCExportInfoPair exportInfo = new IFCExportInfoPair();
-               exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWall);
+               exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWall, ifcEnumType);
                LevelUtil.CreateSplitLevelRangesForElement(exporterIFC, exportInfo, element, out levels, out ranges);
             }
 
@@ -1332,7 +1354,13 @@ namespace Revit.IFC.Export.Exporter
 
             Transform orientationTrf = Transform.Identity;
 
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId))
+            // Check for containment override
+            IFCAnyHandle overrideContainerHnd = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+            if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
+               overrideLevelId = overrideContainerId;
+
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId, overrideContainerHnd))
             {
                IFCAnyHandle localPlacement = setter.LocalPlacement;
                wallHnd = IFCInstanceExporter.CreateWall(exporterIFC, element, elemGUID, ownerHistory,
@@ -1372,17 +1400,19 @@ namespace Revit.IFC.Export.Exporter
 
          Document doc = element.Document;
          ElementId typeElemId = element.GetTypeId();
-         Element elementType = doc.GetElement(typeElemId);
+         ElementType elementType = doc.GetElement(typeElemId) as ElementType;
          if (elementType == null)
             return;
 
-         IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(typeElemId);
+         IFCExportInfoPair exportType = new IFCExportInfoPair();
+         exportType.SetValueWithPair(IFCEntityType.IfcWallType);
+         exportType.ValidatedPredefinedType = "STANDARD";
+         IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(wallType))
          {
             ExporterCacheManager.TypeRelationsCache.Add(wallType, elementHandle);
             return;
          }
-
 
          // Property sets will be set later.
          if (asFooting)
@@ -1390,7 +1420,7 @@ namespace Revit.IFC.Export.Exporter
          else
             wallType = IFCInstanceExporter.CreateWallType(exporterIFC.GetFile(), elementType, null, null, ifcTypeEnum);
 
-         wrapper.RegisterHandleWithElementType(elementType as ElementType, wallType, null);
+         wrapper.RegisterHandleWithElementType(elementType, exportType, wallType, null);
 
          if (overrideMaterialId != ElementId.InvalidElementId)
          {

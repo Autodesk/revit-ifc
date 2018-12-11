@@ -878,11 +878,26 @@ namespace Revit.IFC.Export.Exporter
 
          IFCLevelInfo levelInfo = exporterIFC.GetLevelInfo(levelId);
 
-
-
          IFCFile file = exporterIFC.GetFile();
-
          IFCAnyHandle localPlacement = setter.LocalPlacement;
+
+         // If the override container paramater is detected, the LevelInfo and LocalPlacement will be overriden
+         IFCAnyHandle overrideContainer;
+         ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, spatialElement, out overrideContainer);
+
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(overrideContainer))
+         {
+            if (overrideContainerId != ElementId.InvalidElementId)
+            {
+               levelInfo = exporterIFC.GetLevelInfo(overrideContainerId);
+               levelId = overrideContainerId;
+            }
+            else
+            {
+               levelInfo = null;    //Reset LevelInfo, since the override container does not have an associated element
+            }
+         }
+
          ElementType elemType = document.GetElement(spatialElement.GetTypeId()) as ElementType;
          IFCInternalOrExternal internalOrExternal = CategoryUtil.IsElementExternal(spatialElement) ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
 
@@ -956,8 +971,6 @@ namespace Revit.IFC.Export.Exporter
 
                extraParams.ScaledHeight = scaledRoomHeight;
                extraParams.ScaledArea = dArea;
-
-
 
                spaceHnd = IFCInstanceExporter.CreateSpace(exporterIFC, spatialElement, GUIDUtil.CreateGUID(spatialElement),
                                              ExporterCacheManager.OwnerHistoryHandle,

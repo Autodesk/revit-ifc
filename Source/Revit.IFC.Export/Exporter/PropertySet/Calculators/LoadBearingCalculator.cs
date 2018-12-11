@@ -78,8 +78,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             return true;
          }
 
-         // This may be set for Column
-         if (CategoryUtil.GetSafeCategoryId(element) == new ElementId(BuiltInCategory.OST_StructuralColumns))
+         // This may be set for Column, Beam, Brace
+         ElementId catId = CategoryUtil.GetSafeCategoryId(element);
+         if (catId == new ElementId(BuiltInCategory.OST_StructuralColumns)
+            || catId == new ElementId(BuiltInCategory.OST_StructuralFraming)
+            || catId == new ElementId(BuiltInCategory.OST_StructuralFramingSystem)
+            || catId == new ElementId(BuiltInCategory.OST_StructuralTruss))
          {
             m_LoadBearing = true;
             return true;

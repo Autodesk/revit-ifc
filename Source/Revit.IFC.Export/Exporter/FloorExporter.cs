@@ -55,7 +55,11 @@ namespace Revit.IFC.Export.Exporter
          {
             using (IFCTransformSetter transformSetter = IFCTransformSetter.Create())
             {
-               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, slabElement))
+               // Check for containment override
+               IFCAnyHandle overrideContainerHnd = null;
+               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, slabElement, out overrideContainerHnd);
+
+               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, slabElement, null, null, overrideContainerId, overrideContainerHnd))
                {
                   using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
                   {
@@ -166,6 +170,8 @@ namespace Revit.IFC.Export.Exporter
             if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
                return;
 
+         string predefinedType = null;
+
          using (IFCTransaction tr = new IFCTransaction(file))
          {
             bool canExportAsContainerOrWithExtrusionAnalyzer = (!exportParts && (floorElement is Floor));
@@ -191,7 +197,11 @@ namespace Revit.IFC.Export.Exporter
 
             using (IFCTransformSetter transformSetter = IFCTransformSetter.Create())
             {
-               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, floorElement))
+               // Check for containment override
+               IFCAnyHandle overrideContainerHnd = null;
+               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, floorElement, out overrideContainerHnd);
+
+               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, floorElement, null, null, overrideContainerId, overrideContainerHnd))
                {
                   IFCAnyHandle localPlacement = placementSetter.LocalPlacement;
 
@@ -217,9 +227,17 @@ namespace Revit.IFC.Export.Exporter
                      // Next, try to use the ExtrusionAnalyzer for the limited cases it handles - 1 solid, no openings, end clippings only.
                      // Also limited to cases with line and arc boundaries.
                      //
+                     IList<Solid> solids = new List<Solid>();
+                     IList<Mesh> meshes = new List<Mesh>();
                      SolidMeshGeometryInfo solidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(geometryElement);
-                     IList<Solid> solids = solidMeshInfo.GetSolids();
-                     IList<Mesh> meshes = solidMeshInfo.GetMeshes();
+                     IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(floorElement.Document, exporterIFC, solidMeshInfo.GetSolids(), solidMeshInfo.GetMeshes());
+                     foreach (GeometryObject gObj in gObjs)
+                     {
+                        if (gObj is Solid)
+                           solids.Add(gObj as Solid);
+                        else if (gObj is Mesh)
+                           meshes.Add(gObj as Mesh);
+                     }
 
                      if (solids.Count == 1 && meshes.Count == 0)
                      {
@@ -286,9 +304,6 @@ namespace Revit.IFC.Export.Exporter
                         // Footprint representation will only be exported in export to IFC4
                         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
                         {
-                           // Get back the representations, we need to add the Footprint to it
-                           //IList<IFCAnyHandle> representations = IFCAnyHandleUtil.GetRepresentations(prodRepsTmp[ii]);
-
                            if (extrusionLoops.Count > ii)
                            {
                               if (extrusionLoops[ii].Count > 0)
@@ -307,16 +322,7 @@ namespace Revit.IFC.Export.Exporter
                                  IFCAnyHandleUtil.AddRepresentations(prodReps[ii], reps);
                               }
                            }
-                           //IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
-                           //prodReps.Add(prodRep);
                         }
-                        else
-                        {
-                           //prodReps.Add(prodRepsTmp[ii]);
-                        }
-
-                        // We do not need the prodRepsTmp anymore, delete the handle:
-                        //prodRepsTmp[ii].Delete();
                      }
                   }
 
@@ -349,18 +355,18 @@ namespace Revit.IFC.Export.Exporter
                   {
                      case IFCEntityType.IfcFooting:
                         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                           exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<Revit.IFC.Export.Toolkit.IFC4.IFCFootingType>(floorElement, ifcEnumType, null);
+                           predefinedType = IFCValidateEntry.GetValidIFCType<Revit.IFC.Export.Toolkit.IFC4.IFCFootingType>(floorElement, ifcEnumType, null);
                         else
-                           exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCFootingType>(floorElement, ifcEnumType, null);
+                           predefinedType = IFCValidateEntry.GetValidIFCType<IFCFootingType>(floorElement, ifcEnumType, null);
                         break;
                      case IFCEntityType.IfcCovering:
-                        exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCCoveringType>(floorElement, ifcEnumType, "FLOORING");
+                        predefinedType = IFCValidateEntry.GetValidIFCType<IFCCoveringType>(floorElement, ifcEnumType, "FLOORING");
                         break;
                      case IFCEntityType.IfcRamp:
                         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                           exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<Revit.IFC.Export.Toolkit.IFC4.IFCRampType>(floorElement, ifcEnumType, null);
+                           predefinedType = IFCValidateEntry.GetValidIFCType<Revit.IFC.Export.Toolkit.IFC4.IFCRampType>(floorElement, ifcEnumType, null);
                         else
-                           exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCRampType>(floorElement, ifcEnumType, null);
+                           predefinedType = IFCValidateEntry.GetValidIFCType<IFCRampType>(floorElement, ifcEnumType, null);
                         break;
                      default:
                         bool isBaseSlab = false;
@@ -370,7 +376,7 @@ namespace Revit.IFC.Export.Exporter
                            AnalyzeAs slabFoundationType = analyticalModel.GetAnalyzeAs();
                            isBaseSlab = (slabFoundationType == AnalyzeAs.SlabOnGrade) || (slabFoundationType == AnalyzeAs.Mat);
                         }
-                        exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCSlabType>(floorElement, ifcEnumType, isBaseSlab ? "BASESLAB" : "FLOOR");
+                        predefinedType = IFCValidateEntry.GetValidIFCType<IFCSlabType>(floorElement, ifcEnumType, isBaseSlab ? "BASESLAB" : "FLOOR");
                         break;
                   }
 
@@ -389,6 +395,9 @@ namespace Revit.IFC.Export.Exporter
 
                      if (!string.IsNullOrEmpty(ifcName))
                         IFCAnyHandleUtil.OverrideNameAttribute(slabHnd, ifcName);
+
+                     if (!string.IsNullOrEmpty(predefinedType))
+                        IFCAnyHandleUtil.SetAttribute(slabHnd, "PredefinedType", predefinedType, true);
 
                      if (exportParts)
                         PartExporter.ExportHostPart(exporterIFC, floorElement, slabHnd, productWrapper, placementSetter, localPlacementHnd, null);

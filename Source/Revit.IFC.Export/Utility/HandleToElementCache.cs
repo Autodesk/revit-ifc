@@ -70,6 +70,9 @@ namespace Revit.IFC.Export.Utility
       /// </param>
       public void Register(IFCAnyHandle handle, ElementId elementId)
       {
+         if (m_HandleToElementCache.ContainsKey(handle))
+            return;
+
          m_HandleToElementCache[handle] = elementId;
       }
    }

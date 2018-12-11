@@ -98,10 +98,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
       }
 
-      /// <summary>
-      /// The type of the quantity.
-      /// </summary>
-      public QuantityType QuantityType
+      public QuantityEntry(string propertyName, IEnumerable<QuantityEntryMap> entries)
+           : base(propertyName, entries)
+      {
+
+      }
+
+   /// <summary>
+   /// The type of the quantity.
+   /// </summary>
+   public QuantityType QuantityType
       {
          get
          {

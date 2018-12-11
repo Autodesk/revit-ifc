@@ -48,9 +48,19 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Slow_Debug|x64'">
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Antlr4.Runtime, Version=4.6.0.0, Culture=neutral, PublicKeyToken=09abb75b9ed49849, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Antlr4.Runtime.4.6.4\lib\net45\Antlr4.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="GeometryGymIFC, Version=0.0.17.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\GeometryGymIFC.0.0.17\lib\net45\GeometryGymIFC.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.XML" />
@@ -72,6 +82,7 @@
     <Compile Include="Exporter\DuctInsulationExporter.cs" />
     <Compile Include="Exporter\DuctLiningExporter.cs" />
     <Compile Include="Exporter\ExporterInitializer_PsetDef.cs" />
+    <Compile Include="Exporter\GenericElementExporter.cs" />
     <Compile Include="Exporter\ExtrusionExporter.cs" />
     <Compile Include="Exporter\FabricSheetExporter.cs" />
     <Compile Include="Exporter\FilledRegionExporter.cs" />
@@ -83,6 +94,7 @@
     <Compile Include="Exporter\HandleAndData.cs" />
     <Compile Include="Exporter\HostedSweepExporter.cs" />
     <Compile Include="Exporter\HostObjectExporter.cs" />
+    <Compile Include="Exporter\IFCEntityAndPsetList.cs" />
     <Compile Include="Exporter\InsulationExporter.cs" />
     <Compile Include="Exporter\PartExporter.cs" />
     <Compile Include="Exporter\PileExporter.cs" />
@@ -91,6 +103,11 @@
     <Compile Include="Exporter\PropertySet\AttributeEntryMap.cs" />
     <Compile Include="Exporter\PropertySet\AttributeSetDescription.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FireRatingCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\IsExternalCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NosingLengthCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NumberOfRiserCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NumberOfTreadsCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\RiserHeightCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\SpanCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\CrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\AreaCalculator.cs" />
@@ -119,7 +136,6 @@
     <Compile Include="Exporter\PropertySet\Calculators\ShapeCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\SlopeCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ExtendToStructureCalculator.cs" />
-    <Compile Include="Exporter\PropertySet\Calculators\ExternalCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\LoadBearingCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfStoreysCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\HeightCalculator.cs" />
@@ -127,7 +143,11 @@
     <Compile Include="Exporter\PropertySet\Calculators\ConcealCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\TemperatureCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\SpecificZoneCalculator.cs" />
-    <Compile Include="Exporter\PropertySet\Calculators\StairRiserTreadsCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\TreadLengthAtInnerSideCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\TreadLengthAtOffsetCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\TreadLengthCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\WaistThicknessCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\WalkingLineOffsetCalculator.cs" />
     <Compile Include="Exporter\PropertySet\ClassificationUtil.cs" />
     <Compile Include="Exporter\PropertySet\ElectricalCurrentPropertyUtil.cs" />
     <Compile Include="Exporter\PropertySet\ElectricalVoltagePropertyUtil.cs" />
@@ -216,6 +236,7 @@
     <Compile Include="Utility\DummyHostCache.cs" />
     <Compile Include="Utility\ElementFilteringUtil.cs" />
     <Compile Include="Utility\ElementToHandleCache.cs" />
+    <Compile Include="Utility\ElementTypeToHandleCache.cs" />
     <Compile Include="Utility\ExporterCacheManager.cs" />
     <Compile Include="Utility\ExporterStateManager.cs" />
     <Compile Include="Utility\ExporterUtil.cs" />
@@ -230,6 +251,7 @@
     <Compile Include="Utility\GUIDUtil.cs" />
     <Compile Include="Utility\HandleToElementCache.cs" />
     <Compile Include="Utility\HostPartsCache.cs" />
+    <Compile Include="Utility\IFCExportInfoPair.cs" />
     <Compile Include="Utility\IntegerPropertyInfoCache.cs" />
     <Compile Include="Utility\LevelInfoCache.cs" />
     <Compile Include="Utility\LevelUtil.cs" />
@@ -329,8 +351,9 @@
     about missing OutputPath tags.
     -->
   <Import Project=".\Revit.IFC.Export.props" />
-  <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I</PostBuildEvent>
+  <PropertyGroup> 
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I</PostBuildEvent> 
+xcopy "$(TargetDir)GeometryGymIFC.dll" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I</PostBuildEvent> 
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
