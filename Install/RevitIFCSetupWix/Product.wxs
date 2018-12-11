@@ -88,6 +88,9 @@
          <Component Id = "COMP_Antlr4Runtime_DLL" Guid="EA19D64B-491C-47AD-A019-57E581734481">
             <File Id ="FILE_Antlr4Runtime_DLL" Name="Antlr4.Runtime.dll" Source="$(var.Revit.IFC.Export.TargetDir)Antlr4.Runtime.dll" KeyPath="yes" />
          </Component>
+        <Component Id = "COMP_GeometryGymIFC_DLL" Guid="467589B7-945B-4B06-89D1-668DFFAFD074">
+          <File Id ="FILE_GeometryGymIFC_DLL" Name="GeometryGymIFC.dll" Source="$(var.Revit.IFC.Export.TargetDir)GeometryGymIFC.dll" KeyPath="yes" />
+        </Component>
          <Component Id = "COMP_IFC2X2ADD1_XSD" Guid="3BC747BD-9F67-48C2-AC3E-74C9728F9BC5">
             <File Id ="FILE_IFC2X2ADD1_XSD" Name="IFC2X2_ADD1.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC2X2_ADD1.xsd" KeyPath="yes" />
          </Component>
