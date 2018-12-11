@@ -118,10 +118,11 @@ namespace Revit.IFC.Import.Data
          // Pass in newLCS = null, use newLCS for instance.
          bool isFootprint = (shapeEditScope.ContainingRepresentation.Identifier == IFCRepresentationIdentifier.FootPrint);
 
-         bool canCreateType = (newLcs != null && newLcs.IsConformal) &&
-         (newScaledLcs != null && newScaledLcs.IsConformal) &&
-         isUnitScale &&
-         (shapeEditScope.ContainingRepresentation != null && !isFootprint);
+         bool canCreateType = !shapeEditScope.PreventInstances && 
+            (newLcs != null && newLcs.IsConformal) &&
+            (newScaledLcs != null && newScaledLcs.IsConformal) &&
+            isUnitScale &&
+            (shapeEditScope.ContainingRepresentation != null && !isFootprint);
 
          if (canCreateType)
          {

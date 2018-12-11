@@ -234,6 +234,45 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Find a Non-Abstract Super Type in the current IFC Schema
+      /// </summary>
+      /// <param name="typeName">the entity name</param>
+      /// <param name="stopNode">optional list of entity name(s) to stop the search</param>
+      /// <returns>the appropriate node or null</returns>
+      static public IfcSchemaEntityNode FindNonAbsSuperType(string entityName, params string[] stopNode)
+      {
+         IfcSchemaEntityNode res = null;
+         
+         IfcSchemaEntityNode entNode = Find(entityName);
+
+         if (entNode != null)
+         {
+            foreach (string stopCond in stopNode)
+               if (entNode.Name.Equals(stopCond, StringComparison.InvariantCultureIgnoreCase))
+                  return res;
+
+            while (true)
+            {
+               entNode = entNode.GetParent();
+               // no more parent node to get
+               if (entNode == null)
+                  break;
+
+               foreach (string stopCond in stopNode)
+                  if (entNode.Name.Equals(stopCond, StringComparison.InvariantCultureIgnoreCase))
+                     break;
+
+               if (entNode != null && !entNode.isAbstract)
+               {
+                  res = entNode;
+                  break;
+               }
+            }
+         }
+         return res;
+      }
+
+      /// <summary>
       /// Check whether an entity is a subtype of another entity
       /// </summary>
       /// <param name="subTypeName">candidate of the subtype entity name</param>

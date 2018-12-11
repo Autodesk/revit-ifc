@@ -50,7 +50,11 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element))
+            // Check for containment override
+            IFCAnyHandle overrideContainerHnd = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
             {
                using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
                {
@@ -65,6 +69,16 @@ namespace Revit.IFC.Export.Exporter
 
                      matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element);
                      BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+
+                     StructuralMemberAxisInfo axisInfo = StructuralMemberExporter.GetStructuralMemberAxisTransform(element);
+                     if (axisInfo != null)
+                     {
+                        ecData.CustomAxis = axisInfo.AxisDirection;
+                        ecData.PossibleExtrusionAxes = IFCExtrusionAxes.TryCustom;
+                     }
+                     else
+                        ecData.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;
+
                      prodRep = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC,
                         element, catId, geometryElement, bodyExporterOptions, null, ecData, true);
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodRep))
@@ -76,9 +90,19 @@ namespace Revit.IFC.Export.Exporter
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
                   //string pileType = IFCValidateEntry.GetValidIFCPredefinedType(element, ifcEnumType);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair();
+                  exportInfo.ValidatedPredefinedType = ifcEnumType;
+                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcPile, ifcEnumType);
 
                   IFCAnyHandle pile = IFCInstanceExporter.CreatePile(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
                       ecData.GetLocalPlacement(), prodRep, ifcEnumType, null);
+
+                  // TODO: to allow shared geometry for Piles. For now, Pile export will not use shared geometry
+                  if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
+                  {
+                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
+                     ExporterCacheManager.TypeRelationsCache.Add(type, pile);
+                  }
 
                   if (exportParts)
                   {

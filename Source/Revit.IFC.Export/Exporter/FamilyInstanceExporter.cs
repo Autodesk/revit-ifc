@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
@@ -182,9 +183,11 @@ namespace Revit.IFC.Export.Exporter
          }
 
          // We won't allow creating a type if we aren't creating an instance.
-         // We won't create the instance if: we are exporting to CV2.0, we have no 2D, 3D, or bounding box geometry, and we aren't exporting parts.
-         bool willCreateInstance = !(repMapList.Count == 0 && ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2 &&
-             !ExporterCacheManager.ExportOptionsCache.ExportBoundingBox && !exportParts);
+         // We won't create the instance if: we are exporting to CV2.0/RV, we have no 2D, 3D, or bounding box geometry, and we aren't exporting parts.
+         bool willCreateInstance = !(repMapList.Count == 0 
+            && !ExporterCacheManager.ExportOptionsCache.ExportBoundingBox && !exportParts
+             && (ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2
+                     || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView));
          if (!willCreateInstance)
             return null;
 
@@ -212,23 +215,29 @@ namespace Revit.IFC.Export.Exporter
             {
                case IFCEntityType.IfcBeam:
                   {
-                     string beamType = "Beam";   // temporary. It might be provided through type info? or override
+                     string beamType = exportType.ValidatedPredefinedType;
+                     if (string.IsNullOrEmpty(beamType))
+                        beamType = "Beam";
                      typeStyle = IFCInstanceExporter.CreateBeamType(file, familySymbol,
-                         propertySets, repMapList, GetBeamType(familyInstance, beamType));
+                         propertySets, repMapList, beamType);
                      break;
                   }
                case IFCEntityType.IfcColumn:
                   {
-                     string columnType = "Column";
+                     string columnType = exportType.ValidatedPredefinedType;
+                     if (string.IsNullOrEmpty(columnType))
+                        columnType = "Column";
                      typeStyle = IFCInstanceExporter.CreateColumnType(file, familySymbol,
-                         propertySets, repMapList, GetColumnType(familyInstance, columnType));
+                         propertySets, repMapList, columnType);
                      break;
                   }
                case IFCEntityType.IfcMember:
                   {
-                     string memberType = "Brace";   // temporary. It might be provided through type info? or override
+                     string memberType = exportType.ValidatedPredefinedType;
+                     if (string.IsNullOrEmpty(memberType))
+                        memberType="Brace";
                      typeStyle = IFCInstanceExporter.CreateMemberType(file, familySymbol,
-                         propertySets, repMapList, GetMemberType(familyInstance, memberType));
+                         propertySets, repMapList, memberType);
                      break;
                   }
                case IFCEntityType.IfcDoor:
@@ -403,7 +412,8 @@ namespace Revit.IFC.Export.Exporter
 
          // A Family Instance can have its own copy of geometry, or use the symbol's copy with a transform.
          // The routine below tells us whether to use the Instance's copy or the Symbol's copy.
-         bool useInstanceGeometry = ExporterIFCUtils.UsesInstanceGeometry(familyInstance);
+         //bool useInstanceGeometry = ExporterIFCUtils.UsesInstanceGeometry(familyInstance);
+         bool useInstanceGeometry = GeometryUtil.UsesInstanceGeometry(familyInstance);
          Transform trf = familyInstance.GetTransform();
 
          MaterialAndProfile materialAndProfile = null;
@@ -429,7 +439,7 @@ namespace Revit.IFC.Export.Exporter
             FamilyTypeInfo typeInfo = new FamilyTypeInfo();
 
             bool flipped = doorWindowInfo != null ? doorWindowInfo.FlippedSymbol : false;
-            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(originalFamilySymbol.Id, flipped, exportType.ExportType);
+            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(originalFamilySymbol.Id, flipped, exportType);
             bool found = currentTypeInfo.IsValid();
 
             Family family = familySymbol.Family;
@@ -465,6 +475,7 @@ namespace Revit.IFC.Export.Exporter
 
                Element exportGeometryElement = useInstanceGeometry ? (Element)familyInstance : (Element)originalFamilySymbol;
                GeometryElement exportGeometry = exportGeometryElement.get_Geometry(options);
+               IList<Curve> export2DGeometry = GeometryUtil.Get2DArcOrLineFromSymbol(familyInstance, allCurveType: true);
                GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
 
                // There are 2 possible paths for a Family Instance to be exported as a Swept Solid.
@@ -619,7 +630,10 @@ namespace Revit.IFC.Export.Exporter
                         BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(tryToExportAsExtrusion, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                         if (exportType.ExportInstance == IFCEntityType.IfcColumn || exportType.ExportInstance == IFCEntityType.IfcMember || exportType.ExportInstance == IFCEntityType.IfcBeam)
                         {
-                           bodyExporterOptions.CollectMaterialAndProfile = true;
+                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                              bodyExporterOptions.CollectMaterialAndProfile = false;
+                           else
+                              bodyExporterOptions.CollectMaterialAndProfile = true;
                            // Get a profile name. 
                            profileName = NamingUtil.GetProfileName(familySymbol);
                         }
@@ -721,12 +735,33 @@ namespace Revit.IFC.Export.Exporter
 
                         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                         {
-                           foreach (GeometryObject gObj in exportGeometry)
+                           foreach (Curve curveGeom in export2DGeometry)
                            {
-                              if (!(gObj is Curve))
-                                 continue;
+                              Curve curve = curveGeom;
 
-                              Curve curve = gObj as Curve;
+                              if (doorWindowTrf != null)
+                              {
+                                 Transform flipTrf = Transform.Identity;
+                                 double yTrf = 0.0;
+
+                                 if (familyInstance.FacingFlipped ^ familyInstance.HandFlipped)
+                                 {
+                                    flipTrf.BasisY = flipTrf.BasisY.Negate();
+                                 }
+
+                                 // We will move the curve into Z=0
+                                 if (curve is Arc)
+                                    flipTrf.Origin = new XYZ(0, yTrf, -(curve as Arc).Center.Z);
+                                 else if (curve is Ellipse)
+                                    flipTrf.Origin = new XYZ(0, yTrf, -(curve as Ellipse).Center.Z);
+                                 else
+                                 {
+                                    if (curve.IsBound)
+                                       flipTrf.Origin = new XYZ(0, yTrf, -curve.GetEndPoint(0).Z);
+                                 }
+
+                                 curve = curve.CreateTransformed(doorWindowTrf.Multiply(flipTrf));
+                              }
 
                               IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
                               //IList<int> segmentIndex = null;
@@ -790,7 +825,7 @@ namespace Revit.IFC.Export.Exporter
 
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeStyle))
                {
-                  wrapper.RegisterHandleWithElementType(familySymbol, typeStyle, propertySets);
+                  wrapper.RegisterHandleWithElementType(familySymbol as ElementType, exportType, typeStyle, propertySets);
 
                   typeInfo.Style = typeStyle;
 
@@ -801,8 +836,11 @@ namespace Revit.IFC.Export.Exporter
                      if (typeInfo.materialAndProfile != null)
                      {
                         materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, typeInfo.materialAndProfile);
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, typeInfo.materialAndProfile);
-                        addedMaterialAssociation = true;
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
+                        {
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, typeInfo.materialAndProfile);
+                           addedMaterialAssociation = true;
+                        }
                      }
                      else if (basePlane != null && orig != null)
                      {
@@ -812,8 +850,11 @@ namespace Revit.IFC.Export.Exporter
                         if (matNProf.GetKeyValuePairs().Count > 0)
                         {
                            materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, matNProf);
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, matNProf);
-                           addedMaterialAssociation = true;
+                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, matNProf);
+                              addedMaterialAssociation = true;
+                           }
                         }
                      }
                   }
@@ -871,7 +912,7 @@ namespace Revit.IFC.Export.Exporter
 
             // add to the map, as long as we are not using range, not using instance geometry, and don't have extra openings.
             if ((range == null) && !useInstanceGeometry && (extraParams.GetOpenings().Count == 0))
-               ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(originalFamilySymbol.Id, flipped, exportType.ExportType, typeInfo);
+               ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(originalFamilySymbol.Id, flipped, exportType, typeInfo);
 
             // If we are using the instance geometry, ignore the transformation.
             if (useInstanceGeometry)
@@ -975,15 +1016,23 @@ namespace Revit.IFC.Export.Exporter
 
             IFCAnyHandle repHnd = (shapeReps.Count > 0) ? IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps) : null;
 
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, familyInstance, trf, null, overrideLevelId))
+            // Check for containment override
+            IFCAnyHandle overrideContainerHnd = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, familyInstance, out overrideContainerHnd);
+            if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
+               overrideLevelId = overrideContainerId;
+
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, familyInstance, trf, null, overrideLevelId, overrideContainerHnd))
             {
                IFCAnyHandle instanceHandle = null;
                IFCAnyHandle localPlacement = setter.LocalPlacement;
                bool materialAlreadyAssociated = false;
 
                // We won't create the instance if: 
-               // (1) we are exporting to CV2.0, (2) we have no 2D, 3D, or bounding box geometry, and (3) we aren't exporting parts.
-               if (!(repHnd == null && ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2 && !exportParts))
+               // (1) we are exporting to CV2.0/RV, (2) we have no 2D, 3D, or bounding box geometry, and (3) we aren't exporting parts.
+               if (!(repHnd == null && !exportParts
+                     && (ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2
+                     || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)))
                {
                   string instanceGUID = null;
 
@@ -1188,7 +1237,7 @@ namespace Revit.IFC.Export.Exporter
                               Parameter offsetPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_OFFSET);
                               if (offsetPar == null)
                               {
-                                 maxOffset = ParameterUtil.getSpecialOffsetParameter(familySymbol);
+                                 maxOffset = ParameterUtil.GetSpecialOffsetParameter(familySymbol);
                               }
                               else
                                  maxOffset = offsetPar.AsDouble();
@@ -1352,24 +1401,24 @@ namespace Revit.IFC.Export.Exporter
          // Note that this function doesn't support creating types - it exports a simple IFC instance only of a few possible types.
          switch (exportType.ExportInstance)
          {
-            case IFCEntityType.IfcBeam:
-               {
-                  // We will say that we exported the beam if either we generated an IfcBeam, or if we determined that there
-                  // was nothing to export, either because the beam had no geometry to export, or it was completely clipped.
+            //case IFCEntityType.IfcBeam:
+            //   {
+            //      // We will say that we exported the beam if either we generated an IfcBeam, or if we determined that there
+            //      // was nothing to export, either because the beam had no geometry to export, or it was completely clipped.
 
-                  // The regular Beam has been moved to the ExportFamilyInstanceAsMappedItem, to be able to export its types and also as a mapped geometry
-                  // standard building elements
+            //      // The regular Beam has been moved to the ExportFamilyInstanceAsMappedItem, to be able to export its types and also as a mapped geometry
+            //      // standard building elements
 
-                  // Limit this to IFC4, as beams no longer get axes exported if we use the code in ExportFamilyInstanceAsMappedItem.
-                  if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 || (element is DirectShape))
-                  {
-                     bool dontExport;
-                     IFCAnyHandle beamHnd = BeamExporter.ExportBeamAsStandardElement(exporterIFC, element, geometryElement, productWrapper, out dontExport);
-                     return (dontExport || !IFCAnyHandleUtil.IsNullOrHasNoValue(beamHnd));
-                  }
-                  else
-                     return false;
-               }
+            //      // Limit this to IFC4, as beams no longer get axes exported if we use the code in ExportFamilyInstanceAsMappedItem.
+            //      //if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 || (element is DirectShape))
+            //      //{
+            //      //   bool dontExport;
+            //      //   IFCAnyHandle beamHnd = BeamExporter.ExportBeamAsStandardElement(exporterIFC, element, geometryElement, productWrapper, out dontExport);
+            //      //   return (dontExport || !IFCAnyHandleUtil.IsNullOrHasNoValue(beamHnd));
+            //      //}
+            //      //else
+            //      //   return false;
+            //   }
             case IFCEntityType.IfcBuildingElementProxy:
                {
                   Element type = element.Document.GetElement(element.GetTypeId());
@@ -1385,16 +1434,17 @@ namespace Revit.IFC.Export.Exporter
                   }
                   break;
                }
-            case IFCEntityType.IfcFooting:
-               FootingExporter.ExportFooting(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
-               return true;
+               // IfcFooting and IfcPile will be handled by FamilyInstanceExporter in a more generic way
+            //case IFCEntityType.IfcFooting:
+            //   FootingExporter.ExportFooting(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
+            //   return true;
             case IFCEntityType.IfcCovering:
                CeilingExporter.ExportCovering(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
                return true;
-            case IFCEntityType.IfcPile:
-               PileExporter.ExportPile(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
-               //TODO
-               return true;
+            //case IFCEntityType.IfcPile:
+            //   PileExporter.ExportPile(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
+            //   //TODO
+            //   return true;
             case IFCEntityType.IfcRamp:
                RampExporter.ExportRamp(exporterIFC, ifcEnumTypeString, element, geometryElement, 1, productWrapper);
                return true;
@@ -1526,12 +1576,21 @@ namespace Revit.IFC.Export.Exporter
       static int? BeamCardinalPoint(FamilyInstance familyInstance)
       {
          Parameter yz_just = familyInstance.get_Parameter(BuiltInParameter.YZ_JUSTIFICATION);
+         if (yz_just == null)
+            return null;
+
          // Independent justification on the start and end is not supported in IFC, only the Uniform one is
          if (yz_just.AsInteger() == (int)Autodesk.Revit.DB.Structure.YZJustificationOption.Independent)
             return null;
          Parameter y_just = familyInstance.get_Parameter(BuiltInParameter.Y_JUSTIFICATION);
+         if (y_just == null)
+            return null;
+
          int yJustification = y_just.AsInteger();
          Parameter z_just = familyInstance.get_Parameter(BuiltInParameter.Z_JUSTIFICATION);
+         if (z_just == null)
+            return null;
+
          int zJustification = z_just.AsInteger();
 
          int? cardinalPoint = null;
@@ -1624,5 +1683,27 @@ namespace Revit.IFC.Export.Exporter
 
          return potentialCurves[0];
       }
+
+#if DEBUG
+      static StreamWriter outFile = null;
+      public static void PrintDbgInfo(params string[] inputArgs)
+      {
+         if (outFile == null)
+         {
+            outFile = new StreamWriter(@"e:\temp\debug2dinfo.txt");
+         }
+
+         string data = "\t\t";
+         foreach (string inputArg in inputArgs)
+            data += " " + inputArg;
+         outFile.WriteLine(data);
+         outFile.Flush();
+      }
+#else
+      public static void PrintDbgInfo(params string[] inputArgs)
+      {
+         return;
+      }
+#endif
    }
 }

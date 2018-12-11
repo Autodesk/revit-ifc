@@ -59,7 +59,7 @@ namespace Revit.IFC.Export.Exporter
          ICollection<IFCAnyHandle> boundaryRepresentations = new List<IFCAnyHandle>();
 
          // Use tessellated geometry for surface in IFC Reference View
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)
          {
             BodyExporterOptions options = new BodyExporterOptions(false, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
             surface = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geometryElement);
