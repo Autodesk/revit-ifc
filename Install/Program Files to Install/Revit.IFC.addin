@@ -2,7 +2,7 @@
 <RevitAddIns>
   <AddIn Type="DBApplication">
     <Name>BIM IFC Exporter</Name>
-    <Assembly>Revit.IFC.Export.dll</Assembly>
+    <Assembly>.\Revit.IFC.Export.dll</Assembly>
     <ClientId>D2FE9530-A191-4F58-B3C4-1653384A6286</ClientId>
     <FullClassName>Revit.IFC.Export.Exporter.ExporterApplication</FullClassName>
 	<VendorId>IFCX</VendorId>
@@ -10,7 +10,7 @@
   </AddIn>
   <AddIn Type="DBApplication">
     <Name>BIM IFC Importer</Name>
-    <Assembly>Revit.IFC.Import.dll</Assembly>
+    <Assembly>.\Revit.IFC.Import.dll</Assembly>
     <ClientId>8B9FECE3-8BA0-4DC8-BF15-388239213C92</ClientId>
     <FullClassName>Revit.IFC.Import.ImporterApplication</FullClassName>
 	<VendorId>IFCX</VendorId>
