@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Utility;
@@ -75,8 +76,28 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyLength", out lengthFromParam) == null)
             if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcLength", out lengthFromParam) == null)
                ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Length", out lengthFromParam);
-
          m_Length = UnitUtil.ScaleLength(lengthFromParam);
+
+         // Check for Stair Run - Do special computation for the length
+         if (element is StairsRun)
+         {
+            StairsRun flight = element as StairsRun;
+            double flightLen = flight.GetStairsPath().GetExactLength();
+            flightLen = UnitUtil.ScaleLength(flightLen);
+            if (flightLen > MathUtil.Eps())
+            {
+               m_Length = flightLen;
+               return true;
+            }
+            // consider override as specified in a parameter
+            else if (m_Length > MathUtil.Eps())
+               return true;
+            // exit when none for StairsRun
+            else
+               return false;
+         }
+
+         // For others
          if (m_Length > MathUtil.Eps())
             return true;
 

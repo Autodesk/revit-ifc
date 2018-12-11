@@ -54,7 +54,11 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, element))
+            // Check for containment override
+            IFCAnyHandle overrideContainer = null;
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainer);
+
+            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainer))
             {
                using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
                {

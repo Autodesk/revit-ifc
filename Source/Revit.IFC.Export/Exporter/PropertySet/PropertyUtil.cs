@@ -2724,8 +2724,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                // There was a suggestion in SourceForge that we could "merge" the instance/type property sets in the cases where we aren't
                // creating an entity type, and in the cases where two properties had the same name, use the instance over type.
                // However, given our intention to generally export all types, this seems like a lot of work for diminishing returns.
-               if (which == 1 && ExporterCacheManager.ElementTypeToHandleCache.Find(whichElementId) == null)
-                  groupName += Properties.Resources.PropertySetTypeSuffix;
+               if (whichElement is ElementType)
+                  if (which == 1 && !ExporterCacheManager.ElementTypeToHandleCache.IsRegistered(whichElement as ElementType))
+                     groupName += Properties.Resources.PropertySetTypeSuffix;
 
                HashSet<IFCAnyHandle> currPropertiesForGroup = new HashSet<IFCAnyHandle>();
                propertySets[which][groupName] = currPropertiesForGroup;

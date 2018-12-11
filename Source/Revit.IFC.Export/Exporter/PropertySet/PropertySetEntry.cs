@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using GeometryGym.Ifc;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
@@ -245,7 +246,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       HeatFluxDensity,
       ComplexNumber,
       ThermalResistance,
-      Numeric,
+      Numeric
    }
 
    /// <summary>
@@ -270,7 +271,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
       IFCAnyHandle m_DefaultProperty = null;
 
-      //GeometryGym.Ifc.IfcValue m_DefaultValue = null;
+      IfcValue m_DefaultValue = null;
 
       /// <summary>
       /// Constructs a PropertySetEntry object.
@@ -356,24 +357,32 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             m_PropertyEnumerationType = value;
          }
       }
-      //public GeometryGym.Ifc.IfcValue DefaultValue { set { m_DefaultValue = value; } }
+
+      public IfcValue DefaultValue
+      {
+         set
+         {
+            m_DefaultValue = value;
+         }
+      }
 
       private IFCAnyHandle DefaultProperty(IFCFile file)
       {
          if (m_DefaultProperty == null)
          {
-            //if (m_DefaultValue != null)
-            //{
-            //switch (PropertyType)
-            //{
-            //case PropertyType.Label:
-            //return m_DefaultProperty = PropertyUtil.CreateLabelProperty(file, PropertyName, m_DefaultValue.ValueString, PropertyValueType, PropertyEnumerationType);
-            //case PropertyType.Text:
-            //return m_DefaultProperty = PropertyUtil.CreateTextProperty(file, PropertyName, m_DefaultValue.ValueString, PropertyValueType);
-            //case PropertyType.Identifier:
-            //return m_DefaultProperty = PropertyUtil.CreateIdentifierProperty(file, PropertyName, m_DefaultValue.ValueString, PropertyValueType);
-            //}
-            //}
+            if (m_DefaultValue != null)
+            {
+               switch (PropertyType)
+               {
+                  case PropertyType.Label:
+                     return m_DefaultProperty = PropertyUtil.CreateLabelProperty(file, PropertyName, m_DefaultValue.ValueString, PropertyValueType, PropertyEnumerationType);
+                  case PropertyType.Text:
+                     return m_DefaultProperty = PropertyUtil.CreateTextProperty(file, PropertyName, m_DefaultValue.ValueString, PropertyValueType);
+                  case PropertyType.Identifier:
+                     return m_DefaultProperty = PropertyUtil.CreateIdentifierProperty(file, PropertyName, m_DefaultValue.ValueString, PropertyValueType);
+                  //todo make this work for all values
+               }
+            }
          }
          return m_DefaultProperty;
       }

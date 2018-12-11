@@ -399,6 +399,19 @@ namespace Revit.IFC.Export.Toolkit
    }
 
    /// <summary>
+   /// Define the range of different types of Tendon that can be specified
+   /// </summary>
+   public enum IFCTendonType
+   {
+      STRAND,
+      WIRE,
+      BAR,
+      COATED,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   /// <summary>
    /// Defines the range of different types of switch that can be specified.
    /// </summary>
    public enum IFCSwitchingDeviceType
@@ -1222,9 +1235,7 @@ namespace Revit.IFC.Export.Toolkit
    {
       Beam,
       Joist,
-      Hollowcore,
       Lintel,
-      Spandrel,
       T_Beam,
       UserDefined,
       NotDefined
@@ -1236,7 +1247,6 @@ namespace Revit.IFC.Export.Toolkit
    public enum IFCColumnType
    {
       Column,
-      Pilaster,
       UserDefined,
       NotDefined
    }
@@ -1668,6 +1678,17 @@ namespace Revit.IFC.Export.Toolkit
    }
 
    /// <summary>
+   /// Defines the basic configuration of the ramp flight in term of different ramp flight shapes.
+   /// </summary>
+   public enum IFCRampFlightType
+   {
+      Straight,
+      Spiral,
+      UserDefined,
+      NotDefined
+   }
+
+   /// <summary>
    /// Defines the basic configuration of the stairs in terms of the different stair shapes. 
    /// </summary>
    public enum IFCStairType
@@ -1688,6 +1709,20 @@ namespace Revit.IFC.Export.Toolkit
       Two_Curved_Run_Stair,
       UserDefined,
       NotDefined
+   }
+
+   /// <summary>
+   /// Defines the basic type of the stairflight
+   /// </summary>
+   public enum IFCStairFlightType
+   {
+      STRAIGHT,
+      WINDER,
+      SPIRAL,
+      CURVED,
+      FREEFORM,
+      USERDEFINED,
+      NOTDEFINED
    }
 
    /// <summary>

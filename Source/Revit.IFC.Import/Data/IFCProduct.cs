@@ -248,13 +248,46 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
+         bool preventInstances = false;
+         IFCElement element = this as IFCElement;
+         if (element != null)
+         {
+            IFCOpeningElement openingElement = element as IFCOpeningElement;
+            if (openingElement != null)
+               preventInstances = true;
+            foreach (IFCFeatureElement opening in element.Openings)
+            {
+               try
+               {
+                  preventInstances = true;
+                  // Create the actual Revit element based on the IFCFeatureElement here.
+                  ElementId openingId = CreateElement(doc, opening);
+
+                  // This gets around the issue that the Boolean operation between the void(s) in the IFCFeatureElement and 
+                  // the solid(s) in the IFCElement may use the Graphics Style of the voids in the resulting Solid(s), meaning 
+                  // that some faces may disappear when we turn off the visibility of IfcOpeningElements.
+                  IList<IFCSolidInfo> voids = IFCElement.CloneElementGeometry(doc, opening, this, true);
+                  if (voids != null)
+                  {
+                     foreach (IFCSolidInfo voidGeom in voids)
+                     {
+                        Voids.Add(voidGeom);
+                     }
+                  }
+               }
+               catch (Exception ex)
+               {
+                  Importer.TheLog.LogError(opening.Id, ex.Message, false);
+               }
+            }
+         }
          if (HasValidTopLevelGeometry())
          {
             using (IFCImportShapeEditScope shapeEditScope = IFCImportShapeEditScope.Create(doc, this))
             {
                shapeEditScope.GraphicsStyleId = GraphicsStyleId;
                shapeEditScope.CategoryId = CategoryId;
-
+               shapeEditScope.PreventInstances = preventInstances;
                // The name can be added as well. but it is usually less useful than 'oid'
                string myId = GlobalId; // + "(" + Name + ")";
 
@@ -270,33 +303,6 @@ namespace Revit.IFC.Import.Data
                int numVoids = Voids.Count;
                if ((numSolids > 0) && (numVoids > 0))
                {
-                  // We may have some GeometryInstances.  These need to be "exploded" to do the cutting.
-                  for (int solidIdx = 0; solidIdx < numSolids; solidIdx++)
-                  {
-                     if (Solids[solidIdx].GeometryObject is GeometryInstance)
-                     {
-                        //// This code currently doesn't work, so commented out.
-                        //GeometryInstance geomInst = Solids[solidIdx].GeometryObject as GeometryInstance;
-                        //GeometryElement geomElem = geomInst.GetInstanceGeometry();
-
-                        //foreach (GeometryObject geomObj in geomElem)
-                        //{
-                        //if (geomObj is Solid)
-                        //Solids.Add(IFCSolidInfo.Create(Solids[solidIdx].Id, geomObj as Solid));
-                        //else if (geomObj is Mesh)
-                        //Solids.Add(IFCSolidInfo.Create(Solids[solidIdx].Id, geomObj as Mesh));
-                        //else if (geomObj is GeometryInstance)
-                        //Importer.TheLog.LogError(Solids[solidIdx].Id, "Can't cut nested mapped items, ignoring " + numVoids + " void(s).", false);
-
-                        // Other items are irrelevant here.
-                        //}
-
-                        //Solids.RemoveAt(solidIdx);
-                        //solidIdx--;
-                        //numSolids--;
-                     }
-                  }
-
                   // This may be different than before, with the addition of solids from FamilyInstances.
                   numSolids = Solids.Count;
 

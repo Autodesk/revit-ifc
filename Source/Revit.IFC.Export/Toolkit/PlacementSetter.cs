@@ -119,8 +119,21 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="orientationTrf">The orientation transformation for the local coordinates being used to export the element.  
       /// Optional, can be <see langword="null"/>.</param>
       /// <param name="overrideLevelId">The level id to reference.  This is intended for use when splitting walls and columns by level.</param>
-      public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf, ElementId overrideLevelId)
+      public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf, ElementId overrideLevelId, IFCAnyHandle containerOverrideHnd)
       {
+         // Call a different PlacementSetter if the containment is overridden to the Site or the Building
+         if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && containerOverrideHnd != null)
+         {
+            if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, Common.Enums.IFCEntityType.IfcSite)
+               || IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, Common.Enums.IFCEntityType.IfcBuilding))
+               return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, containerOverrideHnd);
+            else if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, Common.Enums.IFCEntityType.IfcBuildingStorey))
+            {
+               IFCAnyHandle contHnd = null;
+               overrideLevelId = ParameterUtil.OverrideContainmentParameter(exporterIFC, elem, out contHnd);
+            }
+         }
+
          if (overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId)
             overrideLevelId = LevelUtil.GetBaseLevelIdForElement(elem);
          return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, overrideLevelId);
@@ -139,6 +152,54 @@ namespace Revit.IFC.Export.Toolkit
       public PlacementSetter(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf, ElementId overrideLevelId)
       {
          commonInit(exporterIFC, elem, instanceOffsetTrf, orientationTrf, overrideLevelId);
+      }
+
+      /// <summary>
+      /// A special PlacementSetter constructor for element to be placed to the Site or Building
+      /// </summary>
+      /// <param name="exporterIFC">the exporterIFC</param>
+      /// <param name="elem">the element</param>
+      /// <param name="familyTrf">The optional family transform.</param>
+      /// <param name="orientationTrf">The optional orientation of the element based on IFC standards or agreements.</param>
+      /// <param name="siteOrBuilding">IfcSite or IfcBuilding</param>
+      public PlacementSetter(ExporterIFC exporterIFC, Element elem, Transform familyTrf, Transform orientationTrf, IFCAnyHandle siteOrBuilding)
+      {
+         if (!IFCAnyHandleUtil.IsTypeOf(siteOrBuilding, Common.Enums.IFCEntityType.IfcSite) && !IFCAnyHandleUtil.IsTypeOf(siteOrBuilding, Common.Enums.IFCEntityType.IfcBuilding))
+            throw new ArgumentException("Argument siteOrBuilding (" + IFCAnyHandleUtil.GetEntityType(siteOrBuilding).ToString() + ") must be either IfcSite or IfcBuilding!");
+
+         ExporterIFC = exporterIFC;
+         Transform trf = Transform.Identity;
+         if (familyTrf != null)
+         {
+            XYZ origin, xDir, yDir, zDir;
+
+            xDir = familyTrf.BasisX; yDir = familyTrf.BasisY; zDir = familyTrf.BasisZ; origin = familyTrf.Origin;
+
+            trf = trf.Inverse;
+
+            origin = UnitUtil.ScaleLength(origin);
+            LocalPlacement = ExporterUtil.CreateLocalPlacement(exporterIFC.GetFile(), null, origin, zDir, xDir);
+         }
+         else if (orientationTrf != null)
+         {
+            XYZ origin, xDir, yDir, zDir;
+
+            xDir = orientationTrf.BasisX; yDir = orientationTrf.BasisY; zDir = orientationTrf.BasisZ; origin = orientationTrf.Origin;
+
+            trf = orientationTrf.Inverse;
+
+            origin = UnitUtil.ScaleLength(origin);
+            LocalPlacement = ExporterUtil.CreateLocalPlacement(exporterIFC.GetFile(), null, origin, zDir, xDir);
+         }
+         else
+         {
+            LocalPlacement = ExporterUtil.CreateLocalPlacement(exporterIFC.GetFile(), null, null, null, null);
+         }
+
+         ExporterIFC.PushTransform(trf);
+         Offset = 0.0;
+         LevelId = ElementId.InvalidElementId;
+         LevelInfo = null;
       }
 
       /// <summary>
@@ -334,7 +395,7 @@ namespace Revit.IFC.Export.Toolkit
 
                if (useOverrideOrigin)
                {
-                  originToUse = overrideOrigin;
+                  originToUse = overrideOrigin; 
                }
                else
                {
@@ -355,7 +416,6 @@ namespace Revit.IFC.Export.Toolkit
                   }
                }
 
-
                // The original heuristic here was that the origin determined the level containment based on exact location:
                // if the Z of the origin was higher than the current level but lower than the next level, it was contained
                // on that level.
@@ -363,7 +423,7 @@ namespace Revit.IFC.Export.Toolkit
                // are placed before the level, not above.  So we have made a small modification so that anything within
                // 10cm of the 'next' level is on that level.
 
-               double leveExtension = 10.0 / (12.0 * 2.54);
+               double levelExtension = 10.0 / (12.0 * 2.54);
                foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
                {
                   // the cache contains levels from all the exported documents
@@ -372,11 +432,11 @@ namespace Revit.IFC.Export.Toolkit
                   {
                      Element levelElem = doc.GetElement(levelInfoPair.Key);
                      if (levelElem == null || !(levelElem is Level))
-                        continue;
+                           continue;
                   }
 
                   IFCLevelInfo levelInfo = levelInfoPair.Value;
-                  double startHeight = levelInfo.Elevation - leveExtension;
+                  double startHeight = levelInfo.Elevation - levelExtension;
                   double height = levelInfo.DistanceToNextLevel;
                   bool useHeight = !MathUtil.IsAlmostZero(height);
                   double endHeight = startHeight + height;
@@ -414,7 +474,6 @@ namespace Revit.IFC.Export.Toolkit
                LevelInfo = levelInfoPair.Value;
                break;
             }
-            //LevelInfo = levelInfos.Values.First<IFCLevelInfo>();
          }
 
          double elevation = (LevelInfo != null) ? LevelInfo.Elevation : 0.0;

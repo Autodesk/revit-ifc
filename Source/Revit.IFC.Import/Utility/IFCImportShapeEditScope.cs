@@ -59,6 +59,18 @@ namespace Revit.IFC.Import.Utility
 
       private BuilderScope m_BuilderScope = null;
 
+      // Prevent Instances if shape will be voided
+      private bool m_PreventInstances = false;
+
+      /// <summary>
+      /// Returns the builder scope which contains the ShapeBuilder that is used to create the geometry
+      /// </summary>
+      public bool PreventInstances
+      {
+         get { return m_PreventInstances; }
+         set { m_PreventInstances = value; }
+      }
+
       /// <summary>
       /// Returns the builder scope which contains the ShapeBuilder that is used to create the geometry
       /// </summary>
