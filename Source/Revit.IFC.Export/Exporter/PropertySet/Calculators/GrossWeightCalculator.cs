@@ -72,7 +72,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyGrossWeight", out m_Weight) == null)
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcGrossWeight", out m_Weight) == null)
                ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "GrossWeight", out m_Weight);
 
          if (m_Weight > MathUtil.Eps())

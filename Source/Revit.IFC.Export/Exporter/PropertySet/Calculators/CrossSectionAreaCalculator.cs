@@ -83,7 +83,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 
          // 2. Check override parameter
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyCrossSectionArea", out crossSectionArea) == null)
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcCrossSectionArea", out crossSectionArea) == null)
                ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "CrossSectionArea", out crossSectionArea);
          m_Area = UnitUtil.ScaleArea(crossSectionArea);
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())

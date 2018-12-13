@@ -100,8 +100,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (m_Volume < MathUtil.Eps() * MathUtil.Eps() || m_Volume < MathUtil.Eps())
          {
             if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyNetVolume", out m_Volume) == null)
-               if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcNetVolume", out m_Volume) == null)
-                  ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "NetVolume", out m_Volume);
+               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "NetVolume", out m_Volume);
             m_Volume = UnitUtil.ScaleVolume(m_Volume);
             if (m_Volume < MathUtil.Eps())
                return false;

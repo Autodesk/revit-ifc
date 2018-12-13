@@ -72,12 +72,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyPerimeter", out m_Perimeter) == null)
-         {
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcPerimeter", out m_Perimeter) == null)
-            {
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Perimeter", out m_Perimeter);
-            }
-         }
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Perimeter", out m_Perimeter);
+
          if (m_Perimeter > MathUtil.Eps())
             return true;
 

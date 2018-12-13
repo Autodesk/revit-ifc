@@ -85,7 +85,8 @@ namespace Revit.IFC.Export.Utility
 
          KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>> elementTypeHandle;
          if (m_ElementTypeHandles.TryGetValue(elTypeKey, out elementTypeHandle))
-            throw new InvalidOperationException("Already associated type handle with element type.");
+            return;
+            //throw new InvalidOperationException("Already associated type handle with element type.");
 
          m_ElementTypeHandles[elTypeKey] = new KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>(prodTypeHnd, existingPropertySets);
 

@@ -72,7 +72,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyGrossVolume", out m_Volume) == null)
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcGrossVolume", out m_Volume) == null)
                ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "GrossVolume", out m_Volume);
          m_Volume = UnitUtil.ScaleVolume(m_Volume);
          if (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps())
