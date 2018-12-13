@@ -48,13 +48,10 @@ namespace Revit.IFC.Export.Exporter
       /// </param>
       public static void Export(ExporterIFC exporterIFC, TextNote textNote, ProductWrapper productWrapper)
       {
-         // Entity not allowed in IFC4RV
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-            return;
-
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcAnnotation;
-         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
+         string predefinedType = null;
+         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, textNote, out predefinedType);
+         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return;
 
          IFCFile file = exporterIFC.GetFile();
@@ -134,10 +131,15 @@ namespace Revit.IFC.Export.Exporter
                shapeReps.Add(bodyRepHnd);
 
                IFCAnyHandle prodShapeHnd = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
-               IFCAnyHandle annoHnd = IFCInstanceExporter.CreateAnnotation(exporterIFC, textNote, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
-                  setter.LocalPlacement, prodShapeHnd);
+               IFCAnyHandle instHnd;
+               if (exportType.ExportInstance != Common.Enums.IFCEntityType.IfcAnnotation)
+                  instHnd = IFCInstanceExporter.CreateAnnotation(exporterIFC, textNote, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
+                     setter.LocalPlacement, prodShapeHnd);
+               else
+                  instHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, textNote, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
+                     setter.LocalPlacement, prodShapeHnd);
 
-               productWrapper.AddAnnotation(annoHnd, setter.LevelInfo, true);
+               productWrapper.AddAnnotation(instHnd, setter.LevelInfo, true);
             }
 
             tr.Commit();

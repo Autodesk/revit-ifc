@@ -68,7 +68,13 @@ namespace Revit.IFC.Export.Utility
          {
             string newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportInstance.ToString());
             if (ExporterUtil.IsNotDefined(newValidatedPredefinedType))
-               newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportType.ToString());
+            {
+               // if the ExportType is unknown, i.e. Entity without type (e.g. IfcGrid), must try the enum type from the instance type + "Type"
+               if (m_ExportType == IFCEntityType.UnKnown)
+                  newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportInstance.ToString() + "Type");
+               else
+                  newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportType.ToString());
+            }
             m_ValidatedPredefinedType = newValidatedPredefinedType;
          }
       }
@@ -297,7 +303,7 @@ namespace Revit.IFC.Export.Utility
             m_ExportInstance = IFCEntityType.UnKnown;
 
          // IfcProxy is deprecated, we will change it to IfcBuildingElementProxy
-         if (m_ExportInstance == IFCEntityType.IfcProxy)
+         if (m_ExportInstance == IFCEntityType.IfcProxy && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
             m_ExportInstance = IFCEntityType.IfcBuildingElementProxy;
             m_ExportType = IFCEntityType.IfcBuildingElementProxyType;

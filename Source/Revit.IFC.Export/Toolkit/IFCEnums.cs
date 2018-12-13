@@ -935,6 +935,25 @@ namespace Revit.IFC.Export.Toolkit
    }
 
    /// <summary>
+   /// Enumeration defining the typical types of IfcElectricDistributionPoint
+   /// Note: that this is a little bit of a "HACK" because the code can only check enumeration name [IfcEntity] or [IfcEntityType] and this one is IfcElectricDistributionPointFunction
+   /// </summary>
+   public enum IfcElectricDistributionPointType
+   {
+      ALARMPANEL,
+      CONSUMERUNIT,
+      CONTROLPANEL,
+      DISTRIBUTIONBOARD,
+      GASDETECTORPANEL,
+      INDICATORPANEL,
+      MIMICPANEL,
+      MOTORCONTROLCENTRE,
+      SWITCHBOARD,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   /// <summary>
    /// Enumeration defining the typical types of duct silencers.
    /// </summary>
    public enum IFCDuctSilencerType

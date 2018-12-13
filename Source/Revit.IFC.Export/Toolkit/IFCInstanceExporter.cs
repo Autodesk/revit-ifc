@@ -4382,6 +4382,8 @@ namespace Revit.IFC.Export.Toolkit
                 (entityType == IFCEntityType.IfcRoof) ||
                 (entityType == IFCEntityType.IfcStair))
                return "ShapeType";
+            else if (entityType == IFCEntityType.IfcElectricDistributionPoint)
+               return "DistributionPointFunction";
          }
 
          return "PredefinedType";
