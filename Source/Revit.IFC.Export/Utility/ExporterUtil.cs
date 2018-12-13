@@ -1531,7 +1531,13 @@ namespace Revit.IFC.Export.Utility
          {
             string newEnumTypeValue = IFCValidateEntry.GetValidIFCPredefinedTypeType(enumTypeValue, "NOTDEFINED", exportType.ExportInstance.ToString());
             if (IsNotDefined(newEnumTypeValue))
-               newEnumTypeValue = IFCValidateEntry.GetValidIFCPredefinedTypeType(enumTypeValue, "NOTDEFINED", exportType.ExportType.ToString());
+            {
+               // if the ExportType is unknown, i.e. Entity without type (e.g. IfcGrid), must try the enum type from the instance type + "Type"
+               if (exportType.ExportType == IFCEntityType.UnKnown)
+                  newEnumTypeValue = IFCValidateEntry.GetValidIFCPredefinedTypeType(enumTypeValue, "NOTDEFINED", exportType.ExportInstance.ToString() + "Type");
+               else
+                  newEnumTypeValue = IFCValidateEntry.GetValidIFCPredefinedTypeType(enumTypeValue, "NOTDEFINED", exportType.ExportType.ToString());
+            }
             enumTypeValue = newEnumTypeValue;
          }
          exportType.ValidatedPredefinedType = enumTypeValue;
