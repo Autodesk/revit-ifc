@@ -413,7 +413,7 @@ namespace Revit.IFC.Export.Exporter
       /// Con: some beams that have 1 Solid and an axis, but that Solid will be heavily faceted, won't be helped by this improvement.
       /// It is intended that we phase out this routine entirely and instead teach ExportFamilyInstanceAsMappedItem how to sometimes export the Axis representation for beams.</remarks>
       public static IFCAnyHandle ExportBeamAsStandardElement(ExporterIFC exporterIFC,
-         Element element, GeometryElement geometryElement, ProductWrapper productWrapper, out bool dontExport)
+         Element element, IFCExportInfoPair exportType, GeometryElement geometryElement, ProductWrapper productWrapper, out bool dontExport)
       {
          dontExport = true;
          IList<GeometryObject> geomObjects = BeamGeometryToExport(exporterIFC, element, geometryElement, out dontExport);
@@ -543,10 +543,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
-                  string preDefinedType = "BEAM";     // Default predefined type for Beam
-                  //preDefinedType = IFCValidateEntry.GetValidIFCPredefinedType(element, preDefinedType);
-
-                  beam = IFCInstanceExporter.CreateBeam(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle, extrusionCreationData.GetLocalPlacement(), prodRep, preDefinedType);
+                  beam = IFCInstanceExporter.CreateBeam(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle, extrusionCreationData.GetLocalPlacement(), prodRep, exportType.ValidatedPredefinedType);
 
                   IFCAnyHandle mpSetUsage;
                   if (materialProfileSet != null)
@@ -554,7 +551,7 @@ namespace Revit.IFC.Export.Exporter
 
                   productWrapper.AddElement(element, beam, setter, extrusionCreationData, true);
 
-                  ExportBeamType(exporterIFC, productWrapper, beam, element, preDefinedType);
+                  ExportBeamType(exporterIFC, productWrapper, beam, element, exportType.ValidatedPredefinedType);
 
                   OpeningUtil.CreateOpeningsIfNecessary(beam, element, extrusionCreationData, offsetTransform, exporterIFC,
                       extrusionCreationData.GetLocalPlacement(), setter, productWrapper);

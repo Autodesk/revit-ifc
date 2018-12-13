@@ -66,7 +66,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyDiameter", out m_Diameter) == null)
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcDiameter", out m_Diameter) == null)
                ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Diameter", out m_Diameter);
          m_Diameter = UnitUtil.ScaleLength(m_Diameter);
          if (m_Diameter > MathUtil.Eps() * MathUtil.Eps())

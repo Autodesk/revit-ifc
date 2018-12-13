@@ -1405,8 +1405,11 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          IFCExportInfoPair exportType = new IFCExportInfoPair();
-         exportType.SetValueWithPair(IFCEntityType.IfcWallType);
-         exportType.ValidatedPredefinedType = "STANDARD";
+         if (asFooting)
+            exportType.SetValueWithPair(IFCEntityType.IfcFootingType, ifcTypeEnum);
+         else
+            exportType.SetValueWithPair(IFCEntityType.IfcWallType, ifcTypeEnum);
+
          IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(wallType))
          {
@@ -1416,9 +1419,9 @@ namespace Revit.IFC.Export.Exporter
 
          // Property sets will be set later.
          if (asFooting)
-            wallType = IFCInstanceExporter.CreateFootingType(exporterIFC.GetFile(), elementType, null, null, ifcTypeEnum);
+            wallType = IFCInstanceExporter.CreateFootingType(exporterIFC.GetFile(), elementType, null, null, exportType.ValidatedPredefinedType);
          else
-            wallType = IFCInstanceExporter.CreateWallType(exporterIFC.GetFile(), elementType, null, null, ifcTypeEnum);
+            wallType = IFCInstanceExporter.CreateWallType(exporterIFC.GetFile(), elementType, null, null, exportType.ValidatedPredefinedType);
 
          wrapper.RegisterHandleWithElementType(elementType, exportType, wallType, null);
 

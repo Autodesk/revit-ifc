@@ -54,10 +54,30 @@ namespace Revit.IFC.Export.Utility
          //}
       }
 
+      private string m_ValidatedPredefinedType;
       /// <summary>
       /// Validated PredefinedType from IfcExportType (or IfcType for the old param), or from IfcExportAs
       /// </summary>
-      public string ValidatedPredefinedType { get; set; } = null;
+      public string ValidatedPredefinedType
+      {
+         get
+         {
+            return m_ValidatedPredefinedType;
+         }
+         set
+         {
+            string newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportInstance.ToString());
+            if (ExporterUtil.IsNotDefined(newValidatedPredefinedType))
+            {
+               // if the ExportType is unknown, i.e. Entity without type (e.g. IfcGrid), must try the enum type from the instance type + "Type"
+               if (m_ExportType == IFCEntityType.UnKnown)
+                  newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportInstance.ToString() + "Type");
+               else
+                  newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportType.ToString());
+            }
+            m_ValidatedPredefinedType = newValidatedPredefinedType;
+         }
+      }
 
       /// <summary>
       /// Initialization of the class
@@ -65,7 +85,7 @@ namespace Revit.IFC.Export.Utility
       public IFCExportInfoPair()
       {
          // Set default value if not defined
-         ValidatedPredefinedType = "NOTDEFINED";
+         m_ValidatedPredefinedType = "NOTDEFINED";
       }
 
       /// <summary>
@@ -81,15 +101,16 @@ namespace Revit.IFC.Export.Utility
          type = ElementFilteringUtil.GetValidIFCEntityType(type);
          m_ExportType = type;
 
-         if (!string.IsNullOrEmpty(predefinedType))
-         {
-            string newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, m_ExportInstance.ToString());
-            if (ExporterUtil.IsNotDefined(newValidatedPredefinedType))
-               newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, m_ExportType.ToString());
-            ValidatedPredefinedType = newValidatedPredefinedType;
-         }
-         else
-            ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType("NOTDEFINED", ValidatedPredefinedType, m_ExportType.ToString());
+         ValidatedPredefinedType = predefinedType;
+         //if (!string.IsNullOrEmpty(predefinedType))
+         //{
+         //   string newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, m_ValidatedPredefinedType, m_ExportInstance.ToString());
+         //   if (ExporterUtil.IsNotDefined(newValidatedPredefinedType))
+         //      newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, m_ValidatedPredefinedType, m_ExportType.ToString());
+         //   m_ValidatedPredefinedType = newValidatedPredefinedType;
+         //}
+         //else
+         //   m_ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType("NOTDEFINED", m_ValidatedPredefinedType, m_ExportType.ToString());
       }
 
       /// <summary>
@@ -121,15 +142,16 @@ namespace Revit.IFC.Export.Utility
          type = ElementFilteringUtil.GetValidIFCEntityType(type);
          m_ExportType = type;
 
-         if (!string.IsNullOrEmpty(predefinedType))
-         {
-            string newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, m_ExportInstance.ToString());
-            if (ExporterUtil.IsNotDefined(newValidatedPredefinedType))
-               newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, m_ExportType.ToString());
-            ValidatedPredefinedType = newValidatedPredefinedType;
-         }
-         else
-            ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType("NOTDEFINED", ValidatedPredefinedType, m_ExportType.ToString());
+         ValidatedPredefinedType = predefinedType;
+         //if (!string.IsNullOrEmpty(predefinedType))
+         //{
+         //   string newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, m_ValidatedPredefinedType, m_ExportInstance.ToString());
+         //   if (ExporterUtil.IsNotDefined(newValidatedPredefinedType))
+         //      newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, m_ValidatedPredefinedType, m_ExportType.ToString());
+         //   m_ValidatedPredefinedType = newValidatedPredefinedType;
+         //}
+         //else
+         //   m_ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType("NOTDEFINED", m_ValidatedPredefinedType, m_ExportType.ToString());
       }
 
       /// <summary>
@@ -229,17 +251,18 @@ namespace Revit.IFC.Export.Utility
             }
          }
 
-         if (string.IsNullOrEmpty(predefineType))
-            predefineType = "NOTDEFINED";
+         ValidatedPredefinedType = predefineType;
+         //if (string.IsNullOrEmpty(predefineType))
+         //   predefineType = "NOTDEFINED";
 
-         if (m_ExportType == IFCEntityType.UnKnown)
-         {
-            ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, ValidatedPredefinedType, m_ExportInstance.ToString());
-         }
-         else
-         {
-            ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, ValidatedPredefinedType, m_ExportType.ToString());
-         }
+         //if (m_ExportType == IFCEntityType.UnKnown)
+         //{
+         //   m_ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, m_ValidatedPredefinedType, m_ExportInstance.ToString());
+         //}
+         //else
+         //{
+         //   m_ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, m_ValidatedPredefinedType, m_ExportType.ToString());
+         //}
       }
 
       // Check valid entity and type set according to the MVD used in the export
@@ -280,7 +303,7 @@ namespace Revit.IFC.Export.Utility
             m_ExportInstance = IFCEntityType.UnKnown;
 
          // IfcProxy is deprecated, we will change it to IfcBuildingElementProxy
-         if (m_ExportInstance == IFCEntityType.IfcProxy)
+         if (m_ExportInstance == IFCEntityType.IfcProxy && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
             m_ExportInstance = IFCEntityType.IfcBuildingElementProxy;
             m_ExportType = IFCEntityType.IfcBuildingElementProxyType;

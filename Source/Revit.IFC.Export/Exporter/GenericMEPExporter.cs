@@ -187,6 +187,8 @@ namespace Revit.IFC.Export.Exporter
          ElementId typeId = element.GetTypeId();
          ElementType type = element.Document.GetElement(typeId) as ElementType;
          IFCAnyHandle styleHandle = null;
+         ElementId matId = ElementId.InvalidElementId;
+         Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
 
          if (type != null)
          {
@@ -207,6 +209,14 @@ namespace Revit.IFC.Export.Exporter
                   productWrapper.RegisterHandleWithElementType(type, exportType, styleHandle, propertySetsOpt);
                   currentTypeInfo.Style = styleHandle;
                   ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeId, false, exportType, currentTypeInfo);
+
+                  Element elementType = element.Document.GetElement(element.GetTypeId());
+                  matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(element.get_Geometry(geomOptions), exporterIFC, elementType);
+                  if (matId == ElementId.InvalidElementId)
+                     matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(element.get_Geometry(geomOptions), exporterIFC, element);
+
+                  if (matId != ElementId.InvalidElementId)
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, styleHandle, matId);
                }
             }
             else
@@ -243,6 +253,12 @@ namespace Revit.IFC.Export.Exporter
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
             return;
+         if (matId == ElementId.InvalidElementId)
+         {
+            matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(element.get_Geometry(geomOptions), exporterIFC, element);
+            if (matId != ElementId.InvalidElementId)
+               CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matId);
+         }
 
          if (roomId != ElementId.InvalidElementId)
          {

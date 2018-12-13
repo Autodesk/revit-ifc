@@ -554,6 +554,27 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Return a list of material ids from element's parameters
+      /// </summary>
+      /// <param name="element">the element</param>
+      /// <returns>list of material ids</returns>
+      public static IList<ElementId> FindMaterialParameters(Element element)
+      {
+         IList<ElementId> materialIds = new List<ElementId>();
+
+         foreach (Parameter param in element.Parameters)
+         {
+            // Limit to the parameter(s) within builtin parameter group PG_MATERIALS
+            if (param.Definition.ParameterType == ParameterType.Material && param.Definition.ParameterGroup == BuiltInParameterGroup.PG_MATERIALS)
+            {
+               materialIds.Add(param.AsElementId());
+            }
+         }
+
+         return materialIds;
+      }
+
+      /// <summary>
       /// Gets the parameter by name from an element from the parameter cache.
       /// </summary>
       /// <param name="elementId">The element id.</param>

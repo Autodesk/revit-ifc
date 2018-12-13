@@ -66,8 +66,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          int concealed = 0;
-         if (ParameterUtil.GetIntValueFromElementOrSymbol(element, "IfcConcealed", out concealed) == null)
-            ParameterUtil.GetIntValueFromElementOrSymbol(element, "Concealed", out concealed);
+         ParameterUtil.GetIntValueFromElementOrSymbol(element, "Concealed", out concealed);
          m_Concealed = concealed != 0;
 
          return true;
