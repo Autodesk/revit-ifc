@@ -261,6 +261,7 @@ namespace BIM.IFC.Export.UI
          checkboxExportBoundingBox.IsChecked = configuration.ExportBoundingBox;
          checkboxExportSolidModelRep.IsChecked = configuration.ExportSolidModelRep;
          checkboxExportSchedulesAsPsets.IsChecked = configuration.ExportSchedulesAsPsets;
+         checkBoxExportSpecificSchedules.IsChecked = configuration.ExportSpecificSchedules;
          checkboxExportUserDefinedPset.IsChecked = configuration.ExportUserDefinedPsets;
          userDefinedPropertySetFileName.Text = configuration.ExportUserDefinedPsetsFileName;
          checkBoxExportLinkedFiles.IsChecked = configuration.ExportLinkedFiles;
@@ -311,6 +312,7 @@ namespace BIM.IFC.Export.UI
                                                                 checkboxIncludeIfcSiteElevation,
                                                                 checkboxStoreIFCGUID,
                                                                 checkboxExportSchedulesAsPsets,
+                                                                checkBoxExportSpecificSchedules,
                                                                 checkBoxExportRoomsInView,
                                                                 checkBoxLevelOfDetails,
                                                                 comboboxActivePhase,
