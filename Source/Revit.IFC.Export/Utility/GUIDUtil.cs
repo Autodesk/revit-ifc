@@ -153,7 +153,7 @@ namespace Revit.IFC.Export.Utility
                return paramValue;
          }
 
-         return CreateGUID(element);
+         return CreateProjectLevelGUID(document, IFCProjectLevelGUIDType.Site);
       }
 
       /// <summary>
