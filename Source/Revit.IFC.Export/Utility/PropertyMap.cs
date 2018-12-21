@@ -173,17 +173,18 @@ namespace Revit.IFC.Export.Utility
                         }
                         else
                         {
-                           IfcSimplePropertyTemplate propertyDefUnit = null;
                            if (split.Count() >= 2)
                            {
-                              propertyDefUnit = new IfcSimplePropertyTemplate(db, split[0]);
+                              string propertyTemplateName = split[0];
+                              IfcSimplePropertyTemplate propertyDefUnit = userDefinedPset[propertyTemplateName] as IfcSimplePropertyTemplate;
+                              if(propertyDefUnit == null)
+                                 userDefinedPset.AddPropertyTemplate(propertyDefUnit = new IfcSimplePropertyTemplate(db, split[0]));
                               if (split.Count() >= 3 && !string.IsNullOrEmpty(split[2]))
                               {
                                  new IfcRelAssociatesClassification(new IfcClassificationReference(db) { Identification = split[2] }, propertyDefUnit);
                               }
                               if(!string.IsNullOrEmpty(split[1]))
                                  propertyDefUnit.PrimaryMeasureType = "Ifc" + split[1];
-                              userDefinedPsets.Last().AddPropertyTemplate(propertyDefUnit);
                            }
                         }
                      }
