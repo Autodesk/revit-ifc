@@ -769,7 +769,7 @@ namespace Revit.IFC.Export.Utility
 
          double denom = projDir.DotProduct(zDir);
          if (MathUtil.IsAlmostZero(denom))
-            return null;
+            return new UV(point.X, point.Y);
 
          XYZ xDir = lcs.BasisX;
          XYZ yDir = lcs.BasisY;
