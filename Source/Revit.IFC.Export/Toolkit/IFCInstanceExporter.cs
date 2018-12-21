@@ -431,7 +431,8 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="relatedObjects">The objects to be related to a type.</param>
       private static void ValidateRelDefines(string guid, IFCAnyHandle ownerHistory, string name, string description, ICollection<IFCAnyHandle> relatedObjects)
       {
-         IFCAnyHandleUtil.ValidateSubTypeOf(relatedObjects, false, IFCEntityType.IfcObject);
+         if(ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+            IFCAnyHandleUtil.ValidateSubTypeOf(relatedObjects, false, IFCEntityType.IfcObject);
 
          ValidateRelationship(guid, ownerHistory);
       }
@@ -2962,7 +2963,7 @@ namespace Revit.IFC.Export.Toolkit
          ValidateRelDefines(guid, ownerHistory, name, description, relatedObjects);
 
          // ValidateRelDefines actually does more than usual - it checks relatedObjects for various sub-types.
-         // For IFC4 we need to also check that there is only 1 object in relatedObjects.
+         // For IFC4 we need to also check that there is only 1 object in relatedObjects. Comment JM: IFC4 permits more than 1 object in relatedObjects, I don't understand this description
 
          // We would like to do the check below, but because of the issue stated in ExportUtil.CreateRelDefinesByProperties,
          // we can't do it yet.  This will be turned on in a future release.
