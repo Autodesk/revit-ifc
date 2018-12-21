@@ -316,6 +316,10 @@ namespace Revit.IFC.Export.Utility
          m_InternalWrapper.AddSite(handle);
       }
 
+      public void AddProject(Element element, IFCAnyHandle handle)
+      {
+         m_CreatedHandles.Add(handle);
+      }
       /// <summary>
       /// Adds a material handle to associate with the IfcProduct in this wrapper.
       /// </summary>
