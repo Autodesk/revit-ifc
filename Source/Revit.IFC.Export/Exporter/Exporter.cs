@@ -1553,14 +1553,7 @@ namespace Revit.IFC.Export.Exporter
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.BuildingHandle))
                   ExporterCacheManager.ContainmentCache.AddRelation(ExporterCacheManager.ProjectHandle, ExporterCacheManager.BuildingHandle);
             }
-            if (projectInfo != null)
-            {
-               using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
-               {
-                  productWrapper.AddSite(projectInfo, siteHandle);
-                  ExporterUtil.ExportRelatedProperties(exporterIFC, projectInfo, productWrapper);
-               }
-            }
+           
             // The name "GetRelatedProducts()" is misleading; this only covers spaces.
             HashSet<IFCAnyHandle> buildingSpaces = RemoveContainedHandlesFromSet(ExporterCacheManager.LevelInfoCache.OrphanedSpaces);
             buildingSpaces.UnionWith(exporterIFC.GetRelatedProducts());

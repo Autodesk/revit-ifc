@@ -62,7 +62,7 @@ namespace Revit.IFC.Export.Exporter
                return;
 
             if (elementClassTypeEnum == Common.Enums.IFCEntityType.IfcSite)
-               ExportSiteBase(exporterIFC, null, topoSurface, geometryElement, productWrapper);
+               ExportSiteBase(exporterIFC, topoSurface.Document, topoSurface, geometryElement, productWrapper);
             else
             {
                // Export Default Site first before exporting the TopographySurface as a generic element
@@ -71,6 +71,7 @@ namespace Revit.IFC.Export.Exporter
                {
                   GenericElementExporter.ExportGenericElement(exporterIFC, topoSurface, geometryElement, genElemProductWrapper, exportType);
                }
+               productWrapper.ClearInternalHandleWrapperData(topoSurface.Document.ProjectInformation);
             }
          }
          else
@@ -306,6 +307,7 @@ namespace Revit.IFC.Export.Exporter
                productWrapper.AddSite(mainSiteElement, siteHandle);
                ExporterCacheManager.SiteHandle = siteHandle;
 
+               
                // Getting Pset_SiteCommon data from parameters
                // IFC2x3: BuildableArea, TotalArea, BuildingHeightLimit
                HashSet<IFCAnyHandle> properties = new HashSet<IFCAnyHandle>();
@@ -349,6 +351,7 @@ namespace Revit.IFC.Export.Exporter
                       GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle, "Pset_SiteCommon",
                       null, properties);
                }
+               ExporterUtil.ExportRelatedProperties(exporterIFC, projectInfo, productWrapper);
             }
 
             tr.Commit();

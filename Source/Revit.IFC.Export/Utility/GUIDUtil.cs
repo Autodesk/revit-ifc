@@ -104,30 +104,35 @@ namespace Revit.IFC.Export.Utility
          string parameterName = "Ifc" + guidType.ToString() + " GUID";
          ProjectInfo projectInfo = document.ProjectInformation;
 
+         BuiltInParameter parameterId = BuiltInParameter.INVALID;
+         switch (guidType)
+         {
+            case IFCProjectLevelGUIDType.Building:
+               parameterId = BuiltInParameter.IFC_BUILDING_GUID;
+               break;
+            case IFCProjectLevelGUIDType.Project:
+               parameterId = BuiltInParameter.IFC_PROJECT_GUID;
+               break;
+            case IFCProjectLevelGUIDType.Site:
+               parameterId = BuiltInParameter.IFC_SITE_GUID;
+               break;
+         }
+
          if (projectInfo != null)
          {
             string paramValue = null;
             ParameterUtil.GetStringValueFromElement(projectInfo, parameterName, out paramValue);
             if ((paramValue != null) && (IsValidIFCGUID(paramValue)))
                return paramValue;
+            if(parameterId != BuiltInParameter.INVALID && ParameterUtil.GetStringValueFromElement(projectInfo, parameterId, out paramValue) != null)
+            {
+               return paramValue;
+            }
          }
-
          string guid = ExporterIFCUtils.CreateProjectLevelGUID(document, guidType);
          if ((projectInfo != null) && ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID)
          {
-            BuiltInParameter parameterId = BuiltInParameter.INVALID;
-            switch (guidType)
-            {
-               case IFCProjectLevelGUIDType.Building:
-                  parameterId = BuiltInParameter.IFC_BUILDING_GUID;
-                  break;
-               case IFCProjectLevelGUIDType.Project:
-                  parameterId = BuiltInParameter.IFC_PROJECT_GUID;
-                  break;
-               case IFCProjectLevelGUIDType.Site:
-                  parameterId = BuiltInParameter.IFC_SITE_GUID;
-                  break;
-            }
+            
             if (parameterId != BuiltInParameter.INVALID)
                ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<Element, BuiltInParameter>(projectInfo, parameterId)] = guid;
          }
