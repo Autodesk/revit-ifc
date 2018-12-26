@@ -359,13 +359,6 @@ namespace Revit.IFC.Export.Utility
          if (builtInParameter == BuiltInParameter.INVALID)
             throw new ArgumentException("BuiltInParameter is INVALID", "builtInParameter");
 
-         Parameter parameter = element.get_Parameter(builtInParameter);
-         if (parameter != null && parameter.HasValue && parameter.StorageType == StorageType.String)
-         {
-            parameter.SetValueString(propertyValue);
-            return;
-         }
-
          ElementId parameterId = new ElementId(builtInParameter);
          ExporterIFCUtils.AddValueString(element, parameterId, propertyValue);
       }
