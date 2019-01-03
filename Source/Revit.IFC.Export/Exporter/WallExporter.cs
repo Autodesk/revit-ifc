@@ -1227,7 +1227,7 @@ namespace Revit.IFC.Export.Exporter
             WallType wallType = wallElement.WallType;
             WallKind wallTypeKind = wallType.Kind;
 
-            //stacked wall is not supported yet.
+            // We skip over the "stacked wall" but the invidual walls inside that stacked wall will still be exported.  
             if (wallTypeKind == WallKind.Stacked)
                return;
 
