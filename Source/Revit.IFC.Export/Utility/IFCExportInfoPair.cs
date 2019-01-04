@@ -161,12 +161,22 @@ namespace Revit.IFC.Export.Utility
       /// <param name="predefineType">predefinedtype string</param>
       public void SetValueWithPair(IFCEntityType entityType, string predefineType = null)
       {
-         string entityTypeStr = entityType.ToString();
+         SetValueWithPair(entityType.ToString(), predefineType);
+      }
+
+      /// <summary>
+      /// Set the pair information using only either the entity or the type
+      /// </summary>
+      /// <param name="entityTypeStr">the entity or type string</param>
+      /// <param name="predefineType">predefinedtype string</param>
+      public void SetValueWithPair(string entityTypeStr, string predefineType = null)
+      { 
          int typeLen = 4;
          bool isType = entityTypeStr.Substring(entityTypeStr.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase);
          if (!isType)
          {
-            if (entityType == IFCEntityType.IfcDoorStyle || entityType == IFCEntityType.IfcWindowStyle)
+            if (entityTypeStr.Equals("IfcDoorStyle", StringComparison.InvariantCultureIgnoreCase) 
+               || entityTypeStr.Equals("IfcWindowStyle", StringComparison.InvariantCultureIgnoreCase))
             {
                isType = true;
                typeLen = 5;
@@ -197,7 +207,7 @@ namespace Revit.IFC.Export.Utility
             }
 
             // set the type
-            entityType = ElementFilteringUtil.GetValidIFCEntityType(entityType);
+            IFCEntityType entityType = ElementFilteringUtil.GetValidIFCEntityType(entityTypeStr);
             if (entityType != IFCEntityType.UnKnown)
                m_ExportType = entityType;
             else
@@ -214,7 +224,7 @@ namespace Revit.IFC.Export.Utility
          else
          {
             // set the instance
-            IFCEntityType instType = ElementFilteringUtil.GetValidIFCEntityType(entityType);
+            IFCEntityType instType = ElementFilteringUtil.GetValidIFCEntityType(entityTypeStr);
             if (instType != IFCEntityType.UnKnown)
                m_ExportInstance = instType;
             else
@@ -230,13 +240,15 @@ namespace Revit.IFC.Export.Utility
             }
 
             // set the type pair
-            string typeName = entityType.ToString();
-            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && (entityType == IFCEntityType.IfcDoor || entityType == IFCEntityType.IfcWindow))
+            string typeName = entityTypeStr;
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 &&
+               (entityTypeStr.Equals("IfcDoorStyle", StringComparison.InvariantCultureIgnoreCase)
+               || entityTypeStr.Equals("IfcWindowStyle", StringComparison.InvariantCultureIgnoreCase)))
                typeName += "Style";
             else
                typeName += "Type";
 
-            entityType = ElementFilteringUtil.GetValidIFCEntityType(typeName);
+            IFCEntityType entityType = ElementFilteringUtil.GetValidIFCEntityType(typeName);
             if (entityType != IFCEntityType.UnKnown)
                m_ExportType = entityType;
             else
@@ -252,17 +264,6 @@ namespace Revit.IFC.Export.Utility
          }
 
          ValidatedPredefinedType = predefineType;
-         //if (string.IsNullOrEmpty(predefineType))
-         //   predefineType = "NOTDEFINED";
-
-         //if (m_ExportType == IFCEntityType.UnKnown)
-         //{
-         //   m_ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, m_ValidatedPredefinedType, m_ExportInstance.ToString());
-         //}
-         //else
-         //{
-         //   m_ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefineType, m_ValidatedPredefinedType, m_ExportType.ToString());
-         //}
       }
 
       // Check valid entity and type set according to the MVD used in the export

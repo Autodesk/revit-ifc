@@ -145,12 +145,6 @@ namespace Revit.IFC.Export.Utility
          return designOptionFilter;
       }
 
-      // Cannot be implemented until ExportLayerTable can be read.  Replacement is ShouldCategoryBeExported()
-      /*private static ElementFilter GetCategoryFilter()
-      {
-
-      }*/
-
       /// <summary>
       /// Checks if element in certain category should be exported.
       /// </summary>
@@ -333,48 +327,34 @@ namespace Revit.IFC.Export.Utility
             {
                if (string.Compare(clName, "IfcBurner", true) == 0)
                {
-                  //clName = "IfcFlowTerminal";
-                  //tyName = "IfcGasTerminalType";
                   exportInfoPair.SetValueWithPair(IFCEntityType.IfcGasTerminalType);
                }
                else if (string.Compare(clName, "IfcElectricDistributionBoard", true) == 0)
                {
-                  //clName = "IfcElectricDistributionPoint";
-                  //tyName = "IfcDistributionElementType";
                   exportInfoPair.SetValueWithPair(IFCEntityType.IfcElectricDistributionPoint);
                }
                else
                {
-                  IFCEntityType entType = IFCEntityType.UnKnown;
-                  if (Enum.TryParse<IFCEntityType>(clName, true, out entType))
-                     exportInfoPair.SetValueWithPair(entType);
+                  exportInfoPair.SetValueWithPair(clName);
                }
             }
             else
             {
                if (string.Compare(clName, "IfcGasTerminal", true) == 0)
                {
-                  //clName = "IfcBurner";
-                  //tyName = "IfcBurnerType";
                   exportInfoPair.SetValueWithPair(IFCEntityType.IfcBurnerType);
                }
                else if (string.Compare(clName, "IfcElectricDistributionPoint", true) == 0)
                {
-                  //clName = "IfcElectricDistributionBoard";
-                  //tyName = "IfcElectricDistributionBoardType";
                   exportInfoPair.SetValueWithPair(IFCEntityType.IfcElectricDistributionBoardType);
                }
                else if (string.Compare(clName, "IfcElectricHeater", true) == 0)
                {
-                  //clName = "IfcSpaceHeater";
-                  //tyName = "IfcSpaceHeaterType";
                   exportInfoPair.SetValueWithPair(IFCEntityType.IfcSpaceHeaterType);
                }
                else
                {
-                  IFCEntityType entType = IFCEntityType.UnKnown;
-                  if (Enum.TryParse<IFCEntityType>(clName, true, out entType))
-                     exportInfoPair.SetValueWithPair(entType);
+                  exportInfoPair.SetValueWithPair(clName);
                }
             }
 
@@ -384,24 +364,21 @@ namespace Revit.IFC.Export.Utility
             }
          }
 
-         //return IFCExportType.DontExport;
          exportInfoPair.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType("NOTDEFINED", exportInfoPair.ExportType.ToString());
 
          return exportInfoPair;
       }
 
-      // TODO: implement  out bool exportSeparately
       /// <summary>
       /// Gets export type from category id.
       /// </summary>
       /// <param name="categoryId">The category id.</param>
       /// <param name="ifcEnumType">The string value represents the IFC type.</param>
       /// <returns>The export type.</returns>
-      public static IFCExportInfoPair GetExportTypeFromCategoryId(ElementId categoryId, out string ifcEnumType /*, out bool exportSeparately*/)
+      public static IFCExportInfoPair GetExportTypeFromCategoryId(ElementId categoryId, out string ifcEnumType)
       {
          IFCExportInfoPair exportInfoPair = new IFCExportInfoPair();
          ifcEnumType = "NOTDEFINED";
-         //exportSeparately = true;
 
          if (categoryId == new ElementId(BuiltInCategory.OST_Cornices))
             exportInfoPair.SetValueWithPair(IFCEntityType.IfcBeam, ifcEnumType);
@@ -410,7 +387,6 @@ namespace Revit.IFC.Export.Utility
          else if (categoryId == new ElementId(BuiltInCategory.OST_CurtainWallPanels))
          {
             ifcEnumType = "CURTAIN_PANEL";
-            //exportSeparately = false;
             exportInfoPair.SetValueWithPair(IFCEntityType.IfcPlate, ifcEnumType);
          }
          else if (categoryId == new ElementId(BuiltInCategory.OST_Doors))
@@ -429,7 +405,6 @@ namespace Revit.IFC.Export.Utility
          else if (categoryId == new ElementId(BuiltInCategory.OST_CurtainWallMullions))
          {
             ifcEnumType = "MULLION";
-            //exportSeparately = false;
             exportInfoPair.SetValueWithPair(IFCEntityType.IfcMember, ifcEnumType);
          }
          else if (categoryId == new ElementId(BuiltInCategory.OST_Railings))
