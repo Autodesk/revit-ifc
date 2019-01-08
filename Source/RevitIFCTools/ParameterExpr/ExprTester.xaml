@@ -1,0 +1,24 @@
+﻿<Window x:Class="RevitIFCTools.ParameterExpr.ExprTester"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RevitIFCTools.ParameterExpr"
+        mc:Ignorable="d"
+        Title="ExprTester" Height="596" Width="816.986">
+   <Grid>
+      <Grid.RowDefinitions>
+         <RowDefinition Height="518*"/>
+         <RowDefinition Height="47*"/>
+      </Grid.RowDefinitions>
+      <Label x:Name="label" Content="Parameter expression:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="30" Width="155"/>
+      <TextBox x:Name="textBox_Expr" Height="23" Margin="10,45,10,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+      <Label x:Name="label1" Content="Parser report:" HorizontalAlignment="Left" Margin="10,73,0,0" VerticalAlignment="Top" Height="30" Width="98"/>
+      <TextBox x:Name="textBox_Output" Margin="10,108,10,10" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True"/>
+      <Button x:Name="button_Parse" Content="Parse" Margin="724,0,10,10" Grid.Row="1" Height="24" VerticalAlignment="Bottom" Click="button_Parse_Click"/>
+      <Button x:Name="button_Close" Content="Close" Margin="644,0,90,10" Grid.Row="1" Height="24" VerticalAlignment="Bottom" Click="button_Close_Click"/>
+      <Button x:Name="button_ClearAll" Content="Clear All" HorizontalAlignment="Left" Margin="10,0,0,10" Grid.Row="1" VerticalAlignment="Bottom" Width="75" RenderTransformOrigin="0.507,0.542" Height="24" Click="button_ClearAll_Click"/>
+      <Button x:Name="button_ClearOutput" Content="Clear Ouput" HorizontalAlignment="Left" Margin="90,0,0,10" Grid.Row="1" VerticalAlignment="Bottom" Width="97" RenderTransformOrigin="0.507,0.542" Height="24" Click="button_ClearOutput_Click"/>
+
+   </Grid>
+</Window>

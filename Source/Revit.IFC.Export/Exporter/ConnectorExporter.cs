@@ -43,6 +43,8 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    class ConnectorExporter
    {
+      private static IDictionary<IFCAnyHandle, IList<IFCAnyHandle>> m_NestedMembershipDict = new Dictionary<IFCAnyHandle, IList<IFCAnyHandle>>();
+
       /// <summary>
       /// Exports a connector instance. Almost verbatim exmaple from Revit 2012 API for Connector Class
       /// Works only for HVAC and Piping for now
@@ -54,6 +56,9 @@ namespace Revit.IFC.Export.Exporter
          {
             Export(exporterIFC, connectorSet);
          }
+         // Create all the IfcRelNests relationships from the Dictionary for Port connection in IFC4
+         CreateRelNestsFromCache(exporterIFC.GetFile());
+
          // clear local cache 
          ConnectorExporter.ClearConnections();
       }
@@ -62,8 +67,7 @@ namespace Revit.IFC.Export.Exporter
       private static void ProcessConnections(ExporterIFC exporterIFC, Connector connector, Connector originalConnector)
       {
          // Port connection is not allowed for IFC4RV MVD
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-            return;
+         bool isIFC4AndAbove = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
 
          Domain domain = connector.Domain;
          bool isElectricalDomain = (domain == Domain.DomainElectrical);
@@ -116,8 +120,8 @@ namespace Revit.IFC.Export.Exporter
                Element hostElement = connector.Owner;
                IFCAnyHandle hostElementIFCHandle = ExporterCacheManager.MEPCache.Find(hostElement.Id);
 
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && !(IFCAnyHandleUtil.IsSubTypeOf(hostElementIFCHandle, IFCEntityType.IfcDistributionElement)))
-                  return;
+               //if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && !(IFCAnyHandleUtil.IsSubTypeOf(hostElementIFCHandle, IFCEntityType.IfcDistributionElement)))
+               //   return;
 
                IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, hostElementIFCHandle, flowDir);
                IFCFile ifcFile = exporterIFC.GetFile();
@@ -131,7 +135,15 @@ namespace Revit.IFC.Export.Exporter
                // Attach the port to the element
                guid = GUIDUtil.CreateGUID();
                string connectionName = hostElement.Id + "|" + guid;
-               IFCAnyHandle connectorHandle = IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, port, hostElementIFCHandle);
+               IFCAnyHandle connectorHandle = null;
+
+               // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+               // The following code collects the ports that are nested to the object to be assigned later
+               if (isIFC4AndAbove)
+                  AddNestedMembership(hostElementIFCHandle, port);
+               else
+                  connectorHandle = IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, port, hostElementIFCHandle);
+
                HashSet<MEPSystem> systemList = new HashSet<MEPSystem>();
                try
                {
@@ -227,9 +239,8 @@ namespace Revit.IFC.Export.Exporter
 
       static void AddConnection(ExporterIFC exporterIFC, Connector connector, Connector connected, bool isBiDirectional, bool isElectricalDomain)
       {
-         // Port connection is not allowed in IFC4RV MVD
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-            return;
+         // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+         bool isIFC4AndAbove = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
 
          Element inElement = connector.Owner;
          Element outElement = connected.Owner;
@@ -276,12 +287,12 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle inElementIFCHandle = ExporterCacheManager.MEPCache.Find(inElement.Id);
          IFCAnyHandle outElementIFCHandle = ExporterCacheManager.MEPCache.Find(outElement.Id);
 
-         // Note TBD: In IFC4 the IfcRelConnectsPortToElement should be used for a dynamic connection. THe static connection should use IfcRelNests
+         // Note: In IFC4 the IfcRelConnectsPortToElement should be used for a dynamic connection. The static connection should use IfcRelNests
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
             if (inElementIFCHandle == null || outElementIFCHandle == null ||
-               !IFCAnyHandleUtil.IsSubTypeOf(inElementIFCHandle, IFCEntityType.IfcDistributionElement)
-               || !IFCAnyHandleUtil.IsSubTypeOf(outElementIFCHandle, IFCEntityType.IfcDistributionElement))
+               !IFCAnyHandleUtil.IsSubTypeOf(inElementIFCHandle, IFCEntityType.IfcObjectDefinition)
+               || !IFCAnyHandleUtil.IsSubTypeOf(outElementIFCHandle, IFCEntityType.IfcObjectDefinition))
                return;
          }
          else
@@ -311,7 +322,14 @@ namespace Revit.IFC.Export.Exporter
             // Attach the port to the element
             guid = GUIDUtil.CreateGUID();
             string connectionName = inElement.Id + "|" + guid;
-            IFCAnyHandle connectorIn = IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portIn, inElementIFCHandle);
+            IFCAnyHandle connectorIn = null;
+
+            // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+            // The following code collects the ports that are nested to the object to be assigned later
+            if (isIFC4AndAbove)
+               AddNestedMembership(inElementIFCHandle, portIn);
+            else
+               connectorIn = IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portIn, inElementIFCHandle);
          }
 
          // ----------------------- Out Port----------------------
@@ -330,7 +348,14 @@ namespace Revit.IFC.Export.Exporter
             // Attach the port to the element
             guid = GUIDUtil.CreateGUID();
             string connectionName = outElement.Id + "|" + guid;
-            IFCAnyHandle connectorOut = IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portOut, outElementIFCHandle);
+            IFCAnyHandle connectorOut = null;
+
+            // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+            // The following code collects the ports that are nested to the object to be assigned later
+            if (isIFC4AndAbove)
+               AddNestedMembership(outElementIFCHandle, portOut);
+            else
+               connectorOut = IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portOut, outElementIFCHandle);
          }
 
          //  ----------------------- Out Port -> In Port ----------------------
@@ -422,6 +447,36 @@ namespace Revit.IFC.Export.Exporter
       {
          m_ConnectionExists.Clear();
          m_ProcessedWires.Clear();
+         m_NestedMembershipDict.Clear();
+      }
+
+      private static void AddNestedMembership(IFCAnyHandle hostElement, IFCAnyHandle nestedElement)
+      {
+         if (m_NestedMembershipDict.ContainsKey(hostElement))
+         {
+            IList<IFCAnyHandle> nestedElements = m_NestedMembershipDict[hostElement];
+            nestedElements.Add(nestedElement);
+         }
+         else
+         {
+            IList<IFCAnyHandle> nestedElements = new List<IFCAnyHandle>();
+            nestedElements.Add(nestedElement);
+            m_NestedMembershipDict.Add(hostElement, nestedElements);
+         }
+
+      }
+
+      private static void CreateRelNestsFromCache(IFCFile file)
+      {
+         IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+         string name = "NestedPorts";
+         string description = "Flow";
+
+         foreach (KeyValuePair<IFCAnyHandle,IList<IFCAnyHandle>> relNests in m_NestedMembershipDict)
+         {
+            string guid = GUIDUtil.CreateGUID();
+            IFCAnyHandle ifcRelNests = IFCInstanceExporter.CreateRelNests(file, guid, ownerHistory, name, description, relNests.Key, relNests.Value);
+         }
       }
    }
 }

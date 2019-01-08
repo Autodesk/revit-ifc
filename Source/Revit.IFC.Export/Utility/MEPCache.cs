@@ -83,13 +83,6 @@ namespace Revit.IFC.Export.Utility
       /// </param>
       public void Register(Element element, IFCAnyHandle handle)
       {
-         // Keep the "real" MEP objects in Cache for port connection later on (e.g. exclude IfcBuildingElementProxy)
-         // This only affects IFC4 and our use of IfcRelConnectsPortToElement, which is only for IfcDistributionElement.
-         // TODO: Change IfcRelConnectsPortToElement to IfcRelNests for IFC4 only, and remove this check.
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 &&
-            !(IFCAnyHandleUtil.IsSubTypeOf(handle, IFCEntityType.IfcDistributionElement)))
-            return;
-
          if (m_MEPElementHandleDictionary.ContainsKey(element.Id))
             return;
 

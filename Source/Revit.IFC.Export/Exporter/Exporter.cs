@@ -156,7 +156,7 @@ namespace Revit.IFC.Export.Exporter
          {
             BeginExport(exporterIFC, document, filterView);
 
-            //ParamExprListener.ResetParamExprInternalDicts();
+            ParamExprListener.ResetParamExprInternalDicts();
             InitializeElementExporters();
             if (m_ElementExporter != null)
                m_ElementExporter(exporterIFC, document);
@@ -878,7 +878,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      // Note that we currently export FaceWalls as proxies, and that FaceWalls are HostObjects, so we need
                      // to have this check before the (element is HostObject check.
-                     exported = ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper);
+                     exported = ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper, exportType);
                   }
                   else if ((element is HostObject) || (element is DirectShape) || (element is FabricationPart))
                   {
@@ -887,9 +887,12 @@ namespace Revit.IFC.Export.Exporter
                      // Note the general comment that we would like to revamp this whole routine to be cleaner and simpler.
                      exported = FamilyInstanceExporter.ExportGenericBuildingElement(exporterIFC, element, geomElem, exportType, ifcEnumType, productWrapper);
 
-                     // Final resort: export it as a proxy.
                      if (!exported)
-                        exported = ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper);
+                        exported = (GenericElementExporter.ExportGenericElement(exporterIFC, element, geomElem, productWrapper, exportType) != null);
+
+                     //// Final resort: export it as a proxy.
+                     //if (!exported)
+                     //   exported = ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper);
                   }
 
                   // For ducts and pipes, we will add a IfcRelCoversBldgElements during the end of export.

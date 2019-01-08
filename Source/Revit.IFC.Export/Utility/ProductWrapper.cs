@@ -42,8 +42,8 @@ namespace Revit.IFC.Export.Utility
 
       IDictionary<Element, HashSet<IFCAnyHandle>> m_PropertySetsToCreate = new Dictionary<Element, HashSet<IFCAnyHandle>>();
 
-      private Dictionary<ElementType, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>> m_ElementTypeHandles =
-          new Dictionary<ElementType, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>>();
+      private Dictionary<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>> m_ElementTypeHandles =
+          new Dictionary<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>>();
 
       IFCProductWrapper m_InternalWrapper = null;
 
@@ -75,19 +75,20 @@ namespace Revit.IFC.Export.Utility
       /// <param name="elementType">The element type.</param>
       /// <param name="prodTypeHnd">The handle.</param>
       /// <param name="existingPropertySets">Any existing propertysets.</param>
-      public void RegisterHandleWithElementType(ElementType elementType, IFCAnyHandle prodTypeHnd, HashSet<IFCAnyHandle> existingPropertySets)
+      public void RegisterHandleWithElementType(ElementType elementType, IFCExportInfoPair exportType, IFCAnyHandle prodTypeHnd, HashSet<IFCAnyHandle> existingPropertySets)
       {
-         if (elementType == null || IFCAnyHandleUtil.IsNullOrHasNoValue(prodTypeHnd))
+         Tuple<ElementType, IFCExportInfoPair> elTypeKey = new Tuple<ElementType, IFCExportInfoPair>(elementType, exportType);
+         if (elTypeKey.Item1 == null || IFCAnyHandleUtil.IsNullOrHasNoValue(prodTypeHnd))
             return;
 
          KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>> elementTypeHandle;
-         if (m_ElementTypeHandles.TryGetValue(elementType, out elementTypeHandle))
+         if (m_ElementTypeHandles.TryGetValue(elTypeKey, out elementTypeHandle))
             throw new InvalidOperationException("Already associated type handle with element type.");
 
-         m_ElementTypeHandles[elementType] = new KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>(prodTypeHnd, existingPropertySets);
+         m_ElementTypeHandles[elTypeKey] = new KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>(prodTypeHnd, existingPropertySets);
 
          // In addition, add it to the ElementTypeToHandleCache.
-         ExporterCacheManager.ElementTypeToHandleCache.Register(elementType.Id, prodTypeHnd);
+         ExporterCacheManager.ElementTypeToHandleCache.Register(elementType, exportType, prodTypeHnd);
       }
 
       /// <summary>
@@ -347,8 +348,8 @@ namespace Revit.IFC.Export.Utility
          foreach (KeyValuePair<Element, HashSet<IFCAnyHandle>> propertySetToCreate in m_PropertySetsToCreate)
             PropertyUtil.CreateInternalRevitPropertySets(m_ExporterIFC, propertySetToCreate.Key, propertySetToCreate.Value);
 
-         foreach (KeyValuePair<ElementType, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>> elementTypeHandle in m_ElementTypeHandles)
-            PropertyUtil.CreateElementTypeProperties(m_ExporterIFC, elementTypeHandle.Key, elementTypeHandle.Value.Value, elementTypeHandle.Value.Key);
+         foreach (KeyValuePair<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>> elementTypeHandle in m_ElementTypeHandles)
+            PropertyUtil.CreateElementTypeProperties(m_ExporterIFC, elementTypeHandle.Key.Item1, elementTypeHandle.Value.Value, elementTypeHandle.Value.Key);
 
          if (m_ParentWrapper != null)
             m_ParentWrapper.m_CreatedHandles.UnionWith(m_CreatedHandles);
