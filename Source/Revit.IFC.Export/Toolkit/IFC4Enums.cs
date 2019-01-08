@@ -294,6 +294,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4
   , ELEMENT
   , PARTIAL
   , PROVISIONFORVOID
+  , PROVISIONFORSPACE
   , USERDEFINED
   , NOTDEFINED
    }
@@ -621,6 +622,11 @@ namespace Revit.IFC.Export.Toolkit.IFC4
   , NOTDEFINED
    }
 
+   public enum IFCCurtainWallType
+   {
+      USERDEFINED
+  , NOTDEFINED
+   }
 
    public enum IFCDamperType
    {
@@ -2010,13 +2016,17 @@ namespace Revit.IFC.Export.Toolkit.IFC4
 
    public enum IFCSensorType
    {
-      CONDUCTANCESENSOR
+      COSENSOR
+  , CO2SENSOR
+  , CONDUCTANCESENSOR
   , CONTACTSENSOR
   , FIRESENSOR
   , FLOWSENSOR
+  , FROSTSENSOR
   , GASSENSOR
   , HEATSENSOR
   , HUMIDITYSENSOR
+  , IDENTIFIERSENSOR
   , IONCONCENTRATIONSENSOR
   , LEVELSENSOR
   , LIGHTSENSOR

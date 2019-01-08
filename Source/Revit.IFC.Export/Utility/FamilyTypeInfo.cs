@@ -30,6 +30,97 @@ using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Exporter
 {
+   public class FamilyGeometrySummaryData
+   {
+      public int CurveCount { get; set; } = 0;
+      public double CurveLengthTotal { get; set; } = 0.0;
+      public int EdgeCount { get; set; } = 0;
+      public int FaceCount { get; set; } = 0;
+      public double FaceAreaTotal { get; set; } = 0.0;
+      public int MeshCount { get; set; } = 0;
+      public int MeshNumberOfTriangleTotal { get; set; } = 0;
+      public int PointCount { get; set; } = 0;
+      public int PolylineCount { get; set; } = 0;
+      public int PolylineNumberOfCoordinatesTotal { get; set; } = 0;
+      public int ProfileCount { get; set; } = 0;
+      public int SolidCount { get; set; } = 0;
+      public double SolidVolumeTotal { get; set; } = 0.0;
+      public double SolidSurfaceAreaTotal { get; set; } = 0.0;
+      public int SolidFacesCountTotal { get; set; } = 0;
+      public int SolidEdgesCountTotal { get; set; } = 0;
+      public int GeometryInstanceCount { get; set; } = 0;
+
+      public void Add(FamilyGeometrySummaryData otherData)
+      {
+         if (otherData == null)
+            return;
+
+         CurveCount += otherData.CurveCount;
+         CurveLengthTotal += otherData.CurveLengthTotal;
+         EdgeCount += otherData.EdgeCount;
+         FaceCount += otherData.FaceCount;
+         FaceAreaTotal += otherData.FaceAreaTotal;
+         MeshCount += otherData.MeshCount;
+         MeshNumberOfTriangleTotal += otherData.MeshNumberOfTriangleTotal;
+         PointCount += otherData.PointCount;
+         PolylineCount += otherData.PolylineCount;
+         PolylineNumberOfCoordinatesTotal += otherData.PolylineNumberOfCoordinatesTotal;
+         ProfileCount += otherData.ProfileCount;
+         SolidCount += otherData.SolidCount;
+         SolidVolumeTotal += otherData.SolidVolumeTotal;
+         SolidSurfaceAreaTotal += otherData.SolidSurfaceAreaTotal;
+         SolidFacesCountTotal += otherData.SolidFacesCountTotal;
+         SolidEdgesCountTotal += otherData.SolidEdgesCountTotal;
+         GeometryInstanceCount += otherData.GeometryInstanceCount;
+      }
+
+      public bool Equal(FamilyGeometrySummaryData otherData)
+      {
+         if (otherData == null)
+            return false;
+
+         if (CurveCount == otherData.CurveCount
+            && MathUtil.IsAlmostEqual(CurveLengthTotal, otherData.CurveLengthTotal)
+            && EdgeCount == otherData.EdgeCount
+            && FaceCount == otherData.FaceCount
+            && MathUtil.IsAlmostEqual(FaceAreaTotal, otherData.FaceAreaTotal)
+            && MeshCount == otherData.MeshCount
+            && MeshNumberOfTriangleTotal == otherData.MeshNumberOfTriangleTotal
+            && PointCount == otherData.PointCount
+            && PolylineCount == otherData.PolylineCount
+            && PolylineNumberOfCoordinatesTotal == otherData.PolylineNumberOfCoordinatesTotal
+            && ProfileCount == otherData.ProfileCount
+            && SolidCount == otherData.SolidCount
+            && MathUtil.IsAlmostEqual(SolidVolumeTotal, otherData.SolidVolumeTotal)
+            && MathUtil.IsAlmostEqual(SolidSurfaceAreaTotal, otherData.SolidSurfaceAreaTotal)
+            && SolidFacesCountTotal == otherData.SolidFacesCountTotal
+            && SolidEdgesCountTotal == otherData.SolidEdgesCountTotal)
+               return true;
+
+         return false;
+      }
+
+      /// <summary>
+      /// If the geometry element contains only a GeometryInstance
+      /// </summary>
+      /// <returns>true/false</returns>
+      public bool OnlyContainsGeometryInstance()
+      {
+         if (GeometryInstanceCount > 0
+            && CurveCount == 0
+            && EdgeCount == 0
+            && FaceCount == 0
+            && MeshCount == 0
+            && PointCount == 0
+            && PolylineCount == 0
+            && ProfileCount == 0
+            && SolidCount == 0)
+               return true;
+
+         return false;
+      }
+   }
+
    /// <summary>
    ///  An class representing data about a given family element type.
    /// </summary>
@@ -101,6 +192,8 @@ namespace Revit.IFC.Export.Exporter
       double m_ScaledOuterPerimeter = 0.0;
 
       MaterialAndProfile m_MaterialAndProfile = null;
+
+      FamilyGeometrySummaryData m_FamilyGeometrySummaryData = null;
 
       /// <summary>
       /// The associated handle to an IfcTypeProduct for the type.
@@ -200,6 +293,9 @@ namespace Revit.IFC.Export.Exporter
          set { m_ScaledOuterPerimeter = value; }
       }
 
+      /// <summary>
+      /// Material and Profile information for a family
+      /// </summary>
       public MaterialAndProfile materialAndProfile
       {
          get
@@ -211,5 +307,18 @@ namespace Revit.IFC.Export.Exporter
          set { m_MaterialAndProfile = value; }
       }
 
+      /// <summary>
+      /// A summary of family geometry data useful for comparison purpose
+      /// </summary>
+      public FamilyGeometrySummaryData familyGeometrySummaryData
+      {
+         get
+         {
+            if (m_FamilyGeometrySummaryData == null)
+               m_FamilyGeometrySummaryData = new FamilyGeometrySummaryData();
+            return m_FamilyGeometrySummaryData;
+         }
+         set { m_FamilyGeometrySummaryData = value; }
+      }
    }
 }

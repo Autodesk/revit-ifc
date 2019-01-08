@@ -1417,33 +1417,36 @@ namespace Revit.IFC.Export.Exporter
                else
                {
                   // If both Clipping and extrusion exist, they will become boolean body Union
-                  IFCAnyHandle finalBodyItemHnd = null;
+                  //IFCAnyHandle finalBodyItemHnd = null;
 
                   ICollection<IFCAnyHandle> booleanBodyItems = extrusionClippingBodyItems.Union<IFCAnyHandle>(extrusionBooleanBodyItems).ToList();
 
-                  finalBodyItemHnd = booleanBodyItems.ElementAt(0);
-                  booleanBodyItems.Remove(finalBodyItemHnd);
+                  //finalBodyItemHnd = booleanBodyItems.ElementAt(0);
+                  //booleanBodyItems.Remove(finalBodyItemHnd);
 
                   // union non-boolean result first with a boolean result
-                  foreach (IFCAnyHandle bodyRep in extrusionBodyItems)
-                  {
-                     finalBodyItemHnd = IFCInstanceExporter.CreateBooleanResult(exporterIFC.GetFile(), IFCBooleanOperator.Union,
-                          finalBodyItemHnd, bodyRep);
-                  }
+                  //foreach (IFCAnyHandle bodyRep in extrusionBodyItems)
+                  //{
+                  //   finalBodyItemHnd = IFCInstanceExporter.CreateBooleanResult(exporterIFC.GetFile(), IFCBooleanOperator.Union,
+                  //        finalBodyItemHnd, bodyRep);
+                  //}
 
-                  foreach (IFCAnyHandle bodyRep in booleanBodyItems)
-                  {
-                     finalBodyItemHnd = IFCInstanceExporter.CreateBooleanResult(exporterIFC.GetFile(), IFCBooleanOperator.Union,
-                          finalBodyItemHnd, bodyRep);
-                  }
+                  //foreach (IFCAnyHandle bodyRep in booleanBodyItems)
+                  //{
+                  //   finalBodyItemHnd = IFCInstanceExporter.CreateBooleanResult(exporterIFC.GetFile(), IFCBooleanOperator.Union,
+                  //        finalBodyItemHnd, bodyRep);
+                  //}
 
-                  extrusionBodyItems.Clear();
-                  extrusionBodyItems.Add(finalBodyItemHnd);
-                  retVal.MaterialAndProfile.Clear();          // Clear material and profile info as it is only for StandardCase element
+                  //extrusionBodyItems.Clear();
+                  //extrusionBodyItems.Add(finalBodyItemHnd);
+                  //retVal.MaterialAndProfile.Clear();          // Clear material and profile info as it is only for StandardCase element
 
-                  retVal.Handle = RepresentationUtil.CreateCSGRep(exporterIFC, element, catId, contextOfItemsBody,
-                      extrusionBodyItems);
-                  retVal.ShapeRepresentationType = ShapeRepresentationType.CSG;
+                  //retVal.Handle = RepresentationUtil.CreateCSGRep(exporterIFC, element, catId, contextOfItemsBody,
+                  //    extrusionBodyItems);
+                  //retVal.ShapeRepresentationType = ShapeRepresentationType.CSG;
+                  extrusionBodyItems.UnionWith(booleanBodyItems);
+                  retVal.Handle = RepresentationUtil.CreateSweptSolidRep(exporterIFC, element, catId, contextOfItemsBody, extrusionBodyItems, null);
+                  retVal.ShapeRepresentationType = ShapeRepresentationType.SweptSolid;
                }
             }
 

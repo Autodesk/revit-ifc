@@ -978,8 +978,7 @@ namespace Revit.IFC.Export.Exporter
                               if (wallFunction == (int)WallFunction.Retaining || wallFunction == (int)WallFunction.Foundation)
                               {
                                  // In this case, allow potential to export foundation and retaining walls as footing.
-                                 string enumTypeValue = null;
-                                 IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, wallElement, out enumTypeValue);
+                                 IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, wallElement, out ifcEnumType);
                                  if (exportType.ExportInstance == IFCEntityType.IfcFooting)
                                     exportAsFooting = true;
                               }
@@ -1228,7 +1227,7 @@ namespace Revit.IFC.Export.Exporter
             WallType wallType = wallElement.WallType;
             WallKind wallTypeKind = wallType.Kind;
 
-            //stacked wall is not supported yet.
+            // We skip over the "stacked wall" but the invidual walls inside that stacked wall will still be exported.  
             if (wallTypeKind == WallKind.Stacked)
                return;
 
@@ -1372,17 +1371,19 @@ namespace Revit.IFC.Export.Exporter
 
          Document doc = element.Document;
          ElementId typeElemId = element.GetTypeId();
-         Element elementType = doc.GetElement(typeElemId);
+         ElementType elementType = doc.GetElement(typeElemId) as ElementType;
          if (elementType == null)
             return;
 
-         IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(typeElemId);
+         IFCExportInfoPair exportType = new IFCExportInfoPair();
+         exportType.SetValueWithPair(IFCEntityType.IfcWallType);
+         exportType.ValidatedPredefinedType = "STANDARD";
+         IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(wallType))
          {
             ExporterCacheManager.TypeRelationsCache.Add(wallType, elementHandle);
             return;
          }
-
 
          // Property sets will be set later.
          if (asFooting)
@@ -1390,7 +1391,7 @@ namespace Revit.IFC.Export.Exporter
          else
             wallType = IFCInstanceExporter.CreateWallType(exporterIFC.GetFile(), elementType, null, null, ifcTypeEnum);
 
-         wrapper.RegisterHandleWithElementType(elementType as ElementType, wallType, null);
+         wrapper.RegisterHandleWithElementType(elementType, exportType, wallType, null);
 
          if (overrideMaterialId != ElementId.InvalidElementId)
          {

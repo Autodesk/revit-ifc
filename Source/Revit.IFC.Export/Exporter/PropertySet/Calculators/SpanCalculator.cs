@@ -74,8 +74,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       {
          // Check the override first from "IfcSpan" parameter, if not overriden use the geometry data from extrusion
          double spanVal;
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcSpan", out spanVal) == null)
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Span", out spanVal);
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Span", out spanVal) == null)
+            return false;
+
          spanVal = UnitUtil.ScaleLength(spanVal);
          if (spanVal > MathUtil.Eps())
          {

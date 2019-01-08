@@ -158,7 +158,7 @@ namespace Revit.IFC.Export.Utility
 
          Parameter parameter = GetParameterFromName(element.Id, null, propertyName);
 
-         if (parameter != null && parameter.HasValue && parameter.StorageType == StorageType.Integer)
+         if (parameter != null && parameter.HasValue)
          {
             switch (parameter.StorageType)
             {

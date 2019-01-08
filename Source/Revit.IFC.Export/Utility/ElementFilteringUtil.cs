@@ -57,6 +57,8 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public IFCExportInfoPair()
       {
+         // Set default value if not defined
+         ValidatedPredefinedType = "NOTDEFINED";
       }
 
       /// <summary>
@@ -79,6 +81,8 @@ namespace Revit.IFC.Export.Utility
                newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, ExportType.ToString());
             ValidatedPredefinedType = newValidatedPredefinedType;
          }
+         else
+            ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType("NOTDEFINED", ValidatedPredefinedType, ExportType.ToString());
       }
 
       /// <summary>
@@ -117,6 +121,8 @@ namespace Revit.IFC.Export.Utility
                newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, ValidatedPredefinedType, ExportType.ToString());
             ValidatedPredefinedType = newValidatedPredefinedType;
          }
+         else
+            ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType("NOTDEFINED", ValidatedPredefinedType, ExportType.ToString());
       }
 
       /// <summary>
@@ -197,6 +203,8 @@ namespace Revit.IFC.Export.Utility
                }
             }
          }
+
+         ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType("NOTDEFINED", ValidatedPredefinedType, ExportType.ToString());
       }
    }
 
@@ -585,6 +593,8 @@ namespace Revit.IFC.Export.Utility
          }
 
          //return IFCExportType.DontExport;
+         exportInfoPair.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType("NOTDEFINED", exportInfoPair.ExportType.ToString());
+
          return exportInfoPair;
       }
 
@@ -598,7 +608,7 @@ namespace Revit.IFC.Export.Utility
       public static IFCExportInfoPair GetExportTypeFromCategoryId(ElementId categoryId, out string ifcEnumType /*, out bool exportSeparately*/)
       {
          IFCExportInfoPair exportInfoPair = new IFCExportInfoPair();
-         ifcEnumType = "";
+         ifcEnumType = "NOTDEFINED";
          //exportSeparately = true;
 
          if (categoryId == new ElementId(BuiltInCategory.OST_Cornices))
@@ -650,6 +660,7 @@ namespace Revit.IFC.Export.Utility
          {
             string typeName = exportInfoPair.ExportInstance.ToString() + "Type";
             exportInfoPair.ExportType = GetValidIFCEntityType(typeName);
+            exportInfoPair.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType(ifcEnumType, exportInfoPair.ExportType.ToString());
          }
 
          return exportInfoPair;
@@ -913,10 +924,6 @@ namespace Revit.IFC.Export.Utility
       /// <returns></returns>
       public static bool ProxyForMEPType(Element element, IFCExportInfoPair exportType)
       {
-         // In IFC4, the IfcBuildingElementProxy can no longer participate in the system connectivity (restricted only to IfcDistributionElement)
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-            return false;
-
          if ((exportType.ExportInstance == IFCEntityType.IfcBuildingElementProxy) || (exportType.ExportType == IFCEntityType.IfcBuildingElementProxyType))
          {
             try

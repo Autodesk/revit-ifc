@@ -1254,18 +1254,19 @@ namespace Revit.IFC.Export.Exporter
          }
          else
          {
-            IFCAnyHandle trimmedCurve = null;
+            //IFCAnyHandle trimmedCurve = null;
 
-            IFCData trim1data = IFCData.CreateIFCAnyHandle(curveStart);
-            HashSet<IFCData> trim1 = new HashSet<IFCData>();
-            trim1.Add(trim1data);
-            IFCData trim2data = IFCData.CreateIFCAnyHandle(curveEnd);
-            HashSet<IFCData> trim2 = new HashSet<IFCData>();
-            trim2.Add(trim2data);
-            bool senseAgreement = true;
-            trimmedCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, senseAgreement, IFCTrimmingPreference.Cartesian);
+            //IFCData trim1data = IFCData.CreateIFCAnyHandle(edgeStart);
+            //HashSet<IFCData> trim1 = new HashSet<IFCData>();
+            //trim1.Add(trim1data);
+            //IFCData trim2data = IFCData.CreateIFCAnyHandle(edgeEnd);
+            //HashSet<IFCData> trim2 = new HashSet<IFCData>();
+            //trim2.Add(trim2data);
+            //bool senseAgreement = true;
+            ////trimmedCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, senseAgreement, IFCTrimmingPreference.Cartesian);
 
-            sweptCurve = IFCInstanceExporter.CreateArbitraryOpenProfileDef(file, IFCProfileType.Curve, profileName, trimmedCurve);
+            //sweptCurve = IFCInstanceExporter.CreateArbitraryOpenProfileDef(file, IFCProfileType.Curve, profileName, trimmedCurve);
+            sweptCurve = IFCInstanceExporter.CreateArbitraryOpenProfileDef(file, IFCProfileType.Curve, profileName, ifcCurve);
          }
 
          return sweptCurve;
@@ -1835,41 +1836,44 @@ namespace Revit.IFC.Export.Exporter
                         // direction
                         IFCAnyHandle location = GeometryUtil.XYZtoIfcCartesianPoint(exporterIFC, firstProfileCurve.GetEndPoint(0), cartesianPoints);
 
+						XYZ xDir = (firstProfileCurve.GetEndPoint(1) - firstProfileCurve.GetEndPoint(0)).Normalize();
+                        XYZ v2 = xDir;
+                        double paramStart = 1.0;
+                        while (xDir.IsAlmostEqualTo(v2))
+                        {
+                           paramStart = paramStart / 2;
+                           v2 = (firstProfileCurve.Evaluate(paramStart, true) - firstProfileCurve.GetEndPoint(0)).Normalize();
+                        }
+                        XYZ zdir = xDir.CrossProduct(v2).Normalize();
+
+                        IFCAnyHandle sweptCurvePosition = CreatePositionForFace(exporterIFC, location, zdir, xDir);
+
+                        // Set the base plane of the swept curve transform
+                        Transform basePlaneTrf = Transform.Identity;
+                        basePlaneTrf.BasisZ = zdir;
+                        basePlaneTrf.BasisX = xDir;
+                        basePlaneTrf.BasisY = zdir.CrossProduct(xDir);
+
+                        IList<double> locationOrds = IFCAnyHandleUtil.GetCoordinates(location);
+                        basePlaneTrf.Origin = new XYZ(locationOrds[0], locationOrds[1], locationOrds[2]);
+
+                        // Transform the dir to follow to the face transform
                         XYZ endsDiff = secondProfileCurve.GetEndPoint(0) - firstProfileCurve.GetEndPoint(0);
 
                         double depth = endsDiff.GetLength();
 
-                        XYZ zdir = endsDiff.Normalize();
-                        if (zdir == null || MathUtil.IsAlmostZero(zdir.GetLength()))
+                        XYZ dir = endsDiff.Normalize();
+                        if (dir == null || MathUtil.IsAlmostZero(dir.GetLength()))
                         {
                            // The extrusion direction is either null or too small to normalize
                            return null;
                         }
+                        dir = basePlaneTrf.Inverse.OfVector(dir);
+                        
+                        IFCAnyHandle direction = GeometryUtil.VectorToIfcDirection(exporterIFC, dir);
+                        IFCAnyHandle sweptCurve = CreateProfileCurveFromCurve(file, exporterIFC, firstProfileCurve, Resources.RuledFaceProfileCurve, cartesianPoints, basePlaneTrf.Inverse);
 
-                        IFCAnyHandle sweptCurve = CreateProfileCurveFromCurve(file, exporterIFC, firstProfileCurve, Resources.RuledFaceProfileCurve, cartesianPoints);
-
-                        //IFCAnyHandle position = CreatePositionForFace(exporterIFC, location, zdir, arbitraryPlane.XVec);
-
-                        // Extrusion direction is fixed on the +Z axis of the local coordinate system of the extrusion
-                        //IFCAnyHandle direction = GeometryUtil.VectorToIfcDirection(exporterIFC, new XYZ(0, 0, 1));
-                        IFCAnyHandle direction = GeometryUtil.VectorToIfcDirection(exporterIFC, zdir);
-
-                        // Create arbitrary plane with z direction as normal.
-                        Plane arbitraryPlane = GeometryUtil.CreatePlaneByNormalAtOrigin(zdir);
-
-                        IFCAnyHandle position = CreatePositionForFace(exporterIFC, location, zdir, arbitraryPlane.XVec);
-                        //Transform faceTrf = Transform.Identity;
-                        //faceTrf.BasisZ = zdir;
-                        //faceTrf.BasisX = arbitraryPlane.XVec;
-                        //faceTrf.BasisY = faceTrf.BasisZ.CrossProduct(faceTrf.BasisX);
-
-                        //IList<double> locationOrds = IFCAnyHandleUtil.GetCoordinates(location);
-                        //faceTrf.Origin = new XYZ(locationOrds[0], locationOrds[1], locationOrds[2]);
-                        ////Curve curveProfile = firstProfileCurve.CreateTransformed(faceTrf.Inverse);
-
-                        //IFCAnyHandle sweptCurve = CreateProfileCurveFromCurve(file, exporterIFC, firstProfileCurve, Resources.RuledFaceProfileCurve, cartesianPoints, faceTrf.Inverse);
-
-                        surface = IFCInstanceExporter.CreateSurfaceOfLinearExtrusion(file, sweptCurve, position, direction, depth);
+                        surface = IFCInstanceExporter.CreateSurfaceOfLinearExtrusion(file, sweptCurve, sweptCurvePosition, direction, depth);
                      }
                      else
                      {
@@ -1928,7 +1932,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="geomObject">the geometry object of the element</param>
       /// <returns>a handle to the created IFCPolygonalFaceSet</returns>
       public static IList<IFCAnyHandle> ExportBodyAsPolygonalFaceSet(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
-                  GeometryObject geomObject, Transform lcs = null)
+                  GeometryObject geomObject, Transform trfToUse = null)
       {
          IFCFile file = exporterIFC.GetFile();
          Document document = element.Document;
@@ -1960,106 +1964,194 @@ namespace Revit.IFC.Export.Exporter
 
          IList<int> colourIndex = new List<int>();
 
-         if (geomObject is Solid)
+         // If the geomObject is GeometryELement or GeometryInstance, we need to collect their primitive Solid and Mesh first
+         List<GeometryObject> geomObjectPrimitives = new List<GeometryObject>();
+         if (geomObject is GeometryElement)
          {
-            try
+            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(geomObject as GeometryElement));
+         }
+         else if (geomObject is GeometryInstance)
+         {
+            GeometryInstance geomInst = geomObject as GeometryInstance;
+            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(geomInst.GetInstanceGeometry()));
+         }
+         else if (geomObject is Solid)
+            geomObjectPrimitives.Add(geomObject);
+         else if (geomObject is Mesh)
+            geomObjectPrimitives.Add(geomObject);
+
+         // At this point all collected geometry will only contains Solid and/or MEsh
+         foreach (GeometryObject geom in geomObjectPrimitives)
+         {
+            if (geom is Solid)
             {
-               Solid solid = geomObject as Solid;
-
-               SolidOrShellTessellationControls tessellationControls = options.TessellationControls;
-               
-               TriangulatedSolidOrShell solidFacetation =
-                     SolidUtils.TessellateSolidOrShell(solid, tessellationControls);
-
-               for (int ii = 0; ii < solidFacetation.ShellComponentCount; ++ii)
+               try
                {
-                  TriangulatedShellComponent component = solidFacetation.GetShellComponent(ii);
+                  Solid solid = geom as Solid;
 
-                  IList<IFCAnyHandle> Faces = new List<IFCAnyHandle>();
-                  IList<IList<double>> coordList = new List<IList<double>>();
+                  SolidOrShellTessellationControls tessellationControls = options.TessellationControls;
 
-                  // Collect all the vertices first from the component
-                  for (int jj = 0; jj < component.VertexCount; ++jj)
+                  TriangulatedSolidOrShell solidFacetation =
+                        SolidUtils.TessellateSolidOrShell(solid, tessellationControls);
+
+                  for (int ii = 0; ii < solidFacetation.ShellComponentCount; ++ii)
                   {
-                     List<double> vertCoord = new List<double>();
+                     TriangulatedShellComponent component = solidFacetation.GetShellComponent(ii);
 
-                     XYZ vertex = component.GetVertex(jj);
-                     XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
-                     //if (lcs != null)
-                     //   vertexScaled = lcs.Inverse.OfPoint(vertexScaled);
+                     IList<IList<double>> coordList = new List<IList<double>>();
 
-                     vertCoord.Add(vertexScaled.X);
-                     vertCoord.Add(vertexScaled.Y);
-                     vertCoord.Add(vertexScaled.Z);
-                     coordList.Add(vertCoord);
-                  }
-
-                  TriangleMergeUtil triMerge = new TriangleMergeUtil(component);
-                  triMerge.SimplifyAndMergeFaces();
-                  for (int jj = 0; jj < triMerge.NoOfFaces; ++jj)
-                  {
-                     bool faceWithHole = triMerge.NoOfHolesInFace(jj) > 0;
-
-                     IList<int> outerBound = new List<int>();
-                     IList<int> faceIndexOuterbound = triMerge.IndexOuterboundOfFaceAt(jj);
-                     for (int kk = 0; kk < faceIndexOuterbound.Count; ++kk)
+                     // Collect all the vertices first from the component
+                     for (int jj = 0; jj < component.VertexCount; ++jj)
                      {
-                        outerBound.Add(faceIndexOuterbound[kk] + 1);   // IFC starts the index at 1
+                        List<double> vertCoord = new List<double>();
+
+                        XYZ vertex = component.GetVertex(jj);
+                        XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
+                        //if (lcs != null)
+                        //   vertexScaled = lcs.OfPoint(vertexScaled);
+
+                        vertCoord.Add(vertexScaled.X);
+                        vertCoord.Add(vertexScaled.Y);
+                        vertCoord.Add(vertexScaled.Z);
+                        coordList.Add(vertCoord);
                      }
 
-                     if (!faceWithHole)
+                     int mergedFaceCount = 0;
+                     TriangleMergeUtil triMerge = new TriangleMergeUtil(component);
+                     IFCAnyHandle polygonalFaceSet = StitchCoplanarTriangles(file, triMerge, coordList, out mergedFaceCount);
+                     for (int faceCnt = 0; faceCnt < mergedFaceCount; ++faceCnt)
                      {
-                        IFCAnyHandle indexedPolygonalFaceHnd = IFCInstanceExporter.CreateIndexedPolygonalFace(file, outerBound);
-                        Faces.Add(indexedPolygonalFaceHnd);
+                        colourIndex.Add(1);     // Currently each face will refer to just a single color in ColourRgbList
                      }
-                     else
-                     {
-                        IList<IList<int>> innerBounds = new List<IList<int>>();
-                        foreach (IList<int> inner in triMerge.IndexInnerBoundariesOfFaceAt(jj))
-                        {
-                           IList<int> innerBound = new List<int>();
-                           foreach (int vIdx in inner)
-                              innerBound.Add(vIdx + 1);  // IFC starts the index from 1
-                           innerBounds.Add(innerBound);
-                        }
-                        IFCAnyHandle indexedPolygonalFaceHnd = IFCInstanceExporter.CreateIndexedPolygonalFaceWithVoids(file, outerBound, innerBounds);
-                        Faces.Add(indexedPolygonalFaceHnd);
-                     }
-                  }
+                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcColourRgbList) && !IFCAnyHandleUtil.IsNullOrHasNoValue(polygonalFaceSet))
+                        IFCInstanceExporter.CreateIndexedColourMap(file, polygonalFaceSet, opacity, ifcColourRgbList, colourIndex);
 
-                  IFCAnyHandle coordinatesHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, coordList);
-                  IFCAnyHandle polygonalFaceSet = IFCInstanceExporter.CreatePolygonalFaceSet(file, coordinatesHnd, true, Faces, null);
-                  for (int faceCnt=0; faceCnt<Faces.Count; ++faceCnt)
-                  {
-                     colourIndex.Add(1);     // Currently each face will refer to just a single color in ColourRgbList
+                     if (polygonalFaceSetList == null)
+                        polygonalFaceSetList = new List<IFCAnyHandle>();
+                     polygonalFaceSetList.Add(polygonalFaceSet);
                   }
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcColourRgbList) && !IFCAnyHandleUtil.IsNullOrHasNoValue(polygonalFaceSet))
-                     IFCInstanceExporter.CreateIndexedColourMap(file, polygonalFaceSet, opacity, ifcColourRgbList, colourIndex);
-                  
+               }
+               catch
+               {
+                  // Failed! Likely because of the tessellation failed. Try to create from the faceset instead
+                  IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
                   if (polygonalFaceSetList == null)
                      polygonalFaceSetList = new List<IFCAnyHandle>();
-                  polygonalFaceSetList.Add(polygonalFaceSet);
+                  polygonalFaceSetList.Add(triangulatedMesh);
                }
             }
-            catch
+            else if (geom is Mesh)
             {
-               // Failed! Likely because of the tessellation failed. Try to create from the faceset instead
-               IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, lcs);
+               Mesh mesh = geom as Mesh;
+               IList<IList<double>> coordList = new List<IList<double>>();
+
+               // Collect all the vertices first from the component
+               for (int jj = 0; jj < mesh.Vertices.Count; ++jj)
+               {
+                  List<double> vertCoord = new List<double>();
+
+                  XYZ vertex = mesh.Vertices[jj];
+                  XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
+
+                  vertCoord.Add(vertexScaled.X);
+                  vertCoord.Add(vertexScaled.Y);
+                  vertCoord.Add(vertexScaled.Z);
+                  coordList.Add(vertCoord);
+               }
+
+               int mergedFaceCount = 0;
+               TriangleMergeUtil triMerge = new TriangleMergeUtil(mesh);
+               IFCAnyHandle polygonalFaceSet = StitchCoplanarTriangles(file, triMerge, coordList, out mergedFaceCount);
+               for (int faceCnt = 0; faceCnt < mergedFaceCount; ++faceCnt)
+               {
+                  colourIndex.Add(1);     // Currently each face will refer to just a single color in ColourRgbList
+               }
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcColourRgbList) && !IFCAnyHandleUtil.IsNullOrHasNoValue(polygonalFaceSet))
+                  IFCInstanceExporter.CreateIndexedColourMap(file, polygonalFaceSet, opacity, ifcColourRgbList, colourIndex);
+
                if (polygonalFaceSetList == null)
                   polygonalFaceSetList = new List<IFCAnyHandle>();
-               polygonalFaceSetList.Add(triangulatedMesh);
+               polygonalFaceSetList.Add(polygonalFaceSet);
             }
          }
-         else
+
+         if (polygonalFaceSetList == null || polygonalFaceSetList.Count == 0)
          {
             // It is not from Solid, so we will use the faces to export. It works for Surface export too
-            IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, lcs);
+            IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
             if (polygonalFaceSetList == null)
                polygonalFaceSetList = new List<IFCAnyHandle>();
             polygonalFaceSetList.Add(triangulatedMesh);
          }
 
          return polygonalFaceSetList;
+      }
+
+      /// <summary>
+      /// COllect Solid and/or Mesh from GeometryElement
+      /// </summary>
+      /// <param name="geomElement">the GeometryElement</param>
+      /// <returns>list of Solid and/or Mesh</returns>
+      private static List<GeometryObject> GetGeometryObjectListFromGeometryElement(GeometryElement geomElement)
+      {
+         List<GeometryObject> geomObjectPrimitives = new List<GeometryObject>();
+         SolidMeshGeometryInfo solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(geomElement);
+         foreach (Solid solid in solidMeshCapsule.GetSolids())
+            geomObjectPrimitives.Add(solid);
+         foreach (Mesh mesh in solidMeshCapsule.GetMeshes())
+            geomObjectPrimitives.Add(mesh);
+
+         return geomObjectPrimitives;
+      }
+
+      /// <summary>
+      /// Function to stich the co-planar triangles. It is moved here in order to handle two different input from the result of Tesselation or from a Mesh
+      /// </summary>
+      /// <param name="file">the File</param>
+      /// <param name="triMerge">triangleMergeUtil class</param>
+      /// <param name="coordList">coordinate list</param>
+      /// <param name="faceCount">outout parameter giving the face count of the resulting stiched faces</param>
+      /// <returns>IFC handle for the PolygeonalFaceSet</returns>
+      private static IFCAnyHandle StitchCoplanarTriangles(IFCFile file, TriangleMergeUtil triMerge, IList<IList<double>> coordList, out int faceCount)
+      {
+         IList<IFCAnyHandle> Faces = new List<IFCAnyHandle>();
+         triMerge.SimplifyAndMergeFaces();
+         for (int jj = 0; jj < triMerge.NoOfFaces; ++jj)
+         {
+            bool faceWithHole = triMerge.NoOfHolesInFace(jj) > 0;
+
+            IList<int> outerBound = new List<int>();
+            IList<int> faceIndexOuterbound = triMerge.IndexOuterboundOfFaceAt(jj);
+            for (int kk = 0; kk < faceIndexOuterbound.Count; ++kk)
+            {
+               outerBound.Add(faceIndexOuterbound[kk] + 1);   // IFC starts the index at 1
+            }
+
+            if (!faceWithHole)
+            {
+               IFCAnyHandle indexedPolygonalFaceHnd = IFCInstanceExporter.CreateIndexedPolygonalFace(file, outerBound);
+               Faces.Add(indexedPolygonalFaceHnd);
+            }
+            else
+            {
+               IList<IList<int>> innerBounds = new List<IList<int>>();
+               foreach (IList<int> inner in triMerge.IndexInnerBoundariesOfFaceAt(jj))
+               {
+                  IList<int> innerBound = new List<int>();
+                  foreach (int vIdx in inner)
+                     innerBound.Add(vIdx + 1);  // IFC starts the index from 1
+                  innerBounds.Add(innerBound);
+               }
+               IFCAnyHandle indexedPolygonalFaceHnd = IFCInstanceExporter.CreateIndexedPolygonalFaceWithVoids(file, outerBound, innerBounds);
+               Faces.Add(indexedPolygonalFaceHnd);
+            }
+         }
+
+         faceCount = Faces.Count;
+         IFCAnyHandle coordinatesHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, coordList);
+         IFCAnyHandle polygonalFaceSet = IFCInstanceExporter.CreatePolygonalFaceSet(file, coordinatesHnd, true, Faces, null);
+
+         return polygonalFaceSet;
       }
 
       private static int MaximumAllowedFacets(BodyExporterOptions options)
@@ -2112,87 +2204,168 @@ namespace Revit.IFC.Export.Exporter
 
          IList<int> colourIndex = new List<int>();
 
-         if (geomObject is Solid)
+         // We need to collect all SOlids and Meshes from the GeometryObject if it is of types GeometryElement or GeometryInstance
+         List<GeometryObject> geomObjectPrimitives = new List<GeometryObject>();
+         if (geomObject is GeometryElement)
          {
-            try
+            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(geomObject as GeometryElement));
+         }
+         else if (geomObject is GeometryInstance)
+         {
+            GeometryInstance geomInst = geomObject as GeometryInstance;
+            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(geomInst.GetInstanceGeometry()));
+         }
+         else if (geomObject is Solid)
+            geomObjectPrimitives.Add(geomObject);
+         else if (geomObject is Mesh)
+            geomObjectPrimitives.Add(geomObject);
+
+         // At this point the collection will only contains Solids and/or Meshes. Loop through each of them
+         foreach (GeometryObject geom in geomObjectPrimitives)
+         {
+            if (geom is Solid)
             {
-               Solid solid = geomObject as Solid;
-
-               SolidOrShellTessellationControls tessellationControls = options.TessellationControls;
-               
-               TriangulatedSolidOrShell solidFacetation =
-                   SolidUtils.TessellateSolidOrShell(solid, tessellationControls);
-
-               // Only handle one solid or shell.
-               if (solidFacetation.ShellComponentCount == 1)
+               try
                {
-                  TriangulatedShellComponent component = solidFacetation.GetShellComponent(0);
-                  int numberOfTriangles = component.TriangleCount;
-                  int numberOfVertices = component.VertexCount;
+                  Solid solid = geom as Solid;
 
-                  // We are going to limit the number of triangles to prevent the solid faceter from creating too many extra triangles to sew the surfaces.
-                  if ((numberOfTriangles > 0 && numberOfVertices > 0) && (numberOfTriangles < MaximumAllowedFacets(options)))
+                  SolidOrShellTessellationControls tessellationControls = options.TessellationControls;
+
+                  TriangulatedSolidOrShell solidFacetation =
+                      SolidUtils.TessellateSolidOrShell(solid, tessellationControls);
+
+                  // Only handle one solid or shell.
+                  if (solidFacetation.ShellComponentCount == 1)
                   {
-                     IList<IList<double>> coordList = new List<IList<double>>();
-                     IList<IList<int>> coordIdx = new List<IList<int>>();
+                     TriangulatedShellComponent component = solidFacetation.GetShellComponent(0);
+                     int numberOfTriangles = component.TriangleCount;
+                     int numberOfVertices = component.VertexCount;
 
-                     // create list of vertices first.
-                     for (int ii = 0; ii < numberOfVertices; ii++)
+                     // We are going to limit the number of triangles to prevent the solid faceter from creating too many extra triangles to sew the surfaces.
+                     if ((numberOfTriangles > 0 && numberOfVertices > 0) && (numberOfTriangles < MaximumAllowedFacets(options)))
                      {
-                        List<double> vertCoord = new List<double>();
+                        IList<IList<double>> coordList = new List<IList<double>>();
+                        IList<IList<int>> coordIdx = new List<IList<int>>();
 
-                        XYZ vertex = component.GetVertex(ii);
-                        XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
-                        //if (lcs != null)
-                        //   vertexScaled = lcs.Inverse.OfPoint(vertexScaled);
+                        // create list of vertices first.
+                        for (int ii = 0; ii < numberOfVertices; ii++)
+                        {
+                           List<double> vertCoord = new List<double>();
 
-                        vertCoord.Add(vertexScaled.X);
-                        vertCoord.Add(vertexScaled.Y);
-                        vertCoord.Add(vertexScaled.Z);
-                        coordList.Add(vertCoord);
+                           XYZ vertex = component.GetVertex(ii);
+                           XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
+                           //if (lcs != null)
+                           //   vertexScaled = lcs.OfPoint(vertexScaled);
+
+                           vertCoord.Add(vertexScaled.X);
+                           vertCoord.Add(vertexScaled.Y);
+                           vertCoord.Add(vertexScaled.Z);
+                           coordList.Add(vertCoord);
+                        }
+                        // Create the entity IfcCartesianPointList3D from the List of List<double> and assign it to attribute Coordinates of IfcTriangulatedFaceSet
+
+                        // Export all of the triangles
+                        for (int ii = 0; ii < numberOfTriangles; ii++)
+                        {
+                           List<int> vertIdx = new List<int>();
+
+                           TriangleInShellComponent triangle = component.GetTriangle(ii);
+                           vertIdx.Add(triangle.VertexIndex0 + 1);     // IFC uses index that starts with 1 instead of 0 (following similar standard in X3D)
+                           vertIdx.Add(triangle.VertexIndex1 + 1);
+                           vertIdx.Add(triangle.VertexIndex2 + 1);
+                           coordIdx.Add(vertIdx);
+                        }
+
+                        // Create attribute CoordIndex from the List of List<int> of the IfcTriangulatedFaceSet
+
+                        IFCAnyHandle coordPointLists = IFCAnyHandleUtil.CreateInstance(file, IFCEntityType.IfcCartesianPointList3D);
+                        IFCAnyHandleUtil.SetAttribute(coordPointLists, "CoordList", coordList, 1, null, 3, 3);
+
+                        IFCAnyHandle triangulatedBody = IFCAnyHandleUtil.CreateInstance(file, IFCEntityType.IfcTriangulatedFaceSet);
+                        IFCAnyHandleUtil.SetAttribute(triangulatedBody, "Coordinates", coordPointLists);
+                        IFCAnyHandleUtil.SetAttribute(triangulatedBody, "CoordIndex", coordIdx, 1, null, 3, 3);
+
+                        for (int faceCnt = 0; faceCnt < numberOfTriangles; ++faceCnt)
+                        {
+                           colourIndex.Add(1);     // Currently each face will refer to just a single color in ColourRgbList
+                        }
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcColourRgbList) && !IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBody))
+                           IFCInstanceExporter.CreateIndexedColourMap(file, triangulatedBody, opacity, ifcColourRgbList, colourIndex);
+
+                        triangulatedBodyList.Add(triangulatedBody);
                      }
-                     // Create the entity IfcCartesianPointList3D from the List of List<double> and assign it to attribute Coordinates of IfcTriangulatedFaceSet
-
-                     // Export all of the triangles
-                     for (int ii = 0; ii < numberOfTriangles; ii++)
-                     {
-                        List<int> vertIdx = new List<int>();
-
-                        TriangleInShellComponent triangle = component.GetTriangle(ii);
-                        vertIdx.Add(triangle.VertexIndex0 + 1);     // IFC uses index that starts with 1 instead of 0 (following similar standard in X3D)
-                        vertIdx.Add(triangle.VertexIndex1 + 1);
-                        vertIdx.Add(triangle.VertexIndex2 + 1);
-                        coordIdx.Add(vertIdx);
-                     }
-
-                     // Create attribute CoordIndex from the List of List<int> of the IfcTriangulatedFaceSet
-
-                     IFCAnyHandle coordPointLists = IFCAnyHandleUtil.CreateInstance(file, IFCEntityType.IfcCartesianPointList3D);
-                     IFCAnyHandleUtil.SetAttribute(coordPointLists, "CoordList", coordList, 1, null, 3, 3);
-
-                     IFCAnyHandle triangulatedBody = IFCAnyHandleUtil.CreateInstance(file, IFCEntityType.IfcTriangulatedFaceSet);
-                     IFCAnyHandleUtil.SetAttribute(triangulatedBody, "Coordinates", coordPointLists);
-                     IFCAnyHandleUtil.SetAttribute(triangulatedBody, "CoordIndex", coordIdx, 1, null, 3, 3);
-
-                     for (int faceCnt = 0; faceCnt < numberOfTriangles; ++faceCnt)
-                     {
-                        colourIndex.Add(1);     // Currently each face will refer to just a single color in ColourRgbList
-                     }
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcColourRgbList) && !IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBody))
-                        IFCInstanceExporter.CreateIndexedColourMap(file, triangulatedBody, opacity, ifcColourRgbList, colourIndex);
-
-                     triangulatedBodyList.Add(triangulatedBody);
                   }
                }
+               catch
+               {
+                  // Failed! Likely because of the tessellation failed. Try to create from the faceset instead
+                  IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject);
+                  triangulatedBodyList.Add(triangulatedMesh);
+               }
             }
-            catch
+            else if (geom is Mesh)
             {
-               // Failed! Likely because of the tessellation failed. Try to create from the faceset instead
-               IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject);
-               triangulatedBodyList.Add(triangulatedMesh);
+               Mesh mesh = geom as Mesh;
+
+               int numberOfTriangles = mesh.NumTriangles;
+               int numberOfVertices = mesh.Vertices.Count;
+
+               // We are going to limit the number of triangles to prevent the solid faceter from creating too many extra triangles to sew the surfaces.
+               if ((numberOfTriangles > 0 && numberOfVertices > 0) && (numberOfTriangles < MaximumAllowedFacets(options)))
+               {
+                  IList<IList<double>> coordList = new List<IList<double>>();
+                  IList<IList<int>> coordIdx = new List<IList<int>>();
+
+                  // create list of vertices first.
+                  for (int ii = 0; ii < numberOfVertices; ii++)
+                  {
+                     List<double> vertCoord = new List<double>();
+
+                     XYZ vertex = mesh.Vertices[ii];
+                     XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
+
+                     vertCoord.Add(vertexScaled.X);
+                     vertCoord.Add(vertexScaled.Y);
+                     vertCoord.Add(vertexScaled.Z);
+                     coordList.Add(vertCoord);
+                  }
+                  // Create the entity IfcCartesianPointList3D from the List of List<double> and assign it to attribute Coordinates of IfcTriangulatedFaceSet
+
+                  // Export all of the triangles
+                  for (int ii = 0; ii < numberOfTriangles; ii++)
+                  {
+                     List<int> vertIdx = new List<int>();
+
+                     MeshTriangle triangle = mesh.get_Triangle(ii);
+                     vertIdx.Add((int) triangle.get_Index(0) + 1);     // IFC uses index that starts with 1 instead of 0 (following similar standard in X3D)
+                     vertIdx.Add((int) triangle.get_Index(1) + 1);
+                     vertIdx.Add((int) triangle.get_Index(2) + 1);
+                     coordIdx.Add(vertIdx);
+                  }
+
+                  // Create attribute CoordIndex from the List of List<int> of the IfcTriangulatedFaceSet
+
+                  IFCAnyHandle coordPointLists = IFCAnyHandleUtil.CreateInstance(file, IFCEntityType.IfcCartesianPointList3D);
+                  IFCAnyHandleUtil.SetAttribute(coordPointLists, "CoordList", coordList, 1, null, 3, 3);
+
+                  IFCAnyHandle triangulatedBody = IFCAnyHandleUtil.CreateInstance(file, IFCEntityType.IfcTriangulatedFaceSet);
+                  IFCAnyHandleUtil.SetAttribute(triangulatedBody, "Coordinates", coordPointLists);
+                  IFCAnyHandleUtil.SetAttribute(triangulatedBody, "CoordIndex", coordIdx, 1, null, 3, 3);
+
+                  for (int faceCnt = 0; faceCnt < numberOfTriangles; ++faceCnt)
+                  {
+                     colourIndex.Add(1);     // Currently each face will refer to just a single color in ColourRgbList
+                  }
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcColourRgbList) && !IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBody))
+                     IFCInstanceExporter.CreateIndexedColourMap(file, triangulatedBody, opacity, ifcColourRgbList, colourIndex);
+
+                  triangulatedBodyList.Add(triangulatedBody);
+               }
+
             }
          }
-         else
+
+         if (triangulatedBodyList == null || triangulatedBodyList.Count == 0)
          {
             // It is not from Solid, so we will use the faces to export. It works for Surface export too
             IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject);
@@ -2241,7 +2414,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="geomObject">the geometry object</param>
       /// <returns>returns the handle</returns>
       private static IFCAnyHandle ExportSurfaceAsTriangulatedFaceSet(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
-                  GeometryObject geomObject, Transform lcsToUse = null)
+                  GeometryObject geomObject, Transform trfToUse = null)
       {
          IFCFile file = exporterIFC.GetFile();
 
@@ -2275,11 +2448,11 @@ namespace Revit.IFC.Export.Exporter
 
          if (geomObject is Solid)
          {
-            triangleList = GetTriangleListFromSolid(geomObject, options, lcsToUse);
+            triangleList = GetTriangleListFromSolid(geomObject, options, trfToUse);
          }
          else if (geomObject is Mesh)
          {
-            triangleList = GetTriangleListFromMesh(geomObject, options, lcsToUse);
+            triangleList = GetTriangleListFromMesh(geomObject, options, trfToUse);
          }
          // There is also a possibility that the geomObject is an GeometryElement thaat is a collection of GeometryObjects. Go through the collection and get the Mesh, Solid, or Face in it
          else if (geomObject is GeometryElement)
@@ -2288,13 +2461,13 @@ namespace Revit.IFC.Export.Exporter
             foreach (GeometryObject geom in (geomObject as GeometryElement))
             {
                if (geom is Solid)
-                  triangleList.AddRange(GetTriangleListFromSolid(geom, options, lcsToUse));
+                  triangleList.AddRange(GetTriangleListFromSolid(geom, options, trfToUse));
                if (geom is Mesh)
-                  triangleList.AddRange(GetTriangleListFromMesh(geom, options, lcsToUse));
+                  triangleList.AddRange(GetTriangleListFromMesh(geom, options, trfToUse));
                if (geom is Face)
                {
                   Mesh faceMesh = (geom as Face).Triangulate();
-                  triangleList.AddRange(GetTriangleListFromMesh(faceMesh, options, lcsToUse));
+                  triangleList.AddRange(GetTriangleListFromMesh(faceMesh, options, trfToUse));
                }
             }
          }
@@ -2568,7 +2741,9 @@ namespace Revit.IFC.Export.Exporter
             // However, FacetedBReps do hold more information (and aren't only triangles).
             if (!alreadyExported && canExportAsTessellatedFaceSet)
             {
-               IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, bodyData.OffsetTransform);
+               Transform trfToUse = GeometryUtil.GetScaledTransform(exporterIFC);
+               //IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, bodyData.OffsetTransform);
+               IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
                {
                   bodyItems.Add(triangulatedBodyItem);
@@ -3571,7 +3746,7 @@ namespace Revit.IFC.Export.Exporter
             return false;
       }
 
-      static List<List<XYZ>> GetTriangleListFromSolid(GeometryObject geomObject, BodyExporterOptions options, Transform lcsToUse)
+      static List<List<XYZ>> GetTriangleListFromSolid(GeometryObject geomObject, BodyExporterOptions options, Transform trfToUse)
       {
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Solid geomSolid = geomObject as Solid;
@@ -3594,8 +3769,8 @@ namespace Revit.IFC.Export.Exporter
                   for (int tri = 0; tri < 3; ++tri)
                   {
                      XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
-                     if (lcsToUse != null)
-                        vert = lcsToUse.Inverse.OfPoint(vert);
+                     if (trfToUse != null)
+                        vert = trfToUse.OfPoint(vert);
 
                      triangleVertices.Add(vert);
                   }
@@ -3610,7 +3785,7 @@ namespace Revit.IFC.Export.Exporter
          return triangleList;
       }
 
-      static List<List<XYZ>> GetTriangleListFromMesh(GeometryObject geomObject, BodyExporterOptions options, Transform lcsToUse)
+      static List<List<XYZ>> GetTriangleListFromMesh(GeometryObject geomObject, BodyExporterOptions options, Transform trfToUse)
       {
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Mesh geomMesh = geomObject as Mesh;
@@ -3621,8 +3796,8 @@ namespace Revit.IFC.Export.Exporter
             for (int tri = 0; tri < 3; ++tri)
             {
                XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
-               if (lcsToUse != null)
-                  vert = lcsToUse.Inverse.OfPoint(vert);
+               if (trfToUse != null)
+                  vert = trfToUse.OfPoint(vert);
 
                triangleVertices.Add(vert);
             }
