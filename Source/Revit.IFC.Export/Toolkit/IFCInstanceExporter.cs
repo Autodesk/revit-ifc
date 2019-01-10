@@ -5488,13 +5488,14 @@ namespace Revit.IFC.Export.Toolkit
          ValidateElement(guid, ownerHistory, objectPlacement, representation);
 
          IFCAnyHandle buildingElementProxy = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcBuildingElementProxy, element);
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "preDefinedType", predefinedType, true);
+            if (!string.IsNullOrEmpty(predefinedType) && !predefinedType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
+               IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "CompositionType", predefinedType, true);
          }
          else
          {
-            IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "CompositionType", predefinedType, true);
+            IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "preDefinedType", predefinedType, true);
          }
          SetElement(exporterIFC, buildingElementProxy, element, guid, ownerHistory, objectPlacement, representation);
          return buildingElementProxy;
