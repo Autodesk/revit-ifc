@@ -193,7 +193,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4_ADD2
 		NOTKNOWN,
 		UNSET}
 
-	public enum PEnum_AirToAirHeatTransferHeatTransferType {
+	public enum PEnum_HeatTransferType {
 		SENSIBLE,
 		LATENT,
 		OTHER,
@@ -857,7 +857,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4_ADD2
 		NOTKNOWN,
 		UNSET}
 
-	public enum PEnum_ElementComponentDeliveryType {
+	public enum PEnum_DeliveryType {
 		CAST_IN_PLACE,
 		WELDED_TO_STRUCTURE,
 		LOOSE,
@@ -865,7 +865,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4_ADD2
 		PRECAST,
 		NOTDEFINED}
 
-	public enum PEnum_ElementComponentCorrosionTreatment {
+	public enum PEnum_CorrosionTreatment {
 		PAINTED,
 		EPOXYCOATED,
 		GALVANISED,
@@ -1521,6 +1521,27 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4_ADD2
 		USERDEFINED,
 		NOTDEFINED}
 
+	public enum PEnum_BarSurface {
+		PLAIN,
+		TEXTURED,
+		OTHER,
+		USERDEFINED,
+		NOTDEFINED}
+
+	public enum PEnum_LongitudinalBarSurface {
+		PLAIN,
+		TEXTURED,
+		OTHER,
+		USERDEFINED,
+		NOTDEFINED}
+
+	public enum PEnum_TransverseBarSurface {
+		PLAIN,
+		TEXTURED,
+		OTHER,
+		USERDEFINED,
+		NOTDEFINED}
+
 	public enum PEnum_RiskType {
 		BUSINESS,
 		HAZARD,
@@ -1914,6 +1935,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4_ADD2
 		COMPLEX,
 		ELEMENT,
 		PARTIAL,
+		OTHER,
 		NOTKNOWN,
 		UNSET}
 

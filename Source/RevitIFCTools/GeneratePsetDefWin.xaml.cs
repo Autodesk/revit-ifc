@@ -35,6 +35,7 @@ using System.Windows.Navigation;
 using System.Windows.Forms;
 using System.IO;
 using Revit.IFC.Common.Utility;
+using Autodesk.Revit.DB;
 using System.Xml.Linq;
 using RevitIFCTools.PropertySet;
 
@@ -54,6 +55,19 @@ namespace RevitIFCTools
       StreamWriter logF;
 #endif
 
+      private class SharedParameterDef
+      {
+         public string Param { get; set; } = "PARAM";
+         public Guid ParamGuid {get; set;}
+         public string Name { get; set; }
+         public string ParamType { get; set; }
+         public string DataCategory { get; set; }
+         public int GroupId { get; set; } = 2;
+         public bool Visibility { get; set; } = true;
+         public string Description { get; set; }
+         public bool UserModifiable { get; set; } = true;
+      }
+
       private class VersionSpecificPropertyDef
       {
          public string SchemaFileVersion { get; set; }
@@ -68,10 +82,7 @@ namespace RevitIFCTools
          textBox_OutputFile.Text = outputFilename;
          enumFileDict = new Dictionary<string, StreamWriter>();
          enumDict = new Dictionary<string, IList<string>>();
-#if DEBUG
-         string tempFolder = System.IO.Path.GetTempPath();
-         logF = new StreamWriter(Path.Combine(tempFolder, "GeneratePsetDefWin.log"));
-#endif
+         button_Go.IsEnabled = false;
       }
 
       private void button_PSDSourceDir_Click(object sender, RoutedEventArgs e)
@@ -82,6 +93,9 @@ namespace RevitIFCTools
          textBox_PSDSourceDir.Text = dialog.SelectedPath;
          if (string.IsNullOrEmpty(textBox_PSDSourceDir.Text))
             return;
+
+         if (!string.IsNullOrEmpty(textBox_PSDSourceDir.Text) && !string.IsNullOrEmpty(textBox_OutputFile.Text) && !string.IsNullOrEmpty(textBox_SharedParFile.Text))
+            button_Go.IsEnabled = true;
       }
 
       private void button_OutputFile_Click(object sender, RoutedEventArgs e)
@@ -94,6 +108,9 @@ namespace RevitIFCTools
          dialog.ShowDialog();
          textBox_OutputFile.Text = dialog.FileName;
          outputFilename = textBox_OutputFile.Text;
+
+         if (!string.IsNullOrEmpty(textBox_PSDSourceDir.Text) && !string.IsNullOrEmpty(textBox_OutputFile.Text) && !string.IsNullOrEmpty(textBox_SharedParFile.Text))
+            button_Go.IsEnabled = true;
       }
 
       private PsetDefinition ProcessPsetDef(string schemaVersion, FileInfo PSDfileName)
@@ -133,14 +150,17 @@ namespace RevitIFCTools
          foreach (XElement pDef in pDefs)
          {
             PsetProperty prop = getPropertyDef(ns, pDef);
-            if (prop==null)
+            SharedParameterDef shPar = new SharedParameterDef();
+            if (prop == null)
             {
 #if DEBUG
-               logF.WriteLine("%Error: Mising PropertyType data for {0}.{1}", pset.Name, pDef.Element(ns+ "Name").Value);
+               logF.WriteLine("%Error: Mising PropertyType data for {0}.{1}", pset.Name, pDef.Element(ns + "Name").Value);
 #endif
             }
             else
+            {
                propList.Add(prop);
+            }
          }
          pset.properties = propList;
 
@@ -372,7 +392,10 @@ namespace RevitIFCTools
 
       private void button_Go_Click(object sender, RoutedEventArgs e)
       {
-
+#if DEBUG
+         string tempFolder = System.IO.Path.GetTempPath();
+         logF = new StreamWriter(Path.Combine(tempFolder, "GeneratePsetDefWin.log"));
+#endif
          textBox_OutputMsg.Clear();
 
          allPDefDict = new SortedDictionary<string, IList<VersionSpecificPropertyDef>>();
@@ -420,6 +443,9 @@ namespace RevitIFCTools
          outF.WriteLine("{");
          outF.WriteLine("\tpartial class ExporterInitializer");
          outF.WriteLine("\t{");
+
+         //stSharedPar = File.AppendText(SharedParFileName);
+         //stSharedParType = File.AppendText(SharedParFileNameType);
 
          // Collect all Pset definition for psd folders
          foreach (DirectoryInfo psd in psdFolders)
@@ -574,6 +600,12 @@ namespace RevitIFCTools
                         outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                      }
                   }
+               else
+               {
+#if DEBUG
+                  logF.WriteLine("%Error - Unrecognized schema version : " + vspecPDef.SchemaFileVersion);
+#endif
+               }
                //}
 
                // Process each property
@@ -587,12 +619,12 @@ namespace RevitIFCTools
                      foreach (PsetProperty propCx in complexProp.Properties)
                      {
                         string prefixName = pDef.Name + "." + prop.Name;
-                        processSimpleProperty(outF, propCx, prefixName, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName);
+                        processSimpleProperty(outF, propCx, prefixName, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef);
                      }
                   }
                   else
                   {
-                     processSimpleProperty(outF, prop, pDef.Name, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName);
+                     processSimpleProperty(outF, prop, pDef.Name, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef);
                   }                    
                }
                outF.WriteLine("\t\t\t}");
@@ -610,6 +642,9 @@ namespace RevitIFCTools
          outF.WriteLine("}");
          outF.Close();
          endWriteEnumFile();
+
+         stSharedPar.Close();
+         stSharedParType.Close();
 #if DEBUG
          logF.Close();
 #endif
@@ -791,7 +826,7 @@ namespace RevitIFCTools
          return subNames[0];  // Only returns the name before '/' if any
       }
 
-      void processSimpleProperty(StreamWriter outF, PsetProperty prop, string propNamePrefix, string IfcVersion, string schemaVersion, string varName)
+      void processSimpleProperty(StreamWriter outF, PsetProperty prop, string propNamePrefix, string IfcVersion, string schemaVersion, string varName, VersionSpecificPropertyDef vSpecPDef)
       {
          // For now, keep the same approach for naming the properties (i.e. without prefix)
          //outF.WriteLine("\t\t\t\tifcPSE = new PropertySetEntry(\"{0}.{1}\");", propNamePrefix, prop.Name);
@@ -822,7 +857,7 @@ namespace RevitIFCTools
             else if (prop.PropertyType is PropertyListValue)
             {
                PropertyListValue propList = prop.PropertyType as PropertyListValue;
-               if (propList.DataType != null)
+               if (propList.DataType != null && !propList.DataType.Equals("IfcValue", StringComparison.InvariantCultureIgnoreCase))
                   outF.WriteLine("\t\t\t\tifcPSE.PropertyType = PropertyType.{0};", propList.DataType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
                else
                   outF.WriteLine("\t\t\t\tifcPSE.PropertyType = PropertyType.Label;");    // default to Label if not defined
@@ -843,6 +878,171 @@ namespace RevitIFCTools
             else
                outF.WriteLine("\t\t\t\tifcPSE.PropertyType = PropertyType.{0};", prop.PropertyType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
          }
+         else
+         {
+            prop.PropertyType = new PropertySingleValue();
+            // Handle bad cases where datatype is somehow missing in the PSD
+            if (prop.Name.ToLowerInvariant().Contains("ratio") 
+               || prop.Name.ToLowerInvariant().Contains("length")
+               || prop.Name.ToLowerInvariant().Contains("width")
+               || prop.Name.ToLowerInvariant().Contains("thickness")
+               || prop.Name.ToLowerInvariant().Contains("angle")
+               || prop.Name.ToLowerInvariant().Contains("transmittance")
+               || prop.Name.ToLowerInvariant().Contains("fraction")
+               || prop.Name.ToLowerInvariant().Contains("rate")
+               || prop.Name.ToLowerInvariant().Contains("velocity")
+               || prop.Name.ToLowerInvariant().Contains("speed")
+               || prop.Name.ToLowerInvariant().Contains("capacity")
+               || prop.Name.ToLowerInvariant().Contains("pressure")
+               || prop.Name.ToLowerInvariant().Contains("temperature")
+               || prop.Name.ToLowerInvariant().Contains("power")
+               || prop.Name.ToLowerInvariant().Contains("heatgain")
+               || prop.Name.ToLowerInvariant().Contains("efficiency")
+               || prop.Name.ToLowerInvariant().Contains("resistance")
+               || prop.Name.ToLowerInvariant().Contains("coefficient")
+               || prop.Name.ToLowerInvariant().Contains("measure"))
+               (prop.PropertyType as PropertySingleValue).DataType = "IfcReal";
+            else if (prop.Name.ToLowerInvariant().Contains("loadbearing"))
+               (prop.PropertyType as PropertySingleValue).DataType = "IfcBoolean";
+            else
+               (prop.PropertyType as PropertySingleValue).DataType = "IfcLabel";
+#if DEBUG
+            logF.WriteLine("%Warning: " + prop.Name + " from " + vSpecPDef.PropertySetDef.Name + "(" + vSpecPDef.SchemaFileVersion + ") is missing PropertyType/datatype. Set to default " 
+                  + (prop.PropertyType as PropertySingleValue).DataType);
+#endif
+         }
+
+         // Append new definition to the Shared parameter file
+         SharedParameterDef newPar = new SharedParameterDef();
+         newPar.Name = prop.Name;
+
+         // Use IfdGuid for the GUID if defined
+         Guid pGuid = Guid.Empty;
+         if (!string.IsNullOrEmpty(prop.IfdGuid))
+         {
+            Guid.TryParse(prop.IfdGuid, out pGuid);
+         }
+         if (pGuid == Guid.Empty)
+            pGuid = Guid.NewGuid();
+
+         newPar.ParamGuid = pGuid;
+
+         if (prop.PropertyType != null)
+            newPar.Description = prop.PropertyType.ToString().Split(' ', '\t')[0].Trim();     // Put the original IFC datatype in the description
+         else
+         {
+#if DEBUG
+            logF.WriteLine("%Warning: " + prop.Name + " from " + vSpecPDef.PropertySetDef.Name + "(" +  vSpecPDef.SchemaFileVersion + ") is missing PropertyType/datatype.");
+#endif
+         }
+
+            if (prop.PropertyType is PropertyEnumeratedValue
+            || prop.PropertyType is PropertyReferenceValue
+            || prop.PropertyType is PropertyBoundedValue
+            || prop.PropertyType is PropertyListValue
+            || prop.PropertyType is PropertyTableValue)
+         {
+            // For all the non-simple value, a TEXT parameter will be created that will contain formatted string
+            newPar.ParamType = "MULTILINETEXT";
+            if (prop.PropertyType is PropertyBoundedValue)
+               newPar.Description = "PropertyBoundedValue";   // override the default to the type of property datatype
+            else if (prop.PropertyType is PropertyListValue)
+               newPar.Description = "PropertyListValue";   // override the default to the type of property datatype
+            else if (prop.PropertyType is PropertyTableValue)
+               newPar.Description = "PropertyTableValue";   // override the default to the type of property datatype
+         }
+         else if (prop.PropertyType is PropertySingleValue)
+         {
+            PropertySingleValue propSingle = prop.PropertyType as PropertySingleValue;
+            newPar.Description = propSingle.DataType; // Put the original IFC datatype in the description
+
+            if (propSingle.DataType.Equals("IfcPositivePlaneAngleMeasure", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcSolidAngleMeasure", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "ANGLE";
+            else if (propSingle.DataType.Equals("IfcAreaMeasure", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "AREA";
+            else if (propSingle.DataType.Equals("IfcMonetaryMeasure", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "CURRENCY";
+            else if (propSingle.DataType.Equals("IfcPositivePlaneAngleMeasure", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcCardinalPointReference", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcCountMeasure", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcDayInMonthNumber", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcDayInWeekNumber", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcDimensionCount", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcInteger", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcIntegerCountRateMeasure", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcMonthInYearNumber", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcTimeStamp", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "INTEGER";
+            else if (propSingle.DataType.Equals("IfcLengthMeasure", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcNonNegativeLengthMeasure", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcPositiveLengthMeasure", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "LENGTH";
+            else if (propSingle.DataType.Equals("IfcMassDensityMeasure", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "MASS_DENSITY";
+            else if (propSingle.DataType.Equals("IfcArcIndex", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcComplexNumber", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcCompoundPlaneAngleMeasure", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcLineIndex", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcPropertySetDefinitionSet", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "MULTILINETEXT";
+            else if (propSingle.DataType.Equals("IfcBinary", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcBoxAlignment", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcDate", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcDateTime", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcDescriptiveMeasure", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcDuration", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcFontStyle", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcFontVariant", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcFontWeight", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcGloballyUniqueId", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcIdentifier", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcLabel", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcLanguageId", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcPresentableText", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcText", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcTextAlignment", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcTextDecoration", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcTextFontName", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcTextTransformation", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcTime", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "TEXT";
+            else if (propSingle.DataType.Equals("IfcURIReference", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "URL";
+            else if (propSingle.DataType.Equals("IfcVolumeMeasure", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "VOLUME";
+            else if (propSingle.DataType.Equals("IfcBoolean", StringComparison.InvariantCultureIgnoreCase)
+               || propSingle.DataType.Equals("IfcLogical", StringComparison.InvariantCultureIgnoreCase))
+               newPar.ParamType = "YESNO";
+            else
+               newPar.ParamType = "NUMBER";
+         }
+
+         // Append into the param file:
+         string vis = newPar.Visibility ? "1" : "0";
+         string usrMod = newPar.UserModifiable ? "1" : "0";
+
+         if (!SharedParamFileDict.ContainsKey(newPar.Name))
+         {
+            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
+                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+            //byte[] parStrBytes = Encoding.Default.GetBytes(parEntry);
+            //parEntry = Encoding.Unicode.GetString(parStrBytes);
+            stSharedPar.WriteLine(parEntry);
+            SharedParamFileDict.Add(newPar.Name, newPar);
+         }
+
+         newPar.Name += "[Type]";
+         if (!SharedParamFileTypeDict.ContainsKey(newPar.Name))
+         {
+            newPar.ParamGuid = Guid.NewGuid();   // Use new GUID for Type parameter since it cannot have the same guid as the instance one under the same property
+            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
+                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+            //byte[] parStrBytes = Encoding.Default.GetBytes(parEntry);
+            //parEntry = Encoding.Unicode.GetString(parStrBytes);
+            stSharedParType.WriteLine(parEntry);
+            SharedParamFileTypeDict.Add(newPar.Name, newPar);
+         }
 
          if (prop.NameAliases != null)
          {
@@ -859,6 +1059,145 @@ namespace RevitIFCTools
          outF.WriteLine("\t\t\t\t\tifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});");
          outF.WriteLine("\t\t\t\t{0}.AddEntry(ifcPSE);", varName);
          outF.WriteLine("");
+      }
+
+      IDictionary<string, SharedParameterDef> SharedParamFileDict = new Dictionary<string, SharedParameterDef>();
+      IDictionary<string, SharedParameterDef> SharedParamFileTypeDict = new Dictionary<string, SharedParameterDef>();
+      string SharedParFileName;
+      string SharedParFileNameType;
+      StreamWriter stSharedPar;
+      StreamWriter stSharedParType;
+
+      private void Button_BrowseSharedParFile_Click(object sender, RoutedEventArgs e)
+      {
+         var dialog = new OpenFileDialog();
+         dialog.DefaultExt = "txt";
+         dialog.Filter = "Select *.txt shared parameter file|*.txt";
+         dialog.AddExtension = true;
+         dialog.CheckFileExists = true;
+         dialog.ShowDialog();
+         textBox_SharedParFile.Text = dialog.FileName;
+
+         SharedParFileName = textBox_SharedParFile.Text;
+         string parFileNameOut = Path.Combine(Path.GetDirectoryName(SharedParFileName), Path.GetFileNameWithoutExtension(SharedParFileName) + "_out.txt");
+         stSharedPar = File.CreateText(parFileNameOut);
+         processExistingParFile(SharedParFileName, ref SharedParamFileDict, ref stSharedPar);
+
+         if (!string.IsNullOrEmpty(textBox_PSDSourceDir.Text) && !string.IsNullOrEmpty(textBox_OutputFile.Text) && !string.IsNullOrEmpty(textBox_SharedParFile.Text))
+            button_Go.IsEnabled = true;
+      }
+
+      private void Button_BrowseSharedParFileType_Click(object sender, RoutedEventArgs e)
+      {
+         var dialog = new OpenFileDialog();
+         dialog.DefaultExt = "txt";
+         dialog.Filter = "Select *.txt shared parameter file|*.txt";
+         dialog.AddExtension = true;
+         dialog.CheckFileExists = false;
+         dialog.ShowDialog();
+         textBox_ShParFileType.Text = dialog.FileName;
+
+         SharedParFileNameType = textBox_ShParFileType.Text;
+
+         if (File.Exists(SharedParFileNameType))
+         {
+            string parFileNameOut = Path.Combine(Path.GetDirectoryName(SharedParFileName), Path.GetFileNameWithoutExtension(SharedParFileNameType) + "_out.txt");
+            stSharedParType = File.CreateText(parFileNameOut);
+            processExistingParFile(SharedParFileNameType, ref SharedParamFileTypeDict, ref stSharedParType);
+         }
+         else
+         {
+            stSharedParType = File.CreateText(SharedParFileNameType);
+         }
+
+         if (!string.IsNullOrEmpty(textBox_PSDSourceDir.Text) && !string.IsNullOrEmpty(textBox_OutputFile.Text) 
+            && !string.IsNullOrEmpty(textBox_SharedParFile.Text) && !string.IsNullOrEmpty(textBox_ShParFileType.Text))
+            button_Go.IsEnabled = true;
+      }
+
+      private void processExistingParFile(string parFileName, ref IDictionary<string, SharedParameterDef> dictToFill, ref StreamWriter destFile)
+      {
+         // Keep original data (for maintaining the GUID) in a dictionary
+         using (StreamReader stSharedParam = File.OpenText(parFileName))
+         {
+            string line;
+            while ((line = stSharedParam.ReadLine()) != null && !string.IsNullOrEmpty(line))
+            {
+               // Copy content to the destination file
+               destFile.WriteLine(line);
+
+               string[] token = line.Split('\t');
+               if (token == null || token.Count() == 0)
+                  continue;
+
+               if (!token[0].Equals("PARAM"))
+                  continue;
+
+               SharedParameterDef parDef = new SharedParameterDef();
+               parDef.Param = token[0];
+               try
+               {
+                  parDef.ParamGuid = Guid.Parse(token[1]);
+               }
+               catch
+               {
+                  // Shouldn't be here
+                  continue;
+               }
+
+               if (string.IsNullOrEmpty(token[2]))
+               {
+                  // Shouldn't be here
+                  continue;
+               }
+               parDef.Name = token[2];
+
+               if (token[3] == null)
+                  continue;
+
+               parDef.ParamType = token[3];
+
+               parDef.DataCategory = token[4];
+
+               int grp;
+               if (int.TryParse(token[5], out grp))
+                  parDef.GroupId = grp;
+               else
+                  continue;
+
+               parDef.Visibility = false;
+               if (!string.IsNullOrEmpty(token[6]))
+               {
+                  int vis;
+                  if (int.TryParse(token[6], out vis))
+                     if (vis == 1)
+                        parDef.Visibility = true;
+               }
+
+               if (!string.IsNullOrEmpty(token[7]))
+               {
+                  parDef.Description = token[7];
+               }
+
+               parDef.UserModifiable = false;
+               if (!string.IsNullOrEmpty(token[8]))
+               {
+                  int mod;
+                  if (int.TryParse(token[8], out mod))
+                     if (mod == 1)
+                        parDef.UserModifiable = true;
+               }
+
+               try
+               {
+                  dictToFill.Add(parDef.Name, parDef);
+               }
+               catch (ArgumentException exp)
+               {
+                  textBox_OutputMsg.Text += "\n" + parDef.Name + ": " + exp.Message;
+               }
+            }
+         }
       }
    }
 }
