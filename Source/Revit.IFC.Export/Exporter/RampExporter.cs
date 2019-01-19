@@ -741,9 +741,9 @@ namespace Revit.IFC.Export.Exporter
                if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2)
                   propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue,
                      true, typeof(PropertySet.IFC4_ADD2.PEnum_ElementStatus));
-               else if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1)
-                  propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue,
-                     true, typeof(PropertySet.IFC4_ADD1.PEnum_ElementStatus));
+               //else if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1)
+               //   propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue,
+               //      true, typeof(PropertySet.IFC4_ADD1.PEnum_ElementStatus));
 
                if (propSingleValue != null)
                   properties.Add(propSingleValue);
@@ -875,9 +875,9 @@ namespace Revit.IFC.Export.Exporter
                if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2)
                   propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue, 
                      true, typeof(PropertySet.IFC4_ADD2.PEnum_ElementStatus));
-               else if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1)
-                  propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue,
-                     true, typeof(PropertySet.IFC4_ADD1.PEnum_ElementStatus));
+               //else if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1)
+               //   propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue,
+               //      true, typeof(PropertySet.IFC4_ADD1.PEnum_ElementStatus));
 
                if (propSingleValue != null)
                   properties.Add(propSingleValue);

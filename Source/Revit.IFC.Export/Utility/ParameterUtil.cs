@@ -472,9 +472,13 @@ namespace Revit.IFC.Export.Utility
 
          Element elemType = document.GetElement(typeId);
          if (elemType != null)
-            return GetDoubleValueFromElement(elemType, null, propertyName, out propertyValue);
+         {
+            parameter = GetDoubleValueFromElement(elemType, null, propertyName, out propertyValue);
+            if (parameter == null)
+               parameter = GetDoubleValueFromElement(elemType, null, propertyName + "[Type]", out propertyValue);
+         }
 
-         return null;
+         return parameter;
       }
 
       /// <summary>
@@ -857,8 +861,13 @@ namespace Revit.IFC.Export.Utility
 
          Element elementType = element.Document.GetElement(element.GetTypeId());
          if (elementType != null)
-            return GetStringValueFromElementBase(elementType, propertyName, allowUnset, out propertyValue);
-
+         {
+            parameter = GetStringValueFromElementBase(elementType, propertyName, allowUnset, out propertyValue);
+            if (parameter == null)
+            {
+               parameter = GetStringValueFromElementBase(elementType, propertyName + "[Type]", allowUnset, out propertyValue);
+            }
+         }
          return parameter;
       }
 
@@ -908,9 +917,13 @@ namespace Revit.IFC.Export.Utility
 
          Element elemType = document.GetElement(typeId);
          if (elemType != null)
-            return GetIntValueFromElement(elemType, propertyName, out propertyValue);
+         {
+            parameter = GetIntValueFromElement(elemType, propertyName, out propertyValue);
+            if (parameter == null)
+               parameter = GetIntValueFromElement(elemType, propertyName + "[Type]", out propertyValue);
+         }
 
-         return null;
+         return parameter;
       }
 
       /// <summary>
