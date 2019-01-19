@@ -5,22 +5,34 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RevitIFCTools"
         mc:Ignorable="d"
-        Title="GeneratePsetDefinitions" Height="300" Width="502.998">
+        Title="GeneratePsetDefinitions" Height="461.182" Width="644.998">
    <Grid>
       <Grid.RowDefinitions>
-         <RowDefinition Height="233*"/>
-         <RowDefinition Height="37*"/>
+         <RowDefinition Height="105*"/>
+         <RowDefinition Height="13*"/>
       </Grid.RowDefinitions>
-      <TextBox x:Name="textBox_PSDSourceDir" HorizontalAlignment="Left" Height="23" Margin="18,29,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="377"/>
-      <TextBox x:Name="textBox_OutputFile" HorizontalAlignment="Left" Height="23" Margin="18,82,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="377"/>
-      <Label x:Name="label" Content="Select top level folder to search all psd directories:" HorizontalAlignment="Left" Margin="18,3,0,0" VerticalAlignment="Top"/>
-      <Label x:Name="label_Copy" Content="Specify output file:" HorizontalAlignment="Left" Margin="18,56,0,0" VerticalAlignment="Top"/>
-      <Button x:Name="button_PSDSourceDir" Content="Browse ..." HorizontalAlignment="Left" Margin="412,29,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="button_PSDSourceDir_Click"/>
-      <Button x:Name="button_OutputDir" Content="Browse ..." HorizontalAlignment="Left" Margin="412,82,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="button_OutputFile_Click"/>
-      <TextBox x:Name="textBox_OutputMsg" HorizontalAlignment="Left" Height="94" Margin="18,130,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="377" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
-      <Button x:Name="button_Cancel" Content="Cancel" HorizontalAlignment="Left" Margin="412,10.4,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Click="button_Cancel_Click"/>
-      <Button x:Name="button_Go" Content="Go" HorizontalAlignment="Left" Margin="332,10.4,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Click="button_Go_Click"/>
-      <CheckBox x:Name="checkBox_Dump" Content="Dump&#xD;&#xA;Results" HorizontalAlignment="Left" Margin="412,130,0,0" VerticalAlignment="Top" Height="30" Width="75"/>
+      <TextBox x:Name="textBox_PSDSourceDir" HorizontalAlignment="Left" Height="23" Margin="18,29,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="511"/>
+      <TextBox x:Name="textBox_OutputFile" HorizontalAlignment="Left" Height="23" Margin="18,82,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="511"/>
+      <Label x:Name="label" Content="Select top level folder to search all psd directories:" HorizontalAlignment="Left" Margin="18,3,0,0" VerticalAlignment="Top" Height="26" Width="276"/>
+      <Label x:Name="label_Copy" Content="Specify output file:" HorizontalAlignment="Left" Margin="18,56,0,0" VerticalAlignment="Top" Height="26" Width="377"/>
+      <Button x:Name="button_PSDSourceDir" Content="Browse ..." HorizontalAlignment="Left" Margin="545,29,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="button_PSDSourceDir_Click"/>
+      <Button x:Name="button_OutputDir" Content="Browse ..." HorizontalAlignment="Left" Margin="545,82,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="button_OutputFile_Click"/>
+      <TextBox x:Name="textBox_OutputMsg" HorizontalAlignment="Left" Height="128" Margin="18,233,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="511" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
+      <Button x:Name="button_Cancel" Content="Cancel" HorizontalAlignment="Left" Margin="545,10,0,0" Grid.Row="1" Width="75" Click="button_Cancel_Click" Height="20" VerticalAlignment="Top"/>
+      <Button x:Name="button_Go" Content="Go" HorizontalAlignment="Left" Margin="465,10,0,0" Grid.Row="1" Width="75" Click="button_Go_Click" Height="20" VerticalAlignment="Top"/>
+      <Grid Grid.RowSpan="2">
+         <Grid.RowDefinitions>
+            <RowDefinition Height="105*"/>
+            <RowDefinition Height="13*"/>
+         </Grid.RowDefinitions>
+         <TextBox x:Name="textBox_SharedParFile" HorizontalAlignment="Left" Height="23" Margin="18,138,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="510"/>
+         <Label x:Name="label_SharedParFile" Content="Specify Revit Shared Parameter file:" HorizontalAlignment="Left" Margin="18,112,0,0" VerticalAlignment="Top" Height="26" Width="377"/>
+         <CheckBox x:Name="checkBox_Dump" Content="Dump&#xA;Results" HorizontalAlignment="Left" Margin="545,240,0,0" VerticalAlignment="Top" Height="30" Width="75"/>
+         <TextBox x:Name="textBox_ShParFileType" HorizontalAlignment="Left" Height="23" Margin="18,194,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="510"/>
+         <Label x:Name="label_SharedParFile_Copy" Content="Specify Revit Shared Parameter file for [Type]:" HorizontalAlignment="Left" Margin="18,168,0,0" VerticalAlignment="Top" Height="26" Width="377"/>
 
+      </Grid>
+      <Button x:Name="button_BrowseSharedParFile" Content="Browse ..." HorizontalAlignment="Left" Margin="545,137,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="Button_BrowseSharedParFile_Click"/>
+      <Button x:Name="button_BrowseSharedParFileType" Content="Browse ..." HorizontalAlignment="Left" Margin="545,193,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="Button_BrowseSharedParFileType_Click"/>
    </Grid>
 </Window>

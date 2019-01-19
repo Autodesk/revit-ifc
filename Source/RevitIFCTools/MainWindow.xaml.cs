@@ -65,5 +65,11 @@ namespace RevitIFCTools
          RevitIFCTools.ParameterExpr.ExprTester exprTest = new ParameterExpr.ExprTester();
          exprTest.ShowDialog();
       }
+
+      private void Button_GenGUID_Click(object sender, RoutedEventArgs e)
+      {
+         Guid newGuid = Guid.NewGuid();
+         TextBox_GUID.Text = newGuid.ToString();
+      }
    }
 }
