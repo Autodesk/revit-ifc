@@ -35,7 +35,6 @@ using System.Windows.Navigation;
 using System.Windows.Forms;
 using System.IO;
 using Revit.IFC.Common.Utility;
-using Autodesk.Revit.DB;
 using System.Xml.Linq;
 using RevitIFCTools.PropertySet;
 
