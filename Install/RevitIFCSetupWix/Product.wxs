@@ -97,11 +97,23 @@
          <Component Id = "COMP_IFC2X3TC1_XSD" Guid="AAD139D2-7951-48A9-A466-2E711DFCF184">
             <File Id ="FILE_IFC2X3TC1_XSD" Name="IFC2X3_TC1.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC2X3_TC1.xsd" KeyPath="yes" />
          </Component>
-         <Component Id = "COMP_IFCC4ADD1_XSD" Guid="66273422-A0EE-467A-9150-4DBF7A85F9A7">
-            <File Id ="FILE_IFC4ADD1_XSD" Name="IFC4_ADD1.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC4_ADD1.xsd" KeyPath="yes" />
-         </Component>
          <Component Id = "COMP_IFCC4ADD2_XSD" Guid="05AB17B7-9308-4F82-AF5B-EBE7C0485E3C">
             <File Id ="FILE_IFC4ADD2_XSD" Name="IFC4_ADD2.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC4_ADD2.xsd" KeyPath="yes" />
+         </Component>
+         <Component Id = "COMP_IFC_Shared_Parameters_RevitIFCBuiltIn_TXT" Guid="ADFF1BAB-14BC-4722-988E-4C37398973E1">
+            <File Id ="FILE_IFC_Shared_Parameters_RevitIFCBuiltIn" Name="IFC Shared Parameters-RevitIFCBuiltIn.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC Shared Parameters-RevitIFCBuiltIn.txt" KeyPath="yes" />
+         </Component>
+         <Component Id = "COMP_IFC_Shared_Parameters_RevitIFCBuiltIn_ALL_TXT" Guid="BD6EB78A-7AED-40C3-9B24-AA74652A3C25">
+            <File Id ="FILE_IFC_Shared_Parameters_RevitIFCBuiltIn_ALL" Name="IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt" KeyPath="yes" />
+         </Component>
+         <Component Id = "COMP_IFC_Shared_Parameters_RevitIFCBuiltIn_TYPE_TXT" Guid="46AF7108-ED20-4AE8-9E08-49A49D04E22D">
+            <File Id ="FILE_IFC_Shared_Parameters_RevitIFCBuiltIn_TYPE" Name="IFC Shared Parameters-RevitIFCBuiltIn-Type.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC Shared Parameters-RevitIFCBuiltIn-Type.txt" KeyPath="yes" />
+         </Component>
+         <Component Id = "COMP_IFC_Shared_Parameters_RevitIFCBuiltIn_TYPE_ALL_TXT" Guid="FF5BBFF3-033E-4742-8EAE-5BEAE4FF8C81">
+            <File Id ="FILE_IFC_Shared_Parameters_RevitIFCBuiltIn_TYPE_ALL" Name="IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL.txt" KeyPath="yes" />
+         </Component>
+            <Component Id = "COMP_IFCCertifiedEntitiesAndPSets_JSON" Guid="D7609AF6-AF1B-4190-BE0A-60158CDFDE80">
+            <File Id ="FILE_IFCCertifiedEntitiesAndPSets_JSON" Name="IFCCertifiedEntitiesAndPSets.json" Source="$(var.ProjectDir)..\Program Files to Install\IFCCertifiedEntitiesAndPSets.json" KeyPath="yes" />
          </Component>
         <Component Id = "COMP_IFC_Addin_manifest" Guid="EC8783CA-DAE8-4233-B714-BB16B5BDBAC3">
           <File Id ="FILE_Export_manifest" Name="Revit.IFC.addin" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.addin" KeyPath="yes" />

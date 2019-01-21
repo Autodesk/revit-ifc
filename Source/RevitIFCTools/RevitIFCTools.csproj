@@ -158,10 +158,6 @@
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="IFC4_ADD1.xsd">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="IFC4_ADD2.xsd">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -196,11 +192,27 @@
       <Name>Revit.IFC.Export</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="IFC Shared Parameters-RevitIFCBuiltIn-Type.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="IFC Shared Parameters-RevitIFCBuiltIn.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\Program Files (x86)\Revit IFC 2019\" /F /R /Y /I
-xcopy "$(TargetDir)\IFC*.xsd" "C:\Program Files (x86)\Revit IFC 2019\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I
+xcopy "$(TargetDir)IFC*.xsd" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I
+xcopy "$(TargetDir)IFC Shared Parameters*.txt" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I
+xcopy "$(TargetDir)IFCCertifiedEntitiesAndPSets.json" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I
+</PostBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
