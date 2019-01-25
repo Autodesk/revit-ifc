@@ -23,6 +23,7 @@
          <ComponentGroupRef Id="ProductComponents" />
          <ComponentGroupRef Id="ProductResourceComponents" />
          <ComponentGroupRef Id="ProductFRFiles" />
+         <ComponentGroupRef Id="ProductDEFiles" />
          <ComponentGroupRef Id="ProductContents" />
       </Feature>
       <Feature Id="ProductDocumentation" Title="Revit IFC Documentation" Level="1000" ConfigurableDirectory='INSTALLRESOURCE'>
@@ -44,6 +45,7 @@
                        <Directory Id="INSTALLDIR" Name="2019">
                          <Directory Id="INSTALLRESOURCE" Name="Resource" />
                          <Directory Id="INSTALLFRUI" Name="fr" />
+                         <Directory Id="INSTALLDEUI" Name="de" />
                        </Directory>
                      </Directory>
                   </Directory>
@@ -145,6 +147,11 @@
       <ComponentGroup Id="ProductFRFiles" Directory="INSTALLFRUI">
          <Component Id = "COMP_IFC_ResourceFR_DLL" Guid="ACC9C313-F8EF-4DBB-A0DE-55D662E4857D">
             <File Id ="FILE_Ifc_ResourceFR_DLL" Name="IFCExportUIOverride.resources.dll" Source="$(var.IFCExporterUIOverride.TargetDir)fr\IFCExportUIOverride.resources.dll" KeyPath="yes" />
+         </Component>
+      </ComponentGroup>
+      <ComponentGroup Id="ProductDEFiles" Directory="INSTALLDEUI">
+         <Component Id = "COMP_IFC_ResourceDE_DLL" Guid="23BD267A-652F-473A-8DF6-6302C7D14D54">
+            <File Id ="FILE_Ifc_ResourceDE_DLL" Name="IFCExportUIOverride.resources.dll" Source="$(var.IFCExporterUIOverride.TargetDir)de\IFCExportUIOverride.resources.dll" KeyPath="yes" />
          </Component>
       </ComponentGroup>
    </Fragment>

@@ -1,0 +1,789 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ExportBaseQuantities" xml:space="preserve">
+    <value>Basismengen exportieren</value>
+  </data>
+  <data name="ExportPlanViewElements" xml:space="preserve">
+    <value>2D-Draufsichtselemente exportieren</value>
+  </data>
+  <data name="ExportRevitPropertySets" xml:space="preserve">
+    <value>Revit-Eigenschaftensätze exportieren</value>
+  </data>
+  <data name="FileType" xml:space="preserve">
+    <value>Dateityp</value>
+  </data>
+  <data name="FileVersion" xml:space="preserve">
+    <value>Dateiversion</value>
+  </data>
+  <data name="IFCMVD2x3CV2" xml:space="preserve">
+    <value>IFC 2x3 Coordination View 2.0</value>
+  </data>
+  <data name="IFCMVDBCA" xml:space="preserve">
+    <value>IFC 2x2 Singapore BCA e-Plan Check</value>
+  </data>
+  <data name="IFCMVDGSA" xml:space="preserve">
+    <value>IFC 2x3 GSA Concept Design BIM 2010</value>
+  </data>
+  <data name="IFCVersion2x2" xml:space="preserve">
+    <value>IFC 2x2 Coordination View</value>
+  </data>
+  <data name="IFCVersion2x3" xml:space="preserve">
+    <value>IFC 2x3 Coordination View</value>
+  </data>
+  <data name="IFCVersionUnrecognized" xml:space="preserve">
+    <value>Unbekannte IFC-Version</value>
+  </data>
+  <data name="IncludeSpaceBoundaries" xml:space="preserve">
+    <value>Raumbegrenzungen</value>
+  </data>
+  <data name="InSessionConfiguration" xml:space="preserve">
+    <value>&lt;Aktuelle Einstellungen&gt;</value>
+  </data>
+  <data name="SpaceBoundaries" xml:space="preserve">
+    <value>Raumbegrenzungen</value>
+  </data>
+  <data name="SpaceBoundaries1stLevel" xml:space="preserve">
+    <value>1. Ebene</value>
+  </data>
+  <data name="SpaceBoundaries2ndLevel" xml:space="preserve">
+    <value>2. Ebene</value>
+  </data>
+  <data name="SpaceBoundariesNone" xml:space="preserve">
+    <value>Keine</value>
+  </data>
+  <data name="SpaceBoundariesUnrecognized" xml:space="preserve">
+    <value>Unbekannte Raumbegrenzungsebene</value>
+  </data>
+  <data name="Use2DRoomBoundariesForRoomVolume" xml:space="preserve">
+    <value>2D-Raumbegrenzungen für Raumvolumen verwenden</value>
+  </data>
+  <data name="UseFamilyAndTypeNameForReferences" xml:space="preserve">
+    <value>Familien- und Typnamen als Referenzen verwenden</value>
+  </data>
+  <data name="ExportVisibleElementsInView" xml:space="preserve">
+    <value>Nur in der Ansicht sichtbare Elemente exportieren</value>
+  </data>
+  <data name="ExportPartsAsBuildingElements" xml:space="preserve">
+    <value>Teile als Gebäudeelemente exportieren</value>
+  </data>
+  <data name="ExportIFCCommonPropertySets" xml:space="preserve">
+    <value>Allgemeine IFC-Eigenschaftensätze exportieren</value>
+  </data>
+  <data name="IFCMVDFMHandOver" xml:space="preserve">
+    <value>IFC 2x3 Basic FM Handover View</value>
+  </data>
+  <data name="ExportBoundingBox" xml:space="preserve">
+    <value>Begrenzungsrahmen exportieren</value>
+  </data>
+  <data name="ExportSchedulesAsPsets" xml:space="preserve">
+    <value>Bauteillisten als Eigenschaftensätze exportieren</value>
+  </data>
+  <data name="IncludeIfcSiteElevation" xml:space="preserve">
+    <value>IFCSITE-Höhe in lokalen Plazierungsursprung auf Grundstück mit einbeziehen</value>
+  </data>
+  <data name="UseCoarseTessellation" xml:space="preserve">
+    <value>Grobe Tesselierung für einige BReps verwenden</value>
+  </data>
+  <data name="StoreIFCGUID" xml:space="preserve">
+    <value>IFC-GUID nach dem Export in einem Elementparameter speichern</value>
+  </data>
+  <data name="IFCMVD4CV2" xml:space="preserve">
+    <value>IFC 4 Coordination View 2.0</value>
+  </data>
+  <data name="PropertySets" xml:space="preserve">
+    <value>Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsIFCCommon" xml:space="preserve">
+    <value>Nur allgemeine IFC-Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsInternalRevit" xml:space="preserve">
+    <value>Nur Revit-Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsNone" xml:space="preserve">
+    <value>Keine</value>
+  </data>
+  <data name="PropertySetsRevitPlusIFC" xml:space="preserve">
+    <value>Revit-Eigenschaftensätze, allgemeine IFC-Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsSchedules" xml:space="preserve">
+    <value>Nur Bauteillisten-Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsSchedulesPlusRevit" xml:space="preserve">
+    <value>Revit-Eigenschaftensätze, allgemeine IFC-Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsSchedulesPlusIFC" xml:space="preserve">
+    <value>Allgmeine IFC-Eigenschaftensätze, Bauteillisten-Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsSchedulesPlusRevitPlusIFC" xml:space="preserve">
+    <value>Revit-Eigenschaftensätze, allgemeine IFC-Eigenschaftensätze, Bauteillisten-Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsUnrecognized" xml:space="preserve">
+    <value>Unbekannte Eigenschaftensätze</value>
+  </data>
+  <data name="ActivePhase" xml:space="preserve">
+    <value>Zu exportierende Phase</value>
+  </data>
+  <data name="DefaultPhase" xml:space="preserve">
+    <value>Standardeinstellung</value>
+  </data>
+  <data name="Default" xml:space="preserve">
+    <value>Voreingestellt {0}</value>
+  </data>
+  <data name="PropertySetsIFCCommonPlusUserDefined" xml:space="preserve">
+    <value>Allgemeine IFC, benutzerdefiniert</value>
+  </data>
+  <data name="PropertySetsInternalRevitPlusUserDefined" xml:space="preserve">
+    <value>Revit-Eigenschaftensätze, benutzerdefinierte Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsRevitPlusIFCPlusUserDefined" xml:space="preserve">
+    <value>Revit-Eigenschaftensätze, allgemeine IFC-Eigenschaftensätze, benutzerdefinierte Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsSchedulesPlusIFCPlusUserDefined" xml:space="preserve">
+    <value>Allgmeine IFC-Eigenschaftensätze, Bauteillisten-Eigenschaftensätze, benutzerdefinierte Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsSchedulesPlusRevitPlusIFCPlusUserDefined" xml:space="preserve">
+    <value>Revit-Eigenschaftensätze, allgemeine IFC-Eigenschaftensätze, Bauteillisten-Eigenschaftensätze, benutzerdefinierte Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsSchedulesPlusRevitPlusUserDefined" xml:space="preserve">
+    <value>Revit-Eigenschaftensätze, Bauteillisten-Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsSchedulesPlusUserDefined" xml:space="preserve">
+    <value>Bauteillisten-Eigenschaftensätze, benutzerdefinierte Eigenschaftensätze</value>
+  </data>
+  <data name="PropertySetsUserDefined" xml:space="preserve">
+    <value>Nur benutzerdefinierte Eigenschaftensätze</value>
+  </data>
+  <data name="ExportLinkedFiles" xml:space="preserve">
+    <value>Verknüpfte Dateien als separate IFC's exportieren</value>
+  </data>
+  <data name="ExportUserDefinedPsetsFileName" xml:space="preserve">
+    <value>Dateiname der benutzerdefinierten Eigenschaftensätze</value>
+  </data>
+  <data name="UserDefinedParameterSets" xml:space="preserve">
+    <value>Benutzerdefinierte Parametersätze</value>
+  </data>
+  <data name="IFCExportProcessError" xml:space="preserve">
+    <value>Der IFC Export-Vorgang hat einen Fehler verursacht: {0}.</value>
+  </data>
+  <data name="LinkInstanceExportCantCreateDoc" xml:space="preserve">
+    <value>Es konnte keine temporäre Datei für den Export der Referenz erstellt werden. ID: {0}</value>
+  </data>
+  <data name="LinkInstanceExportCantFindDoc" xml:space="preserve">
+    <value>Die Referenz konnte nicht gefudnen werden. ID {0}</value>
+  </data>
+  <data name="LinkInstanceExportErrorMain" xml:space="preserve">
+    <value>{0} Referenzen konnten nicht exportiert werden</value>
+  </data>
+  <data name="LinkInstanceExportErrorPath" xml:space="preserve">
+    <value>Der Pfad für die Referenz existiert nicht. ID:{0}</value>
+  </data>
+  <data name="LinkInstanceExportNonConformal" xml:space="preserve">
+    <value>Folgende Referenzen waren nicht konform: ID {0}.</value>
+  </data>
+  <data name="LinkInstanceExportHasReflection" xml:space="preserve">
+    <value>Die Referenz(en) wurden gespiegelt: ID:{0}. Um gespiegelte Referenzen zu exportieren, spiegeln Sie die referenzierte Geometrie im Ursprungsdokument und referenzieren Sie diese Datei erneut.</value>
+  </data>
+  <data name="LinkInstanceExportScaled" xml:space="preserve">
+    <value>Folgende referenzen wurden angepasst: ID {0}.</value>
+  </data>
+  <data name="IFCExport" xml:space="preserve">
+    <value>IFC exportieren</value>
+  </data>
+  <data name="Classification" xml:space="preserve">
+    <value>Klassifizierungseinstellungen…</value>
+  </data>
+  <data name="DistributionPoint" xml:space="preserve">
+    <value>Vertriebsstelle</value>
+  </data>
+  <data name="Home" xml:space="preserve">
+    <value>Hauptseite</value>
+  </data>
+  <data name="InternalAddress" xml:space="preserve">
+    <value>Interne Adresse</value>
+  </data>
+  <data name="ManditoryFieldsNotEmpty" xml:space="preserve">
+    <value>Pflichtfelder wie Name, Quelle (Herausgeber) und Edition können nicht leer sein.</value>
+  </data>
+  <data name="Office" xml:space="preserve">
+    <value>Büro</value>
+  </data>
+  <data name="Site" xml:space="preserve">
+    <value>Grundstück</value>
+  </data>
+  <data name="UpdateProjectAddress" xml:space="preserve">
+    <value>Priojektadresse aktualisieren</value>
+  </data>
+  <data name="UserDefined" xml:space="preserve">
+    <value>Benutzerdefiniert</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Projektadresse…</value>
+  </data>
+  <data name="AddressLine1" xml:space="preserve">
+    <value>Adresse Zeile 1</value>
+  </data>
+  <data name="AddressLine2" xml:space="preserve">
+    <value>Adresse Zeile 2</value>
+  </data>
+  <data name="Advanced" xml:space="preserve">
+    <value>Erweitert</value>
+  </data>
+  <data name="AltUIVer" xml:space="preserve">
+    <value>Alternative Benutzeroberfläche</value>
+  </data>
+  <data name="ApplicationName" xml:space="preserve">
+    <value>Name der Anwendung</value>
+  </data>
+  <data name="Assignments" xml:space="preserve">
+    <value>Zuweisungen</value>
+  </data>
+  <data name="Authorization" xml:space="preserve">
+    <value>Autorisierung</value>
+  </data>
+  <data name="AuthorsEMail" xml:space="preserve">
+    <value>E-Mail des Verfassers</value>
+  </data>
+  <data name="AuthorsName" xml:space="preserve">
+    <value>Name des Verfassers</value>
+  </data>
+  <data name="Browse" xml:space="preserve">
+    <value>Durchsuchen…</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="City" xml:space="preserve">
+    <value>Stadt</value>
+  </data>
+  <data name="ClassificationFieldName" xml:space="preserve">
+    <value>Klassifizierungsfeldname</value>
+  </data>
+  <data name="Country" xml:space="preserve">
+    <value>Land</value>
+  </data>
+  <data name="CurrentSelectedSetup" xml:space="preserve">
+    <value>Aktuell ausgewählte Einstellungen</value>
+  </data>
+  <data name="DeleteOldSetups" xml:space="preserve">
+    <value>Alte IFC-Export Einstellungen löschen</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="DocumentationLocation" xml:space="preserve">
+    <value>Speicherort der Dateien</value>
+  </data>
+  <data name="Edition" xml:space="preserve">
+    <value>Edition</value>
+  </data>
+  <data name="EditionDate" xml:space="preserve">
+    <value>Editionsdatum</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="ExportElementsVisibleInView" xml:space="preserve">
+    <value>Nur in der Ansicht sichtbare Elemente exportieren</value>
+  </data>
+  <data name="ExportInternalRevitPropertySets" xml:space="preserve">
+    <value>Interne Revit-Eingeschaftensätze exportieren</value>
+  </data>
+  <data name="ExportSchedulesAsPropertySets" xml:space="preserve">
+    <value>Bauteillisten als Eigenschaftensätze exportieren</value>
+  </data>
+  <data name="ExportSolidModelsWhenPossible" xml:space="preserve">
+    <value>Verwendung der kombinierten Körpermodelldarstellung zulassen</value>
+  </data>
+  <data name="ExportUserDefinedPropertySets" xml:space="preserve">
+    <value>Benutzerdefinierte Eigenschaftensätze exportierem</value>
+  </data>
+  <data name="FileDescription" xml:space="preserve">
+    <value>Dateibeschreibung</value>
+  </data>
+  <data name="FileHeader" xml:space="preserve">
+    <value>Dateikopfzeile</value>
+  </data>
+  <data name="FileSchema" xml:space="preserve">
+    <value>Dateischema</value>
+  </data>
+  <data name="IFC" xml:space="preserve">
+    <value>IFC</value>
+  </data>
+  <data name="IFCAssignments" xml:space="preserve">
+    <value>IFC Zuweisungen</value>
+  </data>
+  <data name="IFCExt" xml:space="preserve">
+    <value>ifc</value>
+  </data>
+  <data name="IFCFiles" xml:space="preserve">
+    <value>IFC-SPF|*.ifc</value>
+  </data>
+  <data name="IFCMVDFMExtendedHandOver" xml:space="preserve">
+    <value>IFC2x3 COBie 2.4 Design Deliverable View</value>
+  </data>
+  <data name="IFCUnknown" xml:space="preserve">
+    <value>Unbekannte Einstellung für den Dateityp</value>
+  </data>
+  <data name="IFCVersion" xml:space="preserve">
+    <value>IFC-Version</value>
+  </data>
+  <data name="IFCXML" xml:space="preserve">
+    <value>IFC XML</value>
+  </data>
+  <data name="IFCXMLExt" xml:space="preserve">
+    <value>ifcxml</value>
+  </data>
+  <data name="IFCXMLFiles" xml:space="preserve">
+    <value>Industry Foundation Classes XML(.ifcxml)|*.ifcxml</value>
+  </data>
+  <data name="IFCXMLZIP" xml:space="preserve">
+    <value>Komprimierte IFC-XML</value>
+  </data>
+  <data name="IFCXMLZIPExt" xml:space="preserve">
+    <value>ifczip</value>
+  </data>
+  <data name="IFCZIP" xml:space="preserve">
+    <value>IFC zippé</value>
+  </data>
+  <data name="IFCZIPExt" xml:space="preserve">
+    <value>ifczip</value>
+  </data>
+  <data name="IFCZIPFiles" xml:space="preserve">
+    <value>Zipped Industry Foundation Classes XML(.ifczip)|*.ifczip</value>
+  </data>
+  <data name="InternalLocation" xml:space="preserve">
+    <value>Interner Standort</value>
+  </data>
+  <data name="ModifySetup" xml:space="preserve">
+    <value>Einstellungen ändern…</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="NewExportSetup" xml:space="preserve">
+    <value>Neue Export Einstellungen</value>
+  </data>
+  <data name="NewName" xml:space="preserve">
+    <value>Neuer Name</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Options" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="Organization" xml:space="preserve">
+    <value>Unternehmen</value>
+  </data>
+  <data name="OriginalName" xml:space="preserve">
+    <value>Ursprünglicher Name</value>
+  </data>
+  <data name="PhaseToExport" xml:space="preserve">
+    <value>Zu exportierende Phase</value>
+  </data>
+  <data name="POBox" xml:space="preserve">
+    <value>Postfach</value>
+  </data>
+  <data name="PostalCode" xml:space="preserve">
+    <value>Postleitzahl</value>
+  </data>
+  <data name="Purpose" xml:space="preserve">
+    <value>Zweck</value>
+  </data>
+  <data name="RenameExportSetup" xml:space="preserve">
+    <value>Export-Einstellung umbenennen</value>
+  </data>
+  <data name="SourceFileName" xml:space="preserve">
+    <value>Name von Quelldatei</value>
+  </data>
+  <data name="SourcePublisher" xml:space="preserve">
+    <value>Quelle (Herausgeber)</value>
+  </data>
+  <data name="SplitWallsColumsDuctsByLevel" xml:space="preserve">
+    <value>Wände, Stützen, Luftkanäle nach Ebene teilen</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>Region</value>
+  </data>
+  <data name="UnkownAltUIVer" xml:space="preserve">
+    <value>Unbekannte alternative Benutzeroberflächenversion</value>
+  </data>
+  <data name="UpdateExportSetups" xml:space="preserve">
+    <value>IFC Export Einstellung aktualisieren</value>
+  </data>
+  <data name="UpdateProjectInformation" xml:space="preserve">
+    <value>Projektinformationen aktualisieren</value>
+  </data>
+  <data name="UseCoarseTessellationForBReps" xml:space="preserve">
+    <value>Grobe Tesselierung für einige Breps und Profile verwenden</value>
+  </data>
+  <data name="UseFamilyAndTypeNameForReference" xml:space="preserve">
+    <value>Familien- und Typnamen als Referenz verwenden</value>
+  </data>
+  <data name="UserDefinedPurpose" xml:space="preserve">
+    <value>Benutzerdefinierte Absicht</value>
+  </data>
+  <data name="UseRoomBoundariesForRoomVolume" xml:space="preserve">
+    <value>2D-Raumbegrenzungen für Raumvolumen verwenden</value>
+  </data>
+  <data name="VersionNumber" xml:space="preserve">
+    <value>Versionsnummer</value>
+  </data>
+  <data name="ValueSetByExportOption" xml:space="preserve">
+    <value>…Wert wurde entsprechend der Exporteinstellungen gesetzt</value>
+  </data>
+  <data name="ValueSetOnExport" xml:space="preserve">
+    <value>…Wert wird beim Export gesetzt</value>
+  </data>
+  <data name="ClassificationAltName" xml:space="preserve">
+    <value>Optionaler gemeinsam genutzer Parameter für die Klassifzierung (Vorgabe: ClassificationCode)</value>
+  </data>
+  <data name="ClassificationSystemEdition" xml:space="preserve">
+    <value>Edition</value>
+  </data>
+  <data name="ClassificationSystemName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ClassificationSystemSource" xml:space="preserve">
+    <value>Quelle (Herausgeber)</value>
+  </data>
+  <data name="CloneSetup" xml:space="preserve">
+    <value>Erstelle eine neue Einstellung basierend auf der ausgewählten Einstellung</value>
+  </data>
+  <data name="CreateNewSetup" xml:space="preserve">
+    <value>Neue Export Einstellungen</value>
+  </data>
+  <data name="DeleteSelectedSetup" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Weiter…</value>
+  </data>
+  <data name="RenameSelectedSetup" xml:space="preserve">
+    <value>Ausgewählte Export-Einstellung umbenennen</value>
+  </data>
+  <data name="SaveSetupAndClose" xml:space="preserve">
+    <value>Speichern und Schließen</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>Allgemeine IFC-Eigenschaftensätze exportieren</value>
+  </data>
+  <data name="ExportRoomsInView" xml:space="preserve">
+    <value>Räume in 3D-Ansichten exportieren</value>
+  </data>
+  <data name="UseActiveViewForGeometry" xml:space="preserve">
+    <value>Aktive Ansicht beim Erstellen von Geomatrie verwenden</value>
+  </data>
+  <data name="MultipleFiles" xml:space="preserve">
+    <value>Mehrere Dateien</value>
+  </data>
+  <data name="TessellationDetails" xml:space="preserve">
+    <value>Detailgenauigkeit für einige Geometrieelemente</value>
+  </data>
+  <data name="DetailLevelExtraLow" xml:space="preserve">
+    <value>Sehr niedrig</value>
+  </data>
+  <data name="DetailLevelHigh" xml:space="preserve">
+    <value>Hoch</value>
+  </data>
+  <data name="DetailLevelLow" xml:space="preserve">
+    <value>Niedrig</value>
+  </data>
+  <data name="DetailLevelMedium" xml:space="preserve">
+    <value>Mittel</value>
+  </data>
+  <data name="DefaultFileName" xml:space="preserve">
+    <value>Projekt</value>
+  </data>
+  <data name="CurrentOptions" xml:space="preserve">
+    <value>Aktuelle Einstellungen</value>
+  </data>
+  <data name="ProjectToExport" xml:space="preserve">
+    <value>Zu exportierende Projekte</value>
+  </data>
+  <data name="SelectOneOrMoreProjects" xml:space="preserve">
+    <value>Bitte wählen Sie mindestens ein Projekt zum Exportieren aus</value>
+  </data>
+  <data name="IFCExportProcessGenericError" xml:space="preserve">
+    <value>Der IFC Export-Vorgang hat einen Fehler verursacht.</value>
+  </data>
+  <data name="IFCVersionSelected" xml:space="preserve">
+    <value>IFC-Version:</value>
+  </data>
+  <data name="DocNotSaved" xml:space="preserve">
+    <value>Datei nicht gespeichert</value>
+  </data>
+  <data name="IFC2x3FM" xml:space="preserve">
+    <value>IFC2x3 COBie 2.4 Design Deliverable View</value>
+  </data>
+  <data name="IFC4DTV" xml:space="preserve">
+    <value>IFC4 Design Transfer View</value>
+  </data>
+  <data name="IFC4RV" xml:space="preserve">
+    <value>IFC4 Reference View</value>
+  </data>
+  <data name="Help" xml:space="preserve">
+    <value>Wie gebe ich eine Export Einstellungen an</value>
+  </data>
+  <data name="ExportSpecificSchedules" xml:space="preserve">
+    <value>Nur Bauteillisten mit IFC, Pset oder Allgemein im Titel exportieren</value>
+  </data>
+  <data name="AdditionalContent" xml:space="preserve">
+    <value>Zusätzliche Inhalte</value>
+  </data>
+  <data name="AddressInformation" xml:space="preserve">
+    <value>Projektadresse</value>
+  </data>
+  <data name="ClassificationSetting" xml:space="preserve">
+    <value>Klassifizierungseinstellungen</value>
+  </data>
+  <data name="ExportUserDefinedParameterMappingTable" xml:space="preserve">
+    <value>Parameterzuordnungstabelle exportieren</value>
+  </data>
+  <data name="FileHeaderInformation" xml:space="preserve">
+    <value>Kopfzeileninformationen…</value>
+  </data>
+  <data name="FileName" xml:space="preserve">
+    <value>Dateiname:</value>
+  </data>
+  <data name="IFCXMLZIPFiles" xml:space="preserve">
+    <value>Industry Foundation Classes XML zippé (.ifczip)|*.ifczip</value>
+  </data>
+  <data name="LevelOfDetail" xml:space="preserve">
+    <value>Detailgenauigkeit</value>
+  </data>
+  <data name="ModifySetupTitle" xml:space="preserve">
+    <value>Einstellungen ändern…</value>
+  </data>
+  <data name="FileExists" xml:space="preserve">
+    <value>{0} ist bereits vorhanden. Möchten Sie die Datei ersetzen?</value>
+  </data>
+  <data name="Setup" xml:space="preserve">
+    <value>Setup</value>
+  </data>
+  <data name="UserDefinedParameterMappingTable" xml:space="preserve">
+    <value>Benutzerdefinierte Parameterzuordnungstabelle</value>
+  </data>
+  <data name="ValidPathExists" xml:space="preserve">
+    <value>Pfad ist nicht vorhanden</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>v.</value>
+  </data>
+  <data name="ExportIFC" xml:space="preserve">
+    <value>Exportieren</value>
+  </data>
+  <data name="BuildingDescription" xml:space="preserve">
+    <value>Gebäudebeschreibung</value>
+  </data>
+  <data name="BuildingName" xml:space="preserve">
+    <value>Gebäudename / Gebäudenummer</value>
+  </data>
+  <data name="BuildingType" xml:space="preserve">
+    <value>Gebäudeart</value>
+  </data>
+  <data name="CompanyEmail" xml:space="preserve">
+    <value>E-Mail des Unternehmens</value>
+  </data>
+  <data name="CompanyInfo" xml:space="preserve">
+    <value>Unternehmensinformation</value>
+  </data>
+  <data name="CompanyName" xml:space="preserve">
+    <value>Name des Unternehmens</value>
+  </data>
+  <data name="CompanyPhone" xml:space="preserve">
+    <value>Telefonnummer des Unternehmens</value>
+  </data>
+  <data name="CompanyType" xml:space="preserve">
+    <value>Art des Unternehmens</value>
+  </data>
+  <data name="ConfigurationFilePrefix" xml:space="preserve">
+    <value>IFC Konfiguration</value>
+  </data>
+  <data name="ER_Architecture" xml:space="preserve">
+    <value>Architektur Referenz Austausch</value>
+  </data>
+  <data name="ER_BuildingService" xml:space="preserve">
+    <value>Gebäudetechnik Referenz Austausch</value>
+  </data>
+  <data name="ER_Structural" xml:space="preserve">
+    <value>Tragwerk Referenz Austausch</value>
+  </data>
+  <data name="ExchangeRequirement" xml:space="preserve">
+    <value>Anforderung für Austausch</value>
+  </data>
+  <data name="ExportSelectedSetup" xml:space="preserve">
+    <value>Aktuelle Einstellungen speichern</value>
+  </data>
+  <data name="InternalCoordinates" xml:space="preserve">
+    <value>Interne Koordinaten</value>
+  </data>
+  <data name="KeepTessellatedAsTriangulation" xml:space="preserve">
+    <value>Tesselierte Geomatrie als Triangulation beibehalten</value>
+  </data>
+  <data name="LoadSetup" xml:space="preserve">
+    <value>Einstellungen importieren…</value>
+  </data>
+  <data name="ProjectBasePoint" xml:space="preserve">
+    <value>Basispunkt des Projektes</value>
+  </data>
+  <data name="ProjectDescription" xml:space="preserve">
+    <value>Projektbeschreibung</value>
+  </data>
+  <data name="ProjectInfo" xml:space="preserve">
+    <value>Projektinformation</value>
+  </data>
+  <data name="ProjectName" xml:space="preserve">
+    <value>Projektname</value>
+  </data>
+  <data name="ProjectOrigin" xml:space="preserve">
+    <value>Projektursprung</value>
+  </data>
+  <data name="ProjectPhase" xml:space="preserve">
+    <value>Phase des Projektes</value>
+  </data>
+  <data name="SharedCoordinates" xml:space="preserve">
+    <value>Aktuelle gemeinsam genutzte Koordinaten</value>
+  </data>
+  <data name="SiteDescription" xml:space="preserve">
+    <value>Beschreibung des Grundstücks</value>
+  </data>
+  <data name="SiteLocation" xml:space="preserve">
+    <value>Lage des Grundstücks</value>
+  </data>
+  <data name="SiteSurveyPoint" xml:space="preserve">
+    <value>Vermessungspunkt</value>
+  </data>
+  <data name="StreetAddress" xml:space="preserve">
+    <value>Straße</value>
+  </data>
+  <data name="AssignAddressToBuilding" xml:space="preserve">
+    <value>Adresse dem Gebäude zuweisen</value>
+  </data>
+  <data name="AssignAddressToSite" xml:space="preserve">
+    <value>Adresse dem Grundstück zuweisen</value>
+  </data>
+  <data name="IncludeSteelElements" xml:space="preserve">
+    <value>Stahlbauteile inkludieren</value>
+  </data>
+  <data name="UseOnlyTriangulation" xml:space="preserve">
+    <value>Triangulation erzwingen</value>
+  </data>
+</root>
