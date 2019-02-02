@@ -371,7 +371,7 @@ namespace Revit.IFC.Export.Exporter
                   exportType.SetValueWithPair(IFCEntityType.IfcRamp, predefType);
                   IFCAnyHandle rampTypeHnd = ExporterUtil.CreateGenericTypeFromElement(ramp, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(rampTypeHnd, rampContainerHnd);
-                  productWrapper.AddElement(ramp, rampContainerHnd, placementSetter.LevelInfo, null, true);
+                  productWrapper.AddElement(ramp, rampContainerHnd, placementSetter.LevelInfo, null, true, exportType);
 
                   //Breakdown the Ramp into its components: RampFlights and Landings
                   int rampFlightIndex = 0;
@@ -555,7 +555,7 @@ namespace Revit.IFC.Export.Exporter
 
                         IFCAnyHandle rampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, guid, ownerHistory,
                             localPlacement, representation, exportTypePair.ValidatedPredefinedType);
-                        productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true);
+                        productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true, exportTypePair);
                         CategoryUtil.CreateMaterialAssociation(exporterIFC, rampHnd, bodyData.MaterialIds);
 
                         IFCAnyHandle rampTypeHnd = IFCInstanceExporter.CreateGenericIFCType(exportTypePair, null, exporterIFC.GetFile(), null, null);
@@ -577,7 +577,7 @@ namespace Revit.IFC.Export.Exporter
 
                         IFCAnyHandle rampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, guid, ownerHistory,
                             localPlacement, null, exportTypePair.ValidatedPredefinedType);
-                        productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true);
+                        productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true, exportTypePair);
 
                         IFCAnyHandle rampTypeHnd = IFCInstanceExporter.CreateGenericIFCType(exportTypePair, null, exporterIFC.GetFile(), null, null);
                         ExporterCacheManager.TypeRelationsCache.Add(rampTypeHnd, rampHnd);

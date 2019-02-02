@@ -549,7 +549,7 @@ namespace Revit.IFC.Export.Exporter
                   if (materialProfileSet != null)
                      mpSetUsage = IFCInstanceExporter.CreateMaterialProfileSetUsage(file, materialProfileSet, null, null);
 
-                  productWrapper.AddElement(element, beam, setter, extrusionCreationData, true);
+                  productWrapper.AddElement(element, beam, setter, extrusionCreationData, true, exportType);
 
                   ExportBeamType(exporterIFC, productWrapper, beam, element, exportType.ValidatedPredefinedType);
 
@@ -567,7 +567,7 @@ namespace Revit.IFC.Export.Exporter
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, beam, materialIds);
 
                   // Register the beam's IFC handle for later use by truss and beam system export.
-                  ExporterCacheManager.ElementToHandleCache.Register(element.Id, beam);
+                  ExporterCacheManager.ElementToHandleCache.Register(element.Id, beam, exportType);
                }
             }
 

@@ -155,7 +155,7 @@ namespace Revit.IFC.Export.Exporter
                return false;
 
             // relateToLevel depends on how the AssemblyInstance is being mapped to IFC, above.
-            productWrapper.AddElement(element, assemblyInstanceHnd, levelInfo, null, relateToLevel);
+            productWrapper.AddElement(element, assemblyInstanceHnd, levelInfo, null, relateToLevel, exportAs);
 
             ExporterCacheManager.AssemblyInstanceCache.RegisterAssemblyInstance(element.Id, assemblyInstanceHnd);
 

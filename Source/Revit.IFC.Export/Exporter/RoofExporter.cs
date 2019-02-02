@@ -111,7 +111,7 @@ namespace Revit.IFC.Export.Exporter
                      ExporterCacheManager.TypeRelationsCache.Add(typeHnd, roofHnd);
                   }
 
-                  productWrapper.AddElement(roof, roofHnd, placementSetter.LevelInfo, ecData, true);
+                  productWrapper.AddElement(roof, roofHnd, placementSetter.LevelInfo, ecData, true, exportInfo);
 
                   // will export its host object materials later if it is a roof
                   if (!(roof is RoofBase))

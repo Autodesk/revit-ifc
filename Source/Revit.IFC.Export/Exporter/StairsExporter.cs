@@ -898,7 +898,7 @@ namespace Revit.IFC.Export.Exporter
                   else
                   {
                      // From IFC4 onward, a single geometry Stair will be exported directly as IfcStair without container
-                     productWrapper.AddElement(stair, containedStairHnd, placementSetter.LevelInfo, ecData, true);
+                     productWrapper.AddElement(stair, containedStairHnd, placementSetter.LevelInfo, ecData, true, exportType);
                      StairRampContainerInfo stairRampInfo = new StairRampContainerInfo(containedStairHnd, components, containedStairLocalPlacement);
                      ExporterCacheManager.StairRampContainerInfoCache.AddStairRampContainerInfo(stair.Id, stairRampInfo);
 
@@ -966,7 +966,7 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
                ExporterCacheManager.TypeRelationsCache.Add(stairTypeHnd, stairContainerHnd);
 
-               productWrapper.AddElement(stair, stairContainerHnd, placementSetter.LevelInfo, null, true);
+               productWrapper.AddElement(stair, stairContainerHnd, placementSetter.LevelInfo, null, true, exportType);
 
                // Get List of runs to export their geometry.
                ICollection<ElementId> runIds = stair.GetStairsRuns();
@@ -1033,7 +1033,7 @@ namespace Revit.IFC.Export.Exporter
 
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, stairFlightHnd, bodyData.MaterialIds);
 
-                     productWrapper.AddElement(run, stairFlightHnd, placementSetter.LevelInfo, ecData, false);
+                     productWrapper.AddElement(run, stairFlightHnd, placementSetter.LevelInfo, ecData, false, exportType);
 
                      ExporterCacheManager.HandleToElementCache.Register(stairFlightHnd, run.Id);
                   }
@@ -1103,7 +1103,7 @@ namespace Revit.IFC.Export.Exporter
 
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, landingHnd, bodyData.MaterialIds);
 
-                     productWrapper.AddElement(landing, landingHnd, placementSetter.LevelInfo, ecData, false);
+                     productWrapper.AddElement(landing, landingHnd, placementSetter.LevelInfo, ecData, false, exportType);
                      ExporterCacheManager.HandleToElementCache.Register(landingHnd, landing.Id);
                   }
                }
@@ -1148,7 +1148,7 @@ namespace Revit.IFC.Export.Exporter
 
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, supportHnd, bodyData.MaterialIds);
 
-                     productWrapper.AddElement(support, supportHnd, placementSetter.LevelInfo, ecData, false);
+                     productWrapper.AddElement(support, supportHnd, placementSetter.LevelInfo, ecData, false, exportType);
 
                      ExporterCacheManager.TypeRelationsCache.Add(type, supportHnd);
                   }
@@ -1432,7 +1432,7 @@ namespace Revit.IFC.Export.Exporter
                            IFCAnyHandleUtil.OverrideNameAttribute(newMemberHnd, stairName);
                            CategoryUtil.CreateMaterialAssociation(exporterIFC, memberHnd, bodyData.MaterialIds);
                            components[compIdx].Add(newMemberHnd);
-                           productWrapper.AddElement(null, newMemberHnd, placementSetter.LevelInfo, ecData, false);
+                           productWrapper.AddElement(null, newMemberHnd, placementSetter.LevelInfo, ecData, true);
                         }
                      }
                   }

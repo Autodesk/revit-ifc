@@ -54,7 +54,7 @@ namespace RevitIFCTools
       StreamWriter logF;
 #endif
 
-      private class SharedParameterDef
+      private class SharedParameterDef : ICloneable
       {
          public string Param { get; set; } = "PARAM";
          public Guid ParamGuid {get; set;}
@@ -65,6 +65,21 @@ namespace RevitIFCTools
          public bool Visibility { get; set; } = true;
          public string Description { get; set; }
          public bool UserModifiable { get; set; } = true;
+
+         public virtual object Clone()
+         {
+            SharedParameterDef clonePar = new SharedParameterDef();
+            clonePar.Param = this.Param;
+            clonePar.ParamGuid = this.ParamGuid;
+            clonePar.Name = this.Name;
+            clonePar.ParamType = this.ParamType;
+            clonePar.DataCategory = this.DataCategory;
+            clonePar.GroupId = this.GroupId;
+            clonePar.Visibility = this.Visibility;
+            clonePar.Description = this.Description;
+            clonePar.UserModifiable = this.UserModifiable;
+            return clonePar;
+         }
       }
 
       private class VersionSpecificPropertyDef
@@ -141,8 +156,42 @@ namespace RevitIFCTools
          IEnumerable<XElement> applicableClasses = from el in doc.Descendants(ns+"ClassName") select el;
          IList<string> applClassesList = new List<string>();
          foreach (XElement applClass in applicableClasses)
-            applClassesList.Add(removeInvalidNName(applClass.Value));
+         {
+            string className = removeInvalidNName(applClass.Value);
+            if (!string.IsNullOrEmpty(className))
+               applClassesList.Add(className);
+         }
+
          pset.ApplicableClasses = applClassesList;
+
+         XElement applType = doc.Elements(ns + "PropertySetDef").Elements(ns + "ApplicableTypeValue").FirstOrDefault();
+         if (applType != null)
+         {
+            string applicableType = applType.Value;
+            if (!string.IsNullOrEmpty(applicableType) && !applicableType.Equals("N/A", StringComparison.InvariantCultureIgnoreCase))
+            {
+               // Remove "SELF\" in the applicable type
+               if (applicableType.Contains("SELF\\"))
+                  applicableType = applicableType.Replace("SELF\\", "");
+
+               string[] applTypeStr = applicableType.Split('/','"', '.', '=');
+               pset.ApplicableType = applTypeStr[0];
+               if (applTypeStr.Count() > 1)
+                  pset.PredefinedType = applTypeStr[applTypeStr.Count()-1];
+
+               // If the applicable type contains more than 1 entry, add them into the applicable classes
+               string[] addClasses = pset.ApplicableType.Split(',');
+               if (addClasses.Count() > 1)
+               {
+                  foreach (string addClass in addClasses)
+                  {
+                     string addClassTr = addClass.TrimStart().TrimEnd();
+                     if (!pset.ApplicableClasses.Contains(addClassTr))
+                        pset.ApplicableClasses.Add(addClassTr);
+                  }
+               }
+            }
+         }
 
          IList<PsetProperty> propList = new List<PsetProperty>();
          var pDefs = from p in doc.Descendants(ns + "PropertyDef") select p;
@@ -506,7 +555,7 @@ namespace RevitIFCTools
             tx.Close();
          }
 
-         // Method to initialize all the prosertysets
+         // Method to initialize all the propertysets
          outF.WriteLine("\t\tpublic static void InitCommonPropertySets(IList<IList<PropertySetDescription>> propertySets)");
          outF.WriteLine("\t\t{");
          outF.WriteLine("\t\t\tIList<PropertySetDescription> commonPropertySets = new List<PropertySetDescription>();");
@@ -560,6 +609,10 @@ namespace RevitIFCTools
                         applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
                      outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                   }
+                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
+                     outF.WriteLine("\t\t\t\t{0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
+                     outF.WriteLine("\t\t\t\t{0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                else if (vspecPDef.IfcVersion.Equals("IFC2X3TC1", StringComparison.CurrentCultureIgnoreCase))
                {
@@ -572,33 +625,45 @@ namespace RevitIFCTools
                         applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
                      outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                   }
+                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
+                     outF.WriteLine("\t\t\t\t{0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
+                     outF.WriteLine("\t\t\t\t{0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                //else if (vspecPDef.IfcVersion.Equals("IFC4_ADD1"))
                //{
-                  else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD1", StringComparison.CurrentCultureIgnoreCase))
+               else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD1", StringComparison.CurrentCultureIgnoreCase))
+               {
+                  outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("\t\t\t{");
+                  foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   {
-                     outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
-                     outF.WriteLine("\t\t\t{");
-                     foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
-                     {
-                        string applEnt2 = applEnt;
-                        if (string.IsNullOrEmpty(applEnt))
-                           applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                        outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
-                     }
+                     string applEnt2 = applEnt;
+                     if (string.IsNullOrEmpty(applEnt))
+                        applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
+                     outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                   }
-                  else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD2", StringComparison.CurrentCultureIgnoreCase))
+                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
+                     outF.WriteLine("\t\t\t\t{0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
+                     outF.WriteLine("\t\t\t\t{0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+               }
+               else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD2", StringComparison.CurrentCultureIgnoreCase))
+               {
+                  outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("\t\t\t{");
+                  foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   {
-                     outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
-                     outF.WriteLine("\t\t\t{");
-                     foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
-                     {
-                        string applEnt2 = applEnt;
-                        if (string.IsNullOrEmpty(applEnt))
-                           applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                        outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
-                     }
+                     string applEnt2 = applEnt;
+                     if (string.IsNullOrEmpty(applEnt))
+                        applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
+                     outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                   }
+                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
+                     outF.WriteLine("\t\t\t\t{0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
+                     outF.WriteLine("\t\t\t\t{0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+               }
                else
                {
 #if DEBUG
@@ -628,6 +693,7 @@ namespace RevitIFCTools
                }
                outF.WriteLine("\t\t\t}");
             }
+
             outF.WriteLine("\t\t\tif (ifcPSE != null)");
             outF.WriteLine("\t\t\t{");
             outF.WriteLine("\t\t\t\t{0}.Name = \"{1}\";", varName, psetName);
@@ -641,6 +707,50 @@ namespace RevitIFCTools
          outF.WriteLine("}");
          outF.Close();
          endWriteEnumFile();
+
+         // Now write shared parameter definitions from the Dict to destination file
+         stSharedPar.WriteLine("# This is a Revit shared parameter file.");
+         stSharedPar.WriteLine("# Do not edit manually.");
+         stSharedPar.WriteLine("*META	VERSION	MINVERSION");
+         stSharedPar.WriteLine("META	2	1");
+         stSharedPar.WriteLine("*GROUP	ID	NAME");
+         stSharedPar.WriteLine("GROUP	2	IFC Properties");
+         stSharedPar.WriteLine("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE");
+         stSharedPar.WriteLine("#");
+         foreach (KeyValuePair<string, SharedParameterDef> parDef in SharedParamFileDict)
+         {
+            SharedParameterDef newPar = parDef.Value;
+            string vis = newPar.Visibility ? "1" : "0";
+            string usrMod = newPar.UserModifiable ? "1" : "0";
+
+            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
+                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+            stSharedPar.WriteLine(parEntry);
+         }
+
+         stSharedParType.WriteLine("# This is a Revit shared parameter file.");
+         stSharedParType.WriteLine("# Do not edit manually.");
+         stSharedParType.WriteLine("*META	VERSION	MINVERSION");
+         stSharedParType.WriteLine("META	2	1");
+         stSharedParType.WriteLine("*GROUP	ID	NAME");
+         stSharedParType.WriteLine("GROUP	2	IFC Properties");
+         stSharedParType.WriteLine("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE");
+         stSharedParType.WriteLine("#");
+         foreach (KeyValuePair<string, SharedParameterDef> parDef in SharedParamFileTypeDict)
+         {
+            SharedParameterDef newPar = parDef.Value;
+            string parName4Type;
+            if (newPar.Name.EndsWith("[Type]"))
+               parName4Type = newPar.Name;
+            else
+               parName4Type = newPar.Name + "[Type]";
+            string vis = newPar.Visibility ? "1" : "0";
+            string usrMod = newPar.UserModifiable ? "1" : "0";
+
+            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + parName4Type + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
+                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+            stSharedParType.WriteLine(parEntry);
+         }
 
          stSharedPar.Close();
          stSharedParType.Close();
@@ -821,8 +931,16 @@ namespace RevitIFCTools
 
       string removeInvalidNName(string name)
       {
-         string[] subNames = name.Split('/');
-         return subNames[0];  // Only returns the name before '/' if any
+         string[] subNames = name.Split('/','\\');
+         if (subNames[0].Trim().StartsWith("Ifc", StringComparison.InvariantCultureIgnoreCase))
+            return subNames[0].Trim();  // Only returns the name before '/' if any
+         else
+         {
+            foreach (string entName in subNames)
+               if (entName.Trim().StartsWith("Ifc", StringComparison.InvariantCultureIgnoreCase))
+                  return entName.Trim();
+         }
+         return null;
       }
 
       void processSimpleProperty(StreamWriter outF, PsetProperty prop, string propNamePrefix, string IfcVersion, string schemaVersion, string varName, VersionSpecificPropertyDef vSpecPDef)
@@ -917,9 +1035,11 @@ namespace RevitIFCTools
 
          // Use IfdGuid for the GUID if defined
          Guid pGuid = Guid.Empty;
+         bool hasIfdGuid = false;
          if (!string.IsNullOrEmpty(prop.IfdGuid))
          {
-            Guid.TryParse(prop.IfdGuid, out pGuid);
+            if (Guid.TryParse(prop.IfdGuid, out pGuid))
+               hasIfdGuid = true;
          }
          if (pGuid == Guid.Empty)
             pGuid = Guid.NewGuid();
@@ -935,8 +1055,11 @@ namespace RevitIFCTools
 #endif
          }
 
-            if (prop.PropertyType is PropertyEnumeratedValue
-            || prop.PropertyType is PropertyReferenceValue
+         if (prop.PropertyType is PropertyEnumeratedValue)
+         {
+            newPar.ParamType = "TEXT";    // Support only a single enum value (which is most if not all cases known)
+         }
+         else if (prop.PropertyType is PropertyReferenceValue
             || prop.PropertyType is PropertyBoundedValue
             || prop.PropertyType is PropertyListValue
             || prop.PropertyType is PropertyTableValue)
@@ -1017,30 +1140,38 @@ namespace RevitIFCTools
                newPar.ParamType = "NUMBER";
          }
 
-         // Append into the param file:
-         string vis = newPar.Visibility ? "1" : "0";
-         string usrMod = newPar.UserModifiable ? "1" : "0";
+         //// Append into the param file:
+         //string vis = newPar.Visibility ? "1" : "0";
+         //string usrMod = newPar.UserModifiable ? "1" : "0";
 
          if (!SharedParamFileDict.ContainsKey(newPar.Name))
          {
-            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
-                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
-            //byte[] parStrBytes = Encoding.Default.GetBytes(parEntry);
-            //parEntry = Encoding.Unicode.GetString(parStrBytes);
-            stSharedPar.WriteLine(parEntry);
+            //string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
+            //                  + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+            //stSharedPar.WriteLine(parEntry);
             SharedParamFileDict.Add(newPar.Name, newPar);
          }
-
-         newPar.Name += "[Type]";
-         if (!SharedParamFileTypeDict.ContainsKey(newPar.Name))
+         else    // Keep the GUID, but override the details
          {
-            newPar.ParamGuid = Guid.NewGuid();   // Use new GUID for Type parameter since it cannot have the same guid as the instance one under the same property
-            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
-                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
-            //byte[] parStrBytes = Encoding.Default.GetBytes(parEntry);
-            //parEntry = Encoding.Unicode.GetString(parStrBytes);
-            stSharedParType.WriteLine(parEntry);
-            SharedParamFileTypeDict.Add(newPar.Name, newPar);
+            // If this Property has IfcGuid, use the IfdGuid set in the newPar, otherwise keep the original one
+            if (!hasIfdGuid)
+               newPar.ParamGuid = SharedParamFileDict[newPar.Name].ParamGuid;
+            //string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
+            //                  + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+            //stSharedPar.WriteLine(parEntry);
+            SharedParamFileDict[newPar.Name] = newPar;     // override the Dict
+         }
+
+         SharedParameterDef newParType = (SharedParameterDef)newPar.Clone();
+         newParType.Name = newParType.Name + "[Type]";
+         if (!SharedParamFileTypeDict.ContainsKey(newParType.Name))
+         {
+            SharedParamFileTypeDict.Add(newParType.Name, newParType);
+         }
+         else    // Keep the GUID, but override the details
+         {
+            newParType.ParamGuid = SharedParamFileTypeDict[newParType.Name].ParamGuid;
+            SharedParamFileTypeDict[newParType.Name] = newParType;     // override the Dict
          }
 
          if (prop.NameAliases != null)
@@ -1123,7 +1254,7 @@ namespace RevitIFCTools
             while ((line = stSharedParam.ReadLine()) != null && !string.IsNullOrEmpty(line))
             {
                // Copy content to the destination file
-               destFile.WriteLine(line);
+               //destFile.WriteLine(line);
 
                string[] token = line.Split('\t');
                if (token == null || token.Count() == 0)

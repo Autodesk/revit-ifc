@@ -141,7 +141,7 @@ namespace Revit.IFC.Export.Exporter
                      // Process Ceiling to be contained in a Space only when it is exactly bounding one Space
                      if (roomlist.Count == 1)
                      {
-                        productWrapper.AddElement(element, covering, setter, null, false);
+                        productWrapper.AddElement(element, covering, setter, null, false, exportInfo);
 
                         // Modify the Ceiling placement to be relative to the Space that it bounds 
                         IFCAnyHandle roomPlacement = IFCAnyHandleUtil.GetObjectPlacement(ExporterCacheManager.SpaceInfoCache.FindSpaceHandle(roomlist[0]));
@@ -158,7 +158,7 @@ namespace Revit.IFC.Export.Exporter
 
                   // if not contained in Space, assign it to default containment in Level
                   if (!containInSpace)
-                     productWrapper.AddElement(element, covering, setter, null, true);
+                     productWrapper.AddElement(element, covering, setter, null, true, exportInfo);
 
                   if (!exportParts)
                   {

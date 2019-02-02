@@ -275,7 +275,7 @@ namespace Revit.IFC.Export.Exporter
                      localPlacementToUse, productRepresentation, preDefinedType);
 
                   // Register the members's IFC handle for later use by truss export.
-                  ExporterCacheManager.ElementToHandleCache.Register(familyInstance.Id, instanceHandle);
+                  ExporterCacheManager.ElementToHandleCache.Register(familyInstance.Id, instanceHandle, type);
                   break;
                }
             case IFCEntityType.IfcPlate:

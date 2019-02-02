@@ -81,7 +81,7 @@ namespace Revit.IFC.Export.Exporter
             if (groupHnd == null)
                return false;
 
-            productWrapper.AddElement(element, groupHnd);
+            productWrapper.AddElement(element, groupHnd, exportAs);
 
             ExporterCacheManager.GroupCache.RegisterGroup(element.Id, groupHnd);
 

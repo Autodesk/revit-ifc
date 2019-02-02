@@ -37,6 +37,7 @@ namespace Revit.IFC.Export.Utility
       /// The dictionary mapping from an ElementId to an  handle. 
       /// </summary>
       private Dictionary<ElementId, IFCAnyHandle> m_ElementIdToHandleDictionary = new Dictionary<ElementId, IFCAnyHandle>();
+      private Dictionary<ElementId, IFCExportInfoPair> m_ELementIdAndExportType = new Dictionary<ElementId, IFCExportInfoPair>();
 
       /// <summary>
       /// Finds the handle from the dictionary.
@@ -58,6 +59,21 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Find IFCExportInforPair of the Element with the ElementId. Used for applicable Pset
+      /// </summary>
+      /// <param name="elementId">The ElementId</param>
+      /// <returns>return PredefinedType string or null</returns>
+      public IFCExportInfoPair FindPredefinedType(ElementId elementId)
+      {
+         IFCExportInfoPair exportType;
+         if (m_ELementIdAndExportType.TryGetValue(elementId, out exportType))
+         {
+            return exportType;
+         }
+         return null;
+      }
+
+      /// <summary>
       /// Removes invalid handles from the cache.
       /// </summary>
       /// <param name="elementIds">The element ids.</param>
@@ -73,11 +89,15 @@ namespace Revit.IFC.Export.Utility
                {
                   bool isType = IFCAnyHandleUtil.IsSubTypeOf(handle, expectedType);
                   if (!isType)
+                  {
                      m_ElementIdToHandleDictionary.Remove(elementId);
+                     m_ELementIdAndExportType.Remove(elementId);
+                  }
                }
                catch
                {
                   m_ElementIdToHandleDictionary.Remove(elementId);
+                  m_ELementIdAndExportType.Remove(elementId);
                }
             }
          }
@@ -92,7 +112,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="handle">
       /// The handle.
       /// </param>
-      public void Register(ElementId elementId, IFCAnyHandle handle)
+      public void Register(ElementId elementId, IFCAnyHandle handle, IFCExportInfoPair exportType = null)
       {
          if (m_ElementIdToHandleDictionary.ContainsKey(elementId))
             return;
@@ -100,6 +120,10 @@ namespace Revit.IFC.Export.Utility
          m_ElementIdToHandleDictionary[elementId] = handle;
          // Register also handle to elementid cache at the same time in order to make the two caches consistent
          ExporterCacheManager.HandleToElementCache.Register(handle, elementId);
+
+         if (exportType != null)
+            if (!m_ELementIdAndExportType.ContainsKey(elementId))
+               m_ELementIdAndExportType.Add(elementId, exportType);
       }
    }
 }

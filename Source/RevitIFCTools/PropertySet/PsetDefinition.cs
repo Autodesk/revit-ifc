@@ -31,6 +31,8 @@ namespace RevitIFCTools.PropertySet
       public string IfcVersion { get; set; }
       public string IfdGuid { get; set; }
       public IList<string> ApplicableClasses { get; set; }
+      public string ApplicableType { get; set; }
+      public string PredefinedType { get; set; }
       public IList<PsetProperty> properties { get; set; }
       public override string ToString()
       {

@@ -89,7 +89,7 @@ namespace Revit.IFC.Export.Exporter
 
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
                   {
-                     productWrapper.AddElement(element, instanceHandle, placementSetter.LevelInfo, ecData, true);
+                     productWrapper.AddElement(element, instanceHandle, placementSetter.LevelInfo, ecData, true, exportType);
                      if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                         ExporterCacheManager.TypeRelationsCache.Add(styleHandle, instanceHandle);
                   }

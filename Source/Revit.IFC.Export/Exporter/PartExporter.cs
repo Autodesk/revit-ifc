@@ -331,6 +331,7 @@ namespace Revit.IFC.Export.Exporter
                }
                else
                {
+                  //partPlacement = ExporterUtil.CreateLocalPlacement(file, null, null);
                   partPlacement = ExporterUtil.CreateLocalPlacement(file, originalPlacement, null);
                }
 
@@ -402,7 +403,8 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
                   string partGUID = GUIDUtil.CreateGUID(partElement);
-
+                  string ifcEnumType = null;
+                  IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, hostElement, out ifcEnumType);
                   IFCAnyHandle ifcPart = null;
                   if (!asBuildingElement)
                   {
@@ -410,10 +412,7 @@ namespace Revit.IFC.Export.Exporter
                          extrusionCreationData.GetLocalPlacement(), prodRep);
                   }
                   else
-                  {
-                     string ifcEnumType = null;
-                     IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, hostElement, out ifcEnumType);
-                     
+                  {                   
                      switch (exportType.ExportInstance)
                      {
                         case IFCEntityType.IfcColumn:
@@ -464,7 +463,7 @@ namespace Revit.IFC.Export.Exporter
 
                   bool containedInLevel = standaloneExport;
                   PlacementSetter whichPlacementSetter = containedInLevel ? standalonePlacementSetter : placementSetter;
-                  productWrapper.AddElement(partElement, ifcPart, whichPlacementSetter, extrusionCreationData, containedInLevel);
+                  productWrapper.AddElement(partElement, ifcPart, whichPlacementSetter, extrusionCreationData, containedInLevel, exportType);
 
                   OpeningUtil.CreateOpeningsIfNecessary(ifcPart, partElement, extrusionCreationData, bodyData.OffsetTransform, exporterIFC,
                       extrusionCreationData.GetLocalPlacement(), whichPlacementSetter, productWrapper);
