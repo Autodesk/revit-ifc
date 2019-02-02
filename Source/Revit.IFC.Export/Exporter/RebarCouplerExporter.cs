@@ -149,7 +149,7 @@ namespace Revit.IFC.Export.Exporter
 
                   createdRebarCouplerHandles.Add(instanceHandle);
 
-                  productWrapper.AddElement(coupler, instanceHandle, setter, null, true);
+                  productWrapper.AddElement(coupler, instanceHandle, setter, null, true, exportType);
                }
             }
 
@@ -169,7 +169,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle rebarGroup = IFCInstanceExporter.CreateGroup(file, couplerGUID,
                       ownerHistory, name, description, objectType);
 
-                  productWrapper.AddElement(coupler, rebarGroup);
+                  productWrapper.AddElement(coupler, rebarGroup, exportType);
 
                   IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
                       null, null, createdRebarCouplerHandles, null, rebarGroup);

@@ -416,7 +416,7 @@ namespace Revit.IFC.Export.Exporter
                   for (int ii = 0; ii < numReps; ii++)
                   {
                      IFCExtrusionCreationData loopExtraParam = ii < loopExtraParams.Count ? loopExtraParams[ii] : null;
-                     productWrapper.AddElement(floorElement, slabHnds[ii], placementSetter, loopExtraParam, true);
+                     productWrapper.AddElement(floorElement, slabHnds[ii], placementSetter, loopExtraParam, true, exportType);
 
                      type = ExporterUtil.CreateGenericTypeFromElement(floorElement, exportType, file, ownerHistory, exportType.ValidatedPredefinedType, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(type, slabHnds[ii]);

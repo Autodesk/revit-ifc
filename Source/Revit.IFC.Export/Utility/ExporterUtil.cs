@@ -976,10 +976,18 @@ namespace Revit.IFC.Export.Utility
 
          // PropertySetEntry will only have an information about IFC entity (or type) for the Pset definition but may not be both
          // Here we will check for both and assign Pset to create equally for both Element or ElementType
+         ElementId elemId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
+         IFCExportInfoPair exportType = ExporterCacheManager.ElementToHandleCache.FindPredefinedType(elemId);
+         string predefinedType = null;
+         if (exportType != null)
+            predefinedType = exportType.ValidatedPredefinedType;
+
          IList<PropertySetDescription> cachedPsets = null;
          if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcObject))
          {
-            Enum.TryParse<IFCEntityType>(hndTypeStr + "Type", true, out altProdHndType);
+            if (exportType != null)
+               altProdHndType = exportType.ExportType;
+            //Enum.TryParse<IFCEntityType>(hndTypeStr + "Type", true, out altProdHndType);
 
             // Need to handle backward compatibility for IFC2x3
             if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnishingElement)
@@ -993,7 +1001,11 @@ namespace Revit.IFC.Export.Utility
                && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
                Enum.TryParse<IFCEntityType>("IfcFurnishingElement", true, out altProdHndType);
             else
-            Enum.TryParse<IFCEntityType>(hndTypeStr.Substring(0, hndTypeStr.Length - 4), true, out altProdHndType);
+            {
+               if (exportType != null)
+                  altProdHndType = exportType.ExportInstance;
+               // Enum.TryParse<IFCEntityType>(hndTypeStr.Substring(0, hndTypeStr.Length - 4), true, out altProdHndType);
+            }
          }
 
          IList<PropertySetDescription> tmpCachedPsets = null;
@@ -1017,8 +1029,7 @@ namespace Revit.IFC.Export.Utility
             psetdefListType2 = (List<PropertySetDescription>)tmpCachedPsets;
          psetdefListObj.AddRange(psetdefListType2);
 
-         cachedPsets = psetdefListObj; 
-         string predefinedType = null;
+         cachedPsets = psetdefListObj;
 
          if (cachedPsets == null || cachedPsets.Count == 0)
          {
@@ -1029,18 +1040,18 @@ namespace Revit.IFC.Export.Utility
             {
                foreach (PropertySetDescription currDesc in currStandard)
                {
-                  if (currDesc.IsAppropriateEntityType(prodHnd) || currDesc.IsSubTypeOfEntityTypes(altProdHndType))
+                  if (currDesc.IsAppropriateEntityType(prodHnd) || currDesc.IsAppropriateEntityType(altProdHndType))
                   {
-                     if (currDesc.IsAppropriateObjectType(prodHnd) && currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
+                     //if (currDesc.IsAppropriateObjectType(prodHnd) && currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
+                     //if (currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
                         currPsetsToCreate.Add(currDesc);
 
-                     if (string.IsNullOrEmpty(currDesc.ObjectType) && string.IsNullOrEmpty(currDesc.PredefinedType))
-                        unconditionalPsetsToCreate.Add(currDesc);
-                     else
+                     if (!string.IsNullOrEmpty(currDesc.ObjectType) && !string.IsNullOrEmpty(currDesc.PredefinedType))
                         conditionalPsetsToCreate.Add(currDesc);
+                     else
+                        unconditionalPsetsToCreate.Add(currDesc);
                   }
                }
-
             }
             ExporterCacheManager.PropertySetsForTypeCache[prodHndType] = unconditionalPsetsToCreate;
             ExporterCacheManager.ConditionalPropertySetsForTypeCache[prodHndType] = conditionalPsetsToCreate;
@@ -1054,7 +1065,7 @@ namespace Revit.IFC.Export.Utility
                 ExporterCacheManager.ConditionalPropertySetsForTypeCache[prodHndType];
             foreach (PropertySetDescription currDesc in conditionalPsetsToCreate)
             {
-               if (currDesc.IsAppropriateObjectType(prodHnd) && currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
+               if ((currDesc.IsAppropriateObjectType(prodHnd) || currDesc.IsAppropriateObjectType(altProdHndType)) && currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
                   currPsetsToCreate.Add(currDesc);
             }
          }

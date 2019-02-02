@@ -148,6 +148,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
+      /// Identifies if the input type matches the type of element only to which this description applies.
+      /// </summary>
+      /// <param name="entity">the Entity</param>
+      /// <returns>true if matches</returns>
+      public bool IsAppropriateEntityType(IFCEntityType entity)
+      {
+         if (entity == IFCEntityType.UnKnown || !IsSubTypeOfEntityTypes(entity))
+            return false;
+         return true;
+      }
+
+      /// <summary>
       /// Identifies if the input handle matches the object type only to which this description applies.
       /// </summary>
       /// <param name="handle">
@@ -163,8 +175,36 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (ObjectType == "")
             return true;
 
-         string objectType = IFCAnyHandleUtil.GetObjectType(handle);
-         return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
+         // ObjectType information comes from PSD's Applicable Type. This may be a comma separated list of applicable type
+         //string objectType = IFCAnyHandleUtil.GetObjectType(handle);
+         IFCEntityType hndEntity = IFCAnyHandleUtil.GetEntityType(handle);
+         if (ObjectType.IndexOf(hndEntity.ToString(), StringComparison.InvariantCultureIgnoreCase) < 0)
+            return false;
+         else
+            return true;
+         //return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
+      }
+
+      /// <summary>
+      /// Identifies if the input handle matches the object type only to which this description applies.
+      /// </summary>
+      /// <param name="entityType">the entity type</param>
+      /// <returns>true if found match</returns>
+      public bool IsAppropriateObjectType(IFCEntityType entityType)
+      {
+         if (ObjectType == "")
+            return true;
+         if (entityType == IFCEntityType.UnKnown)
+            return false;
+
+         // ObjectType information comes from PSD's Applicable Type. This may be a comma separated list of applicable type
+         if (ObjectType.IndexOf(entityType.ToString(), StringComparison.InvariantCultureIgnoreCase) < 0)
+            return false;
+         else
+            return true;
+
+         //string objectType = IFCAnyHandleUtil.GetObjectType(handle);
+         //return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
       }
 
       /// <summary>

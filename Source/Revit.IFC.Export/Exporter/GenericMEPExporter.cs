@@ -264,11 +264,11 @@ namespace Revit.IFC.Export.Exporter
          {
             //exporterIFC.RelateSpatialElement(roomId, instanceHandle);
             ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
-            productWrapper.AddElement(element, instanceHandle, setter, extraParams, false);
+            productWrapper.AddElement(element, instanceHandle, setter, extraParams, false, exportType);
          }
          else
          {
-            productWrapper.AddElement(element, instanceHandle, setter, extraParams, true);
+            productWrapper.AddElement(element, instanceHandle, setter, extraParams, true, exportType);
          }
 
          OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, element, extraParams, null, exporterIFC, localPlacementToUse, setter, productWrapper);

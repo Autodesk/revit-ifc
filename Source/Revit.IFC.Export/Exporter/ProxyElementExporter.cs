@@ -93,7 +93,7 @@ namespace Revit.IFC.Export.Exporter
                   buildingElementProxy = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, element, guid,
                       ownerHistory, localPlacement, representation, exportType.ValidatedPredefinedType);
 
-                  productWrapper.AddElement(element, buildingElementProxy, placementSetter.LevelInfo, ecData, true);
+                  productWrapper.AddElement(element, buildingElementProxy, placementSetter.LevelInfo, ecData, true, exportType);
                }
                tr.Commit();
             }

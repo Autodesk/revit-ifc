@@ -1103,10 +1103,10 @@ namespace Revit.IFC.Export.Exporter
 
                            OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
                                exporterIFC, placementToUse, setter, wrapper);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true);
+                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
 
                            // Register the beam's IFC handle for later use by truss and beam system export.
-                           ExporterCacheManager.ElementToHandleCache.Register(familyInstance.Id, instanceHandle);
+                           ExporterCacheManager.ElementToHandleCache.Register(familyInstance.Id, instanceHandle, exportType);
 
                            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet) && RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
                            {
@@ -1158,7 +1158,7 @@ namespace Revit.IFC.Export.Exporter
 
                            OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
                                exporterIFC, placementToUse, setter, wrapper);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true);
+                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
 
                            // Not all columns are space bounding, but it doesn't really hurt to have "extra" handles here, other
                            // than a little extra memory usage.
@@ -1204,7 +1204,7 @@ namespace Revit.IFC.Export.Exporter
                               instanceHandle = IFCInstanceExporter.CreateWindow(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                                  doorWindowLocalPlacement, repHnd, height, width, doorWindowInfo.PreDefinedType, DoorWindowUtil.GetIFCWindowPartitioningType(originalFamilySymbol),
                                  doorWindowInfo.UserDefinedPartitioningType);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true);
+                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
 
                            SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, instanceHandle, familyInstance.Id,
                                setter.LevelId);
@@ -1237,7 +1237,7 @@ namespace Revit.IFC.Export.Exporter
 
                            OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
                                exporterIFC, localPlacement, setter, wrapper);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true);
+                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
 
                            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet) && RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
                            {
@@ -1274,7 +1274,7 @@ namespace Revit.IFC.Export.Exporter
                               }
                               else
                                  maxOffset = offsetPar.AsDouble();
-                              wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true);
+                              wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
 
                               if (materialLayerSet != null)
                               {
@@ -1319,7 +1319,7 @@ namespace Revit.IFC.Export.Exporter
                               localPlacementToUse, repHnd, operationTypeStr, capacityByWeight, capacityByNumber);
 
                            bool containedInSpace = (roomId != ElementId.InvalidElementId);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, !containedInSpace);
+                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, !containedInSpace, exportType);
                            if (containedInSpace)
                               ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
 
@@ -1349,7 +1349,7 @@ namespace Revit.IFC.Export.Exporter
 
                               bool containedInSpace = (roomId != ElementId.InvalidElementId);
                               bool associateToLevel = containedInSpace ? false : !isChildInContainer;
-                              wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, associateToLevel);
+                              wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, associateToLevel, exportType);
                               if (containedInSpace)
                                  ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
                            }
