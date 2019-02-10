@@ -973,6 +973,72 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          return CreateCommonProperty(file, propertyName, forceData, valueType, null);
       }
 
+      /// <summary>Create a LinearForceMeasure property.</summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="propertyName">The name of the property.</param>
+      /// <param name="value">The value of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateLinearForceProperty(IFCFile file, string propertyName, double value, PropertyValueType valueType)
+      {
+         IFCData linearForceData = IFCDataUtil.CreateAsLinearForceMeasure(value);
+         return CreateCommonProperty(file, propertyName, linearForceData, valueType, null);
+      }
+
+      public static IFCAnyHandle CreateLinearForcePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+         string revitParameterName, BuiltInParameter revitBuiltInParam, string ifcPropertyName, PropertyValueType valueType)
+      {
+
+         IFCAnyHandle propHnd = CreateDoublePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName,
+            "IfcLinearForceMeasure", UnitType.UT_LinearForce, valueType);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+            return propHnd;
+
+         if (revitBuiltInParam != BuiltInParameter.INVALID)
+         {
+            string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
+            propHnd = CreateDoublePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName, 
+               "IfcLinearForceMeasure", UnitType.UT_LinearForce, valueType);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+               return propHnd;
+         }
+
+         return null;
+      }
+
+      public static IFCAnyHandle CreatePlanarForcePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+         string revitParameterName, BuiltInParameter revitBuiltInParam, string ifcPropertyName, PropertyValueType valueType)
+      {
+
+         IFCAnyHandle propHnd = CreateDoublePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName,
+            "IfcPlanarForceMeasure", UnitType.UT_AreaForce, valueType);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+            return propHnd;
+
+         if (revitBuiltInParam != BuiltInParameter.INVALID)
+         {
+            string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
+            propHnd = CreateDoublePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName,
+               "IfcLinearForceMeasure", UnitType.UT_LinearForce, valueType);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+               return propHnd;
+         }
+
+         return null;
+      }
+
+      /// <summary>Create a PlanarForceMeasure property.</summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="propertyName">The name of the property.</param>
+      /// <param name="value">The value of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreatePlanarForceProperty(IFCFile file, string propertyName, double value, PropertyValueType valueType)
+      {
+         IFCData planarForceData = IFCDataUtil.CreateAsPlanarForceMeasure(value);
+         return CreateCommonProperty(file, propertyName, planarForceData, valueType, null);
+      }
+
       /// <summary>Create a PowerMeasure property.</summary>
       /// <param name="file">The IFC file.</param>
       /// <param name="propertyName">The name of the property.</param>
@@ -2919,6 +2985,20 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                                  {
                                     double scaledValue = UnitUtil.ScaleForce(value);
                                     propertyHandle = CreateForceProperty(file, parameterCaption,
+                                        scaledValue, PropertyValueType.SingleValue);
+                                    break;
+                                 }
+                              case ParameterType.AreaForce:
+                                 {
+                                    double scaledValue = UnitUtil.ScaleForce(value);
+                                    propertyHandle = CreatePlanarForceProperty(file, parameterCaption,
+                                        scaledValue, PropertyValueType.SingleValue);
+                                    break;
+                                 }
+                              case ParameterType.LinearForce:
+                                 {
+                                    double scaledValue = UnitUtil.ScaleForce(value);
+                                    propertyHandle = CreateLinearForceProperty(file, parameterCaption,
                                         scaledValue, PropertyValueType.SingleValue);
                                     break;
                                  }

@@ -95,6 +95,16 @@ namespace Revit.IFC.Export.Utility
          return ScaleDouble(UnitType.UT_Force, unscaledForce);
       }
 
+      static public double ScaleLinearForce(double unscaledLinearForce)
+      {
+         return ScaleDouble(UnitType.UT_LinearForce, unscaledLinearForce);
+      }
+
+      static public double ScalePlanarForce(double unscaledPlanarForce)
+      {
+         return ScaleDouble(UnitType.UT_AreaForce, unscaledPlanarForce);
+      }
+
       /// <summary>
       /// Converts a power value in Revit internal units to IFC units.
       /// </summary>

@@ -1073,17 +1073,6 @@ namespace Revit.IFC.Export.Exporter
             CreateGlobalDirection(exporterIFC);
             CreateGlobalDirection2D(exporterIFC);
 
-            //// Set relative transform depending on whether it is a linked transform or not.
-            //IFCAnyHandle relativePlacement = null;
-            //if (ExporterCacheManager.ExportOptionsCache.ExportingLink)
-            //{
-            //   Transform linkTrf = ExporterCacheManager.ExportOptionsCache.GetLinkInstanceTransform(0);
-            //   relativePlacement = ExporterUtil.CreateAxis2Placement3D(file, linkTrf.Origin, linkTrf.BasisZ, linkTrf.BasisX);
-            //}
-            //else
-            //   relativePlacement = ExporterUtil.CreateAxis2Placement3D(file);
-
-            //IFCAnyHandle buildingPlacement = IFCInstanceExporter.CreateLocalPlacement(file, null, relativePlacement);
             IFCAnyHandle buildingPlacement = CreateBuildingPlacement(file);
 
             CreateProject(exporterIFC, document, applicationHandle);
@@ -1103,67 +1092,7 @@ namespace Revit.IFC.Export.Exporter
             // Skip Building if there is no Storey to be exported
             if (exportBuilding)
             {
-               //string buildingName = String.Empty;
-               //string buildingDescription = null;
-               //string buildingLongName = null;
-
-               //COBieProjectInfo cobieProjectInfo = ExporterCacheManager.ExportOptionsCache.COBieProjectInfo;
-               //if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3COBIE24DesignDeliverable && cobieProjectInfo != null)
-               //{
-               //   buildingName = cobieProjectInfo.BuildingName_Number;
-               //   buildingDescription = cobieProjectInfo.BuildingDescription;
-               //}
-               //else if (projectInfo != null)
-               //{
-               //   try
-               //   {
-               //      buildingName = projectInfo.BuildingName;
-               //   }
-               //   catch (Autodesk.Revit.Exceptions.InvalidOperationException)
-               //   {
-               //   }
-               //   buildingDescription = NamingUtil.GetOverrideStringValue(projectInfo, "BuildingDescription", null);
-               //   buildingLongName = NamingUtil.GetOverrideStringValue(projectInfo, "BuildingLongName", buildingName);
-               //}
-
-               //IFCAnyHandle buildingAddress = CreateIFCAddress(file, document, projectInfo);
-
-               //string buildingGUID = GUIDUtil.CreateProjectLevelGUID(document, IFCProjectLevelGUIDType.Building);
-               //IFCAnyHandle buildingHandle = IFCInstanceExporter.CreateBuilding(exporterIFC,
-               //    buildingGUID, ownerHistory, buildingName, buildingDescription, buildingPlacement, null, buildingLongName,
-               //    Toolkit.IFCElementComposition.Element, null, null, buildingAddress);
-               //ExporterCacheManager.BuildingHandle = buildingHandle;
-
-               //if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3COBIE24DesignDeliverable && cobieProjectInfo != null)
-               //{
-               //   string classificationName;
-               //   string classificationItemCode;
-               //   string classificationItemName;
-               //   string classificationParamValue = cobieProjectInfo.BuildingType;
-               //   int numRefItem = ClassificationUtil.parseClassificationCode(classificationParamValue, "dummy", out classificationName, out classificationItemCode, out classificationItemName);
-               //   if (numRefItem > 0 && !string.IsNullOrEmpty(classificationItemCode))
-               //   {
-               //      IFCAnyHandle classifRef = IFCInstanceExporter.CreateClassificationReference(file, null, classificationItemCode, classificationItemName, null);
-               //      IFCAnyHandle relClassif = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-               //                                 ownerHistory, "BuildingType", null, new HashSet<IFCAnyHandle>() { buildingHandle }, classifRef);
-               //   }
-               //}
                CreateBuildingFromProjectInfo(exporterIFC, document, buildingPlacement);
-
-               // create levels
-
-               //bool exportAllLevels = true;
-               //for (int ii = 0; ii < levels.Count && exportAllLevels; ii++)
-               //{
-               //   Level level = levels[ii];
-               //   Parameter isBuildingStorey = level.get_Parameter(BuiltInParameter.LEVEL_IS_BUILDING_STORY);
-               //   if (isBuildingStorey == null || (isBuildingStorey.AsInteger() != 0))
-               //   {
-               //      exportAllLevels = false;
-               //      break;
-               //   }
-               //}
-
 
                IList<Element> unassignedBaseLevels = new List<Element>();
 
@@ -1230,10 +1159,10 @@ namespace Revit.IFC.Export.Exporter
                   XYZ orig = new XYZ(0.0, 0.0, elevation);
 
                   IFCAnyHandle placement = ExporterUtil.CreateLocalPlacement(file, buildingPlacement, orig, null, null);
-
+                  string bsObjectType = NamingUtil.GetObjectTypeOverride(level, null);
                   IFCElementComposition ifcComposition = LevelUtil.GetElementCompositionTypeOverride(level);
                   IFCAnyHandle buildingStorey = IFCInstanceExporter.CreateBuildingStorey(exporterIFC, level, ExporterCacheManager.OwnerHistoryHandle,
-                          placement, ifcComposition, elevation);
+                     bsObjectType, placement, ifcComposition, elevation);
 
 
                   // Create classification reference when level has classification field name assigned to it
@@ -2114,32 +2043,53 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
+      //private long GetCreationDate(Document document)
+      //{
+      //   string pathName = document.PathName;
+      //   if (!String.IsNullOrEmpty(pathName))
+      //   {
+      //      if (document.IsWorkshared)
+      //      {
+      //         // A central model will return itself as a central model.
+      //         ModelPath centralModelPath = document.GetWorksharingCentralModelPath();
+      //         // If the ModelPath is actually a file path, then the model is not server based.
+      //         bool isAFilePath = centralModelPath is FilePath;
+      //         if (!isAFilePath)
+      //         {
+      //            //This is just a temporary fix for SPR#226541, currently it's unable to get the FileInfo of a server based file stored at server.
+      //            //Should server based file stored at server support this functionality and how to support will be tracked by SPR#226761. 
+      //            return 0;
+      //         }
+      //      }
+      //      FileInfo fileInfo = new FileInfo(pathName);
+      //      DateTime creationTimeUtc = fileInfo.CreationTimeUtc;
+      //      // The IfcTimeStamp is measured in seconds since 1/1/1970.  As such, we divide by 10,000,000 (100-ns ticks in a second)
+      //      // and subtract the 1/1/1970 offset.
+      //      return creationTimeUtc.ToFileTimeUtc() / 10000000 - 11644473600;
+      //   }
+      //   return 0;
+      //}
       private long GetCreationDate(Document document)
       {
          string pathName = document.PathName;
-         if (!String.IsNullOrEmpty(pathName))
+         // If this is non a locally saved file, we can't get the creation date.
+         // This will require future work to get this, but it is very minor.
+         DateTime creationTimeUtc = DateTime.Now;
+         try
          {
-            if (document.IsWorkshared)
-            {
-               // A central model will return itself as a central model.
-               ModelPath centralModelPath = document.GetWorksharingCentralModelPath();
-               // If the ModelPath is actually a file path, then the model is not server based.
-               bool isAFilePath = centralModelPath is FilePath;
-               if (!isAFilePath)
-               {
-                  //This is just a temporary fix for SPR#226541, currently it's unable to get the FileInfo of a server based file stored at server.
-                  //Should server based file stored at server support this functionality and how to support will be tracked by SPR#226761. 
-                  return 0;
-               }
-            }
             FileInfo fileInfo = new FileInfo(pathName);
-            DateTime creationTimeUtc = fileInfo.CreationTimeUtc;
-            // The IfcTimeStamp is measured in seconds since 1/1/1970.  As such, we divide by 10,000,000 (100-ns ticks in a second)
-            // and subtract the 1/1/1970 offset.
-            return creationTimeUtc.ToFileTimeUtc() / 10000000 - 11644473600;
+            creationTimeUtc = fileInfo.CreationTimeUtc;
          }
-         return 0;
+         catch
+         {
+            creationTimeUtc = DateTime.Now;
+         }
+
+         // The IfcTimeStamp is measured in seconds since 1/1/1970.  As such, we divide by 10,000,000 
+         // (100-ns ticks in a second) and subtract the 1/1/1970 offset.
+         return creationTimeUtc.ToFileTimeUtc() / 10000000 - 11644473600;
       }
+
 
       /// <summary>
       /// Creates the application information.
@@ -3665,6 +3615,7 @@ namespace Revit.IFC.Export.Exporter
          string buildingName = String.Empty;
          string buildingDescription = null;
          string buildingLongName = null;
+         string buildingObjectType = null;
 
          COBieProjectInfo cobieProjectInfo = ExporterCacheManager.ExportOptionsCache.COBieProjectInfo;
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3COBIE24DesignDeliverable && cobieProjectInfo != null)
@@ -3683,6 +3634,7 @@ namespace Revit.IFC.Export.Exporter
             }
             buildingDescription = NamingUtil.GetOverrideStringValue(projectInfo, "BuildingDescription", null);
             buildingLongName = NamingUtil.GetOverrideStringValue(projectInfo, "BuildingLongName", buildingName);
+            buildingObjectType = NamingUtil.GetOverrideStringValue(projectInfo, "BuildingObjectType", null);
          }
 
          IFCFile file = exporterIFC.GetFile();
@@ -3694,7 +3646,7 @@ namespace Revit.IFC.Export.Exporter
 
          string buildingGUID = GUIDUtil.CreateProjectLevelGUID(document, IFCProjectLevelGUIDType.Building);
          IFCAnyHandle buildingHandle = IFCInstanceExporter.CreateBuilding(exporterIFC,
-             buildingGUID, ownerHistory, buildingName, buildingDescription, buildingPlacement, null, buildingLongName,
+             buildingGUID, ownerHistory, buildingName, buildingDescription, buildingObjectType, buildingPlacement, null, buildingLongName,
              Toolkit.IFCElementComposition.Element, null, null, address);
          ExporterCacheManager.BuildingHandle = buildingHandle;
 

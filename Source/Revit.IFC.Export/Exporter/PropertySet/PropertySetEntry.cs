@@ -206,6 +206,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       Time,
       LocalTime,
       Energy,
+      LinearForce,
       PlanarForce,
       Monetary,
       ThermalConductivity,

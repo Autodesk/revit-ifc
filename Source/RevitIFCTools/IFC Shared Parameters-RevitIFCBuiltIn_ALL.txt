@@ -6,6 +6,7 @@ META	2	1
 GROUP	2	IFC Properties
 *PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE
 #
+# Parameters for creating classifications 
 PARAM	f440bb0c-7518-406c-9b84-1de93ecb2d67	ClassificationCode	TEXT		2	1		1
 PARAM	3e35c8f6-18a2-4678-92a7-29f9a2f790bf	ClassificationCode(2)	TEXT		2	1		1
 PARAM	9c810054-8b25-4c82-a8f6-a19d4bde001f	ClassificationCode(3)	TEXT		2	1		1
@@ -18,6 +19,8 @@ PARAM	88125f36-db46-4998-a16d-605bf75cb83f	ClassificationCode(9)	TEXT		2	1		1
 PARAM	0a531080-2060-4bc6-802b-9230d35ac14d	ClassificationCode(10)	TEXT		2	1		1
 PARAM	26f1bba3-a3cb-4fbc-ba29-d7650f1bcb4b	Assembly Code	TEXT		2	1	Uniformat Classification	1
 PARAM	b623d495-dc76-46cb-ac7b-bfe126728bf2	Assembly Description	TEXT		2	1	Uniformat Classification	1
+#
+# Parameters to support Project Global Positioning
 PARAM	1c0c6b64-add6-446e-bba2-7663fb9a3f1c	ProjectGlobalPositioning.Eastings	NUMBER		2	1		1
 PARAM	04364cb2-4787-4180-b10c-2292d922d082	ProjectGlobalPositioning.Northings	NUMBER		2	1		1
 PARAM	d5eca1bd-c8ed-4413-bde9-52c724030fbf	ProjectGlobalPositioning.OrthogonalHeight	NUMBER		2	1		1
@@ -31,6 +34,8 @@ PARAM	bc47059f-e418-41f2-85b9-8b556dacae5e	ProjectGlobalPositioning.CRSVerticalD
 PARAM	b1d60aea-e267-4ca1-b899-cb06d5eaa9c8	ProjectGlobalPositioning.CRSMapProjection	TEXT		2	1		1
 PARAM	91150f20-dc6c-4691-be1e-fe0ed0dfae6f	ProjectGlobalPositioning.CRSMapZone	TEXT		2	1		1
 PARAM	093a80c9-4a77-4076-a71c-041e3521608c	ProjectGlobalPositioning.CRSMapUnit	TEXT		2	1		1
+#
+# Parameters to override quantity information
 PARAM	9c5ad3aa-75d4-448a-a75c-db72ae2139f8	IfcQtyDepth	LENGTH		2	1		1
 PARAM	90d03a57-2f8c-4c2f-b478-4c43c164e8d2	IfcQtyLength	LENGTH		2	1		1
 PARAM	7da39469-0a4a-4e77-8ddd-f4204f1a4001	IfcQtyWidth	LENGTH		2	1		1
@@ -57,18 +62,25 @@ PARAM	e9ce1eaf-b637-4f79-9bdd-8028abc942aa	IfcQtyNetVolume	VOLUME		2	1		1
 PARAM	3d3650c9-ffaf-4df6-bf27-71ce745e7f52	IfcQtyVolume	VOLUME		2	1		1
 PARAM	4cb8562d-51fd-425f-b51f-66ea7b212a7c	IfcQtyGrossWeight	NUMBER		2	1		1
 PARAM	343189da-1fca-411a-ad0d-ba735f79c476	IfcQtyNetWeight	NUMBER		2	1		1
+#
+# Parameters for Pset_SiteCommon to be applied to the Project information
 PARAM	dc32ed2d-58f7-4638-88fc-8a0dcc1ebc54	Pset_SiteCommon.BuildableArea	AREA		2	1		1
 PARAM	2db3713c-6ec4-4f96-82d4-95f0ca8c184b	Pset_SiteCommon.Reference	TEXT		2	1		1
 PARAM	41ff7c55-cd01-4e78-972c-c7ec49853817	Pset_SiteCommon.BuildingHeightLimit	LENGTH		2	1		1
 PARAM	004297b7-015a-4993-9a20-81ae39fc5df2	Pset_SiteCommon.TotalArea	AREA		2	1		1
 PARAM	6e4bc3ba-6026-4923-9256-fdc3b7dcad0b	Pset_SiteCommon.FloorAreaRatio	NUMBER		2	1		1
 PARAM	cec026c1-b978-4d3c-b657-a67fb34be612	Pset_SiteCommon.SiteCoverageRatio	NUMBER		2	1		1
+#
+# Parameters for Pset_ZoneCommon to be applied to Spaces
 PARAM	113a9e35-1465-4468-8305-8e69d5276b24	Pset_ZoneCommon.Reference	TEXT		2	1		1
 PARAM	a9c1d119-d845-488b-8aaa-68625296c6d4	Pset_ZoneCommon.PubliclyAccessible	YESNO		2	1		1
 PARAM	cd616a7a-8e64-4bde-8454-989699ddf1b8	Pset_ZoneCommon.IsExternal	YESNO		2	1		1
 PARAM	4655738f-d56e-4f09-ae04-0d3e3a45cbaa	Pset_ZoneCommon.NetPlannedArea	AREA		2	1		1
 PARAM	6704bcc6-c483-45c3-9d90-e4e5dbb87748	Pset_ZoneCommon.HandicapAccessible	YESNO		2	1		1
 PARAM	f612feec-72a2-4a43-9621-a0c271d08886	Pset_ZoneCommon.GrossPlannedArea	AREA		2	1		1
+#
+# Parameters for Pset_RampFlightCommon required for a custom Ramp. These parameters can be appended with (#) to represent the individual components
+#  of the RampFlight, which are sorted bottom up
 PARAM	2421781d-cac5-4915-9d0c-f0a84a471b1a	Pset_RampFlightCommon.Reference	TEXT		2	1		1
 PARAM	3794b219-95ee-448f-b16f-e878ae037933	Pset_RampFlightCommon.HeadRoom	LENGTH		2	1		1
 PARAM	4894c521-4bf4-4a8f-b343-7a46abf60dce	Pset_RampFlightCommon.Slope	NUMBER		2	1		1
@@ -79,6 +91,9 @@ PARAM	84db17c9-9e1e-44d1-8cbe-69ea634f0eb1	IfcRampFlight.IfcQtyLength	LENGTH		2	
 PARAM	a325a639-582a-4bd3-a249-002ac2676be2	IfcRampFlight.IfcQtyWidth	LENGTH		2	1		1
 PARAM	c6bf3693-2edb-4839-ba96-aa2c6ad33cfa	IfcRampFlight.IfcQtyGrossArea	AREA		2	1		1
 PARAM	4e23e39d-0809-42ea-8bf0-9b3d19d39875	IfcRampFlight.IfcQtyGrossVolume	VOLUME		2	1		1
+#
+# Parameters for Pset_SlabCommon required for Landing for a custom Ramp. These parameters can be appended with (#) to represent the individual components
+#  of the Ramp Landing, which are sorted bottom up
 PARAM	fd7bdaba-bb4e-43de-a6c5-20478d9825e0	Pset_SlabCommon.Reference	TEXT		2	1		1
 PARAM	a3c71da3-c4bd-40aa-bf35-5cf18aeeeec0	Pset_SlabCommon.AcousticRating	TEXT		2	1		1
 PARAM	c93f5556-48c4-433a-9eab-b6e2e1bec9a9	Pset_SlabCommon.FireRating	TEXT		2	1		1
@@ -96,6 +111,8 @@ PARAM	4a40afcb-1979-43ef-a4bf-9df8993161f2	IfcRampLanding.IfcQtyGrossArea	AREA		
 PARAM	c3a0ed1e-419f-43a4-a0d3-b88bbb1ce593	IfcRampLanding.IfcQtyGrossVolume	VOLUME		2	1		1
 PARAM	785453d0-915c-47a2-a024-fed0cdaf39bf	IfcRampLanding.IfcQtyGrossWeight	NUMBER		2	1		1
 PARAM	925f5c62-001f-4777-87e2-862c97393149	IfcRampLanding.IfcQtyNetWeight	NUMBER		2	1		1
+#
+#	COBie related parameters
 PARAM	8635020d-0c0e-4f3a-ab32-a0ad3b6bfff2	BIM Standards URL	URL		2	1		1
 PARAM	5267e00f-cf59-45eb-8317-bcd7028fa748	OmniClass Number	TEXT		2	1		1
 PARAM	90847638-6cac-41fa-9db4-2e151700858f	OmniClass Title	TEXT		2	1		1
@@ -105,6 +122,8 @@ PARAM	ec9e9682-f7a2-4a5a-aefc-c77c16401e23	Space Category (Owner) Reference	TEXT
 PARAM	34713fdf-e119-49e9-92ed-5d11f708920f	Space Category (Owner) Name	TEXT		2	1		1
 PARAM	60ef59f7-f0e7-4d07-bb6e-41fc18510a31	Space Category (BOMA) Reference	TEXT		2	1		1
 PARAM	12bd9755-8e4f-4d4e-9240-2301d2cd7617	Space Category (BOMA) Name	TEXT		2	1		1
+#
+# Parameters for Spatial Zone Energy Analysis export
 PARAM	a20a1633-3a20-4337-9a5f-b8fcfa09a428	Spatial Zone Conditioning Requirement	TEXT		2	1		1
 PARAM	9d838298-00ac-4fec-820b-0d527f887cb7	HVAC System Type	TEXT		2	1		1
 PARAM	c7c65649-0abc-476d-8693-10779207dd50	User Defined HVAC System Type	TEXT		2	1		1
@@ -112,6 +131,8 @@ PARAM	36e76e83-a3c8-41c1-9fe8-a3abef236c3c	Is Daylit Zone	YESNO		2	1		1
 PARAM	7ee7d7b5-8c02-4055-8c24-09d8f913cca2	Number of Daylight Sensors	INTEGER		2	1		1
 PARAM	8253a0dd-4285-4210-869e-2a0f7c2d8ee4	Design Illuminance	NUMBER		2	1		1
 PARAM	7d669cb2-e5ba-445e-b291-87a5b64f61eb	Lighting Controls Type URL	TEXT		2	1		1
+#
+# Parameters used in GSA export
 PARAM	e8d94391-3331-4c7f-9e63-e91c17998c64	Space Occupant Organization Abbreviation	TEXT		2	1		1
 PARAM	739849a8-5ca6-494b-bac4-4afcc1eb1505	Space Occupant Organization Name	TEXT		2	1		1
 PARAM	52b8cea7-4ca9-4172-9501-d3527cf54a59	Occupant	TEXT		2	1		1
@@ -126,11 +147,15 @@ PARAM	5824fd9f-930e-41db-b20e-9c00aa9a8ab3	Spatial Zone Type (Owner) Name	TEXT		
 PARAM	0f1bae35-e82d-4a6c-a7db-572245ff29d6	Spatial Zone Security Level (Owner) Reference	TEXT		2	1		1
 PARAM	4320b6e8-9b0a-4632-b465-e95dc3df493c	Spatial Zone Security Level (Owner) Name	TEXT		2	1		1
 PARAM	8c7a547a-6f7f-4eef-a24c-b974efc717e5	ASHRAE Zone Type	TEXT		2	1		1
+#
+# Parameters to add information on IfcMaterialLayer
 PARAM	d05b5436-5063-46e9-97e3-af659b69828e	IfcMaterialLayer.IsVentilated	YESNO		2	1		1
 PARAM	a458f550-164e-4e95-b816-3b28e8014197	IfcMaterialLayer.Name	TEXT		2	1		1
 PARAM	f69e625c-6005-48bd-80c7-f6e02c122788	IfcMaterialLayer.Priority	INTEGER		2	1		1
 PARAM	36617d8d-1abb-41c4-b4e8-da1fd62aaad6	IfcMaterialLayer.Description	TEXT		2	1		1
 PARAM	55cfe7d7-0b60-4214-97da-d2c5555641cb	IfcMaterialLayer.Category	TEXT		2	1		1
+#
+# Parameters to provide value or override Ifc entity attributes
 PARAM	cf633970-73fe-49cd-b03e-af60d49d4deb	IfcName	TEXT		2	1		1
 PARAM	8df7e965-feaf-403f-8290-d4c289c99840	IfcDescription	TEXT		2	1		1
 PARAM	5d167d01-84fc-47cf-b6af-d4ad81f45868	IfcLongName	TEXT		2	1		1
@@ -151,6 +176,8 @@ PARAM	298bfb8d-7c66-4d69-a493-14beb1bbfd4b	IfcSpatialContainer	TEXT		2	1	Paramet
 PARAM	8f0306fa-4df3-479d-bc44-e55210e0d0e4	ConcealedCovering	YESNO		2	1		1
 PARAM	8083a04d-d537-4089-acef-03c7d96ec873	UserDefinedOperationType	TEXT		2	1		1
 PARAM	abad1d39-6965-468f-8861-370e6b726678	IfcSiteGUID	TEXT		2	1		1
+#
+# Parameters for IfcDoor and IfcWindow Panel and Lining properties
 PARAM	07dce341-b4e9-4507-8778-0e44321f516f	PanelDepth	LENGTH		2	1		1
 PARAM	e766bd67-5383-4174-8e98-303739b9e623	PanelWidth	LENGTH		2	1		1
 PARAM	2f4e182a-b7d4-491c-ad28-488029ec2ad6	LiningDepth	LENGTH		2	1		1
@@ -170,9 +197,15 @@ PARAM	9fa581b0-bab3-4926-9dce-f01cd8326b95	SecondTransomOffset	LENGTH		2	1		1
 PARAM	5d4d24aa-2147-40fb-b5f8-cae80691dfec	MullionThickness	LENGTH		2	1		1
 PARAM	97385d06-1f09-43f4-8d0d-d41809c2df9c	FirstMullionOffset	LENGTH		2	1		1
 PARAM	a766f4c3-f32f-4c85-b750-0cd593d23ad7	SecondMullionOffset	LENGTH		2	1		1
+#
+# Special parameters used to influence IFC export
 PARAM	a3e2f9a7-f184-4d16-80e7-349181e17d3d	IfcExportAs	TEXT		2	1	Parameter to instruct export to assign a specific entity	1
 PARAM	9a17f9c0-c41b-4ceb-8279-b20e789fa3a8	IfcExportType	TEXT		2	1	Parameter to assign PredefinedType	1
 PARAM	29f7ff2f-94b7-4d49-b7d3-ce900c19706b	IfcType	TEXT		2	1	Parameter to assign PredefinedType (Deprecated)	1
+#
+#***
+# The parameters below are all Propeties from IFC Propertset definitions for IFC2x2 to IFC4
+#***
 PARAM	f72ce06c-a2d9-448f-a1a7-7ac90aa2dfe7	RequestSourceType	TEXT		2	1	PEnum_RequestSourceType	1
 PARAM	e098e980-d1bc-11e1-8000-00215ad4efdf	RequestSourceLabel	TEXT		2	1	IfcLabel	1
 PARAM	eabae800-d1bc-11e1-8000-00215ad4efdf	RequestSourceName	MULTILINETEXT		2	1	IfcPerson	1

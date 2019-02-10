@@ -701,7 +701,7 @@ namespace Revit.IFC.Export.Exporter
          }
 
          string elemName = NamingUtil.GetNameOverride(elementType, NamingUtil.GetIFCName(elementType));
-         string elemElementType = NamingUtil.GetOverrideStringValue(elementType, "IfcElementType", null);
+         string elemElementType = NamingUtil.GetElementTypeOverride(elementType, null);
 
          // Property sets will be set later.
          wallType = IFCInstanceExporter.CreateCurtainWallType(exporterIFC.GetFile(), elementType,

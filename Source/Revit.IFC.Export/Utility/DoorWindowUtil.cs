@@ -1030,7 +1030,7 @@ namespace Revit.IFC.Export.Utility
          string openingName = NamingUtil.GetNameOverride(doorWindowElement, origOpeningName);
 
          IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, doorWindowElement, openingGUID, ownerHistory,
-             openingPlacement, openingRepHnd, allowTag: false);
+             openingPlacement, openingRepHnd);
          IFCAnyHandleUtil.OverrideNameAttribute(openingHnd, openingName);
          IFCAnyHandleUtil.SetAttribute(openingHnd, "ObjectType", openingObjectType);
 

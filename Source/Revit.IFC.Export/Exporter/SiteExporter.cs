@@ -236,7 +236,7 @@ namespace Revit.IFC.Export.Exporter
 
             IFCAnyHandle localPlacement = IFCInstanceExporter.CreateLocalPlacement(file, null, relativePlacement);
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-            string siteObjectType = NamingUtil.CreateIFCObjectName(exporterIFC, element);
+            string siteObjectType = null;
 
             ProjectInfo projectInfo = doc.ProjectInformation;
             Element mainSiteElement = (element != null) ? element : projectInfo;
@@ -265,6 +265,9 @@ namespace Revit.IFC.Export.Exporter
                   if (string.IsNullOrWhiteSpace(siteLongName))
                      siteLongName = NamingUtil.GetOverrideStringValue(projectInfo, "SiteLongName", null);
 
+                  siteDescription = NamingUtil.GetOverrideStringValue(projectInfo, "SiteDescription", null);
+                  siteObjectType = NamingUtil.GetOverrideStringValue(projectInfo, "SiteObjectType", null);
+
                   // Look in site element for "IfcLandTitleNumber" or project information for "SiteLandTitleNumber".
                   siteLandTitleNumber = NamingUtil.GetOverrideStringValue(element, "IfcLandTitleNumber", null);
                   if (string.IsNullOrWhiteSpace(siteLandTitleNumber))
@@ -278,6 +281,8 @@ namespace Revit.IFC.Export.Exporter
                siteGUID = GUIDUtil.CreateProjectLevelGUID(doc, IFCProjectLevelGUIDType.Site);
                siteName = NamingUtil.GetOverrideStringValue(projectInfo, "SiteName", "Default");
                siteLongName = NamingUtil.GetLongNameOverride(projectInfo, NamingUtil.GetOverrideStringValue(projectInfo, "SiteLongName", null));
+               siteDescription = NamingUtil.GetOverrideStringValue(projectInfo, "SiteDescription", null);
+               siteObjectType = NamingUtil.GetOverrideStringValue(projectInfo, "SiteObjectType", null);
                siteLandTitleNumber = NamingUtil.GetOverrideStringValue(projectInfo, "SiteLandTitleNumber", null);
 
                // don't bother if we have nothing in the site whatsoever.
@@ -302,7 +307,7 @@ namespace Revit.IFC.Export.Exporter
                if (!assignToSite)
                   address = null;
 
-               siteHandle = IFCInstanceExporter.CreateSite(exporterIFC, element, siteGUID, ownerHistory, siteName, siteDescription, localPlacement,
+               siteHandle = IFCInstanceExporter.CreateSite(exporterIFC, element, siteGUID, ownerHistory, siteName, siteDescription, siteObjectType, localPlacement,
                   siteRepresentation, siteLongName, IFCElementComposition.Element, latitude, longitude, elevation, siteLandTitleNumber, address);
                productWrapper.AddSite(mainSiteElement, siteHandle);
                ExporterCacheManager.SiteHandle = siteHandle;

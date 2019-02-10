@@ -352,6 +352,26 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Creates an IFCData object as IfcLinearForceMeasure
+      /// </summary>
+      /// <param name="value">the double value</param>
+      /// <returns>the IFCData object</returns>
+      public static IFCData CreateAsLinearForceMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcLinearForceMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcPlanarForceMeasure
+      /// </summary>
+      /// <param name="value">the double value</param>
+      /// <returns>the IFCData object</returns>
+      public static IFCData CreateAsPlanarForceMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcPlanarForceMeasure");
+      }
+
+      /// <summary>
       /// Creates an IFCData object as an IfcMeasure of the right type.
       /// </summary>
       /// <param name="value">The double value.</param>
