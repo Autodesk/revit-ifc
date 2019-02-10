@@ -172,11 +172,14 @@ namespace Revit.IFC.Export.Utility
             //if NameOverride is not used or does not exist, test for the actual IFC attribute name: Name (using parameter name: IfcName)
             nameOverride = "IfcName";
             overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
-            if ((string.IsNullOrEmpty(overrideValue) || overrideValue.Equals(originalValue))
-               && (element is ElementType || element is FamilySymbol))
+            if (element is ElementType || element is FamilySymbol)
             {
-               nameOverride = "IfcName[Type]";
-               overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+               if (string.IsNullOrEmpty(overrideValue)
+                  || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
+               {
+                  nameOverride = "IfcName[Type]";
+                  overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+               }
             }
          }
 
@@ -275,11 +278,14 @@ namespace Revit.IFC.Export.Utility
       {
          string nameOverride = "IfcDescription";
          string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
-         if ((string.IsNullOrEmpty(overrideValue) || overrideValue.Equals(originalValue))
-            && (element is ElementType || element is FamilySymbol))
+         if (element is ElementType || element is FamilySymbol)
          {
-            nameOverride = "IfcDescription[Type]";
-            overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            if (string.IsNullOrEmpty(overrideValue)
+               || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
+            {
+               nameOverride = "IfcDescription[Type]";
+               overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            }
          }
          //GetOverrideStringValue will return the override value from the parameter specified, otherwise it will return the originalValue
          return overrideValue;
@@ -311,17 +317,42 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The string contains the object type string value.</returns>
       public static string GetObjectTypeOverride(Element element, string originalValue)
       {
-         string nameOverride = "ObjectTypeOverride";
-         string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
-         if ((String.Compare(originalValue, overrideValue) == 0) || overrideValue == null)
+         string objectTypeOverride = "IfcObjectType";
+         string overrideValue = GetOverrideStringValue(element, objectTypeOverride, originalValue);
+
+         // The following is a special treatment for ObjectType. If IfcObjectType is not set, or carrying the original value, 
+         //   check the existence of IfcObjectType[Type] parameter for the ElementType or the FamilySymbol. If it is set, the 
+         //   ObjectType attribute will be overridden by that value, allowing ObjectType is set according to the Type setting 
+         //   such as IfcExportType="USERDEFINED" set in the Type which necessitates ObjectType in the instance to be set to
+         //   the appropriate value
+         if (string.IsNullOrEmpty(overrideValue)
+            || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
          {
-            //if ObjectTypeOverride is not used or does not exist, test for the actual IFC attribute name: ObjectType (using IfcObjectType)
-            nameOverride = "IfcObjectType";
-            overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            Element typeOrSymbol = element.Document.GetElement(element.GetTypeId()) as ElementType; ;
+            if (typeOrSymbol == null)
+            {
+               FamilyInstance famInst = element as FamilyInstance;
+               if (famInst != null)
+                  typeOrSymbol = famInst.Symbol;
+            }
+
+            if (typeOrSymbol != null)
+            {
+               objectTypeOverride = "IfcObjectType[Type]";
+               overrideValue = GetOverrideStringValue(typeOrSymbol, objectTypeOverride, originalValue);
+            }
          }
          //GetOverrideStringValue will return the override value from the parameter specified, otherwise it will return the originalValue
          return overrideValue;
       }
+
+      /// <summary>
+      /// Get ObjectType override
+      /// </summary>
+      /// <param name="handle">the object Handle</param>
+      /// <param name="element">the element</param>
+      /// <param name="originalValue">the original value</param>
+      /// <returns>the override value or the original</returns>
       public static string GetObjectTypeOverride(IFCAnyHandle handle, Element element, string originalValue)
       {
          List<Exporter.PropertySet.AttributeEntry> entries = ExporterCacheManager.AttributeCache.GetEntry(handle, Exporter.PropertySet.PropertyType.Label, "ObjectType");
@@ -336,6 +367,7 @@ namespace Revit.IFC.Export.Utility
          }
          return GetObjectTypeOverride(element, originalValue);
       }
+
       /// <summary>
       /// Gets Tag override from element.
       /// </summary>
@@ -350,11 +382,36 @@ namespace Revit.IFC.Export.Utility
       {
          string nameOverride = "IfcTag";
          string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
-         if (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)
-            && (element is ElementType || element is FamilySymbol))
+         if (element is ElementType || element is FamilySymbol)
          {
-            nameOverride = "IfcTag[Type]";
-            overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            if (string.IsNullOrEmpty(overrideValue)
+               || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
+            {
+               nameOverride = "IfcTag[Type]";
+               overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            }
+         }
+         return overrideValue;
+      }
+
+      /// <summary>
+      /// Get ElementType attribute override
+      /// </summary>
+      /// <param name="element">the element (should be the Type)</param>
+      /// <param name="originalValue">the original value</param>
+      /// <returns>the string that contains the ElementType attribute value</returns>
+      public static string GetElementTypeOverride(Element element, string originalValue)
+      {
+         string nameOverride = "IfcElementType";
+         string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+         if (element is ElementType || element is FamilySymbol)
+         {
+            if (string.IsNullOrEmpty(overrideValue)
+               || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
+            {
+               nameOverride = "IfcElementType[Type]";
+               overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            }
          }
          return overrideValue;
       }

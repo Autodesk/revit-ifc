@@ -233,6 +233,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                       ifcPropertyName, valueType);
                   break;
                }
+            case PropertyType.LinearForce:
+               {
+                  propHnd = PropertyUtil.CreateLinearForcePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.PlanarForce:
+               {
+                  propHnd = PropertyUtil.CreatePlanarForcePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
             case PropertyType.Pressure:
                {
                   propHnd = FrequencyPropertyUtil.CreatePressurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,

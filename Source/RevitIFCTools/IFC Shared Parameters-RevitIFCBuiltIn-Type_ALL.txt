@@ -49,6 +49,7 @@ PARAM	0a85b5b6-2af4-480d-85bf-235cee912e09	IfcTag[Type]	TEXT		2	1		1
 PARAM	115763c9-c385-4aad-aac6-6ac789b0cb41	IfcProfileName[Type]	TEXT		2	1		1
 PARAM	3fa9eb1c-a4a0-4fa8-b836-e9b2f417b8d8	IfcElementType[Type]	TEXT		2	1		1
 PARAM	0c449988-1efe-4690-b873-fc98d4fc60e2	IfcApplicableOccurrence[Type]	TEXT		2	1		1
+PARAM	54f49c86-bf8c-4689-830a-54bc73fa0ab2	IfcObjectType[Type]	TEXT		2	1	Special Parameter to set the Instance ObjectType attribute from the Type	1
 PARAM	141f4773-6408-460c-9136-ed34a072e8da	PanelDepth[Type]	LENGTH		2	1		1
 PARAM	6f115f50-3148-4aa0-be19-ce8d91aea627	PanelWidth[Type]	LENGTH		2	1		1
 PARAM	abec6a05-f532-46f0-b3de-f9e8a9c01335	LiningDepth[Type]	LENGTH		2	1		1
