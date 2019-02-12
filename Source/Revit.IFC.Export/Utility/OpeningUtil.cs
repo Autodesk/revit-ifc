@@ -222,12 +222,14 @@ namespace Revit.IFC.Export.Utility
             if (openingElem == null)
                openingElem = element;
 
+            bool currentWallIsHost = false;
             FamilyInstance openingFInst = openingElem as FamilyInstance;
-            //if (openingFInst != null && openingFInst.Host != null)
-            //{
-            //   if (openingFInst.Host.Id != element.Id)
-            //      continue;      // If the host is not the current Wall, skip this opening
-            //}
+            if (openingFInst != null && openingFInst.Host != null)
+            {
+               if (openingFInst.Host.Id == element.Id)
+                  currentWallIsHost = true;
+                  //continue;      // If the host is not the current Wall, skip this opening
+            }
 
             // Don't export the opening if WallSweep category has been turned off.
             // This is currently restricted to WallSweeps because the element responsible for the opening could be a variety of things, 
@@ -247,7 +249,7 @@ namespace Revit.IFC.Export.Utility
                parentHandle = elementHandles[0];
 
             bool isDoorOrWindowOpening = IsDoorOrWindowOpening(exporterIFC, openingElem, element);
-            if (isDoorOrWindowOpening)
+            if (isDoorOrWindowOpening && currentWallIsHost)
             {
                DoorWindowDelayedOpeningCreator delayedCreator =
                    DoorWindowDelayedOpeningCreator.Create(exporterIFC, openingData, scaledWidth, element.Id, parentHandle, setter.LevelId);
@@ -495,7 +497,7 @@ namespace Revit.IFC.Export.Utility
             Element instHost = (openingElem as FamilyInstance).Host;
             return (exportType.ExportInstance == IFCEntityType.IfcDoor || exportType.ExportType == IFCEntityType.IfcDoorType 
                || exportType.ExportInstance == IFCEntityType.IfcWindow || exportType.ExportType == IFCEntityType.IfcWindowType) &&
-                (instHost != null && instHost.Id == hostElement.Id);
+                (instHost != null/* && instHost.Id == hostElement.Id*/);
          }
 
          return false;
