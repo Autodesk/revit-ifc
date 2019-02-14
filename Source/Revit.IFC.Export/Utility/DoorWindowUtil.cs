@@ -164,7 +164,8 @@ namespace Revit.IFC.Export.Utility
                currentPanelWidth = (double)panelWidthList[panelIndex];
 
             string doorPanelName = baseDoorPanelName;
-            string doorPanelGUID = GUIDUtil.CreateGUID();
+            //string doorPanelGUID = GUIDUtil.CreateGUID();
+            string doorPanelGUID = GUIDUtil.CreateSubElementGUID(familyInstance, (int)IFCDoorSubElements.DoorPanelStart + panelIndex);
             IFCAnyHandle doorPanel = IFCInstanceExporter.CreateDoorPanelProperties(file, doorPanelGUID, ownerHistory,
                doorPanelName, null, panelDepthList[panelIndex], panelOperationList[panelIndex],
                currentPanelWidth, panelPositionList[panelIndex], null);
@@ -628,7 +629,8 @@ namespace Revit.IFC.Export.Utility
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "SecondMullionOffset", out value1) != null)
             secondMullionOffsetOpt = UnitUtil.ScaleLength(value1);
 
-         string windowLiningGUID = GUIDUtil.CreateGUID();
+         //string windowLiningGUID = GUIDUtil.CreateGUID();
+         string windowLiningGUID = GUIDUtil.CreateSubElementGUID(familyInstance, (int)IFCWindowSubElements.WindowLining);
          string windowLiningName = NamingUtil.GetIFCName(familyInstance);
          return IFCInstanceExporter.CreateWindowLiningProperties(file, windowLiningGUID, ownerHistory,
             windowLiningName, description, liningDepthOpt, liningThicknessOpt, transomThicknessOpt, mullionThicknessOpt,
@@ -684,7 +686,8 @@ namespace Revit.IFC.Export.Utility
                frameThickness = UnitUtil.ScaleLength(value2);
             }
 
-            string panelGUID = GUIDUtil.CreateGUID();
+            //string panelGUID = GUIDUtil.CreateGUID();
+            string panelGUID = GUIDUtil.CreateSubElementGUID(familyInstance, (int)IFCWindowSubElements.WindowPanelStart + panelNumber);
             string panelName = NamingUtil.GetIFCNamePlusIndex(familyInstance, panelNumber);
             panels.Add(IFCInstanceExporter.CreateWindowPanelProperties(file, panelGUID, ownerHistory,
                panelName, description, panelOperation, panelPosition, frameDepth, frameThickness, null));
