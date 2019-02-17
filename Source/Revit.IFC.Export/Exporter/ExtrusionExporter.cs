@@ -1372,14 +1372,18 @@ namespace Revit.IFC.Export.Exporter
 
                foreach (Solid solid in solids)
                {
-                  IFCAnyHandle triangulatedBodyItem = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, solid);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
-                     extrusionBodyItems.Add(triangulatedBodyItem);
+                  IList<IFCAnyHandle> triangulatedBodyItems = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, solid);
+                  if (triangulatedBodyItems != null && triangulatedBodyItems.Count > 0)
+                  {
+                     foreach (IFCAnyHandle item in triangulatedBodyItems)
+                        extrusionBodyItems.Add(item);
+                  }
                   materialId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solid, exporterIFC, element);
                   materialIds.Add(materialId);
-                  BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, triangulatedBodyItem, materialId);
+                  BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, triangulatedBodyItems[0], materialId);
 
-                  retVal.BaseRepresentationItems.Add(triangulatedBodyItem);
+                  foreach (IFCAnyHandle item in extrusionBodyItems)
+                     retVal.BaseRepresentationItems.Add(item);
                }
                retVal.Handle = RepresentationUtil.CreateTessellatedRep(exporterIFC, element, catId, contextOfItemsBody, extrusionBodyItems, null);
                retVal.ShapeRepresentationType = ShapeRepresentationType.Tessellation;

@@ -1019,7 +1019,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
             propHnd = CreateDoublePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName,
-               "IfcLinearForceMeasure", UnitType.UT_LinearForce, valueType);
+               "IfcPlanarForceMeasure", UnitType.UT_AreaForce, valueType);
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
                return propHnd;
          }

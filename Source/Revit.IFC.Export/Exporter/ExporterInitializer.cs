@@ -365,9 +365,20 @@ namespace Revit.IFC.Export.Exporter
                            }
                         }
                      }
-                     PropertySetEntry pSE = new PropertySetEntry(dataType, prop.Name, mappings);
-                     pSE.DefaultValue = defaultValue;
-                     userDefinedPropertySet.AddEntry(pSE);
+                     if (mappings.Count > 0)
+                     {
+                        PropertySetEntry pSE = new PropertySetEntry(dataType, prop.Name, mappings);
+                        pSE.DefaultValue = defaultValue;
+                        userDefinedPropertySet.AddEntry(pSE);
+                     }
+                     else
+                     {
+                        PropertySetEntry pSE = new PropertySetEntry(prop.Name);
+                        pSE.PropertyName = prop.Name;
+                        pSE.PropertyType = dataType;
+                        pSE.DefaultValue = defaultValue;
+                        userDefinedPropertySet.AddEntry(pSE);
+                     }
                   }
                }
                userDefinedPropertySets.Add(userDefinedPropertySet);
