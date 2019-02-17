@@ -58,35 +58,45 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle surface;
          ICollection<IFCAnyHandle> boundaryRepresentations = new List<IFCAnyHandle>();
 
+         ISet<IFCAnyHandle> surfaceItems = new HashSet<IFCAnyHandle>();
+
          // Use tessellated geometry for surface in IFC Reference View
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)
          {
             BodyExporterOptions options = new BodyExporterOptions(false, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-            surface = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geometryElement);
-            if (element is Autodesk.Revit.DB.Architecture.TopographySurface)
-            {
-               // TODO: need to find a good way to create the right boundary outline!
-               //IList<XYZ> boundaryPoints = (element as Autodesk.Revit.DB.Architecture.TopographySurface).GetBoundaryPoints();
-               //if (boundaryPoints != null && boundaryPoints.Count > 0)
-               //{
-               //   IList<IFCAnyHandle> coords = new List<IFCAnyHandle>();
-               //   foreach (XYZ point in boundaryPoints)
-               //   {
-               //      XYZ scPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, point);
-               //      IList<double> uvPoint = new List<double>();
-               //      // SInce the projection direction is on Z-axis, simply ignoring the Z-value will do for this. And also the Site reference will follow the WCS
-               //      uvPoint.Add(scPoint.X);
-               //      uvPoint.Add(scPoint.Y);
-               //      IFCAnyHandle ifcCartesianPoint = IFCInstanceExporter.CreateCartesianPoint(file, uvPoint);
-               //      coords.Add(ifcCartesianPoint);
-               //   }
-               //   if (coords.Count >= 2)
-               //   {
-               //      IFCAnyHandle boundaryLines = IFCInstanceExporter.CreatePolyline(file, coords);
-               //      boundaryRepresentations.Add(boundaryLines); 
-               //   }
-               //}
-            }
+            IList<IFCAnyHandle> items = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geometryElement);
+            if (items == null || items.Count == 0)
+               return false;
+
+            BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, doc, items[0], BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element));
+
+            foreach (IFCAnyHandle item in items)
+               surfaceItems.Add(item);
+
+            //if (element is Autodesk.Revit.DB.Architecture.TopographySurface)
+            //{
+            // TODO: need to find a good way to create the right boundary outline!
+            //IList<XYZ> boundaryPoints = (element as Autodesk.Revit.DB.Architecture.TopographySurface).GetBoundaryPoints();
+            //if (boundaryPoints != null && boundaryPoints.Count > 0)
+            //{
+            //   IList<IFCAnyHandle> coords = new List<IFCAnyHandle>();
+            //   foreach (XYZ point in boundaryPoints)
+            //   {
+            //      XYZ scPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, point);
+            //      IList<double> uvPoint = new List<double>();
+            //      // SInce the projection direction is on Z-axis, simply ignoring the Z-value will do for this. And also the Site reference will follow the WCS
+            //      uvPoint.Add(scPoint.X);
+            //      uvPoint.Add(scPoint.Y);
+            //      IFCAnyHandle ifcCartesianPoint = IFCInstanceExporter.CreateCartesianPoint(file, uvPoint);
+            //      coords.Add(ifcCartesianPoint);
+            //   }
+            //   if (coords.Count >= 2)
+            //   {
+            //      IFCAnyHandle boundaryLines = IFCInstanceExporter.CreatePolyline(file, coords);
+            //      boundaryRepresentations.Add(boundaryLines); 
+            //   }
+            //}
+            //}
          }
          else
          {
@@ -112,15 +122,15 @@ namespace Revit.IFC.Export.Exporter
             
             // Collect Footprint data
             boundaryRepresentations = ifcGeomInfo.GetRepresentations();
+
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(surface))
+               return false;
+
+            BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, doc, surface, BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element));
+
+            surfaceItems.Add(surface);
          }
 
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(surface))
-            return false;
-
-         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, doc, surface, BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element));
-
-         ISet<IFCAnyHandle> surfaceItems = new HashSet<IFCAnyHandle>();
-         surfaceItems.Add(surface);
 
          ElementId catId = CategoryUtil.GetSafeCategoryId(element);
 

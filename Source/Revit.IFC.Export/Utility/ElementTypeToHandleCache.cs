@@ -56,6 +56,7 @@ namespace Revit.IFC.Export.Utility
       /// The key is made up by ElementId, IFC entity to export to, and the predefinedtype. PredefinedType will be assigned to a value "NULL" for the default if not specified
       /// </summary>
       private Dictionary<ElementTypeKey, IFCAnyHandle> m_ElementTypeToHandleDictionary = new Dictionary<ElementTypeKey, IFCAnyHandle>(keyComparer);
+      private Dictionary<IFCAnyHandle, ElementTypeKey> m_HandleToElementTypeDictionary = new Dictionary<IFCAnyHandle, ElementTypeKey>();
       private HashSet<ElementType> m_RegisteredElementType = new HashSet<ElementType>();
 
       /// <summary>
@@ -74,6 +75,21 @@ namespace Revit.IFC.Export.Utility
          if (m_ElementTypeToHandleDictionary.TryGetValue(key, out handle))
          {
             return handle;
+         }
+         return null;
+      }
+
+      /// <summary>
+      /// Find registered type and predefinedType by a type handle
+      /// </summary>
+      /// <param name="typeHnd">the type handle</param>
+      /// <returns>ElementTypeKey if found</returns>
+      public ElementTypeKey Find(IFCAnyHandle typeHnd)
+      {
+         ElementTypeKey etKey;
+         if (m_HandleToElementTypeDictionary.TryGetValue(typeHnd, out etKey))
+         {
+            return etKey;
          }
          return null;
       }
@@ -133,6 +149,7 @@ namespace Revit.IFC.Export.Utility
             return;
 
          m_ElementTypeToHandleDictionary[key] = handle;
+         m_HandleToElementTypeDictionary[handle] = key;
          m_RegisteredElementType.Add(key.Item1);
       }
    }

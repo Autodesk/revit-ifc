@@ -231,10 +231,11 @@ namespace Revit.IFC.Export.Exporter
             if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)
             {
                BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(false, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-               IFCAnyHandle triFaceSet = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, subElem, bodyExporterOptions, geomElem);
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triFaceSet))
+               IList<IFCAnyHandle> triFaceSet = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, subElem, bodyExporterOptions, geomElem);
+               if (triFaceSet != null && triFaceSet.Count > 0)
                {
-                  bodyItems.Add(triFaceSet);
+                  foreach (IFCAnyHandle triFaceSetItem in triFaceSet)
+                     bodyItems.Add(triFaceSetItem);
                   useFallbackBREP = false;    // no need to do Brep since it is successful
                }
             }

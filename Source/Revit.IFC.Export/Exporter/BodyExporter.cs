@@ -2038,7 +2038,8 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
                   if (polygonalFaceSetList == null)
                      polygonalFaceSetList = new List<IFCAnyHandle>();
-                  polygonalFaceSetList.Add(triangulatedMesh);
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedMesh))
+                     polygonalFaceSetList.Add(triangulatedMesh);
                }
             }
             else if (geom is Mesh)
@@ -2081,7 +2082,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
             if (polygonalFaceSetList == null)
                polygonalFaceSetList = new List<IFCAnyHandle>();
-            polygonalFaceSetList.Add(triangulatedMesh);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedMesh))
+               polygonalFaceSetList.Add(triangulatedMesh);
          }
 
          return polygonalFaceSetList;
@@ -2311,7 +2313,8 @@ namespace Revit.IFC.Export.Exporter
                {
                   // Failed! Likely because of the tessellation failed. Try to create from the faceset instead
                   IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject);
-                  triangulatedBodyList.Add(triangulatedMesh);
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedMesh))
+                     triangulatedBodyList.Add(triangulatedMesh);
                }
             }
             else if (geom is Mesh)
@@ -2378,7 +2381,8 @@ namespace Revit.IFC.Export.Exporter
          {
             // It is not from Solid, so we will use the faces to export. It works for Surface export too
             IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject);
-            triangulatedBodyList.Add(triangulatedMesh);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedMesh))
+               triangulatedBodyList.Add(triangulatedMesh);
          }
 
          return triangulatedBodyList;
@@ -2392,11 +2396,11 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="options">the options</param>
       /// <param name="geomObject">geometry objects</param>
       /// <returns>returns a handle</returns>
-      public static IFCAnyHandle ExportBodyAsTessellatedFaceSet(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
+      public static IList<IFCAnyHandle> ExportBodyAsTessellatedFaceSet(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
                   GeometryObject geomObject, Transform lcs = null)
       {
          IList<IFCAnyHandle> tessellatedBodyList = null;
-         IFCAnyHandle tessellatedBody = null;
+         //IFCAnyHandle tessellatedBody = null;
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2 && !ExporterCacheManager.ExportOptionsCache.UseOnlyTriangulation)
          {
@@ -2408,10 +2412,11 @@ namespace Revit.IFC.Export.Exporter
          }
 
          // We only handle one shell for now
-         if (tessellatedBodyList != null && tessellatedBodyList.Count > 0)
-            tessellatedBody = tessellatedBodyList[0];
+         //if (tessellatedBodyList != null && tessellatedBodyList.Count > 0)
+         //   tessellatedBody = tessellatedBodyList[0];
 
-         return tessellatedBody;
+         //return tessellatedBody;
+         return tessellatedBodyList;
       }
 
       /// <summary>
@@ -2751,10 +2756,11 @@ namespace Revit.IFC.Export.Exporter
             if (!alreadyExported && canExportAsTessellatedFaceSet)
             {
                Transform trfToUse = GeometryUtil.GetScaledTransform(exporterIFC);
-               IFCAnyHandle triangulatedBodyItem = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
+               IList<IFCAnyHandle> triangulatedBodyItems = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
+               if (triangulatedBodyItems != null && triangulatedBodyItems.Count > 0)
                {
-                  bodyItems.Add(triangulatedBodyItem);
+                  foreach (IFCAnyHandle triangulatedBodyItem in triangulatedBodyItems)
+                     bodyItems.Add(triangulatedBodyItem);
                   alreadyExported = true;
                   hasTriangulatedGeometry = true;
                }
