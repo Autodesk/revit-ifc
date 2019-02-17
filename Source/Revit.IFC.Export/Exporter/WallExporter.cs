@@ -470,9 +470,12 @@ namespace Revit.IFC.Export.Exporter
                      geomList.Add(mesh);
                foreach (GeometryObject geom in geomList)
                {
-                  IFCAnyHandle triangulatedBodyItem = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, wallElement, options, geom);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
-                     bodyItems.Add(triangulatedBodyItem);
+                  IList<IFCAnyHandle> triangulatedBodyItems = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, wallElement, options, geom);
+                  if (triangulatedBodyItems != null && triangulatedBodyItems.Count > 0)
+                  {
+                     foreach(IFCAnyHandle triangulatedBodyItem in triangulatedBodyItems)
+                        bodyItems.Add(triangulatedBodyItem);
+                  }
                }
                bodyRep = RepresentationUtil.CreateTessellatedRep(exporterIFC, wallElement, catId, contextOfItemsBody, bodyItems, null);
             }
@@ -503,9 +506,12 @@ namespace Revit.IFC.Export.Exporter
                {
                   Transform scaledLCS = wallLCS;
                   scaledLCS.Origin = UnitUtil.ScaleLength(scaledLCS.Origin);
-                  IFCAnyHandle triangulatedBodyItem = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, wallElement, options, geom, scaledLCS.Inverse);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedBodyItem))
-                     bodyItems.Add(triangulatedBodyItem);
+                  IList<IFCAnyHandle> triangulatedBodyItems = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, wallElement, options, geom, scaledLCS.Inverse);
+                  if (triangulatedBodyItems != null && triangulatedBodyItems.Count > 0)
+                  {
+                     foreach (IFCAnyHandle triangulatedBodyItem in triangulatedBodyItems)
+                        bodyItems.Add(triangulatedBodyItem);
+                  }
                }
                bodyRep = RepresentationUtil.CreateTessellatedRep(exporterIFC, wallElement, catId, contextOfItemsBody, bodyItems, null);
             }
@@ -621,178 +627,168 @@ namespace Revit.IFC.Export.Exporter
          double depth = 0.0;
          bool validRange = (range != null && !MathUtil.IsAlmostZero(range.Start - range.End));
 
-         bool exportParts = PartExporter.CanExportParts(element);
-         if (exportParts && !PartExporter.CanExportElementInPartExport(element, validRange ? overrideLevelId : element.LevelId, validRange))
-            return null;
+         Document doc = element.Document;
+         using (SubTransaction tempPartTransaction = new SubTransaction(doc))
+         { 
+            // For IFC4RV export, wall will be split into its parts (temporarily) in order to export the wall by its parts
+            //if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+            //{
+            //   ICollection<ElementId> ids = new List<ElementId>() { element.Id };
+            //   PartUtils.CreateParts(doc, ids);
+            //   doc.Regenerate();
+            //}
 
-         IList<Solid> solids = new List<Solid>();
-         IList<Mesh> meshes = new List<Mesh>();
-         bool exportingInplaceOpenings = false;
-
-         if (!exportParts)
-         {
-            if (!(element is FamilyInstance))
+            bool exportParts = PartExporter.CanExportParts(element);
+            if (exportParts && !PartExporter.CanExportElementInPartExport(element, validRange ? overrideLevelId : element.LevelId, validRange))
             {
-               GetSolidsAndMeshes(element.Document, exporterIFC, geometryElement, range, ref solids, ref meshes);
-               if (solids.Count == 0 && meshes.Count == 0)
-                  return null;
+               if (tempPartTransaction.HasStarted())
+                  tempPartTransaction.RollBack();
+               return null;
             }
-            else
-            {
-               FamilyInstance famInstWallElem = element as FamilyInstance;
 
-               GeometryElement geomElemToUse = GetGeometryFromInplaceWall(famInstWallElem);
-               if (geomElemToUse != null)
+            IList<Solid> solids = new List<Solid>();
+            IList<Mesh> meshes = new List<Mesh>();
+            bool exportingInplaceOpenings = false;
+
+            if (!exportParts)
+            {
+               if (!(element is FamilyInstance))
                {
-                  exportingInplaceOpenings = true;
+                  GetSolidsAndMeshes(element.Document, exporterIFC, geometryElement, range, ref solids, ref meshes);
+                  if (solids.Count == 0 && meshes.Count == 0)
+                  {
+                     if (tempPartTransaction.HasStarted())
+                        tempPartTransaction.RollBack();
+                     return null;
+                  }
                }
                else
                {
-                  exportingInplaceOpenings = false;
-                  geomElemToUse = geometryElement;
-               }
-               Transform trf = Transform.Identity;
-               if (geomElemToUse != geometryElement)
-                  trf = famInstWallElem.GetTransform();
+                  FamilyInstance famInstWallElem = element as FamilyInstance;
 
-               SolidMeshGeometryInfo solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(geomElemToUse, trf);
-               //solids = solidMeshCapsule.GetSolids();
-               //meshes = solidMeshCapsule.GetMeshes();
-               IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solidMeshCapsule.GetSolids(), solidMeshCapsule.GetMeshes());
-               foreach (GeometryObject gObj in gObjs)
-               {
-                  if (gObj is Solid)
-                     solids.Add(gObj as Solid);
-                  else if (gObj is Mesh)
-                     meshes.Add(gObj as Mesh);
-               }
-            }
-         }
-
-         IFCFile file = exporterIFC.GetFile();
-         using (IFCTransaction tr = new IFCTransaction(file))
-         {
-            using (ProductWrapper localWrapper = ProductWrapper.Create(origWrapper))
-            {
-               // get bounding box height so that we can subtract out pieces properly.
-               // only for Wall, not FamilyInstance.
-               if (exportingWallElement && geometryElement != null)
-               {
-                  // There is a problem in the API where some walls with vertical structures are overreporting their height,
-                  // making it appear as if there are clipping problems on export.  We will work around this by getting the
-                  // height directly from the solid(s).
-                  if (solids.Count > 0 && meshes.Count == 0)
+                  GeometryElement geomElemToUse = GetGeometryFromInplaceWall(famInstWallElem);
+                  if (geomElemToUse != null)
                   {
-                     zSpan = GetBoundingBoxOfSolids(solids);
+                     exportingInplaceOpenings = true;
                   }
                   else
                   {
-                     BoundingBoxXYZ boundingBox = wallElement.get_BoundingBox(null);
-                     if (boundingBox != null)
-                        zSpan = GetBoundingBoxZRange(boundingBox);
+                     exportingInplaceOpenings = false;
+                     geomElemToUse = geometryElement;
                   }
+                  Transform trf = Transform.Identity;
+                  if (geomElemToUse != geometryElement)
+                     trf = famInstWallElem.GetTransform();
 
-                  if (zSpan == null)
-                     return null;
-
-                  // if we have a top clipping plane, modify depth accordingly.
-                  double bottomHeight = validRange ? Math.Max(zSpan.Start, range.Start) : zSpan.Start;
-                  double topHeight = validRange ? Math.Min(zSpan.End, range.End) : zSpan.End;
-                  depth = topHeight - bottomHeight;
-                  if (MathUtil.IsAlmostZero(depth))
-                     return null;
-                  depth = UnitUtil.ScaleLength(depth);
-               }
-               else
-               {
-                  zSpan = new IFCRange();
-               }
-
-               Document doc = element.Document;
-
-               double baseWallElevation = 0.0;
-               ElementId baseLevelId = LevelUtil.GetBaseLevelIdForElement(element);
-               if (baseLevelId != ElementId.InvalidElementId)
-               {
-                  Element baseLevel = doc.GetElement(baseLevelId);
-                  if (baseLevel is Level)
-                     baseWallElevation = (baseLevel as Level).Elevation;
-               }
-
-               IFCAnyHandle axisRep = null;
-               IFCAnyHandle bodyRep = null;
-
-               bool exportingAxis = false;
-               Curve trimmedCurve = null;
-
-               bool exportedAsWallWithAxis = false;
-               bool exportedBodyDirectly = false;
-
-               Curve centerCurve = GetWallAxis(wallElement);
-
-               XYZ localXDir = new XYZ(1, 0, 0);
-               XYZ localYDir = new XYZ(0, 1, 0);
-               XYZ localZDir = new XYZ(0, 0, 1);
-               XYZ localOrig = new XYZ(0, 0, 0);
-               double eps = MathUtil.Eps();
-
-               if (centerCurve != null)
-               {
-                  Curve baseCurve = GetWallAxisAtBaseHeight(wallElement);
-                  trimmedCurve = GetWallTrimmedCurve(wallElement, baseCurve);
-
-                  IFCRange curveBounds;
-                  XYZ oldOrig;
-                  GeometryUtil.GetAxisAndRangeFromCurve(trimmedCurve, out curveBounds, out localXDir, out oldOrig);
-
-                  // Move the curve to the bottom of the geometry or the bottom of the range, which is higher.
-                  if (baseCurve != null)
-                     localOrig = new XYZ(oldOrig.X, oldOrig.Y, validRange ? Math.Max(range.Start, zSpan.Start) : zSpan.Start);
-                  else
-                     localOrig = oldOrig;
-
-                  double dist = localOrig[2] - oldOrig[2];
-                  if (!MathUtil.IsAlmostZero(dist))
+                  SolidMeshGeometryInfo solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(geomElemToUse, trf);
+                  //solids = solidMeshCapsule.GetSolids();
+                  //meshes = solidMeshCapsule.GetMeshes();
+                  IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solidMeshCapsule.GetSolids(), solidMeshCapsule.GetMeshes());
+                  foreach (GeometryObject gObj in gObjs)
                   {
-                     XYZ moveVec = new XYZ(0, 0, dist);
-                     trimmedCurve = GeometryUtil.MoveCurve(trimmedCurve, moveVec);
+                     if (gObj is Solid)
+                        solids.Add(gObj as Solid);
+                     else if (gObj is Mesh)
+                        meshes.Add(gObj as Mesh);
                   }
-                  localYDir = localZDir.CrossProduct(localXDir);
-
-                  // ensure that X and Z axes are orthogonal.
-                  double xzDot = localZDir.DotProduct(localXDir);
-                  if (!MathUtil.IsAlmostZero(xzDot))
-                     localXDir = localYDir.CrossProduct(localZDir);
                }
-               else
+            }
+
+            IFCFile file = exporterIFC.GetFile();
+            using (IFCTransaction tr = new IFCTransaction(file))
+            {
+               using (ProductWrapper localWrapper = ProductWrapper.Create(origWrapper))
                {
-                  BoundingBoxXYZ boundingBox = element.get_BoundingBox(null);
-                  if (boundingBox != null)
+                  // get bounding box height so that we can subtract out pieces properly.
+                  // only for Wall, not FamilyInstance.
+                  if (exportingWallElement && geometryElement != null)
                   {
-                     XYZ bBoxMin = boundingBox.Min;
-                     XYZ bBoxMax = boundingBox.Max;
-                     if (validRange)
-                        localOrig = new XYZ(bBoxMin.X, bBoxMin.Y, range.Start);
+                     // There is a problem in the API where some walls with vertical structures are overreporting their height,
+                     // making it appear as if there are clipping problems on export.  We will work around this by getting the
+                     // height directly from the solid(s).
+                     if (solids.Count > 0 && meshes.Count == 0)
+                     {
+                        zSpan = GetBoundingBoxOfSolids(solids);
+                     }
                      else
-                        localOrig = boundingBox.Min;
+                     {
+                        BoundingBoxXYZ boundingBox = wallElement.get_BoundingBox(null);
+                        if (boundingBox != null)
+                           zSpan = GetBoundingBoxZRange(boundingBox);
+                     }
 
-                     XYZ localXDirMax = null;
-                     Transform bTrf = boundingBox.Transform;
-                     XYZ localXDirMax1 = new XYZ(bBoxMax.X, localOrig.Y, localOrig.Z);
-                     localXDirMax1 = bTrf.OfPoint(localXDirMax1);
-                     XYZ localXDirMax2 = new XYZ(localOrig.X, bBoxMax.Y, localOrig.Z);
-                     localXDirMax2 = bTrf.OfPoint(localXDirMax2);
-                     if (localXDirMax1.DistanceTo(localOrig) >= localXDirMax2.DistanceTo(localOrig))
-                        localXDirMax = localXDirMax1;
-                     else
-                        localXDirMax = localXDirMax2;
-
-                     // An invalid bounding box may lead to a zero-length vector here, eventually causing a (soft) crash.
-                     localXDir = localXDirMax.Subtract(localOrig);
-                     localXDir = localXDir.Normalize();
-                     if (!localXDir.IsUnitLength())
+                     if (zSpan == null)
+                     {
+                        if (tempPartTransaction.HasStarted())
+                           tempPartTransaction.RollBack();
                         return null;
+                     }
+                     // if we have a top clipping plane, modify depth accordingly.
+                     double bottomHeight = validRange ? Math.Max(zSpan.Start, range.Start) : zSpan.Start;
+                     double topHeight = validRange ? Math.Min(zSpan.End, range.End) : zSpan.End;
+                     depth = topHeight - bottomHeight;
+                     if (MathUtil.IsAlmostZero(depth))
+                     {
+                        if (tempPartTransaction.HasStarted())
+                           tempPartTransaction.RollBack();
+                        return null;
+                     }
+                     depth = UnitUtil.ScaleLength(depth);
+                  }
+                  else
+                  {
+                     zSpan = new IFCRange();
+                  }
 
+                  //Document doc = element.Document;
+
+                  double baseWallElevation = 0.0;
+                  ElementId baseLevelId = LevelUtil.GetBaseLevelIdForElement(element);
+                  if (baseLevelId != ElementId.InvalidElementId)
+                  {
+                     Element baseLevel = doc.GetElement(baseLevelId);
+                     if (baseLevel is Level)
+                        baseWallElevation = (baseLevel as Level).Elevation;
+                  }
+
+                  IFCAnyHandle axisRep = null;
+                  IFCAnyHandle bodyRep = null;
+
+                  bool exportingAxis = false;
+                  Curve trimmedCurve = null;
+
+                  bool exportedAsWallWithAxis = false;
+                  bool exportedBodyDirectly = false;
+
+                  Curve centerCurve = GetWallAxis(wallElement);
+
+                  XYZ localXDir = new XYZ(1, 0, 0);
+                  XYZ localYDir = new XYZ(0, 1, 0);
+                  XYZ localZDir = new XYZ(0, 0, 1);
+                  XYZ localOrig = new XYZ(0, 0, 0);
+                  double eps = MathUtil.Eps();
+
+                  if (centerCurve != null)
+                  {
+                     Curve baseCurve = GetWallAxisAtBaseHeight(wallElement);
+                     trimmedCurve = GetWallTrimmedCurve(wallElement, baseCurve);
+
+                     IFCRange curveBounds;
+                     XYZ oldOrig;
+                     GeometryUtil.GetAxisAndRangeFromCurve(trimmedCurve, out curveBounds, out localXDir, out oldOrig);
+
+                     // Move the curve to the bottom of the geometry or the bottom of the range, which is higher.
+                     if (baseCurve != null)
+                        localOrig = new XYZ(oldOrig.X, oldOrig.Y, validRange ? Math.Max(range.Start, zSpan.Start) : zSpan.Start);
+                     else
+                        localOrig = oldOrig;
+
+                     double dist = localOrig[2] - oldOrig[2];
+                     if (!MathUtil.IsAlmostZero(dist))
+                     {
+                        XYZ moveVec = new XYZ(0, 0, dist);
+                        trimmedCurve = GeometryUtil.MoveCurve(trimmedCurve, moveVec);
+                     }
                      localYDir = localZDir.CrossProduct(localXDir);
 
                      // ensure that X and Z axes are orthogonal.
@@ -800,346 +796,396 @@ namespace Revit.IFC.Export.Exporter
                      if (!MathUtil.IsAlmostZero(xzDot))
                         localXDir = localYDir.CrossProduct(localZDir);
                   }
-               }
-
-               IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-
-               Transform orientationTrf = Transform.Identity;
-               orientationTrf.BasisX = localXDir;
-               orientationTrf.BasisY = localYDir;
-               orientationTrf.BasisZ = localZDir;
-               orientationTrf.Origin = localOrig;
-
-               double scaledFootprintArea = 0;
-               double scaledLength = 0;
-
-               // Check for containment override
-               IFCAnyHandle overrideContainerHnd = null;
-               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-               if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
-                  overrideLevelId = overrideContainerId;
-
-               using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId, overrideContainerHnd))
-               {
-                  IFCAnyHandle localPlacement = setter.LocalPlacement;
-
-                  // The local coordinate system of the wall as defined by IFC for IfcWallStandardCase.
-                  XYZ projDir = XYZ.BasisZ;
-
-                  // two representations: axis, body.         
+                  else
                   {
-                     if (!exportParts && (centerCurve != null) && (GeometryUtil.CurveIsLineOrArc(centerCurve)))
+                     BoundingBoxXYZ boundingBox = element.get_BoundingBox(null);
+                     if (boundingBox != null)
                      {
-                        exportingAxis = true;
-
-                        string identifierOpt = "Axis";   // IFC2x2 convention
-                        string representationTypeOpt = "Curve2D";  // IFC2x2 convention
-                        IList<IFCAnyHandle> axisItems = null;
-
-                        if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                        {
-                           IFCAnyHandle axisHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, trimmedCurve);
-                           //IList<int> segmentIndex = null;
-                           //IList<IList<double>> pointList = GeometryUtil.PointListFromCurve(exporterIFC, trimmedCurve, null, null, out segmentIndex);
-
-                           //// For now because of no support in creating IfcLineIndex and IfcArcIndex yet, it is set to null
-                           ////IList<IList<int>> segmentIndexList = new List<IList<int>>();
-                           ////segmentIndexList.Add(segmentIndex);
-                           //IList<IList<int>> segmentIndexList = null;
-
-                           //IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, pointList);
-                           //IFCAnyHandle axisHnd = IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentIndexList, false);
-                           axisItems = new List<IFCAnyHandle>();
-                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisHnd))
-                           {
-                              axisItems.Add(axisHnd);
-                              representationTypeOpt = "Curve3D";     // We use Curve3D for IFC4RV
-                           }
-                        }
+                        XYZ bBoxMin = boundingBox.Min;
+                        XYZ bBoxMax = boundingBox.Max;
+                        if (validRange)
+                           localOrig = new XYZ(bBoxMin.X, bBoxMin.Y, range.Start);
                         else
-                        {
-                           IFCGeometryInfo info = IFCGeometryInfo.CreateCurveGeometryInfo(exporterIFC, orientationTrf, projDir, false);
-                           ExporterIFCUtils.CollectGeometryInfo(exporterIFC, info, trimmedCurve, XYZ.Zero, true);
-                           axisItems = info.GetCurves();
-                        }
+                           localOrig = boundingBox.Min;
 
-                        if (axisItems.Count == 0)
-                        {
-                           exportingAxis = false;
-                        }
+                        XYZ localXDirMax = null;
+                        Transform bTrf = boundingBox.Transform;
+                        XYZ localXDirMax1 = new XYZ(bBoxMax.X, localOrig.Y, localOrig.Z);
+                        localXDirMax1 = bTrf.OfPoint(localXDirMax1);
+                        XYZ localXDirMax2 = new XYZ(localOrig.X, bBoxMax.Y, localOrig.Z);
+                        localXDirMax2 = bTrf.OfPoint(localXDirMax2);
+                        if (localXDirMax1.DistanceTo(localOrig) >= localXDirMax2.DistanceTo(localOrig))
+                           localXDirMax = localXDirMax1;
                         else
-                        {
-                           HashSet<IFCAnyHandle> axisItemSet = new HashSet<IFCAnyHandle>();
-                           foreach (IFCAnyHandle axisItem in axisItems)
-                              axisItemSet.Add(axisItem);
+                           localXDirMax = localXDirMax2;
 
-                           IFCAnyHandle contextOfItemsAxis = exporterIFC.Get3DContextHandle("Axis");
-                           axisRep = RepresentationUtil.CreateShapeRepresentation(exporterIFC, element, catId, contextOfItemsAxis,
-                              identifierOpt, representationTypeOpt, axisItemSet);
+                        // An invalid bounding box may lead to a zero-length vector here, eventually causing a (soft) crash.
+                        localXDir = localXDirMax.Subtract(localOrig);
+                        localXDir = localXDir.Normalize();
+                        if (!localXDir.IsUnitLength())
+                        {
+                           if (tempPartTransaction.HasStarted())
+                              tempPartTransaction.RollBack();
+                           return null;
                         }
+
+                        localYDir = localZDir.CrossProduct(localXDir);
+
+                        // ensure that X and Z axes are orthogonal.
+                        double xzDot = localZDir.DotProduct(localXDir);
+                        if (!MathUtil.IsAlmostZero(xzDot))
+                           localXDir = localYDir.CrossProduct(localZDir);
                      }
                   }
 
-                  IList<IFCExtrusionData> cutPairOpenings = new List<IFCExtrusionData>();
+                  IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
-                  if (!exportParts && exportingWallElement && exportingAxis && trimmedCurve != null)
+                  Transform orientationTrf = Transform.Identity;
+                  orientationTrf.BasisX = localXDir;
+                  orientationTrf.BasisY = localYDir;
+                  orientationTrf.BasisZ = localZDir;
+                  orientationTrf.Origin = localOrig;
+
+                  double scaledFootprintArea = 0;
+                  double scaledLength = 0;
+
+                  // Check for containment override
+                  IFCAnyHandle overrideContainerHnd = null;
+                  ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+                  if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
+                     overrideLevelId = overrideContainerId;
+
+                  using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideLevelId, overrideContainerHnd))
                   {
-                     bool isCompletelyClipped;
-                     bodyRep = TryToCreateAsExtrusion(exporterIFC, wallElement, connectedWalls, solids, meshes, baseWallElevation,
-                         catId, centerCurve, trimmedCurve, orientationTrf, depth, zSpan, range, setter,
-                         out cutPairOpenings, out isCompletelyClipped, out scaledFootprintArea, out scaledLength);
-                     if (isCompletelyClipped)
-                        return null;
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
-                        exportedAsWallWithAxis = true;
-                  }
+                     IFCAnyHandle localPlacement = setter.LocalPlacement;
 
-                  using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
-                  {
-                     BodyData bodyData = null;
+                     // The local coordinate system of the wall as defined by IFC for IfcWallStandardCase.
+                     XYZ projDir = XYZ.BasisZ;
 
-                     if (!exportedAsWallWithAxis)
+                     // two representations: axis, body.         
                      {
-                        extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;   // only allow vertical extrusions!
-                        extraParams.AreInnerRegionsOpenings = true;
-
-                        BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-
-                        // Swept solids are not natively exported as part of CV2.0.  
-                        // We have removed the UI toggle for this, so that it is by default false, but keep for possible future use.
-                        if (ExporterCacheManager.ExportOptionsCache.ExportAdvancedSweptSolids)
-                           bodyExporterOptions.TryToExportAsSweptSolid = true;
-
-                        ElementId overrideMaterialId = ElementId.InvalidElementId;
-                        if (exportingWallElement)
-                           overrideMaterialId = HostObjectExporter.GetFirstLayerMaterialId(wallElement);
-
-                        if (!exportParts)
+                        if (!exportParts && (centerCurve != null) && (GeometryUtil.CurveIsLineOrArc(centerCurve)))
                         {
-                           if ((solids.Count > 0) || (meshes.Count > 0))
+                           exportingAxis = true;
+
+                           string identifierOpt = "Axis";   // IFC2x2 convention
+                           string representationTypeOpt = "Curve2D";  // IFC2x2 convention
+                           IList<IFCAnyHandle> axisItems = null;
+
+                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                            {
-                              bodyRep = BodyExporter.ExportBody(exporterIFC, element, catId, overrideMaterialId,
-                                  solids, meshes, bodyExporterOptions, extraParams).RepresentationHnd;
+                              IFCAnyHandle axisHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, trimmedCurve);
+                              //IList<int> segmentIndex = null;
+                              //IList<IList<double>> pointList = GeometryUtil.PointListFromCurve(exporterIFC, trimmedCurve, null, null, out segmentIndex);
+
+                              //// For now because of no support in creating IfcLineIndex and IfcArcIndex yet, it is set to null
+                              ////IList<IList<int>> segmentIndexList = new List<IList<int>>();
+                              ////segmentIndexList.Add(segmentIndex);
+                              //IList<IList<int>> segmentIndexList = null;
+
+                              //IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, pointList);
+                              //IFCAnyHandle axisHnd = IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentIndexList, false);
+                              axisItems = new List<IFCAnyHandle>();
+                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisHnd))
+                              {
+                                 axisItems.Add(axisHnd);
+                                 representationTypeOpt = "Curve3D";     // We use Curve3D for IFC4RV
+                              }
                            }
                            else
                            {
-                              IList<GeometryObject> geomElemList = new List<GeometryObject>();
-                              geomElemList.Add(geometryElement);
-                              bodyData = BodyExporter.ExportBody(exporterIFC, element, catId, overrideMaterialId,
-                                  geomElemList, bodyExporterOptions, extraParams);
-                              bodyRep = bodyData.RepresentationHnd;
+                              IFCGeometryInfo info = IFCGeometryInfo.CreateCurveGeometryInfo(exporterIFC, orientationTrf, projDir, false);
+                              ExporterIFCUtils.CollectGeometryInfo(exporterIFC, info, trimmedCurve, XYZ.Zero, true);
+                              axisItems = info.GetCurves();
                            }
 
-                           if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
+                           if (axisItems.Count == 0)
                            {
-                              extraParams.ClearOpenings();
-                              return null;
+                              exportingAxis = false;
                            }
-                        }
-
-                        // We will be able to export as a IfcWallStandardCase as long as we have an axis curve.
-                        XYZ extrDirUsed = XYZ.Zero;
-                        if (extraParams.HasExtrusionDirection)
-                        {
-                           extrDirUsed = extraParams.ExtrusionDirection;
-                           if (MathUtil.IsAlmostEqual(Math.Abs(extrDirUsed[2]), 1.0))
+                           else
                            {
-                              if ((solids.Count == 1) && (meshes.Count == 0))
-                                 exportedAsWallWithAxis = exportingAxis;
-                              exportedBodyDirectly = true;
+                              HashSet<IFCAnyHandle> axisItemSet = new HashSet<IFCAnyHandle>();
+                              foreach (IFCAnyHandle axisItem in axisItems)
+                                 axisItemSet.Add(axisItem);
+
+                              IFCAnyHandle contextOfItemsAxis = exporterIFC.Get3DContextHandle("Axis");
+                              axisRep = RepresentationUtil.CreateShapeRepresentation(exporterIFC, element, catId, contextOfItemsAxis,
+                                 identifierOpt, representationTypeOpt, axisItemSet);
                            }
                         }
                      }
 
-                     IFCAnyHandle prodRep = null;
-                     if (!exportParts)
+                     IList<IFCExtrusionData> cutPairOpenings = new List<IFCExtrusionData>();
+
+                     if (!exportParts && exportingWallElement && exportingAxis && trimmedCurve != null)
                      {
-                        IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
-                        if (exportingAxis)
-                           representations.Add(axisRep);
+                        bool isCompletelyClipped;
+                        bodyRep = TryToCreateAsExtrusion(exporterIFC, wallElement, connectedWalls, solids, meshes, baseWallElevation,
+                              catId, centerCurve, trimmedCurve, orientationTrf, depth, zSpan, range, setter,
+                              out cutPairOpenings, out isCompletelyClipped, out scaledFootprintArea, out scaledLength);
+                        if (isCompletelyClipped)
+                        {
+                           if (tempPartTransaction.HasStarted())
+                              tempPartTransaction.RollBack();
+                           return null;
+                        }
 
-                        representations.Add(bodyRep);
-
-                        IFCAnyHandle boundingBoxRep = null;
-                        if ((solids.Count > 0) || (meshes.Count > 0))
-                           boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, solids, meshes, Transform.Identity);
-                        else
-                           boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, Transform.Identity);
-
-                        if (boundingBoxRep != null)
-                           representations.Add(boundingBoxRep);
-
-                        prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
+                           exportedAsWallWithAxis = true;
                      }
 
-                     ElementId matId = ElementId.InvalidElementId;
-                     string objectType = NamingUtil.CreateIFCObjectName(exporterIFC, element);
-                     IFCAnyHandle wallHnd = null;
-
-                     string elemGUID = null;
-                     int subElementIndex = ExporterStateManager.GetCurrentRangeIndex();
-                     if (subElementIndex == 0)
-                        elemGUID = GUIDUtil.CreateGUID(element);
-                     else if (subElementIndex <= ExporterStateManager.RangeIndexSetter.GetMaxStableGUIDs())
-                        elemGUID = GUIDUtil.CreateSubElementGUID(element, subElementIndex + (int)IFCGenericSubElements.SplitInstanceStart - 1);
-                     else
-                        elemGUID = GUIDUtil.CreateGUID();
-
-                     //string ifcType = IFCValidateEntry.GetValidIFCPredefinedType(/*element,*/ null);
-
-                     // For Foundation and Retaining walls, allow exporting as IfcFooting instead.
-                     bool exportAsFooting = false;
-                     if (exportingWallElement)
+                     using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
                      {
-                        WallType wallType = wallElement.WallType;
+                        BodyData bodyData = null;
 
-                        if (wallType != null)
+                        if (!exportedAsWallWithAxis)
                         {
-                           int wallFunction;
-                           if (ParameterUtil.GetIntValueFromElement(wallType, BuiltInParameter.FUNCTION_PARAM, out wallFunction) != null)
+                           extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;   // only allow vertical extrusions!
+                           extraParams.AreInnerRegionsOpenings = true;
+
+                           BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+
+                           // Swept solids are not natively exported as part of CV2.0.  
+                           // We have removed the UI toggle for this, so that it is by default false, but keep for possible future use.
+                           if (ExporterCacheManager.ExportOptionsCache.ExportAdvancedSweptSolids)
+                              bodyExporterOptions.TryToExportAsSweptSolid = true;
+
+                           ElementId overrideMaterialId = ElementId.InvalidElementId;
+                           if (exportingWallElement)
+                              overrideMaterialId = HostObjectExporter.GetFirstLayerMaterialId(wallElement);
+
+                           if (!exportParts)
                            {
-                              if (wallFunction == (int)WallFunction.Retaining || wallFunction == (int)WallFunction.Foundation)
+                              if ((solids.Count > 0) || (meshes.Count > 0))
                               {
-                                 // In this case, allow potential to export foundation and retaining walls as footing.
-                                 IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, wallElement, out ifcEnumType);
-                                 if (exportType.ExportInstance == IFCEntityType.IfcFooting)
-                                    exportAsFooting = true;
+                                 bodyRep = BodyExporter.ExportBody(exporterIFC, element, catId, overrideMaterialId,
+                                       solids, meshes, bodyExporterOptions, extraParams).RepresentationHnd;
+                              }
+                              else
+                              {
+                                 IList<GeometryObject> geomElemList = new List<GeometryObject>();
+                                 geomElemList.Add(geometryElement);
+                                 bodyData = BodyExporter.ExportBody(exporterIFC, element, catId, overrideMaterialId,
+                                       geomElemList, bodyExporterOptions, extraParams);
+                                 bodyRep = bodyData.RepresentationHnd;
+                              }
+
+                              if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
+                              {
+                                 extraParams.ClearOpenings();
+                                 if (tempPartTransaction.HasStarted())
+                                    tempPartTransaction.RollBack();
+                                 return null;
+                              }
+                           }
+
+                           // We will be able to export as a IfcWallStandardCase as long as we have an axis curve.
+                           XYZ extrDirUsed = XYZ.Zero;
+                           if (extraParams.HasExtrusionDirection)
+                           {
+                              extrDirUsed = extraParams.ExtrusionDirection;
+                              if (MathUtil.IsAlmostEqual(Math.Abs(extrDirUsed[2]), 1.0))
+                              {
+                                 if ((solids.Count == 1) && (meshes.Count == 0))
+                                    exportedAsWallWithAxis = exportingAxis;
+                                 exportedBodyDirectly = true;
                               }
                            }
                         }
-                     }
 
-                     if (exportedAsWallWithAxis)
-                     {
-                        if (exportAsFooting)
+                        IFCAnyHandle prodRep = null;
+                        if (!exportParts)
                         {
-                           wallHnd = IFCInstanceExporter.CreateFooting(exporterIFC, element, elemGUID, ownerHistory,
-                               localPlacement, exportParts ? null : prodRep, ifcEnumType);
+                           IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
+                           if (exportingAxis)
+                              representations.Add(axisRep);
+
+                           representations.Add(bodyRep);
+
+                           IFCAnyHandle boundingBoxRep = null;
+                           if ((solids.Count > 0) || (meshes.Count > 0))
+                              boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, solids, meshes, Transform.Identity);
+                           else
+                              boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, Transform.Identity);
+
+                           if (boundingBoxRep != null)
+                              representations.Add(boundingBoxRep);
+
+                           prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
                         }
+
+                        ElementId matId = ElementId.InvalidElementId;
+                        string objectType = NamingUtil.CreateIFCObjectName(exporterIFC, element);
+                        IFCAnyHandle wallHnd = null;
+
+                        string elemGUID = null;
+                        int subElementIndex = ExporterStateManager.GetCurrentRangeIndex();
+                        if (subElementIndex == 0)
+                           elemGUID = GUIDUtil.CreateGUID(element);
+                        else if (subElementIndex <= ExporterStateManager.RangeIndexSetter.GetMaxStableGUIDs())
+                           elemGUID = GUIDUtil.CreateSubElementGUID(element, subElementIndex + (int)IFCGenericSubElements.SplitInstanceStart - 1);
                         else
+                           elemGUID = GUIDUtil.CreateGUID();
+
+                        //string ifcType = IFCValidateEntry.GetValidIFCPredefinedType(/*element,*/ null);
+
+                        // For Foundation and Retaining walls, allow exporting as IfcFooting instead.
+                        bool exportAsFooting = false;
+                        if (exportingWallElement)
                         {
-                           bool exportAsWall = exportParts;
-                           if (!exportAsWall)
+                           WallType wallType = wallElement.WallType;
+
+                           if (wallType != null)
                            {
-                              // (For Reference View export) If the representation returned earlier is of type Tessellation, create IfcWall instead.
-                              foreach (IFCAnyHandle pRep in IFCAnyHandleUtil.GetRepresentations(prodRep))
+                              int wallFunction;
+                              if (ParameterUtil.GetIntValueFromElement(wallType, BuiltInParameter.FUNCTION_PARAM, out wallFunction) != null)
                               {
-                                 if (String.Compare(IFCAnyHandleUtil.GetRepresentationType(pRep), "Tessellation") == 0)
+                                 if (wallFunction == (int)WallFunction.Retaining || wallFunction == (int)WallFunction.Foundation)
                                  {
-                                    exportAsWall = true;
-                                    break;
+                                    // In this case, allow potential to export foundation and retaining walls as footing.
+                                    IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, wallElement, out ifcEnumType);
+                                    if (exportType.ExportInstance == IFCEntityType.IfcFooting)
+                                       exportAsFooting = true;
                                  }
                               }
                            }
+                        }
 
-                           if (exportAsWall)
+                        if (exportedAsWallWithAxis)
+                        {
+                           if (exportAsFooting)
                            {
-                              wallHnd = IFCInstanceExporter.CreateWall(exporterIFC, element, elemGUID, ownerHistory,
-                                      localPlacement, prodRep, ifcEnumType);
+                              wallHnd = IFCInstanceExporter.CreateFooting(exporterIFC, element, elemGUID, ownerHistory,
+                                    localPlacement, exportParts ? null : prodRep, ifcEnumType);
                            }
                            else
                            {
-                              wallHnd = IFCInstanceExporter.CreateWallStandardCase(exporterIFC, element, elemGUID, ownerHistory,
-                                  localPlacement, prodRep, ifcEnumType);
+                              bool exportAsWall = exportParts;
+                              if (!exportAsWall)
+                              {
+                                 // (For Reference View export) If the representation returned earlier is of type Tessellation, create IfcWall instead.
+                                 foreach (IFCAnyHandle pRep in IFCAnyHandleUtil.GetRepresentations(prodRep))
+                                 {
+                                    if (String.Compare(IFCAnyHandleUtil.GetRepresentationType(pRep), "Tessellation") == 0)
+                                    {
+                                       exportAsWall = true;
+                                       break;
+                                    }
+                                 }
+                              }
+
+                              if (exportAsWall)
+                              {
+                                 wallHnd = IFCInstanceExporter.CreateWall(exporterIFC, element, elemGUID, ownerHistory,
+                                          localPlacement, prodRep, ifcEnumType);
+                              }
+                              else
+                              {
+                                 wallHnd = IFCInstanceExporter.CreateWallStandardCase(exporterIFC, element, elemGUID, ownerHistory,
+                                       localPlacement, prodRep, ifcEnumType);
+                              }
                            }
-                        }
 
-                        if (exportParts)
-                           PartExporter.ExportHostPart(exporterIFC, element, wallHnd, localWrapper, setter, localPlacement, overrideLevelId);
+                           if (exportParts)
+                              PartExporter.ExportHostPart(exporterIFC, element, wallHnd, localWrapper, setter, localPlacement, overrideLevelId);
 
-                        localWrapper.AddElement(element, wallHnd, setter, extraParams, true);
+                           localWrapper.AddElement(element, wallHnd, setter, extraParams, true);
 
-                        if (!exportParts)
-                        {
-                           OpeningUtil.CreateOpeningsIfNecessary(wallHnd, element, cutPairOpenings, null,
-                               exporterIFC, localPlacement, setter, localWrapper);
-                           if (exportedBodyDirectly)
+                           if (!exportParts)
                            {
-                              Transform offsetTransform = (bodyData != null) ? bodyData.OffsetTransform : Transform.Identity;
-                              OpeningUtil.CreateOpeningsIfNecessary(wallHnd, element, extraParams, offsetTransform,
-                                  exporterIFC, localPlacement, setter, localWrapper);
+                              OpeningUtil.CreateOpeningsIfNecessary(wallHnd, element, cutPairOpenings, null,
+                                    exporterIFC, localPlacement, setter, localWrapper);
+                              if (exportedBodyDirectly)
+                              {
+                                 Transform offsetTransform = (bodyData != null) ? bodyData.OffsetTransform : Transform.Identity;
+                                 OpeningUtil.CreateOpeningsIfNecessary(wallHnd, element, extraParams, offsetTransform,
+                                       exporterIFC, localPlacement, setter, localWrapper);
+                              }
+                              else
+                              {
+                                 double scaledWidth = UnitUtil.ScaleLength(wallElement.Width);
+                                 OpeningUtil.AddOpeningsToElement(exporterIFC, wallHnd, wallElement, null, scaledWidth, range, setter, localPlacement, localWrapper);
+                              }
                            }
-                           else
-                           {
-                              double scaledWidth = UnitUtil.ScaleLength(wallElement.Width);
-                              OpeningUtil.AddOpeningsToElement(exporterIFC, wallHnd, wallElement, null, scaledWidth, range, setter, localPlacement, localWrapper);
-                           }
-                        }
 
-                        // export Base Quantities
-                        if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
-                        {
-                           scaledFootprintArea = MathUtil.AreaIsAlmostZero(scaledFootprintArea) ? extraParams.ScaledArea : scaledFootprintArea;
-                           scaledLength = MathUtil.IsAlmostZero(scaledLength) ? extraParams.ScaledLength : scaledLength;
-                           PropertyUtil.CreateWallBaseQuantities(exporterIFC, wallElement, solids, meshes, wallHnd, scaledLength, depth, scaledFootprintArea, extraParams);
-                        }
-                     }
-                     else
-                     {
-                        if (exportAsFooting)
-                        {
-                           wallHnd = IFCInstanceExporter.CreateFooting(exporterIFC, element, elemGUID, ownerHistory,
-                               localPlacement, exportParts ? null : prodRep, ifcEnumType);
+                           // export Base Quantities
+                           if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+                           {
+                              scaledFootprintArea = MathUtil.AreaIsAlmostZero(scaledFootprintArea) ? extraParams.ScaledArea : scaledFootprintArea;
+                              scaledLength = MathUtil.IsAlmostZero(scaledLength) ? extraParams.ScaledLength : scaledLength;
+                              PropertyUtil.CreateWallBaseQuantities(exporterIFC, wallElement, solids, meshes, wallHnd, scaledLength, depth, scaledFootprintArea, extraParams);
+                           }
                         }
                         else
                         {
-                           wallHnd = IFCInstanceExporter.CreateWall(exporterIFC, element, elemGUID, ownerHistory,
-                               localPlacement, exportParts ? null : prodRep, ifcEnumType);
+                           if (exportAsFooting)
+                           {
+                              wallHnd = IFCInstanceExporter.CreateFooting(exporterIFC, element, elemGUID, ownerHistory,
+                                    localPlacement, exportParts ? null : prodRep, ifcEnumType);
+                           }
+                           else
+                           {
+                              wallHnd = IFCInstanceExporter.CreateWall(exporterIFC, element, elemGUID, ownerHistory,
+                                    localPlacement, exportParts ? null : prodRep, ifcEnumType);
+                           }
+
+                           if (exportParts)
+                              PartExporter.ExportHostPart(exporterIFC, element, wallHnd, localWrapper, setter, localPlacement, overrideLevelId);
+
+                           localWrapper.AddElement(element, wallHnd, setter, extraParams, true);
+
+                           if (!exportParts)
+                           {
+                              // Only export one material for 2x2; for future versions, export the whole list.
+                              if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || !exportingHostObject)
+                              {
+                                 matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solids, meshes, element);
+                                 if (matId != ElementId.InvalidElementId)
+                                    CategoryUtil.CreateMaterialAssociation(exporterIFC, wallHnd, matId);
+                              }
+
+                              if (exportingInplaceOpenings)
+                              {
+                                 OpeningUtil.AddOpeningsToElement(exporterIFC, wallHnd, element, null, 0.0, range, setter, localPlacement, localWrapper);
+                              }
+
+                              if (exportedBodyDirectly)
+                              {
+                                 Transform offsetTransform = (bodyData != null) ? bodyData.OffsetTransform : Transform.Identity;
+                                 OpeningUtil.CreateOpeningsIfNecessary(wallHnd, element, extraParams, offsetTransform,
+                                       exporterIFC, localPlacement, setter, localWrapper);
+                              }
+                           }
+
+                           // export Base Quantities if it is IFC4RV and the extrusion information is available
+                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+                           {
+                              scaledFootprintArea = MathUtil.AreaIsAlmostZero(scaledFootprintArea) ? extraParams.ScaledArea : scaledFootprintArea;
+                              scaledLength = MathUtil.IsAlmostZero(scaledLength) ? extraParams.ScaledLength : scaledLength;
+                              PropertyUtil.CreateWallBaseQuantities(exporterIFC, wallElement, solids, meshes, wallHnd, scaledLength, depth, scaledFootprintArea, extraParams);
+                           }
                         }
 
-                        if (exportParts)
-                           PartExporter.ExportHostPart(exporterIFC, element, wallHnd, localWrapper, setter, localPlacement, overrideLevelId);
+                        ElementId wallLevelId = (validRange) ? setter.LevelId : ElementId.InvalidElementId;
 
-                        localWrapper.AddElement(element, wallHnd, setter, extraParams, true);
-
-                        if (!exportParts)
+                        if (!exportParts && exportingHostObject)
                         {
-                           // Only export one material for 2x2; for future versions, export the whole list.
-                           if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || !exportingHostObject)
-                           {
-                              matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solids, meshes, element);
-                              if (matId != ElementId.InvalidElementId)
-                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, wallHnd, matId);
-                           }
-
-                           if (exportingInplaceOpenings)
-                           {
-                              OpeningUtil.AddOpeningsToElement(exporterIFC, wallHnd, element, null, 0.0, range, setter, localPlacement, localWrapper);
-                           }
-
-                           if (exportedBodyDirectly)
-                           {
-                              Transform offsetTransform = (bodyData != null) ? bodyData.OffsetTransform : Transform.Identity;
-                              OpeningUtil.CreateOpeningsIfNecessary(wallHnd, element, extraParams, offsetTransform,
-                                  exporterIFC, localPlacement, setter, localWrapper);
-                           }
+                           HostObject hostObject = element as HostObject;
+                           if (!ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || exportedAsWallWithAxis)
+                              HostObjectExporter.ExportHostObjectMaterials(exporterIFC, hostObject, localWrapper.GetAnElement(),
+                                    geometryElement, localWrapper, wallLevelId, Toolkit.IFCLayerSetDirection.Axis2, !exportedAsWallWithAxis, null);
                         }
 
-                        // export Base Quantities if it is IFC4RV and the extrusion information is available
-                        if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
-                        {
-                           scaledFootprintArea = MathUtil.AreaIsAlmostZero(scaledFootprintArea) ? extraParams.ScaledArea : scaledFootprintArea;
-                           scaledLength = MathUtil.IsAlmostZero(scaledLength) ? extraParams.ScaledLength : scaledLength;
-                           PropertyUtil.CreateWallBaseQuantities(exporterIFC, wallElement, solids, meshes, wallHnd, scaledLength, depth, scaledFootprintArea, extraParams);
-                        }
+                        ExportWallType(exporterIFC, localWrapper, wallHnd, element, matId, exportedAsWallWithAxis, exportAsFooting, ifcEnumType);
+
+                        SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, wallHnd, element.Id, wallLevelId);
+
+                        tr.Commit();
+                        if (tempPartTransaction.HasStarted())
+                           tempPartTransaction.RollBack();
+                        return wallHnd;
                      }
-
-                     ElementId wallLevelId = (validRange) ? setter.LevelId : ElementId.InvalidElementId;
-
-                     if (!exportParts && exportingHostObject)
-                     {
-                        HostObject hostObject = element as HostObject;
-                        if (!ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || exportedAsWallWithAxis)
-                           HostObjectExporter.ExportHostObjectMaterials(exporterIFC, hostObject, localWrapper.GetAnElement(),
-                               geometryElement, localWrapper, wallLevelId, Toolkit.IFCLayerSetDirection.Axis2, !exportedAsWallWithAxis, null);
-                     }
-
-                     ExportWallType(exporterIFC, localWrapper, wallHnd, element, matId, exportedAsWallWithAxis, exportAsFooting, ifcEnumType);
-
-                     SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, wallHnd, element.Id, wallLevelId);
-
-                     tr.Commit();
-                     return wallHnd;
                   }
                }
             }

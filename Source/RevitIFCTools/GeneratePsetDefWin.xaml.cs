@@ -174,10 +174,10 @@ namespace RevitIFCTools
                if (applicableType.Contains("SELF\\"))
                   applicableType = applicableType.Replace("SELF\\", "");
 
-               string[] applTypeStr = applicableType.Split('/','"', '.', '=');
+               string[] applTypeStr = applicableType.Split('/', '.', '=');
                pset.ApplicableType = applTypeStr[0];
                if (applTypeStr.Count() > 1)
-                  pset.PredefinedType = applTypeStr[applTypeStr.Count()-1];
+                  pset.PredefinedType = applTypeStr[applTypeStr.Count()-1].Replace("\"","");
 
                // If the applicable type contains more than 1 entry, add them into the applicable classes
                string[] addClasses = pset.ApplicableType.Split(',');

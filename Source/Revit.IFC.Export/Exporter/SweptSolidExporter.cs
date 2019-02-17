@@ -199,7 +199,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      // TODO: Create CreateSimpleSweptSolidAsTessellation routine that takes advantage of the superior tessellation of this class.
                      BodyExporterOptions options = new BodyExporterOptions(false, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-                     sweptSolidExporter.RepresentationItem = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject);
+                     sweptSolidExporter.RepresentationItem = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject)[0];
                      sweptSolidExporter.RepresentationType = ShapeRepresentationType.Tessellation;
                   }
                   else
