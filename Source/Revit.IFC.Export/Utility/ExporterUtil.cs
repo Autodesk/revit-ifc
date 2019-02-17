@@ -976,11 +976,24 @@ namespace Revit.IFC.Export.Utility
 
          // PropertySetEntry will only have an information about IFC entity (or type) for the Pset definition but may not be both
          // Here we will check for both and assign Pset to create equally for both Element or ElementType
-         ElementId elemId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
-         IFCExportInfoPair exportType = ExporterCacheManager.ElementToHandleCache.FindPredefinedType(elemId);
          string predefinedType = null;
-         if (exportType != null)
-            predefinedType = exportType.ValidatedPredefinedType;
+         IFCExportInfoPair exportType = null;
+         if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcObject))
+         {
+            ElementId elemId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
+            if (elemId != ElementId.InvalidElementId)
+            {
+               exportType = ExporterCacheManager.ElementToHandleCache.FindPredefinedType(elemId);
+               if (exportType != null)
+                  predefinedType = exportType.ValidatedPredefinedType;
+            }
+         }
+         else if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcTypeObject))
+         {
+            ElementTypeKey etKey = ExporterCacheManager.ElementTypeToHandleCache.Find(prodHnd);
+            if (etKey != null)
+               predefinedType = etKey.Item3;
+         }
 
          IList<PropertySetDescription> cachedPsets = null;
          if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcObject))
@@ -1044,9 +1057,16 @@ namespace Revit.IFC.Export.Utility
                   {
                      //if (currDesc.IsAppropriateObjectType(prodHnd) && currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
                      //if (currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
-                        currPsetsToCreate.Add(currDesc);
+                        //currPsetsToCreate.Add(currDesc);
+                     if (currDesc.IsAppropriateObjectType(prodHnd) || currDesc.IsAppropriateObjectType(altProdHndType))
+                     {
+                        if (string.IsNullOrEmpty(currDesc.PredefinedType))
+                           currPsetsToCreate.Add(currDesc);
+                        else if (!string.IsNullOrEmpty(currDesc.PredefinedType) && currDesc.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
+                           currPsetsToCreate.Add(currDesc);
+                     }
 
-                     if (!string.IsNullOrEmpty(currDesc.ObjectType) && !string.IsNullOrEmpty(currDesc.PredefinedType))
+                     if (!string.IsNullOrEmpty(currDesc.PredefinedType) && currDesc.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
                         conditionalPsetsToCreate.Add(currDesc);
                      else
                         unconditionalPsetsToCreate.Add(currDesc);
@@ -1059,13 +1079,22 @@ namespace Revit.IFC.Export.Utility
          else
          {
             foreach (PropertySetDescription cachedPSet in cachedPsets)
-               currPsetsToCreate.Add(cachedPSet);
+            {
+               if (cachedPSet.IsAppropriateObjectType(prodHnd) || cachedPSet.IsAppropriateObjectType(altProdHndType))
+               {
+                  if (string.IsNullOrEmpty(cachedPSet.PredefinedType))
+                     currPsetsToCreate.Add(cachedPSet);
+                  else if (!string.IsNullOrEmpty(cachedPSet.PredefinedType) && cachedPSet.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
+                     currPsetsToCreate.Add(cachedPSet);
+               }
+            }
 
             IList<PropertySetDescription> conditionalPsetsToCreate =
                 ExporterCacheManager.ConditionalPropertySetsForTypeCache[prodHndType];
             foreach (PropertySetDescription currDesc in conditionalPsetsToCreate)
             {
-               if ((currDesc.IsAppropriateObjectType(prodHnd) || currDesc.IsAppropriateObjectType(altProdHndType)) && currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
+               if ((currDesc.IsAppropriateObjectType(prodHnd) || currDesc.IsAppropriateObjectType(altProdHndType))
+                  && currDesc.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
                   currPsetsToCreate.Add(currDesc);
             }
          }

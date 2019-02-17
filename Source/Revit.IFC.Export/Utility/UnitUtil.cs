@@ -97,12 +97,12 @@ namespace Revit.IFC.Export.Utility
 
       static public double ScaleLinearForce(double unscaledLinearForce)
       {
-         return ScaleDouble(UnitType.UT_LinearForce, unscaledLinearForce);
+         return UnitUtils.ConvertFromInternalUnits(unscaledLinearForce, DisplayUnitType.DUT_NEWTONS_PER_METER);
       }
 
       static public double ScalePlanarForce(double unscaledPlanarForce)
       {
-         return ScaleDouble(UnitType.UT_AreaForce, unscaledPlanarForce);
+         return UnitUtils.ConvertFromInternalUnits(unscaledPlanarForce, DisplayUnitType.DUT_NEWTONS_PER_SQUARE_METER);
       }
 
       /// <summary>
