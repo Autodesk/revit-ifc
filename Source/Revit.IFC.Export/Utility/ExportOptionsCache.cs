@@ -189,8 +189,8 @@ namespace Revit.IFC.Export.Utility
          cache.ExportBaseQuantities = exporterIFC.ExportBaseQuantities;
          cache.WallAndColumnSplitting = exporterIFC.WallAndColumnSplitting;
          cache.SpaceBoundaryLevel = exporterIFC.SpaceBoundaryLevel;
-         // Export Part element only if 'Current View Only' is checked and 'Show Parts' is selected. 
-         cache.ExportParts = filterView != null && filterView.PartsVisibility == PartsVisibility.ShowPartsOnly;
+         // Export Part element only if 'Current View Only' is checked and 'Show Parts' is selected. Or if it is exported as IFC4RV
+         cache.ExportParts = (filterView != null && filterView.PartsVisibility == PartsVisibility.ShowPartsOnly) || (cache.FileVersion == IFCVersion.IFC4RV);
          cache.ExportPartsAsBuildingElementsOverride = null;
          //cache.ExportAllLevels = false;
          cache.ExportAnnotationsOverride = null;
