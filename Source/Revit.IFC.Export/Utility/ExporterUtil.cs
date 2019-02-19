@@ -2130,7 +2130,8 @@ namespace Revit.IFC.Export.Utility
                {
                   // For some reason Plate type may not return any Material id
                   ElementId baseMatId = CategoryUtil.GetBaseMaterialIdForElement(element);
-                  matIds.Add(baseMatId);
+                  if (baseMatId != ElementId.InvalidElementId)
+                     matIds.Add(baseMatId);
                   // How to get the thickness? For CurtainWall Panel (PanelType), there is a builtin parameter CURTAINWALL_SYSPANEL_THICKNESS
                   Parameter thicknessPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_THICKNESS);
                   if (thicknessPar != null)
@@ -2143,7 +2144,8 @@ namespace Revit.IFC.Export.Utility
                {
                   foreach (ElementId matid in famMatIds)
                   {
-                     matIds.Add(matid);
+                     if (matid != ElementId.InvalidElementId)
+                        matIds.Add(matid);
                      // How to get the thickness? For CurtainWall Panel (PanelType), there is a builtin parameter CURTAINWALL_SYSPANEL_THICKNESS
                      Parameter thicknessPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_THICKNESS);
                      if (thicknessPar == null)
@@ -2198,7 +2200,8 @@ namespace Revit.IFC.Export.Utility
 
                if (matIds.Count == 0)
                {
-                  matIds.Add(baseMatId);
+                  if (baseMatId != ElementId.InvalidElementId)
+                     matIds.Add(baseMatId);
                   widths.Add(cs != null ? cs.GetWidth() : 0);
                   functions.Add(MaterialFunctionAssignment.None);
                }
