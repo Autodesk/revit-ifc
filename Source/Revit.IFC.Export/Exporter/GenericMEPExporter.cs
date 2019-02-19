@@ -189,13 +189,13 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle styleHandle = null;
          ElementId matId = ElementId.InvalidElementId;
          Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
+         bool hasMaterialAssociatedToType = false;
 
          if (type != null)
          {
             FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeId, false, exportType);
 
-            bool found = currentTypeInfo.IsValid();
-            if (!found)
+            if (!currentTypeInfo.IsValid())
             {
                string typeObjectType = NamingUtil.CreateIFCObjectName(exporterIFC, type);
 
@@ -216,12 +216,18 @@ namespace Revit.IFC.Export.Exporter
                      matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(element.get_Geometry(geomOptions), exporterIFC, element);
 
                   if (matId != ElementId.InvalidElementId)
+                  {
+                     currentTypeInfo.MaterialIds = new HashSet<ElementId>() { matId };
+                     hasMaterialAssociatedToType = true;
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, styleHandle, matId);
+                  }
                }
             }
             else
             {
                styleHandle = currentTypeInfo.Style;
+               if (currentTypeInfo.MaterialIds != null && currentTypeInfo.MaterialIds.Count > 0)
+                  hasMaterialAssociatedToType = true;
             }
          }
 
@@ -253,7 +259,7 @@ namespace Revit.IFC.Export.Exporter
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
             return;
-         if (matId == ElementId.InvalidElementId)
+         if (matId == ElementId.InvalidElementId && !hasMaterialAssociatedToType)
          {
             matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(element.get_Geometry(geomOptions), exporterIFC, element);
             if (matId != ElementId.InvalidElementId)
