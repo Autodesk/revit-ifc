@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="E0425E4D-F45E-4BEA-A4EA-882FB2606F79" Name="Revit IFC 2019" Language="1033" Version="19.1.0.0" Manufacturer="Autodesk" UpgradeCode="1EAE3C38-F8B4-4FA4-91DB-51A9D7A2B42B">
+   <Product Id="E0425E4D-F45E-4BEA-A4EA-882FB2606F79" Name="Revit IFC 2018" Language="1033" Version="18.4.1.0" Manufacturer="Autodesk" UpgradeCode="1EAE3C38-F8B4-4FA4-91DB-51A9D7A2B42B">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -19,10 +19,10 @@
       <WixVariable Id="WixUIDefUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt"></WixVariable>
       <WixVariable Id="WixUICOBieUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\IFC2x3 Extended FM HandOver View.txt"></WixVariable>
 
-      <Feature Id="ProductFeature" Title="Revit IFC 2019" Level="1" ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id="ProductFeature" Title="Revit IFC 2018" Level="1" ConfigurableDirectory='INSTALLDIR'>
          <ComponentGroupRef Id="ProductComponents" />
          <ComponentGroupRef Id="ProductResourceComponents" />
-         <ComponentGroupRef Id="ProductFRFiles" />
+         <!--<ComponentGroupRef Id="ProductFRFiles" />-->
          <ComponentGroupRef Id="AddinComponents" />
          <ComponentGroupRef Id="AddinComponentsLT" />
       </Feature>
@@ -38,9 +38,9 @@
    <Fragment>
       <Directory Id="TARGETDIR" Name="SourceDir">
          <Directory Id="ProgramFilesFolder">
-            <Directory Id="INSTALLDIR" Name="Revit IFC 2019">
+            <Directory Id="INSTALLDIR" Name="Revit IFC 2018">
                <Directory Id="INSTALLRESOURCE" Name="Resource" />
-               <Directory Id="INSTALLFRUI" Name="fr" />
+               <!--<Directory Id="INSTALLFRUI" Name="fr" />-->
             </Directory>
          </Directory>
 
@@ -48,12 +48,12 @@
             <Directory Id="DIR_ADSK" Name="Autodesk">
                <Directory Id="DIR_REVIT" Name="Revit">
                   <Directory Id="DIR_ADDINS" Name="Addins">
-                     <Directory Id="DIR_Addins" Name="2019"/>
+                     <Directory Id="DIR_Addins" Name="2018"/>
                   </Directory>
                </Directory>
                <Directory Id="DIR_REVIT_LT" Name="RevitLT">
                   <Directory Id="DIR_ADDINS_LT" Name="Addins">
-                     <Directory Id="DIR_Addins_LT" Name="2019"/>
+                     <Directory Id="DIR_Addins_LT" Name="2018"/>
                   </Directory>
                </Directory>
             </Directory>
@@ -64,25 +64,25 @@
    <Fragment>
       <ComponentGroup Id="ProductComponents" Directory="INSTALLDIR">
          <Component Id = "COMP_IFC_Export_DLL" Guid="D59E44AA-89A3-4CD7-AD9C-8D4D7AC6026B">
-            <File Id ="FILE_Ifc_Export_DLL" Name="Revit.IFC.Export.dll" Source="$(var.ProjectDir)..\..\..\..\..\..\Releasex64\Addons\Revit.IFC\Revit.IFC.Export.dll" KeyPath="yes" />
+            <File Id ="FILE_Ifc_Export_DLL" Name="Revit.IFC.Export.dll" Source="$(var.ProjectDir)..\..\Source\Revit.IFC.Export\bin\Release\Revit.IFC.Export.dll" KeyPath="yes" />
          </Component>
-         <Component Id = "COMP_IFC_Export_Sig" Guid="2EE671F2-165C-4DD6-A216-672FB7567FE1">
-            <File Id ="FILE_Ifc_Export_Sig" Name="Revit.IFC.Export.sig" Source="$(var.ProjectDir)..\..\..\..\..\..\Releasex64\Addons\Revit.IFC\Revit.IFC.Export.sig" KeyPath="yes" />
-         </Component>
+         <!--<Component Id = "COMP_IFC_Export_Sig" Guid="2EE671F2-165C-4DD6-A216-672FB7567FE1">
+            <File Id ="FILE_Ifc_Export_Sig" Name="Revit.IFC.Export.sig" Source="$(var.ProjectDir)..\..\Source\Revit.IFC.Export\bin\Release\Revit.IFC.Export.sig" KeyPath="yes" />
+         </Component>-->
          <Component Id = "COMP_IFC_Import_DLL" Guid="E2F0633B-F323-430C-A368-76DBF939FD0D">
-            <File Id ="FILE_Ifc_Import_DLL" Name="Revit.IFC.Import.dll" Source="$(var.ProjectDir)..\..\..\..\..\..\Releasex64\Addons\Revit.IFC\Revit.IFC.Import.dll" KeyPath="yes" />
+            <File Id ="FILE_Ifc_Import_DLL" Name="Revit.IFC.Import.dll" Source="$(var.ProjectDir)..\..\Source\Revit.IFC.Import\bin\Release\Revit.IFC.Import.dll" KeyPath="yes" />
          </Component>
-         <Component Id = "COMP_IFC_Import_Sig" Guid="48EE6912-FCF6-4AE5-9A63-F5A98DFEE811">
-            <File Id ="FILE_Ifc_Import_Sig" Name="Revit.IFC.Import.sig" Source="$(var.ProjectDir)..\..\..\..\..\..\Releasex64\Addons\Revit.IFC\Revit.IFC.Import.sig" KeyPath="yes" />
-         </Component>
+         <!--<Component Id = "COMP_IFC_Import_Sig" Guid="48EE6912-FCF6-4AE5-9A63-F5A98DFEE811">
+            <File Id ="FILE_Ifc_Import_Sig" Name="Revit.IFC.Import.sig" Source="$(var.ProjectDir)..\..\Source\Revit.IFC.Import\bin\Release\Revit.IFC.Import.sig" KeyPath="yes" />
+         </Component>-->
          <Component Id = "COMP_IFC_Common_DLL" Guid="C7ED4A2C-DCB1-457E-968F-2DDE9993C1B6">
-            <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.ProjectDir)..\..\..\..\..\..\Releasex64\Addons\Revit.IFC\Revit.IFC.Common.dll" KeyPath="yes" />
+            <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.ProjectDir)..\..\Source\Revit.IFC.Common\bin\Release\Revit.IFC.Common.dll" KeyPath="yes" />
          </Component>
-         <Component Id = "COMP_IFC_ExternalUI_Sig" Guid="3159B919-CD50-469D-8DDE-FE339CEBBC1C">
-            <File Id ="FILE_Ifc_ExternalUI_Sig" Name="IFCExportUIOverride.sig" Source="$(var.ProjectDir)..\..\..\..\..\..\ReleaseX64\Addons\Revit.IFC\IFCExportUIOverride.sig" KeyPath="yes" />
-         </Component>
+         <!--<Component Id = "COMP_IFC_ExternalUI_Sig" Guid="3159B919-CD50-469D-8DDE-FE339CEBBC1C">
+            <File Id ="FILE_Ifc_ExternalUI_Sig" Name="IFCExportUIOverride.sig" Source="$(var.ProjectDir)..\..\Source\IFCExporterUIOverride\bin\Release\IFCExportUIOverride.sig" KeyPath="yes" />
+         </Component>-->
          <Component Id = "COMP_IFC_ExternalUI_DLL" Guid="D7F89B58-029F-4062-B226-6F3D2EB7FE5D">
-            <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExportUIOverride.dll" Source="$(var.ProjectDir)..\..\..\..\..\..\ReleaseX64\Addons\Revit.IFC\IFCExportUIOverride.dll" KeyPath="yes" />
+            <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExportUIOverride.dll" Source="$(var.ProjectDir)..\..\Source\IFCExporterUIOverride\bin\Release\IFCExportUIOverride.dll" KeyPath="yes" />
          </Component>
          <Component Id = "COMP_LICENSE_RTF" Guid="9F0851DD-3A43-4D49-AC8C-8B8D2F394A91">
             <File Id ="FILE_LICENSE_RTF" Name="LICENSE.rtf" Source="$(var.ProjectDir)..\Program Files to Install\LICENSE.rtf" KeyPath="yes" />
@@ -93,14 +93,14 @@
          <Component Id = "COMP_COBIE_USERDEF_TXT" Guid="2981DA7F-F990-409A-BFF3-18687A50CE7A">
             <File Id ="FILE_COBIE_USERDEF_TXT" Name="IFC2x3 Extended FM HandOver View.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC2x3 Extended FM HandOver View.txt" KeyPath="yes" />
          </Component>
-         <Component Id = "COMP_IFC_INTERFACEUTILITY_DLL" Guid="3CC1A784-B0AE-4F86-BE86-2689E5E9B79D">
+         <!--<Component Id = "COMP_IFC_INTERFACEUTILITY_DLL" Guid="3CC1A784-B0AE-4F86-BE86-2689E5E9B79D">
             <File Id ="FILE_INTERFACEUTILITY_DLL" Name="UserInterfaceUtility.dll" Source="$(var.ProjectDir)..\..\..\..\..\ReleaseX64\UserInterfaceUtility.dll" KeyPath="yes" />
          </Component>
          <Component Id = "COMP_IFC_INTERFACEUTILITY_PDB" Guid="D7A39A90-E843-4E13-9FC6-EC3C701953F5">
             <File Id ="FILE_INTERFACEUTILITY_PDB" Name="UserInterfaceUtility.pdb" Source="$(var.ProjectDir)..\..\..\..\..\ReleaseX64\UserInterfaceUtility.pdb" KeyPath="yes" />
-         </Component>
+         </Component>-->
          <Component Id = "COMP_Antlr4Runtime_DLL" Guid="EA19D64B-491C-47AD-A019-57E581734481">
-            <File Id ="FILE_Antlr4Runtime_DLL" Name="Antlr4.Runtime.dll" Source="$(var.ProjectDir)..\..\..\..\..\Source\packages\Antlr4.Runtime.4.6.4\lib\net45\Antlr4.Runtime.dll" KeyPath="yes" />
+            <File Id ="FILE_Antlr4Runtime_DLL" Name="Antlr4.Runtime.dll" Source="$(var.ProjectDir)..\..\packages\Antlr4.Runtime.4.6.4\lib\net45\Antlr4.Runtime.dll" KeyPath="yes" />
          </Component>
          <Component Id = "COMP_IFC2X2ADD1_XSD" Guid="3BC747BD-9F67-48C2-AC3E-74C9728F9BC5">
             <File Id ="FILE_IFC2X2ADD1_XSD" Name="IFC2X2_ADD1.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC2X2_ADD1.xsd" KeyPath="yes" />
@@ -131,11 +131,11 @@
          </Component>
       </ComponentGroup>
 
-      <ComponentGroup Id="ProductFRFiles" Directory="INSTALLFRUI">
+      <!--<ComponentGroup Id="ProductFRFiles" Directory="INSTALLFRUI">
          <Component Id = "COMP_IFC_ResourceFR_DLL" Guid="ACC9C313-F8EF-4DBB-A0DE-55D662E4857D">
             <File Id ="FILE_Ifc_ResourceFR_DLL" Name="IFCExportUIOverride.resources.dll" Source="$(var.ProjectDir)..\..\..\..\..\..\ReleaseX64\Addons\Revit.IFC\fr\IFCExportUIOverride.resources.dll" KeyPath="yes" />
          </Component>
-      </ComponentGroup>
+      </ComponentGroup>-->
 
       <ComponentGroup Id="AddinComponents" Directory="DIR_Addins">
          <Component Id = "COMP_IFC_Addin_manifest" Guid="EC8783CA-DAE8-4233-B714-BB16B5BDBAC3">

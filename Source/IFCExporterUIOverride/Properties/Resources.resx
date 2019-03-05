@@ -789,4 +789,8 @@
   <data name="UseOnlyTriangulation" xml:space="preserve">
     <value>Keep Tessellated Geometry as Triangulation</value>
   </data>
+  <data name="DoorBelongsToRoom" xml:space="preserve">
+    <value>The door (IfcDoor) belongs to the room (IfcSpace)</value>
+    <comment>Used by eTASK Immobilien Software GmbH</comment>
+  </data>
 </root>
