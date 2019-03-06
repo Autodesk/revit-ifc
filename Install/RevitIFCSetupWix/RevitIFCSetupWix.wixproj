@@ -25,7 +25,7 @@
     <DefineConstants>Debug</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputPath>$(SolutionDir)..\$(Configuration)$(PlatformName)\</OutputPath>
+    <OutputPath>$(SolutionDir)\Setup\$(Configuration)$(PlatformName)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
   <ItemGroup>
