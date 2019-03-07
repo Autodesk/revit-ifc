@@ -396,7 +396,8 @@ namespace Revit.IFC.Export.Exporter
                      if (!string.IsNullOrEmpty(ifcName))
                         IFCAnyHandleUtil.OverrideNameAttribute(slabHnd, ifcName);
 
-                     if (!string.IsNullOrEmpty(predefinedType))
+                     // Pre IFC4 Slab does not have PredefinedType
+                     if (!string.IsNullOrEmpty(predefinedType) && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                         IFCAnyHandleUtil.SetAttribute(slabHnd, "PredefinedType", predefinedType, true);
 
                      if (exportParts)
