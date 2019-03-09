@@ -296,21 +296,13 @@ namespace Revit.IFC.Export.Exporter
                         GeometryElement subElementGeom = GeometryUtil.GetOneLevelGeometryElement(subElement.get_Geometry(geomOptions), 0);
 
                         SolidMeshGeometryInfo subElementSolidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(subElementGeom);
-                        //IList<Solid> subElementSolids = subElementSolidMeshInfo.GetSolids();
-                        //IList<Mesh> subElementMeshes = subElementSolidMeshInfo.GetMeshes();
-                        //foreach (Solid subElementSolid in subElementSolids)
-                        //   solids.Add(subElementSolid);
-                        //foreach (Mesh subElementMesh in subElementMeshes)
-                        //   meshes.Add(subElementMesh);
-                        IList<Solid> subElementSolids = new List<Solid>(); ;
-                        IList<Mesh> subElementMeshes = new List<Mesh>();
                         IList<GeometryObject> partGObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, subElementSolidMeshInfo.GetSolids(), subElementSolidMeshInfo.GetMeshes());
                         foreach (GeometryObject gObj in partGObjs)
                         {
                            if (gObj is Solid)
-                              subElementSolids.Add(gObj as Solid);
+                              solids.Add(gObj as Solid);
                            else if (gObj is Mesh)
-                              subElementMeshes.Add(gObj as Mesh);
+                              meshes.Add(gObj as Mesh);
                         }
                      }
                   }
@@ -318,8 +310,6 @@ namespace Revit.IFC.Export.Exporter
                   ElementId catId = CategoryUtil.GetSafeCategoryId(element);
                   BodyData bodyData = null;
                   BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.Medium);
-                  //bodyExporterOptions.UseGroupsIfPossible = true;
-                  //bodyExporterOptions.UseMappedGeometriesIfPossible = true;
 
                   if (solids.Count > 0 || meshes.Count > 0)
                   {
@@ -360,8 +350,6 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
-
-                  //string railingType = IFCValidateEntry.GetValidIFCPredefinedType(element, ifcEnumType);
 
                   IFCAnyHandle railing = IFCInstanceExporter.CreateRailing(exporterIFC, element, instanceGUID, ownerHistory,
                       ecData.GetLocalPlacement(), prodRep, ifcEnumType);
