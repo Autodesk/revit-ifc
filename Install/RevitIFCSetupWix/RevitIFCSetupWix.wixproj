@@ -6,18 +6,15 @@
     <ProductVersion>3.8</ProductVersion>
     <ProjectGuid>7dfbd495-c588-4c7b-b8f6-5b793adb06f2</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>Revit IFC for Revit 2018</OutputName>
+    <OutputName>Revit IFC for Revit 2015</OutputName>
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <RunPostBuildEvent>Always</RunPostBuildEvent>
-    <SccProjectName>
-    </SccProjectName>
-    <SccProvider>
-    </SccProvider>
+    <SccProjectName>Perforce Project</SccProjectName>
+    <SccProvider>MSSCCI:Perforce SCM</SccProvider>
     <SccAuxPath />
-    <SccLocalPath>
-    </SccLocalPath>
+    <SccLocalPath>.</SccLocalPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>$(SolutionDir)..\$(Configuration)$(PlatformName)\</OutputPath>
@@ -45,8 +42,8 @@
     <Content Include="buildInstaller.bat" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Source\Revit.IFC.Common\Revit.IFC.Common.csproj">
-      <Name>Revit.IFC.Common</Name>
+    <ProjectReference Include="..\..\Source\Revit.IFC.Common\BIM.IFC.Common.csproj">
+      <Name>BIM.IFC.Common</Name>
       <Project>{032ea4dc-181f-4453-9f93-e08de1c07d95}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
