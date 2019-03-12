@@ -2312,7 +2312,7 @@ namespace Revit.IFC.Export.Exporter
                catch
                {
                   // Failed! Likely because of the tessellation failed. Try to create from the faceset instead
-                  IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject);
+                  IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, lcs);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedMesh))
                      triangulatedBodyList.Add(triangulatedMesh);
                }
@@ -2380,7 +2380,7 @@ namespace Revit.IFC.Export.Exporter
          if ((triangulatedBodyList == null || triangulatedBodyList.Count == 0) && !allNotToBeExported)
          {
             // It is not from Solid, so we will use the faces to export. It works for Surface export too
-            IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject);
+            IFCAnyHandle triangulatedMesh = ExportSurfaceAsTriangulatedFaceSet(exporterIFC, element, options, geomObject, lcs);
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedMesh))
                triangulatedBodyList.Add(triangulatedMesh);
          }
