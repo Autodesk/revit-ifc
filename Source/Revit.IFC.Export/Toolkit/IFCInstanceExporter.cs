@@ -647,14 +647,14 @@ namespace Revit.IFC.Export.Toolkit
          string guid, IFCAnyHandle ownerHistory, string name, string description,
          string objectType)
       {
-         string overrideObjecType = objectType;
+         string overrideObjectType = objectType;
          if (element!= null)
          {
             if (string.IsNullOrEmpty(objectType))
                objectType = NamingUtil.GetFamilyAndTypeName(element);
-            string overrideObjectType = NamingUtil.GetObjectTypeOverride(obj, element, objectType);
-            IFCAnyHandleUtil.SetAttribute(obj, "ObjectType", overrideObjectType);
+            overrideObjectType = NamingUtil.GetObjectTypeOverride(obj, element, objectType);
          }
+         IFCAnyHandleUtil.SetAttribute(obj, "ObjectType", overrideObjectType);
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
             SetRoot(obj, element, guid, ownerHistory, name, description);
