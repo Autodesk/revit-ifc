@@ -1,4 +1,6 @@
-﻿Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revit.IFC.Import", "Source\Revit.IFC.Import\Revit.IFC.Import.csproj", "{7F987D09-9716-4F50-ADE0-278E4B537101}"
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revit.IFC.Import", "Source\Revit.IFC.Import\Revit.IFC.Import.csproj", "{7F987D09-9716-4F50-ADE0-278E4B537101}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revit.IFC.Export", "Source\Revit.IFC.Export\Revit.IFC.Export.csproj", "{BCE5141A-291B-4CD8-A69B-7B9345AA00E9}"
 EndProject
