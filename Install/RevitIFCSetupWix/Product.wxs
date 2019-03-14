@@ -167,6 +167,7 @@
          </Component>
       </ComponentGroup>
 
+     
       <!-- Wix doesn't allow the same file to be installed twice.  As such, we must copy the .addin into the RevitLT addins directory.
       Note that it copies the installed file, before the file modification from util:XmlFile, so that must be duplicated. -->
       <ComponentGroup Id="AddinComponentsLT" Directory="DIR_Addins_LT">

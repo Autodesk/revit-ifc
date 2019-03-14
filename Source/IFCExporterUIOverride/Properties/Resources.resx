@@ -790,6 +790,6 @@
     <value>Keep Tessellated Geometry as Triangulation</value>
   </data>
   <data name="DoorBelongsToRoom" xml:space="preserve">
-    <value>The door (IfcDoor) belongs to the room (IfcSpace)</value>
+    <value>Relate doors to rooms</value>
   </data>
 </root>
