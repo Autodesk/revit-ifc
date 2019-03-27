@@ -152,7 +152,11 @@ namespace Revit.IFC.Export.Toolkit
 
          string overrideName = name;
          if (element != null)
-            overrideName = NamingUtil.GetNameOverride(root, element, NamingUtil.GetIFCName(element));
+         {
+            if (string.IsNullOrEmpty(overrideName))
+               overrideName = NamingUtil.GetIFCName(element);
+            overrideName = NamingUtil.GetNameOverride(root, element, overrideName);
+         }
          IFCAnyHandleUtil.SetAttribute(root, "Name", overrideName);
 
          string overrideDescription = description;
