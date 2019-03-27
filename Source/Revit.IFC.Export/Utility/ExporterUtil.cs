@@ -1455,6 +1455,8 @@ namespace Revit.IFC.Export.Utility
       public static void ExportRelatedProperties(ExporterIFC exporterIFC, Element element, ProductWrapper productWrapper)
       {
          ExportElementProperties(exporterIFC, element, productWrapper);
+         if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities && !(ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE))
+            ExportElementQuantities(exporterIFC, element, productWrapper);
          ExportElementClassifications(exporterIFC, element, productWrapper);                     // Exporting ClassificationCode from IFC parameter 
          ExportElementUniformatClassifications(exporterIFC, element, productWrapper);            // Default classification, if filled out.
       }
