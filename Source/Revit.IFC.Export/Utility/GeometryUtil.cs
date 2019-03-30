@@ -3824,7 +3824,7 @@ namespace Revit.IFC.Export.Utility
 
                   innerCurves.Add(innerCurveHandle);
                }
-               extrudedAreaProfile = IFCInstanceExporter.CreateArbitraryProfileDefWithVoids(exporterIFC.GetFile(), IFCProfileType.Curve, profileName, curveHandle,
+               extrudedAreaProfile = IFCInstanceExporter.CreateArbitraryProfileDefWithVoids(exporterIFC.GetFile(), IFCProfileType.Area, profileName, curveHandle,
                   innerCurves);
             }
 
