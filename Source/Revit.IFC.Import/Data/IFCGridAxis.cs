@@ -328,7 +328,7 @@ namespace Revit.IFC.Import.Data
             return;
 
          // These are hardwired values to ensure that the Grid is visible in the
-         // current view, in feet.  Note that there is an assumption that building storeys
+         // current view, in feet.  Note that there is an assumption that building stories
          // would not be placed too close to one another; if they are, and they use different
          // grid structures, then the plan views may have overlapping grid lines.  This seems
          // more likely in theory than practice.

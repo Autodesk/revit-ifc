@@ -434,7 +434,7 @@ namespace Revit.IFC.Export.Exporter
          }
          else
          {
-            foreach (ElementId levelId in ExporterCacheManager.LevelInfoCache.BuildingStoreysByElevation)
+            foreach (ElementId levelId in ExporterCacheManager.LevelInfoCache.BuildingStoriesByElevation)
             {
                Level level = document.GetElement(levelId) as Level;
                if (!levelIds.ContainsKey(level.Elevation))

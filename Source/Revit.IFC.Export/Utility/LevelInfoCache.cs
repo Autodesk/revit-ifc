@@ -40,7 +40,7 @@ namespace Revit.IFC.Export.Utility
       /// A list of building storeys (that is, levels that are being exported), sorted by elevation.  
       /// The user is expected to create the list in the proper order; this is done in Exporter.cs.
       /// </summary>
-      private List<ElementId> m_BuildingStoreysByElevation;
+      private List<ElementId> m_BuildingStoriesByElevation;
 
       /// <summary>
       /// A list of levels, sorted by elevation.  
@@ -106,13 +106,13 @@ namespace Revit.IFC.Export.Utility
       /// A list of building storeys (that is, levels that are being exported), sorted by elevation.  
       /// The user is expected to create the list in the proper order; this is done in Exporter.cs.
       /// </summary>
-      public IList<ElementId> BuildingStoreysByElevation
+      public IList<ElementId> BuildingStoriesByElevation
       {
          get
          {
-            if (m_BuildingStoreysByElevation == null)
-               m_BuildingStoreysByElevation = new List<ElementId>();
-            return m_BuildingStoreysByElevation;
+            if (m_BuildingStoriesByElevation == null)
+               m_BuildingStoriesByElevation = new List<ElementId>();
+            return m_BuildingStoriesByElevation;
          }
       }
 
@@ -167,7 +167,7 @@ namespace Revit.IFC.Export.Utility
       {
          LevelsByElevation.Add(levelId);
          if (isBaseBuildingStorey)
-            BuildingStoreysByElevation.Add(levelId);
+            BuildingStoriesByElevation.Add(levelId);
          exporterIFC.AddBuildingStorey(levelId, info);
       }
 
