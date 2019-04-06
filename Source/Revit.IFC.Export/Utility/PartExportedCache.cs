@@ -44,11 +44,11 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The host element.</returns>
       public ElementId Find(ElementId partId, ElementId LevelId)
       {
-         Dictionary<ElementId, ElementId> hostOverideLevels;
+         Dictionary<ElementId, ElementId> hostOverrideLevels;
          ElementId hostId;
-         if (m_PartExportedDictionary.TryGetValue(partId, out hostOverideLevels))
+         if (m_PartExportedDictionary.TryGetValue(partId, out hostOverrideLevels))
          {
-            if (hostOverideLevels.TryGetValue(LevelId, out hostId))
+            if (hostOverrideLevels.TryGetValue(LevelId, out hostId))
                return hostId;
          }
          return null;
@@ -71,13 +71,13 @@ namespace Revit.IFC.Export.Utility
       /// Register the exported part and its host and level.
       /// </summary>
       /// <param name="partId">The exported part.</param>
-      /// <param name="hostOverideLevels">The dictionary of host and level the part has exported.</param>
-      public void Register(ElementId partId, Dictionary<ElementId, ElementId> hostOverideLevels)
+      /// <param name="hostOverrideLevels">The dictionary of host and level the part has exported.</param>
+      public void Register(ElementId partId, Dictionary<ElementId, ElementId> hostOverrideLevels)
       {
          if (HasRegistered(partId))
             return;
 
-         m_PartExportedDictionary[partId] = hostOverideLevels;
+         m_PartExportedDictionary[partId] = hostOverrideLevels;
       }
 
       /// <summary>

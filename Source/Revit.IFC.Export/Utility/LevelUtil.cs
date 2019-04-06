@@ -330,7 +330,7 @@ namespace Revit.IFC.Export.Utility
                ElementId firstLevelId = GetBaseLevelIdForElement(element);
                bool foundFirstLevel = (firstLevelId == ElementId.InvalidElementId);
 
-               IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.BuildingStoreysByElevation;
+               IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.BuildingStoriesByElevation;
                foreach (ElementId levelId in levelIds)
                {
                   if (!foundFirstLevel)

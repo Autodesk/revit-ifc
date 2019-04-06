@@ -37,7 +37,7 @@ namespace Revit.IFC.Export.Toolkit
    {
       RelContainedInSpatialStructure = 1,
       RelAggregatesProducts = 2,
-      RelAggregatesBuildingStoreys = 3
+      RelAggregatesBuildingStories = 3
    }
 
    enum IFCBuildingStoreySubElements

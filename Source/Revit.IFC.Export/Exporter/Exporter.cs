@@ -1184,7 +1184,7 @@ namespace Revit.IFC.Export.Exporter
                   levelInfo = IFCLevelInfo.Create(buildingStorey, placement, height, elev, lengthScale, true);
                   ExporterCacheManager.LevelInfoCache.AddLevelInfo(exporterIFC, level.Id, levelInfo, true);
 
-                  // if we have coincident levels, add buildingstoreys for them but use the old handle.
+                  // if we have coincident levels, add buildingstories for them but use the old handle.
                   for (int jj = 0; jj < coincidentLevels.Count; jj++)
                   {
                      level = levels[ii + jj + 1];
@@ -3474,7 +3474,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="document">The document to relate the levels.</param>
       private void RelateLevels(ExporterIFC exporterIFC, Document document)
       {
-         HashSet<IFCAnyHandle> buildingStoreys = new HashSet<IFCAnyHandle>();
+         HashSet<IFCAnyHandle> buildingStories = new HashSet<IFCAnyHandle>();
          IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.LevelsByElevation;
          IFCFile file = exporterIFC.GetFile();
 
@@ -3538,7 +3538,7 @@ namespace Revit.IFC.Export.Exporter
                using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, false))
                {
                   IFCAnyHandle buildingStoreyHandle = levelInfo.GetBuildingStorey();
-                  buildingStoreys.Add(buildingStoreyHandle);
+                  buildingStories.Add(buildingStoreyHandle);
 
                   // Add Property set, quantities and classification of Building Storey also to IFC
                   productWrapper.AddElement(level, buildingStoreyHandle, levelInfo, null, false);
@@ -3570,14 +3570,14 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
-         if (buildingStoreys.Count > 0)
+         if (buildingStories.Count > 0)
          {
             IFCAnyHandle buildingHnd = ExporterCacheManager.BuildingHandle;
             ProjectInfo projectInfo = document.ProjectInformation;
-            string guid = GUIDUtil.CreateSubElementGUID(projectInfo, (int)IFCBuildingSubElements.RelAggregatesBuildingStoreys);
+            string guid = GUIDUtil.CreateSubElementGUID(projectInfo, (int)IFCBuildingSubElements.RelAggregatesBuildingStories);
             if (!ExporterCacheManager.ContainmentCache.ContainsKey(buildingHnd))
                ExporterCacheManager.ContainmentCache.SetGUIDForRelation(buildingHnd, guid);
-            ExporterCacheManager.ContainmentCache.AddRelations(buildingHnd, buildingStoreys);
+            ExporterCacheManager.ContainmentCache.AddRelations(buildingHnd, buildingStories);
          }
       }
 

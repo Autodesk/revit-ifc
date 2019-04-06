@@ -3355,10 +3355,15 @@ namespace Revit.IFC.Export.Exporter
                               XYZ extrusionDirection = extrusionLists[ii][0].ExtrusionDirection;
                               if (options.CollectFootprintHandle)
                               {
-                                 // Must Check correctness for transform!!!!!
                                  FootPrintInfo fInfo = new FootPrintInfo();
                                  fInfo.LCSTransformUsed = bodyData.OffsetTransform;
-                                 fInfo.FootPrintHandle = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoops[0], fInfo.LCSTransformUsed, fInfo.LCSTransformUsed.BasisZ);
+                                 // If curveLoops[0] is planar, the projDir should be the normal of the plane
+                                 XYZ projDir;
+                                 if (curveLoops[0].GetPlane() != null)
+                                    projDir = curveLoops[0].GetPlane().Normal;
+                                 else
+                                    projDir = fInfo.LCSTransformUsed.BasisZ;
+                                 fInfo.FootPrintHandle = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoops[0], fInfo.LCSTransformUsed, projDir);
                                  footprintInfoSet.Add(fInfo);
                               }
                               if (options.CollectMaterialAndProfile)
