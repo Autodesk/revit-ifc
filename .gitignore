@@ -192,3 +192,4 @@ FakesAssemblies/
 .vs/Revit.IFC/v15/Server/sqlite3/db.lock
 *.ide-shm
 *.ide-wal
+.vs/
