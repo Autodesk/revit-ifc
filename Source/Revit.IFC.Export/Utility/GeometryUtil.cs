@@ -766,7 +766,6 @@ namespace Revit.IFC.Export.Utility
       public static UV ProjectPointToXYPlaneOfLCS(Transform lcs, XYZ projDir, XYZ point)
       {
          XYZ zDir = lcs.BasisZ;
-
          double denom = projDir.DotProduct(zDir);
          if (MathUtil.IsAlmostZero(denom))
             return new UV(point.X, point.Y);

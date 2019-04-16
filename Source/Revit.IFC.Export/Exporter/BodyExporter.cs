@@ -3357,12 +3357,8 @@ namespace Revit.IFC.Export.Exporter
                               {
                                  FootPrintInfo fInfo = new FootPrintInfo();
                                  fInfo.LCSTransformUsed = bodyData.OffsetTransform;
-                                 // If curveLoops[0] is planar, the projDir should be the normal of the plane
                                  XYZ projDir;
-                                 if (curveLoops[0].GetPlane() != null)
-                                    projDir = curveLoops[0].GetPlane().Normal;
-                                 else
-                                    projDir = fInfo.LCSTransformUsed.BasisZ;
+                                 projDir = fInfo.LCSTransformUsed.BasisZ;
                                  fInfo.FootPrintHandle = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoops[0], fInfo.LCSTransformUsed, projDir);
                                  footprintInfoSet.Add(fInfo);
                               }
