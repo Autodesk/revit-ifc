@@ -142,7 +142,11 @@ namespace BIM.IFC.Export.UI
          comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
          comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCBCA));
          comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4));
+
+         // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
+         string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
+         if (!string.IsNullOrEmpty(nonMVDOption) && nonMVDOption.Equals("true", StringComparison.InvariantCultureIgnoreCase))
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4));
 
          foreach (IFCFileFormat fileType in Enum.GetValues(typeof(IFCFileFormat)))
          {
