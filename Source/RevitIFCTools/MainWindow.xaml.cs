@@ -66,10 +66,28 @@ namespace RevitIFCTools
          exprTest.ShowDialog();
       }
 
+      bool guid_lowercase = true;
       private void Button_GenGUID_Click(object sender, RoutedEventArgs e)
       {
          Guid newGuid = Guid.NewGuid();
          TextBox_GUID.Text = newGuid.ToString();
+      }
+
+      private void Button_switchcase_Click(object sender, RoutedEventArgs e)
+      {
+         if (string.IsNullOrEmpty(TextBox_GUID.Text))
+            return;
+
+         if (guid_lowercase)
+         {
+            TextBox_GUID.Text = TextBox_GUID.Text.ToUpper();
+            guid_lowercase = false;
+         }
+         else
+         {
+            TextBox_GUID.Text = TextBox_GUID.Text.ToLower();
+            guid_lowercase = true;
+         }
       }
    }
 }
