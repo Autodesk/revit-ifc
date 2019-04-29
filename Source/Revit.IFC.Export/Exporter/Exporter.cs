@@ -3353,6 +3353,19 @@ namespace Revit.IFC.Export.Exporter
             HashSet<IFCAnyHandle> relatedProducts = RemoveContainedHandlesFromSet(relatedProductsToCheck);
             HashSet<IFCAnyHandle> relatedElements = RemoveContainedHandlesFromSet(relatedElementsToCheck);
 
+            // ------------------------------------------------------------------------------
+            // Jo64
+            if (ExporterCacheManager.ExportOptionsCache.DoorBelongsToRoom.GetValueOrDefault())
+            {
+               var n = relatedElements.RemoveWhere
+               (
+                   //item => item.TypeName.Equals("IfcDoor", StringComparison.OrdinalIgnoreCase)
+                   //&&
+                   item => ExporterCacheManager.DoorBelongsToRoomCache.Contains(item)
+               );
+            }
+            // ------------------------------------------------------------------------------
+
             // skip coincident levels, if any.
             for (int jj = ii + 1; jj < nextLevelIdx; jj++)
             {

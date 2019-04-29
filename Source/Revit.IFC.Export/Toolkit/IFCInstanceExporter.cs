@@ -5847,6 +5847,37 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle door = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcDoor, element);
          IFCAnyHandleUtil.SetAttribute(door, "OverallHeight", overallHeight);
          IFCAnyHandleUtil.SetAttribute(door, "OverallWidth", overallWidth);
+
+         // ------------------------------------------------------------------------------
+         // Jo64
+         if (ExporterCacheManager.ExportOptionsCache.DoorBelongsToRoom.GetValueOrDefault())
+         {
+            var familyInstance = element as FamilyInstance;
+            if (familyInstance != null)
+            {
+               ElementId roomId;
+
+               var toRoomId = ((FamilyInstance)element).ToRoom?.Id;
+               if (toRoomId != null)
+                  roomId = toRoomId;
+               else
+                  roomId = ((FamilyInstance)element).Room?.Id;
+
+               //var fromRoomId = ((FamilyInstance)element).FromRoom?.Id;
+               if (roomId != null)
+               {
+                  bool containedInSpace = (roomId != ElementId.InvalidElementId);
+                  if (containedInSpace)
+                  {
+                     ExporterCacheManager.DoorBelongsToRoomCache.Add(door);
+                     ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, door);
+                  }
+               }
+            }
+         }
+         // ------------------------------------------------------------------------------
+
+
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
             string validatedPreDefinedType = IFCValidateEntry.ValidateStrEnum<IFC4.IFCDoorType>(preDefinedType);

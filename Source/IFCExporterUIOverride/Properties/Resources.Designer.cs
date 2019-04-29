@@ -529,6 +529,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Relate doors to rooms.
+        /// </summary>
+        public static string DoorBelongsToRoom {
+            get {
+                return ResourceManager.GetString("DoorBelongsToRoom", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Edition.
         /// </summary>
         public static string Edition {

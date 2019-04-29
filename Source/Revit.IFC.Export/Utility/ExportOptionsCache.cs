@@ -198,6 +198,8 @@ namespace Revit.IFC.Export.Utility
          bool? includeSteelElements = GetNamedBooleanOption(options, "IncludeSteelElements");
          cache.IncludeSteelElements = includeSteelElements.HasValue && includeSteelElements.Value;
 
+         cache.DoorBelongsToRoom = GetNamedBooleanOption(options, "DoorBelongsToRoom");
+
          // There is a bug in the native code that doesn't allow us to cast the filterView to any sub-type of View.  Work around this by re-getting the element pointer.
          if (filterView != null)
             cache.FilterViewForExport = filterView.Document.GetElement(filterView.Id) as View;
@@ -743,6 +745,11 @@ namespace Revit.IFC.Export.Utility
             return (FileVersion == IFCVersion.IFC2x3FM);
          }
       }
+
+      /// <summary>
+      /// 
+      /// </summary>
+      public bool? DoorBelongsToRoom { get; set; }
 
       /// <summary>
       /// Cache variable for the export annotations override (if set independently via the UI or API inputs)
