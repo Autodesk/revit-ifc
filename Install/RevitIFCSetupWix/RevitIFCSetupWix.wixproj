@@ -25,8 +25,9 @@
     <SuppressPdbOutput>True</SuppressPdbOutput>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputPath>$(SolutionDir)..\$(Configuration)$(PlatformName)\</OutputPath>
+    <OutputPath>$(SolutionDir)$(Configuration)$(PlatformName)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>_OfficialBuild=true</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />

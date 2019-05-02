@@ -113,7 +113,7 @@ The export alternate interface is loaded when users access the Export functional
 
 <p><strong>Export only elements visible in view</strong>: Checked to export only the visible elements of the current view (based on filtering and/or element and category hiding), unchecked to export the entire model.  
 <p><strong>Export rooms in 3D views</strong>: If the "export only elements visible in view" is checked, checking this option will export all of the rooms that are contained inside the section box of the selected 3D view.  If there is no active section box, all rooms will be exported.
-<p><strong>Export Bounding Box</strong>: Checked to export bounding box representations, Unchecked to exclude them.  This is the the default for GSA export.</p>
+<p><strong>Export Bounding Box</strong>: Checked to export bounding box representations, Unchecked to exclude them.  This is the default for GSA export.</p>
 <p><strong>Export Linked Files as Separate IFCs</strong>: Checked to export any Revit links in the project as separate IFCs, unchecked to exclude them.  Each linked instance in the file will export as a separate IFC file with the right positioning relative to the host file.  Multiple instances of the same linked document will export as separate files, identical except for their position and orientation.  Note that linked IFC files will be re-exported, so may suffer data loss on roundtrip.
 
 <p><strong>Split walls and columns by Level</strong>: Whether or not to split walls and columns by building stories.</p>
@@ -231,7 +231,7 @@ working on expanding and eventually removing this limit, and we will be tracking
             <li>Enable site and project property creation
             <li>Utilize Site GlobalId method
             <li>Add multilanguage support files for German language (DE)
-            <li>Provide a complete list of all Shared Parameters used by Revit on export including ALL properties defined in IFC PropertySet Definition for both Instances and Types. The lists are included in the installer and will be placed in the instal folder: IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt (for the Instace parameters) and IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL.txt (for the Type parameters).
+            <li>Provide a complete list of all Shared Parameters used by Revit on export including ALL properties defined in IFC PropertySet Definition for both Instances and Types. The lists are included in the installer and will be placed in the install folder: IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt (for the Instance parameters) and IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL.txt (for the Type parameters).
             <li>Improve consistency for setting the object direct attributes, support IfcObjectType[Type] special parameter to drive instance ObjectType parameter from the Type, update the shared parameter definition files (now for [Type] parameters we will also maintain the GUID as long as it remains)
             <li>Incremental work towards IFC4RV 1.2 MVD
 </ul>
@@ -247,8 +247,8 @@ working on expanding and eventually removing this limit, and we will be tracking
 			<li>Fixed performance issue in IFC2x3 export due to error in creating types
 			<li>Fixed issue with slanted Pile
 			<li>Fixed issue related to element that is split into parts
+			<li>Improvement in handling level of Part Override
 			<li>Some improvements on classification (issue #31)
-			<li>Improve voiding of IfcMappedItem representation (issue #9)
 			<li>Fixed issue on Composite curve tolerance (issue #5)
 			<li>Fixed issue where element is still exported even though it is set to not-exported in the mapping table
 			<li>Bugfix for incorrect cylindrical hollow core Beam export in IFC4RV
@@ -279,6 +279,11 @@ working on expanding and eventually removing this limit, and we will be tracking
 			<li>Fixed for orphaned entities and wrong footprint information due to incorrect projection direction for IFC4RV requirements. IFC4RV Beam (Arch) is now without error in the automated test
 			<li>1st fixed for issue related to runaway parts in "export only elements visible in view" (there are still situations that may cause a wrong rotation, but the test case reported in issue #86 so far looks good)
          </ul>
+			<p>
+         Import Bug Fixes:
+
+         <ul>
+            <li>Improve voiding of IfcMappedItem representation (#9)
 
    </div>
 
@@ -347,7 +352,7 @@ working on expanding and eventually removing this limit, and we will be tracking
             <li>Restore calculations for "concealed" and "is external" properties.
             <li>Restore proper mapping of Revit Grids to IfcGrids.
             <li>Restore proper GUID for some door, windows, and property sets.
-            <li>Restore remapping of some deprecated IFC2x3 and IFC4 entitites.
+            <li>Restore remapping of some deprecated IFC2x3 and IFC4 entities.
             <li>Restore support for parameter mapping files.
             <li>Restore support for provisions for voids in IFC2x3.
             <li>Restore support for IfcSpace "ElevationWithFlooring" attribute.
