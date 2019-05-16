@@ -181,25 +181,37 @@ namespace Revit.IFC.Import.Data
             else
                WorldCoordinateSystem = Transform.Identity;
 
-            // For IfcGeometricRepresentationSubContext, it seems as if  
-            try
-            {
-               IFCAnyHandle trueNorth = IFCImportHandleUtil.GetOptionalInstanceAttribute(ifcRepresentationContext, "TrueNorth");
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(trueNorth))
-                  TrueNorth = IFCPoint.ProcessNormalizedIFCDirection(trueNorth);
-               else
-                  TrueNorth = XYZ.BasisZ;
-            }
-            catch
-            {
-               TrueNorth = XYZ.BasisZ;
-            }
-
-            if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x2 && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationContext, IFCEntityType.IfcGeometricRepresentationSubContext))
+            bool isSubContext = IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x2 &&
+               IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationContext, IFCEntityType.IfcGeometricRepresentationSubContext);
+            if (isSubContext)
             {
                IFCAnyHandle parentContext = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcRepresentationContext, "ParentContext", true);
                ParentContext = IFCRepresentationContext.ProcessIFCRepresentationContext(parentContext);
+               TrueNorth = ParentContext.TrueNorth;
+            }
+            else
+            {
+               // This used to fail for IfcGeometricRepresentationSubContext, because the TrueNorth attribute was derived from
+               // the IfcGeometricRepresentationContext, and the toolkit returned what seemed to be a valid handle that actually
+               // wasn't.  The code has now been rewritten to avoid this issue, but we will keep the try/catch block in case we 
+               // were also catching other serious issues.
+               try
+               {
+                     // By default, True North points in the Y-Direction.
+                  IFCAnyHandle trueNorth = IFCImportHandleUtil.GetOptionalInstanceAttribute(ifcRepresentationContext, "TrueNorth");
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(trueNorth))
+                     TrueNorth = IFCPoint.ProcessNormalizedIFCDirection(trueNorth);
+                  else
+                        TrueNorth = XYZ.BasisY;
+               }
+               catch
+               {
+                  TrueNorth = XYZ.BasisY;
+               }
+            }
 
+            if (isSubContext)
+            {
                TargetScale = IFCImportHandleUtil.GetOptionalPositiveRatioAttribute(ifcRepresentationContext, "TargetScale", 1.0);
 
                TargetView = IFCEnums.GetSafeEnumerationAttribute<IFCGeometricProjection>(ifcRepresentationContext, "TargetView",
