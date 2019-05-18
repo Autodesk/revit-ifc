@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright by: buildingSMART International Ltd, 1996-2013
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ifc="http://www.buildingsmart-tech.org/ifc/IFC4/Add2TC1" targetNamespace="http://www.buildingsmart-tech.org/ifc/IFC4/Add2TC1" elementFormDefault="qualified" attributeFormDefault="unqualified" >
+<!-- created with IFCDOC 11.7 at buildingsmart-tech.org -->
 
-Any technical documentation made available by buildingSMART International Limited 
+<!--
+Copyright by:
+buildingSMART International Limited, 1996-2017
+
+Any technical documentation made available by buildingSMART International Limited
 is the copyrighted work of buildingSMART International Limited and is owned by the 
 buildingSMART International Limited. It may be photocopied, used in software development, 
 or translated into another computer language without prior written consent from 
 buildingSMART International Limited provided that full attribution is given. 
 Prior written consent is required if changes are made to the technical specification.
+
 This material is delivered to you as is and buildingSMART International Limited makes 
 no warranty of any kind with regard to it, including, but not limited to, the implied 
 warranties as to its accuracy or fitness for a particular purpose. Any use of the 
@@ -15,22 +21,13 @@ Documentation may include technical or other inaccuracies or typographical error
 buildingSMART International Limited shall not be liable for errors contained therein or 
 for incidental consequential damages in connection with the furnishing, performance or use 
 of the material. The information contained in this document is subject to change without notice.
-
-Content:
-full ifcXML schema definition (XSD) for the IFC4 release (released for production)
-
-Issue date:
-February 28, 2013
-
-Development Team:
-Modeling Support Group of buildingSMART International
-compiled by Thomas Liebich tl@aec3.de
 -->
-<!-- created with EXPTOOL V20130124 (perl 5 program) written by Thomas Liebich, AEC3, tl@aec3.de -->
-<!-- validated with XMLspy2013 (http://www.xmlspy.com) by Thomas Liebich, AEC3, tl@aec3.de -->
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ifc="http://www.buildingsmart-tech.org/ifcXML/IFC4/final" targetNamespace="http://www.buildingsmart-tech.org/ifcXML/IFC4/final" elementFormDefault="qualified" attributeFormDefault="unqualified">
+
 	<!-- root element declaration (for SCHEMA definitions) -->
 	<xs:element name="uos" type="ifc:uos" abstract="true"/>
+    <xs:simpleType name="Seq-anyURI">
+        <xs:list itemType="xs:anyURI"/>
+    </xs:simpleType>
 	<xs:complexType name="uos" abstract="true">
 		<xs:sequence>
 			<xs:element name="header" minOccurs="0">
@@ -51,7 +48,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:attribute name="id" type="xs:ID" use="optional"/>
 		<xs:attribute name="express" type="ifc:Seq-anyURI" use="optional"/>
 		<xs:attribute name="configuration" type="ifc:Seq-anyURI" use="optional"/>
-		<!--- 2013-02-04 extension of the uos element: see P28 - section 5.6 -->
 	</xs:complexType>
 	<xs:element name="ifcXML" type="ifc:ifcXML" substitutionGroup="ifc:uos"/>
 	<xs:complexType name="ifcXML">
@@ -483,10 +479,10 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="Degree" type="xs:long" use="optional"/>
+				<xs:attribute name="Degree" type="ifc:IfcInteger" use="optional"/>
 				<xs:attribute name="CurveForm" type="ifc:IfcBSplineCurveForm" use="optional"/>
-				<xs:attribute name="ClosedCurve" type="ifc:logical" use="optional"/>
-				<xs:attribute name="SelfIntersect" type="ifc:logical" use="optional"/>
+				<xs:attribute name="ClosedCurve" type="ifc:IfcLogical" use="optional"/>
+				<xs:attribute name="SelfIntersect" type="ifc:IfcLogical" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -498,7 +494,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:long"/>
+								<xs:list itemType="ifc:IfcInteger"/>
 							</xs:simpleType>
 							<xs:minLength value="2"/>
 						</xs:restriction>
@@ -534,12 +530,12 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="UDegree" type="xs:long" use="optional"/>
-				<xs:attribute name="VDegree" type="xs:long" use="optional"/>
+				<xs:attribute name="UDegree" type="ifc:IfcInteger" use="optional"/>
+				<xs:attribute name="VDegree" type="ifc:IfcInteger" use="optional"/>
 				<xs:attribute name="SurfaceForm" type="ifc:IfcBSplineSurfaceForm" use="optional"/>
-				<xs:attribute name="UClosed" type="ifc:logical" use="optional"/>
-				<xs:attribute name="VClosed" type="ifc:logical" use="optional"/>
-				<xs:attribute name="SelfIntersect" type="ifc:logical" use="optional"/>
+				<xs:attribute name="UClosed" type="ifc:IfcLogical" use="optional"/>
+				<xs:attribute name="VClosed" type="ifc:IfcLogical" use="optional"/>
+				<xs:attribute name="SelfIntersect" type="ifc:IfcLogical" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -551,7 +547,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:long"/>
+								<xs:list itemType="ifc:IfcInteger"/>
 							</xs:simpleType>
 							<xs:minLength value="2"/>
 						</xs:restriction>
@@ -561,7 +557,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:long"/>
+								<xs:list itemType="ifc:IfcInteger"/>
 							</xs:simpleType>
 							<xs:minLength value="2"/>
 						</xs:restriction>
@@ -618,7 +614,7 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcSurfaceTexture">
 				<xs:sequence>
-					<xs:element name="RasterCode" type="ifc:hexBinary"/>
+					<xs:element name="RasterCode" type="ifc:IfcBinary"/>
 				</xs:sequence>
 				<xs:attribute name="RasterFormat" type="ifc:IfcIdentifier" use="optional"/>
 			</xs:extension>
@@ -910,6 +906,7 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcSystem">
 				<xs:attribute name="PredefinedType" type="ifc:IfcBuildingSystemTypeEnum" use="optional"/>
+				<xs:attribute name="LongName" type="ifc:IfcLabel" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -1028,6 +1025,23 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:extension base="ifc:IfcGeometricRepresentationItem"/>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:element name="IfcCartesianPointList2D" type="ifc:IfcCartesianPointList2D" substitutionGroup="ifc:IfcCartesianPointList" nillable="true"/>
+	<xs:complexType name="IfcCartesianPointList2D">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcCartesianPointList">
+				<xs:attribute name="CoordList" use="optional">
+					<xs:simpleType>
+						<xs:restriction>
+							<xs:simpleType>
+								<xs:list itemType="ifc:IfcLengthMeasure"/>
+							</xs:simpleType>
+							<xs:minLength value="2"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:element name="IfcCartesianPointList3D" type="ifc:IfcCartesianPointList3D" substitutionGroup="ifc:IfcCartesianPointList" nillable="true"/>
 	<xs:complexType name="IfcCartesianPointList3D">
 		<xs:complexContent>
@@ -1054,7 +1068,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:element name="Axis2" type="ifc:IfcDirection" nillable="true" minOccurs="0"/>
 					<xs:element name="LocalOrigin" type="ifc:IfcCartesianPoint" nillable="true"/>
 				</xs:sequence>
-				<xs:attribute name="Scale" type="xs:double" use="optional"/>
+				<xs:attribute name="Scale" type="ifc:IfcReal" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -1068,7 +1082,7 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcCartesianTransformationOperator2DnonUniform">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcCartesianTransformationOperator2D">
-				<xs:attribute name="Scale2" type="xs:double" use="optional"/>
+				<xs:attribute name="Scale2" type="ifc:IfcReal" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -1086,8 +1100,8 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcCartesianTransformationOperator3DnonUniform">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcCartesianTransformationOperator3D">
-				<xs:attribute name="Scale2" type="xs:double" use="optional"/>
-				<xs:attribute name="Scale3" type="xs:double" use="optional"/>
+				<xs:attribute name="Scale2" type="ifc:IfcReal" use="optional"/>
+				<xs:attribute name="Scale3" type="ifc:IfcReal" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -1182,6 +1196,16 @@ compiled by Thomas Liebich tl@aec3.de
 							<xs:attribute ref="ifc:arraySize" use="optional"/>
 						</xs:complexType>
 					</xs:element>
+					<xs:element name="HasReferences" nillable="true" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcClassificationReference" minOccurs="0" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcClassificationReference"/>
+							<xs:attribute ref="ifc:cType" fixed="set"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
 				</xs:sequence>
 				<xs:attribute name="Source" type="ifc:IfcLabel" use="optional"/>
 				<xs:attribute name="Edition" type="ifc:IfcLabel" use="optional"/>
@@ -1197,9 +1221,14 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcExternalReference">
 				<xs:sequence>
-					<xs:element name="ReferencedSource" nillable="true" minOccurs="0">
+					<xs:element name="HasReferences" nillable="true" minOccurs="0">
 						<xs:complexType>
-							<xs:group ref="ifc:IfcClassificationReferenceSelect"/>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcClassificationReference" minOccurs="0" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcClassificationReference"/>
+							<xs:attribute ref="ifc:cType" fixed="set"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
@@ -1360,7 +1389,7 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="SelfIntersect" type="ifc:logical" use="optional"/>
+				<xs:attribute name="SelfIntersect" type="ifc:IfcLogical" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -1378,7 +1407,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:element name="ParentCurve" type="ifc:IfcCurve" nillable="true"/>
 				</xs:sequence>
 				<xs:attribute name="Transition" type="ifc:IfcTransitionCode" use="optional"/>
-				<xs:attribute name="SameSense" type="xs:boolean" use="optional"/>
+				<xs:attribute name="SameSense" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -1684,6 +1713,26 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 					<xs:element name="UnitsInContext" type="ifc:IfcUnitAssignment" nillable="true" minOccurs="0"/>
+					<xs:element name="IsDefinedBy" nillable="true" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcRelDefinesByProperties" minOccurs="0" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcRelDefinesByProperties"/>
+							<xs:attribute ref="ifc:cType" fixed="set"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="Declares" nillable="true" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcRelDeclares" minOccurs="0" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcRelDeclares"/>
+							<xs:attribute ref="ifc:cType" fixed="set"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
 				</xs:sequence>
 				<xs:attribute name="ObjectType" type="ifc:IfcLabel" use="optional"/>
 				<xs:attribute name="LongName" type="ifc:IfcLabel" use="optional"/>
@@ -1779,11 +1828,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:Entity">
 				<xs:sequence>
-					<xs:element name="SourceCRS">
-						<xs:complexType>
-							<xs:group ref="ifc:IfcCoordinateReferenceSystemSelect"/>
-						</xs:complexType>
-					</xs:element>
 					<xs:element name="TargetCRS" type="ifc:IfcCoordinateReferenceSystem" nillable="true"/>
 				</xs:sequence>
 			</xs:extension>
@@ -1977,7 +2021,7 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="ImplicitOuter" type="xs:boolean" use="optional"/>
+				<xs:attribute name="ImplicitOuter" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -2002,7 +2046,7 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="ModelOrDraughting" type="xs:boolean" use="optional"/>
+				<xs:attribute name="ModelOrDraughting" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -2141,7 +2185,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:double"/>
+								<xs:list itemType="ifc:IfcReal"/>
 							</xs:simpleType>
 							<xs:minLength value="2"/>
 							<xs:maxLength value="3"/>
@@ -2373,8 +2417,8 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:extension base="ifc:IfcTypeProduct">
 				<xs:attribute name="OperationType" type="ifc:IfcDoorStyleOperationEnum" use="optional"/>
 				<xs:attribute name="ConstructionType" type="ifc:IfcDoorStyleConstructionEnum" use="optional"/>
-				<xs:attribute name="ParameterTakesPrecedence" type="xs:boolean" use="optional"/>
-				<xs:attribute name="Sizeable" type="xs:boolean" use="optional"/>
+				<xs:attribute name="ParameterTakesPrecedence" type="ifc:IfcBoolean" use="optional"/>
+				<xs:attribute name="Sizeable" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -2384,7 +2428,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:extension base="ifc:IfcBuildingElementType">
 				<xs:attribute name="PredefinedType" type="ifc:IfcDoorTypeEnum" use="optional"/>
 				<xs:attribute name="OperationType" type="ifc:IfcDoorTypeOperationEnum" use="optional"/>
-				<xs:attribute name="ParameterTakesPrecedence" type="xs:boolean" use="optional"/>
+				<xs:attribute name="ParameterTakesPrecedence" type="ifc:IfcBoolean" use="optional"/>
 				<xs:attribute name="UserDefinedOperationType" type="ifc:IfcLabel" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -2467,7 +2511,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:sequence>
 					<xs:element name="EdgeGeometry" type="ifc:IfcCurve" nillable="true"/>
 				</xs:sequence>
-				<xs:attribute name="SameSense" type="xs:boolean" use="optional"/>
+				<xs:attribute name="SameSense" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -2590,6 +2634,10 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcElement" abstract="true">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcProduct">
+				<xs:sequence>
+					<xs:element name="HasProjections" type="ifc:IfcRelProjectsElement" nillable="true" minOccurs="0" maxOccurs="1"/>
+					<xs:element name="HasOpenings" type="ifc:IfcRelVoidsElement" nillable="true" minOccurs="0" maxOccurs="1"/>
+				</xs:sequence>
 				<xs:attribute name="Tag" type="ifc:IfcIdentifier" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -2926,7 +2974,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:sequence>
 					<xs:element name="Bound" type="ifc:IfcLoop" nillable="true"/>
 				</xs:sequence>
-				<xs:attribute name="Orientation" type="xs:boolean" use="optional"/>
+				<xs:attribute name="Orientation" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -2943,7 +2991,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:sequence>
 					<xs:element name="FaceSurface" type="ifc:IfcSurface" nillable="true"/>
 				</xs:sequence>
-				<xs:attribute name="SameSense" type="xs:boolean" use="optional"/>
+				<xs:attribute name="SameSense" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -3049,7 +3097,7 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="ModelorDraughting" type="xs:boolean" use="optional"/>
+				<xs:attribute name="ModelorDraughting" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -3350,9 +3398,10 @@ compiled by Thomas Liebich tl@aec3.de
 							<xs:attribute ref="ifc:arraySize" use="optional"/>
 						</xs:complexType>
 					</xs:element>
+					<xs:element name="HasCoordinateOperation" type="ifc:IfcCoordinateOperation" nillable="true" minOccurs="0" maxOccurs="1"/>
 				</xs:sequence>
 				<xs:attribute name="CoordinateSpaceDimension" type="ifc:IfcDimensionCount" use="optional"/>
-				<xs:attribute name="Precision" type="xs:double" use="optional"/>
+				<xs:attribute name="Precision" type="ifc:IfcReal" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -3476,7 +3525,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:sequence>
 					<xs:element name="BaseSurface" type="ifc:IfcSurface" nillable="true"/>
 				</xs:sequence>
-				<xs:attribute name="AgreementFlag" type="xs:boolean" use="optional"/>
+				<xs:attribute name="AgreementFlag" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -3539,18 +3588,70 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcPresentationItem">
 				<xs:sequence>
-					<xs:element name="Overrides" type="ifc:IfcSurfaceStyleShading" nillable="true" minOccurs="0"/>
 					<xs:element name="Colours" type="ifc:IfcColourRgbList" nillable="true"/>
 				</xs:sequence>
+				<xs:attribute name="Opacity" type="ifc:IfcNormalisedRatioMeasure" use="optional"/>
 				<xs:attribute name="ColourIndex" use="optional">
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:long"/>
+								<xs:list itemType="ifc:IfcPositiveInteger"/>
 							</xs:simpleType>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:element name="IfcIndexedPolyCurve" type="ifc:IfcIndexedPolyCurve" substitutionGroup="ifc:IfcBoundedCurve" nillable="true"/>
+	<xs:complexType name="IfcIndexedPolyCurve">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcBoundedCurve">
+				<xs:sequence>
+					<xs:element name="Points" type="ifc:IfcCartesianPointList" nillable="true"/>
+					<xs:element name="Segments" nillable="true" minOccurs="0">
+						<xs:complexType>
+							<xs:group ref="ifc:IfcSegmentIndexSelect" maxOccurs="unbounded"/>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcSegmentIndexSelect"/>
+							<xs:attribute ref="ifc:cType" fixed="list"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="SelfIntersect" type="ifc:IfcBoolean" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:element name="IfcIndexedPolygonalFace" type="ifc:IfcIndexedPolygonalFace" substitutionGroup="ifc:IfcTessellatedItem" nillable="true"/>
+	<xs:complexType name="IfcIndexedPolygonalFace">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcTessellatedItem">
+				<xs:attribute name="CoordIndex" use="optional">
+					<xs:simpleType>
+						<xs:restriction>
+							<xs:simpleType>
+								<xs:list itemType="ifc:IfcPositiveInteger"/>
+							</xs:simpleType>
+							<xs:minLength value="3"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:element name="IfcIndexedPolygonalFaceWithVoids" type="ifc:IfcIndexedPolygonalFaceWithVoids" substitutionGroup="ifc:IfcIndexedPolygonalFace" nillable="true"/>
+	<xs:complexType name="IfcIndexedPolygonalFaceWithVoids">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcIndexedPolygonalFace">
+				<xs:sequence>
+					<xs:element name="InnerCoordIndices" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="Seq-IfcPositiveInteger-wrapper" type="ifc:Seq-IfcPositiveInteger" maxOccurs="unbounded" />
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -3572,7 +3673,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:long"/>
+								<xs:list itemType="ifc:IfcPositiveInteger"/>
 							</xs:simpleType>
 							<xs:minLength value="3"/>
 						</xs:restriction>
@@ -3595,6 +3696,12 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:extension base="ifc:IfcFlowTreatmentDeviceType">
 				<xs:attribute name="PredefinedType" type="ifc:IfcInterceptorTypeEnum" use="optional"/>
 			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:element name="IfcIntersectionCurve" type="ifc:IfcIntersectionCurve" substitutionGroup="ifc:IfcSurfaceCurve" nillable="true"/>
+	<xs:complexType name="IfcIntersectionCurve">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcSurfaceCurve"/>
 		</xs:complexContent>
 	</xs:complexType>
 	<xs:element name="IfcInventory" type="ifc:IfcInventory" substitutionGroup="ifc:IfcGroup" nillable="true"/>
@@ -4075,7 +4182,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:attribute name="Name" type="ifc:IfcLabel" use="optional"/>
 				<xs:attribute name="Description" type="ifc:IfcText" use="optional"/>
 				<xs:attribute name="Category" type="ifc:IfcLabel" use="optional"/>
-				<xs:attribute name="Priority" type="ifc:IfcNormalisedRatioMeasure" use="optional"/>
+				<xs:attribute name="Priority" type="ifc:IfcInteger" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -4162,7 +4269,7 @@ compiled by Thomas Liebich tl@aec3.de
 				</xs:sequence>
 				<xs:attribute name="Name" type="ifc:IfcLabel" use="optional"/>
 				<xs:attribute name="Description" type="ifc:IfcText" use="optional"/>
-				<xs:attribute name="Priority" type="ifc:IfcNormalisedRatioMeasure" use="optional"/>
+				<xs:attribute name="Priority" type="ifc:IfcInteger" use="optional"/>
 				<xs:attribute name="Category" type="ifc:IfcLabel" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -4345,7 +4452,7 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcConstraint">
 				<xs:sequence>
-					<xs:element name="DataValue">
+					<xs:element name="DataValue" nillable="true" minOccurs="0">
 						<xs:complexType>
 							<xs:group ref="ifc:IfcMetricValueSelect"/>
 						</xs:complexType>
@@ -4411,6 +4518,20 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcObject" abstract="true">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcObjectDefinition">
+				<xs:sequence>
+					<xs:element name="IsDeclaredBy" type="ifc:IfcRelDefinesByObject" nillable="true" minOccurs="0" maxOccurs="1"/>
+					<xs:element name="IsTypedBy" type="ifc:IfcRelDefinesByType" nillable="true" minOccurs="0" maxOccurs="1"/>
+					<xs:element name="IsDefinedBy" nillable="true" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcRelDefinesByProperties" minOccurs="0" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcRelDefinesByProperties"/>
+							<xs:attribute ref="ifc:cType" fixed="set"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
 				<xs:attribute name="ObjectType" type="ifc:IfcLabel" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -4418,7 +4539,30 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:element name="IfcObjectDefinition" type="ifc:IfcObjectDefinition" abstract="true" substitutionGroup="ifc:IfcRoot" nillable="true"/>
 	<xs:complexType name="IfcObjectDefinition" abstract="true">
 		<xs:complexContent>
-			<xs:extension base="ifc:IfcRoot"/>
+			<xs:extension base="ifc:IfcRoot">
+				<xs:sequence>
+					<xs:element name="IsNestedBy" nillable="true" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcRelNests" minOccurs="0" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcRelNests"/>
+							<xs:attribute ref="ifc:cType" fixed="set"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="IsDecomposedBy" nillable="true" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcRelAggregates" minOccurs="0" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcRelAggregates"/>
+							<xs:attribute ref="ifc:cType" fixed="set"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
 	<xs:element name="IfcObjectPlacement" type="ifc:IfcObjectPlacement" abstract="true" substitutionGroup="ifc:Entity" nillable="true"/>
@@ -4465,7 +4609,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:element name="BasisCurve" type="ifc:IfcCurve" nillable="true"/>
 				</xs:sequence>
 				<xs:attribute name="Distance" type="ifc:IfcLengthMeasure" use="optional"/>
-				<xs:attribute name="SelfIntersect" type="ifc:logical" use="optional"/>
+				<xs:attribute name="SelfIntersect" type="ifc:IfcLogical" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -4478,7 +4622,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:element name="RefDirection" type="ifc:IfcDirection" nillable="true"/>
 				</xs:sequence>
 				<xs:attribute name="Distance" type="ifc:IfcLengthMeasure" use="optional"/>
-				<xs:attribute name="SelfIntersect" type="ifc:logical" use="optional"/>
+				<xs:attribute name="SelfIntersect" type="ifc:IfcLogical" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -4492,6 +4636,9 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcOpeningElement">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcFeatureElementSubtraction">
+				<xs:sequence>
+					<xs:element name="HasFillings" type="ifc:IfcRelFillsElement" nillable="true" minOccurs="0" maxOccurs="1"/>
+				</xs:sequence>
 				<xs:attribute name="PredefinedType" type="ifc:IfcOpeningElementTypeEnum" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -4568,7 +4715,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:sequence>
 					<xs:element name="EdgeElement" type="ifc:IfcEdge" nillable="true"/>
 				</xs:sequence>
-				<xs:attribute name="Orientation" type="xs:boolean" use="optional"/>
+				<xs:attribute name="Orientation" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -4993,6 +5140,35 @@ compiled by Thomas Liebich tl@aec3.de
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:element name="IfcPolygonalFaceSet" type="ifc:IfcPolygonalFaceSet" substitutionGroup="ifc:IfcTessellatedFaceSet" nillable="true"/>
+	<xs:complexType name="IfcPolygonalFaceSet">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcTessellatedFaceSet">
+				<xs:sequence>
+					<xs:element name="Faces">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcIndexedPolygonalFace" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcIndexedPolygonalFace"/>
+							<xs:attribute ref="ifc:cType" fixed="list"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="Closed" type="ifc:IfcBoolean" use="optional"/>
+				<xs:attribute name="PnIndex" use="optional">
+					<xs:simpleType>
+						<xs:restriction>
+							<xs:simpleType>
+								<xs:list itemType="ifc:IfcPositiveInteger"/>
+							</xs:simpleType>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:element name="IfcPolyline" type="ifc:IfcPolyline" substitutionGroup="ifc:IfcBoundedCurve" nillable="true"/>
 	<xs:complexType name="IfcPolyline">
 		<xs:complexContent>
@@ -5123,9 +5299,9 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="LayerOn" type="ifc:logical" use="optional"/>
-				<xs:attribute name="LayerFrozen" type="ifc:logical" use="optional"/>
-				<xs:attribute name="LayerBlocked" type="ifc:logical" use="optional"/>
+				<xs:attribute name="LayerOn" type="ifc:IfcLogical" use="optional"/>
+				<xs:attribute name="LayerFrozen" type="ifc:IfcLogical" use="optional"/>
+				<xs:attribute name="LayerBlocked" type="ifc:IfcLogical" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -5726,7 +5902,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:double"/>
+								<xs:list itemType="ifc:IfcReal"/>
 							</xs:simpleType>
 							<xs:minLength value="2"/>
 						</xs:restriction>
@@ -5743,9 +5919,9 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:element name="WeightsData">
 						<xs:complexType>
 							<xs:sequence>
-								<xs:element ref="ifc:double-wrapper" minOccurs="4" maxOccurs="unbounded"/>
+								<xs:element ref="ifc:IfcReal-wrapper" minOccurs="4" maxOccurs="unbounded"/>
 							</xs:sequence>
-							<xs:attribute ref="ifc:itemType" fixed="ifc:double-wrapper"/>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcReal-wrapper"/>
 							<xs:attribute ref="ifc:cType" fixed="list list"/>
 							<xs:attribute ref="ifc:arraySize" use="optional"/>
 						</xs:complexType>
@@ -5794,8 +5970,8 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:attribute name="V1" type="ifc:IfcParameterValue" use="optional"/>
 				<xs:attribute name="U2" type="ifc:IfcParameterValue" use="optional"/>
 				<xs:attribute name="V2" type="ifc:IfcParameterValue" use="optional"/>
-				<xs:attribute name="Usense" type="xs:boolean" use="optional"/>
-				<xs:attribute name="Vsense" type="xs:boolean" use="optional"/>
+				<xs:attribute name="Usense" type="ifc:IfcBoolean" use="optional"/>
+				<xs:attribute name="Vsense" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -5863,7 +6039,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:long"/>
+								<xs:list itemType="ifc:IfcInteger"/>
 							</xs:simpleType>
 						</xs:restriction>
 					</xs:simpleType>
@@ -6021,7 +6197,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcRelDecomposes">
 				<xs:sequence>
-					<xs:element name="RelatingObject" type="ifc:IfcObjectDefinition" nillable="true"/>
 					<xs:element name="RelatedObjects">
 						<xs:complexType>
 							<xs:sequence>
@@ -6258,7 +6433,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:double"/>
+								<xs:list itemType="ifc:IfcInteger"/>
 							</xs:simpleType>
 							<xs:minLength value="0"/>
 						</xs:restriction>
@@ -6268,7 +6443,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:double"/>
+								<xs:list itemType="ifc:IfcInteger"/>
 							</xs:simpleType>
 							<xs:minLength value="0"/>
 						</xs:restriction>
@@ -6377,7 +6552,6 @@ compiled by Thomas Liebich tl@aec3.de
 							<xs:attribute ref="ifc:arraySize" use="optional"/>
 						</xs:complexType>
 					</xs:element>
-					<xs:element name="RelatingStructure" type="ifc:IfcSpatialElement" nillable="true"/>
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
@@ -6427,7 +6601,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcRelationship">
 				<xs:sequence>
-					<xs:element name="RelatingContext" type="ifc:IfcContext" nillable="true"/>
 					<xs:element name="RelatedDefinitions">
 						<xs:complexType>
 							<xs:group ref="ifc:IfcDefinitionSelect" maxOccurs="unbounded"/>
@@ -6467,7 +6640,6 @@ compiled by Thomas Liebich tl@aec3.de
 							<xs:attribute ref="ifc:arraySize" use="optional"/>
 						</xs:complexType>
 					</xs:element>
-					<xs:element name="RelatingObject" type="ifc:IfcObject" nillable="true"/>
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
@@ -6477,7 +6649,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcRelDefines">
 				<xs:sequence>
-					<xs:element name="RelatedObjects" type="ifc:IfcObjectDefinition" nillable="true" maxOccurs="1"/>
 					<xs:element name="RelatingPropertyDefinition">
 						<xs:complexType>
 							<xs:group ref="ifc:IfcPropertySetDefinitionSelect"/>
@@ -6512,16 +6683,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcRelDefines">
 				<xs:sequence>
-					<xs:element name="RelatedObjects">
-						<xs:complexType>
-							<xs:sequence>
-								<xs:element ref="ifc:IfcObject" maxOccurs="unbounded"/>
-							</xs:sequence>
-							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcObject"/>
-							<xs:attribute ref="ifc:cType" fixed="set"/>
-							<xs:attribute ref="ifc:arraySize" use="optional"/>
-						</xs:complexType>
-					</xs:element>
 					<xs:element name="RelatingType" type="ifc:IfcTypeObject" nillable="true"/>
 				</xs:sequence>
 			</xs:extension>
@@ -6532,7 +6693,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcRelConnects">
 				<xs:sequence>
-					<xs:element name="RelatingOpeningElement" type="ifc:IfcOpeningElement" nillable="true"/>
 					<xs:element name="RelatedBuildingElement" type="ifc:IfcElement" nillable="true"/>
 				</xs:sequence>
 			</xs:extension>
@@ -6577,7 +6737,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcRelDecomposes">
 				<xs:sequence>
-					<xs:element name="RelatingObject" type="ifc:IfcObjectDefinition" nillable="true"/>
 					<xs:element name="RelatedObjects">
 						<xs:complexType>
 							<xs:sequence>
@@ -6597,7 +6756,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcRelDecomposes">
 				<xs:sequence>
-					<xs:element name="RelatingElement" type="ifc:IfcElement" nillable="true"/>
 					<xs:element name="RelatedFeatureElement" type="ifc:IfcFeatureElementAddition" nillable="true"/>
 				</xs:sequence>
 			</xs:extension>
@@ -6618,7 +6776,6 @@ compiled by Thomas Liebich tl@aec3.de
 							<xs:attribute ref="ifc:arraySize" use="optional"/>
 						</xs:complexType>
 					</xs:element>
-					<xs:element name="RelatingStructure" type="ifc:IfcSpatialElement" nillable="true"/>
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
@@ -6700,7 +6857,6 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcRelDecomposes">
 				<xs:sequence>
-					<xs:element name="RelatingBuildingElement" type="ifc:IfcElement" nillable="true"/>
 					<xs:element name="RelatedOpeningElement" type="ifc:IfcFeatureElementSubtraction" nillable="true"/>
 				</xs:sequence>
 			</xs:extension>
@@ -6840,7 +6996,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:attribute name="ScheduleFinish" type="ifc:IfcDateTime" use="optional"/>
 				<xs:attribute name="ScheduleContour" type="ifc:IfcLabel" use="optional"/>
 				<xs:attribute name="LevelingDelay" type="ifc:IfcDuration" use="optional"/>
-				<xs:attribute name="IsOverAllocated" type="xs:boolean" use="optional"/>
+				<xs:attribute name="IsOverAllocated" type="ifc:IfcBoolean" use="optional"/>
 				<xs:attribute name="StatusTime" type="ifc:IfcDateTime" use="optional"/>
 				<xs:attribute name="ActualWork" type="ifc:IfcDuration" use="optional"/>
 				<xs:attribute name="ActualUsage" type="ifc:IfcPositiveRatioMeasure" use="optional"/>
@@ -6970,6 +7126,12 @@ compiled by Thomas Liebich tl@aec3.de
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:element name="IfcSeamCurve" type="ifc:IfcSeamCurve" substitutionGroup="ifc:IfcSurfaceCurve" nillable="true"/>
+	<xs:complexType name="IfcSeamCurve">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcSurfaceCurve"/>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:element name="IfcSectionProperties" type="ifc:IfcSectionProperties" substitutionGroup="ifc:IfcPreDefinedProperties" nillable="true"/>
 	<xs:complexType name="IfcSectionProperties">
 		<xs:complexContent>
@@ -7086,7 +7248,7 @@ compiled by Thomas Liebich tl@aec3.de
 				</xs:sequence>
 				<xs:attribute name="Name" type="ifc:IfcLabel" use="optional"/>
 				<xs:attribute name="Description" type="ifc:IfcText" use="optional"/>
-				<xs:attribute name="ProductDefinitional" type="ifc:logical" use="optional"/>
+				<xs:attribute name="ProductDefinitional" type="ifc:IfcLogical" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -7262,6 +7424,28 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcSpatialElement" abstract="true">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcProduct">
+				<xs:sequence>
+					<xs:element name="ContainsElements" nillable="true" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcRelContainedInSpatialStructure" minOccurs="0" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcRelContainedInSpatialStructure"/>
+							<xs:attribute ref="ifc:cType" fixed="set"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="ReferencesElements" nillable="true" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcRelReferencedInSpatialStructure" minOccurs="0" maxOccurs="unbounded"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcRelReferencedInSpatialStructure"/>
+							<xs:attribute ref="ifc:cType" fixed="set"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
 				<xs:attribute name="LongName" type="ifc:IfcLabel" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -7313,6 +7497,14 @@ compiled by Thomas Liebich tl@aec3.de
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:element name="IfcSphericalSurface" type="ifc:IfcSphericalSurface" substitutionGroup="ifc:IfcElementarySurface" nillable="true"/>
+	<xs:complexType name="IfcSphericalSurface">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcElementarySurface">
+				<xs:attribute name="Radius" type="ifc:IfcPositiveLengthMeasure" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:element name="IfcStackTerminal" type="ifc:IfcStackTerminal" substitutionGroup="ifc:IfcFlowTerminal" nillable="true"/>
 	<xs:complexType name="IfcStackTerminal">
 		<xs:complexContent>
@@ -7341,8 +7533,8 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcStairFlight">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcBuildingElement">
-				<xs:attribute name="NumberOfRiser" type="xs:long" use="optional"/>
-				<xs:attribute name="NumberOfTreads" type="xs:long" use="optional"/>
+				<xs:attribute name="NumberOfRisers" type="ifc:IfcInteger" use="optional"/>
+				<xs:attribute name="NumberOfTreads" type="ifc:IfcInteger" use="optional"/>
 				<xs:attribute name="RiserHeight" type="ifc:IfcPositiveLengthMeasure" use="optional"/>
 				<xs:attribute name="TreadLength" type="ifc:IfcPositiveLengthMeasure" use="optional"/>
 				<xs:attribute name="PredefinedType" type="ifc:IfcStairFlightTypeEnum" use="optional"/>
@@ -7369,7 +7561,7 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcStructuralAction" abstract="true">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcStructuralActivity">
-				<xs:attribute name="DestabilizingLoad" type="xs:boolean" use="optional"/>
+				<xs:attribute name="DestabilizingLoad" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -7692,7 +7884,7 @@ compiled by Thomas Liebich tl@aec3.de
 					<xs:element name="ResultForLoadGroup" type="ifc:IfcStructuralLoadGroup" nillable="true" minOccurs="0"/>
 				</xs:sequence>
 				<xs:attribute name="TheoryType" type="ifc:IfcAnalysisTheoryTypeEnum" use="optional"/>
-				<xs:attribute name="IsLinear" type="xs:boolean" use="optional"/>
+				<xs:attribute name="IsLinear" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -7794,6 +7986,27 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcSurface" abstract="true">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcGeometricRepresentationItem"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:element name="IfcSurfaceCurve" type="ifc:IfcSurfaceCurve" substitutionGroup="ifc:IfcCurve" nillable="true"/>
+	<xs:complexType name="IfcSurfaceCurve">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcCurve">
+				<xs:sequence>
+					<xs:element name="Curve3D" type="ifc:IfcCurve" nillable="true"/>
+					<xs:element name="AssociatedGeometry">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element ref="ifc:IfcPcurve" maxOccurs="2"/>
+							</xs:sequence>
+							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcPcurve"/>
+							<xs:attribute ref="ifc:cType" fixed="list"/>
+							<xs:attribute ref="ifc:arraySize" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="MasterRepresentation" type="ifc:IfcPreferredSurfaceCurveRepresentation" use="optional"/>
+			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
 	<xs:element name="IfcSurfaceCurveSweptAreaSolid" type="ifc:IfcSurfaceCurveSweptAreaSolid" substitutionGroup="ifc:IfcSweptAreaSolid" nillable="true"/>
@@ -7944,7 +8157,6 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="Transparency" type="ifc:IfcNormalisedRatioMeasure" use="optional"/>
 				<xs:attribute name="ReflectanceMethod" type="ifc:IfcReflectanceMethodEnum" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -7956,6 +8168,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:sequence>
 					<xs:element name="SurfaceColour" type="ifc:IfcColourRgb" nillable="true"/>
 				</xs:sequence>
+				<xs:attribute name="Transparency" type="ifc:IfcNormalisedRatioMeasure" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -7984,20 +8197,19 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:extension base="ifc:IfcPresentationItem">
 				<xs:sequence>
 					<xs:element name="TextureTransform" type="ifc:IfcCartesianTransformationOperator2D" nillable="true" minOccurs="0"/>
-					<xs:element name="Parameter" nillable="true" minOccurs="0">
-						<xs:complexType>
-							<xs:sequence>
-								<xs:element ref="ifc:IfcIdentifier-wrapper" maxOccurs="unbounded"/>
-							</xs:sequence>
-							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcIdentifier-wrapper"/>
-							<xs:attribute ref="ifc:cType" fixed="list"/>
-							<xs:attribute ref="ifc:arraySize" use="optional"/>
-						</xs:complexType>
-					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="RepeatS" type="xs:boolean" use="optional"/>
-				<xs:attribute name="RepeatT" type="xs:boolean" use="optional"/>
+				<xs:attribute name="RepeatS" type="ifc:IfcBoolean" use="optional"/>
+				<xs:attribute name="RepeatT" type="ifc:IfcBoolean" use="optional"/>
 				<xs:attribute name="Mode" type="ifc:IfcIdentifier" use="optional"/>
+				<xs:attribute name="Parameter" use="optional">
+					<xs:simpleType>
+						<xs:restriction>
+							<xs:simpleType>
+								<xs:list itemType="ifc:IfcIdentifier"/>
+							</xs:simpleType>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -8161,7 +8373,7 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="IsHeading" type="xs:boolean" use="optional"/>
+				<xs:attribute name="IsHeading" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -8190,8 +8402,8 @@ compiled by Thomas Liebich tl@aec3.de
 				</xs:sequence>
 				<xs:attribute name="Status" type="ifc:IfcLabel" use="optional"/>
 				<xs:attribute name="WorkMethod" type="ifc:IfcLabel" use="optional"/>
-				<xs:attribute name="IsMilestone" type="xs:boolean" use="optional"/>
-				<xs:attribute name="Priority" type="xs:long" use="optional"/>
+				<xs:attribute name="IsMilestone" type="ifc:IfcBoolean" use="optional"/>
+				<xs:attribute name="Priority" type="ifc:IfcInteger" use="optional"/>
 				<xs:attribute name="PredefinedType" type="ifc:IfcTaskTypeEnum" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -8210,7 +8422,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:attribute name="LateFinish" type="ifc:IfcDateTime" use="optional"/>
 				<xs:attribute name="FreeFloat" type="ifc:IfcDuration" use="optional"/>
 				<xs:attribute name="TotalFloat" type="ifc:IfcDuration" use="optional"/>
-				<xs:attribute name="IsCritical" type="xs:boolean" use="optional"/>
+				<xs:attribute name="IsCritical" type="ifc:IfcBoolean" use="optional"/>
 				<xs:attribute name="StatusTime" type="ifc:IfcDateTime" use="optional"/>
 				<xs:attribute name="ActualDuration" type="ifc:IfcDuration" use="optional"/>
 				<xs:attribute name="ActualStart" type="ifc:IfcDateTime" use="optional"/>
@@ -8225,7 +8437,7 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcTaskTime">
 				<xs:sequence>
-					<xs:element name="Recurrance" type="ifc:IfcRecurrencePattern" nillable="true"/>
+					<xs:element name="Recurrence" type="ifc:IfcRecurrencePattern" nillable="true"/>
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
@@ -8322,7 +8534,7 @@ compiled by Thomas Liebich tl@aec3.de
 				<xs:attribute name="PredefinedType" type="ifc:IfcTendonTypeEnum" use="optional"/>
 				<xs:attribute name="NominalDiameter" type="ifc:IfcPositiveLengthMeasure" use="optional"/>
 				<xs:attribute name="CrossSectionArea" type="ifc:IfcAreaMeasure" use="optional"/>
-				<xs:attribute name="SheethDiameter" type="ifc:IfcPositiveLengthMeasure" use="optional"/>
+				<xs:attribute name="SheathDiameter" type="ifc:IfcPositiveLengthMeasure" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -8344,17 +8556,6 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="Normals" use="optional">
-					<xs:simpleType>
-						<xs:restriction>
-							<xs:simpleType>
-								<xs:list itemType="ifc:IfcParameterValue"/>
-							</xs:simpleType>
-							<xs:minLength value="3"/>
-						</xs:restriction>
-					</xs:simpleType>
-				</xs:attribute>
-				<xs:attribute name="Closed" type="xs:boolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -8404,7 +8605,7 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="ModelOrDraughting" type="xs:boolean" use="optional"/>
+				<xs:attribute name="ModelOrDraughting" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -8636,6 +8837,15 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:extension base="ifc:IfcShapeModel"/>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:element name="IfcToroidalSurface" type="ifc:IfcToroidalSurface" substitutionGroup="ifc:IfcElementarySurface" nillable="true"/>
+	<xs:complexType name="IfcToroidalSurface">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcElementarySurface">
+				<xs:attribute name="MajorRadius" type="ifc:IfcPositiveLengthMeasure" use="optional"/>
+				<xs:attribute name="MinorRadius" type="ifc:IfcPositiveLengthMeasure" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:element name="IfcTransformer" type="ifc:IfcTransformer" substitutionGroup="ifc:IfcEnergyConversionDevice" nillable="true"/>
 	<xs:complexType name="IfcTransformer">
 		<xs:complexContent>
@@ -8683,23 +8893,33 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:complexType name="IfcTriangulatedFaceSet">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcTessellatedFaceSet">
-				<xs:attribute name="CoordIndex" use="optional">
+				<xs:attribute name="Normals" use="optional">
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:long"/>
+								<xs:list itemType="ifc:IfcParameterValue"/>
 							</xs:simpleType>
 							<xs:minLength value="3"/>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:attribute>
-				<xs:attribute name="NormalIndex" use="optional">
+				<xs:attribute name="Closed" type="ifc:IfcBoolean" use="optional"/>
+				<xs:attribute name="CoordIndex" use="optional">
 					<xs:simpleType>
 						<xs:restriction>
 							<xs:simpleType>
-								<xs:list itemType="xs:long"/>
+								<xs:list itemType="ifc:IfcPositiveInteger"/>
 							</xs:simpleType>
 							<xs:minLength value="3"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="PnIndex" use="optional">
+					<xs:simpleType>
+						<xs:restriction>
+							<xs:simpleType>
+								<xs:list itemType="ifc:IfcPositiveInteger"/>
+							</xs:simpleType>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:attribute>
@@ -8729,7 +8949,7 @@ compiled by Thomas Liebich tl@aec3.de
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="SenseAgreement" type="xs:boolean" use="optional"/>
+				<xs:attribute name="SenseAgreement" type="ifc:IfcBoolean" use="optional"/>
 				<xs:attribute name="MasterRepresentation" type="ifc:IfcTrimmingPreference" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -9089,8 +9309,8 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:extension base="ifc:IfcTypeProduct">
 				<xs:attribute name="ConstructionType" type="ifc:IfcWindowStyleConstructionEnum" use="optional"/>
 				<xs:attribute name="OperationType" type="ifc:IfcWindowStyleOperationEnum" use="optional"/>
-				<xs:attribute name="ParameterTakesPrecedence" type="xs:boolean" use="optional"/>
-				<xs:attribute name="Sizeable" type="xs:boolean" use="optional"/>
+				<xs:attribute name="ParameterTakesPrecedence" type="ifc:IfcBoolean" use="optional"/>
+				<xs:attribute name="Sizeable" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -9100,7 +9320,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:extension base="ifc:IfcBuildingElementType">
 				<xs:attribute name="PredefinedType" type="ifc:IfcWindowTypeEnum" use="optional"/>
 				<xs:attribute name="PartitioningType" type="ifc:IfcWindowTypePartitioningEnum" use="optional"/>
-				<xs:attribute name="ParameterTakesPrecedence" type="xs:boolean" use="optional"/>
+				<xs:attribute name="ParameterTakesPrecedence" type="ifc:IfcBoolean" use="optional"/>
 				<xs:attribute name="UserDefinedPartitioningType" type="ifc:IfcLabel" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -9225,6 +9445,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:element ref="ifc:IfcAngularVelocityMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcAreaDensityMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcAreaMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcBinary-wrapper"/>
 			<xs:element ref="ifc:IfcBoolean-wrapper"/>
 			<xs:element ref="ifc:IfcComplexNumber-wrapper"/>
 			<xs:element ref="ifc:IfcCompoundPlaneAngleMeasure-wrapper"/>
@@ -9288,6 +9509,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:element ref="ifc:IfcParameterValue-wrapper"/>
 			<xs:element ref="ifc:IfcPlanarForceMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcPlaneAngleMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcPositiveInteger-wrapper"/>
 			<xs:element ref="ifc:IfcPositiveLengthMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcPositivePlaneAngleMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcPositiveRatioMeasure-wrapper"/>
@@ -9347,6 +9569,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:element ref="ifc:IfcCsgPrimitive3D"/>
 			<xs:element ref="ifc:IfcHalfSpaceSolid"/>
 			<xs:element ref="ifc:IfcSolidModel"/>
+			<xs:element ref="ifc:IfcTessellatedFaceSet"/>
 		</xs:choice>
 	</xs:group>
 	<xs:group name="IfcClassificationReferenceSelect">
@@ -9396,6 +9619,7 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:choice>
 			<xs:element ref="ifc:IfcCompositeCurveOnSurface"/>
 			<xs:element ref="ifc:IfcPcurve"/>
+			<xs:element ref="ifc:IfcSurfaceCurve"/>
 		</xs:choice>
 	</xs:group>
 	<xs:group name="IfcCurveOrEdgeCurve">
@@ -9586,6 +9810,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:element ref="ifc:IfcAppliedValue"/>
 			<xs:element ref="ifc:IfcAreaDensityMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcAreaMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcBinary-wrapper"/>
 			<xs:element ref="ifc:IfcBoolean-wrapper"/>
 			<xs:element ref="ifc:IfcComplexNumber-wrapper"/>
 			<xs:element ref="ifc:IfcCompoundPlaneAngleMeasure-wrapper"/>
@@ -9649,6 +9874,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:element ref="ifc:IfcParameterValue-wrapper"/>
 			<xs:element ref="ifc:IfcPlanarForceMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcPlaneAngleMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcPositiveInteger-wrapper"/>
 			<xs:element ref="ifc:IfcPositiveLengthMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcPositivePlaneAngleMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcPositiveRatioMeasure-wrapper"/>
@@ -9794,6 +10020,12 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:element ref="ifc:IfcRotationalStiffnessMeasure-wrapper"/>
 		</xs:choice>
 	</xs:group>
+	<xs:group name="IfcSegmentIndexSelect">
+		<xs:choice>
+			<xs:element ref="ifc:IfcArcIndex-wrapper"/>
+			<xs:element ref="ifc:IfcLineIndex-wrapper"/>
+		</xs:choice>
+	</xs:group>
 	<xs:group name="IfcShell">
 		<xs:choice>
 			<xs:element ref="ifc:IfcClosedShell"/>
@@ -9802,6 +10034,7 @@ compiled by Thomas Liebich tl@aec3.de
 	</xs:group>
 	<xs:group name="IfcSimpleValue">
 		<xs:choice>
+			<xs:element ref="ifc:IfcBinary-wrapper"/>
 			<xs:element ref="ifc:IfcBoolean-wrapper"/>
 			<xs:element ref="ifc:IfcDate-wrapper"/>
 			<xs:element ref="ifc:IfcDateTime-wrapper"/>
@@ -9810,6 +10043,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:element ref="ifc:IfcInteger-wrapper"/>
 			<xs:element ref="ifc:IfcLabel-wrapper"/>
 			<xs:element ref="ifc:IfcLogical-wrapper"/>
+			<xs:element ref="ifc:IfcPositiveInteger-wrapper"/>
 			<xs:element ref="ifc:IfcReal-wrapper"/>
 			<xs:element ref="ifc:IfcText-wrapper"/>
 			<xs:element ref="ifc:IfcTime-wrapper"/>
@@ -9911,6 +10145,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:element ref="ifc:IfcAngularVelocityMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcAreaDensityMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcAreaMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcBinary-wrapper"/>
 			<xs:element ref="ifc:IfcBoolean-wrapper"/>
 			<xs:element ref="ifc:IfcComplexNumber-wrapper"/>
 			<xs:element ref="ifc:IfcCompoundPlaneAngleMeasure-wrapper"/>
@@ -9973,6 +10208,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:element ref="ifc:IfcParameterValue-wrapper"/>
 			<xs:element ref="ifc:IfcPlanarForceMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcPlaneAngleMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcPositiveInteger-wrapper"/>
 			<xs:element ref="ifc:IfcPositiveLengthMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcPositivePlaneAngleMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcPositiveRatioMeasure-wrapper"/>
@@ -10274,6 +10510,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:enumeration value="element"/>
 			<xs:enumeration value="partial"/>
 			<xs:enumeration value="provisionforvoid"/>
+			<xs:enumeration value="provisionforspace"/>
 			<xs:enumeration value="userdefined"/>
 			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
@@ -11042,7 +11279,7 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:enumeration value="external_water"/>
 			<xs:enumeration value="external_fire"/>
 			<xs:enumeration value="userdefined"/>
-			<xs:enumeration value="notdefiend"/>
+			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:simpleType name="IfcFanTypeEnum">
@@ -11556,6 +11793,13 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
 	</xs:simpleType>
+	<xs:simpleType name="IfcPreferredSurfaceCurveRepresentation">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="curve3d"/>
+			<xs:enumeration value="pcurve_s1"/>
+			<xs:enumeration value="pcurve_s2"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:simpleType name="IfcProcedureTypeEnum">
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="advice_caution"/>
@@ -11865,13 +12109,17 @@ compiled by Thomas Liebich tl@aec3.de
 	</xs:simpleType>
 	<xs:simpleType name="IfcSensorTypeEnum">
 		<xs:restriction base="xs:string">
+			<xs:enumeration value="cosensor"/>
+			<xs:enumeration value="co2sensor"/>
 			<xs:enumeration value="conductancesensor"/>
 			<xs:enumeration value="contactsensor"/>
 			<xs:enumeration value="firesensor"/>
 			<xs:enumeration value="flowsensor"/>
+			<xs:enumeration value="frostsensor"/>
 			<xs:enumeration value="gassensor"/>
 			<xs:enumeration value="heatsensor"/>
 			<xs:enumeration value="humiditysensor"/>
+			<xs:enumeration value="identifiersensor"/>
 			<xs:enumeration value="ionconcentrationsensor"/>
 			<xs:enumeration value="levelsensor"/>
 			<xs:enumeration value="lightsensor"/>
@@ -12487,12 +12735,36 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:simpleType name="IfcAngularVelocityMeasure">
 		<xs:restriction base="xs:double"/>
 	</xs:simpleType>
+	<xs:complexType name="IfcArcIndex">
+		<xs:simpleContent>
+			<xs:extension base="ifc:List-IfcArcIndex">
+				<xs:attribute ref="ifc:itemType" fixed="ifc:IfcPositiveInteger"/>
+				<xs:attribute ref="ifc:cType" fixed="list"/>
+				<xs:attribute ref="ifc:arraySize" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="List-IfcArcIndex">
+		<xs:restriction>
+			<xs:simpleType>
+				<xs:list itemType="ifc:IfcPositiveInteger"/>
+			</xs:simpleType>
+			<xs:minLength value="3"/>
+			<xs:maxLength value="3"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:simpleType name="IfcAreaDensityMeasure">
 		<xs:restriction base="xs:double"/>
 	</xs:simpleType>
 	<xs:simpleType name="IfcAreaMeasure">
 		<xs:restriction base="xs:double"/>
 	</xs:simpleType>
+	<xs:complexType name="IfcBinary">
+		<xs:simpleContent>
+			<xs:extension base="ifc:hexBinary">
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
 	<xs:simpleType name="IfcBoolean">
 		<xs:restriction base="xs:boolean"/>
 	</xs:simpleType>
@@ -12659,6 +12931,23 @@ compiled by Thomas Liebich tl@aec3.de
 	<xs:simpleType name="IfcLengthMeasure">
 		<xs:restriction base="xs:double"/>
 	</xs:simpleType>
+	<xs:complexType name="IfcLineIndex">
+		<xs:simpleContent>
+			<xs:extension base="ifc:List-IfcLineIndex">
+				<xs:attribute ref="ifc:itemType" fixed="ifc:IfcPositiveInteger"/>
+				<xs:attribute ref="ifc:cType" fixed="list"/>
+				<xs:attribute ref="ifc:arraySize" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="List-IfcLineIndex">
+		<xs:restriction>
+			<xs:simpleType>
+				<xs:list itemType="ifc:IfcPositiveInteger"/>
+			</xs:simpleType>
+			<xs:minLength value="2"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:simpleType name="IfcLinearForceMeasure">
 		<xs:restriction base="xs:double"/>
 	</xs:simpleType>
@@ -12748,6 +13037,9 @@ compiled by Thomas Liebich tl@aec3.de
 	</xs:simpleType>
 	<xs:simpleType name="IfcPlaneAngleMeasure">
 		<xs:restriction base="xs:double"/>
+	</xs:simpleType>
+	<xs:simpleType name="IfcPositiveInteger">
+		<xs:restriction base="ifc:IfcInteger"/>
 	</xs:simpleType>
 	<xs:simpleType name="IfcPositiveLengthMeasure">
 		<xs:restriction base="ifc:IfcLengthMeasure"/>
@@ -12964,6 +13256,14 @@ compiled by Thomas Liebich tl@aec3.de
 			<xs:enumeration value="unknown"/>
 		</xs:restriction>
 	</xs:simpleType>
+    <xs:simpleType name="Seq-IfcPositiveInteger">
+        <xs:restriction>
+            <xs:simpleType>
+                <xs:list itemType="ifc:IfcPositiveInteger"/>
+            </xs:simpleType>
+            <xs:minLength value="3"/>
+        </xs:restriction>
+    </xs:simpleType>
 	<!-- base global wrapper declaration for atomic simple types (for embeded base schema definitions) -->
 	<xs:element name="IfcAbsorbedDoseMeasure-wrapper" nillable="true">
 		<xs:complexType>
@@ -13001,6 +13301,15 @@ compiled by Thomas Liebich tl@aec3.de
 			</xs:simpleContent>
 		</xs:complexType>
 	</xs:element>
+	<xs:element name="IfcArcIndex-wrapper" nillable="true">
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="ifc:IfcArcIndex">
+					<xs:attributeGroup ref="ifc:instanceAttributes"/>
+				</xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
 	<xs:element name="IfcAreaDensityMeasure-wrapper" nillable="true">
 		<xs:complexType>
 			<xs:simpleContent>
@@ -13014,6 +13323,15 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexType>
 			<xs:simpleContent>
 				<xs:extension base="ifc:IfcAreaMeasure">
+					<xs:attributeGroup ref="ifc:instanceAttributes"/>
+				</xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="IfcBinary-wrapper" nillable="true">
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="ifc:IfcBinary">
 					<xs:attributeGroup ref="ifc:instanceAttributes"/>
 				</xs:extension>
 			</xs:simpleContent>
@@ -13316,6 +13634,15 @@ compiled by Thomas Liebich tl@aec3.de
 			</xs:simpleContent>
 		</xs:complexType>
 	</xs:element>
+	<xs:element name="IfcLineIndex-wrapper" nillable="true">
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="ifc:IfcLineIndex">
+					<xs:attributeGroup ref="ifc:instanceAttributes"/>
+				</xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
 	<xs:element name="IfcLinearForceMeasure-wrapper" nillable="true">
 		<xs:complexType>
 			<xs:simpleContent>
@@ -13581,6 +13908,15 @@ compiled by Thomas Liebich tl@aec3.de
 		<xs:complexType>
 			<xs:simpleContent>
 				<xs:extension base="ifc:IfcPlaneAngleMeasure">
+					<xs:attributeGroup ref="ifc:instanceAttributes"/>
+				</xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="IfcPositiveInteger-wrapper" nillable="true">
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="ifc:IfcPositiveInteger">
 					<xs:attributeGroup ref="ifc:instanceAttributes"/>
 				</xs:extension>
 			</xs:simpleContent>
@@ -13964,17 +14300,4 @@ compiled by Thomas Liebich tl@aec3.de
 			</xs:simpleContent>
 		</xs:complexType>
 	</xs:element>
-	<xs:element name="double-wrapper" nillable="true">
-		<xs:complexType>
-			<xs:simpleContent>
-				<xs:extension base="xs:double">
-					<xs:attributeGroup ref="ifc:instanceAttributes"/>
-				</xs:extension>
-			</xs:simpleContent>
-		</xs:complexType>
-	</xs:element>
-	<!--- 2013-02-04 added to allow definition of express and configuration attributes of the ifcXML uos element -->
-	<xs:simpleType name="Seq-anyURI">
-		<xs:list itemType="xs:anyURI"/>
-	</xs:simpleType>
 </xs:schema>

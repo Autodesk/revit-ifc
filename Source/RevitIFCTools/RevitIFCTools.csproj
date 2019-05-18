@@ -158,10 +158,6 @@
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="IFC4_ADD2.xsd">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="IFCCertifiedEntitiesAndPSets.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
