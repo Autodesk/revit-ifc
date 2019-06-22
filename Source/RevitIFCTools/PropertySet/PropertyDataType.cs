@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 
 namespace RevitIFCTools.PropertySet
 {
-   abstract class PropertyDataType
+   abstract public class PropertyDataType
    {
       public abstract override string ToString();
    }
