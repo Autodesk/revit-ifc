@@ -961,21 +961,37 @@ namespace Revit.IFC.Export.Exporter
          IFCFileModelOptions modelOptions = new IFCFileModelOptions();
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
          {
-            modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X2_ADD1.exp");
+            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X2_ADD1.exp");
+            modelOptions.SchemaFile = LocateSchemaFile("IFC2X2_ADD1.exp");
             modelOptions.SchemaName = "IFC2x2_FINAL";
          }
          else if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
-               modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4.exp");
-               modelOptions.SchemaName = "IFC4";
+            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4.exp");
+            modelOptions.SchemaFile = LocateSchemaFile("IFC4.exp");
+            modelOptions.SchemaName = "IFC4";
          }
          else
          {
             // We leave IFC2x3 as default until IFC4 is finalized and generally supported across platforms.
-            modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X3_TC1.exp");
+            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X3_TC1.exp");
+            modelOptions.SchemaFile = LocateSchemaFile("IFC2X3_TC1.exp");
             modelOptions.SchemaName = "IFC2x3";
          }
          return modelOptions;
+      }
+
+      private string LocateSchemaFile(string schemaFileName)
+      {
+         string filePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM", schemaFileName);
+#if IFC_OPENSOURCE
+         if (!File.Exists(filePath))
+         {
+            // Find the alternate schema file from the open source install folder
+            filePath = Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location), schemaFileName);
+         }
+#endif
+         return filePath;
       }
 
       /// <summary>
