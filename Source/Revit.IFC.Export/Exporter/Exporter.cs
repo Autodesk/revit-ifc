@@ -983,14 +983,15 @@ namespace Revit.IFC.Export.Exporter
 
       private string LocateSchemaFile(string schemaFileName)
       {
-         string filePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM", schemaFileName);
+         string filePath = null;
 #if IFC_OPENSOURCE
+         // Find the alternate schema file from the open source install folder
+         filePath = Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location), schemaFileName);
          if (!File.Exists(filePath))
-         {
-            // Find the alternate schema file from the open source install folder
-            filePath = Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location), schemaFileName);
-         }
 #endif
+         {
+            filePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM", schemaFileName);
+         }
          return filePath;
       }
 
