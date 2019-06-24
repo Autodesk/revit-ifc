@@ -1,0 +1,68 @@
+#
+# User Defined PropertySet Definition File
+#
+# Format:
+#	PropertySet:	<Pset Name>	I[nstance]/T[ype]	<element list separated by ','>
+#				<Property Name 1>	<Data type>	<Revit parameter name (if different from property name)>
+#				<Property Name 2>	<Data type>	<Revit parameter name (if different from property name)>
+#				...
+# 
+# PropertySet definition for COBie
+#
+PropertySet:	COBie_Specification	T	IfcElementType
+	NominalLength	Length	COBie.Type.NominalLength
+	NominalWidth	Length	COBie.Type.NominalWidth
+	NominalHeight	Length	COBie.Type.NominalHeight
+	Shape		Text	COBie.Type.Shape
+	Size		Text	COBie.Type.Size
+	Color		Text	COBie.Type.Color
+	Finish		Text	COBie.Type.Finish
+	Grade		Text	COBie.Type.Grade
+	Material	Text	COBie.Type.Material
+	Constituents	Text	COBie.Type.Constituents
+	Features	Text	COBie.Type.Features
+	AccessibilityPerformance	Text	COBie.Type.AccessibilityPerformance
+	CodePerformance	Text	COBie.Type.CodePerformance
+	SustainabilityPerformance	Text	COBie.Type.SustainabilityPerformance
+	AccessibilityPerformance	Text	COBie.Type.AccessibilityPerformance
+# 
+PropertySet:	COBie_Component	I	IfcElement
+	InstallationDate	Text	COBie.Component.InstallationDate
+	WarrantyStartDate	Text	COBie.Component.WarrantyStartDate
+	TagNumber	Text	COBie.Component.TagNumber
+	AssetIdentifier	Text	COBie.Component.AssetIdentifier
+#
+PropertySet:	COBie_Space	I	IfcSpace
+	RoomTag	Text	COBie.Space.RoomTag
+#
+PropertySet:	COBie_Asset	T	IfcElementType
+	AssetType	Text	COBie.Type.AssetType
+#
+PropertySet:	COBie_Warranty	T	IfcElementType
+	WarrantyGuarantorParts	Text	COBie.Type.WarrantyGuarantorParts
+	WarrantyDurationParts	Text	COBie.Type.WarrantyDurationParts
+	WarrantyGuarantorLabor	Text	COBie.Type.WarrantyGuarantorLabor
+	WarrantyDurationLabor	Text	COBie.Type.WarrantyDurationLabor
+	WarrantyDurationDescription	Text	COBie.Type.WarrantyDurationDescription
+	WarrantyDescription	Text	COBie.Type.WarrantyDescription
+#
+PropertySet:	Pset_ManufacturerOccurence	I	IfcElement
+	SerialNumber	Text	COBie.Component.SerialNumber
+	BarCode	Text	COBie.Component.BarCode
+#
+PropertySet:	COBie_ServiceLife	T	IfcElementType
+	ServiceLifeDuration	Text	COBie.Type.ExpectedLife
+#
+PropertySet:	COBie_EconomicalImpactValues	T	IfcElementType
+	ReplacementCost	Text	COBie.Type.ReplacementCost
+#
+PropertySet:	Pset_ManufacturerTypeInformation	T	IfcElementType
+	Manufacturer	Text	COBie.Type.Manufacturer
+	ModelReference	Text	COBie.Type.ModelReference
+	ModelLabel	Text	COBie.Type.ModelNumber
+#
+PropertySet:	COBie_Spare	I	IfcElement
+	Suppliers	Text
+	SetNumber	Text
+	PartNumber	Text
+#
