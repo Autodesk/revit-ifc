@@ -344,7 +344,7 @@ namespace Revit.IFC.Export.Exporter
             IList<Solid> solids = solidMeshInfo.GetSolids();
             IList<Mesh> meshes = solidMeshInfo.GetMeshes();
 
-            visibleGeomObjects = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solids, meshes);
+            visibleGeomObjects = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref solids, ref meshes);
 
             // If we found solids and meshes, and they are all invisible, don't export the beam.
             // If we didn't find solids and meshes, we won't export the beam with ExportBeamAsStandardElement, but will allow the generic

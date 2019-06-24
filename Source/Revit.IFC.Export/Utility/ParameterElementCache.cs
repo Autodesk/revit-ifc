@@ -19,17 +19,21 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
-
 
 namespace Revit.IFC.Export.Utility
 {
    /// <summary>
-   /// Contains a cache from parameter name to parameter.  Intended to be grouped by BuiltInParameterGroup.
+   /// Contains a cache from cleaned parameter name to the first parameter with that name.  
+   /// Intended to be grouped by BuiltInParameterGroup.
    /// </summary>
+   /// <remarks>
+   /// Note that Revit may have multiple parameters with the same name, that IFC doesn't support.
+   /// For now, we support only exporting the first Parameter with the same name, as determined
+   /// by the parameter with the lowest id.  We'd like to extend this by exporting all parameters
+   /// with the same name, uniqified for IFC, but this requires significant changes in routines
+   /// that expect one parameter per name.
+   /// </remarks>
    public class ParameterElementCache
    {
       /// <summary>

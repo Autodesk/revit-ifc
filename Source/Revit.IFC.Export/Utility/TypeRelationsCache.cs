@@ -49,5 +49,29 @@ namespace Revit.IFC.Export.Utility
             this[typeObj] = objs;
          }
       }
+
+      /// <summary>
+      /// To clean the set of reference objects from the type in the case of some deleted entity
+      /// </summary>
+      /// <param name="typeObj">Thpe handle</param>
+      public void CleanRefObjects(IFCAnyHandle typeObj)
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(typeObj))
+            return;
+
+         if (ContainsKey(typeObj))
+         {
+            IList<IFCAnyHandle> refObjToDel = new List<IFCAnyHandle>();
+            foreach (IFCAnyHandle handle in this[typeObj])
+            {
+               if (ExporterCacheManager.HandleToDeleteCache.Contains(handle))
+                  refObjToDel.Add(handle);
+            }
+            foreach (IFCAnyHandle handle in refObjToDel)
+               this[typeObj].Remove(handle);
+         }
+         else
+            return;
+      }
    }
 }

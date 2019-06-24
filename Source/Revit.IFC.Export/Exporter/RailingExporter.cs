@@ -274,16 +274,9 @@ namespace Revit.IFC.Export.Exporter
                   ecData.SetLocalPlacement(localPlacement);
 
                   SolidMeshGeometryInfo solidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(geomElem);
-                  IList<Solid> solids = new List<Solid>(); ;
-                  IList<Mesh> meshes = new List<Mesh>();
-                  IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solidMeshInfo.GetSolids(), solidMeshInfo.GetMeshes());
-                  foreach (GeometryObject gObj in gObjs)
-                  {
-                     if (gObj is Solid)
-                        solids.Add(gObj as Solid);
-                     else if (gObj is Mesh)
-                        meshes.Add(gObj as Mesh);
-                  }
+                  IList<Solid> solids = solidMeshInfo.GetSolids();
+                  IList<Mesh> meshes = solidMeshInfo.GetMeshes();
+                  IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref solids, ref meshes);
 
                   Railing railingElem = element as Railing;
                   IList<ElementId> subElementIds = CollectSubElements(railingElem);
@@ -296,14 +289,13 @@ namespace Revit.IFC.Export.Exporter
                         GeometryElement subElementGeom = GeometryUtil.GetOneLevelGeometryElement(subElement.get_Geometry(geomOptions), 0);
 
                         SolidMeshGeometryInfo subElementSolidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(subElementGeom);
-                        IList<GeometryObject> partGObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, subElementSolidMeshInfo.GetSolids(), subElementSolidMeshInfo.GetMeshes());
-                        foreach (GeometryObject gObj in partGObjs)
-                        {
-                           if (gObj is Solid)
-                              solids.Add(gObj as Solid);
-                           else if (gObj is Mesh)
-                              meshes.Add(gObj as Mesh);
-                        }
+                        IList<Solid> subElemSolids = subElementSolidMeshInfo.GetSolids();
+                        IList<Mesh> subElemMeshes = subElementSolidMeshInfo.GetMeshes();
+                        IList<GeometryObject> partGObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref subElemSolids, ref subElemMeshes);
+                        foreach (Solid subElSolid in subElemSolids)
+                           solids.Add(subElSolid);
+                        foreach (Mesh subElMesh in subElemMeshes)
+                           meshes.Add(subElMesh);
                      }
                   }
 
@@ -333,9 +325,7 @@ namespace Revit.IFC.Export.Exporter
                   IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
                   representations.Add(bodyRep);
 
-                  IList<GeometryObject> geomObjects = new List<GeometryObject>();
-                  foreach (Solid solid in solids)
-                     geomObjects.Add(solid);
+                  IList<GeometryObject> geomObjects = new List<GeometryObject>(solids);
                   foreach (Mesh mesh in meshes)
                      geomObjects.Add(mesh);
 

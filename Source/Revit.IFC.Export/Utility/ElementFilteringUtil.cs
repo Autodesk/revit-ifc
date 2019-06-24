@@ -728,15 +728,20 @@ namespace Revit.IFC.Export.Utility
          if (node != null && !node.isAbstract)
          {
             // Only IfcProduct or IfcTypeProduct can be assigned for export type
-            if (!node.IsSubTypeOf("IfcProduct") && !node.IsSubTypeOf("IfcTypeProduct"))
-               ret = ifcType;
-            else
+            //if (!node.IsSubTypeOf("IfcProduct") && !node.IsSubTypeOf("IfcTypeProduct") && !node.Name.Equals("IfcGroup", StringComparison.InvariantCultureIgnoreCase))
+            if ((node.IsSubTypeOf("IfcObject") && (node.IsSubTypeOf("IfcProduct")
+                     || node.IsSubTypeOf("IfcGroup") || node.Name.Equals("IfcGroup", StringComparison.InvariantCultureIgnoreCase)))
+               || node.IsSubTypeOf("IfcTypeObject"))
+            {
                if (IFCEntityType.TryParse(entityType, true, out ifcType))
+                  ret = ifcType;
+            }
+            else
                ret = ifcType;
          }
          else if (node != null && node.isAbstract)
          {
-            node = IfcSchemaEntityTree.FindNonAbsSuperType(entityType, "IfcProduct", "IfcProductType");
+            node = IfcSchemaEntityTree.FindNonAbsSuperType(entityType, "IfcProduct", "IfcProductType", "IfcGroup");
             if (node != null)
             {
                if (Enum.TryParse<IFCEntityType>(node.Name, true, out ifcType))

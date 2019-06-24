@@ -926,9 +926,9 @@ namespace Revit.IFC.Export.Exporter
          if (stair == null || geometryElement == null)
             return;
 
-         // Don't process Stair that has only one Flight -> export it as a single IfcStair instead by returning immediately 
-         if (stair.GetStairsRuns().Count == 1)
-            return;
+         //// Don't process Stair that has only one Flight -> export it as a single IfcStair instead by returning immediately 
+         //if (stair.GetStairsRuns().Count == 1)
+         //   return;
 
          Document doc = stair.Document;
          IFCFile file = exporterIFC.GetFile();
@@ -1744,6 +1744,20 @@ namespace Revit.IFC.Export.Exporter
                 contextOfItemsAxis, walkingLineItems);
             reps.Add(walkingLineRep);
          }
+      }
+
+      /// <summary>
+      /// Delete StairFlight data in case it is not needed anymore, to be collpased into a single IfcStair in case it is a single object
+      /// </summary>
+      /// <param name="flightHnd"></param>
+      public static void DeleteStairFlightData(IFCAnyHandle flightHnd)
+      {
+         // Clear references to the StairFlight in the Cache before deleting
+         ExporterCacheManager.HandleToElementCache.Delete(flightHnd);
+
+         // This cannot be deleted yet until all the necessary references in the cache can be removed. The actual delete will be done at the end of EndExport
+         //flightHnd.Delete();
+         ExporterCacheManager.HandleToDeleteCache.Add(flightHnd);
       }
    }
 }

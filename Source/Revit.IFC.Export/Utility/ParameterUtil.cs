@@ -359,6 +359,16 @@ namespace Revit.IFC.Export.Utility
          if (builtInParameter == BuiltInParameter.INVALID)
             throw new ArgumentException("BuiltInParameter is INVALID", "builtInParameter");
 
+         Parameter parameter = element.get_Parameter(builtInParameter);
+         if (parameter != null && 
+            parameter.HasValue && 
+            parameter.StorageType == StorageType.String)
+         {
+            if (!parameter.IsReadOnly)
+               parameter.Set(propertyValue);
+            return;
+         }
+
          ElementId parameterId = new ElementId(builtInParameter);
          ExporterIFCUtils.AddValueString(element, parameterId, propertyValue);
       }
@@ -706,6 +716,9 @@ namespace Revit.IFC.Export.Utility
          if (parameterIds.Size == 0)
             return;
 
+         IDictionary<int, KeyValuePair<string, Parameter>> stableSortedParameterSet = 
+            new SortedDictionary<int, KeyValuePair<string, Parameter>>();
+
          // We will do two passes.  In the first pass, we will look at parameters in the IFC group.
          // In the second pass, we will look at all other groups.
          ParameterSetIterator parameterIt = parameterIds.ForwardIterator();
@@ -728,10 +741,18 @@ namespace Revit.IFC.Export.Utility
             if (internalDefinition != null && internalDefinition.Visible == false)
                continue;
 
-            if (string.IsNullOrWhiteSpace(paramDefinition.Name))
+            string name = paramDefinition.Name;
+            if (string.IsNullOrWhiteSpace(name))
                continue;
 
-            string cleanPropertyName = NamingUtil.RemoveSpaces(paramDefinition.Name);
+            stableSortedParameterSet[parameter.Id.IntegerValue] = new KeyValuePair<string,Parameter>(name, parameter);
+         }
+
+         foreach (KeyValuePair<string, Parameter> stableSortedParameter in stableSortedParameterSet.Values)
+         {
+            Parameter parameter = stableSortedParameter.Value;
+            Definition paramDefinition = parameter.Definition;
+            string cleanPropertyName = NamingUtil.RemoveSpaces(stableSortedParameter.Key);
 
             BuiltInParameterGroup groupId = paramDefinition.ParameterGroup;
             ParameterElementCache cacheForGroup = null;

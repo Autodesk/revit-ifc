@@ -132,7 +132,7 @@ namespace Revit.IFC.Export.Exporter
 
                IFCAnyHandle prodShapeHnd = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
                IFCAnyHandle instHnd;
-               if (exportType.ExportInstance != Common.Enums.IFCEntityType.IfcAnnotation)
+               if (exportType.ExportInstance == Common.Enums.IFCEntityType.IfcAnnotation)
                   instHnd = IFCInstanceExporter.CreateAnnotation(exporterIFC, textNote, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
                      setter.LocalPlacement, prodShapeHnd);
                else

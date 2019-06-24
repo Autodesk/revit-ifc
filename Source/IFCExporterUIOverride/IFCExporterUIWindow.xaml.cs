@@ -1382,10 +1382,10 @@ namespace BIM.IFC.Export.UI
                case IFCVersion.IFC4:
                case IFCVersion.IFC4DTV:
                case IFCVersion.IFC4RV:
-                  schemaFile = "IFC4_ADD2.xsd";
+                  schemaFile = "IFC4.xsd";
                   break;
                default:
-                  schemaFile = "IFC4_ADD1.xsd";
+                  schemaFile = "IFC4.xsd";
                   break;
             }
 

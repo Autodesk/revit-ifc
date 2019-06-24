@@ -575,23 +575,33 @@ namespace Revit.IFC.Export.Exporter
          // If that changes, we should revisit optimization possibilities.
          Transform profilePlaneTrfInverse = profilePlaneTrf.Inverse;
 
+         IList<IList<XYZ>> projectedTessellatedOutline = new List<IList<XYZ>>();
+         foreach (IList<XYZ> pointLoop in tessellatedOutline)
+         {
+            IList<XYZ> projectedPointLoop = new List<XYZ>();
+            foreach (XYZ point in pointLoop)
+            {
+               projectedPointLoop.Add(profilePlaneTrfInverse.OfPoint(point));
+            }
+            projectedTessellatedOutline.Add(projectedPointLoop);
+         }
+
          // Create the delta transforms and the offset tessellated profiles.
          foreach (double parameter in tessellatedDirectrixParameters)
          {
             Transform directrixDirs = CreateProfileCurveTransform(exporterIFC, directrix, parameter);
-            Transform deltaTransform = directrixDirs.Multiply(profilePlaneTrfInverse);
 
             IList<IList<IFCAnyHandle>> currTessellatedOutline = new List<IList<IFCAnyHandle>>();
-            foreach (IList<XYZ> pointLoop in tessellatedOutline)
+            foreach (IList<XYZ> projectedPointLoop in projectedTessellatedOutline)
             {
-               IList<IFCAnyHandle> currTessellatedPoinLoop = new List<IFCAnyHandle>();
-               foreach (XYZ point in pointLoop)
+               IList<IFCAnyHandle> currTessellatedPointLoop = new List<IFCAnyHandle>();
+               foreach (XYZ projectedPoint in projectedPointLoop)
                {
-                  XYZ transformedPoint = deltaTransform.OfPoint(point);
+                  XYZ transformedPoint = directrixDirs.OfPoint(projectedPoint);
                   IFCAnyHandle transformedPointHandle = ExporterUtil.CreateCartesianPoint(file, transformedPoint);
-                  currTessellatedPoinLoop.Add(transformedPointHandle);
+                  currTessellatedPointLoop.Add(transformedPointHandle);
                }
-               currTessellatedOutline.Add(currTessellatedPoinLoop);
+               currTessellatedOutline.Add(currTessellatedPointLoop);
             }
             facetVertexHandles.Add(currTessellatedOutline);
          }

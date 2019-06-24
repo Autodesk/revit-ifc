@@ -97,7 +97,7 @@ namespace Revit.IFC.Export.Utility
 
       /// <summary>
       /// Creates a SimpleSweptSolidAnalyzer and computes the swept solid. This method should be used when a swept curve (directrix) is already known. Even when it is missing (null)
-      /// it will simplu call the original one where it will try to determine the swept curve (directrix) using the connecting faces
+      /// it will simply call the original one where it will try to determine the swept curve (directrix) using the connecting faces
       /// </summary>
       /// <param name="faces">The faces of a solid.</param>
       /// <param name="normal">The normal of the reference plane that a path might lie on.  If it is null, try to guess based on the geometry.</param>
@@ -110,12 +110,13 @@ namespace Revit.IFC.Export.Utility
          IList<Tuple<PlanarFace, XYZ>> potentialSweptAreaFaces = new List<Tuple<PlanarFace, XYZ>>();
          Curve directrix = potentialPathGeom as Curve;
 
-         bool pathGeomExists = potentialPathGeom != null;
-
-         if (!pathGeomExists)
+         if (potentialPathGeom == null)
             return Create(faces, normal);
 
-         // Collect plannar faces as candidates for the swept area
+         XYZ directrixStartPt = directrix.GetEndPoint(0);
+         XYZ directrixEndPt = directrix.GetEndPoint(1);
+
+         // Collect planar faces as candidates for the swept area
          foreach (Face face in faces)
          {
             if (!(face is PlanarFace))
@@ -130,8 +131,8 @@ namespace Revit.IFC.Export.Utility
                {
                   foreach (IntersectionResult res in intersectResults)
                   {
-                     if (res.XYZPoint.IsAlmostEqualTo(directrix.GetEndPoint(0))
-                         || res.XYZPoint.IsAlmostEqualTo(directrix.GetEndPoint(1)))
+                     if (res.XYZPoint.IsAlmostEqualTo(directrixStartPt)
+                         || res.XYZPoint.IsAlmostEqualTo(directrixEndPt))
                      {
                         Tuple<PlanarFace, XYZ> potentialEndFaceAndPoint = new Tuple<PlanarFace, XYZ>(planarFace, res.XYZPoint);
                         potentialSweptAreaFaces.Add(potentialEndFaceAndPoint);
@@ -141,12 +142,12 @@ namespace Revit.IFC.Export.Utility
             }
          }
 
-         // If there are more than 1 candidates, we need to find the congruent faces, and they cannot be on the same plane
-         IList<Tuple<PlanarFace, XYZ>> sweptEndFaces = new List<Tuple<PlanarFace, XYZ>>();
+         // If there is more than 1 candidate, we need to find the congruent faces, 
+         // and they cannot be on the same plane.
+         PlanarFace sweptEndStartFace = null;
 
-         while (potentialSweptAreaFaces.Count > 1)
+         while (potentialSweptAreaFaces.Count > 1 && (sweptEndStartFace == null))
          {
-            bool foundPair = false;
             PlanarFace face0 = potentialSweptAreaFaces[0].Item1;
             XYZ ptDirectrix = potentialSweptAreaFaces[0].Item2;
             potentialSweptAreaFaces.RemoveAt(0);    // remove the item from the List
@@ -177,20 +178,19 @@ namespace Revit.IFC.Export.Utility
 
                if (AreFacesSimpleCongruent(face0, face1))
                {
-                  sweptEndFaces.Add(new Tuple<PlanarFace, XYZ>(face0, ptDirectrix));
-                  sweptEndFaces.Add(new Tuple<PlanarFace, XYZ>(face1, potentialPair.Item2));
-                  foundPair = true;
+                  if (ptDirectrix.IsAlmostEqualTo(directrixStartPt))
+                     sweptEndStartFace = face0;
+                  else
+                     sweptEndStartFace = face1;
                   break;
                }
             }
-            if (foundPair)
-               break;
          }
 
-         if (sweptEndFaces.Count >= 2)
+         if (sweptEndStartFace != null)
          {
             simpleSweptSolidAnalyzer = new SimpleSweptSolidAnalyzer();
-            simpleSweptSolidAnalyzer.m_ProfileFace = sweptEndFaces[0].Item1;
+            simpleSweptSolidAnalyzer.m_ProfileFace = sweptEndStartFace;
             simpleSweptSolidAnalyzer.m_PathCurve = directrix;
             simpleSweptSolidAnalyzer.m_ReferencePlaneNormal = normal;
          }

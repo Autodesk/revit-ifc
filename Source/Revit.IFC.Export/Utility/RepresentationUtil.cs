@@ -569,7 +569,7 @@ namespace Revit.IFC.Export.Utility
                //{
                //   geometryList.Add(solid);
                //}
-               geometryList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solidList, null);
+               geometryList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref solidList, ref meshes);
                if (geometryList.Count == 0)
                   return null;
             }

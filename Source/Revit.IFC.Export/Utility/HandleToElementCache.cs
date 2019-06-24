@@ -75,5 +75,19 @@ namespace Revit.IFC.Export.Utility
 
          m_HandleToElementCache[handle] = elementId;
       }
+
+      /// <summary>
+      /// Delete a handle from the cache
+      /// </summary>
+      /// <param name="handle">the handle</param>
+      public void Delete(IFCAnyHandle handle)
+      {
+         if (m_HandleToElementCache.ContainsKey(handle))
+         {
+            ElementId elem = m_HandleToElementCache[handle];
+            m_HandleToElementCache.Remove(handle);
+            ExporterCacheManager.ElementToHandleCache.Delete(elem);
+         }
+      }
    }
 }

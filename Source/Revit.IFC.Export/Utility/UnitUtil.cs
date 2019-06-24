@@ -224,5 +224,15 @@ namespace Revit.IFC.Export.Utility
       {
          return ExporterCacheManager.UnitsCache.Unscale(UnitType.UT_Length, scaledLength);
       }
+
+      /// <summary>
+      /// Converts an area in IFC units to Revit internal units.
+      /// </summary>
+      /// <param name="scaledArea">The area in IFC units.</param>
+      /// <returns>The area in Revit internal units.</returns>
+      static public double UnscaleArea(double scaledArea)
+      {
+         return ExporterCacheManager.UnitsCache.Unscale(UnitType.UT_Area, scaledArea);
+      }
    }
 }

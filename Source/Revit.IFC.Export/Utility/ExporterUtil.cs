@@ -809,7 +809,7 @@ namespace Revit.IFC.Export.Utility
             return null;
 
          SolidMeshGeometryInfo solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(geomElem);
-         IList<Solid> solids = solidMeshCapsule.GetSolids();
+         IList<SolidInfo> solidInfos = solidMeshCapsule.GetSolidInfos();
          IList<Mesh> meshes = solidMeshCapsule.GetMeshes();
 
          ElementId overrideCatId = ElementId.InvalidElementId;
@@ -817,9 +817,9 @@ namespace Revit.IFC.Export.Utility
 
          Document doc = element.Document;
 
-         foreach (Solid solid in solids)
+         foreach (SolidInfo solidInfo in solidInfos)
          {
-            if (!ProcessObjectForGStyle(doc, solid, ref overrideCatId, ref initOverrideCatId))
+            if (!ProcessObjectForGStyle(doc, solidInfo.Solid, ref overrideCatId, ref initOverrideCatId))
                return null;
          }
 
@@ -1534,7 +1534,7 @@ namespace Revit.IFC.Export.Utility
                ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcType", out pdefFromParam);
                if (!string.IsNullOrEmpty(pdefFromParam))
                   enumTypeValue = pdefFromParam;
-               else
+               else if (!string.IsNullOrEmpty(predefType))
                   enumTypeValue = predefType;
             }
          }
@@ -1556,9 +1556,12 @@ namespace Revit.IFC.Export.Utility
                switch (familyInstance.StructuralType)
                {
                   case Autodesk.Revit.DB.Structure.StructuralType.Beam:
+                     if (string.IsNullOrEmpty(enumTypeValue))
+                        enumTypeValue = "BEAM";
                      exportType.SetValueWithPair(IFCEntityType.IfcBeam, enumTypeValue);
                      break;
                   case Autodesk.Revit.DB.Structure.StructuralType.Brace:
+                     if (string.IsNullOrEmpty(enumTypeValue))
                      enumTypeValue = "BRACE";
                      exportType.SetValueWithPair(IFCEntityType.IfcMember, enumTypeValue);
                      break;
@@ -1566,6 +1569,8 @@ namespace Revit.IFC.Export.Utility
                      exportType.SetValueWithPair(IFCEntityType.IfcFooting, enumTypeValue);
                      break;
                   case Autodesk.Revit.DB.Structure.StructuralType.Column:
+                     if (string.IsNullOrEmpty(enumTypeValue))
+                        enumTypeValue = "COLUMN";
                      exportType.SetValueWithPair(IFCEntityType.IfcColumn, enumTypeValue);
                      break;
                }

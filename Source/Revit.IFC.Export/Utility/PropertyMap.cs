@@ -27,6 +27,52 @@ using GeometryGym.Ifc;
 
 namespace Revit.IFC.Export.Utility
 {
+   /// <summary>
+   /// Type or Instance enum
+   /// </summary>
+   public enum TypeOrInstance
+   {
+      Type,
+      Instance
+   }
+
+   /// <summary>
+   /// PropertSet definition struct
+   /// </summary>
+   public struct PropertySetDef
+   {
+      public string propertySetName;
+      public string propertySetDescription;
+      public IList<PropertyDef> propertyDefs;
+      public TypeOrInstance applicableTo;
+      public IList<string> applicableElements;
+   }
+
+   /// <summary>
+   /// Property 
+   /// </summary>
+   public class PropertyDef
+   {
+      public string PropertyName;
+      public string PropertyDataType;
+      public List<PropertyParameterDefinition> ParameterDefinitions = new List<PropertyParameterDefinition>();
+      //public GeometryGym.Ifc.IfcValue DefaultValue = null;
+      public PropertyDef(string propertyName)
+      {
+         PropertyName = propertyName;
+         ParameterDefinitions.Add(new PropertyParameterDefinition(propertyName));
+      }
+      public PropertyDef(string propertyName, PropertyParameterDefinition definition)
+      {
+         PropertyName = propertyName;
+         ParameterDefinitions.Add(definition);
+      }
+      public PropertyDef(string propertyName, IEnumerable<PropertyParameterDefinition> definitions)
+      {
+         PropertyName = propertyName;
+         ParameterDefinitions.AddRange(definitions);
+      }
+   }
    public class PropertyParameterDefinition
    {
       public string RevitParameterName = "";
