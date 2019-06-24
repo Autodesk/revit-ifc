@@ -45,6 +45,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Slow_Debug|x64'">
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;IFC_OPENSOURCE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <DefineConstants>TRACE;IFC_OPENSOURCE</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=9ea901ae1ee158aa, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
