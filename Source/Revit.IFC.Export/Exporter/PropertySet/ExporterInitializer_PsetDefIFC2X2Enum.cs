@@ -1,21 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Autodesk.Revit;
-using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Export.Exporter.PropertySet;
-using Revit.IFC.Export.Exporter.PropertySet.Calculators;
-using Revit.IFC.Export.Utility;
-using Revit.IFC.Export.Toolkit;
-using Revit.IFC.Common.Enums;
-
 namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
 {
-
-
 	public enum PEnum_RequestSourceType {
 		Email,
 		Fax,
