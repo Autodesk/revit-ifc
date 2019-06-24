@@ -249,6 +249,23 @@ namespace Revit.IFC.Export.Utility
                parentHandle = elementHandles[0];
 
             bool isDoorOrWindowOpening = IsDoorOrWindowOpening(exporterIFC, openingElem, element);
+            bool insertHasHost = false;
+            bool insertInThisHost = false;
+            if (openingElem is FamilyInstance && element is Wall)
+            {
+               string ifcEnumType;
+               IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, openingElem, out ifcEnumType);
+               Element instHost = (openingElem as FamilyInstance).Host;
+               insertHasHost = (instHost != null);
+               insertInThisHost = (insertHasHost && instHost.Id == element.Id);
+               isDoorOrWindowOpening = 
+                  insertInThisHost &&
+                  (exportType.ExportInstance == IFCEntityType.IfcDoor || 
+                  exportType.ExportType == IFCEntityType.IfcDoorType || 
+                  exportType.ExportInstance == IFCEntityType.IfcWindow || 
+                  exportType.ExportType == IFCEntityType.IfcWindowType);
+            }
+
             if (isDoorOrWindowOpening && currentWallIsHost)
             {
                DoorWindowDelayedOpeningCreator delayedCreator =
@@ -260,9 +277,12 @@ namespace Revit.IFC.Export.Utility
                }
             }
 
-            // If the opening is "filled" by another element (either a door or window as determined above, 
-            // or an embedded wall, then we can't use the element GUID for the opening. 
-            bool canUseElementGUID = !isDoorOrWindowOpening && !(openingElem is Wall);
+            // If the opening is "filled" by another element (either a door or window as 
+            // determined above, or an embedded wall, then we can't use the element GUID 
+            // for the opening. 
+            bool canUseElementGUID = (!insertHasHost || insertInThisHost) && 
+               !isDoorOrWindowOpening && 
+               !(openingElem is Wall);
 
             IList<Solid> solids = openingData.GetOpeningSolids();
             foreach (Solid solid in solids)

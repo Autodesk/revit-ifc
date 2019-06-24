@@ -368,16 +368,9 @@ namespace Revit.IFC.Export.Exporter
                   extrusionCreationData.ReuseLocalPlacement = false;
                   extrusionCreationData.PossibleExtrusionAxes = ifcExtrusionAxes;
 
-                  IList<Solid> solids = new List<Solid>(); ;
-                  IList<Mesh> meshes = new List<Mesh>();
-                  IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(partElement.Document, exporterIFC, solidMeshInfo.GetSolids(), solidMeshInfo.GetMeshes());
-                  foreach (GeometryObject gObj in gObjs)
-                  {
-                     if (gObj is Solid)
-                        solids.Add(gObj as Solid);
-                     else if (gObj is Mesh)
-                        meshes.Add(gObj as Mesh);
-                  }
+                  IList<Solid> solids = solidMeshInfo.GetSolids();
+                  IList<Mesh> meshes = solidMeshInfo.GetMeshes();
+                  IList<GeometryObject> gObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(partElement.Document, exporterIFC, ref solids, ref meshes);
 
                   ElementId catId = CategoryUtil.GetSafeCategoryId(partElement);
                   ElementId hostCatId = CategoryUtil.GetSafeCategoryId(hostElement);
@@ -417,7 +410,7 @@ namespace Revit.IFC.Export.Exporter
 
                   string partGUID = GUIDUtil.CreateGUID(partElement);
                   string ifcEnumType = null;
-                  IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, hostElement, out ifcEnumType);
+                  IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, (hostElement!=null)? hostElement : partElement, out ifcEnumType);
                   IFCAnyHandle ifcPart = null;
                   if (!asBuildingElement)
                   {
@@ -469,7 +462,7 @@ namespace Revit.IFC.Export.Exporter
                            break;
                         default:
                            ifcPart = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, partElement, partGUID, ownerHistory,
-                               extrusionCreationData.GetLocalPlacement(), prodRep, exportType.ValidatedPredefinedType);
+                           extrusionCreationData.GetLocalPlacement(), prodRep, exportType.ValidatedPredefinedType);
                            break;
                      }
                   }

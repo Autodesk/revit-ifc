@@ -125,5 +125,19 @@ namespace Revit.IFC.Export.Utility
             if (!m_ELementIdAndExportType.ContainsKey(elementId))
                m_ELementIdAndExportType.Add(elementId, exportType);
       }
+
+      /// <summary>
+      /// Delete an element from the cache
+      /// </summary>
+      /// <param name="element">the element</param>
+      public void Delete(ElementId element)
+      {
+         if (m_ElementIdToHandleDictionary.ContainsKey(element))
+         {
+            IFCAnyHandle handle = m_ElementIdToHandleDictionary[element];
+            m_ElementIdToHandleDictionary.Remove(element);
+            ExporterCacheManager.HandleToElementCache.Delete(handle);
+         }
+      }
    }
 }

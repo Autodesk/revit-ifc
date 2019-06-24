@@ -120,7 +120,7 @@ namespace Revit.IFC.Export.Exporter
 
                            IList<GeometryObject> geomObjects =
                                FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document,
-                               exporterIFC, solids, polyMeshes);
+                               exporterIFC, ref solids, ref polyMeshes);
 
                            if (geomObjects.Count == 0 && (solids.Count > 0 || polyMeshes.Count > 0))
                               return false;

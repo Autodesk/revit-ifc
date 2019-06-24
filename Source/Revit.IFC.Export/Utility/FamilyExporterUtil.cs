@@ -578,7 +578,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="solids">The list of solids, possibly empty.</param>
       /// <param name="meshes">The list of meshes, possibly empty.</param>
       /// <returns>The combined list of solids and meshes that are visible given category export settings and view visibility settings.</returns>
-      public static List<GeometryObject> RemoveInvisibleSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, IList<Solid> solids, IList<Mesh> meshes)
+      public static List<GeometryObject> RemoveInvisibleSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, ref IList<Solid> solids, ref IList<Mesh> meshes)
       {
          List<GeometryObject> geomObjectsIn = new List<GeometryObject>();
          if (solids != null && solids.Count > 0)
@@ -598,8 +598,16 @@ namespace Revit.IFC.Export.Exporter
                Category graphicsStyleCategory = gStyle.GraphicsStyleCategory;
                if (graphicsStyleCategory != null)
                {
+                  // Remove the geometry that is not visible
                   if (!ElementFilteringUtil.IsCategoryVisible(graphicsStyleCategory, filterView))
+                  {
+                     if (obj is Solid)
+                        solids.Remove(obj as Solid);
+                     else if (obj is Mesh)
+                        meshes.Remove(obj as Mesh);
+
                      continue;
+                  }
 
                   ElementId catId = graphicsStyleCategory.Id;
 
@@ -611,7 +619,14 @@ namespace Revit.IFC.Export.Exporter
                      {
                         IFCExportInfoPair exportType = ElementFilteringUtil.GetExportTypeFromClassName(ifcClassName);
                         if (exportType.ExportInstance == IFCEntityType.UnKnown)
+                        {
+                           if (obj is Solid)
+                              solids.Remove(obj as Solid);
+                           else if (obj is Mesh)
+                              meshes.Remove(obj as Mesh);
+
                            continue;
+                        }
                      }
                   }
                }

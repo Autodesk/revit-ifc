@@ -27,7 +27,6 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 
-using Newtonsoft.Json;
 
 // CQ_TODO: Better storage of pipe insulation options
 
@@ -56,8 +55,8 @@ namespace Revit.IFC.Export.Utility
       }
 
       private GUIDOptions m_GUIDOptions;
-      private bool m_ExportAs4_ADD1;
-      private bool m_ExportAs4_ADD2;
+      //private bool m_ExportAs4_ADD1;
+      //private bool m_ExportAs4_ADD2;
       private IFCVersion m_FileVersion;
       public COBieCompanyInfo COBieCompanyInfo { get; set; }
       public COBieProjectInfo COBieProjectInfo { get; set; }
@@ -67,8 +66,8 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       private ExportOptionsCache()
       {
-         m_ExportAs4_ADD1 = false;
-         m_ExportAs4_ADD2 = false;
+         //m_ExportAs4_ADD1 = false;
+         //m_ExportAs4_ADD2 = false;
       }
 
 
@@ -195,6 +194,8 @@ namespace Revit.IFC.Export.Utility
          //cache.ExportAllLevels = false;
          cache.ExportAnnotationsOverride = null;
 
+         // We are going to default to "true" for IncludeSteelElements to allow the default API
+         // export to match the default UI.
          bool? includeSteelElements = GetNamedBooleanOption(options, "IncludeSteelElements");
          cache.IncludeSteelElements = includeSteelElements.HasValue && includeSteelElements.Value;
 
@@ -414,13 +415,6 @@ namespace Revit.IFC.Export.Utility
          }
 
          cache.ExcludeFilter = GetNamedStringOption(options, "ExcludeFilter");
-
-         // Get COBie specific information
-         //if (cache.ExportAs2x3COBIE24DesignDeliverable)
-         //{
-            //cache.COBieCompanyInfo = JsonConvert.DeserializeObject<COBieCompanyInfo>(GetNamedStringOption(options, "COBieCompanyInfo"));
-            //cache.COBieProjectInfo = JsonConvert.DeserializeObject<COBieProjectInfo>(GetNamedStringOption(options, "COBieProjectInfo"));
-         //}
          return cache;
       }
 
@@ -658,36 +652,36 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Identifies if the schema used is IFC4 Addendum 1 in place of IFC4 for version 4.
       /// </summary>
-      public bool ExportAs4_ADD1
-      {
-         get
-         {
-            return m_ExportAs4_ADD1;
-         }
+      //public bool ExportAs4_ADD1
+      //{
+      //   get
+      //   {
+      //      return m_ExportAs4_ADD1;
+      //   }
 
-         set
-         {
-            m_ExportAs4_ADD1 = value;
-         }
+      //   set
+      //   {
+      //      m_ExportAs4_ADD1 = value;
+      //   }
 
-      }
+      //}
 
-      /// <summary>
-      /// Identifies if the schema used is IFC4 Addendum 2 in place of IFC4 for version 4.
-      /// </summary>
-      public bool ExportAs4_ADD2
-      {
-         get
-         {
-            return m_ExportAs4_ADD2;
-         }
+      ///// <summary>
+      ///// Identifies if the schema used is IFC4 Addendum 2 in place of IFC4 for version 4.
+      ///// </summary>
+      //public bool ExportAs4_ADD2
+      //{
+      //   get
+      //   {
+      //      return m_ExportAs4_ADD2;
+      //   }
 
-         set
-         {
-            m_ExportAs4_ADD2 = value;
-         }
+      //   set
+      //   {
+      //      m_ExportAs4_ADD2 = value;
+      //   }
 
-      }
+      //}
 
       /// <summary>
       /// Identifies if the schema used is IFC 2x3.
@@ -903,7 +897,7 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// The option to leave tessellation results as triangulation and not optimized into polygonal faceset (supported in IFC4_ADD2)
+      /// The option to leave tessellation results as triangulation and not optimized into polygonal faceset (supported from IFC4_ADD2)
       /// </summary>
       public bool UseOnlyTriangulation
       {

@@ -49,5 +49,29 @@ namespace Revit.IFC.Export.Utility
             this[material] = products;
          }
       }
+
+      /// <summary>
+      /// To clean the set of reference objects from the material in the case of some deleted entity
+      /// </summary>
+      /// <param name="material">the material</param>
+      public void CleanRefObjects(IFCAnyHandle material)
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(material))
+            return;
+
+         if (ContainsKey(material))
+         {
+            IList<IFCAnyHandle> refObjToDel = new List<IFCAnyHandle>();
+            foreach (IFCAnyHandle handle in this[material])
+            {
+               if (ExporterCacheManager.HandleToDeleteCache.Contains(handle))
+                  refObjToDel.Add(handle);
+            }
+            foreach (IFCAnyHandle handle in refObjToDel)
+               this[material].Remove(handle);
+         }
+         else
+            return;
+      }
    }
 }

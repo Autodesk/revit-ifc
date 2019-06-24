@@ -18,8 +18,6 @@
 //
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
@@ -27,6 +25,34 @@ using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
 {
+   /// <summary>
+   /// A solid with extra pertinant information.
+   /// </summary>
+   public class SolidInfo
+   {
+      /// <summary>
+      /// The constructor.
+      /// </summary>
+      /// <param name="solid">The solid.</param>
+      /// <param name="ownerElement">The optional owner element for this solid.</param>
+      public SolidInfo(Solid solid, Element ownerElement)
+      {
+         Solid = solid;
+         OwnerElement = ownerElement;
+      }
+
+      /// <summary>
+      /// The contained solid.
+      /// </summary>
+      public Solid Solid { get; protected set; }
+
+      /// <summary>
+      /// The element that contains the solid in its GeometryElement.
+      /// This is optional, and can be unset (null).
+      /// </summary>
+      public Element OwnerElement { get; protected set; }
+   }
+
    /// <summary>
    /// A container class for lists of solids and meshes.
    /// </summary>
@@ -37,15 +63,21 @@ namespace Revit.IFC.Export.Utility
    /// </remarks>
    public class SolidMeshGeometryInfo
    {
-      private List<Solid> m_SolidsList; // a list of collected solids
-      private List<Mesh> m_MeshesList;  // a list of collected meshes
+      // A list of collected solids, and the external element (if any) that generated them.
+      // In general, this will be this will be non-null if the geometry come from an
+      // Instance/Symbol pair, and will be the element that contains the geometry
+      // that the Instance is pointing to.
+      private IList<SolidInfo> m_SolidInfoList;
+
+      // A list of collected meshes.
+      private List<Mesh> m_MeshesList;
 
       /// <summary>
       /// Creates a default SolidMeshGeometryInfo with empty solidsList and meshesList. 
       /// </summary>
       public SolidMeshGeometryInfo()
       {
-         m_SolidsList = new List<Solid>();
+         m_SolidInfoList = new List<SolidInfo>();
          m_MeshesList = new List<Mesh>();
       }
 
@@ -55,9 +87,9 @@ namespace Revit.IFC.Export.Utility
       /// <param name="geomElem">
       /// The Solid we are appending to the solidsList.
       /// </param>
-      public void AddSolid(Solid solidToAdd)
+      public void AddSolid(Solid solidToAdd, Element externalElement)
       {
-         m_SolidsList.Add(solidToAdd);
+         m_SolidInfoList.Add(new SolidInfo(solidToAdd, externalElement));
       }
 
       /// <summary>
@@ -72,11 +104,25 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Returns the list of Solids. 
+      /// Returns the list of Solids and their generating external elements. 
       /// </summary>
+      /// <remarks>We return a List instead of an IList for the AddRange functionality.</remarks>
       public List<Solid> GetSolids()
       {
-         return m_SolidsList;
+         List<Solid> solids = new List<Solid>();
+         foreach (SolidInfo solidInfo in m_SolidInfoList)
+         {
+            solids.Add(solidInfo.Solid);
+         }
+         return solids;
+      }
+
+      /// <summary>
+      /// Returns the list of Solids and their generating external elements. 
+      /// </summary>
+      public IList<SolidInfo> GetSolidInfos()
+      {
+         return m_SolidInfoList;
       }
 
       /// <summary>
@@ -92,7 +138,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public int SolidsCount()
       {
-         return m_SolidsList.Count;
+         return m_SolidInfoList.Count;
       }
 
       /// <summary>
@@ -106,16 +152,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// This method takes the solidsList and clips all of its solids between the given range.
       /// </summary>
-      /// <param name="elem">
-      /// The Element from which we obtain our BoundingBoxXYZ.
-      /// </param>
-      /// <param name="geomElem">
-      /// The top-level GeometryElement from which to gather X and Y coordinates for the intersecting solid.
-      /// </param>
-      /// <param name="range">
-      /// The IFCRange whose Z values we use to create an intersecting solid to clip the solids in this class's internal solidsList.
-      /// If range boundaries are equal, method returns, performing no clippings.
-      /// </param>
+      /// <param name="elem">The Element from which we obtain our BoundingBoxXYZ.</param>
+      /// <param name="geomElem">The top-level GeometryElement from which to gather X and Y 
+      /// coordinates for the intersecting solid.</param>
+      /// <param name="range">The IFCRange whose Z values we use to create an intersecting 
+      /// solid to clip the solids in this class's internal solidsList.
+      /// If range boundaries are equal, method returns, performing no clippings.</param>
       public void ClipSolidsList(GeometryElement geomElem, IFCRange range)
       {
          if (geomElem == null)
@@ -168,28 +210,30 @@ namespace Revit.IFC.Export.Utility
          Solid intersectionSolid = GeometryCreationUtilities.CreateExtrusionGeometry(boxPerimeterList, XYZ.BasisZ, boundDifference);
 
          // cycle through the elements in solidsList and intersect them against intersectionSolid to create a new list
-         List<Solid> clippedSolidsList = new List<Solid>();
+         List<SolidInfo> clippedSolidsList = new List<SolidInfo>();
          Solid currSolid;
 
-         foreach (Solid solid in m_SolidsList)
+         foreach (SolidInfo solidAndElement in m_SolidInfoList)
          {
+            Solid solid = solidAndElement.Solid;
+
             try
             {
                // ExecuteBooleanOperation can throw if it fails.  In this case, just ignore the clipping.
                currSolid = BooleanOperationsUtils.ExecuteBooleanOperation(solid, intersectionSolid, BooleanOperationsType.Intersect);
                if (currSolid != null && currSolid.Volume != 0)
                {
-                  clippedSolidsList.Add(currSolid);
+                  clippedSolidsList.Add(new SolidInfo(currSolid, solidAndElement.OwnerElement));
                }
             }
             catch
             {
                // unable to perform intersection, add original solid instead
-               clippedSolidsList.Add(solid);
+               clippedSolidsList.Add(solidAndElement);
             }
          }
 
-         m_SolidsList = clippedSolidsList;
+         m_SolidInfoList = clippedSolidsList;
       }
 
       /// <summary>
@@ -197,14 +241,19 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void SplitSolidsList()
       {
-         List<Solid> splitSolidsList = new List<Solid>();
+         IList<SolidInfo> splitSolidsList = new List<SolidInfo>();
 
-         foreach (Solid solid in m_SolidsList)
+         foreach (SolidInfo solidInfo in m_SolidInfoList)
          {
-            splitSolidsList.AddRange(GeometryUtil.SplitVolumes(solid));
+            Element element = solidInfo.OwnerElement;
+            IList<Solid> splitSolids = GeometryUtil.SplitVolumes(solidInfo.Solid);
+            foreach (Solid splitSolid in splitSolids)
+            {
+               splitSolidsList.Add(new SolidInfo(splitSolid, element));
+            }
          }
 
-         m_SolidsList = splitSolidsList;
+         m_SolidInfoList = splitSolidsList;
       }
    }
 }

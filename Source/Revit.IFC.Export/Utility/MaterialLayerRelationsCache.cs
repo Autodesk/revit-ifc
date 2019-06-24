@@ -35,7 +35,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="product">The product handle.</param>
       public void Add(IFCAnyHandle material, IFCAnyHandle product)
       {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(material))
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(material) || IFCAnyHandleUtil.IsNullOrHasNoValue(product))
             return;
 
          if (ContainsKey(material))

@@ -110,19 +110,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          switch (propertyType)
          {
-            case PropertyType.Text:
+            case PropertyType.Area:
                {
-                  propHnd = PropertyUtil.CreateTextPropertyFromElement(file, element, revitParamNameToUse, builtInParameter, ifcPropertyName, valueType, propertyEnumerationType);
-                  break;
-               }
-            case PropertyType.Label:
-               {
-                  propHnd = PropertyUtil.CreateLabelPropertyFromElement(file, element, revitParamNameToUse, builtInParameter, ifcPropertyName, valueType, propertyEnumerationType);
-                  break;
-               }
-            case PropertyType.Identifier:
-               {
-                  propHnd = PropertyUtil.CreateIdentifierPropertyFromElement(file, element, revitParamNameToUse, builtInParameter, ifcPropertyName, valueType);
+                  propHnd = PropertyUtil.CreateAreaMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                      builtInParameter, ifcPropertyName, valueType);
                   break;
                }
             case PropertyType.Boolean:
@@ -130,131 +121,22 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   propHnd = PropertyUtil.CreateBooleanPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
                   break;
                }
-            case PropertyType.Logical:
+            case PropertyType.ClassificationReference:
                {
-                  propHnd = PropertyUtil.CreateLogicalPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.Integer:
-               {
-                  propHnd = PropertyUtil.CreateIntegerPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.Real:
-               {
-                  propHnd = PropertyUtil.CreateRealPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.Length:
-               {
-                  propHnd = PropertyUtil.CreateLengthMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      builtInParameter, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.PositiveLength:
-               {
-                  propHnd = PropertyUtil.CreatePositiveLengthMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      builtInParameter, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.NormalisedRatio:
-               {
-                  propHnd = PropertyUtil.CreateNormalisedRatioPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.PositiveRatio:
-               {
-                  propHnd = PropertyUtil.CreatePositiveRatioPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.Ratio:
-               {
-                  propHnd = PropertyUtil.CreateRatioPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, ifcPropertyName,
-                      valueType);
-                  break;
-               }
-            case PropertyType.PlaneAngle:
-               {
-                  propHnd = PropertyUtil.CreatePlaneAngleMeasurePropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName,
-                      valueType);
-                  break;
-               }
-            case PropertyType.PositivePlaneAngle:
-               {
-                  propHnd = PositivePlaneAnglePropertyUtil.CreatePositivePlaneAngleMeasurePropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName,
-                      valueType);
-                  break;
-               }
-            case PropertyType.Area:
-               {
-                  propHnd = PropertyUtil.CreateAreaMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      builtInParameter, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.Volume:
-               {
-                  propHnd = PropertyUtil.CreateVolumeMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      builtInParameter, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.Count:
-               {
-                  propHnd = PropertyUtil.CreateCountMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      builtInParameter, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.Frequency:
-               {
-                  propHnd = FrequencyPropertyUtil.CreateFrequencyPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
-                      ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.ElectricCurrent:
-               {
-                  propHnd = ElectricalCurrentPropertyUtil.CreateElectricalCurrentMeasurePropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.ElectricVoltage:
-               {
-                  propHnd = ElectricVoltagePropertyUtil.CreateElectricVoltageMeasurePropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.LuminousFlux:
-               {
-                  propHnd = PropertyUtil.CreateLuminousFluxMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      builtInParameter, ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.Force:
-               {
-                  propHnd = FrequencyPropertyUtil.CreateForcePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
-                      ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.LinearForce:
-               {
-                  propHnd = PropertyUtil.CreateLinearForcePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
-                      ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.PlanarForce:
-               {
-                  propHnd = PropertyUtil.CreatePlanarForcePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
-                      ifcPropertyName, valueType);
-                  break;
-               }
-            case PropertyType.Pressure:
-               {
-                  propHnd = FrequencyPropertyUtil.CreatePressurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
-                      ifcPropertyName, valueType);
+                  propHnd = PropertyUtil.CreateClassificationReferencePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                      builtInParameter, ifcPropertyName);
                   break;
                }
             case PropertyType.ColorTemperature:
                {
                   propHnd = PropertyUtil.CreateColorTemperaturePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
                       ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Count:
+               {
+                  propHnd = PropertyUtil.CreateCountMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                      builtInParameter, ifcPropertyName, valueType);
                   break;
                }
             case PropertyType.Currency:
@@ -269,9 +151,93 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                       ifcPropertyName, valueType);
                   break;
                }
+            case PropertyType.ElectricCurrent:
+               {
+                  propHnd = ElectricalCurrentPropertyUtil.CreateElectricalCurrentMeasurePropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.ElectricVoltage:
+               {
+                  propHnd = ElectricVoltagePropertyUtil.CreateElectricVoltageMeasurePropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Force:
+               {
+                  propHnd = FrequencyPropertyUtil.CreateForcePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Frequency:
+               {
+                  propHnd = FrequencyPropertyUtil.CreateFrequencyPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Identifier:
+               {
+                  propHnd = PropertyUtil.CreateIdentifierPropertyFromElement(file, element, revitParamNameToUse, builtInParameter, ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Integer:
+               {
+                  propHnd = PropertyUtil.CreateIntegerPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Illuminance:
+               {
+                  propHnd = PropertyUtil.CreateIlluminancePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.HeatFluxDensity:
+               {
+                  propHnd = PropertyUtil.CreateHeatFluxDensityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Label:
+               {
+                  propHnd = PropertyUtil.CreateLabelPropertyFromElement(file, element, revitParamNameToUse, builtInParameter, ifcPropertyName, valueType, propertyEnumerationType);
+                  break;
+               }
+            case PropertyType.Length:
+               {
+                  propHnd = PropertyUtil.CreateLengthMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                      builtInParameter, ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.LinearVelocity:
+               {
+                  propHnd = PropertyUtil.CreateLinearVelocityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Logical:
+               {
+                  propHnd = PropertyUtil.CreateLogicalPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.LuminousFlux:
+               {
+                  propHnd = PropertyUtil.CreateLuminousFluxMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                      builtInParameter, ifcPropertyName, valueType);
+                  break;
+               }
             case PropertyType.LuminousIntensity:
                {
                   propHnd = PropertyUtil.CreateLuminousIntensityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.LinearForce:
+               {
+                  propHnd = PropertyUtil.CreateLinearForcePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Mass:
+               {
+                  propHnd = PropertyUtil.CreateMassPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
                       ifcPropertyName, valueType);
                   break;
                }
@@ -281,11 +247,40 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                       ifcPropertyName, valueType);
                   break;
                }
-
-            case PropertyType.Illuminance:
+            case PropertyType.NormalisedRatio:
                {
-                  propHnd = PropertyUtil.CreateIlluminancePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                  propHnd = PropertyUtil.CreateNormalisedRatioPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
                       ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.PlaneAngle:
+               {
+                  propHnd = PropertyUtil.CreatePlaneAngleMeasurePropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName,
+                      valueType);
+                  break;
+               }
+            case PropertyType.PlanarForce:
+               {
+                  propHnd = PropertyUtil.CreatePlanarForcePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.PositiveLength:
+               {
+                  propHnd = PropertyUtil.CreatePositiveLengthMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                      builtInParameter, ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.PositiveRatio:
+               {
+                  propHnd = PropertyUtil.CreatePositiveRatioPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.PositivePlaneAngle:
+               {
+                  propHnd = PositivePlaneAnglePropertyUtil.CreatePositivePlaneAngleMeasurePropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName,
+                      valueType);
                   break;
                }
             case PropertyType.Power:
@@ -294,15 +289,43 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                       ifcPropertyName, valueType);
                   break;
                }
+            case PropertyType.Pressure:
+               {
+                  propHnd = FrequencyPropertyUtil.CreatePressurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                      ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Ratio:
+               {
+                  propHnd = PropertyUtil.CreateRatioPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, ifcPropertyName,
+                      valueType);
+                  break;
+               }
+            case PropertyType.Real:
+               {
+                  propHnd = PropertyUtil.CreateRealPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
+                  break;
+               }
+            case PropertyType.Text:
+               {
+                  propHnd = PropertyUtil.CreateTextPropertyFromElement(file, element, revitParamNameToUse, builtInParameter, ifcPropertyName, valueType, propertyEnumerationType);
+                  break;
+               }
+            case PropertyType.ThermalTransmittance:
+               {
+                  propHnd = PropertyUtil.CreateThermalTransmittancePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                      builtInParameter, ifcPropertyName, valueType);
+                  break;
+               }
             case PropertyType.ThermodynamicTemperature:
                {
                   propHnd = PropertyUtil.CreateThermodynamicTemperaturePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
                       builtInParameter, ifcPropertyName, valueType);
                   break;
                }
-            case PropertyType.ThermalTransmittance:
+            case PropertyType.Volume:
                {
-                  propHnd = PropertyUtil.CreateThermalTransmittancePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                  propHnd = PropertyUtil.CreateVolumeMeasurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
                       builtInParameter, ifcPropertyName, valueType);
                   break;
                }
@@ -312,20 +335,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                       builtInParameter, ifcPropertyName, valueType);
                   break;
                }
-            case PropertyType.ClassificationReference:
-               {
-                  propHnd = PropertyUtil.CreateClassificationReferencePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      builtInParameter, ifcPropertyName);
-                  break;
-               }
-            case PropertyType.LinearVelocity:
-               {
-                  propHnd = PropertyUtil.CreateLinearVelocityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
-                      ifcPropertyName, valueType);
-                  break;
-               }
+            // Known unhandled cases:
+            case PropertyType.IfcCalendarDate:
+            case PropertyType.IfcClassificationReference:
+            case PropertyType.IfcExternalReference:
+            case PropertyType.IfcMaterial:
+            case PropertyType.IfcOrganization:
+            case PropertyType.Monetary:
+            case PropertyType.Time:
+               return null;
             default:
-               // Unhandled cases.
+               // Unexpected unhandled cases.
                return null;
          }
 

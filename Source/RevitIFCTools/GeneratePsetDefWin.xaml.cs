@@ -650,7 +650,7 @@ namespace RevitIFCTools
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD2", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("\t\t\t{");
                   foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   {

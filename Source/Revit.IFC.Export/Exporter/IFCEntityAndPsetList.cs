@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Web.Script.Serialization;
+using System.Runtime.Serialization;
+using System.Xml;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -21,13 +23,11 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Pset list for MVD
       /// </summary>
-      [JsonProperty("PropertySet List")]
-      public HashSet<string> PsetList { get; set; } = new HashSet<string>();
+      public HashSet<string> PropertySetList { get; set; } = new HashSet<string>();
 
       /// <summary>
       /// Entity list for MVD
       /// </summary>
-      [JsonProperty("Entity List")]
       public HashSet<string> EntityList { get; set; } = new HashSet<string>();
 
       /// <summary>
@@ -38,10 +38,10 @@ namespace Revit.IFC.Export.Utility
       public bool PsetIsInTheList(string psetName)
       {
          // return true if there is no entry
-         if (PsetList.Count == 0)
+         if (PropertySetList.Count == 0)
             return true;
 
-         if (PsetList.Contains(psetName))
+         if (PropertySetList.Contains(psetName))
             return true;
          else
             return false;
@@ -70,6 +70,27 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class IFCCertifiedEntitiesAndPSets
    {
+      /// <summary>
+      /// Valid Entity and Pset list according to MVD definitions
+      /// </summary>
+      class IFCEntityAndPsetListRawFromJson
+      {
+         /// <summary>
+         /// The MVD version
+         /// </summary>
+         public string Version { get; set; }
+
+         /// <summary>
+         /// Pset list for MVD
+         /// </summary>
+         public IList<string> PropertySetList { get; set; } = new List<string>();
+
+         /// <summary>
+         /// Entity list for MVD
+         /// </summary>
+         public IList<string> EntityList { get; set; } = new List<string>();
+      }
+
       IDictionary<string, IFCEntityAndPsetList> CertifiedEntityAndPsetDict { get; set; } = new Dictionary<string, IFCEntityAndPsetList>();
 
       /// <summary>
@@ -82,7 +103,19 @@ namespace Revit.IFC.Export.Utility
 
          if (File.Exists(filePath))
          {
-            CertifiedEntityAndPsetDict = JsonConvert.DeserializeObject<IDictionary<string, IFCEntityAndPsetList>>(File.ReadAllText(filePath));
+            // JavaScriptSerializer does not support mapping of Json array into Hashset (it expects List) and this code below gets the data into Lists first
+            //   and then transfers the data to the final form using Hashset for performance reason
+            JavaScriptSerializer jsonConvert = new JavaScriptSerializer();
+            IDictionary<string, IFCEntityAndPsetListRawFromJson> CertifiedEntityAndPsetList = jsonConvert.Deserialize<IDictionary<string, IFCEntityAndPsetListRawFromJson>>(File.ReadAllText(filePath));
+            // Copy the data to the desired format using Hashset in IFCEntityAndPsetList
+            foreach (KeyValuePair<string, IFCEntityAndPsetListRawFromJson> entPsetData in CertifiedEntityAndPsetList)
+            {
+               IFCEntityAndPsetList entPset = new IFCEntityAndPsetList();
+               entPset.Version = entPsetData.Value.Version;
+               entPset.PropertySetList = new HashSet<string>(entPsetData.Value.PropertySetList);
+               entPset.EntityList = new HashSet<string>(entPsetData.Value.EntityList);
+               CertifiedEntityAndPsetDict.Add(entPsetData.Key, entPset);
+            }
          }
       }
 

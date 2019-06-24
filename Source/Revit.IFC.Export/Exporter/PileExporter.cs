@@ -41,6 +41,7 @@ namespace Revit.IFC.Export.Exporter
       public static void ExportPile(ExporterIFC exporterIFC, Element element, GeometryElement geometryElement,
          string ifcEnumType, ProductWrapper productWrapper)
       {
+         // NOTE: We expect to incorporate this code into the generic FamilyInstanceExporter at some point.
          // export parts or not
          bool exportParts = PartExporter.CanExportParts(element);
          if (exportParts && !PartExporter.CanExportElementInPartExport(element, element.LevelId, false))

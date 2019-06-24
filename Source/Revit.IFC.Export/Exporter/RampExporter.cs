@@ -738,9 +738,9 @@ namespace Revit.IFC.Export.Exporter
             if (param != null)
             {
                IFCAnyHandle propSingleValue = null;
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2)
+               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
                   propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue,
-                     true, typeof(PropertySet.IFC4_ADD2.PEnum_ElementStatus));
+                     true, typeof(PropertySet.IFC4.PEnum_ElementStatus));
                //else if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1)
                //   propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue,
                //      true, typeof(PropertySet.IFC4_ADD1.PEnum_ElementStatus));
@@ -872,9 +872,9 @@ namespace Revit.IFC.Export.Exporter
             if (param != null)
             {
                IFCAnyHandle propSingleValue = null;
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2)
+               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
                   propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue, 
-                     true, typeof(PropertySet.IFC4_ADD2.PEnum_ElementStatus));
+                     true, typeof(PropertySet.IFC4.PEnum_ElementStatus));
                //else if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1)
                //   propSingleValue = PropertySet.PropertyUtil.CreateLabelPropertyFromCache(file, param.Id, "Status", stringParam, PropertySet.PropertyValueType.EnumeratedValue,
                //      true, typeof(PropertySet.IFC4_ADD1.PEnum_ElementStatus));

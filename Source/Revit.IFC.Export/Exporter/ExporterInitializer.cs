@@ -28,7 +28,6 @@ using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Autodesk.Revit.ApplicationServices;
-using Newtonsoft.Json;
 using GeometryGym.Ifc;
 
 namespace Revit.IFC.Export.Exporter
@@ -46,9 +45,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="commonPropertySets">List to store property sets.</param>
       private static void InitPset_ProvisionForVoid2x(IList<PropertySetDescription> commonPropertySets)
       {
-         // The IFC4 version is contained in ExporterInitializer_PsetDef.cs.
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-            return;
+         //// The IFC4 version is contained in ExporterInitializer_PsetDef.cs.
+         //if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         //   return;
 
          PropertySetDescription propertySetProvisionForVoid = new PropertySetDescription();
          propertySetProvisionForVoid.Name = "Pset_ProvisionForVoid";

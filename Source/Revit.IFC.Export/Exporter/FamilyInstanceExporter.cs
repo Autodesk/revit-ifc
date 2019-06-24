@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.IO;
 using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
@@ -216,7 +216,7 @@ namespace Revit.IFC.Export.Exporter
                case IFCEntityType.IfcBeam:
                   {
                      string beamType = exportType.ValidatedPredefinedType;
-                     if (string.IsNullOrEmpty(beamType))
+                     if (string.IsNullOrEmpty(beamType) || beamType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
                         beamType = "Beam";
                      typeStyle = IFCInstanceExporter.CreateBeamType(file, familySymbol,
                            propertySets, repMapList, beamType);
@@ -225,7 +225,7 @@ namespace Revit.IFC.Export.Exporter
                case IFCEntityType.IfcColumn:
                   {
                      string columnType = exportType.ValidatedPredefinedType;
-                     if (string.IsNullOrEmpty(columnType))
+                     if (string.IsNullOrEmpty(columnType) || columnType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
                         columnType = "Column";
                      typeStyle = IFCInstanceExporter.CreateColumnType(file, familySymbol,
                            propertySets, repMapList, columnType);
@@ -234,7 +234,7 @@ namespace Revit.IFC.Export.Exporter
                case IFCEntityType.IfcMember:
                   {
                      string memberType = exportType.ValidatedPredefinedType;
-                     if (string.IsNullOrEmpty(memberType))
+                     if (string.IsNullOrEmpty(memberType) || memberType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
                         memberType = "Brace";
                      typeStyle = IFCInstanceExporter.CreateMemberType(file, familySymbol,
                            propertySets, repMapList, memberType);
@@ -509,7 +509,7 @@ namespace Revit.IFC.Export.Exporter
 
                      if (hasSolidsOrMeshesInSymbol)
                      {
-                        geomObjects = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, solids, polyMeshes);
+                        geomObjects = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, ref solids, ref polyMeshes);
                         if ((geomObjects.Count == 0))
                            return; // no proper visible split geometry to export.
                      }
@@ -1120,6 +1120,8 @@ namespace Revit.IFC.Export.Exporter
                   {
                      case IFCEntityType.IfcBeam:
                         {
+                           if (exportType.ValidatedPredefinedType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
+                              exportType.ValidatedPredefinedType = "BEAM";
                            instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
                               wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, ifcEnumType, overrideLocalPlacement);
                            IFCAnyHandle placementToUse = localPlacement;
@@ -1158,6 +1160,8 @@ namespace Revit.IFC.Export.Exporter
                         }
                      case IFCEntityType.IfcColumn:
                         {
+                           if (exportType.ValidatedPredefinedType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
+                              exportType.ValidatedPredefinedType = "COLUMN";
                            instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
                               wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, ifcEnumType, overrideLocalPlacement);
 
@@ -1258,6 +1262,9 @@ namespace Revit.IFC.Export.Exporter
                         }
                      case IFCEntityType.IfcMember:
                         {
+                           if (exportType.ValidatedPredefinedType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
+                              exportType.ValidatedPredefinedType = "BRACE";
+
                            instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
                               wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, ifcEnumType, overrideLocalPlacement);
 

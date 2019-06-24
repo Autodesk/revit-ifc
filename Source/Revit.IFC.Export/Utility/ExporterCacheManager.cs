@@ -409,6 +409,8 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static IFCCertifiedEntitiesAndPSets m_CertifiedEntitiesAndPsetCache;
 
+      static HashSet<IFCAnyHandle> m_HandleToDelete;
+
       /// <summary>
       /// The ParameterCache object.
       /// </summary>
@@ -1314,6 +1316,16 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
+      public static HashSet<IFCAnyHandle> HandleToDeleteCache
+      {
+         get
+         {
+            if (m_HandleToDelete == null)
+               m_HandleToDelete = new HashSet<IFCAnyHandle>();
+            return m_HandleToDelete;
+         }
+      }
+
       /// <summary>
       /// Clear all caches contained in this manager.
       /// </summary>
@@ -1392,6 +1404,7 @@ namespace Revit.IFC.Export.Utility
          m_ZoneInfoCache = null;
          BuildingHandle = null;
          m_CertifiedEntitiesAndPsetCache = null;
+         m_HandleToDelete = null;
       }
    }
 }

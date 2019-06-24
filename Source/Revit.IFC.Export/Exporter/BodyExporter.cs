@@ -1254,18 +1254,6 @@ namespace Revit.IFC.Export.Exporter
          }
          else
          {
-            //IFCAnyHandle trimmedCurve = null;
-
-            //IFCData trim1data = IFCData.CreateIFCAnyHandle(edgeStart);
-            //HashSet<IFCData> trim1 = new HashSet<IFCData>();
-            //trim1.Add(trim1data);
-            //IFCData trim2data = IFCData.CreateIFCAnyHandle(edgeEnd);
-            //HashSet<IFCData> trim2 = new HashSet<IFCData>();
-            //trim2.Add(trim2data);
-            //bool senseAgreement = true;
-            ////trimmedCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, senseAgreement, IFCTrimmingPreference.Cartesian);
-
-            //sweptCurve = IFCInstanceExporter.CreateArbitraryOpenProfileDef(file, IFCProfileType.Curve, profileName, trimmedCurve);
             sweptCurve = IFCInstanceExporter.CreateArbitraryOpenProfileDef(file, IFCProfileType.Curve, profileName, ifcCurve);
          }
 
@@ -2099,7 +2087,9 @@ namespace Revit.IFC.Export.Exporter
          List<GeometryObject> geomObjectPrimitives = new List<GeometryObject>();
          SolidMeshGeometryInfo solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(geomElement);
          int initialSolidMeshCount = solidMeshCapsule.GetSolids().Count + solidMeshCapsule.GetMeshes().Count;
-         geomObjectPrimitives = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, solidMeshCapsule.GetSolids(), solidMeshCapsule.GetMeshes());
+         IList<Solid> solids = solidMeshCapsule.GetSolids();
+         IList<Mesh> meshes = solidMeshCapsule.GetMeshes();
+         geomObjectPrimitives = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, ref solids, ref meshes);
          allNotToBeExported = initialSolidMeshCount > 0 && geomObjectPrimitives.Count == 0;
 
          return geomObjectPrimitives;
@@ -2204,6 +2194,8 @@ namespace Revit.IFC.Export.Exporter
          }
 
          IList<int> colourIndex = new List<int>();
+         IList<Solid> solidGeom = new List<Solid>();
+         IList<Mesh> meshGeom = new List<Mesh>();
 
          // We need to collect all SOlids and Meshes from the GeometryObject if it is of types GeometryElement or GeometryInstance
          bool allNotToBeExported = false;
@@ -2219,7 +2211,8 @@ namespace Revit.IFC.Export.Exporter
          }
          else if (geomObject is Solid)
          {
-            IList<GeometryObject> visibleSolids = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(document, exporterIFC, new List<Solid>() { geomObject as Solid }, null);
+            solidGeom.Add(geomObject as Solid);
+            IList<GeometryObject> visibleSolids = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(document, exporterIFC, ref solidGeom, ref meshGeom);
             if (visibleSolids != null && visibleSolids.Count > 0)
                geomObjectPrimitives.AddRange(visibleSolids);
             else
@@ -2227,7 +2220,8 @@ namespace Revit.IFC.Export.Exporter
          }
          else if (geomObject is Mesh)
          {
-            IList<GeometryObject> visibleMeshes = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(document, exporterIFC, null, new List<Mesh>() { geomObject as Mesh });
+            meshGeom.Add(geomObject as Mesh);
+            IList<GeometryObject> visibleMeshes = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(document, exporterIFC, ref solidGeom, ref meshGeom);
             if (visibleMeshes != null && visibleMeshes.Count > 0)
                geomObjectPrimitives.AddRange(visibleMeshes);
             else
@@ -2402,7 +2396,7 @@ namespace Revit.IFC.Export.Exporter
          IList<IFCAnyHandle> tessellatedBodyList = null;
          //IFCAnyHandle tessellatedBody = null;
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2 && !ExporterCacheManager.ExportOptionsCache.UseOnlyTriangulation)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && !ExporterCacheManager.ExportOptionsCache.UseOnlyTriangulation)
          {
             tessellatedBodyList = ExportBodyAsPolygonalFaceSet(exporterIFC, element, options, geomObject, lcs);
          }
@@ -3702,11 +3696,7 @@ namespace Revit.IFC.Export.Exporter
             if (meshes.Count == 0)
             {
                IList<Solid> solidList = info.GetSolids();
-               geomList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solidList, null);
-               //foreach (Solid solid in solidList)
-               //{
-               //   geomList.Add(solid);
-               //}
+               geomList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref solidList, ref meshes);
             }
          }
 

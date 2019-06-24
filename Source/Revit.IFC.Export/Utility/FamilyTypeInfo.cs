@@ -17,14 +17,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
-using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 
 
