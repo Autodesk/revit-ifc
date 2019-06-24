@@ -144,11 +144,20 @@
         <Component Id = "COMP_GeometryGymIFC_DLL" Guid="467589B7-945B-4B06-89D1-668DFFAFD074">
           <File Id ="FILE_GeometryGymIFC_DLL" Name="GeometryGymIFC.dll" Source="$(var.Revit.IFC.Export.TargetDir)GeometryGymIFC.dll" KeyPath="yes" />
         </Component>
+         <Component Id = "COMP_IFC2X2ADD1_EXP" Guid="03084C2B-FD44-48C8-AA91-71A9EB199181">
+            <File Id ="FILE_IFC2X2ADD1_EXP" Name="IFC2X2_ADD1.exp" Source="$(var.ProjectDir)..\Program Files to Install\IFC2X2_ADD1.exp" KeyPath="yes" />
+         </Component>
          <Component Id = "COMP_IFC2X2ADD1_XSD" Guid="3BC747BD-9F67-48C2-AC3E-74C9728F9BC5">
             <File Id ="FILE_IFC2X2ADD1_XSD" Name="IFC2X2_ADD1.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC2X2_ADD1.xsd" KeyPath="yes" />
          </Component>
+         <Component Id = "COMP_IFC2X3TC1_EXP" Guid="B7F2AAE3-0BF2-49F4-B095-6E63D3391CC1">
+            <File Id ="FILE_IFC2X3TC1_EXP" Name="IFC2X3_TC1.exp" Source="$(var.ProjectDir)..\Program Files to Install\IFC2X3_TC1.exp" KeyPath="yes" />
+         </Component>
          <Component Id = "COMP_IFC2X3TC1_XSD" Guid="AAD139D2-7951-48A9-A466-2E711DFCF184">
             <File Id ="FILE_IFC2X3TC1_XSD" Name="IFC2X3_TC1.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC2X3_TC1.xsd" KeyPath="yes" />
+         </Component>
+         <Component Id = "COMP_IFC4_EXP" Guid="0BD3ECD2-F6DA-4CC9-9DFF-A52B8E058A0A">
+            <File Id ="FILE_IFC4_EXP" Name="IFC4.exp" Source="$(var.ProjectDir)..\Program Files to Install\IFC4.exp" KeyPath="yes" />
          </Component>
          <Component Id = "COMP_IFC4_XSD" Guid="51B549A3-DCB2-412B-9D4D-1B72D901D2B3">
             <File Id ="FILE_IFC4_XSD" Name="IFC4.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC4.xsd" KeyPath="yes" />
