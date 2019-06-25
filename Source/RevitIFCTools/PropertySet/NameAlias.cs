@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 
 namespace RevitIFCTools.PropertySet
 {
-   class NameAlias
+   public class NameAlias
    {
       public string Alias { get; set; }
       public string lang { get; set; }
