@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 
 namespace RevitIFCTools.PropertySet
 {
-   class PsetDefinition
+   public class PsetDefinition
    {
       public string Name { get; set; }
       public string IfcVersion { get; set; }
