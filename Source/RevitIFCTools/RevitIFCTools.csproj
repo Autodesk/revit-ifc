@@ -55,6 +55,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Antlr4.Runtime, Version=4.6.0.0, Culture=neutral, PublicKeyToken=09abb75b9ed49849, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Antlr4.Runtime.4.6.6\lib\net45\Antlr4.Runtime.dll</HintPath>
+    </Reference>
     <Reference Include="RevitAPI">
       <HintPath>C:\Program Files\Autodesk\Revit 2019\RevitAPI.dll</HintPath>
     </Reference>
@@ -149,12 +152,21 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="IFC2X2_ADD1.exp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="IFC2X2_ADD1.xsd">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="IFC2X3_TC1.exp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="IFC2X3_TC1.xsd">
       <SubType>Designer</SubType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="IFC4.exp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="IFC4.xsd">
@@ -209,6 +221,7 @@
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I
 xcopy "$(TargetDir)IFC*.xsd" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I
+xcopy "$(TargetDir)IFC*.exp" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I
 xcopy "$(TargetDir)IFC Shared Parameters*.txt" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I
 xcopy "$(TargetDir)IFCCertifiedEntitiesAndPSets.json" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2019.bundle\Contents\2019\" /F /R /Y /I
 </PostBuildEvent>
