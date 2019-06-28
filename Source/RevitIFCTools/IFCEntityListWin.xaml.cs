@@ -137,7 +137,6 @@ namespace RevitIFCTools
 
             ProcessPsetDefinition procPdef = new ProcessPsetDefinition(logF);
 
-            // Add creation of Json file for FORNAX universal template
             string schemaName = f.Name.Replace(".xsd", "");
             IDictionary<string, IfcSchemaEntityNode> entDict = IfcSchemaEntityTree.GetEntityDictFor(schemaName);
             IFCEntityAndPsetList schemaEntities = new IFCEntityAndPsetList();
@@ -212,11 +211,6 @@ namespace RevitIFCTools
                }
             }
 
-#if FORNAX_EXTENSION
-            // TODO: Insert code here to parse FORNAX extended property set definitions and add the pset into the appropriate applicable types (entPsetDict)
-
-#endif
-
             // For every entity of the schema, collect the list of PredefinedType (obtained from the xsd), and collect all applicable
             //  Pset Definitions collected above
             foreach (KeyValuePair<string, IfcSchemaEntityNode> ent in entDict)
@@ -244,12 +238,6 @@ namespace RevitIFCTools
                if (entPsetDict.ContainsKey(entInfo.Entity))
                {
                   entInfo.PropertySets = entPsetDict[entInfo.Entity].ToList();
-#if FORNAX_EXTENSION
-                  // Add FORNAX special property sets IFCATTRIBUTES
-                  entInfo.PropertySets.Add("IFCATTRIBUTES");
-                  // TODO: Add the pset definition of IFCATTRIBUTES to ... (probably has to be dne earlier)
-
-#endif
                }
                // Collect Pset that is applicable to the supertype of this entity
                IList<IfcSchemaEntityNode> supertypeList = IfcSchemaEntityTree.FindAllSuperTypes(entInfo.Entity, 
@@ -261,11 +249,8 @@ namespace RevitIFCTools
                      if (entPsetDict.ContainsKey(superType.Name))
                      {
                         if (entInfo.PropertySets == null)
-#if FORNAX_EXTENSION
-                           entInfo.PropertySets = new List<string>() { "IFCATTRIBUTES" };
-#else
                            entInfo.PropertySets = new List<string>();
-#endif
+
                         foreach (string pset in entPsetDict[superType.Name])
                            entInfo.PropertySets.Add(pset);
                      }
@@ -410,43 +395,5 @@ namespace RevitIFCTools
       {
          outputFolder = textBox_outputFolder.Text;
       }
-
-#if FORNAX_EXTENSION
-      List<IFCPropertySetDef> DefineFXProperties ()
-      {
-         List<IFCPropertySetDef> fxPSets = new List<IFCPropertySetDef>();
-
-         // For IFCATTRIBUTES
-         IFCPropertySetDef pset = new IFCPropertySetDef();
-         pset.PsetName = "IFCATTRIBUTES";
-         IList<string> props = new List<string>();
-         props.Add("AreaClassification");
-         props.Add("Building Name");
-         props.Add("Description");
-         props.Add("DrainageBoundary");
-         props.Add("Checkbox");
-         props.Add("Level");
-         props.Add("LongName");
-         props.Add("Material");
-         props.Add("Name");
-         props.Add("ObjectType");
-         props.Add("OccupancyType");
-         props.Add("PredefinedType");
-         props.Add("ProjectDevelopmentType");
-         props.Add("Project Location");
-         props.Add("System");
-         fxPSets.Add(pset);
-
-         // For Fornax Extensions
-         //pset = new IFCPropertySetDef();
-         //pset.PsetName = "PUBPset_xxx";
-         //props = new List<string>();
-         //props.Add("Building Name");
-         //fxPSets.Add(pset);
-
-
-         return fxPSets;
-      }
-#endif
    }
 }

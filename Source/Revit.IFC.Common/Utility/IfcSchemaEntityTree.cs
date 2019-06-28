@@ -134,7 +134,7 @@ namespace Revit.IFC.Common.Utility
             // Process IFCXml schema here, then search for IfcProduct and build TreeView beginning from that node. Allow checks for the tree nodes. Grey out (and Italic) the abstract entity
             string schemaLoc = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
             schemaFile = Path.Combine(schemaLoc, schemaFile);
-            FileInfo schemaFileInfo = new FileInfo(schemaFile + ".xsd");
+            FileInfo schemaFileInfo = new FileInfo(schemaFile);
 
             bool newLoad = ProcessIFCXMLSchema.ProcessIFCSchema(schemaFileInfo);
             if (newLoad)
