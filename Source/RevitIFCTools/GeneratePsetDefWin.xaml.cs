@@ -85,7 +85,9 @@ namespace RevitIFCTools
 
          if (!string.IsNullOrEmpty(textBox_PSDSourceDir.Text) && !string.IsNullOrEmpty(textBox_OutputFile.Text) && !string.IsNullOrEmpty(textBox_SharedParFile.Text))
             button_Go.IsEnabled = true;
+#if DEBUG
          logF = new StreamWriter(outputFilename + ".log");
+#endif
       }
 
       private void button_Go_Click(object sender, RoutedEventArgs e)
@@ -111,7 +113,11 @@ namespace RevitIFCTools
             stSharedParType = File.CreateText(SharedParFileNameType);
          }
 
+#if DEBUG
          ProcessPsetDefinition procPsetDef = new ProcessPsetDefinition(logF);
+#else
+         ProcessPsetDefinition procPsetDef = new ProcessPsetDefinition(null);
+#endif
 
          if (string.IsNullOrEmpty(textBox_PSDSourceDir.Text) || string.IsNullOrEmpty(textBox_OutputFile.Text))
             return;
