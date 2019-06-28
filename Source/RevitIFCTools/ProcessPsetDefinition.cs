@@ -80,7 +80,9 @@ namespace RevitIFCTools
 
       public ProcessPsetDefinition(StreamWriter logfile)
       {
+#if DEBUG
          logF = logfile;
+#endif
          enumFileDict = new Dictionary<string, StreamWriter>();
          enumDict = new Dictionary<string, IList<string>>();
       }
