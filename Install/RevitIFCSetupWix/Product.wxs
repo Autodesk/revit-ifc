@@ -7,11 +7,6 @@
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
       <MediaTemplate EmbedCab="yes"/>
-      <UI>
-         <UIRef Id="WixUI_InstallDir" />
-         <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchFile" Order="1">1</Publish>
-      </UI>
-      <Property Id="WIXUI_INSTALLDIR" Value ="INSTALLDIR"/>
 
       <WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)..\Program Files to Install\LICENSE.rtf"></WixVariable>
       <WixVariable Id="WixUIBannerBmp" Value="$(var.ProjectDir)..\Program Files to Install\Autodesk Logo.bmp" />
@@ -19,7 +14,7 @@
       <WixVariable Id="WixUIDefUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt"></WixVariable>
       <WixVariable Id="WixUICOBieUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\IFC2x3 Extended FM HandOver View.txt"></WixVariable>
 
-      <Feature Id="ProductFeature" Title="Revit IFC 2019" Level="1" ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id="ProductFeature" Title="Revit IFC 2019" Level="1">
          <ComponentGroupRef Id="ProductComponents" />
          <ComponentGroupRef Id="ProductResourceComponents" />
          <ComponentGroupRef Id="ProductFRFiles" />
