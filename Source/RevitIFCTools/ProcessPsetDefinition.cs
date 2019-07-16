@@ -884,6 +884,118 @@ namespace RevitIFCTools
             }
          }
 
+         // Shouldn't be here, but some time the IFC documentation is not good
+         if (pset.ApplicableClasses.Count == 0)
+         {
+#if DEBUG
+            logF.WriteLine("%Error - This pset is missing applicable class information: " + pset.IfcVersion + " " + pset.Name);
+#endif
+            // Special handling of problematic issue
+            #region IFCSpecialHandling
+            if (pset.IfcVersion.Equals("IFC4", StringComparison.InvariantCultureIgnoreCase))
+            {
+               if (pset.Name.Equals("Pset_CivilElementCommon"))
+                  pset.ApplicableClasses.Add("IfcCivilElement");
+               else if (pset.Name.Equals("Pset_ElectricFlowStorageDevicePHistory", StringComparison.InvariantCultureIgnoreCase))
+                  pset.ApplicableClasses.Add("IfcElectricFlowStorageDevice");
+               else if (pset.Name.Equals("Pset_ElementAssemblyCommon", StringComparison.InvariantCultureIgnoreCase))
+                  pset.ApplicableClasses.Add("IfcElementAssembly");
+               else if (pset.Name.Equals("Pset_SpatialZoneCommon", StringComparison.InvariantCultureIgnoreCase))
+                  pset.ApplicableClasses.Add("IfcSpatialZone");
+            }
+            else if (pset.IfcVersion.Equals("IFC2X2", StringComparison.InvariantCultureIgnoreCase))
+            {
+               if (pset.Name.Equals("Pset_AnalogInput"))
+               {
+                  pset.ApplicableClasses.Add("IfcDistributionControlElement");
+               }
+               else if (pset.Name.Equals("Pset_AnalogOutput", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcDistributionControlElement");
+               }
+               else if (pset.Name.Equals("Pset_BinaryInput", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcDistributionControlElement");
+               }
+               else if (pset.Name.Equals("Pset_BinaryOutput", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcDistributionControlElement");
+               }
+               else if (pset.Name.Equals("Pset_MultiStateInput", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcDistributionControlElement");
+               }
+               else if (pset.Name.Equals("Pset_MultiStateOutput", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcDistributionControlElement");
+               }
+               else if (pset.Name.Equals("Pset_ElectricalDeviceCommon", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcDistributionElement");
+               }
+               else if (pset.Name.Equals("Pset_DuctConnection", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcDuctSegmentType");
+                  pset.ApplicableClasses.Add("IfcDuctFittingType");
+               }
+               else if (pset.Name.Equals("Pset_DuctDesignCriteria", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcSystem");
+                  pset.ApplicableClasses.Add("IfcDuctSegmentType");
+                  pset.ApplicableClasses.Add("IfcDuctFittingType");
+               }
+               else if (pset.Name.Equals("Pset_PipeConnection", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcPipeSegmentType");
+                  pset.ApplicableClasses.Add("IfcPipeFittingType");
+               }
+               else if (pset.Name.Equals("Pset_PipeConnectionFlanged", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcPipeSegmentType");
+                  pset.ApplicableClasses.Add("IfcPipeFittingType");
+               }
+               else if (pset.Name.Equals("Pset_AirSideSystemInformation", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcSystem");
+               }
+               else if (pset.Name.Equals("Pset_FireRatingProperties", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcElement");
+                  pset.ApplicableClasses.Add("IfcSpatialStructureElement");
+               }
+               else if (pset.Name.Equals("Pset_ThermalLoadAggregate", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcElement");
+                  pset.ApplicableClasses.Add("IfcSpatialStructureElement");
+                  pset.ApplicableClasses.Add("IfcZone");
+               }
+               else if (pset.Name.Equals("Pset_ThermalLoadDesignCriteria", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcElement");
+                  pset.ApplicableClasses.Add("IfcSpatialStructureElement");
+                  pset.ApplicableClasses.Add("IfcZone");
+                  pset.ApplicableClasses.Add("IfcBuilding");
+               }
+               else if (pset.Name.Equals("Pset_ConcreteElementGeneral", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcBuildingElement");
+               }
+               else if (pset.Name.Equals("Pset_ConcreteElementQuantityGeneral", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcBuildingElement");
+               }
+               else if (pset.Name.Equals("Pset_ConcreteElementSurfaceFinishQuantityGeneral", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcBuildingElement");
+               }
+               else if (pset.Name.Equals("Pset_PrecastConcreteElementGeneral", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  pset.ApplicableClasses.Add("IfcBuildingElement");
+               }
+            }
+            #endregion
+         }
+
          IList<PsetProperty> propList = new List<PsetProperty>();
          var pDefs = from p in doc.Descendants(ns + "PropertyDef") select p;
          foreach (XElement pDef in pDefs)
