@@ -35,6 +35,8 @@ using System.Windows.Forms;
 using System.Runtime.Serialization.Json;
 using System.IO;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
+using Revit.IFC.Export.Utility;
 
 namespace RevitIFCTools
 {
@@ -52,6 +54,7 @@ namespace RevitIFCTools
          textBox_outputFolder.Text = outputFolder; // set default
          button_subtypeTest.IsEnabled = false;
          button_supertypeTest.IsEnabled = false;
+         button_ExportInfoPair.IsEnabled = false;
          button_Go.IsEnabled = false;
       }
 
@@ -119,6 +122,12 @@ namespace RevitIFCTools
          if (aggregateEntities == null)
             aggregateEntities = new SortedSet<string>();
          aggregateEntities.Clear();
+
+         if (!Directory.Exists(textBox_outputFolder.Text))
+         {
+            textBox_outputFolder.Text = "";
+            return;
+         }
 
          logF = new StreamWriter(System.IO.Path.Combine(outputFolder, "entityList.log"));
 
@@ -331,11 +340,13 @@ namespace RevitIFCTools
          {
             button_subtypeTest.IsEnabled = true;
             button_supertypeTest.IsEnabled = true;
+            button_ExportInfoPair.IsEnabled = true;
          }
          else
          {
             button_subtypeTest.IsEnabled = false;
             button_supertypeTest.IsEnabled = false;
+            button_ExportInfoPair.IsEnabled = false;
          }
 
          if (logF != null)
@@ -394,6 +405,28 @@ namespace RevitIFCTools
       private void textBox_outputFolder_TextChanged(object sender, TextChangedEventArgs e)
       {
          outputFolder = textBox_outputFolder.Text;
+      }
+
+      private void Button_ExportInfoPair_Click(object sender, RoutedEventArgs e)
+      {
+         if (string.IsNullOrEmpty(textBox_type1.Text))
+            return;
+
+         string[] info = textBox_type1.Text.Split('.');
+         string entity = info[0];
+         string predefType = null;
+         if (info.Count() > 1)
+            predefType = info[1];
+
+
+         IFCExportInfoPair exportInfo = new IFCExportInfoPair();
+         IFCEntityType entType = IFCEntityType.UnKnown;
+         if (!Enum.TryParse<IFCEntityType>(entity, out entType))
+            return;
+
+         exportInfo.SetValueWithPair(entType, predefType);
+         textBox_type2.Text = "Instance: " + exportInfo.ExportInstance + "\nType: " + exportInfo.ExportType 
+               + "\nPredefinedTpe: " + exportInfo.ValidatedPredefinedType;
       }
    }
 }
