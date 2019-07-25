@@ -1,11 +1,20 @@
 ﻿<!-- TODO: use resources to govern externalized strings.  (static initialization failure when loaded into Revit even though it shows perfectly well in the Dialog editor) -->
-<ui:ChildWindow x:Class="BIM.IFC.Export.UI.IFCExport"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"  
-        xmlns:ui="clr-namespace:Autodesk.Revit.WPFFramework;assembly=UserInterfaceUtility"
-        xmlns:System="clr-namespace:System;assembly=mscorlib" Title="{x:Static p:Resources.IFCExport}" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" WindowStyle="SingleBorderWindow"  ContentRendered="ChildWindow_ContentRendered" ResizeMode="NoResize" Closing="Window_Closing" Height="326" Width="731">
+<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.IFCExport"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"  
+                  xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+                  xmlns:System="clr-namespace:System;assembly=mscorlib" 
+                  Title="{x:Static p:Resources.IFCExport}" 
+                  mc:Ignorable="d" 
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                  WindowStyle="SingleBorderWindow"  
+                  ContentRendered="ChildWindow_ContentRendered" 
+                  ResizeMode="NoResize" 
+                  Closing="Window_Closing" 
+                  Height="326" 
+                  Width="731">
    <Grid Margin="10,0" RenderTransformOrigin="0,0">
       <Label Content="{x:Static p:Resources.FileName}" HorizontalAlignment="Left" Margin="0,12,0,0" x:Name="label_FileName" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" RenderTransformOrigin="0.462,0.478"/>
       <TextBox Height="23" Margin="242,12,0,0" Name="textBoxSetupFileName" VerticalAlignment="Top" IsEnabled="True"  TextWrapping="NoWrap" VerticalContentAlignment="Center" HorizontalAlignment="Left" Width="337"/>
@@ -26,11 +35,11 @@
       <Button Content="{x:Static p:Resources.Cancel}" Margin="616,0,0,24" Width="77" Name="buttonCancel" Click="buttonCancel_Click" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
    </Grid>
 
-   <Window.Resources>
+   <auiw:ChildWindow.Resources>
       <System:String x:Key="ifcExportWindowTitle">{x:Static p:Resources.IFCExport}</System:String>
       <System:String x:Key="currentSelectedSetup">{x:Static p:Resources.CurrentSelectedSetup}</System:String>
       <System:String x:Key="next">{x:Static p:Resources.Next}</System:String>
       <System:String x:Key="saveSetupAndClose">{x:Static p:Resources.SaveSetupAndClose}</System:String>
       <System:String x:Key="cancel">{x:Static p:Resources.Cancel}</System:String>
-   </Window.Resources>
-</ui:ChildWindow>
+   </auiw:ChildWindow.Resources>
+</auiw:ChildWindow>

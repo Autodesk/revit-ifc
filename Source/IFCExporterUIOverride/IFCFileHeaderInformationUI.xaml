@@ -1,9 +1,20 @@
-﻿<ui:ChildWindow x:Class="BIM.IFC.Export.UI.IFCFileHeaderInformation"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:ui="clr-namespace:Autodesk.Revit.WPFFramework;assembly=UserInterfaceUtility"
-        Title="{x:Static p:Resources.FileHeader}" Loaded="Window_Loaded" Name="FileHeaderTab" Initialized="FileHeaderTab_Initialized" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" SizeToContent="WidthAndHeight" HorizontalAlignment="Stretch" Margin="10,5,5,10" Height="419.499" Width="567" >
+﻿<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.IFCFileHeaderInformation"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                  mc:Ignorable="d" 
+                  Title="{x:Static p:Resources.FileHeader}" 
+                  Name="FileHeaderTab" 
+                  Loaded="Window_Loaded" 
+                  Initialized="FileHeaderTab_Initialized" 
+                  SizeToContent="WidthAndHeight" 
+                  HorizontalAlignment="Stretch" 
+                  Margin="10,5,5,10" 
+                  Height="419.499" 
+                  Width="567">
    <Grid Name="grid1" Width="551" Margin="6,2,2,-10">
       <Grid.RowDefinitions>
          <RowDefinition Height="331*" />
@@ -38,4 +49,4 @@
          <Label Content="{x:Static p:Resources.ExchangeRequirement}" Height="28" HorizontalAlignment="Left" Margin="16,277,0,0" Name="labelExchangeRequirement" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="137" />
       </Grid>
    </Grid>
-</ui:ChildWindow>
+</auiw:ChildWindow>

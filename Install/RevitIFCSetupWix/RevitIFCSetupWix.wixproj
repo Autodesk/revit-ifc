@@ -6,7 +6,7 @@
     <ProductVersion>3.8</ProductVersion>
     <ProjectGuid>7dfbd495-c588-4c7b-b8f6-5b793adb06f2</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>Revit IFC for Revit 2019.2.1</OutputName>
+    <OutputName>Revit IFC for Revit 2020.0.0.0</OutputName>
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
@@ -27,7 +27,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>$(SolutionDir)$(Configuration)$(PlatformName)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>_OfficialBuild=true; _ForNavisworks2019=true</DefineConstants>
+    <DefineConstants>OfficialBuild=true; _ForNavisworks2019=true</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />

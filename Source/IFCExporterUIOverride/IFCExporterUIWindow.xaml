@@ -1,10 +1,17 @@
-﻿<ui:ChildWindow x:Class="BIM.IFC.Export.UI.IFCExporterUIWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:ui="clr-namespace:Autodesk.Revit.WPFFramework;assembly=UserInterfaceUtility"
-        Title="{x:Static p:Resources.ModifySetupTitle}" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" Height="450" Width="887" WindowStyle="SingleBorderWindow" ResizeMode="NoResize" Closing="Window_Closing">
+﻿<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.IFCExporterUIWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                  mc:Ignorable="d" 
+                  Title="{x:Static p:Resources.ModifySetupTitle}" 
+                  Height="450"
+                  Width="887" 
+                  WindowStyle="SingleBorderWindow" 
+                  ResizeMode="NoResize" 
+                  Closing="Window_Closing">
    <Grid HorizontalAlignment="Right" Margin="0,3,10,0" Height="403" VerticalAlignment="Top" Width="877">
       <Grid.RowDefinitions>
          <RowDefinition Height="394*"/>
@@ -136,4 +143,4 @@
          <Image HorizontalAlignment="Stretch" Name="image5" Stretch="Fill" VerticalAlignment="Stretch" Source="icons/save.ico" Width="16" Height="16" RenderTransformOrigin="0.5,0.688" />
       </Button>
    </Grid>
-</ui:ChildWindow>
+</auiw:ChildWindow>
