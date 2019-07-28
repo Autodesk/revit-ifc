@@ -218,6 +218,8 @@ namespace Revit.IFC.Import.Utility
       /// <param name="entity">The entity.</param>
       /// <param name="typeEntityType">The IfcTypeObject entity type, if it exists.</param>
       /// <param name="typePredefinedType">The IfcTypeObject predefined type, if it exists.</param>
+      /// <remarks>This function is intended to give additional information for
+      /// categorization in Revit.  As such, it may ignore the type if it is generic.</remarks>
       private static void GetAssociatedTypeEntityInfo(IFCObjectDefinition entity, out IFCEntityType? typeEntityType, out string typePredefinedType)
       {
          typeEntityType = null;
@@ -229,6 +231,17 @@ namespace Revit.IFC.Import.Utility
             {
                IFCTypeObject typeObject = ifcObject.TypeObjects.First();
                typeEntityType = typeObject.EntityType;
+
+               // "IfcTypeObject" and "IfcTypeProduct" are generic entity types
+               // that gives us no further information.  In this case, ignore these entity
+               // types and use the instance entity information.
+               if (typeEntityType == IFCEntityType.IfcTypeObject ||
+                  typeEntityType == IFCEntityType.IfcTypeProduct)
+               {
+                  typeEntityType = null;
+                  return;
+               }
+
                typePredefinedType = typeObject.PredefinedType;
             }
          }

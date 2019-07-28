@@ -39,6 +39,7 @@ namespace Revit.IFC.Export.Utility
       {
          UseFamilyAndTypeNameForReference = false;
          UseVisibleRevitNameAsEntityName = false;
+         UseTypeNameOnlyForIfcType = false;
       }
 
       /// <summary>
@@ -60,6 +61,17 @@ namespace Revit.IFC.Export.Utility
       /// 2. false: Constructs the name from Category:FamilyName:TypeName.  Ignores naming overrides.
       /// </summary>
       public bool UseVisibleRevitNameAsEntityName
+      {
+         get;
+         set;
+      }
+
+      /// <summary>
+      /// Determines how to set the base IFC type name.
+      /// 1. true: Constructs the name only from the TypeName.  Uses naming override, if one is set by user.
+      /// 2. false: Constructs the name as the traditional way from FamilyName:TypeName.  Name override will always take precedence.
+      /// </summary>
+      public bool UseTypeNameOnlyForIfcType
       {
          get;
          set;

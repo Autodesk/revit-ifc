@@ -3084,14 +3084,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                                  }
                               case ParameterType.AreaForce:
                                  {
-                                    double scaledValue = UnitUtil.ScaleForce(value);
+                                    double scaledValue = UnitUtil.ScalePlanarForce(value);
                                     propertyHandle = CreatePlanarForceProperty(file, parameterCaption,
                                         scaledValue, PropertyValueType.SingleValue);
                                     break;
                                  }
                               case ParameterType.LinearForce:
                                  {
-                                    double scaledValue = UnitUtil.ScaleForce(value);
+                                    double scaledValue = UnitUtil.ScaleLinearForce(value);
                                     propertyHandle = CreateLinearForceProperty(file, parameterCaption,
                                         scaledValue, PropertyValueType.SingleValue);
                                     break;

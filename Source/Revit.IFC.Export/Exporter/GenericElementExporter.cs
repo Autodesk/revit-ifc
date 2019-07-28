@@ -81,6 +81,7 @@ namespace Revit.IFC.Export.Exporter
 
                            styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, exportType.ValidatedPredefinedType,
                               propertySetsOpt, repMapListOpt, element, familySymbol);
+                           productWrapper.RegisterHandleWithElementType(familySymbol, exportType, styleHandle, propertySetsOpt);
                         }
                      }
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))

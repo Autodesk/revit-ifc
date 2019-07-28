@@ -96,6 +96,7 @@ namespace Revit.IFC.Export.Exporter
 
                      IFCAnyHandle slabHnd = IFCInstanceExporter.CreateSlab(exporterIFC, slabElement, ifcGUID, ownerHistory,
                              localPlacement, exportParts ? null : prodDefHnd, entityType);
+                     IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcSlab, entityType);
 
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(slabHnd))
                         return;
@@ -103,11 +104,10 @@ namespace Revit.IFC.Export.Exporter
                      if (exportParts)
                         PartExporter.ExportHostPart(exporterIFC, slabElement, slabHnd, productWrapper, placementSetter, localPlacement, null);
 
-                     productWrapper.AddElement(slabElement, slabHnd, placementSetter, ecData, true);
+                     productWrapper.AddElement(slabElement, slabHnd, placementSetter, ecData, true, exportInfo);
 
                      if (!exportParts)
                      {
-                        IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcSlab, IFCEntityType.IfcSlabType, entityType);
                         IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(slabElement, exportInfo, file, ownerHistory, entityType, productWrapper);
                         ExporterCacheManager.TypeRelationsCache.Add(typeHnd, slabHnd);
 
@@ -166,11 +166,12 @@ namespace Revit.IFC.Export.Exporter
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
          Common.Enums.IFCEntityType elementClassTypeEnum;
-         if (Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ToString(), out elementClassTypeEnum))
+         if (Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
+            || Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportType.ToString(), out elementClassTypeEnum))
             if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
                return;
 
-         string predefinedType = null;
+         //string predefinedType = null;
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
@@ -348,18 +349,18 @@ namespace Revit.IFC.Export.Exporter
                   {
                      case IFCEntityType.IfcFooting:
                         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                           predefinedType = IFCValidateEntry.GetValidIFCType<Revit.IFC.Export.Toolkit.IFC4.IFCFootingType>(floorElement, ifcEnumType, null);
+                           exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<Revit.IFC.Export.Toolkit.IFC4.IFCFootingType>(floorElement, ifcEnumType, null);
                         else
-                           predefinedType = IFCValidateEntry.GetValidIFCType<IFCFootingType>(floorElement, ifcEnumType, null);
+                           exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCFootingType>(floorElement, ifcEnumType, null);
                         break;
                      case IFCEntityType.IfcCovering:
-                        predefinedType = IFCValidateEntry.GetValidIFCType<IFCCoveringType>(floorElement, ifcEnumType, "FLOORING");
+                        exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCCoveringType>(floorElement, ifcEnumType, "FLOORING");
                         break;
                      case IFCEntityType.IfcRamp:
                         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                           predefinedType = IFCValidateEntry.GetValidIFCType<Revit.IFC.Export.Toolkit.IFC4.IFCRampType>(floorElement, ifcEnumType, null);
+                           exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<Revit.IFC.Export.Toolkit.IFC4.IFCRampType>(floorElement, ifcEnumType, null);
                         else
-                           predefinedType = IFCValidateEntry.GetValidIFCType<IFCRampType>(floorElement, ifcEnumType, null);
+                           exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCRampType>(floorElement, ifcEnumType, null);
                         break;
                      default:
                         bool isBaseSlab = false;
@@ -369,7 +370,7 @@ namespace Revit.IFC.Export.Exporter
                            AnalyzeAs slabFoundationType = analyticalModel.GetAnalyzeAs();
                            isBaseSlab = (slabFoundationType == AnalyzeAs.SlabOnGrade) || (slabFoundationType == AnalyzeAs.Mat);
                         }
-                        predefinedType = IFCValidateEntry.GetValidIFCType<IFCSlabType>(floorElement, ifcEnumType, isBaseSlab ? "BASESLAB" : "FLOOR");
+                        exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCSlabType>(floorElement, ifcEnumType, isBaseSlab ? "BASESLAB" : "FLOOR");
                         break;
                   }
 
@@ -390,9 +391,8 @@ namespace Revit.IFC.Export.Exporter
                         IFCAnyHandleUtil.OverrideNameAttribute(slabHnd, ifcName);
 
                      // Pre IFC4 Slab does not have PredefinedType
-                     if (!string.IsNullOrEmpty(predefinedType) && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-                        IFCAnyHandleUtil.SetAttribute(slabHnd, "PredefinedType", predefinedType, true);
-
+                     if (!string.IsNullOrEmpty(exportType.ValidatedPredefinedType) && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                        IFCAnyHandleUtil.SetAttribute(slabHnd, "PredefinedType", exportType.ValidatedPredefinedType, true);
                      if (exportParts)
                         PartExporter.ExportHostPart(exporterIFC, floorElement, slabHnd, productWrapper, placementSetter, localPlacementHnd, null);
 

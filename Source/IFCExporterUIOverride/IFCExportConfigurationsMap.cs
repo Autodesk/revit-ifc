@@ -67,15 +67,15 @@ namespace BIM.IFC.Export.UI
       {
          // These are the built-in configurations.  Provide a more extensible means of storage.
          // Order of construction: name, version, space boundaries, QTO, split walls, internal sets, 2d elems, boundingBox
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View 2.0", IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Design Transfer View", IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View", IFCVersion.IFC2x3, 1, false, false, true, false, false, false, true, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 GSA Concept Design BIM 2010", IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, true, true, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Basic FM Handover View", IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, true, false, false));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View 2.0", IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View", IFCVersion.IFC2x3, 1, false, false, true, false, false, false, true, false, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 GSA Concept Design BIM 2010", IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, true, true, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Basic FM Handover View", IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, true, false, false, includeSteelElements: true));
          Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x2 Coordination View", IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false));
          Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x2 Singapore BCA e-Plan Check", IFCVersion.IFCBCA, 1, false, true, true, false, false, false, false, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 COBie 2.4 Design Deliverable", IFCVersion.IFC2x3FM, 1, true, false, false, true, true, false, true, true, false));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 COBie 2.4 Design Deliverable", IFCVersion.IFC2x3FM, 1, true, false, false, true, true, false, true, true, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Design Transfer View", IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true));
       }
 
       /// <summary>
@@ -157,6 +157,11 @@ namespace BIM.IFC.Export.UI
                      configuration.ExportRoomsInView = bool.Parse(configMap[s_setupExportRoomsInView]);
                   if (configMap.ContainsKey(s_includeSteelElements))
                      configuration.IncludeSteelElements = bool.Parse(configMap[s_includeSteelElements]);
+                  if (configMap.ContainsKey(s_useTypeNameOnlyForIfcType))
+                     configuration.UseTypeNameOnlyForIfcType = bool.Parse(configMap[s_useTypeNameOnlyForIfcType]);
+                  if (configMap.ContainsKey(s_useVisibleRevitNameAsEntityName))
+                     configuration.UseVisibleRevitNameAsEntityName = bool.Parse(configMap[s_useVisibleRevitNameAsEntityName]);
+
                   Add(configuration);
                }
                return; // if finds the config in map schema, return and skip finding the old schema.
@@ -227,6 +232,14 @@ namespace BIM.IFC.Export.UI
                   Field fieldIncludeSteelElements = m_schema.GetField(s_includeSteelElements);
                   if (fieldIncludeSteelElements != null)
                      configuration.IncludeSteelElements = configEntity.Get<bool>(s_includeSteelElements);
+
+                  Field fieldUseTypeNameOnlyForIfcType = m_schema.GetField(s_useTypeNameOnlyForIfcType);
+                  if (fieldUseTypeNameOnlyForIfcType != null)
+                     configuration.UseTypeNameOnlyForIfcType = configEntity.Get<bool>(s_useTypeNameOnlyForIfcType);
+                  Field fieldUseVisibleRevitNameAsEntityName = m_schema.GetField(s_useVisibleRevitNameAsEntityName);
+                  if (fieldUseVisibleRevitNameAsEntityName != null)
+                     configuration.UseVisibleRevitNameAsEntityName = configEntity.Get<bool>(s_useVisibleRevitNameAsEntityName);
+
                   Add(configuration);
                }
             }
@@ -272,6 +285,8 @@ namespace BIM.IFC.Export.UI
       private const string s_setupExportRoomsInView = "ExportRoomsInView";
       private const string s_excludeFilter = "ExcludeFilter";
       private const string s_setupSitePlacement = "SitePlacement";
+      private const string s_useTypeNameOnlyForIfcType = "UseTypeNameOnlyForIfcType";
+      private const string s_useVisibleRevitNameAsEntityName = "UseVisibleRevitNameAsEntityName";
       // Used for COBie 2.4
       private const string s_cobieCompanyInfo = "COBieCompanyInfo";
       private const string s_cobieProjectInfo = "COBieProjectInfo";
@@ -402,6 +417,8 @@ namespace BIM.IFC.Export.UI
                mapData.Add(s_useOnlyTriangulation, configuration.UseOnlyTriangulation.ToString());
                mapData.Add(s_excludeFilter, configuration.ExcludeFilter.ToString());
                mapData.Add(s_setupSitePlacement, configuration.SitePlacement.ToString());
+               mapData.Add(s_useTypeNameOnlyForIfcType, configuration.UseTypeNameOnlyForIfcType.ToString());
+               mapData.Add(s_useVisibleRevitNameAsEntityName, configuration.UseVisibleRevitNameAsEntityName.ToString());
                // For COBie v2.4
                mapData.Add(s_cobieCompanyInfo, configuration.COBieCompanyInfo);
                mapData.Add(s_cobieProjectInfo, configuration.COBieProjectInfo);

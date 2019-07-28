@@ -184,7 +184,8 @@ namespace Revit.IFC.Export.Utility
 
          // Check whether the intended Entity type is inside the export exclusion set
          Common.Enums.IFCEntityType elementClassTypeEnum;
-         if (Enum.TryParse<Common.Enums.IFCEntityType>(ifcClassName, out elementClassTypeEnum))
+         if (Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
+            || Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportType.ToString(), out elementClassTypeEnum))
             if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
                return false;
 
@@ -729,8 +730,9 @@ namespace Revit.IFC.Export.Utility
          {
             // Only IfcProduct or IfcTypeProduct can be assigned for export type
             //if (!node.IsSubTypeOf("IfcProduct") && !node.IsSubTypeOf("IfcTypeProduct") && !node.Name.Equals("IfcGroup", StringComparison.InvariantCultureIgnoreCase))
-            if ((node.IsSubTypeOf("IfcObject") && (node.IsSubTypeOf("IfcProduct")
-                     || node.IsSubTypeOf("IfcGroup") || node.Name.Equals("IfcGroup", StringComparison.InvariantCultureIgnoreCase)))
+            if ((node.IsSubTypeOf("IfcObject") && 
+                     (node.IsSubTypeOf("IfcProduct") || node.IsSubTypeOf("IfcGroup") || node.Name.Equals("IfcGroup", StringComparison.InvariantCultureIgnoreCase)))
+                  || node.IsSubTypeOf("IfcProject") || node.Name.Equals("IfcProject", StringComparison.InvariantCultureIgnoreCase)
                || node.IsSubTypeOf("IfcTypeObject"))
             {
                if (IFCEntityType.TryParse(entityType, true, out ifcType))
@@ -741,7 +743,7 @@ namespace Revit.IFC.Export.Utility
          }
          else if (node != null && node.isAbstract)
          {
-            node = IfcSchemaEntityTree.FindNonAbsSuperType(entityType, "IfcProduct", "IfcProductType", "IfcGroup");
+            node = IfcSchemaEntityTree.FindNonAbsSuperType(entityType, "IfcProduct", "IfcProductType", "IfcGroup", "IfcProject");
             if (node != null)
             {
                if (Enum.TryParse<IFCEntityType>(node.Name, true, out ifcType))

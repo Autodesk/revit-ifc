@@ -73,6 +73,19 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// DEPRECATED!!!
+      /// Register an ElementType with the ProductWrapper, to create its property sets on Dispose without the information of IFCExportInfoPair
+      /// </summary>
+      /// <param name="elementType">The element type</param>
+      /// <param name="prodTypeHnd">The handle</param>
+      /// <param name="existingPropertySets">Any existing propertysets</param>
+      public void RegisterHandleWithElementType(ElementType elementType, IFCAnyHandle prodTypeHnd, HashSet<IFCAnyHandle> existingPropertySets)
+      {
+         IFCExportInfoPair exportType = new IFCExportInfoPair();
+         RegisterHandleWithElementType(elementType, exportType, prodTypeHnd, existingPropertySets);
+      }
+
+      /// <summary>
       /// Register an ElementType with the ProductWrapper, to create its property sets on Dispose.
       /// </summary>
       /// <param name="elementType">The element type.</param>
@@ -203,7 +216,15 @@ namespace Revit.IFC.Export.Utility
             return m_CreatedHandles;
 
          HashSet<IFCAnyHandle> allObjects = new HashSet<IFCAnyHandle>();
-         allObjects.UnionWith(internalObjects);
+
+         // We aren't going to trust that the handles aren't stale.  This needs a rewrite
+         // of disposal of entities, and in general a move to .NET only created entities.
+         foreach (IFCAnyHandle internalObject in internalObjects)
+         {
+            if (IFCAnyHandleUtil.IsValidHandle(internalObject))
+               allObjects.Add(internalObject);
+         }
+
          allObjects.UnionWith(m_CreatedHandles);
          return allObjects;
       }
@@ -264,7 +285,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="levelInfo">The level information.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      public void AddSpace(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType = null)
+      public void AddSpace(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
       {
          bool actuallyRelateToLevel = relateToLevel && (levelInfo != null);
          m_InternalWrapper.AddSpace(handle, levelInfo, data, actuallyRelateToLevel);

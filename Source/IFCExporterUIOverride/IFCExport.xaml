@@ -5,10 +5,10 @@
                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"  
                   xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
                   xmlns:System="clr-namespace:System;assembly=mscorlib" 
-                  Title="{x:Static p:Resources.IFCExport}" 
-                  mc:Ignorable="d" 
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                  mc:Ignorable="d" 
+                  Title="{x:Static p:Resources.IFCExport}" 
                   WindowStyle="SingleBorderWindow"  
                   ContentRendered="ChildWindow_ContentRendered" 
                   ResizeMode="NoResize" 
@@ -23,7 +23,19 @@
       <ComboBox Height="23" HorizontalAlignment="Left" Margin="242,48,0,0" Name="currentSelectedSetup" VerticalAlignment="Top" Width="260" SelectionChanged="currentSelectedSetup_SelectionChanged" ItemsSource="{Binding}" DataContext="{Binding}" />
       <Button Content="{x:Static p:Resources.ModifySetup}" Height="23" Margin="509,48,0,0" Name="buttonEditSetup" VerticalAlignment="Top" Click="buttonEditSetup_Click" HorizontalAlignment="Left" Width="184" />
       <Label Content="{x:Static p:Resources.IFCVersionSelected}" HorizontalAlignment="Left" Margin="0,82,0,0" x:Name="label1_Copy1" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" />
-      <TextBox Height="28" Margin="0,82,10,0" Name="textBoxSetupDescription" VerticalAlignment="Top" IsEnabled="True" IsReadOnly="True"  TextWrapping="WrapWithOverflow" TextChanged="textBoxSetupDescription_TextChanged" Grid.Column="1" BorderThickness="0" VerticalContentAlignment="Center" HorizontalAlignment="Right" Width="451"/>
+      <TextBox Height="28" 
+               Margin="0,82,10,0" 
+               Name="textBoxSetupDescription" 
+               VerticalAlignment="Top" 
+               IsEnabled="True" 
+               IsReadOnly="True" 
+               TextWrapping="WrapWithOverflow" 
+               TextChanged="textBoxSetupDescription_TextChanged" 
+               Grid.Column="1" BorderThickness="0" 
+               VerticalContentAlignment="Center" 
+               HorizontalAlignment="Right" 
+               Background="Transparent"
+               Width="451"/>
       <Label Content="{x:Static p:Resources.ProjectToExport}" HorizontalAlignment="Left" Margin="0,116,0,0" x:Name="label1_Copy" Height="28" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="666" />
       <ListView Margin="0,142,0,58" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="listViewDocuments" HorizontalAlignment="Left" Width="693"/>
       <TextBlock VerticalAlignment="Bottom"  Margin="0,0,189,16" Height="31" Grid.Column="1">

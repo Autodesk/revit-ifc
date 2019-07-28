@@ -18,8 +18,6 @@
 //
 
 using System.Reflection;
-using System.Resources;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 
@@ -29,11 +27,14 @@ using System.Windows;
 [assembly: AssemblyTitle("IFCExporterUI")]
 [assembly: AssemblyDescription("IFC Exporter for Revit Project")]
 [assembly: AssemblyConfiguration("")]
+// Company, Product and Copyright info can now be found in Foundation\RevitENU\Version.cs
+#if IFC_OPENSOURCE
 [assembly: AssemblyCompany("Autodesk, Inc.")]
 [assembly: AssemblyProduct("IFCExporterUI")]
 [assembly: AssemblyCopyright("© 2012-2019 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
+#endif
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
@@ -60,15 +61,11 @@ using System.Windows;
 )]
 
 
-// Version information for an assembly consists of the following four values:
-//
-//      Major Version
-//      Minor Version 
-//      Build Number
-//      Revision
-//
-// You can specify all the values or you can default the Build and Revision Numbers 
-// by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("20.0.0.0")]
-[assembly: AssemblyFileVersion("20.0.0.0")]
+// Version information can now be found in Foundation\RevitENU\Version.cs
+#if IFC_OPENSOURCE
+// The following information is used in the Open Source version as the release version number.
+// The number will show up in the Title bar of the export dialog as well as at the IFC header file
+// This number must be manually updated prior to releasing the new version
+[assembly: AssemblyVersion("20.1.0.0")]
+[assembly: AssemblyFileVersion("20.1.0.0")]
+#endif

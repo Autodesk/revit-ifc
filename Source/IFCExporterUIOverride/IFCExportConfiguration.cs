@@ -18,8 +18,9 @@
 //
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Collections.ObjectModel;
+using System.Reflection;
+using System.Web.Script.Serialization;
 
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
@@ -36,22 +37,22 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// The name of the configuration.
       /// </summary>
-      public string Name { get; set; }
+      public string Name { get; set; } = "";
 
       /// <summary>
       /// The IFCVersion of the configuration.
       /// </summary>
-      public IFCVersion IFCVersion { get; set; }
+      public IFCVersion IFCVersion { get; set; } = IFCVersion.IFC2x3CV2;
 
       /// <summary>
       /// The IFCFileFormat of the configuration.
       /// </summary>
-      public IFCFileFormat IFCFileType { get; set; }
+      public IFCFileFormat IFCFileType { get; set; } = IFCFileFormat.Ifc;
 
       /// <summary>
       /// The level of space boundaries of the configuration.
       /// </summary>
-      public int SpaceBoundaries { get; set; }
+      public int SpaceBoundaries { get; set; } = 0;
 
       /// <summary>
       /// The origin of the exported file: either shared coordinates (Site Survey Point), Project Base Point, or internal coordinates.
@@ -60,132 +61,132 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// The phase of the document to export.
       /// </summary>
-      public ElementId ActivePhaseId { get; set; }
+      public ElementId ActivePhaseId { get; set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// Whether or not to include base quantities for model elements in the export data. 
       /// Base quantities are generated from model geometry to reflect actual physical quantity values, independent of measurement rules or methods.
       /// </summary>
-      public bool ExportBaseQuantities { get; set; }
+      public bool ExportBaseQuantities { get; set; } = false;
 
       /// <summary>
       /// Whether or not to split walls and columns by building stories.
       /// </summary>
-      public bool SplitWallsAndColumns { get; set; }
+      public bool SplitWallsAndColumns { get; set; } = false;
 
       /// <summary>
       /// True to include the Revit-specific property sets based on parameter groups. 
       /// False to exclude them.
       /// </summary>
-      public bool ExportInternalRevitPropertySets { get; set; }
+      public bool ExportInternalRevitPropertySets { get; set; } = false;
 
       /// <summary>
       /// True to include the IFC common property sets. 
       /// False to exclude them.
       /// </summary>
-      public bool ExportIFCCommonPropertySets { get; set; }
+      public bool ExportIFCCommonPropertySets { get; set; } = true;
 
       /// <summary>
       /// True to include 2D elements supported by IFC export (notes and filled regions). 
       /// False to exclude them.
       /// </summary>
-      public bool Export2DElements { get; set; }
+      public bool Export2DElements { get; set; } = false;
 
       /// <summary>
       /// True to export only the visible elements of the current view (based on filtering and/or element and category hiding). 
       /// False to export the entire model.  
       /// </summary>
-      public bool VisibleElementsOfCurrentView { get; set; }
+      public bool VisibleElementsOfCurrentView { get; set; } = false;
 
       /// <summary>
       /// True to use a simplified approach to calculation of room volumes (based on extrusion of 2D room boundaries) which is also the default when exporting to IFC 2x2.   
       /// False to use the Revit calculated room geometry to represent the room volumes (which is the default when exporting to IFC 2x3).
       /// </summary>
-      public bool Use2DRoomBoundaryForVolume { get; set; }
+      public bool Use2DRoomBoundaryForVolume { get; set; } = false;
 
       /// <summary>
       /// True to use the family and type name for references. 
       /// False to use the type name only.
       /// </summary>
-      public bool UseFamilyAndTypeNameForReference { get; set; }
+      public bool UseFamilyAndTypeNameForReference { get; set; } = false;
 
       /// <summary>
       /// True to export the parts as independent building elements
       /// False to export the parts with host element.
       /// </summary>
-      public bool ExportPartsAsBuildingElements { get; set; }
+      public bool ExportPartsAsBuildingElements { get; set; } = false;
 
       /// <summary>
       /// True to allow exports of solid models when possible.
       /// False to exclude them.
       /// </summary>
-      public bool ExportSolidModelRep { get; set; }
+      public bool ExportSolidModelRep { get; set; } = false;
 
       /// <summary>
       /// True to allow exports of schedules as custom property sets.
       /// False to exclude them.
       /// </summary>
-      public bool ExportSchedulesAsPsets { get; set; }
+      public bool ExportSchedulesAsPsets { get; set; } = false;
 
       /// <summary>
       /// True to allow user defined property sets to be exported
       /// False to ignore them
       /// </summary>
-      public bool ExportUserDefinedPsets { get; set; }
+      public bool ExportUserDefinedPsets { get; set; } = false;
 
       /// <summary>
       /// The name of the file containing the user defined property sets to be exported.
       /// </summary>
-      public string ExportUserDefinedPsetsFileName { get; set; }
+      public string ExportUserDefinedPsetsFileName { get; set; } = "";
 
       /// <summary>
       /// True if the User decides to use the Parameter Mapping Table
       /// False if the user decides to ignore it
       /// </summary>
-      public bool ExportUserDefinedParameterMapping { get; set; }
+      public bool ExportUserDefinedParameterMapping { get; set; } = false;
 
       /// <summary>
       /// The name of the file containing the user defined Parameter Mapping Table to be exported.
       /// </summary>
-      public string ExportUserDefinedParameterMappingFileName { get; set; }
+      public string ExportUserDefinedParameterMappingFileName { get; set; } = "";
 
       /// <summary>
       /// True to export bounding box.
       /// False to exclude them.
       /// </summary>
-      public bool ExportBoundingBox { get; set; }
+      public bool ExportBoundingBox { get; set; } = false;
 
       /// <summary>
       /// True to include IFCSITE elevation in the site local placement origin.
       /// </summary>
-      public bool IncludeSiteElevation { get; set; }
+      public bool IncludeSiteElevation { get; set; } = false;
 
       /// <summary>
       /// True to use the active view when generating geometry.
       /// False to use default export options.
       /// </summary>
-      public bool UseActiveViewGeometry { get; set; }
+      public bool UseActiveViewGeometry { get; set; } = false;
 
       /// <summary>
       /// True to export specific schedules.
       /// </summary>
-      public bool? ExportSpecificSchedules { get; set; }
+      public bool? ExportSpecificSchedules { get; set; } = false;
 
       /// <summary>
       /// Value indicating the level of detail to be used by tessellation. Valid valus is between 0 to 1
       /// </summary>
-      public double TessellationLevelOfDetail { get; set; }
+      public double TessellationLevelOfDetail { get; set; } = 0.5;
 
       /// <summary>
       /// Value indicating whether tessellated geometry should be kept only as triagulation
       /// (Note: in IFC4_ADD2 IfcPolygonalFaceSet is introduced that can simplify the coplanar triangle faces into a polygonal face. This option skip this)
       /// </summary>
-      public bool UseOnlyTriangulation { get; set; }
+      public bool UseOnlyTriangulation { get; set; } = false;
 
       /// <summary>
       /// True to store the IFC GUID in the file after the export.  This will require manually saving the file to keep the parameter.
       /// </summary>
-      public bool StoreIFCGUID { get; set; }
+      public bool StoreIFCGUID { get; set; } = false;
 
       /// <summary>
       /// True to export rooms if their bounding box intersect with the section box.
@@ -193,17 +194,17 @@ namespace BIM.IFC.Export.UI
       /// <remarks>
       /// If the section box isn't visible, then all the rooms are exported if this option is set.
       /// </remarks>
-      public bool ExportRoomsInView { get; set; }
+      public bool ExportRoomsInView { get; set; } = false;
 
       /// <summary>
       /// 
       /// </summary>
-      public bool ExportLinkedFiles { get; set; }
+      public bool ExportLinkedFiles { get; set; } = false;
 
       /// <summary>
       /// Id of the active view.
       /// </summary>
-      public int ActiveViewId { get; set; }
+      public int ActiveViewId { get; set; } = ElementId.InvalidElementId.IntegerValue;
 
       /// <summary>
       /// Exclude filter string (element list in an arrary, seperated with semicolon ';')
@@ -223,7 +224,17 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// Value indicating whether steel elements should be exported.
       /// </summary>
-      public bool IncludeSteelElements { get; set; }
+      public bool IncludeSteelElements { get; set; } = true;
+
+      /// <summary>
+      /// Value indicating whether only the Type name will be used to name the IfcTypeObject
+      /// </summary>
+      public bool UseTypeNameOnlyForIfcType { get; set; } = false;
+
+      /// <summary>
+      /// Value indicating whether the IFC Entity Name will use visible Revit Name
+      /// </summary>
+      public bool UseVisibleRevitNameAsEntityName { get; set; } = false;
 
       private bool m_isBuiltIn = false;
       private bool m_isInSession = false;
@@ -257,7 +268,11 @@ namespace BIM.IFC.Export.UI
       /// <returns>The new default configuration.</returns>
       public static IFCExportConfiguration CreateDefaultConfiguration()
       {
-         return new IFCExportConfiguration();
+         IFCExportConfiguration defConfig = new IFCExportConfiguration
+         {
+            Name = "<< Default >>"
+         };
+         return defConfig;
       }
 
       /// <summary>
@@ -265,41 +280,6 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       private IFCExportConfiguration()
       {
-         this.Name = "<<Default>>";
-         this.IFCVersion = IFCVersion.IFC2x3CV2;
-         this.IFCFileType = IFCFileFormat.Ifc;
-         this.SpaceBoundaries = 0;
-         this.ActivePhaseId = ElementId.InvalidElementId;
-         this.ExportBaseQuantities = false;
-         this.SplitWallsAndColumns = false;
-         this.VisibleElementsOfCurrentView = false;
-         this.Use2DRoomBoundaryForVolume = false;
-         this.UseFamilyAndTypeNameForReference = false;
-         this.ExportInternalRevitPropertySets = false;
-         this.ExportIFCCommonPropertySets = true;
-         this.Export2DElements = false;
-         this.ExportPartsAsBuildingElements = false;
-         this.ExportBoundingBox = false;
-         this.ExportSolidModelRep = false;
-         this.ExportSchedulesAsPsets = false;
-         this.ExportUserDefinedPsets = false;
-         this.ExportUserDefinedPsetsFileName = "";
-         this.ExportUserDefinedParameterMapping = false;
-         this.ExportUserDefinedParameterMappingFileName = "";
-         this.ExportLinkedFiles = false;
-         this.IncludeSiteElevation = false;
-         this.UseActiveViewGeometry = false;
-         this.ExportSpecificSchedules = false;
-         this.TessellationLevelOfDetail = 0.5;
-         this.UseOnlyTriangulation = false;
-         this.StoreIFCGUID = false;
-         this.m_isBuiltIn = false;
-         this.m_isInSession = false;
-         this.ExportRoomsInView = false;
-         this.ExcludeFilter = string.Empty;
-         this.COBieCompanyInfo = string.Empty;
-         this.COBieProjectInfo = string.Empty;
-         this.IncludeSteelElements = true;
       }
 
       /// <summary>
@@ -369,63 +349,18 @@ namespace BIM.IFC.Export.UI
          configuration.COBieCompanyInfo = "";
          configuration.COBieProjectInfo = "";
          configuration.IncludeSteelElements = includeSteelElements;
+         configuration.UseTypeNameOnlyForIfcType = false;
+         configuration.UseVisibleRevitNameAsEntityName = false;
 
          return configuration;
       }
 
       public IFCExportConfiguration Clone()
       {
-         return new IFCExportConfiguration(this);
+         // just need a shallow copy
+         return (IFCExportConfiguration)MemberwiseClone();
       }
-
-      /// <summary>
-      /// Constructs a copy from a defined configuration.
-      /// </summary>
-      /// <param name="other">The configuration to copy.</param>
-      private IFCExportConfiguration(IFCExportConfiguration other)
-      {
-         this.Name = other.Name;
-         this.IFCVersion = other.IFCVersion;
-         this.IFCFileType = other.IFCFileType;
-         this.SpaceBoundaries = other.SpaceBoundaries;
-         this.ExportBaseQuantities = other.ExportBaseQuantities;
-         this.SplitWallsAndColumns = other.SplitWallsAndColumns;
-         this.ExportInternalRevitPropertySets = other.ExportInternalRevitPropertySets;
-         this.ExportIFCCommonPropertySets = other.ExportIFCCommonPropertySets;
-         this.Export2DElements = other.Export2DElements;
-         this.VisibleElementsOfCurrentView = other.VisibleElementsOfCurrentView;
-         this.ActiveViewId = other.ActiveViewId;
-         this.Use2DRoomBoundaryForVolume = other.Use2DRoomBoundaryForVolume;
-         this.UseFamilyAndTypeNameForReference = other.UseFamilyAndTypeNameForReference;
-         this.ExportPartsAsBuildingElements = other.ExportPartsAsBuildingElements;
-         this.UseActiveViewGeometry = other.UseActiveViewGeometry;
-         this.ExportSpecificSchedules = other.ExportSpecificSchedules;
-         this.ExportBoundingBox = other.ExportBoundingBox;
-         this.ExportSolidModelRep = other.ExportSolidModelRep;
-         this.ExportSchedulesAsPsets = other.ExportSchedulesAsPsets;
-         this.ExportUserDefinedPsets = other.ExportUserDefinedPsets;
-         this.ExportUserDefinedPsetsFileName = other.ExportUserDefinedPsetsFileName;
-         this.ExportUserDefinedParameterMapping = other.ExportUserDefinedParameterMapping;
-         this.ExportUserDefinedParameterMappingFileName = other.ExportUserDefinedParameterMappingFileName;
-         this.ExportLinkedFiles = other.ExportLinkedFiles;
-         this.IncludeSiteElevation = other.IncludeSiteElevation;
-         this.TessellationLevelOfDetail = other.TessellationLevelOfDetail;
-         this.UseOnlyTriangulation = other.UseOnlyTriangulation;
-         this.StoreIFCGUID = other.StoreIFCGUID;
-         this.m_isBuiltIn = other.m_isBuiltIn;
-         this.m_isInSession = other.m_isInSession;
-         this.ActivePhaseId = other.ActivePhaseId;
-         this.ExportRoomsInView = other.ExportRoomsInView;
-         this.ExcludeFilter = other.ExcludeFilter;
-         this.COBieCompanyInfo = other.COBieCompanyInfo;
-         this.COBieProjectInfo = other.COBieProjectInfo;
-         this.SitePlacement = other.SitePlacement;
-         this.IncludeSteelElements = other.IncludeSteelElements;
-         this.ExcludeFilter = other.ExcludeFilter;
-         this.COBieCompanyInfo = other.COBieCompanyInfo;
-         this.COBieProjectInfo = other.COBieProjectInfo;
-      }
-
+      
       /// <summary>
       /// Duplicates this configuration by giving a new name.
       /// </summary>
@@ -433,53 +368,9 @@ namespace BIM.IFC.Export.UI
       /// <returns>The duplicated configuration.</returns>
       public IFCExportConfiguration Duplicate(String newName)
       {
-         return new IFCExportConfiguration(newName, this);
-      }
-
-      /// <summary>
-      /// Constructs a copy configuration by providing name and defined configuration. 
-      /// </summary>
-      /// <param name="name">The name of copy configuration.</param>
-      /// <param name="other">The defined configuration to copy.</param>
-      private IFCExportConfiguration(String name, IFCExportConfiguration other)
-      {
-         this.Name = name;
-         this.IFCVersion = other.IFCVersion;
-         this.IFCFileType = other.IFCFileType;
-         this.SpaceBoundaries = other.SpaceBoundaries;
-         this.ExportBaseQuantities = other.ExportBaseQuantities;
-         this.SplitWallsAndColumns = other.SplitWallsAndColumns;
-         this.ExportInternalRevitPropertySets = other.ExportInternalRevitPropertySets;
-         this.ExportIFCCommonPropertySets = other.ExportIFCCommonPropertySets;
-         this.Export2DElements = other.Export2DElements;
-         this.VisibleElementsOfCurrentView = other.VisibleElementsOfCurrentView;
-         this.ActiveViewId = other.ActiveViewId;
-         this.UseFamilyAndTypeNameForReference = other.UseFamilyAndTypeNameForReference;
-         this.Use2DRoomBoundaryForVolume = other.Use2DRoomBoundaryForVolume;
-         this.ExportPartsAsBuildingElements = other.ExportPartsAsBuildingElements;
-         this.UseActiveViewGeometry = other.UseActiveViewGeometry;
-         this.ExportSpecificSchedules = other.ExportSpecificSchedules;
-         this.ExportBoundingBox = other.ExportBoundingBox;
-         this.ExportSolidModelRep = other.ExportSolidModelRep;
-         this.ExportSchedulesAsPsets = other.ExportSchedulesAsPsets;
-         this.ExportUserDefinedPsets = other.ExportUserDefinedPsets;
-         this.ExportUserDefinedPsetsFileName = other.ExportUserDefinedPsetsFileName;
-         this.ExportUserDefinedParameterMapping = other.ExportUserDefinedParameterMapping;
-         this.ExportUserDefinedParameterMappingFileName = other.ExportUserDefinedParameterMappingFileName;
-         this.ExportLinkedFiles = other.ExportLinkedFiles;
-         this.IncludeSiteElevation = other.IncludeSiteElevation;
-         this.StoreIFCGUID = other.StoreIFCGUID;
-         this.TessellationLevelOfDetail = other.TessellationLevelOfDetail;
-         this.UseOnlyTriangulation = other.UseOnlyTriangulation;
-         this.ActivePhaseId = other.ActivePhaseId;
-         this.ExportRoomsInView = other.ExportRoomsInView;
-         this.m_isBuiltIn = false;
-         this.m_isInSession = false;
-         this.ExcludeFilter = other.ExcludeFilter;
-         this.COBieCompanyInfo = other.COBieCompanyInfo;
-         this.COBieProjectInfo = other.COBieProjectInfo;
-         this.SitePlacement = other.SitePlacement;
-         this.IncludeSteelElements = other.IncludeSteelElements;
+         IFCExportConfiguration dup = Clone();
+         dup.Name = newName;
+         return dup;
       }
 
       /// <summary>
@@ -565,6 +456,8 @@ namespace BIM.IFC.Export.UI
          options.AddOption("COBieCompanyInfo", COBieCompanyInfo);
          options.AddOption("COBieProjectInfo", COBieProjectInfo);
          options.AddOption("IncludeSteelElements", IncludeSteelElements.ToString());
+         options.AddOption("UseTypeNameOnlyForIfcType", UseTypeNameOnlyForIfcType.ToString());
+         options.AddOption("UseVisibleRevitNameAsEntityName", UseVisibleRevitNameAsEntityName.ToString());
       }
 
 
@@ -591,6 +484,88 @@ namespace BIM.IFC.Export.UI
             return "<" + Name + " " + Properties.Resources.Setup + ">";
          }
          return Name;
+      }
+
+      /// <summary>
+      /// Loads the propertie for this configuration from the input Json props.
+      /// </summary>
+      /// <param name="dictionary">Key, value pairs for each read in property.</param>
+      /// <param name="serializer">Json serializer used to load data. </param>
+      public void DeserializeFromJson(IDictionary<string, object> dictionary, JavaScriptSerializer serializer)
+      {
+         Type type = GetType();
+
+         // load in each property from the dictionary. 
+         foreach (var prop in dictionary)
+         {
+            string propName = prop.Key;
+            object propValue = prop.Value;
+
+            // have to special case ElementId to be able to load 
+            if (propName == "ActivePhaseId")
+            {
+               IDictionary<string, object> elemIdProps = serializer.ConvertToType<IDictionary<string, object>>(propValue);
+               ActivePhaseId = new ElementId(serializer.ConvertToType<int>(elemIdProps["IntegerValue"]));
+               continue;
+            }
+
+            // get the property info
+            PropertyInfo propInfo = type.GetProperty(propName);
+
+            // property removed/renamed..
+            if (propInfo == null)
+               continue;
+
+            // set direct for all the writeable props
+            if (propInfo.CanWrite)
+            {
+               propInfo.SetValue(this, serializer.ConvertToType(propValue, propInfo.PropertyType));
+               continue;
+            }
+
+            // need to set explicit member variables for ready only props.
+            if (propName == "IsBuiltIn")
+            {
+               m_isBuiltIn = serializer.ConvertToType<bool>(propValue);
+            }
+            else if (propName == "IsInSession")
+            {
+               m_isInSession = serializer.ConvertToType<bool>(propValue);
+            }
+         }
+      }
+   }
+
+   /// <summary>
+   /// Converter to handle specialize Deserialization for the Configurations. 
+   /// </summary>
+   public class IFCExportConfigurationConverter : JavaScriptConverter
+   {
+
+      public override IEnumerable<Type> SupportedTypes
+      {
+         //Define the ListItemCollection as a supported type.
+         get { return new ReadOnlyCollection<Type>(new List<Type>(new Type[] { typeof(IFCExportConfiguration) })); }
+      }
+
+      public override IDictionary<string, object> Serialize(object obj, JavaScriptSerializer serializer)
+      {
+         // no need to do any special serialization for this object, so don't use for that purpose
+         throw new NotImplementedException();
+      }
+
+      public override object Deserialize(IDictionary<string, object> dictionary, Type type, JavaScriptSerializer serializer)
+      {
+         if (dictionary == null)
+            throw new ArgumentNullException("dictionary");
+
+         if (type != typeof(IFCExportConfiguration))
+            return null;
+
+         // Create the instance to deserialize into.
+         IFCExportConfiguration config = IFCExportConfiguration.CreateDefaultConfiguration();
+         config.DeserializeFromJson(dictionary, serializer);
+         return config; 
       }
    }
 }

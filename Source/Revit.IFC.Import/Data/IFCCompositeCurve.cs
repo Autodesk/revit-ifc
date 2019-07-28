@@ -427,7 +427,7 @@ namespace Revit.IFC.Import.Data
 
                // We check if this circle is similar to the first circle by checking that they have the same center, same radius,
                // and lie on the same plane
-               if (!(currentCenter.IsAlmostEqualTo(firstArc.Center, vertexEps) && MathUtil.IsAlmostEqual(currentRadius, firstArc.Radius, vertexEps)))
+               if (!(currentCenter.IsAlmostEqualTo(firstArc.Center, vertexEps) && MathUtil.IsAlmostEqual(currentRadius, firstArc.Radius)))
                {
                   return null;
                }
@@ -454,7 +454,6 @@ namespace Revit.IFC.Import.Data
                firstCurve.MakeBound(startParameter, endParameter);
             }
             returnCurve = firstCurve;
-
          }
          else if (firstCurve is Ellipse)
          {

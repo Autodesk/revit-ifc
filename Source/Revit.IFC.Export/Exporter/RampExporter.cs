@@ -212,6 +212,7 @@ namespace Revit.IFC.Export.Exporter
             }
 
             IList<IFCAnyHandle> localComponentHnds = new List<IFCAnyHandle>();
+            IList<IFCExportInfoPair> localCompExportInfo = new List<IFCExportInfoPair>();
             if (isSubRamp)
             {
                string componentType = IFCAnyHandleUtil.GetEnumerationAttribute(component, ExporterCacheManager.ExportOptionsCache.ExportAs4 ? "PredefinedType" : "ShapeType");
@@ -227,7 +228,8 @@ namespace Revit.IFC.Export.Exporter
 
                   localComponentHnds.Add(localComponent);
                   IFCAnyHandleUtil.OverrideNameAttribute(localComponent, localComponentNames[ii]);
-
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcRamp, localRampType);
+                  localCompExportInfo.Add(exportInfo);
                }
             }
             else if (IFCAnyHandleUtil.IsSubTypeOf(component, IFCEntityType.IfcRampFlight))
@@ -237,11 +239,14 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle representationCopy =
                       ExporterUtil.CopyProductDefinitionShape(exporterIFC, ramp, catId, componentProdRep);
 
+                  string rampFlightType = "NOTDEFINED";
                   IFCAnyHandle localComponent = IFCInstanceExporter.CreateRampFlight(exporterIFC, ramp, GUIDUtil.CreateGUID(), ownerHistory,
-                      componentPlacementHnds[ii], representationCopy, "NOTDEFINED");
+                      componentPlacementHnds[ii], representationCopy, rampFlightType);
 
                   IFCAnyHandleUtil.OverrideNameAttribute(localComponent, localComponentNames[ii]);
                   localComponentHnds.Add(localComponent);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcRampFlight, rampFlightType);
+                  localCompExportInfo.Add(exportInfo);
                }
             }
             else if (IFCAnyHandleUtil.IsSubTypeOf(component, IFCEntityType.IfcSlab))
@@ -258,6 +263,8 @@ namespace Revit.IFC.Export.Exporter
                       componentPlacementHnds[ii], representationCopy, localLandingType.ToString());
                   localComponentHnds.Add(localComponent);
                   IFCAnyHandleUtil.OverrideNameAttribute(localComponent, localComponentNames[ii]);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcSlab, localLandingType.ToString());
+                  localCompExportInfo.Add(exportInfo);
                }
             }
             else if (IFCAnyHandleUtil.IsSubTypeOf(component, IFCEntityType.IfcMember))
@@ -266,11 +273,14 @@ namespace Revit.IFC.Export.Exporter
                {
                   IFCAnyHandle representationCopy =
                       ExporterUtil.CopyProductDefinitionShape(exporterIFC, ramp, catId, componentProdRep);
+                  string localMemberType = "STRINGER";
 
                   IFCAnyHandle localComponent = IFCInstanceExporter.CreateMember(exporterIFC, ramp, GUIDUtil.CreateGUID(), ownerHistory,
-                componentPlacementHnds[ii], representationCopy, "STRINGER");
+                componentPlacementHnds[ii], representationCopy, localMemberType);
                   localComponentHnds.Add(localComponent);
                   IFCAnyHandleUtil.OverrideNameAttribute(localComponent, localComponentNames[ii]);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcMember, localMemberType);
+                  localCompExportInfo.Add(exportInfo);
                }
             }
 
@@ -279,7 +289,7 @@ namespace Revit.IFC.Export.Exporter
                if (localComponentHnds[ii] != null)
                {
                   newComponents[ii].Add(localComponentHnds[ii]);
-                  productWrapper.AddElement(null, localComponentHnds[ii], levelInfos[ii], componentECData[compIdx], false);
+                  productWrapper.AddElement(null, localComponentHnds[ii], levelInfos[ii], componentECData[compIdx], false, localCompExportInfo[ii]);
                }
             }
             compIdx++;
@@ -302,8 +312,8 @@ namespace Revit.IFC.Export.Exporter
 
             rampCopyHnds.Add(rampCopyHnd);
             IFCAnyHandleUtil.OverrideNameAttribute(rampCopyHnd, containerRampName);
-
-            productWrapper.AddElement(ramp, rampCopyHnds[ii], levelInfos[ii], null, true);
+            IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcRamp, rampType);
+            productWrapper.AddElement(ramp, rampCopyHnds[ii], levelInfos[ii], null, true, exportInfo);
          }
 
          for (int ii = 0; ii < numFlights - 1; ii++)
@@ -367,8 +377,7 @@ namespace Revit.IFC.Export.Exporter
 
                   IFCAnyHandle rampContainerHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, rampGUID, ownerHistory, rampLocalPlacement, null, predefType);
                   // Create appropriate type
-                  IFCExportInfoPair exportType = new IFCExportInfoPair();
-                  exportType.SetValueWithPair(IFCEntityType.IfcRamp, predefType);
+                  IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcRamp, predefType);
                   IFCAnyHandle rampTypeHnd = ExporterUtil.CreateGenericTypeFromElement(ramp, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(rampTypeHnd, rampContainerHnd);
                   productWrapper.AddElement(ramp, rampContainerHnd, placementSetter.LevelInfo, null, true, exportType);
@@ -428,8 +437,7 @@ namespace Revit.IFC.Export.Exporter
                            rampComponents.Add(rampFlightHnd);
 
                            // Create type
-                           IFCExportInfoPair flightEportType = new IFCExportInfoPair();
-                           flightEportType.SetValueWithPair(IFCEntityType.IfcRampFlight, flightPredefType);
+                           IFCExportInfoPair flightEportType = new IFCExportInfoPair(IFCEntityType.IfcRampFlight, flightPredefType);
                            IFCAnyHandle flightTypeHnd = IFCInstanceExporter.CreateGenericIFCType(flightEportType, null, exporterIFC.GetFile(), null, null);
                            IFCAnyHandleUtil.OverrideNameAttribute(flightTypeHnd, flightName);
                            ExporterCacheManager.TypeRelationsCache.Add(flightTypeHnd, rampFlightHnd);
@@ -497,8 +505,7 @@ namespace Revit.IFC.Export.Exporter
                            rampComponents.Add(rampLandingHnd);
 
                            // Create type
-                           IFCExportInfoPair landingEportType = new IFCExportInfoPair();
-                           landingEportType.SetValueWithPair(IFCEntityType.IfcSlab, landingPredefType);
+                           IFCExportInfoPair landingEportType = new IFCExportInfoPair(IFCEntityType.IfcSlab, landingPredefType);
                            IFCAnyHandle landingTypeHnd = IFCInstanceExporter.CreateGenericIFCType(landingEportType, null, exporterIFC.GetFile(), null, null);
                            IFCAnyHandleUtil.OverrideNameAttribute(landingTypeHnd, landingName);
                            ExporterCacheManager.TypeRelationsCache.Add(landingTypeHnd, rampLandingHnd);

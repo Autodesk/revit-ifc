@@ -23,6 +23,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -82,9 +83,11 @@ namespace Revit.IFC.Export.Exporter
 
                   IFCAnyHandle insulation = IFCInstanceExporter.CreateCovering(exporterIFC, element, guid,
                       ownerHistory, localPlacement, representation, "Insulation");
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcCovering, "Insulation");
+
                   ExporterCacheManager.ElementToHandleCache.Register(element.Id, insulation);
 
-                  productWrapper.AddElement(element, insulation, placementSetter.LevelInfo, ecData, true);
+                  productWrapper.AddElement(element, insulation, placementSetter.LevelInfo, ecData, true, exportInfo);
 
                   ElementId matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element);
                   CategoryUtil.CreateMaterialAssociation(exporterIFC, insulation, matId);

@@ -90,10 +90,7 @@ namespace Revit.IFC.Export.Exporter
                   }
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
-                  //string pileType = IFCValidateEntry.GetValidIFCPredefinedType(element, ifcEnumType);
-                  IFCExportInfoPair exportInfo = new IFCExportInfoPair();
-                  exportInfo.ValidatedPredefinedType = ifcEnumType;
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcPile, ifcEnumType);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(Common.Enums.IFCEntityType.IfcPile, ifcEnumType);
 
                   IFCAnyHandle pile = IFCInstanceExporter.CreatePile(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
                       ecData.GetLocalPlacement(), prodRep, ifcEnumType, null);
@@ -104,7 +101,6 @@ namespace Revit.IFC.Export.Exporter
                      IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(type, pile);
                   }
-
                   if (exportParts)
                   {
                      PartExporter.ExportHostPart(exporterIFC, element, pile, productWrapper, setter, setter.LocalPlacement, null);

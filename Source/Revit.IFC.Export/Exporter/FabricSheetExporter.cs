@@ -28,6 +28,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -74,7 +75,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle fabricArea = IFCInstanceExporter.CreateGroup(file, guid,
                 ownerHistory, name, description, objectType);
 
-            productWrapper.AddElement(element, fabricArea);
+            IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcGroup);
+            productWrapper.AddElement(element, fabricArea, exportInfo);
 
             IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
                 null, null, fabricSheetHandles, null, fabricArea);
@@ -198,6 +200,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle fabricSheet = IFCInstanceExporter.CreateReinforcingMesh(exporterIFC, sheet, guid, ownerHistory, localPlacement,
                       prodRep, steelGrade, meshLength, meshWidth, longitudinalBarNominalDiameter, transverseBarNominalDiameter,
                       longitudinalBarCrossSectionArea, transverseBarCrossSectionArea, longitudinalBarSpacing, transverseBarSpacing);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingMesh);
 
                   ElementId fabricAreaId = sheet.FabricAreaOwnerId;
                   if (fabricAreaId != ElementId.InvalidElementId)
@@ -211,7 +214,7 @@ namespace Revit.IFC.Export.Exporter
                      fabricSheets.Add(fabricSheet);
                   }
 
-                  productWrapper.AddElement(sheet, fabricSheet, placementSetter.LevelInfo, ecData, true);
+                  productWrapper.AddElement(sheet, fabricSheet, placementSetter.LevelInfo, ecData, true, exportInfo);
 
                   CategoryUtil.CreateMaterialAssociation(exporterIFC, fabricSheet, materialId);
                }

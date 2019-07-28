@@ -390,7 +390,7 @@ namespace Revit.IFC.Export.Exporter
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(elemHnd))
                   return;
 
-               wrapper.AddElement(element, elemHnd, setter, null, true);
+               wrapper.AddElement(element, elemHnd, setter, null, true, null);
 
                bool canExportCurtainWallAsContainer = CanExportCurtainWallAsContainer(allSubElements, element.Document);
                IFCAnyHandle rep = null;
@@ -692,8 +692,7 @@ namespace Revit.IFC.Export.Exporter
          if (elementType == null)
             return;
 
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         exportType.SetValueWithPair(IFCEntityType.IfcCurtainWallType);
+         IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcCurtainWallType);
          IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(wallType))
          {

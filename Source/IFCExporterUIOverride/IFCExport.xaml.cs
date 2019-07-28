@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
+using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
+using Autodesk.UI.Windows;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,10 +26,6 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-
-using Autodesk.Revit.DB;
-using Autodesk.Revit.UI;
-using Autodesk.UI.Windows;
 
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
@@ -234,7 +233,11 @@ namespace BIM.IFC.Export.UI
          UpdateCurrentSelectedSetupCombo(selectedConfigName);
          UpdateOpenedProjectsListView(app);
 
+#if IFC_OPENSOURCE
          Title = Properties.Resources.ExportIFC + " (" + IFCUISettings.GetAssemblyVersionForUI() + ")";
+#else
+         Title = Properties.Resources.ExportIFC;
+#endif
          
          TheDocument = UpdateOpenedProject(app);
 
@@ -724,17 +727,6 @@ namespace BIM.IFC.Export.UI
          help.Launch();
 
          return true;
-      }
-
-      /// <summary>
-      /// Handles the Help button click
-      /// </summary>
-      /// <param name="sender"></param>
-      /// <param name="e"></param>
-      private void OnHelpClick(object sender, RoutedEventArgs e)
-      {
-         // handle using the context help command handler
-         e.Handled = OnContextHelp();
       }
 
       private void ChildWindow_ContentRendered(object sender, EventArgs e)

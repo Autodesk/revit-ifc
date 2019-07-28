@@ -23,6 +23,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -80,11 +81,13 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                   IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
+                  string ifcType = "Wrapping";
                   IFCAnyHandle ductLining = IFCInstanceExporter.CreateCovering(exporterIFC, element, guid,
-                      ownerHistory, localPlacement, representation, "Wrapping");
+                      ownerHistory, localPlacement, representation, ifcType);
                   ExporterCacheManager.ElementToHandleCache.Register(element.Id, ductLining);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcCovering, ifcType);
 
-                  productWrapper.AddElement(element, ductLining, placementSetter.LevelInfo, ecData, true);
+                  productWrapper.AddElement(element, ductLining, placementSetter.LevelInfo, ecData, true, exportInfo);
 
                   ElementId matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element);
                   CategoryUtil.CreateMaterialAssociation(exporterIFC, ductLining, matId);

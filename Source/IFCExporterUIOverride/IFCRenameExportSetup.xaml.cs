@@ -17,25 +17,17 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+using Autodesk.UI.Windows;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace BIM.IFC.Export.UI
 {
     /// <summary>
     /// Interaction logic for Window1.xaml
     /// </summary>
-    public partial class RenameExportSetupWindow : Window
+    public partial class RenameExportSetupWindow : ChildWindow
     {
         private String m_newName;
         private IFCExportConfigurationsMap m_configurationMap;

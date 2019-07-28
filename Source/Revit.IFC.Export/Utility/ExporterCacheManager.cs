@@ -160,7 +160,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The MaterialHandleCache object.
       /// </summary>
-      static MaterialHandleCache m_MaterialHandleCache;
+      static ElementToHandleCache m_MaterialHandleCache;
 
       /// <summary>
       /// The MaterialConsituent object cache (starting IFC4)
@@ -337,7 +337,7 @@ namespace Revit.IFC.Export.Utility
       /// The common property sets to be exported for an entity type, conditional on the Object Type of the
       /// entity matching that of the PropertySetDescription.
       /// </summary>
-      static IDictionary<IFCEntityType, IList<PropertySetDescription>> m_ConditionalPropertySetsForTypeCache;
+      //static IDictionary<IFCEntityType, IList<PropertySetDescription>> m_ConditionalPropertySetsForTypeCache;
 
       /// <summary>
       /// The material id to style handle cache.
@@ -766,12 +766,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The MaterialHandleCache object.
       /// </summary>
-      public static MaterialHandleCache MaterialHandleCache
+      public static ElementToHandleCache MaterialHandleCache
       {
          get
          {
             if (m_MaterialHandleCache == null)
-               m_MaterialHandleCache = new MaterialHandleCache();
+               m_MaterialHandleCache = new ElementToHandleCache();
             return m_MaterialHandleCache;
          }
       }
@@ -1175,15 +1175,15 @@ namespace Revit.IFC.Export.Utility
       /// The common property sets to be exported for an entity type, conditional on the Object Type of the
       /// entity matching that of the PropertySetDescription.
       /// </summary>
-      public static IDictionary<IFCEntityType, IList<PropertySetDescription>> ConditionalPropertySetsForTypeCache
-      {
-         get
-         {
-            if (m_ConditionalPropertySetsForTypeCache == null)
-               m_ConditionalPropertySetsForTypeCache = new Dictionary<IFCEntityType, IList<PropertySetDescription>>();
-            return m_ConditionalPropertySetsForTypeCache;
-         }
-      }
+      //public static IDictionary<IFCEntityType, IList<PropertySetDescription>> ConditionalPropertySetsForTypeCache
+      //{
+      //   get
+      //   {
+      //      if (m_ConditionalPropertySetsForTypeCache == null)
+      //         m_ConditionalPropertySetsForTypeCache = new Dictionary<IFCEntityType, IList<PropertySetDescription>>();
+      //      return m_ConditionalPropertySetsForTypeCache;
+      //   }
+      //}
 
       /// <summary>
       /// The material id to style handle cache.
@@ -1346,7 +1346,7 @@ namespace Revit.IFC.Export.Utility
          m_ClassificationCache = null;
          m_ClassificationLocationCache = null;
          m_ClassificationReferenceCache = null;
-         m_ConditionalPropertySetsForTypeCache = null;
+         //m_ConditionalPropertySetsForTypeCache = null;
          m_ContainmentCache = null;
          m_CurveAnnotationCache = null;
          m_DBViewsToExport = null;

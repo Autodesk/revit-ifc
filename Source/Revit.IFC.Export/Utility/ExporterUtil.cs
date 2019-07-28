@@ -968,138 +968,247 @@ namespace Revit.IFC.Export.Utility
       public static IList<PropertySetDescription> GetCurrPSetsToCreate(IFCAnyHandle prodHnd,
           IList<IList<PropertySetDescription>> psetsToCreate)
       {
-         List<PropertySetDescription> currPsetsToCreate = new List<PropertySetDescription>();
+         IEnumerable<PropertySetDescription> currPsetsToCreate = new List<PropertySetDescription>();
          IFCEntityType prodHndType = IFCAnyHandleUtil.GetEntityType(prodHnd);
          string hndTypeStr = prodHndType.ToString();
-         IFCEntityType altProdHndType = IFCEntityType.UnKnown;
-         IFCEntityType altProdHndType2 = IFCEntityType.UnKnown;
+         //IFCEntityType altProdHndType = IFCEntityType.UnKnown;
 
          // PropertySetEntry will only have an information about IFC entity (or type) for the Pset definition but may not be both
          // Here we will check for both and assign Pset to create equally for both Element or ElementType
-         string predefinedType = null;
-         IFCExportInfoPair exportType = null;
+         //string predefinedType = null;
+         IFCExportInfoPair exportInfo = null;
          if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcObject))
          {
             ElementId elemId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
             if (elemId != ElementId.InvalidElementId)
             {
-               exportType = ExporterCacheManager.ElementToHandleCache.FindPredefinedType(elemId);
-               if (exportType != null)
-                  predefinedType = exportType.ValidatedPredefinedType;
-            }
-         }
-         else if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcTypeObject))
-         {
-            ElementTypeKey etKey = ExporterCacheManager.ElementTypeToHandleCache.Find(prodHnd);
-            if (etKey != null)
-               predefinedType = etKey.Item3;
+               exportInfo = ExporterCacheManager.ElementToHandleCache.FindPredefinedType(elemId);
          }
 
-         IList<PropertySetDescription> cachedPsets = null;
-         if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcObject))
+            if (exportInfo == null)
          {
-            if (exportType != null)
-               altProdHndType = exportType.ExportType;
-            //Enum.TryParse<IFCEntityType>(hndTypeStr + "Type", true, out altProdHndType);
+               exportInfo = new IFCExportInfoPair(prodHndType);
+            }
 
             // Need to handle backward compatibility for IFC2x3
             if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnishingElement)
                && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
-               Enum.TryParse<IFCEntityType>("IfcFurnitureType", true, out altProdHndType2);
+            {
+               IFCEntityType altProdHndType = IFCEntityType.UnKnown;
+               if (Enum.TryParse<IFCEntityType>("IfcFurnitureType", true, out altProdHndType))
+                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.ValidatedPredefinedType);
+            }
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcTypeObject))
          {
+            exportInfo = new IFCExportInfoPair();
+            ElementTypeKey etKey = ExporterCacheManager.ElementTypeToHandleCache.Find(prodHnd);
+            if (etKey != null)
+            {
+               //predefinedType = etKey.Item3;
+               exportInfo.SetValueWithPair(etKey.Item2, etKey.Item3);
+            }
+            else
+            {
+               exportInfo.SetValueWithPair(prodHndType);
+            }
+
             // Need to handle backward compatibility for IFC2x3
             if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnitureType)
                && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
-               Enum.TryParse<IFCEntityType>("IfcFurnishingElement", true, out altProdHndType);
-            else
             {
-               if (exportType != null)
-                  altProdHndType = exportType.ExportInstance;
-               // Enum.TryParse<IFCEntityType>(hndTypeStr.Substring(0, hndTypeStr.Length - 4), true, out altProdHndType);
+               IFCEntityType altProdHndType = IFCEntityType.UnKnown;
+               if (Enum.TryParse<IFCEntityType>("IfcFurnishingElement", true, out altProdHndType))
+                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.ValidatedPredefinedType);
             }
+            }
+         else
+         {
+            // Default
+            exportInfo = new IFCExportInfoPair(prodHndType);
          }
 
+         //List<PropertySetDescription> cachedPsets = new List<PropertySetDescription>();
+         //if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcObject))
+         //{
+         //   // Need to handle backward compatibility for IFC2x3
+         //   if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnishingElement)
+         //      && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
+         //      Enum.TryParse<IFCEntityType>("IfcFurnitureType", true, out altProdHndType);
+         //   else
+         //   {
+         //      if (exportInfo != null)
+         //         altProdHndType = exportInfo.ExportType;
+         //   }
+         //}
+         //else if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcTypeObject))
+         //{
+         //   // Need to handle backward compatibility for IFC2x3
+         //   if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnitureType)
+         //      && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
+         //      Enum.TryParse<IFCEntityType>("IfcFurnishingElement", true, out altProdHndType);
+         //   else
+         //   {
+         //      if (exportInfo != null)
+         //         altProdHndType = exportInfo.ExportInstance;
+         //   }
+         //}
+
+         // Find existing Psets list for the given type in the cache
+         List<PropertySetDescription> cachedPsets = new List<PropertySetDescription>();
          IList<PropertySetDescription> tmpCachedPsets = null;
-         ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(prodHndType, out tmpCachedPsets);
-         List<PropertySetDescription> psetdefListObj = new List<PropertySetDescription>();
-         if (tmpCachedPsets != null)
-            psetdefListObj = (List<PropertySetDescription>)tmpCachedPsets;
-         tmpCachedPsets = null;
-         if (altProdHndType != IFCEntityType.UnKnown)
-            ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(altProdHndType, out tmpCachedPsets);
-         List<PropertySetDescription> psetdefListType = new List<PropertySetDescription>();
-         if (tmpCachedPsets != null)
-            psetdefListType = (List<PropertySetDescription>)tmpCachedPsets;
-         psetdefListObj.Union(psetdefListType);
+         if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(exportInfo.ExportInstance, out tmpCachedPsets))
+            cachedPsets.AddRange((List<PropertySetDescription>)tmpCachedPsets);
+         if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(exportInfo.ExportType, out tmpCachedPsets))
+            cachedPsets.AddRange((List<PropertySetDescription>)tmpCachedPsets);
 
-         tmpCachedPsets = null;
-         if (altProdHndType2 != IFCEntityType.UnKnown)
-            ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(altProdHndType2, out tmpCachedPsets);
-         List<PropertySetDescription> psetdefListType2 = new List<PropertySetDescription>();
-         if (tmpCachedPsets != null)
-            psetdefListType2 = (List<PropertySetDescription>)tmpCachedPsets;
-         psetdefListObj.AddRange(psetdefListType2);
+         //if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(prodHndType, out tmpCachedPsets))
+         //   cachedPsets.AddRange((List<PropertySetDescription>)tmpCachedPsets);
+         ////if (ExporterCacheManager.ConditionalPropertySetsForTypeCache.TryGetValue(prodHndType, out tmpCachedPsets))
+         ////   cachedPsets.AddRange((List<PropertySetDescription>)tmpCachedPsets);
 
-         cachedPsets = psetdefListObj;
+         //if (altProdHndType != IFCEntityType.UnKnown)
+         //{
+         //   if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(altProdHndType, out tmpCachedPsets))
+         //      cachedPsets.AddRange((List<PropertySetDescription>)tmpCachedPsets);
+         //   //if (ExporterCacheManager.ConditionalPropertySetsForTypeCache.TryGetValue(altProdHndType, out tmpCachedPsets))
+         //   //   cachedPsets.AddRange((List<PropertySetDescription>)tmpCachedPsets);
+         //}
 
          if (cachedPsets == null || cachedPsets.Count == 0)
          {
-            IList<PropertySetDescription> unconditionalPsetsToCreate = new List<PropertySetDescription>();
-            IList<PropertySetDescription> conditionalPsetsToCreate = new List<PropertySetDescription>();
+            //IList<PropertySetDescription> unconditionalPsetsToCreate = new List<PropertySetDescription>();
+            //IList<PropertySetDescription> conditionalPsetsToCreate = new List<PropertySetDescription>();
 
             foreach (IList<PropertySetDescription> currStandard in psetsToCreate)
             {
-               foreach (PropertySetDescription currDesc in currStandard)
-               {
-                  if (currDesc.IsAppropriateEntityType(prodHnd) || currDesc.IsAppropriateEntityType(altProdHndType))
+               IList<PropertySetDescription> filteredList = GetApplicablePropertySets(exportInfo, currStandard);
+               if (filteredList.Count > 0)
                   {
-                     //if (currDesc.IsAppropriateObjectType(prodHnd) && currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
-                     //if (currDesc.IsAppropriatePredefinedType(prodHnd, predefinedType))
-                        //currPsetsToCreate.Add(currDesc);
-                     if (currDesc.IsAppropriateObjectType(prodHnd) || currDesc.IsAppropriateObjectType(altProdHndType))
-                     {
-                        if (string.IsNullOrEmpty(currDesc.PredefinedType))
-                           currPsetsToCreate.Add(currDesc);
-                        else if (!string.IsNullOrEmpty(currDesc.PredefinedType) && currDesc.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
-                           currPsetsToCreate.Add(currDesc);
-                     }
-
-                     if (!string.IsNullOrEmpty(currDesc.PredefinedType) && currDesc.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
-                        conditionalPsetsToCreate.Add(currDesc);
+                  if (currPsetsToCreate.Count() == 0)
+                     currPsetsToCreate = filteredList;
                      else
-                        unconditionalPsetsToCreate.Add(currDesc);
+                     currPsetsToCreate = currPsetsToCreate.Union(filteredList);
                   }
-               }
+               
+               //// The logic needs some explanation here. The quality of IFC documentation is rather poor especially the earlier version (i.e. IFC2x2, IFC2x3)
+               //// The use of ObjectType in the PSD is unclear sometime it is a duplicate of applicable classes, sometime it is showing PredefinedType (in IFC2x2),
+               //// sometime purely useless information. Due to that, we will also check ObjectType for applicable entity if not present, and also cheked for
+               //// PredefinedType if not present
+               //foreach (PropertySetDescription currDesc in currStandard)
+               //{
+               //   bool toAdd = false;
+               //   if (currDesc.IsAppropriateEntityType(prodHnd) || currDesc.IsAppropriateEntityType(prodHndType) || currDesc.IsAppropriateEntityType(altProdHndType))
+               //   {
+               //      toAdd = true;
+               //   }
+               //   // ObjectType if the Applicable type is missing
+               //   else if (currDesc.IsAppropriateObjectType(prodHnd) || currDesc.IsAppropriateObjectType(prodHndType) || currDesc.IsAppropriateObjectType(altProdHndType))
+               //   {
+               //      toAdd = true;
+               //   }
+
+               //   if (toAdd)
+               //   {
+               //      if (string.IsNullOrEmpty(currDesc.PredefinedType))
+               //      {
+               //         currPsetsToCreate.Add(currDesc);
+               //         //unconditionalPsetsToCreate.Add(currDesc);
+               //      }
+               //      else if (!string.IsNullOrEmpty(currDesc.PredefinedType) && currDesc.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
+               //      {
+               //         currPsetsToCreate.Add(currDesc);
+               //         //conditionalPsetsToCreate.Add(currDesc);
+               //      }
+               //      // Also check ObjectType since the predefinedType seems to go here for the earlier versions of IFC
+               //      else if (!string.IsNullOrEmpty(currDesc.ObjectType) && currDesc.ObjectType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
+               //      {
+               //         currPsetsToCreate.Add(currDesc);
+               //         //conditionalPsetsToCreate.Add(currDesc);
+               //      }
+               //   }
+               //}
             }
-            ExporterCacheManager.PropertySetsForTypeCache[prodHndType] = unconditionalPsetsToCreate;
-            ExporterCacheManager.ConditionalPropertySetsForTypeCache[prodHndType] = conditionalPsetsToCreate;
-         }
+            //ExporterCacheManager.PropertySetsForTypeCache[prodHndType] = unconditionalPsetsToCreate;
+            //ExporterCacheManager.ConditionalPropertySetsForTypeCache[prodHndType] = conditionalPsetsToCreate;
+            ExporterCacheManager.PropertySetsForTypeCache[prodHndType] = currPsetsToCreate.ToList();
+               }
          else
          {
-            foreach (PropertySetDescription cachedPSet in cachedPsets)
-            {
-               if (cachedPSet.IsAppropriateObjectType(prodHnd) || cachedPSet.IsAppropriateObjectType(altProdHndType))
-               {
-                  if (string.IsNullOrEmpty(cachedPSet.PredefinedType))
-                     currPsetsToCreate.Add(cachedPSet);
-                  else if (!string.IsNullOrEmpty(cachedPSet.PredefinedType) && cachedPSet.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
-                     currPsetsToCreate.Add(cachedPSet);
-               }
+            currPsetsToCreate = GetApplicablePropertySets(exportInfo, cachedPsets);
+            //foreach (PropertySetDescription cachedPSet in cachedPsets)
+            //{
+            //   if (cachedPSet.IsAppropriateEntityType(prodHnd) || cachedPSet.IsAppropriateEntityType(prodHndType) || cachedPSet.IsAppropriateEntityType(altProdHndType))
+            //   {
+
+            //   }
+            //   else if (cachedPSet.IsAppropriateObjectType(prodHnd) || cachedPSet.IsAppropriateObjectType(prodHndType) || cachedPSet.IsAppropriateObjectType(altProdHndType))
+            //   {
+            //      if (string.IsNullOrEmpty(cachedPSet.PredefinedType))
+            //         currPsetsToCreate.Add(cachedPSet);
+            //      else if (!string.IsNullOrEmpty(cachedPSet.PredefinedType) && cachedPSet.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
+            //         currPsetsToCreate.Add(cachedPSet);
+            //   }
+            //}
+
+            //IList<PropertySetDescription> conditionalPsetsToCreate =
+            //    ExporterCacheManager.ConditionalPropertySetsForTypeCache[prodHndType];
+            //foreach (PropertySetDescription currDesc in conditionalPsetsToCreate)
+            //{
+            //   if ((currDesc.IsAppropriateObjectType(prodHnd) || currDesc.IsAppropriateObjectType(prodHndType) || currDesc.IsAppropriateObjectType(altProdHndType))
+            //      && currDesc.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
+            //      currPsetsToCreate.Add(currDesc);
+            //}
             }
 
-            IList<PropertySetDescription> conditionalPsetsToCreate =
-                ExporterCacheManager.ConditionalPropertySetsForTypeCache[prodHndType];
-            foreach (PropertySetDescription currDesc in conditionalPsetsToCreate)
-            {
-               if ((currDesc.IsAppropriateObjectType(prodHnd) || currDesc.IsAppropriateObjectType(altProdHndType))
-                  && currDesc.PredefinedType.Equals(predefinedType, StringComparison.InvariantCultureIgnoreCase))
-                  currPsetsToCreate.Add(currDesc);
-            }
+         return currPsetsToCreate.ToList();
          }
 
-         return currPsetsToCreate;
+      /// <summary>
+      /// Get applicable PropertySets for an entity type with optionaly condition for PredefinedType
+      ///    The logic needs some explanation here. The quality of IFC documentation is rather poor especially the earlier version (i.e. IFC2x2, IFC2x3)
+      ///    The use of ObjectType in the PSD is unclear sometime it is a duplicate of applicable classes, sometime it is showing PredefinedType (in IFC2x2),
+      ///    sometime purely useless information. Due to that, we will also check ObjectType for applicable entity if not present, and also cheked for
+      ///    PredefinedType if not present
+      /// </summary>
+      /// <param name="exportInfo">the export infor pair</param>
+      /// <param name="psetList">the pset list to iterate</param>
+      /// <returns>filtered results of the applicable Psets</returns>
+      static IList<PropertySetDescription> GetApplicablePropertySets(IFCExportInfoPair exportInfo, IList<PropertySetDescription> psetList)
+         {
+         IList<PropertySetDescription> applicablePsets = new List<PropertySetDescription>();
+
+         foreach (PropertySetDescription currDesc in psetList)
+            {
+            bool toAdd = false;
+            if (currDesc.IsAppropriateEntityType(exportInfo.ExportInstance) || currDesc.IsAppropriateEntityType(exportInfo.ExportType))
+               {
+               toAdd = true;
+               }
+            // ObjectType if the Applicable type is missing
+            else if (currDesc.IsAppropriateObjectType(exportInfo.ExportInstance) || currDesc.IsAppropriateObjectType(exportInfo.ExportType))
+            {
+               toAdd = true;
+            }
+
+            if (toAdd)
+            {
+               if (string.IsNullOrEmpty(currDesc.PredefinedType))
+            {
+                  applicablePsets.Add(currDesc);
+            }
+               else if (!string.IsNullOrEmpty(currDesc.PredefinedType) && currDesc.PredefinedType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase))
+               {
+                  applicablePsets.Add(currDesc);
+               }
+               // Also check ObjectType since the predefinedType seems to go here for the earlier versions of IFC
+               else if (!string.IsNullOrEmpty(currDesc.ObjectType) && currDesc.ObjectType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase))
+               {
+                  applicablePsets.Add(currDesc);
+         }
+            }
+         }
+         return applicablePsets;
       }
 
       /// <summary>
@@ -1274,7 +1383,6 @@ namespace Revit.IFC.Export.Utility
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
             ExportPsetDraughtingFor2x2(exporterIFC, element, productWrapper);
       }
-
       internal static HashSet<IFCAnyHandle> ExtractElementTypeProperties(ExporterIFC exporterIFC, ElementType elementType, IFCAnyHandle typeHnd)
       {
          if (elementType == null)

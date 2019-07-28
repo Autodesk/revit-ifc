@@ -544,6 +544,42 @@ namespace Revit.IFC.Import.Data
             expectedTypes.AddExpectedType(-3, UnitType.UT_Length);
             expectedTypesList.Add(expectedTypes);
          }
+         else if (string.Compare(unitType, "LINEARFORCEUNIT", true) == 0)
+         {
+            UnitType = UnitType.UT_LinearForce;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support N / m in the IFC file.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitName.DUT_NEWTONS_PER_METER, UnitSymbolType.UST_N_PER_M);
+            expectedTypes.AddExpectedType(1, UnitType.UT_LinearForce);
+            expectedTypesList.Add(expectedTypes);
+
+            // Support N / m in basic units
+            DerivedUnitExpectedTypes expectedTypes2 = new DerivedUnitExpectedTypes(UnitName.DUT_NEWTONS_PER_METER, UnitSymbolType.UST_N_PER_M);
+            expectedTypes2.AddExpectedType(1, UnitType.UT_Mass);
+            expectedTypes2.AddExpectedType(1, UnitType.UT_Length);
+            expectedTypes2.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypes2.AddExpectedType(-1, UnitType.UT_Length);
+            expectedTypesList.Add(expectedTypes2);
+         }
+         else if (string.Compare(unitType, "PLANARFORCEUNIT", true) == 0)
+         {
+            UnitType = UnitType.UT_AreaForce;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support N / m^2 in the IFC file.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitName.DUT_NEWTONS_PER_SQUARE_METER, UnitSymbolType.UST_N_PER_M_SUP_2);
+            expectedTypes.AddExpectedType(1, UnitType.UT_AreaForce);
+            expectedTypesList.Add(expectedTypes);
+
+            // Support N / m in basic units
+            DerivedUnitExpectedTypes expectedTypes2 = new DerivedUnitExpectedTypes(UnitName.DUT_NEWTONS_PER_SQUARE_METER, UnitSymbolType.UST_N_PER_M_SUP_2);
+            expectedTypes2.AddExpectedType(1, UnitType.UT_Mass);
+            expectedTypes2.AddExpectedType(1, UnitType.UT_Length);
+            expectedTypes2.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypes2.AddExpectedType(-2, UnitType.UT_Length);
+            expectedTypesList.Add(expectedTypes2);
+         }
          else if (string.Compare(unitType, "USERDEFINED", true) == 0)
          {
             // Look at the sub-types to see what we support.

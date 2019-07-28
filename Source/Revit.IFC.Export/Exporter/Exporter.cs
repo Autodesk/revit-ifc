@@ -3312,6 +3312,35 @@ namespace Revit.IFC.Export.Exporter
             unitSet.Add(frictionLossUnit);
          }
 
+         // Area/Planar Force - support N/m2 only, and Linear Force - support N/m only
+         {
+            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, massSIUnit, 1));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, 1));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, timeSIUnit, -2));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, -1));
+
+            IFCAnyHandle linearForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
+                IFCDerivedUnitEnum.LinearForceUnit, null);
+
+            double linearForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_NEWTONS_PER_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_LinearForce, linearForceUnit, linearForceFactor, 0.0);
+            unitSet.Add(linearForceUnit);
+
+            elements = new HashSet<IFCAnyHandle>();
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, massSIUnit, 1));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, 1));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, timeSIUnit, -2));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, -2));
+
+            IFCAnyHandle planarForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
+                IFCDerivedUnitEnum.PlanarForceUnit, null);
+
+            double planarForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_NEWTONS_PER_SQUARE_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_AreaForce, planarForceUnit, planarForceFactor, 0.0);
+            unitSet.Add(planarForceUnit);
+         }
+
          // GSA only units.
          if (exportToCOBIE)
          {
@@ -3538,9 +3567,10 @@ namespace Revit.IFC.Export.Exporter
                {
                   IFCAnyHandle buildingStoreyHandle = levelInfo.GetBuildingStorey();
                   buildingStories.Add(buildingStoreyHandle);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcBuildingStorey);
 
                   // Add Property set, quantities and classification of Building Storey also to IFC
-                  productWrapper.AddElement(level, buildingStoreyHandle, levelInfo, null, false);
+                  productWrapper.AddElement(level, buildingStoreyHandle, levelInfo, null, false, exportInfo);
 
                   ExporterUtil.ExportRelatedProperties(exporterIFC, level, productWrapper);
                }
