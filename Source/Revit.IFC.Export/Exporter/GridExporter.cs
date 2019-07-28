@@ -294,7 +294,7 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle copyLevelPlacement = ExporterUtil.CopyLocalPlacement(ifcFile, levelObjectPlacement);
                IFCAnyHandle ifcGrid = IFCInstanceExporter.CreateGrid(exporterIFC, gridGUID, ownerHistory, gridName, copyLevelPlacement, productRep, axesU, axesV, axesW);
 
-               productWrapper.AddElement(null, ifcGrid, levelInfo, null, true);
+               productWrapper.AddElement(null, ifcGrid, levelInfo, null, true, null);
 
                transaction.Commit();
             }

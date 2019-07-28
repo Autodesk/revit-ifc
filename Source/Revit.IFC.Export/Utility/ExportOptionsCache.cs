@@ -245,6 +245,10 @@ namespace Revit.IFC.Export.Utility
             bool? useVisibleRevitNameAsEntityName = GetNamedBooleanOption(options, "UseVisibleRevitNameAsEntityName");
             cache.NamingOptions.UseVisibleRevitNameAsEntityName =
                 (useVisibleRevitNameAsEntityName != null) && useVisibleRevitNameAsEntityName.GetValueOrDefault();
+
+            bool? useOnlyTypeNameForIfcType = GetNamedBooleanOption(options, "UseTypeNameOnlyForIfcType");
+            cache.NamingOptions.UseTypeNameOnlyForIfcType =
+                (useOnlyTypeNameForIfcType != null) && useOnlyTypeNameForIfcType.GetValueOrDefault();
          }
 
          // "SingleElement" export option - useful for debugging - only one input element will be processed for export

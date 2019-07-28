@@ -296,7 +296,6 @@
     <Compile Include="Utility\UnitUtil.cs" />
     <Compile Include="Utility\WallConnectionDataCache.cs" />
     <Compile Include="Utility\ZoneInfoCache.cs" />
-    <Compile Include="Utility\MaterialHandleCache.cs" />
     <Compile Include="Utility\MaterialLayerRelationsCache.cs" />
     <Compile Include="Utility\MaterialLayerSetCache.cs" />
     <Compile Include="Utility\MaterialRelationsCache.cs" />

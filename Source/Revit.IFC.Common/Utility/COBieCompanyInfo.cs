@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Web.Script.Serialization;
 
 namespace Revit.IFC.Common.Utility
 {
@@ -29,7 +29,8 @@ namespace Revit.IFC.Common.Utility
       {
          if (!string.IsNullOrEmpty(compInfoStr))
          {
-            COBieCompanyInfo compInfo = JsonConvert.DeserializeObject<COBieCompanyInfo>(compInfoStr);
+            JavaScriptSerializer js = new JavaScriptSerializer();
+            COBieCompanyInfo compInfo = js.Deserialize<COBieCompanyInfo>(compInfoStr);
             CompanyType = compInfo.CompanyType;
             CompanyName = compInfo.CompanyName;
             StreetAddress = compInfo.StreetAddress;
@@ -62,7 +63,8 @@ namespace Revit.IFC.Common.Utility
 
       public string ToJsonString()
       {
-         return JsonConvert.SerializeObject(this);
+         JavaScriptSerializer js = new JavaScriptSerializer();
+         return js.Serialize(this);
       }
    }
 }

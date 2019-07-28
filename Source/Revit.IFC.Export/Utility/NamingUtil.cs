@@ -461,20 +461,16 @@ namespace Revit.IFC.Export.Utility
          ElementType elementType = (isType ? element : element.Document.GetElement(element.GetTypeId())) as ElementType;
          if (elementType != null)
          {
-            // This maintains the same behavior as the previous export.
-            if (!isType || !(elementType is FamilySymbol))
-            {
                familyName = elementType.FamilyName;
                if (familyName == "???")
                   familyName = "";
             }
-         }
 
          string fullName = familyName;
          if (elementName != "")
          {
-            // if it is a type and the name is set, use the name
-            if (isType)
+            // if it is a type and the name is set and the option is selected, use the name only
+            if (isType && ExporterCacheManager.ExportOptionsCache.NamingOptions.UseTypeNameOnlyForIfcType)
                fullName = elementName;
             else
             {

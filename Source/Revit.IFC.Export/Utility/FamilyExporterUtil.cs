@@ -370,7 +370,7 @@ namespace Revit.IFC.Export.Exporter
          {
             bool containedInSpace = (roomId != ElementId.InvalidElementId);
             bool associateToLevel = containedInSpace ? false : !isChildInContainer;
-            wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, associateToLevel);
+            wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, associateToLevel, type);
             if (containedInSpace)
                ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
          }

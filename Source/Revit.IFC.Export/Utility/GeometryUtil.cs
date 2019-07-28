@@ -568,16 +568,16 @@ namespace Revit.IFC.Export.Utility
             Solid solid = geomObj as Solid;
             if (solid != null && solid.Faces.Size > 0)
             {
-               try
-               {
-                  if (solid.Volume <= MathUtil.Eps())
-                     continue;
-               }
-               catch
-               {
-                  // solid.Volume can throw an exception.  In this case, we don't really care;
-                  // there is geometry there, and we will export it best we can.
-               }
+               //try
+               //{
+               //   if (solid.Volume <= MathUtil.Eps())
+               //      continue;
+               //}
+               //catch
+               //{
+               //   // solid.Volume can throw an exception.  In this case, we don't really care;
+               //   // there is geometry there, and we will export it best we can.
+               //}
 
                solidMeshCapsule.AddSolid(solid, containingElement);
             }
@@ -3517,7 +3517,7 @@ namespace Revit.IFC.Export.Utility
                // encounter invalid curve, return null
                return null;
             }
-            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveArcCenter, cartesianPoints);
+            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveArcCenter, cartesianPoints, additionalTrf);
 
             // Create the z-direction
             IFCAnyHandle axis = VectorToIfcDirection(exporterIFC, curveArcNormal);

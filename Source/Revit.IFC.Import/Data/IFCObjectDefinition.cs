@@ -866,6 +866,7 @@ namespace Revit.IFC.Import.Data
             if (Decomposes != null && Decomposes is IFCElementAssembly)
             {
                IFCPropertySet.AddParameterString(doc, element, "IfcElementAssembly", Decomposes.Name, Id);
+               IFCPropertySet.AddParameterString(doc, element, "IfcElementAssemblyGUID", Decomposes.GlobalId, Id);
             }
 
             // Set additional parameters (if any), e.g. for Classification assignments

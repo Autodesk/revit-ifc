@@ -113,6 +113,16 @@ namespace Revit.IFC.Export.Utility
          //   m_ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType("NOTDEFINED", m_ValidatedPredefinedType, m_ExportType.ToString());
       }
 
+      public IFCExportInfoPair(IFCEntityType entity, string predefinedType = null)
+      {
+         if (string.IsNullOrEmpty(predefinedType))
+            ValidatedPredefinedType = "NOTDEFINED";
+         else
+            ValidatedPredefinedType = predefinedType;
+
+         SetValueWithPair(entity, predefinedType);
+      }
+
       /// <summary>
       /// Check whether the export information is unknown type
       /// </summary>
@@ -242,8 +252,8 @@ namespace Revit.IFC.Export.Utility
             // set the type pair
             string typeName = entityTypeStr;
             if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 &&
-               (entityTypeStr.Equals("IfcDoorStyle", StringComparison.InvariantCultureIgnoreCase)
-               || entityTypeStr.Equals("IfcWindowStyle", StringComparison.InvariantCultureIgnoreCase)))
+               (entityTypeStr.Equals("IfcDoor", StringComparison.InvariantCultureIgnoreCase)
+               || entityTypeStr.Equals("IfcWindow", StringComparison.InvariantCultureIgnoreCase)))
                typeName += "Style";
             else
                typeName += "Type";
@@ -253,12 +263,24 @@ namespace Revit.IFC.Export.Utility
                m_ExportType = entityType;
             else
             {
-               IfcSchemaEntityNode node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(typeName);
-               if (node != null)
+               // If the type name is not found, likely it does not have the pair at this level, needs to get the supertype of the instance to get the type pair
+               IList<IfcSchemaEntityNode> instNodes = IfcSchemaEntityTree.FindAllSuperTypes(entityTypeStr, "IfcProduct", "IfcGroup");
+               foreach (IfcSchemaEntityNode instNode in instNodes)
+               {
+                  typeName = instNode.Name + "Type";
+                  IfcSchemaEntityNode node = IfcSchemaEntityTree.Find(typeName);
+                  if (node == null)
+                     node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(typeName);
+
+                  if (node != null && !node.isAbstract)
                {
                   instType = IFCEntityType.UnKnown;
                   if (IFCEntityType.TryParse(node.Name, true, out instType))
+                     {
                      m_ExportType = instType;
+                        break;
+                     }
+                  }
                }
             }
          }

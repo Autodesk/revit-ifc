@@ -24,6 +24,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -99,6 +100,7 @@ namespace Revit.IFC.Export.Exporter
                   string typeGuid = GUIDUtil.CreateSubElementGUID(element, (int)IFCHostedSweepSubElements.PipeSegmentType);
                   IFCAnyHandle style = IFCInstanceExporter.CreatePipeSegmentType(file, null, null, repMapList, IFCPipeSegmentType.Gutter);
                   IFCAnyHandleUtil.OverrideNameAttribute(style, elementTypeName);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcPipeSegmentType, IFCPipeSegmentType.Gutter.ToString());
 
                   IFCAnyHandleUtil.SetAttribute(style, "Tag", originalTag);
                   ExporterUtil.SetGlobalId(style, typeGuid);
@@ -134,7 +136,7 @@ namespace Revit.IFC.Export.Exporter
                       ExporterCacheManager.OwnerHistoryHandle, localPlacementToUse, prodRep);
 
                   bool containedInSpace = (roomId != ElementId.InvalidElementId);
-                  productWrapper.AddElement(element, elemHnd, setter.LevelInfo, ecData, !containedInSpace);
+                  productWrapper.AddElement(element, elemHnd, setter.LevelInfo, ecData, !containedInSpace, exportInfo);
 
                   if (containedInSpace)
                      ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, elemHnd);

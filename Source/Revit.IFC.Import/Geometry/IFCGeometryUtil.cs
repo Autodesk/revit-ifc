@@ -371,7 +371,7 @@ namespace Revit.IFC.Import.Geometry
          if (curveLoop == null)
             return null;
 
-         int numCurves = curveLoop.Count();
+         int numCurves = curveLoop.NumberOfCurves();
          if (numCurves == 0)
             return null;
 
@@ -415,10 +415,23 @@ namespace Revit.IFC.Import.Geometry
       /// </summary>
       /// <param name="id">The id of the IFC entity containing the directrix, for messaging purposes.</param>
       /// <param name="ifcCurve">The IFCCurve entity containing the CurveLoop to be trimmed.</param>
-      /// <param name="curveParamLength">The delta between the start and end parameters of the overall curve.</param>
-      /// <returns>False if the trim parameters are thought to be invalid, true otherwise.</returns>
-      private static bool CheckIfTrimParametersAreValidForSomeInvalidities(int id, IFCCurve ifcCurve, double curveParamLength)
+      /// <param name="startVal">The starting trim parameter.</param>
+      /// <param name="endVal">The ending trim parameter.</param>
+      /// <param name="totalParamLength">The total parametric length of the curve, as defined by IFC.</param>
+      /// <returns>False if the trim parameters are thought to be invalid or unnecessary, true otherwise.</returns>
+      private static bool CheckIfTrimParametersAreNeeded(int id, IFCCurve ifcCurve, 
+         double startVal, double endVal, double totalParamLength)
       {
+         // This check allows for some leniency in the setting of startVal and endVal; we assume that:
+         // 1. If the parameter range is equal, that an offset value is OK; don't trim.
+         // 2. If the start parameter is 0 and the curveParamLength is greater than the total length, don't trim.
+         double curveParamLength = endVal - startVal;
+         if (MathUtil.IsAlmostEqual(curveParamLength, totalParamLength))
+            return false;
+
+         if (MathUtil.IsAlmostZero(startVal) && totalParamLength < curveParamLength - MathUtil.Eps())
+            return false;
+  
          if (!(ifcCurve is IFCCompositeCurve))
             return true;
 
@@ -435,6 +448,9 @@ namespace Revit.IFC.Import.Geometry
             totalRawParametricLength += (trimmedCurveSegment.Trim2.Value - trimmedCurveSegment.Trim1.Value);
          }
 
+         // Error in some Tekla files - lines are parameterized by length, instead of 1.0 (as is correct).  
+         // Warn and ignore the parameter length.  This must come after the MathUtil.IsAlmostEqual(curveParamLength, totalParamLength)
+         // check above, since we don't want to warn if curveParamLength == totalParamLength.
          if (MathUtil.IsAlmostEqual(curveParamLength, totalRawParametricLength))
          {
             Importer.TheLog.LogWarning(id, "The total parameter length for this curve is equal to the sum of the parameter deltas, " +
@@ -445,6 +461,20 @@ namespace Revit.IFC.Import.Geometry
          }
 
          return true;
+      }
+
+      private static void AdjustParamsIfNecessary(Curve curve, ref double param1, ref double param2)
+      {
+         if (curve == null || !curve.IsCyclic)
+            return;
+
+         double period = curve.Period;
+
+         // We want to make sure both values are within period of one another.
+         param1 = MathUtil.PutInRange(param1, 0, period);
+         param2 = MathUtil.PutInRange(param2, 0, period);
+         if (param2 < param1)
+            param2 = MathUtil.PutInRange(param2, param1 + period / 2, period);
       }
 
       /// <summary>
@@ -485,17 +515,9 @@ namespace Revit.IFC.Import.Geometry
          }
 
          double endVal = origEndVal.HasValue ? origEndVal.Value : totalParamLength;
+         double eps = MathUtil.Eps();
 
-         // This check allows for some leniency in the setting of startVal and endVal; we assume that if the parameter range
-         // is equal, that an offset value is OK.
-         double curveParamLength = endVal - startVal;
-         if (MathUtil.IsAlmostEqual(curveParamLength, totalParamLength))
-            return origCurveLoop;
-
-         // Error in some Tekla files - lines are parameterized by length, instead of 1.0 (as is correct).  
-         // Warn and ignore the parameter length.  This must come after the MathUtil.IsAlmostEqual(curveParamLength, totalParamLength)
-         // check above, since we don't want to warn if curveParamLength == totalParamLength.
-         if (!CheckIfTrimParametersAreValidForSomeInvalidities(id, ifcCurve, curveParamLength))
+         if (!CheckIfTrimParametersAreNeeded(id, ifcCurve, startVal, endVal, totalParamLength))
             return origCurveLoop;
 
          // Special cases: 
@@ -525,7 +547,7 @@ namespace Revit.IFC.Import.Geometry
          {
             for (; currCurve < numCurves; currCurve++)
             {
-               if (currentPosition + curveLengths[currCurve] < startVal + MathUtil.Eps())
+               if (currentPosition + curveLengths[currCurve] < startVal + eps)
                {
                   currentPosition += curveLengths[currCurve];
                   continue;
@@ -533,18 +555,23 @@ namespace Revit.IFC.Import.Geometry
 
                Curve newCurve = loopCurves[currCurve].Clone();
                if (!MathUtil.IsAlmostEqual(currentPosition, startVal))
-                  newCurve.MakeBound(UnscaleSweptSolidCurveParam(loopCurves[currCurve], startVal - currentPosition), newCurve.GetEndParameter(1));
+               {
+                  double startParam = UnscaleSweptSolidCurveParam(loopCurves[currCurve], startVal - currentPosition);
+                  double endParam = newCurve.GetEndParameter(1);
+                  AdjustParamsIfNecessary(newCurve, ref startParam, ref endParam);
+                  newCurve.MakeBound(startParam, endParam);
+               }
 
                newLoopCurves.Add(newCurve);
                break;
             }
          }
 
-         if (endVal < totalParamLength - MathUtil.Eps())
+         if (endVal < totalParamLength - eps)
          {
             for (; currCurve < numCurves; currCurve++)
             {
-               if (currentPosition + curveLengths[currCurve] < endVal - MathUtil.Eps())
+               if (currentPosition + curveLengths[currCurve] < endVal - eps)
                {
                   currentPosition += curveLengths[currCurve];
                   newLoopCurves.Add(loopCurves[currCurve]);
@@ -553,7 +580,12 @@ namespace Revit.IFC.Import.Geometry
 
                Curve newCurve = loopCurves[currCurve].Clone();
                if (!MathUtil.IsAlmostEqual(currentPosition + curveLengths[currCurve], endVal))
-                  newCurve.MakeBound(newCurve.GetEndParameter(0), UnscaleSweptSolidCurveParam(loopCurves[currCurve], endVal - currentPosition));
+               {
+                  double startParam = newCurve.GetEndParameter(0);
+                  double endParam = UnscaleSweptSolidCurveParam(loopCurves[currCurve], endVal - currentPosition);
+                  AdjustParamsIfNecessary(newCurve, ref startParam, ref endParam);
+                  newCurve.MakeBound(startParam, endParam);
+               }
 
                newLoopCurves.Add(newCurve);
                break;

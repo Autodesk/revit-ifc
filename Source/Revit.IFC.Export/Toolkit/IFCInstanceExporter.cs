@@ -4244,10 +4244,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCAnyHandle CreateBeamType(IFCFile file, Element revitType, HashSet<IFCAnyHandle> propertySets,
              IList<IFCAnyHandle> representationMaps, IFCBeamType predefinedType)
       {
-         IFCAnyHandle beamType = CreateInstance(file, IFCEntityType.IfcBeamType, revitType);
-         IFCAnyHandleUtil.SetAttribute(beamType, "PredefinedType", predefinedType);
-         SetElementType(beamType, revitType, propertySets, representationMaps);
-         return beamType;
+         return CreateBeamType(file, revitType, propertySets, representationMaps, predefinedType.ToString());
       }
 
       /// <summary>
@@ -4317,6 +4314,29 @@ namespace Revit.IFC.Export.Toolkit
          }
 
          return fastener;
+      }
+
+      /// <summary>
+      /// DEPRECATED!!!
+      /// (Provided for backward compatibility to the Steel Connection that may still call this old method)
+      /// Creates an IfcMemberType, and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="applicableOccurrence">The attribute optionally defines the data type of the occurrence object.</param>
+      /// <param name="propertySets">The property set(s) associated with the type.</param>
+      /// <param name="representationMaps">The mapped geometries associated with the type.</param>
+      /// <param name="elementTag">The tag that represents the entity.</param>
+      /// <param name="elementType">The type name.</param>
+      /// <param name="predefinedType">The predefined types.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateMemberType(IFCFile file, Element revitType, HashSet<IFCAnyHandle> propertySets,
+          IList<IFCAnyHandle> representationMaps, IFCMemberType predefinedType)
+      {
+         return CreateMemberType(file, revitType, propertySets, representationMaps, predefinedType.ToString());
       }
 
       /// <summary>
@@ -4449,6 +4469,8 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// DEPRECATED!!!
+      /// (Provided for backward compatibility to the Steel Connection that may still call this old method)
       /// Creates an IfcColumnType, and assigns it to the file.
       /// </summary>
       /// <param name="file">The file.</param>
@@ -4464,7 +4486,28 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="predefinedType">The predefined types.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateColumnType(IFCFile file, Element revitType, HashSet<IFCAnyHandle> propertySets,
-          IList<IFCAnyHandle> representationMaps, string predefinedType)
+          IList<IFCAnyHandle> representationMaps, IFCColumnType predefinedType)
+      {
+         return CreateColumnType(file, revitType, propertySets, representationMaps, predefinedType.ToString());
+      }
+
+      /// <summary>
+      /// Creates an IfcColumnType, and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="applicableOccurrence">The attribute optionally defines the data type of the occurrence object.</param>
+      /// <param name="propertySets">The property set(s) associated with the type.</param>
+      /// <param name="representationMaps">The mapped geometries associated with the type.</param>
+      /// <param name="elementTag">The tag that represents the entity.</param>
+      /// <param name="elementType">The type name.</param>
+      /// <param name="predefinedType">The predefined types.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateColumnType(IFCFile file, Element revitType, HashSet<IFCAnyHandle> propertySets,
+         IList<IFCAnyHandle> representationMaps, string predefinedType)
       {
          IFCAnyHandle columnType = CreateInstance(file, IFCEntityType.IfcColumnType, revitType);
          // IFCAnyHandleUtil.SetAttribute(columnType, "PredefinedType", predefinedType);

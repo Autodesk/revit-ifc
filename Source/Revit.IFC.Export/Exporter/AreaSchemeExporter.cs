@@ -74,8 +74,8 @@ namespace Revit.IFC.Export.Exporter
 
             IFCAnyHandle areaScheme = IFCInstanceExporter.CreateGroup(file, guid,
                 ownerHistory, name, description, objectType);
-
-            productWrapper.AddElement(element, areaScheme);
+            IFCExportInfoPair exportInfo = new IFCExportInfoPair(elementClassTypeEnum);
+            productWrapper.AddElement(element, areaScheme, exportInfo);
 
             IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
                 null, null, areaHandles, null, areaScheme);

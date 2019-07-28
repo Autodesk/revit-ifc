@@ -792,4 +792,10 @@
   <data name="IFC4" xml:space="preserve">
     <value>IFC4 for General Use</value>
   </data>
+  <data name="UseTypeNameOnlyForIfcType" xml:space="preserve">
+    <value>Use Type name only for IFCType name</value>
+  </data>
+  <data name="UseVisibleRevitNameAsEntityName" xml:space="preserve">
+    <value>Use visible Revit name as the IFCEntity name</value>
+  </data>
 </root>

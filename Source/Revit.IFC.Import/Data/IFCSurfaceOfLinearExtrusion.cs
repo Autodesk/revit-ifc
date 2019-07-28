@@ -164,6 +164,9 @@ namespace Revit.IFC.Import.Data
             CurveLoopIterator it = outerCurve.GetCurveLoopIterator();
             sweptCurve = it.Current;
          }
+         // Position/transform the Curve first according to the lcs of the IfcSurfaceOfLinearExtrusion
+         sweptCurve = sweptCurve.CreateTransformed(Position);
+
          // Create the second profile curve by translating the first one in the extrusion direction
          Curve profileCurve2 = sweptCurve.CreateTransformed(Transform.CreateTranslation(ExtrudedDirection.Multiply(Depth)));
 

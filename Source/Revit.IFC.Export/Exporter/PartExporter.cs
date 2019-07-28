@@ -215,8 +215,7 @@ namespace Revit.IFC.Export.Exporter
             IList<ElementId> levels = new List<ElementId>();
             IList<IFCRange> ranges = new List<IFCRange>();
             IFCEntityType exportType = isWall ? IFCEntityType.IfcWall : IFCEntityType.IfcColumn;
-            IFCExportInfoPair exportInfo = new IFCExportInfoPair();
-            exportInfo.SetValueWithPair(exportType);
+            IFCExportInfoPair exportInfo = new IFCExportInfoPair(exportType);
             LevelUtil.CreateSplitLevelRangesForElement(exporterIFC, exportInfo, part, out levels, out ranges);
             if (ranges.Count == 0)
             {
@@ -280,7 +279,8 @@ namespace Revit.IFC.Export.Exporter
 
             // Check the intended IFC entity or type name is in the exclude list specified in the UI
             Common.Enums.IFCEntityType elementClassTypeEnum;
-            if (Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ToString(), out elementClassTypeEnum))
+            if (Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
+               || Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportType.ToString(), out elementClassTypeEnum))
                if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
                   return;
          }

@@ -1630,6 +1630,11 @@ namespace Revit.IFC.Common.Utility
          }
       }
 
+      /// <summary>
+      /// Add RelatedObjects into IfcRelAssociates
+      /// </summary>
+      /// <param name="relAssociates">The IfcRelAssociates entity</param>
+      /// <param name="related">The entity handle to be added to the RelatedObjects attribute</param>
       public static void AssociatesAddRelated(IFCAnyHandle relAssociates, IFCAnyHandle related)
       {
          if (relAssociates == null)
@@ -1654,6 +1659,7 @@ namespace Revit.IFC.Common.Utility
             aggregate.Add(IFCData.CreateIFCAnyHandle(related));
          }
       }
+
       /// <summary>
       /// Gets Name of an IfcProductDefinitionShape handle.
       /// </summary>

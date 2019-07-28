@@ -379,8 +379,7 @@ namespace Revit.IFC.Export.Exporter
          string preDefinedTypeSearch = predefinedType;
          if (string.IsNullOrEmpty(preDefinedTypeSearch))
             preDefinedTypeSearch = "NULL";
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         exportType.SetValueWithPair(IFCEntityType.IfcBeamType, preDefinedTypeSearch);
+         IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcBeamType, preDefinedTypeSearch);
          IFCAnyHandle beamType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(beamType))
          {
@@ -544,6 +543,7 @@ namespace Revit.IFC.Export.Exporter
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
                   beam = IFCInstanceExporter.CreateBeam(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle, extrusionCreationData.GetLocalPlacement(), prodRep, exportType.ValidatedPredefinedType);
+
 
                   IFCAnyHandle mpSetUsage;
                   if (materialProfileSet != null)

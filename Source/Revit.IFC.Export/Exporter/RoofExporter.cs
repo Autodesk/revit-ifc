@@ -131,13 +131,13 @@ namespace Revit.IFC.Export.Exporter
                          exporterIFC, slabLocalPlacementHnd, placementSetter, productWrapper);
 
                      ExporterUtil.RelateObject(exporterIFC, roofHnd, slabHnd);
+                     IFCExportInfoPair slabRoofExportType = new IFCExportInfoPair(IFCEntityType.IfcSlab, slabRoofPredefinedType);
 
-                     productWrapper.AddElement(null, slabHnd, placementSetter.LevelInfo, ecData, false);
+                     productWrapper.AddElement(null, slabHnd, placementSetter.LevelInfo, ecData, false, slabRoofExportType);
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, bodyData.MaterialIds);
 
                      // Create type
-                     IFCExportInfoPair slabRoofExportType = new IFCExportInfoPair();
-                     slabRoofExportType.SetValueWithPair(IFCEntityType.IfcSlab, slabRoofPredefinedType);
+
                      IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(roof, slabRoofExportType, exporterIFC.GetFile(), ownerHistory, slabRoofPredefinedType, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(slabRoofTypeHnd, slabHnd);
                   }
@@ -213,6 +213,7 @@ namespace Revit.IFC.Export.Exporter
          Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcRoof;
          if (elementIsFloor)
             elementClassTypeEnum = Common.Enums.IFCEntityType.IfcSlab;
+         IFCExportInfoPair roofExportType = new IFCExportInfoPair(elementClassTypeEnum, ifcEnumType);
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
@@ -339,6 +340,7 @@ namespace Revit.IFC.Export.Exporter
                               IFCAnyHandle slabPlacement = ExporterUtil.CreateLocalPlacement(file, slabExtrusionCreationData.GetLocalPlacement(), null);
                               IFCAnyHandle slabHnd = IFCInstanceExporter.CreateSlab(exporterIFC, element, slabGUID, ownerHistory,
                                  slabPlacement, repHnd, subSlabType);
+                              IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcSlab, subSlabType);
 
                               //slab quantities
                               slabExtrusionCreationData.ScaledLength = scaledExtrusionDepth;
@@ -346,7 +348,15 @@ namespace Revit.IFC.Export.Exporter
                               slabExtrusionCreationData.ScaledOuterPerimeter = UnitUtil.ScaleLength(curveLoops[0].GetExactLength());
                               slabExtrusionCreationData.Slope = UnitUtil.ScaleAngle(MathUtil.SafeAcos(Math.Abs(slope)));
 
-                              productWrapper.AddElement(null, slabHnd, setter, slabExtrusionCreationData, false);
+                              ExporterUtil.RelateObject(exporterIFC, hostObjectHandle, slabHnd);
+                              IFCExportInfoPair slabRoofExportType = new IFCExportInfoPair(IFCEntityType.IfcSlab, slabRoofPredefinedType);
+                              productWrapper.AddElement(null, slabHnd, setter, slabExtrusionCreationData, false, slabRoofExportType);
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, matId);
+
+                              // Create type
+                              IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(element, slabRoofExportType, exporterIFC.GetFile(), ownerHistory, slabRoofPredefinedType, productWrapper);
+                              ExporterCacheManager.TypeRelationsCache.Add(slabRoofTypeHnd, slabHnd);
+
                               elementHandles.Add(slabHnd);
                               slabHandles.Add(slabHnd);
 
@@ -356,7 +366,7 @@ namespace Revit.IFC.Export.Exporter
                            }
                         }
 
-                        productWrapper.AddElement(element, hostObjectHandle, setter, extrusionCreationData, true);
+                        productWrapper.AddElement(element, hostObjectHandle, setter, extrusionCreationData, true, roofExportType);
 
                         ExporterUtil.RelateObjects(exporterIFC, null, hostObjectHandle, slabHandles);
 
@@ -420,11 +430,12 @@ namespace Revit.IFC.Export.Exporter
 
                IFCAnyHandle roofHandle = IFCInstanceExporter.CreateRoof(exporterIFC, element, elementGUID, ownerHistory,
                    localPlacement, prodRepHnd, ifcEnumType);
+               IFCExportInfoPair exportType = new IFCExportInfoPair(elementClassTypeEnum, ifcEnumType);
 
                // Export the parts
                PartExporter.ExportHostPart(exporterIFC, element, roofHandle, productWrapper, setter, localPlacement, null);
 
-               productWrapper.AddElement(element, roofHandle, setter, null, true);
+               productWrapper.AddElement(element, roofHandle, setter, null, true, exportType);
 
                transaction.Commit();
             }

@@ -64,7 +64,7 @@ namespace Revit.IFC.Import.Utility
          m_MeasureCache["IfcPressureMeasure"] = UnitType.UT_HVAC_Pressure;
          m_MeasureCache["IfcRatioMeasure"] = UnitType.UT_Number;
          m_MeasureCache["IfcReal"] = UnitType.UT_Number;
-         m_MeasureCache["IfcTimeMeasure"] = UnitType.UT_Number;  // No unit type for time in Revit.
+         m_MeasureCache["IfcTimeMeasure"] = UnitType.UT_TimeInterval;
          m_MeasureCache["IfcTimeStamp"] = UnitType.UT_Number;  // No unit type for time in Revit.
          m_MeasureCache["IfcThermalTransmittanceMeasure"] = UnitType.UT_HVAC_CoefficientOfHeatTransfer;
          m_MeasureCache["IfcThermodynamicTemperatureMeasure"] = UnitType.UT_HVAC_Temperature;

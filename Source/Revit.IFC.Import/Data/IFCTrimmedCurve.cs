@@ -119,48 +119,39 @@ namespace Revit.IFC.Import.Data
             return;
          }
 
+         if (MathUtil.IsAlmostEqual(param1, param2))
+         {
+            Importer.TheLog.LogError(Id, "Param1 = Param2 for IfcTrimmedCurve #, ignoring.", false);
+            return;
+         }
+
          Curve baseCurve = ifcBasisCurve.Curve;
          if (baseCurve.IsCyclic)
          {
+            double period = baseCurve.Period;
             if (!sameSense)
                MathUtil.Swap(ref param1, ref param2);
 
+            // We want to make sure both values are within period of one another.
+            param1 = MathUtil.PutInRange(param1, 0, period);
+            param2 = MathUtil.PutInRange(param2, 0, period);
             if (param2 < param1)
-               param2 = MathUtil.PutInRange(param2, param1 + Math.PI, 2 * Math.PI);
+               param2 = MathUtil.PutInRange(param2, param1 + period/2, period);
 
-            if (param2 - param1 > 2.0 * Math.PI - MathUtil.Eps())
+            // This is effectively an unbound curve.
+            double numberOfPeriods = (param2 - param1) / period;
+            if (MathUtil.IsAlmostEqual(numberOfPeriods, Math.Round(numberOfPeriods)))
             {
-               Importer.TheLog.LogWarning(ifcCurve.StepId, "IfcTrimmedCurve length is greater than 2*PI, leaving unbound.", false);
+               Importer.TheLog.LogWarning(Id, "Start and end parameters indicate a zero-length closed curve, assuming unbound is intended.", false);
                Curve = baseCurve;
                return;
             }
 
             Curve = baseCurve.Clone();
-
-            try
-            {
                Curve.MakeBound(param1, param2);
             }
-            catch (Exception ex)
-            {
-               if (ex.Message.Contains("too small"))
-               {
-                  Curve = null;
-                  Importer.TheLog.LogError(Id, "curve length is invalid, ignoring.", false);
-                  return;
-               }
                else
-                  throw ex;
-            }
-         }
-         else
-         {
-            if (MathUtil.IsAlmostEqual(param1, param2))
             {
-               Importer.TheLog.LogError(Id, "Param1 = Param2 for IfcTrimmedCurve #, ignoring.", false);
-               return;
-            }
-
             if (param1 > param2 - MathUtil.Eps())
             {
                Importer.TheLog.LogWarning(Id, "Param1 > Param2 for IfcTrimmedCurve #, reversing.", false);

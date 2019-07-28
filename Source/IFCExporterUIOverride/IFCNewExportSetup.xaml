@@ -1,12 +1,14 @@
-﻿<Window x:Class="BIM.IFC.Export.UI.NewExportSetupWindow"
+﻿<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.NewExportSetupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{x:Static p:Resources.NewExportSetup}" Height="131" Width="347" WindowStyle="ToolWindow" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+        xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+        Title="{x:Static p:Resources.NewExportSetup}" 
+        Height="131" Width="347" ResizeMode="NoResize">
     <Grid>
       <Button Content="{x:Static p:Resources.Cancel}" Height="23" HorizontalAlignment="Left" Margin="238,57,0,0" Name="buttonCancel" VerticalAlignment="Top" Width="75" Click="buttonCancel_Click" />
       <Button Content="{x:Static p:Resources.OK}" Height="23" HorizontalAlignment="Left" Margin="157,57,0,0" Name="buttonOK" VerticalAlignment="Top" Width="75" Click="buttonOK_Click" IsDefault="True" />
         <TextBox Height="23" HorizontalAlignment="Left" Margin="12,28,0,0" Name="textBoxNewSetupName" VerticalAlignment="Top" Width="301" TextChanged="textBoxNewSetupName_TextChanged" />
       <Label Content="{x:Static p:Resources.Name}" Height="33" HorizontalAlignment="Left" Margin="12,0,0,0" Name="label1" VerticalAlignment="Top" />
     </Grid>
-</Window>
+</auiw:ChildWindow>

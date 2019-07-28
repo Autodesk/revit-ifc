@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
+using System.IO;
 using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
@@ -886,20 +886,18 @@ namespace Revit.IFC.Export.Exporter
                   else
                   {
                      Element elementType = familyInstance.Document.GetElement(familyInstance.GetTypeId());
-                     ElementId matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, elementType);
-                     if (matId == ElementId.InvalidElementId)
-                        matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, familyInstance);
+                     ElementId bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, elementType);
+                     if (bestMatId == ElementId.InvalidElementId)
+                        bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, familyInstance);
 
-                     if (matId != ElementId.InvalidElementId)
-                     {
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, matId);
-                        addedMaterialAssociation = true;
-                     }
-                     else
-                     {
+                     // Also get the materials from Parameters
                         IList<ElementId> matIds = ParameterUtil.FindMaterialParameters(elementType);
                         if (matIds.Count == 0)
                            matIds = ParameterUtil.FindMaterialParameters(familyInstance);
+
+                     // Combine the material ids
+                     if (bestMatId != ElementId.InvalidElementId && !matIds.Contains(bestMatId))
+                        matIds.Add(bestMatId);
 
                         if (matIds.Count > 0)
                         {
@@ -913,12 +911,13 @@ namespace Revit.IFC.Export.Exporter
                            if (materials.Count == 1)
                            {
                               CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, materials[0]);
+                           addedMaterialAssociation = true;
                            }
                            else
                            {
                               IFCAnyHandle materialList = IFCInstanceExporter.CreateMaterialList(file, materials);
                               CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, materialList);
-                           }
+                           addedMaterialAssociation = true;
                         }
                      }
                   }

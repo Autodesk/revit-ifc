@@ -343,10 +343,10 @@ namespace Revit.IFC.Export.Exporter
 
                   IFCAnyHandle railing = IFCInstanceExporter.CreateRailing(exporterIFC, element, instanceGUID, ownerHistory,
                       ecData.GetLocalPlacement(), prodRep, ifcEnumType);
-
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(elementClassTypeEnum, ifcEnumType);
                   bool associateToLevel = (hostId == ElementId.InvalidElementId);
 
-                  productWrapper.AddElement(element, railing, setter, ecData, associateToLevel);
+                  productWrapper.AddElement(element, railing, setter, ecData, associateToLevel, exportInfo);
                   OpeningUtil.CreateOpeningsIfNecessary(railing, element, ecData, bodyData.OffsetTransform,
                       exporterIFC, ecData.GetLocalPlacement(), setter, productWrapper);
 
@@ -365,7 +365,7 @@ namespace Revit.IFC.Export.Exporter
                         {
                            IFCAnyHandle railingHndCopy = CopyRailingHandle(exporterIFC, element, catId, railingLocalPlacement, railing);
                            stairRampInfo.AddComponent(ii, railingHndCopy);
-                           productWrapper.AddElement(element, railingHndCopy, (IFCLevelInfo)null, ecData, false);
+                           productWrapper.AddElement(element, railingHndCopy, (IFCLevelInfo)null, ecData, false, exportInfo);
                            CategoryUtil.CreateMaterialAssociation(exporterIFC, railingHndCopy, bodyData.MaterialIds);
                         }
                      }

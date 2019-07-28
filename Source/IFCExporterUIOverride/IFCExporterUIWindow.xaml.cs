@@ -1722,5 +1722,29 @@ namespace BIM.IFC.Export.UI
          IFCExportConfiguration configuration = GetSelectedConfiguration();
          configuration.IncludeSteelElements = false;
       }
+
+      private void Checkbox_UseTypeNameOnly_Checked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.UseTypeNameOnlyForIfcType = true;
+      }
+
+      private void Checkbox_UseTypeNameOnly_Unchecked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.UseTypeNameOnlyForIfcType = false;
+      }
+
+      private void Checkbox_UseVisibleRevitName_Checked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.UseVisibleRevitNameAsEntityName = true;
+      }
+
+      private void Checkbox_UseVisibleRevitName_Unchecked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.UseVisibleRevitNameAsEntityName = false;
+      }
    }
 }

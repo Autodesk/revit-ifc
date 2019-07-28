@@ -276,8 +276,9 @@ namespace Revit.IFC.Export.Exporter
 
                IFCAnyHandle assemblyInstanceHnd = IFCInstanceExporter.CreateElementAssembly(exporterIFC, assemblyElem, guid,
                    ownerHistory, localPlacement, null, IFCAssemblyPlace.NotDefined, assemblyType);
+               IFCExportInfoPair exportInfo = new IFCExportInfoPair(elementClassTypeEnum, assemblyType.ToString());
 
-               productWrapper.AddElement(assemblyElem, assemblyInstanceHnd, placementSetter.LevelInfo, null, true);
+               productWrapper.AddElement(assemblyElem, assemblyInstanceHnd, placementSetter.LevelInfo, null, true, exportInfo);
 
                string aggregateGuid = GUIDUtil.CreateSubElementGUID(assemblyElem, (int)IFCAssemblyInstanceSubElements.RelAggregates);
                IFCInstanceExporter.CreateRelAggregates(file, aggregateGuid, ownerHistory, null, null, assemblyInstanceHnd, memberHnds);

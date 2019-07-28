@@ -16,12 +16,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+using Autodesk.UI.Windows;
+using Revit.IFC.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using Autodesk.UI.Windows;
-using Revit.IFC.Common.Extensions;
 
 
 namespace BIM.IFC.Export.UI
@@ -100,8 +100,6 @@ namespace BIM.IFC.Export.UI
       {
          Close();
       }
-
-
 
       /// <summary>
       /// Initialization of File Header tab

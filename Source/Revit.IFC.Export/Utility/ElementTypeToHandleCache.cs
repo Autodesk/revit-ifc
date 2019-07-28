@@ -43,6 +43,23 @@ namespace Revit.IFC.Export.Utility
       }
    }
 
+   internal class ElementTypeComparer : IEqualityComparer<ElementType>
+   {
+      public bool Equals(ElementType key1, ElementType key2)
+      {
+         if (key1.Id.IntegerValue == key2.Id.IntegerValue)
+            return true;
+         else
+            return false;
+      }
+
+      public int GetHashCode(ElementType key)
+      {
+         int hash = key.Id.IntegerValue;
+         return hash;
+      }
+   }
+
    /// <summary>
    /// Used to keep a cache of a mapping of an ElementType to a handle.
    /// This is specially handled because the same type can be assigned to different IFC entity with IfcExportAs and IfcExportType
@@ -57,7 +74,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       private Dictionary<ElementTypeKey, IFCAnyHandle> m_ElementTypeToHandleDictionary = new Dictionary<ElementTypeKey, IFCAnyHandle>(keyComparer);
       private Dictionary<IFCAnyHandle, ElementTypeKey> m_HandleToElementTypeDictionary = new Dictionary<IFCAnyHandle, ElementTypeKey>();
-      private HashSet<ElementType> m_RegisteredElementType = new HashSet<ElementType>();
+      private HashSet<ElementType> m_RegisteredElementType = new HashSet<ElementType>(new ElementTypeComparer());
 
       /// <summary>
       /// Finds the handle from the dictionary.
@@ -145,7 +162,7 @@ namespace Revit.IFC.Export.Utility
       {
          var key = new ElementTypeKey(elementType, exportType.ExportType, exportType.ValidatedPredefinedType);
 
-         if (m_ElementTypeToHandleDictionary.ContainsKey(key))
+         if (m_ElementTypeToHandleDictionary.ContainsKey(key) || exportType.ExportType == IFCEntityType.UnKnown)
             return;
 
          m_ElementTypeToHandleDictionary[key] = handle;

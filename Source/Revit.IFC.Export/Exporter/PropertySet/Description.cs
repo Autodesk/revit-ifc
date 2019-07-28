@@ -172,8 +172,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          if (handle == null)
             return false;
-         if (ObjectType == "")
-            return true;
+         //if (ObjectType == "")
+         //   return true;
 
          // ObjectType information comes from PSD's Applicable Type. This may be a comma separated list of applicable type
          IFCEntityType hndEntity = IFCAnyHandleUtil.GetEntityType(handle);
@@ -203,8 +203,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>true if found match</returns>
       public bool IsAppropriateObjectType(IFCEntityType entityType)
       {
-         if (ObjectType == "")
-            return true;
+         //if (ObjectType == "")
+         //   return true;
          if (entityType == IFCEntityType.UnKnown)
             return false;
 

@@ -106,15 +106,9 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Constructs a BodyData object.
       /// </summary>
-      /// <param name="representationHnd">
-      /// The representation handle.
-      /// </param>
-      /// <param name="offsetTransform">
-      /// The offset transform.
-      /// </param>
-      /// <param name="materialIds">
-      /// The material ids.
-      /// </param>
+      /// <param name="representationHnd">The representation handle.</param>
+      /// <param name="offsetTransform">The offset transform.</param>
+      /// <param name="materialIds">The material ids.</param>
       public BodyData(IFCAnyHandle representationHnd, Transform offsetTransform, HashSet<ElementId> materialIds)
       {
          this.RepresentationHnd = representationHnd;
@@ -147,6 +141,9 @@ namespace Revit.IFC.Export.Exporter
          MaterialIds.Add(matId);
       }
 
+      /// <summary>
+      /// Material and Profile information for IfcMaterialProfile
+      /// </summary>
       public MaterialAndProfile materialAndProfile
       {
          get

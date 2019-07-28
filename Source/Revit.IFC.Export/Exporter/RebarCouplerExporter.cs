@@ -86,6 +86,7 @@ namespace Revit.IFC.Export.Exporter
                repMap.Add(IFCInstanceExporter.CreateRepresentationMap(file, origin, bodyData.RepresentationHnd));
 
                IFCAnyHandle styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, ifcEnumType, propertySetsOpt, repMap, coupler, familySymbol);
+               productWrapper.RegisterHandleWithElementType(familySymbol, exportType, styleHandle, propertySetsOpt);
 
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                {
@@ -129,8 +130,7 @@ namespace Revit.IFC.Export.Exporter
                using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, coupler, trf, null))
                {
                   IFCAnyHandle instanceHandle = null;
-                  IFCExportInfoPair exportMechFastener = new IFCExportInfoPair();
-                  exportMechFastener.SetValueWithPair(IFCEntityType.IfcMechanicalFastener, ifcEnumType);
+                  IFCExportInfoPair exportMechFastener = new IFCExportInfoPair(IFCEntityType.IfcMechanicalFastener, ifcEnumType);
                   instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportMechFastener, exporterIFC, coupler, instanceGUID, ownerHistory,
                                       setter.LocalPlacement, productRepresentation);
                   string instanceName = NamingUtil.GetNameOverride(instanceHandle, coupler, origInstanceName + ": " + idx);

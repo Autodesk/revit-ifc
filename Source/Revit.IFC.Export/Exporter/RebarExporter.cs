@@ -48,11 +48,12 @@ namespace Revit.IFC.Export.Exporter
          /// <param name="rebarElement">The element that created the rebar.</param>
          /// <param name="elementHandle">The associated IFC element handle.</param>
          /// <param name="levelInfo">The information for the associated level.</param>
-         public DelayedProductWrapper(Element rebarElement, IFCAnyHandle elementHandle, IFCLevelInfo levelInfo)
+         public DelayedProductWrapper(Element rebarElement, IFCAnyHandle elementHandle, IFCLevelInfo levelInfo, IFCExportInfoPair exportInfo)
          {
             RebarElement = rebarElement;
             ElementHandle = elementHandle;
             LevelInfo = levelInfo;
+            ExportInfo = exportInfo;
          }
 
          public Element RebarElement { get; protected set; }
@@ -60,14 +61,36 @@ namespace Revit.IFC.Export.Exporter
          public IFCAnyHandle ElementHandle { get; protected set; }
 
          public IFCLevelInfo LevelInfo { get; protected set; }
+
+         public IFCExportInfoPair ExportInfo { get; protected set; }
       }
 
-      private static bool ElementIsContainedInAssembly(Element element)
+      private static void CreateRebarGroup(ExporterIFC exporterIFC, Element element,
+         string guid, ProductWrapper productWrapper,
+         ISet<IFCAnyHandle> createdRebarHandles)
       {
-         if (element == null)
-            return false;
+         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcGroup;
+         if (!ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
+         {
+            IFCFile file = exporterIFC.GetFile();
+            using (IFCTransaction tr = new IFCTransaction(file))
+      {
+               IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+               string revitObjectType = NamingUtil.GetFamilyAndTypeName(element);
+               string name = NamingUtil.GetNameOverride(element, revitObjectType);
+               string description = NamingUtil.GetDescriptionOverride(element, null);
+               string objectType = NamingUtil.GetObjectTypeOverride(element, revitObjectType);
 
-         return (element.AssemblyInstanceId != ElementId.InvalidElementId);
+               IFCAnyHandle rebarGroup = IFCInstanceExporter.CreateGroup(file, guid,
+                   ownerHistory, name, description, objectType);
+               IFCExportInfoPair exportInfo = new IFCExportInfoPair(elementClassTypeEnum);
+               productWrapper.AddElement(element, rebarGroup, exportInfo);
+
+               IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
+                   null, null, createdRebarHandles, null, rebarGroup);
+               tr.Commit();
+            }
+         }
       }
 
       /// <summary>
@@ -80,6 +103,7 @@ namespace Revit.IFC.Export.Exporter
       {
          ISet<DelayedProductWrapper> createdRebars = new HashSet<DelayedProductWrapper>();
 
+         // First, we will create individual rebars based on the Revit element.
          if (element is Rebar)
          {
             createdRebars = ExportRebar(exporterIFC, element, productWrapper);
@@ -127,68 +151,88 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
+         // If we've created any rebar, we will group them below into three conceptual groups:
+         // 1. One rebar that shouldn't be grouped or be in an assembly, 
+         //    but be directly contained in a building story.
+         // 2. Rebar that are in assemblies, where the assembly is contained in a building story.
+         // 3. Multiple rebar that aren't in assembles, which should both be in a group and 
+         //    directly contained in a building story.
+         //
+         // The reason for the cases above:
+         // 1. Nested groups/assemblies aren't allow in IFC.  So we can only have one level.
+         // 2. IfcGroups don't have level assignment.  So the individual components inside have 
+         //    to be directly contained in a building story.
+         // 3. IfcAssemblies do have level assignment, so individual components can't be directly
+         //    contained in a building story.   This does mean that rebars in assemblies may
+         //    be associated with the wrong level, but that is an IFC limitation.
          if (createdRebars != null && createdRebars.Count != 0)
          {
+            // Only one created element can have the consistent GUID of the main element.
+            // This will be either the first created assembly or the first rebar element.
             string guid = GUIDUtil.CreateGUID(element);
 
-            // Create a group to hold all of the created IFC entities, if the rebars aren't already in an assembly or a group.  
-            // We want to avoid nested groups of groups of rebars.
-            bool relateToLevel = true;
-            bool groupRebarHandles = (createdRebars.Count != 1);
+            // While it seems likely that all of the rebar would have the same assembly id,
+            // there's no need to assume this.  Make a map of assembly id to created rebar.
+            IDictionary<ElementId, ISet<DelayedProductWrapper>> relatedRebar =
+               new Dictionary<ElementId, ISet<DelayedProductWrapper>>();
+            relatedRebar[ElementId.InvalidElementId] = new HashSet<DelayedProductWrapper>();
+
+            // Go through the created rebar and sort into buckets by assembly id.
             foreach (DelayedProductWrapper delayedProductWrapper in createdRebars)
             {
-               if (ElementIsContainedInAssembly(delayedProductWrapper.RebarElement))
+               Element rebarElement = delayedProductWrapper.RebarElement;
+               if (rebarElement == null)
+                  continue;
+
+               ElementId rebarAssemblyInstanceId = rebarElement.AssemblyInstanceId;
+               ISet<DelayedProductWrapper> currentRebarSet = null;
+               if (!relatedRebar.TryGetValue(rebarAssemblyInstanceId, out currentRebarSet))
                {
-                  groupRebarHandles = false;
-                  relateToLevel = false;
-                  break;
+                  currentRebarSet = new HashSet<DelayedProductWrapper>();
+                  relatedRebar[rebarAssemblyInstanceId] = currentRebarSet;
                }
+               currentRebarSet.Add(delayedProductWrapper);
             }
 
+            foreach (KeyValuePair<ElementId, ISet<DelayedProductWrapper>> relatedToAssembly in relatedRebar)
+            {
+               // Ignore buckets with no items in them.
+               if (relatedToAssembly.Value.Count == 0)
+                  continue;
+
+               // We will attach rebar to an assembly for rebar belonging to an assembly; 
+               // otherwise we will create a group, assuming there are at least 2 rebar to group.
+               ElementId assemblyId = relatedToAssembly.Key;
+               bool hasAssemblyId = (assemblyId != ElementId.InvalidElementId);
+               bool attachToLevel = !hasAssemblyId;
+
             ISet<IFCAnyHandle> createdRebarHandles = new HashSet<IFCAnyHandle>();
-            foreach (DelayedProductWrapper delayedProductWrapper in createdRebars)
+               foreach (DelayedProductWrapper delayedProductWrapper in relatedToAssembly.Value)
             {
                IFCAnyHandle currentRebarHandle = delayedProductWrapper.ElementHandle;
-               productWrapper.AddElement(delayedProductWrapper.RebarElement, currentRebarHandle, delayedProductWrapper.LevelInfo, null, relateToLevel);
+                  productWrapper.AddElement(delayedProductWrapper.RebarElement, currentRebarHandle, 
+                     delayedProductWrapper.LevelInfo, null, attachToLevel, delayedProductWrapper.ExportInfo);
                createdRebarHandles.Add(currentRebarHandle);
             }
 
-            if (createdRebars.Count > 1)
+               if (hasAssemblyId)
             {
-               if (groupRebarHandles)
+                  ExporterCacheManager.AssemblyInstanceCache.RegisterElements(assemblyId, productWrapper);
+               }
+               else if (createdRebarHandles.Count > 1)
                {
                   // Check the intended IFC entity or type name is in the exclude list specified in the UI
-                  Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcGroup;
-                  if (!ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
-                  {
-                     IFCFile file = exporterIFC.GetFile();
-                     using (IFCTransaction tr = new IFCTransaction(file))
-                     {
-                        IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-                        string revitObjectType = NamingUtil.GetFamilyAndTypeName(element);
-                        string name = NamingUtil.GetNameOverride(element, revitObjectType);
-                        string description = NamingUtil.GetDescriptionOverride(element, null);
-                        string objectType = NamingUtil.GetObjectTypeOverride(element, revitObjectType);
+                  string rebarGUID = (guid != null) ? guid : GUIDUtil.CreateGUID();
+                  CreateRebarGroup(exporterIFC, element, rebarGUID, productWrapper, createdRebarHandles);
+                  guid = null;
 
-                        IFCAnyHandle rebarGroup = IFCInstanceExporter.CreateGroup(file, guid,
-                            ownerHistory, name, description, objectType);
-
-                        productWrapper.AddElement(element, rebarGroup);
-
-                        IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
-                            null, null, createdRebarHandles, null, rebarGroup);
-
-                        tr.Commit();
-                     }
                   }
                }
-            }
-            else
-            {
+
                // We will update the GUID of the one created IfcReinforcingElement to be the element GUID.
                // This will allow the IfcGUID parameter to be use/set if appropriate.
-               ExporterUtil.SetGlobalId(createdRebarHandles.ElementAt(0), guid);
-            }
+            if (createdRebars.Count == 1 && guid != null)
+               ExporterUtil.SetGlobalId(createdRebars.ElementAt(0).ElementHandle, guid);
          }
       }
 
@@ -405,11 +449,12 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle elemHnd = IFCInstanceExporter.CreateReinforcingBar(exporterIFC, rebarElement, rebarGUID, ExporterCacheManager.OwnerHistoryHandle,
                      copyLevelPlacement, prodRep, steelGrade, longitudinalBarNominalDiameter, longitudinalBarCrossSectionArea, barLength, role, null);
                   IFCAnyHandleUtil.OverrideNameAttribute(elemHnd, rebarName);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingBar);
 
                   // We will not add the element ot the productWrapper here, but instead in the function that calls
                   // ExportRebar.  The reason for this is that we don't currently know if the handles such be associated
                   // to the level or not, depending on whether they will or won't be grouped.
-                  createdRebars.Add(new DelayedProductWrapper(rebarElement, elemHnd, setter.LevelInfo));
+                  createdRebars.Add(new DelayedProductWrapper(rebarElement, elemHnd, setter.LevelInfo, exportInfo));
 
                   CacheSubelementParameterValues(rebarElement, rebarElementParams, ii, elemHnd);
 

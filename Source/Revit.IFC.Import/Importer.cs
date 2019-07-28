@@ -452,6 +452,9 @@ namespace Revit.IFC.Import
             return;
 
          // An early check, based on the options set - if we are allowed to use an up-to-date existing file on disk, use it.
+         // It is possible that the log file may have been created in CreateImporter above, 
+         // if it is used by an external developer.
+         if (TheLog == null)
          m_ImportLog = IFCImportLog.CreateLog(localFileName, "log.html");
 
          Document originalDocument = document;
