@@ -571,6 +571,9 @@ namespace Revit.IFC.Export.Utility
 
          foreach (Parameter param in element.Parameters)
          {
+            if (param.Definition == null)
+               continue;
+
             // Limit to the parameter(s) within builtin parameter group PG_MATERIALS
             if (param.Definition.ParameterType == ParameterType.Material && param.Definition.ParameterGroup == BuiltInParameterGroup.PG_MATERIALS)
             {

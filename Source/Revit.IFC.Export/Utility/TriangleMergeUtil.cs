@@ -135,11 +135,11 @@ namespace Revit.IFC.Export.Utility
          /// <summary>
          /// Vertex index of the starting point
          /// </summary>
-         public int startPindex { get; set; }
+         public int startPindex { get; set; } = 0;
          /// <summary>
          /// Vertex index of the end point
          /// </summary>
-         public int endPIndex { get; set; }
+         public int endPIndex { get; set; } = 0;
          /// <summary>
          /// Constructor for generating the class
          /// </summary>
@@ -194,20 +194,20 @@ namespace Revit.IFC.Export.Utility
          /// <summary>
          /// Vertex indices for the outer boundary of the face
          /// </summary>
-         public IList<int> indexOuterBoundary { get; set; }
+         public IList<int> indexOuterBoundary { get; set; } = null;
          /// <summary>
          /// List of vertex indices for the inner boundaries
          /// </summary>
-         public IList<IList<int>> indexedInnerBoundaries { get; set; }
+         public IList<IList<int>> indexedInnerBoundaries { get; set; } = null;
          /// <summary>
          /// Collection of all the vertices (outer and inner)
          /// </summary>
-         public IList<IndexSegment> outerAndInnerBoundaries { get; set; }
+         public IList<IndexSegment> outerAndInnerBoundaries { get; set; } = null;
          IDictionary<IndexSegment, int> boundaryLinesDict;
          /// <summary>
          /// The normal vector of the face
          /// </summary>
-         public XYZ normal { get; set; }
+         public XYZ normal { get; set; } = null;
 
          /// <summary>
          /// Constructor taking a list of vertex indices (face without hole) 

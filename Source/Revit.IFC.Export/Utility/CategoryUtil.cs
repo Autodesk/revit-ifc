@@ -497,13 +497,15 @@ namespace Revit.IFC.Export.Utility
             {
                Material material = document.GetElement(materialId) as Material;
                if (material != null)
+               {
                   materialName = NamingUtil.GetNameOverride(material, material.Name);
 
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-               {
-                  category = NamingUtil.GetOverrideStringValue(material, "IfcCategory", 
-                     NamingUtil.GetOverrideStringValue(material, "Category", material.MaterialCategory));
-                  description = NamingUtil.GetOverrideStringValue(material, "IfcDescription", null);
+                  if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+                  {
+                     category = NamingUtil.GetOverrideStringValue(material, "IfcCategory",
+                        NamingUtil.GetOverrideStringValue(material, "Category", material.MaterialCategory));
+                     description = NamingUtil.GetOverrideStringValue(material, "IfcDescription", null);
+                  }
                }
             }
 
