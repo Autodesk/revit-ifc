@@ -978,6 +978,11 @@ namespace Revit.IFC.Export.Exporter
                                              extraParams.GetLocalPlacement(), repHnd, IFCElementComposition.Element,
                                              internalOrExternal);
                exportInfo.SetValueWithPair(IFCEntityType.IfcSpace);
+               if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
+               {
+                  IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(spatialElement, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
+                  ExporterCacheManager.TypeRelationsCache.Add(type, spaceHnd);
+               }
                transaction2.Commit();
             }
 
