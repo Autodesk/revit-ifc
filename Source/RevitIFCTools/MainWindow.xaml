@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RevitIFCTools"
         mc:Ignorable="d"
-        Title="Revit IFC Tools" Height="300" Width="445">
+        Title="Revit IFC Tools" Height="300" Width="548.931">
    <Grid>
       <Grid.RowDefinitions>
          <RowDefinition Height="237*"/>
@@ -17,6 +17,7 @@
       <Button x:Name="button_paramexpr" Content="Test Parameter Expr" HorizontalAlignment="Left" Margin="10,103,0,0" VerticalAlignment="Top" Width="408" Height="33" Click="button_paramexpr_Click"/>
       <Button x:Name="Button_GenGUID" Content="Generate GUID" HorizontalAlignment="Left" Margin="10,174,0,0" VerticalAlignment="Top" Width="102" Height="23" Click="Button_GenGUID_Click"/>
       <TextBox x:Name="TextBox_GUID" HorizontalAlignment="Left" Height="23" Margin="117,174,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="301"/>
+      <Button x:Name="Button_GuidSwitchCase" Content="Switch Case" Margin="0,174,15,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="97" Height="23" Click="Button_switchcase_Click"/>
 
    </Grid>
 </Window>

@@ -187,9 +187,6 @@ namespace Revit.IFC.Import.Data
                m_UnitToParameterType[UnitType.UT_AreaForceScale] = ParameterType.Number;
                m_UnitToParameterType[UnitType.UT_MomentScale] = ParameterType.Number;
                m_UnitToParameterType[UnitType.UT_LinearMomentScale] = ParameterType.Number;
-
-               m_UnitToParameterType[UnitType.UT_TimeInterval] = ParameterType.TimeInterval;
-               m_UnitToParameterType[UnitType.UT_Speed] = ParameterType.Speed;
             }
 
             return m_UnitToParameterType;
