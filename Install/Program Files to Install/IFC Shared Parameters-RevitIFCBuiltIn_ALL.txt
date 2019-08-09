@@ -71,7 +71,12 @@ PARAM	004297b7-015a-4993-9a20-81ae39fc5df2	Pset_SiteCommon.TotalArea	AREA		2	1		
 PARAM	6e4bc3ba-6026-4923-9256-fdc3b7dcad0b	Pset_SiteCommon.FloorAreaRatio	NUMBER		2	1		1
 PARAM	cec026c1-b978-4d3c-b657-a67fb34be612	Pset_SiteCommon.SiteCoverageRatio	NUMBER		2	1		1
 #
-# Parameters for Pset_ZoneCommon to be applied to Spaces
+# Parameters for Zone and Pset_ZoneCommon to be applied to Spaces
+PARAM	8654f7d0-4046-4658-8f4c-f7c9fae9c48b	ZoneName	TEXT		2	1		1
+PARAM	803a2a7e-2c1b-4297-a4bb-9d7431580b75	ZoneObjectType	TEXT		2	1		1
+PARAM	9959634a-4d88-4139-a7d5-51fb25655bd3	ZoneLongName	TEXT		2	1		1
+PARAM	b898aba5-8f77-463f-9e88-56787fa0dd92	ZoneDescription	TEXT		2	1		1
+PARAM	7bd18f19-93ba-418f-8d6e-a4dc6b20353b	ZoneClassificationCode	TEXT		2	1		1
 PARAM	113a9e35-1465-4468-8305-8e69d5276b24	Pset_ZoneCommon.Reference	TEXT		2	1		1
 PARAM	a9c1d119-d845-488b-8aaa-68625296c6d4	Pset_ZoneCommon.PubliclyAccessible	YESNO		2	1		1
 PARAM	cd616a7a-8e64-4bde-8454-989699ddf1b8	Pset_ZoneCommon.IsExternal	YESNO		2	1		1

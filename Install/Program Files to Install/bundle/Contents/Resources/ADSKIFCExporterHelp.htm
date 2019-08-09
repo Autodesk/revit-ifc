@@ -51,9 +51,9 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 <body>
 <div id="heading">
 	<div id="plugin-icon"><img width=85 height=85 id="Rectangle 3" src="IFCExporter.png"></div>
-	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2020</h1></div>
+	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2019</h1></div>
 	<p id="plugin-description">
-	This application seamlessly replaces the built-in IFC capabilities of Revit 2020.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
+	This application seamlessly replaces the built-in IFC capabilities of Revit 2019.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
     </p>
 </div>
 
@@ -65,7 +65,7 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 	<div class="command name">Revit IFC</div>
 	<div class="command description">
     <p> 
-    Revit IFC 2020 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
+    Revit IFC 2019 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
     Source contributors.  While this app is not necessary for IFC support, it is recommended that users that depend on the quality of their IFC 
     download this app and keep it up-to-date, as new enhancements and defect fixes are added,  For more information on IFC, 
     please visit the <a href="http://buildingsmart.com/standards/ifc" target=_blank>buildingSMART website</a> or the Revit wiki.
@@ -204,16 +204,62 @@ working on expanding and eventually removing this limit, and we will be tracking
 
 <div class="versionset">
 
-   <div class="version">20.0.0.0</div><div class="versioninfo-bullet">
-      <p>
+   <div class="version">19.3.0.0</div><div class="versioninfo-bullet">
+
+      <br><p>
          General:
+
          <ul>
-            <li>This is the first version of IFC Export utility for Revit 2020.
-				<li>The functionality in this version is identical to the 19.2.0.1 version
+            <li>This is an update version for Revit 2019. 
+            <li>IFC4 schema has been updated to the latest IFC4 ADD2 TC1 as well as all other related entities, PropertySets and other related properties.
          </ul>
-	</div>
-	
-	<br>
+
+         <br>
+      <p>
+         New Functionality:
+
+         <ul>
+            <li>Two new export options are added:
+					<li>- Use Type name only for IFCType name
+					<li>- Use visible Revit name as the IFCEntity name
+				<li>Added a few more IFC unit types:
+					<li>- IfcPowerMeasure
+					<li>- IfcMassMeasure
+					<li>- IfcLinearForce
+					<li>- IfcPlanarForce
+				<li>built-in parameters IFC GUID parameters are no longer read-only.
+			</ul>
+
+      <p>
+         Export Bug Fixes:
+
+         <ul>
+			<li>Various regression issues especially related to the default names for IFC entities
+			<li>Improved consistency of PropertySet assignment. It now includes all PropertySets defined for the supertype.
+		   <li>Improved support for conditional PropertySet (PropsetySet assignment based on the entity type and its PredefinedType)
+			<li>Improved handling of an Elliptical Wall in export
+			<li>Improve export of grouped rebar
+		   <li>correct perimeter quantity export for metric units, and volume quantity export in mixed unit cases.
+			<li>make Open IFC respect "Don't Import" setting when import IfcSpace.
+			<li>Fixed an issue that resulted in the incorrect orientation of some elbow pipe or duct segments after IFC export.
+		   <li>Fixed export issue when working with Cloud model
+			<li>Improved the generation of consistent IFC GUIDs when exporting doors and windows in sandwich walls.
+			<li>Improved IFC export of walls with integral wall sweeps.
+         </ul>
+			<p>
+         Import Bug Fixes:
+
+         <ul>
+         <li>Added support for IfcTimeMeasure
+			<li>Added support for IFC metadata to Revit IFC importer.
+			<li>store the IFC GUID of the containing element assembly to differentiate between assemblies with the same name.
+			<li>Fix import of rebar with incorrect trim parameters from Tekla.
+			<li>Improved import of IfcTrimmedCurve
+			<li>Fixed issue of IFC files from Tekla have an unexpected 90 degree rotation about Z
+
+   </div>
+
+   <br>
 
    <div class="version">19.2.0.1</div><div class="versioninfo-bullet">
       <p>
