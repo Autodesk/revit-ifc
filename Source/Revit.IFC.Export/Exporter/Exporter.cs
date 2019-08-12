@@ -986,7 +986,7 @@ namespace Revit.IFC.Export.Exporter
          string filePath = null;
 #if IFC_OPENSOURCE
          // Find the alternate schema file from the open source install folder
-         filePath = Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location), schemaFileName);
+         filePath = Path.Combine(Path.GetDirectoryName(Assembly.GetCallingAssembly().Location), schemaFileName);
          if (!File.Exists(filePath))
 #endif
          {
