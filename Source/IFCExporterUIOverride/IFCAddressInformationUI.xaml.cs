@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using Autodesk.Revit.DB;
-using Autodesk.UI.Windows;
+using Autodesk.Revit.WPFFramework;
 using Revit.IFC.Common.Extensions;
 using System;
 using System.Linq;

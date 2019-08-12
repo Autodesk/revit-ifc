@@ -18,7 +18,7 @@
 //
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using Autodesk.UI.Windows;
+using Autodesk.Revit.WPFFramework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -727,6 +727,18 @@ namespace BIM.IFC.Export.UI
          help.Launch();
 
          return true;
+      }
+
+
+      /// <summary>
+      /// Handles the Help button click
+      /// </summary>
+      /// <param name="sender"></param>
+      /// <param name="e"></param>
+      private void OnHelpClick(object sender, RoutedEventArgs e)
+      {
+         // handle using the context help command handler
+         e.Handled = OnContextHelp();
       }
 
       private void ChildWindow_ContentRendered(object sender, EventArgs e)
