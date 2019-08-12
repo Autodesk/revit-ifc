@@ -98,7 +98,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public IFCCertifiedEntitiesAndPSets()
       {
-         string fileLoc = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
+         string fileLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
          string filePath = Path.Combine(fileLoc, "IFCCertifiedEntitiesAndPSets.json");
 
          if (File.Exists(filePath))
