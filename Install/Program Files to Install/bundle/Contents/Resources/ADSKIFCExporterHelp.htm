@@ -51,9 +51,9 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 <body>
 <div id="heading">
 	<div id="plugin-icon"><img width=85 height=85 id="Rectangle 3" src="IFCExporter.png"></div>
-	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2019</h1></div>
+	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2020</h1></div>
 	<p id="plugin-description">
-	This application seamlessly replaces the built-in IFC capabilities of Revit 2019.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
+	This application seamlessly replaces the built-in IFC capabilities of Revit 2020.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
     </p>
 </div>
 
@@ -65,7 +65,7 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 	<div class="command name">Revit IFC</div>
 	<div class="command description">
     <p> 
-    Revit IFC 2019 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
+    Revit IFC 2020 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
     Source contributors.  While this app is not necessary for IFC support, it is recommended that users that depend on the quality of their IFC 
     download this app and keep it up-to-date, as new enhancements and defect fixes are added,  For more information on IFC, 
     please visit the <a href="http://buildingsmart.com/standards/ifc" target=_blank>buildingSMART website</a> or the Revit wiki.
@@ -257,11 +257,9 @@ working on expanding and eventually removing this limit, and we will be tracking
 			<li>Fix import of rebar with incorrect trim parameters from Tekla.
 			<li>Improved import of IfcTrimmedCurve
 			<li>Fixed issue of IFC files from Tekla have an unexpected 90 degree rotation about Z
-
    </div>
 
    <br>
-
 	   <div class="version">20.0.0.0</div><div class="versioninfo-bullet">
 
       <br><p>
@@ -277,199 +275,6 @@ working on expanding and eventually removing this limit, and we will be tracking
 
          <ul>
             <li>Correct the default North orientation when there is no information of the True North to +Y.
-
-   </div>
-
-   <br>
-   <div class="version">19.2.0.0</div><div class="versioninfo-bullet">
-
-      <br><p>
-         General:
-
-         <ul>
-            <li>This is generally a bug fix release with some new IFC functionality.
-         </ul>
-
-         <br>
-      <p>
-         New Export Functionality:
-
-         <ul>
-            <li>IFC Exporter now supports IFC Spatial Container assignment override using IfcSpatialContainer parameter. Valid values are: "IFCSITE", "IFCBUILDING", or name of the Building Storey
-            <li>Improved detection of Door operation type using the 2D swing symbol (arc). The improved version detects range of angles (not limited to 90, 180 or 360 degrees only)
-            <li>Added support for IfcCivilElement
-            <li>Replace IfcRelConnectsPortToElement with IfcRelNests for IFC4 export as recommended in IFC4 specifications, allowing non-IfcDIstributionElement to participates in the connectivity
-            <li>Added support for RampFlight and Run from generic models or family representing more complex Ramp for export to IfcRamp and IfcRampFlight
-            <li>Added various property Calculators
-            <li>Improve performance when exporting a large mesh
-            <li>Enable IFC Property Templates
-            <li>Allow multiple Property Template mapping from txt
-            <li>Projection improvement
-            <li>Enable site and project property creation
-            <li>Utilize Site GlobalId method
-            <li>Add multilanguage support files for German language (DE)
-            <li>Provide a complete list of all Shared Parameters used by Revit on export including ALL properties defined in IFC PropertySet Definition for both Instances and Types. The lists are included in the installer and will be placed in the install folder: IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt (for the Instance parameters) and IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL.txt (for the Type parameters).
-            <li>Improve consistency for setting the object direct attributes, support IfcObjectType[Type] special parameter to drive instance ObjectType parameter from the Type, update the shared parameter definition files (now for [Type] parameters we will also maintain the GUID as long as it remains)
-            <li>Incremental work towards IFC4RV 1.2 MVD
-</ul>
-
-      <p>
-         Export Bug Fixes:
-
-         <ul>
-			<li>Consistent ExportAs entity and its PredefinedTypes
-			<li>Export fails when there is no associated Plan View to a level
-			<li>Additional fix for error getting 2D data when there is no Level associated to the FamilyInstance
-			<li>Various fixes related to missing geometry and export failures
-			<li>Fixed performance issue in IFC2x3 export due to error in creating types
-			<li>Fixed issue with slanted Pile
-			<li>Fixed issue related to element that is split into parts
-			<li>Improvement in handling level of Part Override
-			<li>Some improvements on classification (issue #31)
-			<li>Fixed issue on Composite curve tolerance (issue #5)
-			<li>Fixed issue where element is still exported even though it is set to not-exported in the mapping table
-			<li>Bugfix for incorrect cylindrical hollow core Beam export in IFC4RV
-			<li>Fixed for issue #51
-			<li>Bugfix based on Pull request #52 for MEP connector, and a few clean-ups
-			<li>Fixed minor issue to ensure generic element exporter will generate consistent GUID for the instance
-			<li>Fixed issue when OverrideElementContainment is used but the Site does not have site geometry (from Topography surface)
-			<li>Add support of OverrideElementContainment also for SpatialElement (Room/Space/Area). This enables export to place IfcSpace directly to IfcSite for example, which is useful for outdoor spaces
-			<li>Refactored the handling of valid entity and type and fixed a few defects related to it (Github issue #68)
-			<li>Fixed issue with Stair Landing that is offset far away from the supposed location
-			<li>Fixed issue with missing geometry when assigning IfcExportAs to the Spatial Element (Issue #23)
-			However, in IFC4RV or DTV, there is a fixed list of valid entities that will be enforced, entity such as IfcExternalSpatialElement will be exported as IfcBuildingElementProxy.
-			<li>Fixed performance issue when there is a large triangulated geometry for export to IFC4RV
-			<li>Fixed issue of exception raised during export when "Export schedules as property sets" option is selected, and the model contains ViewSchedule from the template
-			<li>Update Source/IFCExporterUIOverride/IFCExporterUIWindow.xaml.cs (issue #59)
-			<li>IFCBooleanOperator.Union don't work! (issue #32)
-			<li>Fixed issue in exporting IfcBuildingElementProxy that assigns an invalid enumeration for CompositionType in Ifc2x3 export
-			<li>Fixed issue related to opening that cuts through multiple walls (note that this is not yet 100%. In some cases, due to the extended body of the opening (that is defined in the native code) there may be more cut than it should for a few cases
-			<li>Fixed issue with changing GUID of Window or Door when it is in the context of the opening that cuts multiple walls (issue "IFC Guid on family" in SourceForge)
-			<li>Fixed IfcWindowLiningProperties, IfcWindowPanelProperties GUID issue
-			<li>Improve handling for multiple meshes in a tessellated geometry that causes missing some surface body.
-			<li>Fixed issues of UserDefined propertysets that fails to recognize the Pset assigned to a Type. Also improve the handling for Conditional Pset (by PredefinedType)
-			<li>Fixed regression issue #70 missing toprail for IfcRailing on export
-			<li>Fixed issue with "runaway" flex duct with "Keep Tessellated Geometry as Triangulation" option selected (issue #58)
-			<li>Fixed regression issue (issue #96) IfcZone ObjectType not exported
-			<li>Fixed issue of Naming override/default value, and issue of Qto_ properties are not exported
-			<li>Fixed issue on a wrong enumeration for the SweptArea (it was set to .CURVE., should be .AREA.)
-			<li>Fixed for orphaned entities and wrong footprint information due to incorrect projection direction for IFC4RV requirements. IFC4RV Beam (Arch) is now without error in the automated test
-			<li>1st fixed for issue related to runaway parts in "export only elements visible in view" (there are still situations that may cause a wrong rotation, but the test case reported in issue #86 so far looks good)
-         </ul>
-			<p>
-         Import Bug Fixes:
-
-         <ul>
-            <li>Improve voiding of IfcMappedItem representation (#9)
-
-   </div>
-
-   <br>
-
-   <div class="version">19.1.0.0</div><div class="versioninfo-bullet">
-
-      <br><p>
-         General:
-
-         <ul>
-            <li>Some of the naming conventions for elements have changed.  Please discuss in the forums if this causes problems.
-            <li>This is generally a bug fix release with some new Link IFC functionality.
-         </ul>
-
-         <br>
-      <p>
-         New Export Functionality:
-
-         <ul>
-            <li>Add the ability to import and export custom configuration setups.
-            <li>
-               Add the ability to choose the project origin of the exported file.  There are 4 options:
-               - Current shared coordinates origin
-               - Internal Revit coordinates
-               - Project Base Point
-               - Site Survey Point
-            <li>
-               A number of IFC4 Reference View improvements, including:
-               - Export some profile names with geometry when appropriate
-               - Fix scaling of triangulation coordinates
-               - Improve export of beam axis
-               - Restrict use of many disallowed IFC entities and geometries
-            <li>Allow columns to be space bounding elements.
-            <li>Allow remapping of IFC entity attributes in addition to properties.
-            <li>Create more associated type entities for IFC objects.
-            <li>Consistent ability to override name, object type and description for all entities
-            <li>Export connectors even if they aren't connected to other elements.
-            <li>Export parts whose host elements are in linked files, regardless of if "Export Parts as Building Elements" is checked or not.
-            <li>Improved creation of IFCBUILDING and IFCSITE entities
-            <li>Better support for Illuminance and Volume parameter types.
-            <li>Include the exchange requirement information in the File Header for COBie export.
-            <li>New UI to allow assigning the address filled out in the export options to the building and/or site.
-            <li>Reduce the facet count for some element geometries.
-            <li>Support export of fabrication parts.
-            <li>Remove unneeded "Triangulation only" checkbox in the "Level of Detail" export options tab.
-         </ul>
-
-      <p>
-         Export Bug Fixes:
-
-         <ul>
-            <li>Export "NetVolume" and "NetSideArea" quantities instead of "Gross" ones.
-            <li>Export PredefinedType/ShapeType for ramps, stairs and vibration isolators.
-            <li>Fix export of certain elements so that they are of the right type instead of IfcBuildingElementProxy orIfcBuildingElementProxyType.
-            <li>Fix export of some multi-story stairs.
-            <li>Fix export of some space with empty Occupant fields.
-            <li>Fix material assignment for some elements.
-            <li>Fix missing predefined type for some elements.
-            <li>Fix missing profile names for some beams.
-            <li>Fix slope calculations for some elements.
-            <li>Fix unexpected error when exporting a floor as an IfcRamp (for IFC2x3 only).
-            <li>Fix unexpected error when exporting a site from a 3D view when exporting the active view geometry (for IFC4 RV only).
-            <li>More fixes to correct "unexpected errors" of certain entity types.
-            <li>Only allow unconnected elements if they are of type IfcDistributionElement.
-            <li>Restore calculations for "concealed" and "is external" properties.
-            <li>Restore proper mapping of Revit Grids to IfcGrids.
-            <li>Restore proper GUID for some door, windows, and property sets.
-            <li>Restore remapping of some deprecated IFC2x3 and IFC4 entities.
-            <li>Restore support for parameter mapping files.
-            <li>Restore support for provisions for voids in IFC2x3.
-            <li>Restore support for IfcSpace "ElevationWithFlooring" attribute.
-            <li>Restore tag for IfcCurtainWallType.
-            <li>Restore tessellation level of detail for coarse tessellations.
-            <li>Restore use of built-in parameters for populating some IFC parameters.
-            <li>(Pre-IFC4) Stop converting space heater types to electric heater types.
-            <li>(IFC4) Properly export some trimmed edges in advanced BReps.
-            <li>(IFC4) Limit distribution ports to IfcDistributionElements only.
-         </ul>
-
-         <br>
-      <p>
-         New Import Functionality:
-
-         <ul>
-            <li>(IFC4) Support IfcCartesianPointList2D, IfcIndexedPolyCurve
-         </ul>
-
-      <p>
-         Import Bug Fixes:
-
-         <ul>
-            <li>Accept structural items that have an undefined LoadBearing parameter.
-            <li>Better processing of slightly non-planar faces.
-            <li>Better processing of some sweeps that have unnecessary start and end parameters.
-            <li>Correct orientation of some objects on import with incomplete placement information.
-            <li>Make sure all created schedules and parameters have unique names.
-            <li>Improve import of some circular extruded geometries whose outer profile curves are slightly disjointed.
-            <li>Improve use of shared geometry across different type elements.
-            <li>Properly cut some geometry when the bounded curve for the half-space solid is missing.
-            <li>(IFC4) Better import of some geometry with NURBS curve-based edges.
-         </ul>
-
-   </div>
-
-   <div class="version">19.0.0.0</div><div class="versioninfo-bullet">
-
-      <br>Initial Revit 2019 release
-
    </div>
 </div>
 
