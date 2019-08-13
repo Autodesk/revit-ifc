@@ -5,18 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RevitIFCTools"
         mc:Ignorable="d"
-        Title="Revit IFC Tools" Height="300" Width="445">
+        Title="Revit IFC Tools" Height="300" Width="522.931">
    <Grid>
       <Grid.RowDefinitions>
          <RowDefinition Height="237*"/>
          <RowDefinition Height="34*"/>
       </Grid.RowDefinitions>
-      <Button x:Name="button_GenerateIFCEntityList" Content="Generate IFC EntityList" HorizontalAlignment="Left" Margin="10,23,0,0" VerticalAlignment="Top" Width="408" Height="35" Click="button_GenerateIFCEntityList_Click"/>
-      <Button x:Name="button_GeneratePsetDefs" Content="Generate Pset Definitions" HorizontalAlignment="Left" Margin="10,63,0,0" VerticalAlignment="Top" Width="408" Height="35" Click="button_GeneratePsetDefs_Click" />
-      <Button x:Name="button_Cancel" Content="Cancel" Margin="0,0,15,5" Grid.Row="1" Height="19" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75" Click="button_Cancel_Click"/>
-      <Button x:Name="button_paramexpr" Content="Test Parameter Expr" HorizontalAlignment="Left" Margin="10,103,0,0" VerticalAlignment="Top" Width="408" Height="33" Click="button_paramexpr_Click"/>
+      <Button x:Name="button_GenerateIFCEntityList" Content="Generate IFC EntityList" Margin="10,23,9.8,0" VerticalAlignment="Top" Height="35" Click="button_GenerateIFCEntityList_Click"/>
+      <Button x:Name="button_GeneratePsetDefs" Content="Generate Pset Definitions" Margin="10,63,9.8,0" VerticalAlignment="Top" Height="35" Click="button_GeneratePsetDefs_Click" />
+      <Button x:Name="button_Cancel" Content="Cancel" Margin="0,0,9.8,4.4" Grid.Row="1" Height="19" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75" Click="button_Cancel_Click"/>
+      <Button x:Name="button_paramexpr" Content="Test Parameter Expr" Margin="10,103,9.8,0" VerticalAlignment="Top" Height="33" Click="button_paramexpr_Click"/>
       <Button x:Name="Button_GenGUID" Content="Generate GUID" HorizontalAlignment="Left" Margin="10,174,0,0" VerticalAlignment="Top" Width="102" Height="23" Click="Button_GenGUID_Click"/>
       <TextBox x:Name="TextBox_GUID" HorizontalAlignment="Left" Height="23" Margin="117,174,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="301"/>
+      <Button x:Name="Button_switchcase" Content="Switch Case" Margin="0,174,9.6,0" VerticalAlignment="Top" Height="23" HorizontalAlignment="Right" Width="75" Click="Button_switchcase_Click"/>
 
    </Grid>
 </Window>

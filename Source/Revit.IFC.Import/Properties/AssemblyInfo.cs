@@ -13,8 +13,8 @@ using System.Reflection;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("20.1.0.0")]
-[assembly: AssemblyFileVersion("20.1.0.0")]
+[assembly: AssemblyVersion("20.1.0.1")]
+[assembly: AssemblyFileVersion("20.1.0.1")]
 #endif
 
 #region Using directives
