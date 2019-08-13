@@ -141,21 +141,25 @@ namespace Revit.IFC.Common.Utility
       /// <param name="schemaFile">the schema file name</param>
       /// <returns>the entity Dictionary</returns>
       public static IDictionary<string, IfcSchemaEntityNode> GetEntityDictFor(string schemaFile)
-      { 
+      {
          if (string.IsNullOrEmpty(loadedIfcSchemaVersion) || !loadedIfcSchemaVersion.Equals(schemaFile, StringComparison.InvariantCultureIgnoreCase))
          {
             // Process IFCXml schema here, then search for IfcProduct and build TreeView beginning from that node. Allow checks for the tree nodes. Grey out (and Italic) the abstract entity
-            string schemaFilePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\" + schemaFile);
-            FileInfo schemaFileInfo = new FileInfo(schemaFilePath);
+            string schemaFilePath;
+            FileInfo schemaFileInfo;
+
 #if IFC_OPENSOURCE
+            // For the open source code, search it from the IfcExporter install folder
+            string schemaLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
+            schemaFilePath = Path.Combine(schemaLoc, schemaFile);
+            schemaFileInfo = new FileInfo(schemaFilePath);
             if (!schemaFileInfo.Exists)
+#endif
             {
-               // For the open source code, if the schema file is not found, search also from the IfcExporter install folder
-               string schemaLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
-               schemaFilePath = Path.Combine(schemaLoc, schemaFile);
+               schemaFilePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\" + schemaFile);
                schemaFileInfo = new FileInfo(schemaFilePath);
             }
-#endif
+
             if (schemaFileInfo.Exists)
             {
                bool newLoad = ProcessIFCXMLSchema.ProcessIFCSchema(schemaFileInfo);
