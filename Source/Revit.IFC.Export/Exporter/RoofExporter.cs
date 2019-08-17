@@ -348,7 +348,6 @@ namespace Revit.IFC.Export.Exporter
                               slabExtrusionCreationData.ScaledOuterPerimeter = UnitUtil.ScaleLength(curveLoops[0].GetExactLength());
                               slabExtrusionCreationData.Slope = UnitUtil.ScaleAngle(MathUtil.SafeAcos(Math.Abs(slope)));
 
-                              ExporterUtil.RelateObject(exporterIFC, hostObjectHandle, slabHnd);
                               IFCExportInfoPair slabRoofExportType = new IFCExportInfoPair(IFCEntityType.IfcSlab, slabRoofPredefinedType);
                               productWrapper.AddElement(null, slabHnd, setter, slabExtrusionCreationData, false, slabRoofExportType);
                               CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, matId);
