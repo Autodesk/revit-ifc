@@ -82,10 +82,6 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
-    <Reference Include="UserInterfaceUtility, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2020\UserInterfaceUtility.dll</HintPath>
-    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -232,10 +228,6 @@
     <Resource Include="icons\save.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Foundation\UserInterfaceUtility\UserInterfaceUtility.csproj">
-      <Project>{80f7e25d-8198-4083-b30e-b60ee420c27e}</Project>
-      <Name>UserInterfaceUtility</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj">
       <Project>{032EA4DC-181F-4453-9F93-E08DE1C07D95}</Project>
       <Name>Revit.IFC.Common</Name>
