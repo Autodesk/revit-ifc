@@ -116,6 +116,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                       builtInParameter, ifcPropertyName, valueType);
                   break;
                }
+            case PropertyType.AreaDensity:
+               {
+                  propHnd = PropertyUtil.CreateAreaDensityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                     builtInParameter, ifcPropertyName, valueType);
+                  break;
+               }
             case PropertyType.Boolean:
                {
                   propHnd = PropertyUtil.CreateBooleanPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
