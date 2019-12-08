@@ -1685,7 +1685,7 @@ namespace Revit.IFC.Export.Exporter
                         if (edgeLoopList.Count == 1)
                            faceBound = IFCInstanceExporter.CreateFaceOuterBound(file, edgeLoop, true);
                         else
-                           faceBound = IFCInstanceExporter.CreateFaceBound(file, edgeLoop, false);
+                           faceBound = IFCInstanceExporter.CreateFaceBound(file, edgeLoop, true);
 
                         bounds.Add(faceBound);
 
