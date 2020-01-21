@@ -146,6 +146,8 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="document">The document to export.</param>
       /// <param name="exporterIFC">The IFC exporter object.</param>
       /// <param name="filterView">The view whose filter visibility settings govern the export.</param>
+      /// <remarks>Note that filterView doesn't control the exported geometry; it only controls which elements
+      /// are visible or not. That allows us to, e.g., choose a plan view but get 3D geometry.</remarks>
       public void ExportIFC(Autodesk.Revit.DB.Document document, ExporterIFC exporterIFC, Autodesk.Revit.DB.View filterView)
       {
          // Make sure our static caches are clear at the start, and end, of export.
@@ -240,36 +242,42 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
-      protected void ExportSpatialElements(ExporterIFC exporterIFC, Autodesk.Revit.DB.Document document)
+      private FilteredElementCollector GetExportElementCollector(Autodesk.Revit.DB.Document document)
       {
          ExportOptionsCache exportOptionsCache = ExporterCacheManager.ExportOptionsCache;
+         ICollection<ElementId> idsToExport = exportOptionsCache.ElementsForExport;
+         if (idsToExport.Count > 0)
+         {
+            return new FilteredElementCollector(document, idsToExport);
+         }
+
          View filterView = exportOptionsCache.FilterViewForExport;
+         return (filterView == null || exportOptionsCache.ExportingLink) ?
+                new FilteredElementCollector(document) :
+                new FilteredElementCollector(filterView.Document, filterView.Id);
+      }
 
-         // Create IfcSite first here using TopographySurface if any, if not create a default one
+      protected void ExportSpatialElements(ExporterIFC exporterIFC, Autodesk.Revit.DB.Document document)
+      {
+         // Create IfcSite first here using the first visible TopographySurface if any, if not create a default one.
          // Site and Building need to be created first to ensure containment override to work
-
-         Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
-         FilteredElementCollector collector = new FilteredElementCollector(document);
+         FilteredElementCollector topoElementCollector = GetExportElementCollector(document);
          List<Type> topoSurfaceType = new List<Type>() { typeof(TopographySurface) };
          ElementMulticlassFilter multiclassFilter = new ElementMulticlassFilter(topoSurfaceType);
-         collector.WherePasses(multiclassFilter);
-         ICollection<ElementId> filteredTopoElemments = collector.ToElementIds();
-         if (filteredTopoElemments != null && filteredTopoElemments.Count > 0)
+         topoElementCollector.WherePasses(multiclassFilter);
+         ICollection<ElementId> filteredTopoElements = topoElementCollector.ToElementIds();
+         if (filteredTopoElements != null && filteredTopoElements.Count > 0)
          {
-            foreach (ElementId topoElemId in filteredTopoElemments)
+            foreach (ElementId topoElemId in filteredTopoElements)
             {
+               // Note that the TopographySurface exporter in ExportElementImpl does nothing if the
+               // element has already been processed here.
                Element topoElem = document.GetElement(topoElemId);
-               if (topoElem is TopographySurface)
-               {
-                  GeometryElement geomElem = topoElem.get_Geometry(geomOptions);
-                  using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
-                  {
-                     SiteExporter.ExportTopographySurface(exporterIFC, (TopographySurface)topoElem, geomElem, productWrapper);
-                  }
-                  break;   // Process only the first one to create the IfcSite
-               }
+               if (ExportElement(exporterIFC, topoElem))
+                  break; // Process only the first exportable one to create the IfcSite
             }
          }
+
          if (ExporterCacheManager.SiteHandle == null || IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
          {
             using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
@@ -286,25 +294,19 @@ namespace Revit.IFC.Export.Exporter
             ExporterCacheManager.BuildingHandle = buildingHnd;
          }
 
-         bool exportIfBoundingBoxIsWithinViewExtent = (exportOptionsCache.ExportRoomsInView && (filterView != null) && filterView is View3D);
+         ExportOptionsCache exportOptionsCache = ExporterCacheManager.ExportOptionsCache;
+         View filterView = exportOptionsCache.FilterViewForExport;
 
-         FilteredElementCollector spatialElementCollector;
-         ICollection<ElementId> idsToExport = exportOptionsCache.ElementsForExport;
-         if (idsToExport.Count > 0)
-         {
-            spatialElementCollector = new FilteredElementCollector(document, idsToExport);
-         }
-         else
-         {
-            spatialElementCollector = (filterView == null || ExporterCacheManager.ExportOptionsCache.ExportingLink || exportIfBoundingBoxIsWithinViewExtent) ?
-                new FilteredElementCollector(document) : new FilteredElementCollector(filterView.Document, filterView.Id);
-         }
+         bool exportIfBoundingBoxIsWithinViewExtent = (exportOptionsCache.ExportRoomsInView && (filterView != null) && filterView is View3D);
 
          ISet<ElementId> exportedSpaces = null;
          if (exportOptionsCache.SpaceBoundaryLevel == 2)
             exportedSpaces = SpatialElementExporter.ExportSpatialElement2ndLevel(this, exporterIFC, document);
 
-         //export all spatial elements for no or 1st level room boundaries; for 2nd level, export spaces that couldn't be exported above.
+         // Export all spatial elements for no or 1st level room boundaries; for 2nd level, export spaces that 
+         // couldn't be exported above.
+         // Note that FilteredElementCollector is one use only, so we need to create a new one here.
+         FilteredElementCollector spatialElementCollector = GetExportElementCollector(document);
          SpatialElementExporter.InitializeSpatialElementGeometryCalculator(document, exporterIFC);
          ElementFilter spatialElementFilter = ElementFilteringUtil.GetSpatialElementFilter(document, exporterIFC);
          spatialElementCollector.WherePasses(spatialElementFilter);
@@ -341,24 +343,12 @@ namespace Revit.IFC.Export.Exporter
 
       protected void ExportNonSpatialElements(ExporterIFC exporterIFC, Autodesk.Revit.DB.Document document)
       {
-         FilteredElementCollector otherElementCollector;
-         View filterView = ExporterCacheManager.ExportOptionsCache.FilterViewForExport;
-
-         ICollection<ElementId> idsToExport = ExporterCacheManager.ExportOptionsCache.ElementsForExport;
-         if (idsToExport.Count > 0)
-         {
-            otherElementCollector = new FilteredElementCollector(document, idsToExport);
-         }
-         else
-         {
-            otherElementCollector = (filterView == null || ExporterCacheManager.ExportOptionsCache.ExportingLink) ?
-                new FilteredElementCollector(document) : new FilteredElementCollector(filterView.Document, filterView.Id);
-         }
+         FilteredElementCollector otherElementCollector = GetExportElementCollector(document);
 
          ElementFilter nonSpatialElementFilter = ElementFilteringUtil.GetNonSpatialElementFilter(document, exporterIFC);
          otherElementCollector.WherePasses(nonSpatialElementFilter);
 
-         int numOfOtherElement = otherElementCollector.Count<Element>();
+         int numOfOtherElement = otherElementCollector.Count();
          int otherElementCollectorCount = 1;
          foreach (Element element in otherElementCollector)
          {
@@ -546,8 +536,11 @@ namespace Revit.IFC.Export.Exporter
       /// Performs the export of elements, including spatial and non-spatial elements.
       /// </summary>
       /// <param name="exporterIFC">The IFC exporter object.</param>
-      /// <param name="element ">The element to export.</param>
-      public virtual void ExportElement(ExporterIFC exporterIFC, Autodesk.Revit.DB.Element element)
+      /// <param name="element">The element to export.</param>
+      /// <returns>False if the element can't be exported at all, true otherwise.</returns>
+      /// <remarks>A true return value doesn't mean something was exported, but that the
+      /// routine did a quick reject on the element, or an exception occurred.</remarks>
+      public virtual bool ExportElement(ExporterIFC exporterIFC, Autodesk.Revit.DB.Element element)
       {
          if (!CanExportElement(exporterIFC, element))
          {
@@ -563,7 +556,7 @@ namespace Revit.IFC.Export.Exporter
                   ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID = bStoreIFCGUID;
                }
             }
-            return;
+            return false;
          }
 
          //WriteIFCExportedElements
@@ -589,7 +582,10 @@ namespace Revit.IFC.Export.Exporter
          catch (System.Exception ex)
          {
             HandleUnexpectedException(ex, exporterIFC, element);
+            return false;
          }
+
+         return true;
       }
 
       /// <summary>
@@ -1289,16 +1285,16 @@ namespace Revit.IFC.Export.Exporter
                   }
                   else
                   {
-                  Element elem = document.GetElement(stairRamp.Key);
-                  string guid = GUIDUtil.CreateSubElementGUID(elem, (int)IFCStairSubElements.ContainmentRelation);
-                  if (locallyUsedGUIDs.Contains(guid))
-                     guid = GUIDUtil.CreateGUID();
-                  else
-                     locallyUsedGUIDs.Add(guid);
+                     Element elem = document.GetElement(stairRamp.Key);
+                     string guid = GUIDUtil.CreateSubElementGUID(elem, (int)IFCStairSubElements.ContainmentRelation);
+                     if (locallyUsedGUIDs.Contains(guid))
+                        guid = GUIDUtil.CreateGUID();
+                     else
+                        locallyUsedGUIDs.Add(guid);
 
-                  ExporterUtil.RelateObjects(exporterIFC, guid, hnd, comps);
+                     ExporterUtil.RelateObjects(exporterIFC, guid, hnd, comps);
+                  }
                }
-            }
             }
 
             ProjectInfo projectInfo = document.ProjectInformation;
@@ -1495,7 +1491,7 @@ namespace Revit.IFC.Export.Exporter
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.BuildingHandle))
                   ExporterCacheManager.ContainmentCache.AddRelation(ExporterCacheManager.ProjectHandle, ExporterCacheManager.BuildingHandle);
             }
-           
+
             // The name "GetRelatedProducts()" is misleading; this only covers spaces.
             HashSet<IFCAnyHandle> buildingSpaces = RemoveContainedHandlesFromSet(ExporterCacheManager.LevelInfoCache.OrphanedSpaces);
             buildingSpaces.UnionWith(exporterIFC.GetRelatedProducts());
@@ -2088,7 +2084,6 @@ namespace Revit.IFC.Export.Exporter
          // (100-ns ticks in a second) and subtract the 1/1/1970 offset.
          return creationTimeUtc.ToFileTimeUtc() / 10000000 - 11644473600;
       }
-
 
       /// <summary>
       /// Creates the application information.
@@ -3631,7 +3626,7 @@ namespace Revit.IFC.Export.Exporter
             if (basis == ExportOptionsCache.SiteTransformBasis.Shared && 
                !ExporterCacheManager.ExportOptionsCache.IncludeSiteElevation)
             {
-            Transform linkTrf = ExporterCacheManager.ExportOptionsCache.GetLinkInstanceTransform(0);
+               Transform linkTrf = ExporterCacheManager.ExportOptionsCache.GetLinkInstanceTransform(0);
                XYZ buildingZOffset = new XYZ(0, 0, linkTrf.Origin.Z);
                linkTrfToUse = Transform.CreateTranslation(buildingZOffset);
             }
@@ -3639,6 +3634,7 @@ namespace Revit.IFC.Export.Exporter
             {
                linkTrfToUse = Transform.Identity;
             }
+
             relativePlacement = ExporterUtil.CreateAxis2Placement3D(file,
                linkTrfToUse.Origin, linkTrfToUse.BasisZ, linkTrfToUse.BasisX);
          }
