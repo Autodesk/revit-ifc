@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Runtime.Serialization;
 using System.Xml;
-using Newtonsoft.Json;
+//using Newtonsoft.Json;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -19,19 +19,16 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The MVD version
       /// </summary>
-      [JsonProperty("Version")]
       public string Version { get; set; }
 
       /// <summary>
       /// Pset list for MVD
       /// </summary>
-      [JsonProperty("PropertySet List")]
       public HashSet<string> PropertySetList { get; set; } = new HashSet<string>();
 
       /// <summary>
       /// Entity list for MVD
       /// </summary>
-      [JsonProperty("Entity List")]
       public HashSet<string> EntityList { get; set; } = new HashSet<string>();
 
       /// <summary>
@@ -82,19 +79,19 @@ namespace Revit.IFC.Export.Utility
          /// <summary>
          /// The MVD version
          /// </summary>
-         [JsonProperty("Version")]
+         //[JsonProperty("Version")]
          public string Version { get; set; }
 
          /// <summary>
          /// Pset list for MVD
          /// </summary>
-         [JsonProperty("PropertySet List")]
+         //[JsonProperty("PropertySet List")]
          public IList<string> PropertySetList { get; set; } = new List<string>();
 
          /// <summary>
          /// Entity list for MVD
          /// </summary>
-         [JsonProperty("Entity LIst")]
+         //[JsonProperty("Entity LIst")]
          public IList<string> EntityList { get; set; } = new List<string>();
       }
 
@@ -112,9 +109,9 @@ namespace Revit.IFC.Export.Utility
          {
             // JavaScriptSerializer does not support mapping of Json array into Hashset (it expects List) and this code below gets the data into Lists first
             //   and then transfers the data to the final form using Hashset for performance reason
-            //JavaScriptSerializer jsonConvert = new JavaScriptSerializer();
-            //IDictionary<string, IFCEntityAndPsetListRawFromJson> CertifiedEntityAndPsetList = jsonConvert.Deserialize<IDictionary<string, IFCEntityAndPsetListRawFromJson>>(File.ReadAllText(filePath));
-            IDictionary<string, IFCEntityAndPsetListRawFromJson> CertifiedEntityAndPsetList = JsonConvert.DeserializeObject<IDictionary<string, IFCEntityAndPsetListRawFromJson>>(File.ReadAllText(filePath));
+            JavaScriptSerializer jsonConvert = new JavaScriptSerializer();
+            IDictionary<string, IFCEntityAndPsetListRawFromJson> CertifiedEntityAndPsetList = jsonConvert.Deserialize<IDictionary<string, IFCEntityAndPsetListRawFromJson>>(File.ReadAllText(filePath));
+
             // Copy the data to the desired format using Hashset in IFCEntityAndPsetList
             foreach (KeyValuePair<string, IFCEntityAndPsetListRawFromJson> entPsetData in CertifiedEntityAndPsetList)
             {

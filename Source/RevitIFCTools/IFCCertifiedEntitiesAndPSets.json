@@ -1,7 +1,7 @@
 {
    "IFC4RV" : {
       "Version" : "V1.2",
-      "Entity List" : [
+      "EntityList" : [
          "IfcActorRole",
          "IfcActuator",
          "IfcActuatorType",
@@ -415,7 +415,7 @@
          "IfcWindowType",
          "IfcZone"
       ],
-      "PropertySet List" : [
+      "PropertySetList" : [
          "Pset_ActuatorTypeCommon",
          "Pset_ActuatorTypeLinearActuation",
          "Pset_ActuatorTypeRotationalActuation",
@@ -599,7 +599,7 @@
    },
    "IFC4DTV" : {
       "Version" : "V1.0",
-      "Entity List" : [
+      "EntityList" : [
          "IfcActorRole",
          "IfcActuator",
          "IfcActuatorType",
@@ -1141,7 +1141,7 @@
          "IfcZone",
          "IfcZShapeProfileDef"
       ],
-      "PropertySet List" : [
+      "PropertySetList" : [
          "Pset_ActuatorTypeCommon",
          "Pset_ActuatorTypeLinearActuation",
          "Pset_ActuatorTypeRotationalActuation",
