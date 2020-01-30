@@ -343,6 +343,8 @@ namespace RevitIFCTools
                (prop.PropertyType as PropertySingleValue).DataType = "IfcReal";
             else if (prop.Name.ToLowerInvariant().Contains("loadbearing"))
                (prop.PropertyType as PropertySingleValue).DataType = "IfcBoolean";
+            else if (prop.Name.ToLowerInvariant().Contains("reference"))
+               (prop.PropertyType as PropertySingleValue).DataType = "IfcIdentifier";
             else
                (prop.PropertyType as PropertySingleValue).DataType = "IfcLabel";
 #if DEBUG
@@ -598,101 +600,149 @@ namespace RevitIFCTools
 
       public PsetProperty getPropertyDef(XNamespace ns, XElement pDef)
       {
-         PsetProperty prop = new PsetProperty();
-         if (pDef.Attribute("ifdguid") != null)
-            prop.IfdGuid = pDef.Attribute("ifdguid").Value;
-         prop.Name = pDef.Element(ns + "Name").Value;
-         IList<NameAlias> aliases = new List<NameAlias>();
-         XElement nAliasesElem = pDef.Elements(ns + "NameAliases").FirstOrDefault();
-         if (nAliasesElem != null)
+         try
          {
-            var nAliases = from el in nAliasesElem.Elements(ns + "NameAlias") select el;
-            foreach (XElement alias in nAliases)
+            PsetProperty prop = new PsetProperty();
+            if (pDef.Attribute("ifdguid") != null)
+               prop.IfdGuid = pDef.Attribute("ifdguid").Value;
+            prop.Name = pDef.Element(ns + "Name").Value;
+            IList<NameAlias> aliases = new List<NameAlias>();
+            XElement nAliasesElem = pDef.Elements(ns + "NameAliases").FirstOrDefault();
+            if (nAliasesElem != null)
             {
-               NameAlias nameAlias = new NameAlias();
-               nameAlias.Alias = alias.Value;
-               nameAlias.lang = alias.Attribute("lang").Value;
-               aliases.Add(nameAlias);
-            }
-         }
-         if (aliases.Count > 0)
-            prop.NameAliases = aliases;
-
-         PropertyDataType dataTyp = null;
-         var propType = pDef.Elements(ns + "PropertyType").FirstOrDefault();
-         XElement propDetType = propType.Elements().FirstOrDefault();
-         if (propDetType == null)
-         {
-#if DEBUG
-            logF.WriteLine("%Warning: Missing PropertyType for {0}.{1}", pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
-#endif
-            return prop;
-         }
-
-         if (propDetType.Name.LocalName.Equals("TypePropertySingleValue"))
-         {
-            XElement dataType = propDetType.Element(ns + "DataType");
-            PropertySingleValue sv = new PropertySingleValue();
-            if (dataType.Attribute("type") != null)
-            {
-               sv.DataType = dataType.Attribute("type").Value;
-            }
-            else
-            {
-               sv.DataType = "IfcLabel";     // Set this to default if missing
-#if DEBUG
-               logF.WriteLine("%Warning: Missing TypePropertySingleValue for {0}.{1}", pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
-#endif
-            }
-            dataTyp = sv;
-         }
-         else if (propDetType.Name.LocalName.Equals("TypePropertyReferenceValue"))
-         {
-            PropertyReferenceValue rv = new PropertyReferenceValue();
-            // Older versions uses Element DataType!
-            XElement dt = propDetType.Element(ns + "DataType");
-            if (dt == null)
-            {
-               rv.RefEntity = propDetType.Attribute("reftype").Value;
-            }
-            else
-            {
-               rv.RefEntity = dt.Attribute("type").Value;
-            }
-            dataTyp = rv;
-         }
-         else if (propDetType.Name.LocalName.Equals("TypePropertyEnumeratedValue"))
-         {
-            PropertyEnumeratedValue pev = new PropertyEnumeratedValue();
-            var enumItems = propDetType.Descendants(ns + "EnumItem");
-            if (enumItems.Count() > 0)
-            {
-               pev.Name = propDetType.Element(ns + "EnumList").Attribute("name").Value;
-               pev.EnumDef = new List<PropertyEnumItem>();
-               foreach (var en in enumItems)
+               var nAliases = from el in nAliasesElem.Elements(ns + "NameAlias") select el;
+               foreach (XElement alias in nAliases)
                {
-                  string enumItemName = en.Value.ToString();
-                  IEnumerable<XElement> consDef = null;
-                  if (propDetType.Element(ns + "ConstantList") != null)
-                  {
-                     consDef = from el in propDetType.Element(ns + "ConstantList").Elements(ns + "ConstantDef")
-                               where (el.Element(ns + "Name").Value.Equals(enumItemName, StringComparison.CurrentCultureIgnoreCase))
-                               select el;
-                  }
+                  NameAlias nameAlias = new NameAlias();
+                  nameAlias.Alias = alias.Value;
+                  nameAlias.lang = alias.Attribute("lang").Value;
+                  aliases.Add(nameAlias);
+               }
+            }
+            if (aliases.Count > 0)
+               prop.NameAliases = aliases;
 
-                  if (propDetType.Element(ns + "ConstantList") != null)
-                  {
-                     var consList = propDetType.Element(ns + "ConstantList").Elements(ns + "ConstantDef");
-                     if (consList != null && consList.Count() != enumItems.Count())
-                     {
+            PropertyDataType dataTyp = null;
+            var propType = pDef.Elements(ns + "PropertyType").FirstOrDefault();
+            XElement propDetType = propType.Elements().FirstOrDefault();
+            if (propDetType == null)
+            {
 #if DEBUG
-                        logF.WriteLine("%Warning: EnumList (" + enumItems.Count().ToString() + ") is not consistent with the ConstantList ("
-                           + consList.Count().ToString() + ") for: {0}.{1}",
-                           pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
+               logF.WriteLine("%Warning: Missing PropertyType for {0}.{1}", pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
 #endif
+               return prop;
+            }
+
+            if (propDetType.Name.LocalName.Equals("TypePropertySingleValue"))
+            {
+               XElement dataType = propDetType.Element(ns + "DataType");
+               PropertySingleValue sv = new PropertySingleValue();
+               if (dataType.Attribute("type") != null)
+               {
+                  sv.DataType = dataType.Attribute("type").Value;
+               }
+               else
+               {
+#if DEBUG
+                  logF.WriteLine("%Warning: Missing TypePropertySingleValue for {0}.{1}", pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
+#endif
+                  // Hndle a known issue of missing data type for a specific property
+                  if (prop.Name.Equals("Reference", StringComparison.InvariantCultureIgnoreCase))
+                     sv.DataType = "IfcIdentifier";
+                  else
+                     sv.DataType = "IfcLabel";     // Set this to default if missing
+               }
+               dataTyp = sv;
+            }
+            else if (propDetType.Name.LocalName.Equals("TypePropertyReferenceValue"))
+            {
+               PropertyReferenceValue rv = new PropertyReferenceValue();
+               // Older versions uses Element DataType!
+               XElement dt = propDetType.Element(ns + "DataType");
+               if (dt == null)
+               {
+                  rv.RefEntity = propDetType.Attribute("reftype").Value;
+               }
+               else
+               {
+                  rv.RefEntity = dt.Attribute("type").Value;
+               }
+               dataTyp = rv;
+            }
+            else if (propDetType.Name.LocalName.Equals("TypePropertyEnumeratedValue"))
+            {
+               PropertyEnumeratedValue pev = new PropertyEnumeratedValue();
+               var enumItems = propDetType.Descendants(ns + "EnumItem");
+               if (enumItems.Count() > 0)
+               {
+                  pev.Name = propDetType.Element(ns + "EnumList").Attribute("name").Value;
+                  pev.EnumDef = new List<PropertyEnumItem>();
+                  foreach (var en in enumItems)
+                  {
+                     string enumItemName = en.Value.ToString();
+                     IEnumerable<XElement> consDef = null;
+                     if (propDetType.Element(ns + "ConstantList") != null)
+                     {
+                        consDef = from el in propDetType.Element(ns + "ConstantList").Elements(ns + "ConstantDef")
+                                  where (el.Element(ns + "Name").Value.Equals(enumItemName, StringComparison.CurrentCultureIgnoreCase))
+                                  select el;
+                     }
+
+                     if (propDetType.Element(ns + "ConstantList") != null)
+                     {
+                        var consList = propDetType.Element(ns + "ConstantList").Elements(ns + "ConstantDef");
+                        if (consList != null && consList.Count() != enumItems.Count())
+                        {
+#if DEBUG
+                           logF.WriteLine("%Warning: EnumList (" + enumItems.Count().ToString() + ") is not consistent with the ConstantList ("
+                              + consList.Count().ToString() + ") for: {0}.{1}",
+                              pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
+#endif
+                        }
+                     }
+
+                     if (consDef != null && consDef.Count() > 0)
+                     {
+                        foreach (var cD in consDef)
+                        {
+                           PropertyEnumItem enumItem = new PropertyEnumItem();
+                           enumItem.EnumItem = cD.Elements(ns + "Name").FirstOrDefault().Value;
+                           enumItem.Aliases = new List<NameAlias>();
+                           var eAliases = from el in cD.Elements(ns + "NameAliases").FirstOrDefault().Elements(ns + "NameAlias") select el;
+                           if (eAliases.Count() > 0)
+                           {
+                              foreach (var aliasItem in eAliases)
+                              {
+                                 NameAlias nal = new NameAlias();
+                                 nal.Alias = aliasItem.Value;
+                                 nal.lang = aliasItem.Attribute("lang").Value;
+                                 enumItem.Aliases.Add(nal);
+                              }
+                           }
+                           pev.EnumDef.Add(enumItem);
+                        }
+                     }
+                     else
+                     {
+                        PropertyEnumItem enumItem = new PropertyEnumItem();
+                        enumItem.EnumItem = enumItemName;
+                        enumItem.Aliases = new List<NameAlias>();
+                        pev.EnumDef.Add(enumItem);
                      }
                   }
-
+               }
+               else
+               {
+                  {
+#if DEBUG
+                     logF.WriteLine("%Warning: EnumList {0}.{1} is empty!", pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
+#endif
+                  }
+                  // If EnumList is empty, try to see whether ConstantDef has values. The Enum item name will be taken from the ConstantDef.Name
+                  pev.Name = "PEnum_" + prop.Name;
+                  pev.EnumDef = new List<PropertyEnumItem>();
+                  var consDef = from el in propDetType.Element(ns + "ConstantList").Elements(ns + "ConstantDef")
+                                select el;
                   if (consDef != null && consDef.Count() > 0)
                   {
                      foreach (var cD in consDef)
@@ -702,7 +752,6 @@ namespace RevitIFCTools
                         enumItem.Aliases = new List<NameAlias>();
                         var eAliases = from el in cD.Elements(ns + "NameAliases").FirstOrDefault().Elements(ns + "NameAlias") select el;
                         if (eAliases.Count() > 0)
-                        {
                            foreach (var aliasItem in eAliases)
                            {
                               NameAlias nal = new NameAlias();
@@ -710,112 +759,76 @@ namespace RevitIFCTools
                               nal.lang = aliasItem.Attribute("lang").Value;
                               enumItem.Aliases.Add(nal);
                            }
-                        }
                         pev.EnumDef.Add(enumItem);
                      }
                   }
+               }
+               dataTyp = pev;
+            }
+            else if (propDetType.Name.LocalName.Equals("TypePropertyBoundedValue"))
+            {
+               XElement dataType = propDetType.Element(ns + "DataType");
+               PropertyBoundedValue bv = new PropertyBoundedValue();
+               bv.DataType = dataType.Attribute("type").Value;
+               dataTyp = bv;
+            }
+            else if (propDetType.Name.LocalName.Equals("TypePropertyListValue"))
+            {
+               XElement dataType = propDetType.Descendants(ns + "DataType").FirstOrDefault();
+               PropertyListValue lv = new PropertyListValue();
+               lv.DataType = dataType.Attribute("type").Value;
+               dataTyp = lv;
+            }
+            else if (propDetType.Name.LocalName.Equals("TypePropertyTableValue"))
+            {
+               PropertyTableValue tv = new PropertyTableValue();
+               var tve = propDetType.Element(ns + "Expression");
+               if (tve != null)
+                  tv.Expression = tve.Value;
+               XElement el = propDetType.Element(ns + "DefiningValue");
+               if (el != null)
+               {
+                  XElement el2 = propDetType.Element(ns + "DefiningValue").Element(ns + "DataType");
+                  if (el2 != null)
+                     tv.DefiningValueType = el2.Attribute("type").Value;
+               }
+               el = propDetType.Element(ns + "DefinedValue");
+               if (el != null)
+               {
+                  XElement el2 = propDetType.Element(ns + "DefinedValue").Element(ns + "DataType");
+                  if (el2 != null)
+                     tv.DefinedValueType = el2.Attribute("type").Value;
+               }
+               dataTyp = tv;
+            }
+            else if (propDetType.Name.LocalName.Equals("TypeComplexProperty"))
+            {
+               ComplexProperty compProp = new ComplexProperty();
+               compProp.Name = propDetType.Attribute("name").Value;
+               compProp.Properties = new List<PsetProperty>();
+               foreach (XElement cpPropDef in propDetType.Elements(ns + "PropertyDef"))
+               {
+                  PsetProperty pr = getPropertyDef(ns, cpPropDef);
+                  if (pr == null)
+                  {
+#if DEBUG
+                     logF.WriteLine("%Error: Mising PropertyType data in complex property {0}.{1}.{2}", propDetType.Parent.Parent.Element(ns + "Name").Value,
+                        prop.Name, cpPropDef.Element(ns + "Name").Value);
+#endif
+                  }
                   else
-                  {
-                     PropertyEnumItem enumItem = new PropertyEnumItem();
-                     enumItem.EnumItem = enumItemName;
-                     enumItem.Aliases = new List<NameAlias>();
-                     pev.EnumDef.Add(enumItem);
-                  }
+                     compProp.Properties.Add(pr);
                }
+               dataTyp = compProp;
             }
-            else
-            {
-               {
-#if DEBUG
-                  logF.WriteLine("%Warning: EnumList {0}.{1} is empty!", pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
-#endif
-               }
-               // If EnumList is empty, try to see whether ConstantDef has values. The Enum item name will be taken from the ConstantDef.Name
-               pev.Name = "PEnum_" + prop.Name;
-               pev.EnumDef = new List<PropertyEnumItem>();
-               var consDef = from el in propDetType.Element(ns + "ConstantList").Elements(ns + "ConstantDef")
-                             select el;
-               if (consDef != null && consDef.Count() > 0)
-               {
-                  foreach (var cD in consDef)
-                  {
-                     PropertyEnumItem enumItem = new PropertyEnumItem();
-                     enumItem.EnumItem = cD.Elements(ns + "Name").FirstOrDefault().Value;
-                     enumItem.Aliases = new List<NameAlias>();
-                     var eAliases = from el in cD.Elements(ns + "NameAliases").FirstOrDefault().Elements(ns + "NameAlias") select el;
-                     if (eAliases.Count() > 0)
-                        foreach (var aliasItem in eAliases)
-                        {
-                           NameAlias nal = new NameAlias();
-                           nal.Alias = aliasItem.Value;
-                           nal.lang = aliasItem.Attribute("lang").Value;
-                           enumItem.Aliases.Add(nal);
-                        }
-                     pev.EnumDef.Add(enumItem);
-                  }
-               }
-            }
-            dataTyp = pev;
-         }
-         else if (propDetType.Name.LocalName.Equals("TypePropertyBoundedValue"))
-         {
-            XElement dataType = propDetType.Element(ns + "DataType");
-            PropertyBoundedValue bv = new PropertyBoundedValue();
-            bv.DataType = dataType.Attribute("type").Value;
-            dataTyp = bv;
-         }
-         else if (propDetType.Name.LocalName.Equals("TypePropertyListValue"))
-         {
-            XElement dataType = propDetType.Descendants(ns + "DataType").FirstOrDefault();
-            PropertyListValue lv = new PropertyListValue();
-            lv.DataType = dataType.Attribute("type").Value;
-            dataTyp = lv;
-         }
-         else if (propDetType.Name.LocalName.Equals("TypePropertyTableValue"))
-         {
-            PropertyTableValue tv = new PropertyTableValue();
-            var tve = propDetType.Element(ns + "Expression");
-            if (tve != null)
-               tv.Expression = tve.Value;
-            XElement el = propDetType.Element(ns + "DefiningValue");
-            if (el != null)
-            {
-               XElement el2 = propDetType.Element(ns + "DefiningValue").Element(ns + "DataType");
-               if (el2 != null)
-                  tv.DefiningValueType = el2.Attribute("type").Value;
-            }
-            el = propDetType.Element(ns + "DefinedValue");
-            if (el != null)
-            {
-               XElement el2 = propDetType.Element(ns + "DefinedValue").Element(ns + "DataType");
-               if (el2 != null)
-                  tv.DefinedValueType = el2.Attribute("type").Value;
-            }
-            dataTyp = tv;
-         }
-         else if (propDetType.Name.LocalName.Equals("TypeComplexProperty"))
-         {
-            ComplexProperty compProp = new ComplexProperty();
-            compProp.Name = propDetType.Attribute("name").Value;
-            compProp.Properties = new List<PsetProperty>();
-            foreach (XElement cpPropDef in propDetType.Elements(ns + "PropertyDef"))
-            {
-               PsetProperty pr = getPropertyDef(ns, cpPropDef);
-               if (pr == null)
-               {
-#if DEBUG
-                  logF.WriteLine("%Error: Mising PropertyType data in complex property {0}.{1}.{2}", propDetType.Parent.Parent.Element(ns + "Name").Value,
-                     prop.Name, cpPropDef.Element(ns + "Name").Value);
-#endif
-               }
-               else
-                  compProp.Properties.Add(pr);
-            }
-            dataTyp = compProp;
-         }
-         prop.PropertyType = dataTyp;
+            prop.PropertyType = dataTyp;
 
-         return prop;
+            return prop;
+         }
+         catch
+         {
+            return null;
+         }
       }
 
       PsetDefinition Process(string schemaVersion, FileInfo PSDfileName)
@@ -833,8 +846,10 @@ namespace RevitIFCTools
          pset.IfcVersion = doc.Elements(ns + "PropertySetDef").Elements(ns + "IfcVersion").FirstOrDefault().Attribute("version").Value.Replace(" ", "");
          if (pset.IfcVersion.StartsWith("2"))
          {
-            if (pset.IfcVersion.Equals("2X", StringComparison.CurrentCultureIgnoreCase))
-               pset.IfcVersion = "IFC" + pset.IfcVersion.ToUpper() + "2";  // BUG in the documentation. It ony contains "2x" instead of "2x2"
+            if (pset.IfcVersion.Equals("2X", StringComparison.CurrentCultureIgnoreCase)
+               || pset.IfcVersion.Equals("2X2", StringComparison.CurrentCultureIgnoreCase)
+               || pset.IfcVersion.Equals("2.X", StringComparison.CurrentCultureIgnoreCase))
+               pset.IfcVersion = "IFC2X2";  // BUG in the documentation. It ony contains "2x" instead of "2x2"
             else
                pset.IfcVersion = "IFC" + pset.IfcVersion.ToUpper();   // Namespace cannot start with a number. e.g. make sure 2x3 -> IFC2x3
          }
