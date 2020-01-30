@@ -174,7 +174,12 @@ PARAM	17d638a6-954d-46f5-9fd8-a12329895bb6	IfcPresentationLayer	TEXT		2	1		1
 PARAM	a45065e7-99ce-4323-95c2-a10e0063bcec	IfcCadLayer	TEXT		2	1	(Deprecated)	1
 PARAM	bff4553d-62d0-4ce8-86d3-fa3d2ba9944c	SiteName	TEXT		2	1		1
 PARAM	1691cccc-14bf-4859-a1ef-a4a3c03a3345	SiteLongName	TEXT		2	1		1
+PARAM	70e9b810-1d94-4dd8-9c47-1223d10cfc91	SiteDescription	TEXT		2	1		1
+PARAM	3deb300a-d856-4192-b39b-4c22d5089f8b	SiteObjectType	TEXT		2	1		1
+PARAM	d77d44de-e38b-4fa3-89b2-d41c46ef5250	SiteLandTitleNumber	TEXT		2	1		1
 PARAM	126288d7-a4be-40a8-ba93-8a9e8c05d33b	BuildingLongName	TEXT		2	1		1
+PARAM	be201e5e-4c8c-4fad-9cce-2a93e39dbfd8	BuildingDescription	TEXT		2	1		1
+PARAM	aea294d5-2859-41dc-a58e-5ac7192901be	BuildingObjectType	TEXT		2	1		1
 PARAM	71d092aa-0c92-4346-b2ad-2102c8e7710c	IfcCategory	TEXT		2	1		1
 PARAM	55914e74-79dd-4fef-9539-0c0631743aee	IfcSingleMaterialOverride	TEXT		2	1	Parameter to force a single material assignment when there is only a single material	1
 PARAM	298bfb8d-7c66-4d69-a493-14beb1bbfd4b	IfcSpatialContainer	TEXT		2	1	Parameter to override element containment	1
