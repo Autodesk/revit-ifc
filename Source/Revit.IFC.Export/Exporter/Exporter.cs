@@ -1289,16 +1289,16 @@ namespace Revit.IFC.Export.Exporter
                   }
                   else
                   {
-                  Element elem = document.GetElement(stairRamp.Key);
-                  string guid = GUIDUtil.CreateSubElementGUID(elem, (int)IFCStairSubElements.ContainmentRelation);
-                  if (locallyUsedGUIDs.Contains(guid))
-                     guid = GUIDUtil.CreateGUID();
-                  else
-                     locallyUsedGUIDs.Add(guid);
+                     Element elem = document.GetElement(stairRamp.Key);
+                     string guid = GUIDUtil.CreateSubElementGUID(elem, (int)IFCStairSubElements.ContainmentRelation);
+                     if (locallyUsedGUIDs.Contains(guid))
+                        guid = GUIDUtil.CreateGUID();
+                     else
+                        locallyUsedGUIDs.Add(guid);
 
-                  ExporterUtil.RelateObjects(exporterIFC, guid, hnd, comps);
+                     ExporterUtil.RelateObjects(exporterIFC, guid, hnd, comps);
+                  }
                }
-            }
             }
 
             ProjectInfo projectInfo = document.ProjectInformation;
