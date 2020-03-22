@@ -1292,9 +1292,11 @@ namespace Revit.IFC.Export.Exporter
                      string stairName = NamingUtil.GetNameOverride(legacyStair, NamingUtil.GetIFCNamePlusIndex(legacyStair, ii + 1));
                      string ifcType = "NOTDEFINED";
 
+                     string flightGUID = GUIDUtil.CreateSubElementGUID(legacyStair, ii + 1);
+
                      if (isRamp)
                      {
-                        flightHnd = IFCInstanceExporter.CreateRampFlight(exporterIFC, legacyStair, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
+                        flightHnd = IFCInstanceExporter.CreateRampFlight(exporterIFC, legacyStair, flightGUID, ExporterCacheManager.OwnerHistoryHandle,
                             flightLocalPlacement, flightRep, ifcType);
                         flightHnds.Add(flightHnd);
                         IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcRampFlight, ifcType);
@@ -1302,7 +1304,7 @@ namespace Revit.IFC.Export.Exporter
                      }
                      else
                      {
-                        flightHnd = IFCInstanceExporter.CreateStairFlight(exporterIFC, legacyStair, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
+                        flightHnd = IFCInstanceExporter.CreateStairFlight(exporterIFC, legacyStair, flightGUID, ExporterCacheManager.OwnerHistoryHandle,
                             flightLocalPlacement, flightRep, numRisers[ii], numTreads[ii],
                             riserHeight, treadsLength[ii], ifcType);
                         flightHnds.Add(flightHnd);
@@ -1316,12 +1318,13 @@ namespace Revit.IFC.Export.Exporter
                      for (int compIdx = 1; compIdx < numFlights; compIdx++)
                      {
                         IFCExportInfoPair exportInfo = new IFCExportInfoPair();
+                        string flightCompGUID = GUIDUtil.CreateSubElementGUID(legacyStair, ii*numFlights + (compIdx-1));
 
                         if (isRamp)
                         {
                            IFCAnyHandle newLocalPlacement = ExporterUtil.CreateLocalPlacement(file, localPlacementForFlights[compIdx - 1], null);
                            IFCAnyHandle newProdRep = ExporterUtil.CopyProductDefinitionShape(exporterIFC, legacyStair, categoryId, IFCAnyHandleUtil.GetRepresentation(flightHnd));
-                           flightHnd = IFCInstanceExporter.CreateRampFlight(exporterIFC, legacyStair, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
+                           flightHnd = IFCInstanceExporter.CreateRampFlight(exporterIFC, legacyStair, flightCompGUID, ExporterCacheManager.OwnerHistoryHandle,
                                newLocalPlacement, newProdRep, ifcType);
                            components[compIdx].Add(flightHnd);
                            exportInfo.SetValueWithPair(IFCEntityType.IfcRampFlight, ifcType);
@@ -1331,7 +1334,7 @@ namespace Revit.IFC.Export.Exporter
                            IFCAnyHandle newLocalPlacement = ExporterUtil.CreateLocalPlacement(file, localPlacementForFlights[compIdx - 1], null);
                            IFCAnyHandle newProdRep = ExporterUtil.CopyProductDefinitionShape(exporterIFC, legacyStair, categoryId, IFCAnyHandleUtil.GetRepresentation(flightHnd));
 
-                           flightHnd = IFCInstanceExporter.CreateStairFlight(exporterIFC, legacyStair, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
+                           flightHnd = IFCInstanceExporter.CreateStairFlight(exporterIFC, legacyStair, flightCompGUID, ExporterCacheManager.OwnerHistoryHandle,
                                newLocalPlacement, newProdRep, numRisers[ii], numTreads[ii], riserHeight, treadsLength[ii], ifcType);
                            components[compIdx].Add(flightHnd);
                            exportInfo.SetValueWithPair(IFCEntityType.IfcStairFlight, ifcType);

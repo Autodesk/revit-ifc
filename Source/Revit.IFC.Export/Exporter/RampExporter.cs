@@ -236,11 +236,12 @@ namespace Revit.IFC.Export.Exporter
             {
                for (int ii = 0; ii < numFlights - 1; ii++)
                {
+                  string flightGUID = GUIDUtil.CreateSubElementGUID(ramp, ii + 1);
                   IFCAnyHandle representationCopy =
                       ExporterUtil.CopyProductDefinitionShape(exporterIFC, ramp, catId, componentProdRep);
 
                   string rampFlightType = "NOTDEFINED";
-                  IFCAnyHandle localComponent = IFCInstanceExporter.CreateRampFlight(exporterIFC, ramp, GUIDUtil.CreateGUID(), ownerHistory,
+                  IFCAnyHandle localComponent = IFCInstanceExporter.CreateRampFlight(exporterIFC, ramp, flightGUID, ownerHistory,
                       componentPlacementHnds[ii], representationCopy, rampFlightType);
 
                   IFCAnyHandleUtil.OverrideNameAttribute(localComponent, localComponentNames[ii]);
