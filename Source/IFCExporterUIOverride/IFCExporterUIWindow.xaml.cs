@@ -732,7 +732,7 @@ namespace BIM.IFC.Export.UI
             newConfiguration.Name = name;
          }
          else
-            newConfiguration = configuration.Duplicate(name);
+            newConfiguration = configuration.Duplicate(name, makeEditable:true);
          m_configurationsMap.Add(newConfiguration);
 
          // set new configuration as selected

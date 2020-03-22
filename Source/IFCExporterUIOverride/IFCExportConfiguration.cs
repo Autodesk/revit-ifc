@@ -366,10 +366,12 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       /// <param name="newName">The new name of the copy configuration.</param>
       /// <returns>The duplicated configuration.</returns>
-      public IFCExportConfiguration Duplicate(String newName)
+      public IFCExportConfiguration Duplicate(String newName, bool makeEditable = false)
       {
          IFCExportConfiguration dup = Clone();
          dup.Name = newName;
+         if (makeEditable)
+            dup.m_isBuiltIn = false;
          return dup;
       }
 
