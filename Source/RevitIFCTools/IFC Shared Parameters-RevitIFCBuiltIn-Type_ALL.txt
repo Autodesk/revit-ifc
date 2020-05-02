@@ -57,7 +57,7 @@ PARAM	55e3e35c-c4ba-42df-ba56-048a3995bba5	LiningThickness[Type]	LENGTH		2	1		1
 PARAM	3be72e29-7818-4302-89a7-337d1f328e12	LiningOffset[Type]	LENGTH		2	1		1
 PARAM	a1982167-ba1d-463f-b67d-28a9679bc10c	ThresholdDepth[Type]	LENGTH		2	1		1
 PARAM	524d8a84-6533-40f3-b306-880f79263b71	ThresholdThickness[Type]	LENGTH		2	1		1
-PARAM	b088323c-4dfb-4e78-a124-580119915e40	ThreshholdOffset[Type]	LENGTH		2	1		1
+PARAM	b088323c-4dfb-4e78-a124-580119915e40	ThresholdOffset[Type]	LENGTH		2	1		1
 PARAM	0345acfb-1ffc-4d44-bdb2-9d4dd6c4ca01	TransomOffset[Type]	LENGTH		2	1		1
 PARAM	95466b46-291e-427f-8d55-96445794c575	TransomThickness[Type]	LENGTH		2	1		1
 PARAM	ec98702d-a600-45a7-b710-2a8e943aab7e	CasingDepth[Type]	LENGTH		2	1		1
