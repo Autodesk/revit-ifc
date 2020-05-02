@@ -33,6 +33,10 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    class RampExporter
    {
+      static private int m_FlightIdOffset = 1;
+      static private int m_LandingIdOffset = 201;
+      static private int m_StringerIdOffset = 401;
+
       /// <summary>
       /// Checks if exporting an element of Ramp category.
       /// </summary>
@@ -236,11 +240,12 @@ namespace Revit.IFC.Export.Exporter
             {
                for (int ii = 0; ii < numFlights - 1; ii++)
                {
+                  string flightGUID = GUIDUtil.CreateSubElementGUID(ramp, ii + m_FlightIdOffset);
                   IFCAnyHandle representationCopy =
                       ExporterUtil.CopyProductDefinitionShape(exporterIFC, ramp, catId, componentProdRep);
 
                   string rampFlightType = "NOTDEFINED";
-                  IFCAnyHandle localComponent = IFCInstanceExporter.CreateRampFlight(exporterIFC, ramp, GUIDUtil.CreateGUID(), ownerHistory,
+                  IFCAnyHandle localComponent = IFCInstanceExporter.CreateRampFlight(exporterIFC, ramp, flightGUID, ownerHistory,
                       componentPlacementHnds[ii], representationCopy, rampFlightType);
 
                   IFCAnyHandleUtil.OverrideNameAttribute(localComponent, localComponentNames[ii]);
@@ -256,10 +261,11 @@ namespace Revit.IFC.Export.Exporter
 
                for (int ii = 0; ii < numFlights - 1; ii++)
                {
+                  string landingGUID = GUIDUtil.CreateSubElementGUID(ramp, ii + m_LandingIdOffset);
                   IFCAnyHandle representationCopy =
                       ExporterUtil.CopyProductDefinitionShape(exporterIFC, ramp, catId, componentProdRep);
 
-                  IFCAnyHandle localComponent = IFCInstanceExporter.CreateSlab(exporterIFC, ramp, GUIDUtil.CreateGUID(), ownerHistory,
+                  IFCAnyHandle localComponent = IFCInstanceExporter.CreateSlab(exporterIFC, ramp, landingGUID, ownerHistory,
                       componentPlacementHnds[ii], representationCopy, localLandingType.ToString());
                   localComponentHnds.Add(localComponent);
                   IFCAnyHandleUtil.OverrideNameAttribute(localComponent, localComponentNames[ii]);
@@ -271,11 +277,12 @@ namespace Revit.IFC.Export.Exporter
             {
                for (int ii = 0; ii < numFlights - 1; ii++)
                {
+                  string stringerGUID = GUIDUtil.CreateSubElementGUID(ramp, ii + m_StringerIdOffset);
                   IFCAnyHandle representationCopy =
                       ExporterUtil.CopyProductDefinitionShape(exporterIFC, ramp, catId, componentProdRep);
                   string localMemberType = "STRINGER";
 
-                  IFCAnyHandle localComponent = IFCInstanceExporter.CreateMember(exporterIFC, ramp, GUIDUtil.CreateGUID(), ownerHistory,
+                  IFCAnyHandle localComponent = IFCInstanceExporter.CreateMember(exporterIFC, ramp, stringerGUID, ownerHistory,
                 componentPlacementHnds[ii], representationCopy, localMemberType);
                   localComponentHnds.Add(localComponent);
                   IFCAnyHandleUtil.OverrideNameAttribute(localComponent, localComponentNames[ii]);
@@ -422,7 +429,7 @@ namespace Revit.IFC.Export.Exporter
                            IFCAnyHandle representation = IFCInstanceExporter.CreateProductDefinitionShape(exporterIFC.GetFile(), null, null, reps);
 
                            rampFlightIndex++;
-                           string flightGUID = GUIDUtil.CreateSubElementGUID(ramp, rampFlightIndex);
+                           string flightGUID = GUIDUtil.CreateSubElementGUID(ramp, rampFlightIndex + m_FlightIdOffset);
                            string origFlightName = IFCAnyHandleUtil.GetStringAttribute(rampContainerHnd, "Name") + " " + rampFlightIndex;
                            string flightName = NamingUtil.GetOverrideStringValue(ramp, "IfcRampFlight.Name (" + rampFlightIndex + ")", origFlightName);
 
@@ -492,7 +499,7 @@ namespace Revit.IFC.Export.Exporter
                            IFCAnyHandle representation = IFCInstanceExporter.CreateProductDefinitionShape(exporterIFC.GetFile(), null, null, reps);
 
                            landingIndex++;
-                           string landingGUID = GUIDUtil.CreateSubElementGUID(ramp, landingIndex);
+                           string landingGUID = GUIDUtil.CreateSubElementGUID(ramp, landingIndex + m_LandingIdOffset);
                            string origLandingName = IFCAnyHandleUtil.GetStringAttribute(rampContainerHnd, "Name") + " " + landingIndex;
                            string landingName = NamingUtil.GetOverrideStringValue(ramp, "IfcRampLanding.Name (" + landingIndex + ")", origLandingName);
 
