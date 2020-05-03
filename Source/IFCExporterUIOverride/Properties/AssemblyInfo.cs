@@ -31,7 +31,7 @@ using System.Windows;
 #if IFC_OPENSOURCE
 [assembly: AssemblyCompany("Autodesk, Inc.")]
 [assembly: AssemblyProduct("IFCExporterUI")]
-[assembly: AssemblyCopyright("© 2012-2019 Autodesk, Inc. All rights reserved.")]
+[assembly: AssemblyCopyright("© 2012-2020 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 #endif
@@ -66,6 +66,6 @@ using System.Windows;
 // The following information is used in the Open Source version as the release version number.
 // The number will show up in the Title bar of the export dialog as well as at the IFC header file
 // This number must be manually updated prior to releasing the new version
-[assembly: AssemblyVersion("20.1.0.1")]
-[assembly: AssemblyFileVersion("20.1.0.1")]
+[assembly: AssemblyVersion("21.0.0.0")]
+[assembly: AssemblyFileVersion("21.0.0.0")]
 #endif
