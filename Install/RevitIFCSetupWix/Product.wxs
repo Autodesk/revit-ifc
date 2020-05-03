@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="F2D04214-ECD3-4EC3-8631-DC9C7A6FD777" Name="Revit IFC 2020" Language="1033" Version="20.1.0.2" Manufacturer="Autodesk" UpgradeCode="FA32511B-DA6D-405A-B735-33C943730AAB">
+   <Product Id="DF385412-AB15-4DED-A046-FE32CE0BCC5E" Name="Revit IFC 2021" Language="1033" Version="21.0.0.0" Manufacturer="Autodesk" UpgradeCode="D8344D14-F520-44DA-9583-9AF4BD489CF8">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -19,7 +19,7 @@
       <WixVariable Id="WixUIDefUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt"></WixVariable>
       <WixVariable Id="WixUICOBieUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\IFC2x3 Extended FM HandOver View.txt"></WixVariable>
 
-      <Feature Id="ProductFeature" Title="Revit IFC 2020" Level="1" ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id="ProductFeature" Title="Revit IFC 2021" Level="1" ConfigurableDirectory='INSTALLDIR'>
          <ComponentGroupRef Id="ProductComponents" />
          <ComponentGroupRef Id="ProductResourceComponents" />
          <ComponentGroupRef Id="ProductFRFiles" />
@@ -44,7 +44,7 @@
       <Fragment>
          <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFilesFolder">
-               <Directory Id="INSTALLDIR" Name="Revit IFC 2020">
+               <Directory Id="INSTALLDIR" Name="Revit IFC 2021">
                   <Directory Id="INSTALLRESOURCE" Name="Resource" />
                   <Directory Id="INSTALLFRUI" Name="fr" />
                   <Directory Id="INSTALLDEUI" Name="de" />
@@ -55,12 +55,12 @@
                <Directory Id="DIR_ADSK" Name="Autodesk">
                   <Directory Id="DIR_REVIT" Name="Revit">
                      <Directory Id="DIR_ADDINS" Name="Addins">
-                        <Directory Id="DIR_Addins" Name="2020"/>
+                        <Directory Id="DIR_Addins" Name="2021"/>
                      </Directory>
                   </Directory>
                   <Directory Id="DIR_REVIT_LT" Name="RevitLT">
                      <Directory Id="DIR_ADDINS_LT" Name="Addins">
-                        <Directory Id="DIR_Addins_LT" Name="2020"/>
+                        <Directory Id="DIR_Addins_LT" Name="2021"/>
                      </Directory>
                   </Directory>
                </Directory>
@@ -73,9 +73,9 @@
             <Directory Id="CommonAppDataFolder" Name="MyAppDataFolder">
                <Directory Id="DIR_ADSK" Name="Autodesk">
                   <Directory Id="DIR_PLUGINS" Name="ApplicationPlugins">
-                     <Directory Id="DIR_PACKAGE" Name="IFC 2020.bundle">
+                     <Directory Id="DIR_PACKAGE" Name="IFC 2021.bundle">
                         <Directory Id="DIR_Contents" Name="Contents">
-                          <Directory Id="INSTALLDIR" Name="2020">
+                          <Directory Id="INSTALLDIR" Name="2021">
                             <Directory Id="INSTALLRESOURCE" Name="Resource" />
                             <Directory Id="INSTALLFRUI" Name="fr" />
                             <Directory Id="INSTALLDEUI" Name="de" />
@@ -162,14 +162,8 @@
          <Component Id = "COMP_IFC4_XSD" Guid="51B549A3-DCB2-412B-9D4D-1B72D901D2B3">
             <File Id ="FILE_IFC4_XSD" Name="IFC4.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC4.xsd" KeyPath="yes" />
          </Component>
-         <Component Id = "COMP_IFC_Shared_Parameters_RevitIFCBuiltIn_TXT" Guid="ADFF1BAB-14BC-4722-988E-4C37398973E1">
-            <File Id ="FILE_IFC_Shared_Parameters_RevitIFCBuiltIn" Name="IFC Shared Parameters-RevitIFCBuiltIn.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC Shared Parameters-RevitIFCBuiltIn.txt" KeyPath="yes" />
-         </Component>
          <Component Id = "COMP_IFC_Shared_Parameters_RevitIFCBuiltIn_ALL_TXT" Guid="BD6EB78A-7AED-40C3-9B24-AA74652A3C25">
             <File Id ="FILE_IFC_Shared_Parameters_RevitIFCBuiltIn_ALL" Name="IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt" KeyPath="yes" />
-         </Component>
-         <Component Id = "COMP_IFC_Shared_Parameters_RevitIFCBuiltIn_TYPE_TXT" Guid="46AF7108-ED20-4AE8-9E08-49A49D04E22D">
-            <File Id ="FILE_IFC_Shared_Parameters_RevitIFCBuiltIn_TYPE" Name="IFC Shared Parameters-RevitIFCBuiltIn-Type.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC Shared Parameters-RevitIFCBuiltIn-Type.txt" KeyPath="yes" />
          </Component>
          <Component Id = "COMP_IFC_Shared_Parameters_RevitIFCBuiltIn_TYPE_ALL_TXT" Guid="FF5BBFF3-033E-4742-8EAE-5BEAE4FF8C81">
             <File Id ="FILE_IFC_Shared_Parameters_RevitIFCBuiltIn_TYPE_ALL" Name="IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL.txt" KeyPath="yes" />
