@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Runtime.Serialization;
 using System.Xml;
-//using Newtonsoft.Json;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -79,19 +78,16 @@ namespace Revit.IFC.Export.Utility
          /// <summary>
          /// The MVD version
          /// </summary>
-         //[JsonProperty("Version")]
          public string Version { get; set; }
 
          /// <summary>
          /// Pset list for MVD
          /// </summary>
-         //[JsonProperty("PropertySet List")]
          public IList<string> PropertySetList { get; set; } = new List<string>();
 
          /// <summary>
          /// Entity list for MVD
          /// </summary>
-         //[JsonProperty("Entity LIst")]
          public IList<string> EntityList { get; set; } = new List<string>();
       }
 
@@ -111,7 +107,6 @@ namespace Revit.IFC.Export.Utility
             //   and then transfers the data to the final form using Hashset for performance reason
             JavaScriptSerializer jsonConvert = new JavaScriptSerializer();
             IDictionary<string, IFCEntityAndPsetListRawFromJson> CertifiedEntityAndPsetList = jsonConvert.Deserialize<IDictionary<string, IFCEntityAndPsetListRawFromJson>>(File.ReadAllText(filePath));
-
             // Copy the data to the desired format using Hashset in IFCEntityAndPsetList
             foreach (KeyValuePair<string, IFCEntityAndPsetListRawFromJson> entPsetData in CertifiedEntityAndPsetList)
             {

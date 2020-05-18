@@ -324,7 +324,7 @@ namespace Revit.IFC.Export.Exporter
                   //       localPlacementToUse, productRepresentation, GetPreDefinedType<Toolkit.IFCRailingType>(familyInstance, strEnumType).ToString());
                   //}
                   string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "NOTDEFINED" : type.ValidatedPredefinedType;
-                  instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
+                     instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                       localPlacementToUse, productRepresentation, preDefinedType);
                   break;
                }
@@ -578,11 +578,13 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="solids">The list of solids, possibly empty.</param>
       /// <param name="meshes">The list of meshes, possibly empty.</param>
       /// <returns>The combined list of solids and meshes that are visible given category export settings and view visibility settings.</returns>
-      public static List<GeometryObject> RemoveInvisibleSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, ref IList<Solid> solids, ref IList<Mesh> meshes)
+      public static List<GeometryObject> RemoveInvisibleSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, ref IList<Solid> solids, ref IList<Mesh> meshes, 
+         IList<Solid> excludeSolids = null)
       {
+         // Remove excluded solids from the original list of solids
          List<GeometryObject> geomObjectsIn = new List<GeometryObject>();
-         if (solids != null && solids.Count > 0)
-            geomObjectsIn.AddRange(solids);
+         geomObjectsIn.AddRange(RemoveExcludedSolid(solids, excludeSolids));
+
          if (meshes != null && meshes.Count > 0)
             geomObjectsIn.AddRange(meshes);
 
@@ -635,6 +637,35 @@ namespace Revit.IFC.Export.Exporter
          }
 
          return geomObjectsOut;
+      }
+
+      static IList<Solid> RemoveExcludedSolid(IList<Solid> originalList, IList<Solid> excludeSolids)
+      {
+         IList<Solid> cleanedUpList = new List<Solid>();
+         if (originalList == null)
+            return cleanedUpList;
+
+         if (excludeSolids == null || excludeSolids.Count == 0)
+            return originalList;
+
+         foreach (Solid solid in originalList)
+         {
+            int itemToRemove = -1;
+            for (int ii = 0; ii < excludeSolids.Count; ++ii)
+            {
+               if (GeometryUtil.SolidsQuickEqualityCompare(solid, excludeSolids[ii]))
+               {
+                  itemToRemove = ii;
+                  break;
+               }
+            }
+            // If there is item to remove identified (means solid is equal to one of the exclude list), skip this solid and remove the equivalent one from the excludeSolids
+            if (itemToRemove >= 0)
+               excludeSolids.RemoveAt(itemToRemove);
+            else
+               cleanedUpList.Add(solid);
+         }
+         return cleanedUpList;
       }
    }
 }

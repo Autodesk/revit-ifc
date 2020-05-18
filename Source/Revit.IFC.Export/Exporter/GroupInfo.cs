@@ -22,31 +22,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Export.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
    public class GroupInfo
    {
-      private IFCAnyHandle m_GroupHandle = null;
-
-      private HashSet<IFCAnyHandle> m_ElementHandles = new HashSet<IFCAnyHandle>();
-
       /// <summary>
       /// The Group handle.
       /// </summary>
-      public IFCAnyHandle GroupHandle
-      {
-         get { return m_GroupHandle; }
-         set { m_GroupHandle = value; }
-      }
+      public IFCAnyHandle GroupHandle { get; set; } = null;
 
       /// <summary>
       /// The associated element handles.
       /// </summary>
-      public HashSet<IFCAnyHandle> ElementHandles
-      {
-         get { return m_ElementHandles; }
-         set { m_ElementHandles = value; }
-      }
+      public HashSet<IFCAnyHandle> ElementHandles { get; set; } = new HashSet<IFCAnyHandle>();
+
+      /// <summary>
+      /// Group's export type.
+      /// </summary>
+      public IFCExportInfoPair GroupType { get; set; } = new IFCExportInfoPair(IFCEntityType.UnKnown);
    }
 }

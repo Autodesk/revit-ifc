@@ -33,19 +33,19 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class UnitsCache : Dictionary<string, IFCAnyHandle>
    {
-      Dictionary<UnitType, Tuple<IFCAnyHandle, double, double>> m_UnitConversionTable =
-          new Dictionary<UnitType, Tuple<IFCAnyHandle, double, double>>();
+      Dictionary<ForgeTypeId, Tuple<IFCAnyHandle, double, double>> m_UnitConversionTable =
+          new Dictionary<ForgeTypeId, Tuple<IFCAnyHandle, double, double>>();
 
       /// <summary>
       /// Convert from Revit internal units to Revit display units.
       /// </summary>
-      /// <param name="unitType">The unit type.</param>
+      /// <param name="specTypeId">Identifier of the spec.</param>
       /// <param name="unscaledValue">The value in Revit internal units.</param>
       /// <returns>The value in Revit display units.</returns>
-      public double Scale(UnitType unitType, double unscaledValue)
+      public double Scale(ForgeTypeId specTypeId, double unscaledValue)
       {
          Tuple<IFCAnyHandle, double, double> scale;
-         if (m_UnitConversionTable.TryGetValue(unitType, out scale))
+         if (m_UnitConversionTable.TryGetValue(specTypeId, out scale))
             return unscaledValue * scale.Item2 + scale.Item3;
          return unscaledValue;
       }
@@ -53,14 +53,14 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Convert from Revit display units to Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit type.</param>
+      /// <param name="specTypeId">Identifier of the spec.</param>
       /// <param name="unscaledValue">The value in Revit display units.</param>
       /// <returns>The value in Revit internal units.</returns>
       /// <remarks>Ignores the offset component.</remarks>
-      public XYZ Unscale(UnitType unitType, XYZ scaledValue)
+      public XYZ Unscale(ForgeTypeId specTypeId, XYZ scaledValue)
       {
          Tuple<IFCAnyHandle, double, double> scale;
-         if (m_UnitConversionTable.TryGetValue(unitType, out scale))
+         if (m_UnitConversionTable.TryGetValue(specTypeId, out scale))
             return scaledValue / scale.Item2;
          return scaledValue;
       }
@@ -68,13 +68,13 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Convert from Revit display units to Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit type.</param>
+      /// <param name="specTypeId">Identifier of the spec.</param>
       /// <param name="scaledValue">The value in Revit display units.</param>
       /// <returns>The value in Revit internal units.</returns>
-      public double Unscale(UnitType unitType, double scaledValue)
+      public double Unscale(ForgeTypeId specTypeId, double scaledValue)
       {
          Tuple<IFCAnyHandle, double, double> scale;
-         if (m_UnitConversionTable.TryGetValue(unitType, out scale))
+         if (m_UnitConversionTable.TryGetValue(specTypeId, out scale))
             return (scaledValue - scale.Item3) / scale.Item2;
          return scaledValue;
       }
@@ -82,14 +82,14 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Convert from Revit internal units to Revit display units.
       /// </summary>
-      /// <param name="unitType">The unit type.</param>
+      /// <param name="specTypeId">Identifier of the spec.</param>
       /// <param name="unscaledValue">The value in Revit internal units.</param>
       /// <returns>The value in Revit display units.</returns>
       /// <remarks>Ignores the offset component.</remarks>
-      public UV Scale(UnitType unitType, UV unscaledValue)
+      public UV Scale(ForgeTypeId specTypeId, UV unscaledValue)
       {
          Tuple<IFCAnyHandle, double, double> scale;
-         if (m_UnitConversionTable.TryGetValue(unitType, out scale))
+         if (m_UnitConversionTable.TryGetValue(specTypeId, out scale))
             return unscaledValue * scale.Item2;
          return unscaledValue;
       }
@@ -97,14 +97,14 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Convert from Revit internal units to Revit display units.
       /// </summary>
-      /// <param name="unitType">The unit type.</param>
+      /// <param name="specTypeId">Identifier of the spec.</param>
       /// <param name="unscaledValue">The value in Revit internal units.</param>
       /// <returns>The value in Revit display units.</returns>
       /// <remarks>Ignores the offset component.</remarks>
-      public XYZ Scale(UnitType unitType, XYZ unscaledValue)
+      public XYZ Scale(ForgeTypeId specTypeId, XYZ unscaledValue)
       {
          Tuple<IFCAnyHandle, double, double> scale;
-         if (m_UnitConversionTable.TryGetValue(unitType, out scale))
+         if (m_UnitConversionTable.TryGetValue(specTypeId, out scale))
             return unscaledValue * scale.Item2;
          return unscaledValue;
       }
@@ -112,12 +112,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Sets the conversion factors to convert Revit internal units to Revit display units for the specified unit type, and stores the IFC handle.
       /// </summary>
-      /// <param name="unitType">The unit type.</param>
+      /// <param name="specTypeId">Identifier of the spec.</param>
       /// <param name="unitHandle">The IFCUnit handle.</param>
       /// <param name="scale">The scaling factor.</param>
-      public void AddUnit(UnitType unitType, IFCAnyHandle unitHandle, double scale, double offset)
+      public void AddUnit(ForgeTypeId specTypeId, IFCAnyHandle unitHandle, double scale, double offset)
       {
-         m_UnitConversionTable[unitType] = new Tuple<IFCAnyHandle, double, double>(unitHandle, scale, offset);
+         m_UnitConversionTable[specTypeId] = new Tuple<IFCAnyHandle, double, double>(unitHandle, scale, offset);
       }
    }
 }

@@ -55,9 +55,6 @@ namespace BIM.IFC.Export.UI
          ClassificationTab.DataContext = m_newClassification;
       }
 
-
-
-
       /// <summary>
       /// Event when OK button is pressed
       /// </summary>
@@ -108,7 +105,6 @@ namespace BIM.IFC.Export.UI
       {
          Close();
       }
-
 
       /// <summary>
       /// Initialization of the Classification Tab when there is saved item

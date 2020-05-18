@@ -75,7 +75,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
             return true;
 
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "ProjectedArea", out m_Area);
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "ProjectedArea", out m_Area);
 
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
             return true;

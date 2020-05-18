@@ -33,6 +33,10 @@ namespace Revit.IFC.Export.Utility
    {
       public void AddRepresentationToLayer(string layerName, IFCAnyHandle repHnd)
       {
+         // Not supported for IFC2x2.
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+            return;
+
          if (string.IsNullOrWhiteSpace(layerName))
             throw new ArgumentException("Empty or null layer name.");
 

@@ -99,8 +99,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 
          // If other entities, look for the parameter value for Load Bearing
          int intLoadBearing = 0;
-         if (ParameterUtil.GetIntValueFromElementOrSymbol(element, "LoadBearing", out intLoadBearing) == null)
-            return false;
+            if (ParameterUtil.GetIntValueFromElementOrSymbol(element, "LoadBearing", out intLoadBearing) == null)
+               return false;
 
          m_LoadBearing = (intLoadBearing != 0);
          return true;

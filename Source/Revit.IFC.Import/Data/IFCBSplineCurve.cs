@@ -107,7 +107,7 @@ namespace Revit.IFC.Import.Data
             Importer.TheLog.LogError(ifcCurve.StepId, "Cannot find the degree of this curve", true);
          }
 
-         IList<IFCAnyHandle> controlPoints = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcCurve, "ControlPointsList");
+         IList<IFCAnyHandle> controlPoints = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcCurve, "ControlPointsList");
 
          if (controlPoints == null || controlPoints.Count == 0)
          {
@@ -148,7 +148,7 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcBSplineCurve, IFCEntityType.IfcBSplineCurveWithKnots))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBSplineCurve, IFCEntityType.IfcBSplineCurveWithKnots))
             return IFCBSplineCurveWithKnots.ProcessIFCBSplineCurveWithKnots(ifcBSplineCurve);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcBSplineCurve, IFCEntityType.IfcBSplineCurve, true);

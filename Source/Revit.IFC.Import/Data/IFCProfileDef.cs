@@ -84,14 +84,14 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcProfileDef.StepId, out profileDef))
             return (profileDef as IFCProfileDef);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcProfileDef, IFCEntityType.IfcCompositeProfileDef))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProfileDef, IFCEntityType.IfcCompositeProfileDef))
             return IFCCompositeProfile.ProcessIFCCompositeProfile(ifcProfileDef);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcProfileDef, IFCEntityType.IfcDerivedProfileDef))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProfileDef, IFCEntityType.IfcDerivedProfileDef))
             return IFCDerivedProfileDef.ProcessIFCDerivedProfileDef(ifcProfileDef);
 
-         //if (IFCAnyHandleUtil.IsSubTypeOf(ifcProfileDef, IFCEntityType.IfcArbitraryOpenProfileDef))
-         //if (IFCAnyHandleUtil.IsSubTypeOf(ifcProfileDef, IFCEntityType.IfcArbitraryClosedProfileDef))
+         //if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProfileDef, IFCEntityType.IfcArbitraryOpenProfileDef))
+         //if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProfileDef, IFCEntityType.IfcArbitraryClosedProfileDef))
          // IFC2x files don't have IfcParameterizedProfileDef, so we won't check the type. 
          // If profileDef is the wrong entity type, it will fail in ProcessIFCParameterizedProfileDef.
          return IFCSimpleProfile.ProcessIFCSimpleProfile(ifcProfileDef);
@@ -983,23 +983,23 @@ namespace Revit.IFC.Import.Data
             Position = Transform.Identity;
          }
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcRectangleProfileDef))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcRectangleProfileDef))
             ProcessIFCRectangleProfileDef(profileDef);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcCircleProfileDef))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcCircleProfileDef))
             ProcessIFCCircleProfileDef(profileDef);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcEllipseProfileDef))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcEllipseProfileDef))
             ProcessIFCEllipseProfileDef(profileDef);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcCShapeProfileDef))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcCShapeProfileDef))
             ProcessIFCCShapeProfileDef(profileDef);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcLShapeProfileDef))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcLShapeProfileDef))
             ProcessIFCLShapeProfileDef(profileDef);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcIShapeProfileDef))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcIShapeProfileDef))
             ProcessIFCIShapeProfileDef(profileDef);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcTShapeProfileDef))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcTShapeProfileDef))
             ProcessIFCTShapeProfileDef(profileDef);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcUShapeProfileDef))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcUShapeProfileDef))
             ProcessIFCUShapeProfileDef(profileDef);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcZShapeProfileDef))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcZShapeProfileDef))
             ProcessIFCZShapeProfileDef(profileDef);
          else
          {
@@ -1069,7 +1069,7 @@ namespace Revit.IFC.Import.Data
          }
 
          IFCCurve profileIFCCurve = IFCCurve.ProcessIFCCurve(curveHnd);
-         CurveLoop profileCurveLoop = profileIFCCurve.CurveLoop;
+         CurveLoop profileCurveLoop = profileIFCCurve.GetTheCurveLoop();
          if (profileCurveLoop == null)
          {
             Curve profileCurve = profileIFCCurve.Curve;
@@ -1081,7 +1081,7 @@ namespace Revit.IFC.Import.Data
          }
 
 
-         if ((profileCurveLoop != null) && IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcCenterLineProfileDef))
+         if ((profileCurveLoop != null) && IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcCenterLineProfileDef))
          {
             double? thickness = IFCAnyHandleUtil.GetDoubleAttribute(profileDef, "Thickness");
             if (!thickness.HasValue)
@@ -1168,7 +1168,7 @@ namespace Revit.IFC.Import.Data
             return;
 
          IFCCurve outerIFCCurve = IFCCurve.ProcessIFCCurve(curveHnd);
-         CurveLoop outerCurveLoop = outerIFCCurve.CurveLoop;
+         CurveLoop outerCurveLoop = outerIFCCurve.GetTheCurveLoop();
 
          // We need to convert outerIFCCurve into a CurveLoop with bound curves.  This is handled below (with possible errors logged).
          if (outerCurveLoop != null)
@@ -1225,7 +1225,7 @@ namespace Revit.IFC.Import.Data
                usedHandles.Add(innerCurveHnd);
 
                IFCCurve innerIFCCurve = IFCCurve.ProcessIFCCurve(innerCurveHnd);
-               CurveLoop innerCurveLoop = innerIFCCurve.CurveLoop;
+               CurveLoop innerCurveLoop = innerIFCCurve.GetTheCurveLoop();
 
                // See if we have a closed curve instead.
                if (innerCurveLoop == null)
@@ -1283,8 +1283,8 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcProfileDef.StepId, out profileDef))
             return (profileDef as IFCSimpleProfile);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcProfileDef, IFCEntityType.IfcArbitraryOpenProfileDef) ||
-             (IFCAnyHandleUtil.IsSubTypeOf(ifcProfileDef, IFCEntityType.IfcArbitraryClosedProfileDef)))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProfileDef, IFCEntityType.IfcArbitraryOpenProfileDef) ||
+             (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProfileDef, IFCEntityType.IfcArbitraryClosedProfileDef)))
             return new IFCSimpleProfile(ifcProfileDef);
 
          // IFC2x files don't have IfcParameterizedProfileDef, so we won't check the type.  If profileDef is the wrong entity type, it will fail in

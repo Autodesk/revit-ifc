@@ -214,7 +214,7 @@ namespace Revit.IFC.Export.Utility
          SortedSet<double> arcRadii = new SortedSet<double>();
 
          foreach (Arc arc in origArcs)
-         {
+            {
             Arc trfArc = arc.CreateTransformed(doorWindowTrf) as Arc;
 
             // Filter only Arcs that is on XY plane and at the Z=0 of the Door/Window transform
@@ -228,23 +228,23 @@ namespace Revit.IFC.Export.Utility
             if (!trfArc.IsBound)
                fullCircleCount++;
             else
-            {
+         {
                double angleOffOfXY = 0;
                XYZ v1 = CorrectNearlyZeroValueToZero((trfArc.GetEndPoint(0) - trfArc.Center).Normalize());
                XYZ v2 = CorrectNearlyZeroValueToZero((trfArc.GetEndPoint(1) - trfArc.Center).Normalize());
-               angleOffOfXY = Math.Acos(v1.DotProduct(v2));
+               angleOffOfXY = MathUtil.SafeAcos(v1.DotProduct(v2));
 
                if ((Math.Abs(angleOffOfXY) > (60.0 / 180.0) * Math.PI && Math.Abs(angleOffOfXY) < (240.0 / 180.0) * Math.PI)
                         && ((v1.Y > 0.0 && v2.Y < 0.0) || (v1.Y < 0.0 && v2.Y > 0.0)))    // Consider the opening swing between -30 to +30 up to -120 to +120 degree, where Y axes must be at the opposite sides
-               {
+            {
                   if (trfArc.Center.X >= -tolForArcCenter && trfArc.Center.X <= tolForArcCenter)
                      leftHalfCircleCount++;
                   else
                      rightHalfCircleCount++;
-               }
+            }
                else if ((Math.Abs(angleOffOfXY) > (30.0/180.0) * Math.PI && Math.Abs(angleOffOfXY) < (170.0/180.0)*Math.PI)
                         &&  (MathUtil.IsAlmostEqual(Math.Abs(v1.X), 1.0, allowance) || MathUtil.IsAlmostEqual(Math.Abs(v2.X),1.0, allowance)))    // Consider the opening swing between 30 to 170 degree, beginning at X axis
-               {
+         {
                   XYZ yDir;
                   if (MathUtil.IsAlmostEqual(Math.Abs(v1.Y), Math.Abs(Math.Sin(angleOffOfXY)), 0.01))
                      yDir = v1;
@@ -265,9 +265,9 @@ namespace Revit.IFC.Export.Utility
                         leftNegYArcCount++;
                      else
                         continue;
-                  }
+                           }
                   else
-                  {
+                           {
                      // on the RIGHT
                      if ((yDir.Y > 0.0 && trfArc.YDirection.Y > 0.0) || (yDir.Y < 0.0 && trfArc.YDirection.Y < 0.0))
                         rightPosYArcCount++;
@@ -275,29 +275,29 @@ namespace Revit.IFC.Export.Utility
                         rightNegYArcCount++;
                      else
                         continue;
-                  }
-               }
+                           }
+                        }
                else
                   continue;
 
                // Collect all distinct Arc Center if it is counted as the door opening, to ensure that for cases that there are more than 2 leafs, it is not worngly labelled
                bool foundExisting = false;
                foreach (XYZ existingCenter in arcCenterLocations)
-               {
+                        {
                   if ((trfArc.Center.X > existingCenter.X - tolForArcCenter) && (trfArc.Center.X <= existingCenter.X + tolForArcCenter)
                      && (trfArc.Center.Y > existingCenter.Y - tolForArcCenter) && (trfArc.Center.Y <= existingCenter.Y + tolForArcCenter))
                   {
                      foundExisting = true;
                      break;
-                  }
-               }
+                        }
+                     }
                if (!foundExisting)
                {
                   arcCenterLocations.Add(trfArc.Center);
                   arcRadii.Add(trfArc.Radius);
+                  }
                }
             }
-         }
 
          // When only full circle(s) exists
          if (fullCircleCount > 0 
@@ -330,25 +330,25 @@ namespace Revit.IFC.Export.Utility
          // When only 90-degree arc(s) exists
          if (leftPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
-         {
+            {
             // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
             if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
-            {
+               {
                if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                   return "NOTDEFINED";
-               else
+                  else
                   return "SWING_FIXED_LEFT";
-            }
-            else
+               }
+               else
                return "SINGLE_SWING_LEFT";
-         }
+            }
 
          if (rightPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && leftPosYArcCount == 0 && rightNegYArcCount == 0)
-         {
+            {
             // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
             if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
-            {
+               {
                if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                   return "NOTDEFINED";
                else
@@ -393,7 +393,7 @@ namespace Revit.IFC.Export.Utility
          ExportingDoor = isDoor;
          if (isDoor)
          {
-            if (exportType.ValidatedPredefinedType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
+            if (exportType.HasUndefinedPredefinedType())
                PreDefinedType = "DOOR";
             else
                PreDefinedType = exportType.ValidatedPredefinedType;
@@ -402,7 +402,7 @@ namespace Revit.IFC.Export.Utility
          ExportingWindow = isWindow;
          if (isWindow)
          {
-            if (exportType.ValidatedPredefinedType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
+            if (exportType.HasUndefinedPredefinedType())
                PreDefinedType = "WINDOW";
             else
                PreDefinedType = exportType.ValidatedPredefinedType;
@@ -466,8 +466,8 @@ namespace Revit.IFC.Export.Utility
             }
             else
             {
-               if (FlippedX ^ FlippedY)
-                  DoorOperationTypeString = ReverseDoorStyleOperation(DoorOperationTypeString);
+            if (FlippedX ^ FlippedY)
+               DoorOperationTypeString = ReverseDoorStyleOperation(DoorOperationTypeString);
             }
 
             if (String.Compare(DoorOperationTypeString, "USERDEFINED", true) == 0)
@@ -499,7 +499,9 @@ namespace Revit.IFC.Export.Utility
 
                Curve curve = WallExporter.GetWallAxis(wall);
 
-               XYZ wallZDir = WallExporter.GetWallHeightDirection(wall);
+               XYZ wallZDir = WallExporter.GetWallExtrusionDirection(wall);
+               if (wallZDir == null)
+                  wallZDir = XYZ.BasisZ; // Right thing here?
 
                // famInst.HostParameter will fail if FamilyPlacementType is WorkPlaneBased, regardless of whether or not the reported host is a Wall.
                // In this case, just use the start parameter of the curve.

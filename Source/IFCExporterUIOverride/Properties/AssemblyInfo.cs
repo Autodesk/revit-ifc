@@ -24,13 +24,14 @@ using System.Windows;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("IFCExporterUI")]
+[assembly: AssemblyTitle("Autodesk.IFC.Export.UI")]
 [assembly: AssemblyDescription("IFC Exporter for Revit Project")]
 [assembly: AssemblyConfiguration("")]
+
 // Company, Product and Copyright info can now be found in Foundation\RevitENU\Version.cs
 #if IFC_OPENSOURCE
 [assembly: AssemblyCompany("Autodesk, Inc.")]
-[assembly: AssemblyProduct("IFCExporterUI")]
+[assembly: AssemblyProduct("Autodesk.IFC.Export.UI")]
 [assembly: AssemblyCopyright("© 2012-2020 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -60,12 +61,11 @@ using System.Windows;
     // app, or any theme specific resource dictionaries)
 )]
 
-
 // Version information can now be found in Foundation\RevitENU\Version.cs
 #if IFC_OPENSOURCE
 // The following information is used in the Open Source version as the release version number.
 // The number will show up in the Title bar of the export dialog as well as at the IFC header file
 // This number must be manually updated prior to releasing the new version
-[assembly: AssemblyVersion("21.0.0.0")]
-[assembly: AssemblyFileVersion("21.0.0.0")]
+[assembly: AssemblyVersion("21.1.0.0")]
+[assembly: AssemblyFileVersion("21.1.0.0")]
 #endif

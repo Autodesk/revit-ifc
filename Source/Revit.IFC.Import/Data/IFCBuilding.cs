@@ -37,20 +37,20 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// Constructs an IFCBuilding from the IfcBuilding handle.
       /// </summary>
-      /// <param name="ifcIFCBuilding">The IfcBuilding handle.</param>
-      protected IFCBuilding(IFCAnyHandle ifcIFCBuilding)
+      /// <param name="ifcBuilding">The IfcBuilding handle.</param>
+      protected IFCBuilding(IFCAnyHandle ifcBuilding)
       {
-         Process(ifcIFCBuilding);
+         Process(ifcBuilding);
       }
 
       /// <summary>
       /// Processes IfcBuilding attributes.
       /// </summary>
-      /// <param name="ifcIFCBuilding">The IfcBuilding handle.</param>
-      protected override void Process(IFCAnyHandle ifcIFCBuilding)
+      /// <param name="ifcBuilding">The IfcBuilding handle.</param>
+      protected override void Process(IFCAnyHandle ifcBuilding)
       {
          // TODO: process IfcBuilding specific data.
-         base.Process(ifcIFCBuilding);
+         base.Process(ifcBuilding);
       }
 
       /// <summary>

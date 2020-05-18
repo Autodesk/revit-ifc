@@ -28,7 +28,6 @@ using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Data;
 using UnitSystem = Autodesk.Revit.DB.DisplayUnit;
-using UnitName = Autodesk.Revit.DB.DisplayUnitType;
 using Revit.IFC.Import.Enums;
 
 namespace Revit.IFC.Import.Utility
@@ -274,8 +273,6 @@ namespace Revit.IFC.Import.Utility
       {
          Document = doc;
          Creator = creator;
-
-         SetIFCFuzzyXYZEpsilon();
       }
 
       /// <summary>
@@ -317,7 +314,7 @@ namespace Revit.IFC.Import.Utility
          // Note that this tolerance is slightly larger than required, as it is a cube instead of a
          // sphere of equivalence.  In the case of AnyGeoemtry, we resort to the Solid tolerance as we are
          // generally trying to create Solids over Meshes.
-         IFCFuzzyXYZ.IFCFuzzyXYZEpsilon = IFCImportFile.TheFile.Document.Application.ShortCurveTolerance;
+         IFCFuzzyXYZ.IFCFuzzyXYZEpsilon = GetShortSegmentTolerance();
       }
 
       /// <summary>
@@ -366,20 +363,17 @@ namespace Revit.IFC.Import.Utility
       }
 
       /// <summary>
-      /// Indicates whether we are attempting to create a solid as our primary target
-      /// </summary>
-      /// <returns>True if we are first trying to create a Solid, false otherwise</returns>
-      public bool TryToCreateSolid()
+      /// Get the tolerance to be used when determining if a polygon has too short an edge
+      /// for either solid or mesh output.</summary>
+      /// <returns>The tolerance value.</returns>
+      public double GetShortSegmentTolerance()
       {
-         if (BuilderType == IFCShapeBuilderType.TessellatedShapeBuilder)
-         {
-            TessellatedShapeBuilderScope bs = BuilderScope as TessellatedShapeBuilderScope;
-            return (bs.TargetGeometry == TessellatedShapeBuilderTarget.AnyGeometry || bs.TargetGeometry == TessellatedShapeBuilderTarget.Solid);
-         }
-         else
-         {
-            return true;
-         }
+         if (BuilderType != IFCShapeBuilderType.TessellatedShapeBuilder)
+            return Document.Application.ShortCurveTolerance;
+
+         TessellatedShapeBuilderScope bs = BuilderScope as TessellatedShapeBuilderScope;
+         return (bs.TargetGeometry == TessellatedShapeBuilderTarget.Mesh) ?
+            MathUtil.Eps() : Document.Application.ShortCurveTolerance;
       }
 
       /// <summary>
@@ -512,6 +506,7 @@ namespace Revit.IFC.Import.Utility
             BuilderScope = new TessellatedShapeBuilderScope(this);
          }
 
+         SetIFCFuzzyXYZEpsilon();
          return BuilderScope;
       }
 

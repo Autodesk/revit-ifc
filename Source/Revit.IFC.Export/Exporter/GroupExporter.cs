@@ -69,13 +69,17 @@ namespace Revit.IFC.Export.Exporter
 
             string ifcEnumType;
             IFCExportInfoPair exportAs = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
+
             if (exportAs.ExportInstance == IFCEntityType.IfcGroup)
             {
                groupHnd = IFCInstanceExporter.CreateGroup(file, guid, ownerHistory, name, description, objectType);
             }
-            else if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && exportAs.ExportInstance == IFCEntityType.IfcBuildingSystem)
+            else if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             {
+               if (exportAs.ExportInstance == IFCEntityType.IfcBuildingSystem)
                groupHnd = IFCInstanceExporter.CreateBuildingSystem(file, exportAs, guid, ownerHistory, name, description, objectType, longName);
+               else if (exportAs.ExportInstance == IFCEntityType.IfcFurniture)
+                  groupHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, exporterIFC, element, guid, ownerHistory, null, null);
             }
 
             if (groupHnd == null)
@@ -83,7 +87,13 @@ namespace Revit.IFC.Export.Exporter
 
             productWrapper.AddElement(element, groupHnd, exportAs);
 
-            ExporterCacheManager.GroupCache.RegisterGroup(element.Id, groupHnd);
+            GroupInfo groupInfo = ExporterCacheManager.GroupCache.RegisterGroup(element.Id, groupHnd);
+
+            // Check or set the cached Group's export type
+            if (groupInfo.GroupType.ExportInstance == IFCEntityType.UnKnown)
+               ExporterCacheManager.GroupCache.RegisterGroupType(element.Id, exportAs);
+            else if (groupInfo.GroupType.ExportInstance != exportAs.ExportInstance)
+               throw new InvalidOperationException("Inconsistent Group export entity type");
 
             tr.Commit();
             return true;

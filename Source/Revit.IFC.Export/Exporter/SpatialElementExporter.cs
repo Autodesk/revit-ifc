@@ -851,31 +851,29 @@ namespace Revit.IFC.Export.Exporter
       {
          results = null;
 
+         // Avoid throwing for a spatial element with no location.
+         if (spatialElement.Location == null)
+            return false;
+
+         SpatialElementBoundaryOptions options = GetSpatialElementBoundaryOptions(spatialElement);
          IList<CurveLoop> curveLoops = null;
+
          try
          {
-            // Avoid throwing for a spatial element with no location.
-            if (spatialElement.Location == null)
-               return false;
-
-            SpatialElementBoundaryOptions options = GetSpatialElementBoundaryOptions(spatialElement);
             curveLoops = ExporterIFCUtils.GetRoomBoundaryAsCurveLoopArray(spatialElement, options, true);
+            if (curveLoops == null || curveLoops.Count == 0)
+               return false;
          }
-         catch (Autodesk.Revit.Exceptions.InvalidOperationException)
+         catch
          {
-            //Some spatial elements are not placed that have no boundary loops. Don't export them.
             return false;
          }
-
-         Autodesk.Revit.DB.Document document = spatialElement.Document;
-         ElementId levelId = spatialElement.LevelId;
-
-         ElementId catId = spatialElement.Category != null ? spatialElement.Category.Id : ElementId.InvalidElementId;
 
          double dArea = 0.0;
          if (ParameterUtil.GetDoubleValueFromElement(spatialElement, BuiltInParameter.ROOM_AREA, out dArea) != null)
             dArea = UnitUtil.ScaleArea(dArea);
 
+         ElementId levelId = spatialElement.LevelId;
          IFCLevelInfo levelInfo = exporterIFC.GetLevelInfo(levelId);
 
          IFCFile file = exporterIFC.GetFile();
@@ -898,6 +896,7 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
+         Autodesk.Revit.DB.Document document = spatialElement.Document;
          ElementType elemType = document.GetElement(spatialElement.GetTypeId()) as ElementType;
          IFCInternalOrExternal internalOrExternal = CategoryUtil.IsElementExternal(spatialElement) ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
 
@@ -937,6 +936,8 @@ namespace Revit.IFC.Export.Exporter
 
             using (IFCTransaction transaction2 = new IFCTransaction(file))
             {
+               ElementId catId = spatialElement.Category != null ? spatialElement.Category.Id : ElementId.InvalidElementId;
+
                IFCAnyHandle repHnd = null;
                if (!ExporterCacheManager.ExportOptionsCache.Use2DRoomBoundaryForRoomVolumeCreation && geomElem != null)
                {

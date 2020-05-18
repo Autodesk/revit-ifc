@@ -25,6 +25,7 @@ using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
+using System.Collections.Generic;
 
 namespace Revit.IFC.Import.Data
 {
@@ -64,6 +65,38 @@ namespace Revit.IFC.Import.Data
          Process(trimmedCurve);
       }
 
+      private bool NeedToReverseBaseCurve(Curve baseCurve, 
+         double param1, double param2, IFCTrimmingPreference trimPreference)
+      {
+         // In the very specific case where the trim preference is Cartesian,
+         // and the trim parameters are reversed, we can try again by reversing
+         // the base curve, if it is not cyclic.  
+         // This is an error on the input that we see in some files.
+         return (baseCurve != null &&
+            param1 > param2 + MathUtil.Eps() &&
+            trimPreference == IFCTrimmingPreference.Cartesian &&
+            !baseCurve.IsCyclic);
+      }
+
+      private bool SafelyBoundCurve(Curve curve, double param1, double param2)
+      {
+         if (curve == null)
+            return false;
+
+         try
+         {
+            curve.MakeBound(param1, param2);
+            return true;
+         }
+         catch
+         {
+            BackupCurveStartLocation = curve.Evaluate(param1, false);
+            BackupCurveEndLocation = curve.Evaluate(param2, false);
+         }
+
+         return false;
+      }
+
       protected override void Process(IFCAnyHandle ifcCurve)
       {
          base.Process(ifcCurve);
@@ -76,7 +109,7 @@ namespace Revit.IFC.Import.Data
 
          IFCAnyHandle basisCurve = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcCurve, "BasisCurve", true);
          IFCCurve ifcBasisCurve = IFCCurve.ProcessIFCCurve(basisCurve);
-         if (ifcBasisCurve == null || (ifcBasisCurve.Curve == null && ifcBasisCurve.CurveLoop == null))
+         if (ifcBasisCurve == null || (ifcBasisCurve.IsEmpty()))
          {
             // LOG: ERROR: Error processing BasisCurve # for IfcTrimmedCurve #.
             return;
@@ -109,9 +142,16 @@ namespace Revit.IFC.Import.Data
          IFCTrimmingPreference trimPreference = IFCEnums.GetSafeEnumerationAttribute<IFCTrimmingPreference>(ifcCurve, "MasterRepresentation", IFCTrimmingPreference.Parameter);
 
          double param1 = 0.0, param2 = 0.0;
+         Curve baseCurve = ifcBasisCurve.Curve;
          try
          {
-            GetTrimParameters(trim1, trim2, ifcBasisCurve, trimPreference, out param1, out param2);
+            GetTrimParameters(ifcBasisCurve.Id, trim1, trim2, baseCurve, trimPreference, out param1, out param2);
+            if (NeedToReverseBaseCurve(baseCurve, param1, param2, trimPreference))
+            {
+               Importer.TheLog.LogWarning(Id, "Invalid Param1 > Param2 for non-cyclic IfcTrimmedCurve using Cartesian trimming preference, reversing.", false);
+               baseCurve = baseCurve.CreateReversed();
+               GetTrimParameters(ifcBasisCurve.Id, trim1, trim2, baseCurve, trimPreference, out param1, out param2);
+            }
          }
          catch (Exception ex)
          {
@@ -125,13 +165,13 @@ namespace Revit.IFC.Import.Data
             return;
          }
 
-         Curve baseCurve = ifcBasisCurve.Curve;
+         Curve curve = null;
          if (baseCurve.IsCyclic)
          {
             double period = baseCurve.Period;
             if (!sameSense)
                MathUtil.Swap(ref param1, ref param2);
-
+            
             // We want to make sure both values are within period of one another.
             param1 = MathUtil.PutInRange(param1, 0, period);
             param2 = MathUtil.PutInRange(param2, 0, period);
@@ -143,20 +183,22 @@ namespace Revit.IFC.Import.Data
             if (MathUtil.IsAlmostEqual(numberOfPeriods, Math.Round(numberOfPeriods)))
             {
                Importer.TheLog.LogWarning(Id, "Start and end parameters indicate a zero-length closed curve, assuming unbound is intended.", false);
-               Curve = baseCurve;
-               return;
+               curve = baseCurve;
             }
-
-            Curve = baseCurve.Clone();
-               Curve.MakeBound(param1, param2);
-            }
-               else
+            else
             {
+               curve = baseCurve.Clone();
+               if (!SafelyBoundCurve(curve, param1, param2))
+                  return;
+            }
+         }
+         else
+         {
             if (param1 > param2 - MathUtil.Eps())
             {
                Importer.TheLog.LogWarning(Id, "Param1 > Param2 for IfcTrimmedCurve #, reversing.", false);
                MathUtil.Swap(ref param1, ref param2);
-               return;
+               sameSense = !sameSense;
             }
 
             Curve copyCurve = baseCurve.Clone();
@@ -169,32 +211,36 @@ namespace Revit.IFC.Import.Data
                return;
             }
 
-            copyCurve.MakeBound(param1, param2);
+            if (!SafelyBoundCurve(copyCurve, param1, param2))
+               return;
+
             if (sameSense)
             {
-               Curve = copyCurve;
+               curve = copyCurve;
             }
             else
             {
-               Curve = copyCurve.CreateReversed();
+               curve = copyCurve.CreateReversed();
             }
          }
 
-         CurveLoop = new CurveLoop();
-         CurveLoop.Append(Curve);
+         CurveLoop curveLoop = new CurveLoop();
+         curveLoop.Append(curve);
+         SetCurveLoop(curveLoop);
       }
 
-      private void GetTrimParameters(IFCData trim1, IFCData trim2, IFCCurve basisCurve, IFCTrimmingPreference trimPreference,
-          out double param1, out double param2)
+      private void GetTrimParameters(int id, IFCData trim1, IFCData trim2, 
+         Curve baseCurve, IFCTrimmingPreference trimPreference,
+         out double param1, out double param2)
       {
-         double? condParam1 = GetTrimParameter(trim1, basisCurve, trimPreference, false);
+         double? condParam1 = GetTrimParameter(id, trim1, baseCurve, trimPreference, false);
          if (!condParam1.HasValue)
-            throw new InvalidOperationException("#" + basisCurve.Id + ": Couldn't apply first trimming parameter of IfcTrimmedCurve.");
+            throw new InvalidOperationException("#" + id + ": Couldn't apply first trimming parameter of IfcTrimmedCurve.");
          param1 = condParam1.Value;
 
-         double? condParam2 = GetTrimParameter(trim2, basisCurve, trimPreference, false);
+         double? condParam2 = GetTrimParameter(id, trim2, baseCurve, trimPreference, false);
          if (!condParam2.HasValue)
-            throw new InvalidOperationException("#" + basisCurve.Id + ": Couldn't apply second trimming parameter of IfcTrimmedCurve.");
+            throw new InvalidOperationException("#" + id + ": Couldn't apply second trimming parameter of IfcTrimmedCurve.");
          param2 = condParam2.Value;
 
          if (MathUtil.IsAlmostEqual(param1, param2))
@@ -202,18 +248,18 @@ namespace Revit.IFC.Import.Data
             // If we had a cartesian parameter as the trim preference, check if the parameter values are better.
             if (trimPreference == IFCTrimmingPreference.Cartesian)
             {
-               condParam1 = GetTrimParameter(trim1, basisCurve, IFCTrimmingPreference.Parameter, true);
+               condParam1 = GetTrimParameter(id, trim1, baseCurve, IFCTrimmingPreference.Parameter, true);
                if (!condParam1.HasValue)
-                  throw new InvalidOperationException("#" + basisCurve.Id + ": Couldn't apply first trimming parameter of IfcTrimmedCurve.");
+                  throw new InvalidOperationException("#" + id + ": Couldn't apply first trimming parameter of IfcTrimmedCurve.");
                param1 = condParam1.Value;
 
-               condParam2 = GetTrimParameter(trim2, basisCurve, IFCTrimmingPreference.Parameter, true);
+               condParam2 = GetTrimParameter(id, trim2, baseCurve, IFCTrimmingPreference.Parameter, true);
                if (!condParam2.HasValue)
-                  throw new InvalidOperationException("#" + basisCurve.Id + ": Couldn't apply second trimming parameter of IfcTrimmedCurve.");
+                  throw new InvalidOperationException("#" + id + ": Couldn't apply second trimming parameter of IfcTrimmedCurve.");
                param2 = condParam2.Value;
             }
             else
-               throw new InvalidOperationException("#" + basisCurve.Id + ": Ignoring 0 length curve.");
+               throw new InvalidOperationException("#" + id + ": Ignoring 0 length curve.");
          }
       }
 
@@ -231,7 +277,8 @@ namespace Revit.IFC.Import.Data
          return null;
       }
 
-      private double? GetTrimParameter(IFCData trim, IFCCurve basisCurve, IFCTrimmingPreference trimPreference, bool secondAttempt)
+      private double? GetTrimParameter(int id, IFCData trim, Curve baseCurve, 
+         IFCTrimmingPreference trimPreference, bool secondAttempt)
       {
          bool preferParam = !(trimPreference == IFCTrimmingPreference.Cartesian);
          if (secondAttempt)
@@ -247,27 +294,27 @@ namespace Revit.IFC.Import.Data
                XYZ trimParamPt = IFCPoint.ProcessScaledLengthIFCCartesianPoint(trimParamInstance);
                if (trimParamPt == null)
                {
-                  Importer.TheLog.LogWarning(basisCurve.Id, "Invalid trim point for basis curve.", false);
+                  Importer.TheLog.LogWarning(id, "Invalid trim point for basis curve.", false);
                   continue;
                }
 
                try
                {
-                  IntersectionResult result = basisCurve.Curve.Project(trimParamPt);
+                  IntersectionResult result = baseCurve.Project(trimParamPt);
                   if (result.Distance < vertexEps)
                      return result.Parameter;
 
-                  Importer.TheLog.LogWarning(basisCurve.Id, "Cartesian value for trim point not on the basis curve.", false);
+                  Importer.TheLog.LogWarning(id, "Cartesian value for trim point not on the basis curve.", false);
                }
                catch
                {
-                  Importer.TheLog.LogWarning(basisCurve.Id, "Cartesian value for trim point not on the basis curve.", false);
+                  Importer.TheLog.LogWarning(id, "Cartesian value for trim point not on the basis curve.", false);
                }
             }
             else if (preferParam && (trimParam.PrimitiveType == IFCDataPrimitiveType.Double))
             {
                double trimParamDouble = trimParam.AsDouble();
-               if (basisCurve.Curve.IsCyclic)
+               if (baseCurve.IsCyclic)
                   trimParamDouble = IFCUnitUtil.ScaleAngle(trimParamDouble);
                else
                   trimParamDouble = IFCUnitUtil.ScaleLength(trimParamDouble);
@@ -277,7 +324,7 @@ namespace Revit.IFC.Import.Data
 
          // Try again with opposite preference.
          if (!secondAttempt)
-            return GetTrimParameter(trim, basisCurve, trimPreference, true);
+            return GetTrimParameter(id, trim, baseCurve, trimPreference, true);
 
          return null;
       }

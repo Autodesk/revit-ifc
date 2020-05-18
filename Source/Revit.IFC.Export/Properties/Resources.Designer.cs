@@ -176,5 +176,14 @@ namespace Revit.IFC.Export.Properties {
                 return ResourceManager.GetString("RuledFaceProfileCurve", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shape.
+        /// </summary>
+        internal static string Shape {
+            get {
+                return ResourceManager.GetString("Shape", resourceCulture);
+            }
+        }
     }
 }

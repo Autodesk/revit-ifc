@@ -104,7 +104,9 @@ namespace Revit.IFC.Import.Data
          base.Process(ifcSurface);
 
          IFCAnyHandle extrudedDirection = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcSurface, "ExtrudedDirection", true);
-         ExtrudedDirection = IFCPoint.ProcessNormalizedIFCDirection(extrudedDirection);
+         m_ExtrudedDirection = IFCPoint.ProcessNormalizedIFCDirection(extrudedDirection);
+         // The extruded direction is relative to the lcs of the IfcSweptSurface position
+         m_ExtrudedDirection = Position.OfVector(m_ExtrudedDirection);
 
          bool found = false;
          Depth = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(ifcSurface, "Depth", out found);

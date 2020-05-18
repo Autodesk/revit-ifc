@@ -48,7 +48,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The IfcBuilding handle.
       /// </summary>
-      static public IFCAnyHandle BuildingHandle { get; set; }
+      static public IFCAnyHandle BuildingHandle { get; set; } = null;
 
       /// <summary>
       /// A cache to keep track of what beams can be exported as extrusions.
@@ -108,7 +108,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static ElementToHandleCache m_ElementToHandleCache;
 
-      /// <summary>
+      ///<summary>
       /// The ElementTypeToHandleCache cache
       /// </summary>
       static ElementTypeToHandleCache m_ElementTypeToHandleCache;
@@ -118,10 +118,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static ExportOptionsCache m_ExportOptionsCache;
 
-      /// <summary>
-      /// The GroupElementGeometryCache cache.
-      /// </summary>
-      static GroupElementGeometryCache m_GroupElementGeometryCache;
+      static IFCAnyHandle m_Global3DOriginHandle = null;
 
       /// <summary>
       /// The GUID cache.
@@ -145,11 +142,6 @@ namespace Revit.IFC.Export.Utility
       /// This stores the IsExternal value from the shared parameters, if any, for elements that may be used by hosted elements later.
       /// We use this because we clear the ParametersCache after we export an element, and do not want to create just for IsExternal.
       static Dictionary<ElementId, bool?> m_IsExternalParameterValueCache;
-
-      /// <summary>
-      /// The language of the current Revit document.
-      /// </summary>
-      static LanguageType m_LanguageType;
 
       /// <summary>
       /// The LevelInfoCache object.  This contains extra information on top of
@@ -411,6 +403,13 @@ namespace Revit.IFC.Export.Utility
 
       static HashSet<IFCAnyHandle> m_HandleToDelete;
 
+      static IDictionary<ElementId, IList<Curve>> m_Object2DCurves;
+
+      /// <summary>
+      /// Cache for additional Quantities or Properties to be created later with the other quantities
+      /// </summary>
+      static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> ComplexPropertyCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
+
       /// <summary>
       /// The ParameterCache object.
       /// </summary>
@@ -478,19 +477,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// The GroupElementGeometryCache object.
-      /// </summary>
-      public static GroupElementGeometryCache GroupElementGeometryCache
-      {
-         get
-         {
-            if (m_GroupElementGeometryCache == null)
-               m_GroupElementGeometryCache = new GroupElementGeometryCache();
-            return m_GroupElementGeometryCache;
-         }
-      }
-
-      /// <summary>
       /// The GUIDCache object.
       /// </summary>
       public static HashSet<string> GUIDCache
@@ -545,11 +531,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The language of the current Revit document.
       /// </summary>
-      public static LanguageType LanguageType
-      {
-         get { return m_LanguageType; }
-         set { m_LanguageType = value; }
-      }
+      public static LanguageType LanguageType { get; set; }
 
       public static AttributeCache AttributeCache
       {
@@ -561,10 +543,10 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
-      /// <summary>
-      /// The ParameterCache object.
-      /// </summary>
-      public static ParameterCache ParameterCache
+/// <summary>
+/// The ParameterCache object.
+/// </summary>
+public static ParameterCache ParameterCache
       {
          get
          {
@@ -1316,6 +1298,21 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
+      /// <summary>
+      /// A local copy of the internal IfcCartesianPoint for the global origin.
+      public static IFCAnyHandle Global3DOriginHandle
+      {
+         get
+         {
+            if (m_Global3DOriginHandle == null)
+               m_Global3DOriginHandle = ExporterIFCUtils.GetGlobal3DOriginHandle();
+            return m_Global3DOriginHandle;
+         }
+      }
+
+      /// <summary>
+      /// Collection of IFC Handles to delete
+      /// </summary>
       public static HashSet<IFCAnyHandle> HandleToDeleteCache
       {
          get
@@ -1323,6 +1320,19 @@ namespace Revit.IFC.Export.Utility
             if (m_HandleToDelete == null)
                m_HandleToDelete = new HashSet<IFCAnyHandle>();
             return m_HandleToDelete;
+         }
+      }
+
+      /// <summary>
+      /// The Cache for 2D curves information of a FamilySymbol
+      /// </summary>
+      public static IDictionary<ElementId, IList<Curve>> Object2DCurvesCache
+      {
+         get
+         {
+            if (m_Object2DCurves == null)
+               m_Object2DCurves = new Dictionary<ElementId, IList<Curve>>();
+            return m_Object2DCurves;
          }
       }
 
@@ -1359,9 +1369,9 @@ namespace Revit.IFC.Export.Utility
          m_ExportOptionsCache = null;
          m_FabricAreaHandleCache = null;
          m_FamilySymbolToTypeInfoCache = null;
+         m_Global3DOriginHandle = null;
          m_GridCache = null;
          m_GroupCache = null;
-         m_GroupElementGeometryCache = null;
          m_GUIDCache = null;
          m_GUIDsToStoreCache = null;
          m_HandleToElementCache = null;
@@ -1405,6 +1415,8 @@ namespace Revit.IFC.Export.Utility
          BuildingHandle = null;
          m_CertifiedEntitiesAndPsetCache = null;
          m_HandleToDelete = null;
+         m_Object2DCurves = null;
+         ComplexPropertyCache.Clear();
       }
    }
 }

@@ -80,7 +80,7 @@ namespace Revit.IFC.Import.Data
          IFCAnyHandle treeRootExpression = IFCImportHandleUtil.GetRequiredInstanceAttribute(solid, "TreeRootExpression", false);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(treeRootExpression))
          {
-            if (IFCAnyHandleUtil.IsSubTypeOf(treeRootExpression, IFCEntityType.IfcBooleanResult))
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(treeRootExpression, IFCEntityType.IfcBooleanResult))
                BooleanResult = IFCBooleanResult.ProcessIFCBooleanResult(treeRootExpression);
             else
                Importer.TheLog.LogUnhandledSubTypeError(treeRootExpression, "IfcCsgSelect", false);

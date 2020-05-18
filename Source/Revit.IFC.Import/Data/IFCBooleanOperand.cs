@@ -41,11 +41,11 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcBooleanResult))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcBooleanResult))
             return IFCBooleanResult.ProcessIFCBooleanResult(ifcBooleanOperand);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcHalfSpaceSolid))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcHalfSpaceSolid))
             return IFCHalfSpaceSolid.ProcessIFCHalfSpaceSolid(ifcBooleanOperand);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcSolidModel))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcSolidModel))
             return IFCSolidModel.ProcessIFCSolidModel(ifcBooleanOperand);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcBooleanOperand, "IfcBooleanOperand", true);

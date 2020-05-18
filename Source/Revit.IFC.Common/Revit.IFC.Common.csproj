@@ -85,6 +85,7 @@
     <Compile Include="Utility\IfcSchemaEntityNode.cs" />
     <Compile Include="Utility\IfcSchemaEntityTree.cs" />
     <Compile Include="Utility\MathUtil.cs" />
+    <Compile Include="Utility\OptionsUtil.cs" />
     <Compile Include="Utility\ProcessIFCXMLSchema.cs" />
     <Compile Include="Utility\RevitStatusBar.cs" />
   </ItemGroup>

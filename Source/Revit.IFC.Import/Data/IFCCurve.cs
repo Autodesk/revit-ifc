@@ -19,13 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
 
@@ -33,41 +30,50 @@ namespace Revit.IFC.Import.Data
 {
    public abstract class IFCCurve : IFCRepresentationItem
    {
-      // One of m_Curve or m_CurveLoop will be non-null.
-      Curve m_Curve = null;
-
-      CurveLoop m_CurveLoop = null;
-
-      // In theory, some IfcCurves may use a non-unit length IfcVector to influence the parametrization of the underlying curve.
-      // While in practice this is unlikely, we keep this value to be complete.
-      double m_ParametericScaling = 1.0;
-
-      protected double ParametericScaling
-      {
-         get { return m_ParametericScaling; }
-         set { m_ParametericScaling = value; }
-      }
+      // Some IfcCurves may use a non-unit length IfcVector to influence
+      // the parametrization of the underlying curve.
+      public double ParametericScaling { get; protected set; } = 1.0;
 
       /// <summary>
-      /// Get the Curve representation of IFCCurve.  It could be null.
+      /// If the curve can't get represented by Revit Curve(s) or CurveLoops(s), 
+      /// the start point of the curve.
       /// </summary>
-      public Curve Curve
-      {
-         get { return m_Curve; }
-         protected set { m_Curve = value; }
-      }
+      /// <remarks>
+      /// This will only be set if we fail at creating Revit geometry for the curve.
+      /// This is intended as a backup where if we have multiple invalid curve 
+      /// segments, we can potentially combine them into one valid curve segment.
+      /// In practice, this is intended to be set when calling routines try to 
+      /// bound the curve.
+      /// </remarks>
+      public XYZ BackupCurveStartLocation { get; set; } = null;
 
       /// <summary>
-      /// Get the CurveLoop representation of IFCCurve.  It could be null.
+      /// If the curve can't get represented by Revit Curve(s) or CurveLoops(s), 
+      /// the end point of the curve.
       /// </summary>
-      public CurveLoop CurveLoop
-      {
-         get { return m_CurveLoop; }
-         protected set { m_CurveLoop = value; }
-      }
+      /// <remarks>
+      /// This will only be set if we fail at creating Revit geometry for the curve.
+      /// This is intended as a backup where if we have multiple invalid curve 
+      /// segments, we can potentially combine them into one valid curve segment.
+      /// In practice, this is intended to be set when calling routines try to 
+      /// bound the curve.
+      /// </remarks>
+      public XYZ BackupCurveEndLocation { get; set; } = null;
 
       /// <summary>
-      /// Get the curve or CurveLoop representation of IFCCurve, as a list of 0 or more curves.
+      /// Get the representation of IFCCurve as a single Revit curve, if it can be 
+      /// representated as such.  It could be null.
+      /// </summary>
+      public Curve Curve { get; private set; } = null;
+
+      /// <summary>
+      /// Get the representation of IFCCurve as a list of Revit CurveLoops, 
+      /// if it can be representated as such.  It could be null.
+      /// </summary>
+      public IList<CurveLoop> CurveLoops { get; private set; } = null;
+      
+      /// <summary>
+      /// Get the representation of IFCCurve, as a list of 0 or more Revit curves.
       /// </summary>
       public IList<Curve> GetCurves()
       {
@@ -75,35 +81,325 @@ namespace Revit.IFC.Import.Data
 
          if (Curve != null)
             curves.Add(Curve);
-         else if (CurveLoop != null)
+         else if (CurveLoops != null)
          {
-            foreach (Curve curve in CurveLoop)
-               curves.Add(curve);
+            foreach (CurveLoop curveLoop in CurveLoops)
+            {
+               foreach (Curve curve in curveLoop)
+                  curves.Add(curve);
+            }
          }
 
          return curves;
       }
 
       /// <summary>
-      /// Get the curve or CurveLoop representation of IFCCurve, as a CurveLoop.  This will have a value, as long as Curve or CurveLoop do.
+      /// Return true if this IFCCurve has no Revit geometric data associated with it.
       /// </summary>
-      public CurveLoop GetCurveLoop()
+      /// <returns></returns>
+      public bool IsEmpty()
       {
-         if (CurveLoop != null)
-            return CurveLoop;
-         if (Curve == null)
-            return null;
+         if (BackupCurveStartLocation != null && BackupCurveEndLocation != null)
+            return false;
 
-         CurveLoop curveAsCurveLoop = new CurveLoop();
-         curveAsCurveLoop.Append(Curve);
-         return curveAsCurveLoop;
+         if (Curve != null)
+            return false;
+
+         if (CurveLoops == null || CurveLoops.Count == 0)
+            return true;
+
+         foreach (CurveLoop curveLoop in CurveLoops)
+         {
+            if (curveLoop.NumberOfCurves() != 0)
+               return false;
+         }
+
+         return true;
       }
 
       /// <summary>
-      /// Calculates the normal of the plane of the curve or curve loop.
+      /// Get the one and only CurveLoop if it exists, otherwise null.
       /// </summary>
-      /// <returns>The normal, or null if there is no curve or curve loop.</returns>
-      public XYZ GetNormal()
+      /// <returns>The one and only CurveLoop if it exists.</returns>
+      public CurveLoop GetTheCurveLoop()
+      {
+         return (CurveLoops != null && CurveLoops.Count == 1) ? CurveLoops[0] : null;
+      }
+
+      /// <summary>
+      /// Set the representation of the curve based on one Curve.
+      /// </summary>
+      /// <param name="curve">The one curve.</param>
+      /// <remarks>This will set CurveLoop to null.</remarks>
+      public void SetCurve(Curve curve)
+      {
+         Curve = curve;
+         CurveLoops = null;
+      }
+      
+      /// <summary>
+      /// Set the representation of the curve based on one CurveLoop.
+      /// </summary>
+      /// <param name="curveLoop">The one CurveLoop.</param>
+      public void SetCurveLoop(CurveLoop curveLoop)
+      {
+         Curve = null;
+         CurveLoops = null;
+
+         if (curveLoop == null)
+            return;
+
+         if (curveLoop.NumberOfCurves() == 1)
+         {
+            Curve = curveLoop.GetCurveLoopIterator().Current;
+         }
+
+         CurveLoops = new List<CurveLoop>();
+         CurveLoops.Add(curveLoop);
+      }
+
+      /// <summary>
+      /// Set the representation of the curve based on one CurveLoop.
+      /// </summary>
+      /// <param name="curveLoop">The one CurveLoop.</param>
+      /// <param name="pointXYZs">The point list that created this CurveLoop.</param>
+      /// <remarks>The point list is used to potentially collapse a series of
+      /// line segments into one.</remarks>
+      public void SetCurveLoop(CurveLoop curveLoop, IList<XYZ> pointXYZs)
+      {
+         SetCurveLoop(curveLoop);
+         if (Curve == null)
+            Curve = IFCGeometryUtil.CreateCurveFromPolyCurveLoop(GetTheCurveLoop(), pointXYZs);
+      }
+      
+      /// <summary>
+      /// Set the representation of the curve based on a list of curves.
+      /// </summary>
+      /// <param name="curves">The initial list of curves.</param>
+      public void SetCurveLoops(IList<Curve> curves)
+      {
+         Curve = null;
+         CurveLoops = null;
+
+         if (curves == null || curves.Count == 0)
+            return;
+
+         CurveLoops = new List<CurveLoop>();
+         CurveLoop currCurveLoop = new CurveLoop();
+         CurveLoops.Add(currCurveLoop);
+         foreach (Curve curve in curves)
+         {
+            if (curve == null)
+               continue;
+
+            try
+            {
+               currCurveLoop.Append(curve);
+               continue;
+            }
+            catch
+            {
+            }
+
+            currCurveLoop = new CurveLoop();
+            CurveLoops.Add(currCurveLoop);
+            currCurveLoop.Append(curve);
+         }
+
+         if (curves.Count == 1)
+            Curve = curves[0];
+         else
+            Curve = ConvertCurveLoopIntoSingleCurve();
+      }
+
+      /// <summary>
+      /// Create a curve representation of this IFCCompositeCurve from a curveloop
+      /// </summary>
+      /// <returns>A Revit curve that is made by appending every curve in the given curveloop, if possible</returns>
+      public Curve ConvertCurveLoopIntoSingleCurve()
+      {
+         CurveLoop curveLoop = GetTheCurveLoop();
+         if (curveLoop == null)
+         {
+            return null;
+         }
+
+         CurveLoopIterator curveIterator = curveLoop.GetCurveLoopIterator();
+         Curve firstCurve = curveIterator.Current;
+         Curve returnCurve = null;
+
+         double vertexEps = IFCImportFile.TheFile.Document.Application.VertexTolerance;
+
+         // We only connect the curves if they are Line, Arc or Ellipse
+         if (!((firstCurve is Line) || (firstCurve is Arc) || (firstCurve is Ellipse)))
+         {
+            return null;
+         }
+
+         XYZ firstStartPoint = firstCurve.GetEndPoint(0);
+
+         Curve currentCurve = null;
+         if (firstCurve is Line)
+         {
+            Line firstLine = firstCurve as Line;
+            while (curveIterator.MoveNext())
+            {
+               currentCurve = curveIterator.Current;
+               if (!(currentCurve is Line))
+               {
+                  return null;
+               }
+               Line currentLine = currentCurve as Line;
+
+               if (!(firstLine.Direction.IsAlmostEqualTo(currentLine.Direction)))
+               {
+                  return null;
+               }
+            }
+            returnCurve = Line.CreateBound(firstStartPoint, currentCurve.GetEndPoint(1));
+         }
+         else if (firstCurve is Arc)
+         {
+            Arc firstArc = firstCurve as Arc;
+            XYZ firstCurveNormal = firstArc.Normal;
+
+            while (curveIterator.MoveNext())
+            {
+               currentCurve = curveIterator.Current;
+               if (!(currentCurve is Arc))
+               {
+                  return null;
+               }
+
+               XYZ currentStartPoint = currentCurve.GetEndPoint(0);
+               XYZ currentEndPoint = currentCurve.GetEndPoint(1);
+
+               Arc currentArc = currentCurve as Arc;
+               XYZ currentCenter = currentArc.Center;
+               double currentRadius = currentArc.Radius;
+               XYZ currentNormal = currentArc.Normal;
+
+               // We check if this circle is similar to the first circle by checking that they have the same center, same radius,
+               // and lie on the same plane
+               if (!(currentCenter.IsAlmostEqualTo(firstArc.Center, vertexEps) && MathUtil.IsAlmostEqual(currentRadius, firstArc.Radius)))
+               {
+                  return null;
+               }
+               if (!MathUtil.IsAlmostEqual(Math.Abs(currentNormal.DotProduct(firstCurveNormal)), 1))
+               {
+                  return null;
+               }
+            }
+            // If all of the curve segments are part of the same circle, then the returning curve will be a circle bounded
+            // by the start point of the first curve and the end point of the last curve.
+            XYZ lastPoint = currentCurve.GetEndPoint(1);
+            if (lastPoint.IsAlmostEqualTo(firstStartPoint, vertexEps))
+            {
+               firstCurve.MakeUnbound();
+            }
+            else
+            {
+               double startParameter = firstArc.GetEndParameter(0);
+               double endParameter = firstArc.Project(lastPoint).Parameter;
+
+               if (endParameter < startParameter)
+                  endParameter += Math.PI * 2;
+
+               firstCurve.MakeBound(startParameter, endParameter);
+            }
+            returnCurve = firstCurve;
+         }
+         else if (firstCurve is Ellipse)
+         {
+            Ellipse firstEllipse = firstCurve as Ellipse;
+            double radiusX = firstEllipse.RadiusX;
+            double radiusY = firstEllipse.RadiusY;
+            XYZ xDirection = firstEllipse.XDirection;
+            XYZ yDirection = firstEllipse.YDirection;
+            XYZ firstCurveNormal = firstEllipse.Normal;
+
+            while (curveIterator.MoveNext())
+            {
+               currentCurve = curveIterator.Current;
+               if (!(currentCurve is Ellipse))
+                  return null;
+
+               XYZ currentStartPoint = currentCurve.GetEndPoint(0);
+               XYZ currentEndPoint = currentCurve.GetEndPoint(1);
+
+               Ellipse currentEllipse = currentCurve as Ellipse;
+               XYZ currentCenter = currentEllipse.Center;
+
+               double currentRadiusX = currentEllipse.RadiusX;
+               double currentRadiusY = currentEllipse.RadiusY;
+               XYZ currentXDirection = currentEllipse.XDirection;
+               XYZ currentYDirection = currentEllipse.YDirection;
+
+               XYZ currentNormal = currentEllipse.Normal;
+
+               if (!MathUtil.IsAlmostEqual(Math.Abs(currentNormal.DotProduct(firstCurveNormal)), 1))
+               {
+                  return null;
+               }
+
+               // We determine whether this ellipse is the same as the initial ellipse by checking if their centers and corresponding
+               // radiuses as well as radius directions are the same or permutations of each other.
+               if (!currentCenter.IsAlmostEqualTo(firstEllipse.Center))
+               {
+                  return null;
+               }
+
+               // Checks if the corresponding radius and radius direction are the same
+               if (MathUtil.IsAlmostEqual(radiusX, currentRadiusX))
+               {
+                  if (!(MathUtil.IsAlmostEqual(radiusY, currentRadiusY) && currentXDirection.IsAlmostEqualTo(xDirection) && currentYDirection.IsAlmostEqualTo(yDirection)))
+                  {
+                     return null;
+                  }
+               }
+               // Checks if the corresponding radiuses and radius directions are permutations of each other
+               else if (MathUtil.IsAlmostEqual(radiusX, currentRadiusY))
+               {
+                  if (!(MathUtil.IsAlmostEqual(radiusY, currentRadiusX) && currentXDirection.IsAlmostEqualTo(yDirection) && currentYDirection.IsAlmostEqualTo(xDirection)))
+                  {
+                     return null;
+                  }
+               }
+               else
+               {
+                  return null;
+               }
+            }
+
+            // If all of the curve segments are part of the same ellipse then the returning curve will be the ellipse whose start point is the start 
+            // point of the first curve and the end point is the end point of the last curve
+            XYZ lastPoint = currentCurve.GetEndPoint(1);
+            if (lastPoint.IsAlmostEqualTo(firstStartPoint))
+            {
+               firstCurve.MakeUnbound();
+            }
+            else
+            {
+               double startParameter = firstEllipse.GetEndParameter(0);
+               double endParameter = firstEllipse.Project(lastPoint).Parameter;
+
+               if (endParameter < startParameter)
+               {
+                  endParameter += Math.PI * 2;
+               }
+               firstCurve.MakeBound(startParameter, endParameter);
+            }
+            returnCurve = firstCurve;
+         }
+
+         return returnCurve;
+      }
+   
+   /// <summary>
+   /// Calculates the normal of the plane of the curve or curve loop.
+   /// </summary>
+   /// <returns>The normal, or null if there is no curve or curve loop.</returns>
+   public XYZ GetNormal()
       {
          if (Curve != null)
          {
@@ -111,20 +407,36 @@ namespace Revit.IFC.Import.Data
             if (transform != null)
                return transform.BasisZ;
          }
-         else if (CurveLoop != null)
+
+         if (CurveLoops == null)
+            return null;
+
+         XYZ normal = null;
+         foreach (CurveLoop curveLoop in CurveLoops)
          {
             try
             {
-               Plane plane = CurveLoop.GetPlane();
+               Plane plane = curveLoop.GetPlane();
                if (plane != null)
-                  return plane.Normal;
+               {
+                  if (normal == null)
+                  {
+                     normal = plane.Normal;
+                  }
+                  else
+                  {
+                     if (!normal.IsAlmostEqualTo(plane.Normal))
+                        return null;
+                  }
+               }
             }
             catch
             {
+               return null;
             }
          }
-
-         return null;
+         
+         return normal;
       }
 
       protected IFCCurve()
@@ -154,15 +466,15 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcCurve, IFCEntityType.IfcBoundedCurve))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcCurve, IFCEntityType.IfcBoundedCurve))
             return IFCBoundedCurve.ProcessIFCBoundedCurve(ifcCurve);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcCurve, IFCEntityType.IfcConic))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcCurve, IFCEntityType.IfcConic))
             return IFCConic.ProcessIFCConic(ifcCurve);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcCurve, IFCEntityType.IfcLine))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcCurve, IFCEntityType.IfcLine))
             return IFCLine.ProcessIFCLine(ifcCurve);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcCurve, IFCEntityType.IfcOffsetCurve2D))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcCurve, IFCEntityType.IfcOffsetCurve2D))
             return IFCOffsetCurve2D.ProcessIFCOffsetCurve2D(ifcCurve);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcCurve, IFCEntityType.IfcOffsetCurve3D))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcCurve, IFCEntityType.IfcOffsetCurve3D))
             return IFCOffsetCurve3D.ProcessIFCOffsetCurve3D(ifcCurve);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcCurve, IFCEntityType.IfcCurve, true);
@@ -202,13 +514,16 @@ namespace Revit.IFC.Import.Data
             if (transformedCurve != null)
                transformedCurves.Add(transformedCurve);
          }
-         else if (CurveLoop != null)
+         else if (CurveLoops != null)
          {
-            foreach (Curve curve in CurveLoop)
+            foreach (CurveLoop curveLoop in CurveLoops)
             {
-               Curve transformedCurve = CreateTransformedCurve(curve, parentRep, lcs);
-               if (transformedCurve != null)
-                  transformedCurves.Add(transformedCurve);
+               foreach (Curve curve in curveLoop)
+               {
+                  Curve transformedCurve = CreateTransformedCurve(curve, parentRep, lcs);
+                  if (transformedCurve != null)
+                     transformedCurves.Add(transformedCurve);
+               }
             }
          }
 

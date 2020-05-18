@@ -65,7 +65,7 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcFacetedBrep);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcFacetedBrep, IFCEntityType.IfcFacetedBrepWithVoids))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcFacetedBrep, IFCEntityType.IfcFacetedBrepWithVoids))
          {
             HashSet<IFCAnyHandle> ifcVoids =
                 IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcFacetedBrep, "Voids");

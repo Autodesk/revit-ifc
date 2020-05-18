@@ -151,10 +151,10 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcTypeProduct.StepId, out typeProduct))
             return (typeProduct as IFCTypeProduct);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcTypeProduct, IFCEntityType.IfcDoorStyle))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTypeProduct, IFCEntityType.IfcDoorStyle))
             return IFCDoorStyle.ProcessIFCDoorStyle(ifcTypeProduct);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcTypeProduct, IFCEntityType.IfcElementType))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTypeProduct, IFCEntityType.IfcElementType))
             return IFCElementType.ProcessIFCElementType(ifcTypeProduct);
 
          return new IFCTypeProduct(ifcTypeProduct);

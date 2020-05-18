@@ -88,7 +88,7 @@ namespace Revit.IFC.Import.Data
          // IFC2x has a different representation for styled items which we don't support.
          if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x2)
          {
-            List<IFCAnyHandle> styledByItems = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(item, "StyledByItem");
+            List<IFCAnyHandle> styledByItems = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(item, "StyledByItem");
             if (styledByItems != null && styledByItems.Count > 0)
             {
                // We can only handle one styled item, but we allow the possiblity that there are duplicates.  Do a top-level check.
@@ -173,19 +173,25 @@ namespace Revit.IFC.Import.Data
       /// <returns>The IFCRepresentationItem object.</returns>
       public static IFCRepresentationItem ProcessIFCRepresentationItem(IFCAnyHandle ifcRepresentationItem)
       {
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcBooleanResult))
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcRepresentationItem))
+         {
+            Importer.TheLog.LogNullError(IFCEntityType.IfcRepresentationItem);
+            return null;
+         }
+
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcBooleanResult))
             return IFCBooleanResult.ProcessIFCBooleanResult(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcCurve))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcCurve))
             return IFCCurve.ProcessIFCCurve(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcFaceBasedSurfaceModel))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcFaceBasedSurfaceModel))
             return IFCFaceBasedSurfaceModel.ProcessIFCFaceBasedSurfaceModel(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcGeometricSet))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcGeometricSet))
             return IFCGeometricSet.ProcessIFCGeometricSet(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcMappedItem))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcMappedItem))
             return IFCMappedItem.ProcessIFCMappedItem(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcShellBasedSurfaceModel))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcShellBasedSurfaceModel))
             return IFCShellBasedSurfaceModel.ProcessIFCShellBasedSurfaceModel(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcSolidModel))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcSolidModel))
             return IFCSolidModel.ProcessIFCSolidModel(ifcRepresentationItem);
 
          if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x2 && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcStyledItem))
@@ -194,8 +200,16 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4 && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTriangulatedFaceSet))
             return IFCTriangulatedFaceSet.ProcessIFCTriangulatedFaceSet(ifcRepresentationItem);
 
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4Add2 && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPolygonalFaceSet))
-            return IFCPolygonalFaceSet.ProcessIFCPolygonalFaceSet(ifcRepresentationItem);
+         // There is no way to actually determine an IFC4Add2 file vs. a "vanilla" IFC4 file, which is
+         // obsolete.  The try/catch here allows us to read these obsolete files without crashing.
+         try
+         {
+            if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4 && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPolygonalFaceSet))
+               return IFCPolygonalFaceSet.ProcessIFCPolygonalFaceSet(ifcRepresentationItem);
+         }
+         catch
+         {
+         }
 
          if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTopologicalRepresentationItem))
             return IFCTopologicalRepresentationItem.ProcessIFCTopologicalRepresentationItem(ifcRepresentationItem);

@@ -41,7 +41,8 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="groupId">The elementId of the Group.</param>
       /// <param name="groupHnd">The handle of the IfcGroup.</param>
-      public void RegisterGroup(ElementId groupId, IFCAnyHandle groupHnd)
+      /// <returns>GroupInfo of the registered group</returns>
+      public GroupInfo RegisterGroup(ElementId groupId, IFCAnyHandle groupHnd)
       {
          GroupInfo groupInfo;
          if (!TryGetValue(groupId, out groupInfo))
@@ -49,6 +50,23 @@ namespace Revit.IFC.Export.Utility
             groupInfo = new GroupInfo();
          }
          groupInfo.GroupHandle = groupHnd;
+         this[groupId] = groupInfo;
+         return groupInfo;
+      }
+
+      /// <summary>
+      /// Specify the export type of the cached group.
+      /// </summary>
+      /// <param name="groupId">The elementId of the Group.</param>
+      /// <param name="type">The export type of the Group.</param>
+      public void RegisterGroupType(ElementId groupId, IFCExportInfoPair type)
+      {
+         GroupInfo groupInfo;
+         if (!TryGetValue(groupId, out groupInfo))
+         {
+            groupInfo = new GroupInfo();
+         }
+         groupInfo.GroupType = type;
          this[groupId] = groupInfo;
       }
 

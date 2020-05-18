@@ -33,13 +33,6 @@ namespace Revit.IFC.Export.Toolkit
       RelAggregates = 2
    }
 
-   enum IFCBuildingSubElements
-   {
-      RelContainedInSpatialStructure = 1,
-      RelAggregatesProducts = 2,
-      RelAggregatesBuildingStories = 3
-   }
-
    enum IFCBuildingStoreySubElements
    {
       RelContainedInSpatialStructure = 1,
@@ -122,6 +115,13 @@ namespace Revit.IFC.Export.Toolkit
    enum IFCHostedSweepSubElements
    {
       PipeSegmentType = 1
+   }
+
+   enum IFCProjectSubElements
+   {
+      RelContainedInBuildingSpatialStructure = 1,
+      RelContainedInSiteSpatialStructure = 2,
+      RelAggregatesBuildingStories = 3
    }
 
    enum IFCRampSubElements

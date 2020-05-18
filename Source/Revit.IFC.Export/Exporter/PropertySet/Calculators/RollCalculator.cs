@@ -83,7 +83,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // For other elements with ExtrusionData. Parameter will take precedence (override)
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Roll", out m_Roll);
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Roll", out m_Roll);
          m_Roll = UnitUtil.ScaleAngle(m_Roll);
          if (m_Roll > MathUtil.Eps())
             return true;

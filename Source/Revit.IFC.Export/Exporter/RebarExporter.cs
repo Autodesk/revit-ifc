@@ -20,15 +20,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.DB.Structure;
+using Revit.IFC.Export.Properties;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
-using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
+
+
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -74,7 +75,7 @@ namespace Revit.IFC.Export.Exporter
          {
             IFCFile file = exporterIFC.GetFile();
             using (IFCTransaction tr = new IFCTransaction(file))
-      {
+            {
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                string revitObjectType = NamingUtil.GetFamilyAndTypeName(element);
                string name = NamingUtil.GetNameOverride(element, revitObjectType);
@@ -206,17 +207,17 @@ namespace Revit.IFC.Export.Exporter
                bool hasAssemblyId = (assemblyId != ElementId.InvalidElementId);
                bool attachToLevel = !hasAssemblyId;
 
-            ISet<IFCAnyHandle> createdRebarHandles = new HashSet<IFCAnyHandle>();
+               ISet<IFCAnyHandle> createdRebarHandles = new HashSet<IFCAnyHandle>();
                foreach (DelayedProductWrapper delayedProductWrapper in relatedToAssembly.Value)
-            {
-               IFCAnyHandle currentRebarHandle = delayedProductWrapper.ElementHandle;
+               {
+                  IFCAnyHandle currentRebarHandle = delayedProductWrapper.ElementHandle;
                   productWrapper.AddElement(delayedProductWrapper.RebarElement, currentRebarHandle, 
                      delayedProductWrapper.LevelInfo, null, attachToLevel, delayedProductWrapper.ExportInfo);
-               createdRebarHandles.Add(currentRebarHandle);
-            }
+                  createdRebarHandles.Add(currentRebarHandle);
+               }
 
                if (hasAssemblyId)
-            {
+               {
                   ExporterCacheManager.AssemblyInstanceCache.RegisterElements(assemblyId, productWrapper);
                }
                else if (createdRebarHandles.Count > 1)
@@ -225,17 +226,16 @@ namespace Revit.IFC.Export.Exporter
                   string rebarGUID = (guid != null) ? guid : GUIDUtil.CreateGUID();
                   CreateRebarGroup(exporterIFC, element, rebarGUID, productWrapper, createdRebarHandles);
                   guid = null;
-
-                  }
                }
+            }
 
-               // We will update the GUID of the one created IfcReinforcingElement to be the element GUID.
-               // This will allow the IfcGUID parameter to be use/set if appropriate.
+            // We will update the GUID of the one created IfcReinforcingElement to be the element GUID.
+            // This will allow the IfcGUID parameter to be use/set if appropriate.
             if (createdRebars.Count == 1 && guid != null)
                ExporterUtil.SetGlobalId(createdRebars.ElementAt(0).ElementHandle, guid);
          }
       }
-
+   
       private static IFCReinforcingBarRole GetReinforcingBarRole(string role)
       {
          if (String.IsNullOrWhiteSpace(role))
@@ -367,7 +367,7 @@ namespace Revit.IFC.Export.Exporter
                // Potential issue : totalBarLength has a rounded value but individual lengths (from centerlines) do not have rounded values.
                // Also dividing a rounded totalBarLength does not result in barLength rounded by the same round value.
                double barLength = totalBarLength / rebarQuantity;
-               IList<Curve> baseCurves = GetRebarCenterlineCurves(rebarItem, true, false, false);
+               IList<Curve> baseCurves = GetRebarCenterlineCurves(rebarItem, true, false, false, MultiplanarOption.IncludeAllMultiplanarCurves);
 
                ElementId barLengthParamId = new ElementId(BuiltInParameter.REBAR_ELEM_LENGTH);
                ParameterSet rebarElementParams = rebarElement.Parameters;
@@ -379,7 +379,7 @@ namespace Revit.IFC.Export.Exporter
                   Rebar rebar = rebarElement as Rebar;
                   if ((rebar != null) && (rebar.DistributionType == DistributionType.VaryingLength || rebar.IsRebarFreeForm()))
                   {
-                     baseCurves = GetRebarCenterlineCurves(rebar, true, false, false, MultiplanarOption.IncludeOnlyPlanarCurves, ii);
+                     baseCurves = GetRebarCenterlineCurves(rebar, true, false, false, MultiplanarOption.IncludeAllMultiplanarCurves, ii);
                      DoubleParameterValue barLengthParamVal = rebar.GetParameterValueAtIndex(barLengthParamId, ii) as DoubleParameterValue;
                      if (barLengthParamVal != null)
                         barLength = barLengthParamVal.Value;
@@ -391,21 +391,12 @@ namespace Revit.IFC.Export.Exporter
                   {
                      string shapeName = getShapeNameAtIndex(rebar, ii);
                      string elementName = rebar.Name;
-                     string strVaries = "";
                      if (!elementName.Contains(shapeName))
                      {
-                        // it means that element name contains "Shape Varies"
-
-                        // get "Varies" string from elem name
-                        for (int iChar = elementName.Length - 1; iChar > 0; iChar--)
-                        {
-                           if (elementName[iChar] == ' ')
-                              break;
-                           strVaries = strVaries.Insert(0, elementName[iChar].ToString());
-                        }
-
-                        // Replace "Varies" with shape name.    
-                        rebarNameFormated = origRebarName.Replace(strVaries, shapeName);
+                        // this means that our rebar is a free form bent with varying shapes. We want to have in its name "Shape xx"
+                        shapeName = Resources.Shape + " " + shapeName; // This is something like - "Shape 00" or "Shape 17"
+                        string formatedString = elementName + " : " + shapeName;
+                        rebarNameFormated = origRebarName.Replace(elementName, formatedString);
                      }
                   }
 
@@ -635,9 +626,24 @@ namespace Revit.IFC.Export.Exporter
          {
             Rebar rebar = element as Rebar;
             if (rebar.IsRebarFreeForm())
-               return Transform.Identity; // free form rebar don't have a transformation
-
+            {
+               return Transform.Identity;
+            }
             return (element as Rebar).GetShapeDrivenAccessor().GetBarPositionTransform(barPositionIndex);
+
+            // Only in 2022
+            //Transform movedBarTransform = rebar.GetMovedBarTransform(barPositionIndex);
+            //if (rebar.IsRebarFreeForm())
+            //{
+            //   return movedBarTransform;
+            //}
+            //else
+            //{
+            //   // shape driven
+            //   Transform barPosTrf = rebar.GetShapeDrivenAccessor().GetBarPositionTransform(barPositionIndex);
+            //   Transform entireTrf = movedBarTransform.Multiply(barPosTrf);
+            //   return entireTrf;
+            //}
          }
          else if (element is RebarInSystem)
          {

@@ -121,6 +121,15 @@ namespace Revit.IFC.Import.Utility
          // Referenceable: true.
          // Room Bounding: if applicable, user settable.
 
+         if (IFCImportFile.TheFile.Options.UseStreamlinedOptions)
+         {
+            // Disable referencing for performance purposes.
+            DirectShapeOptions options = directShape.GetOptions();
+            options.ReferencingOption = DirectShapeReferencingOption.NotReferenceable;
+            directShape.SetOptions(options);
+         }
+
+
          if (directShape != null && geomObjs != null)
             directShape.SetShape(geomObjs);
 

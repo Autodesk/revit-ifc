@@ -144,7 +144,7 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcBSplineSurfaceWithKnots.StepId, out bSplineSurface))
             return (bSplineSurface as IFCBSplineSurfaceWithKnots);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcBSplineSurfaceWithKnots, IFCEntityType.IfcRationalBSplineSurfaceWithKnots))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBSplineSurfaceWithKnots, IFCEntityType.IfcRationalBSplineSurfaceWithKnots))
             return IFCRationalBSplineSurfaceWithKnots.ProcessIFCRationalBSplineSurfaceWithKnots(ifcBSplineSurfaceWithKnots);
 
          return new IFCBSplineSurfaceWithKnots(ifcBSplineSurfaceWithKnots);

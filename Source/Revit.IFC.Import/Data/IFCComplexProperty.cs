@@ -60,7 +60,7 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Returns the property value as a string, for SetValueString().
+      /// Returns the property value as a string, for Set().
       /// </summary>
       /// <returns>The property value as a string.</returns>
       public override string PropertyValueAsString()
@@ -95,7 +95,7 @@ namespace Revit.IFC.Import.Data
          Name = IFCAnyHandleUtil.GetStringAttribute(complexProperty, "Name");
          UsageName = IFCAnyHandleUtil.GetStringAttribute(complexProperty, "UsageName");
 
-         HashSet<IFCAnyHandle> properties = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(complexProperty, "HasProperties");
+         HashSet<IFCAnyHandle> properties = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(complexProperty, "HasProperties");
 
          foreach (IFCAnyHandle property in properties)
          {
@@ -119,7 +119,7 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (!IFCAnyHandleUtil.IsSubTypeOf(ifcComplexProperty, IFCEntityType.IfcComplexProperty))
+         if (!IFCAnyHandleUtil.IsValidSubTypeOf(ifcComplexProperty, IFCEntityType.IfcComplexProperty))
          {
             //LOG: ERROR: Not an IfcComplexProperty.
             return null;

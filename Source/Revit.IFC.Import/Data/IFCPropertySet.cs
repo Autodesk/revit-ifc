@@ -49,147 +49,147 @@ namespace Revit.IFC.Import.Data
       }
 
 
-      static IDictionary<UnitType, ParameterType> m_UnitToParameterType = null;
+      static IDictionary<ForgeTypeId, ParameterType> m_UnitToParameterType = null;
 
-      static IDictionary<UnitType, ParameterType> UnitToParameterType
+      static IDictionary<ForgeTypeId, ParameterType> UnitToParameterType
       {
          get
          {
             if (m_UnitToParameterType == null)
             {
-               m_UnitToParameterType = new Dictionary<UnitType, ParameterType>();
-               m_UnitToParameterType[UnitType.UT_Length] = ParameterType.Length;
-               m_UnitToParameterType[UnitType.UT_SheetLength] = ParameterType.Length;
-               m_UnitToParameterType[UnitType.UT_Area] = ParameterType.Area;
-               m_UnitToParameterType[UnitType.UT_Volume] = ParameterType.Volume;
-               m_UnitToParameterType[UnitType.UT_Angle] = ParameterType.Angle;
-               m_UnitToParameterType[UnitType.UT_SiteAngle] = ParameterType.Angle;
-               m_UnitToParameterType[UnitType.UT_Number] = ParameterType.Number;
-               m_UnitToParameterType[UnitType.UT_HVAC_Density] = ParameterType.HVACDensity;
-               m_UnitToParameterType[UnitType.UT_HVAC_Energy] = ParameterType.HVACEnergy;
-               m_UnitToParameterType[UnitType.UT_HVAC_Friction] = ParameterType.HVACFriction;
-               m_UnitToParameterType[UnitType.UT_HVAC_Power] = ParameterType.HVACPower;
-               m_UnitToParameterType[UnitType.UT_HVAC_Power_Density] = ParameterType.HVACPower;
-               m_UnitToParameterType[UnitType.UT_HVAC_Pressure] = ParameterType.HVACPressure;
-               m_UnitToParameterType[UnitType.UT_HVAC_Temperature] = ParameterType.HVACTemperature;
-               m_UnitToParameterType[UnitType.UT_HVAC_Velocity] = ParameterType.HVACVelocity;
-               m_UnitToParameterType[UnitType.UT_HVAC_Airflow] = ParameterType.HVACAirflow;
-               m_UnitToParameterType[UnitType.UT_HVAC_DuctSize] = ParameterType.HVACDuctSize;
-               m_UnitToParameterType[UnitType.UT_HVAC_CrossSection] = ParameterType.HVACCrossSection;
-               m_UnitToParameterType[UnitType.UT_HVAC_HeatGain] = ParameterType.HVACHeatGain;
-               m_UnitToParameterType[UnitType.UT_Electrical_Current] = ParameterType.ElectricalCurrent;
-               m_UnitToParameterType[UnitType.UT_Electrical_Potential] = ParameterType.ElectricalPotential;
-               m_UnitToParameterType[UnitType.UT_Electrical_Frequency] = ParameterType.ElectricalFrequency;
-               m_UnitToParameterType[UnitType.UT_Electrical_Illuminance] = ParameterType.ElectricalIlluminance;
-               m_UnitToParameterType[UnitType.UT_Electrical_Luminous_Flux] = ParameterType.ElectricalLuminousFlux;
-               m_UnitToParameterType[UnitType.UT_Electrical_Power] = ParameterType.ElectricalPower;
-               m_UnitToParameterType[UnitType.UT_HVAC_Roughness] = ParameterType.HVACRoughness;
-               m_UnitToParameterType[UnitType.UT_Force] = ParameterType.Force;
-               m_UnitToParameterType[UnitType.UT_LinearForce] = ParameterType.LinearForce;
-               m_UnitToParameterType[UnitType.UT_AreaForce] = ParameterType.AreaForce;
-               m_UnitToParameterType[UnitType.UT_Moment] = ParameterType.Moment;
-               m_UnitToParameterType[UnitType.UT_Electrical_Apparent_Power] = ParameterType.ElectricalApparentPower;
-               m_UnitToParameterType[UnitType.UT_Electrical_Power_Density] = ParameterType.ElectricalPowerDensity;
-               m_UnitToParameterType[UnitType.UT_Piping_Density] = ParameterType.PipingDensity;
-               m_UnitToParameterType[UnitType.UT_Piping_Flow] = ParameterType.PipingFlow;
-               m_UnitToParameterType[UnitType.UT_Piping_Friction] = ParameterType.PipingFriction;
-               m_UnitToParameterType[UnitType.UT_Piping_Pressure] = ParameterType.PipingPressure;
-               m_UnitToParameterType[UnitType.UT_Piping_Temperature] = ParameterType.PipingTemperature;
-               m_UnitToParameterType[UnitType.UT_Piping_Velocity] = ParameterType.PipingVelocity;
-               m_UnitToParameterType[UnitType.UT_Piping_Viscosity] = ParameterType.PipingViscosity;
-               m_UnitToParameterType[UnitType.UT_PipeSize] = ParameterType.PipeSize;
-               m_UnitToParameterType[UnitType.UT_Piping_Roughness] = ParameterType.PipingRoughness;
-               m_UnitToParameterType[UnitType.UT_Stress] = ParameterType.Stress;
-               m_UnitToParameterType[UnitType.UT_UnitWeight] = ParameterType.UnitWeight;
-               m_UnitToParameterType[UnitType.UT_ThermalExpansion] = ParameterType.ThermalExpansion;
-               m_UnitToParameterType[UnitType.UT_LinearMoment] = ParameterType.LinearMoment;
-               m_UnitToParameterType[UnitType.UT_ForcePerLength] = ParameterType.ForcePerLength;
-               m_UnitToParameterType[UnitType.UT_ForceLengthPerAngle] = ParameterType.ForceLengthPerAngle;
-               m_UnitToParameterType[UnitType.UT_LinearForcePerLength] = ParameterType.LinearForcePerLength;
-               m_UnitToParameterType[UnitType.UT_LinearForceLengthPerAngle] = ParameterType.LinearForceLengthPerAngle;
-               m_UnitToParameterType[UnitType.UT_AreaForcePerLength] = ParameterType.AreaForcePerLength;
-               m_UnitToParameterType[UnitType.UT_Piping_Volume] = ParameterType.PipingVolume;
-               m_UnitToParameterType[UnitType.UT_HVAC_Viscosity] = ParameterType.HVACViscosity;
-               m_UnitToParameterType[UnitType.UT_HVAC_CoefficientOfHeatTransfer] = ParameterType.HVACCoefficientOfHeatTransfer;
-               m_UnitToParameterType[UnitType.UT_HVAC_Airflow_Density] = ParameterType.HVACAirflowDensity;
-               m_UnitToParameterType[UnitType.UT_Slope] = ParameterType.Slope;
-               m_UnitToParameterType[UnitType.UT_HVAC_Cooling_Load] = ParameterType.HVACCoolingLoad;
-               m_UnitToParameterType[UnitType.UT_HVAC_Cooling_Load_Divided_By_Area] = ParameterType.HVACCoolingLoadDividedByArea;
-               m_UnitToParameterType[UnitType.UT_HVAC_Cooling_Load_Divided_By_Volume] = ParameterType.HVACCoolingLoadDividedByVolume;
-               m_UnitToParameterType[UnitType.UT_HVAC_Heating_Load] = ParameterType.HVACHeatingLoad;
-               m_UnitToParameterType[UnitType.UT_HVAC_Heating_Load_Divided_By_Area] = ParameterType.HVACHeatingLoadDividedByArea;
-               m_UnitToParameterType[UnitType.UT_HVAC_Heating_Load_Divided_By_Volume] = ParameterType.HVACHeatingLoadDividedByVolume;
-               m_UnitToParameterType[UnitType.UT_HVAC_Airflow_Divided_By_Volume] = ParameterType.HVACAirflowDividedByVolume;
-               m_UnitToParameterType[UnitType.UT_HVAC_Airflow_Divided_By_Cooling_Load] = ParameterType.HVACAirflowDividedByCoolingLoad;
-               m_UnitToParameterType[UnitType.UT_HVAC_Area_Divided_By_Cooling_Load] = ParameterType.HVACAreaDividedByCoolingLoad;
-               m_UnitToParameterType[UnitType.UT_WireSize] = ParameterType.WireSize;
-               m_UnitToParameterType[UnitType.UT_HVAC_Slope] = ParameterType.HVACSlope;
-               m_UnitToParameterType[UnitType.UT_Piping_Slope] = ParameterType.PipingSlope;
-               m_UnitToParameterType[UnitType.UT_Currency] = ParameterType.Currency;
-               m_UnitToParameterType[UnitType.UT_Electrical_Efficacy] = ParameterType.ElectricalEfficacy;
-               m_UnitToParameterType[UnitType.UT_Electrical_Wattage] = ParameterType.ElectricalWattage;
-               m_UnitToParameterType[UnitType.UT_Color_Temperature] = ParameterType.ColorTemperature;
-               m_UnitToParameterType[UnitType.UT_DecSheetLength] = ParameterType.Length;
-               m_UnitToParameterType[UnitType.UT_Electrical_Luminous_Intensity] = ParameterType.ElectricalLuminousIntensity;
-               m_UnitToParameterType[UnitType.UT_Electrical_Luminance] = ParameterType.ElectricalLuminance;
-               m_UnitToParameterType[UnitType.UT_HVAC_Area_Divided_By_Heating_Load] = ParameterType.HVACAreaDividedByHeatingLoad;
-               m_UnitToParameterType[UnitType.UT_HVAC_Factor] = ParameterType.HVACFactor;
-               m_UnitToParameterType[UnitType.UT_Electrical_Temperature] = ParameterType.ElectricalTemperature;
-               m_UnitToParameterType[UnitType.UT_Electrical_CableTraySize] = ParameterType.ElectricalCableTraySize;
-               m_UnitToParameterType[UnitType.UT_Electrical_ConduitSize] = ParameterType.ElectricalConduitSize;
-               m_UnitToParameterType[UnitType.UT_Reinforcement_Volume] = ParameterType.ReinforcementVolume;
-               m_UnitToParameterType[UnitType.UT_Reinforcement_Length] = ParameterType.ReinforcementLength;
-               m_UnitToParameterType[UnitType.UT_Electrical_Demand_Factor] = ParameterType.ElectricalDemandFactor;
-               m_UnitToParameterType[UnitType.UT_HVAC_DuctInsulationThickness] = ParameterType.HVACDuctInsulationThickness;
-               m_UnitToParameterType[UnitType.UT_HVAC_DuctLiningThickness] = ParameterType.HVACDuctLiningThickness;
-               m_UnitToParameterType[UnitType.UT_PipeInsulationThickness] = ParameterType.PipeInsulationThickness;
-               m_UnitToParameterType[UnitType.UT_HVAC_ThermalResistance] = ParameterType.HVACThermalResistance;
-               m_UnitToParameterType[UnitType.UT_HVAC_ThermalMass] = ParameterType.HVACThermalMass;
-               m_UnitToParameterType[UnitType.UT_Acceleration] = ParameterType.Acceleration;
-               m_UnitToParameterType[UnitType.UT_Bar_Diameter] = ParameterType.BarDiameter;
-               m_UnitToParameterType[UnitType.UT_Crack_Width] = ParameterType.CrackWidth;
-               m_UnitToParameterType[UnitType.UT_Displacement_Deflection] = ParameterType.DisplacementDeflection;
-               m_UnitToParameterType[UnitType.UT_Energy] = ParameterType.Energy;
-               m_UnitToParameterType[UnitType.UT_Structural_Frequency] = ParameterType.StructuralFrequency;
-               m_UnitToParameterType[UnitType.UT_Mass] = ParameterType.Mass;
-               m_UnitToParameterType[UnitType.UT_Mass_per_Unit_Length] = ParameterType.MassPerUnitLength;
-               m_UnitToParameterType[UnitType.UT_Moment_of_Inertia] = ParameterType.MomentOfInertia;
-               m_UnitToParameterType[UnitType.UT_Surface_Area] = ParameterType.SurfaceArea;
-               m_UnitToParameterType[UnitType.UT_Period] = ParameterType.Period;
-               m_UnitToParameterType[UnitType.UT_Pulsation] = ParameterType.Pulsation;
-               m_UnitToParameterType[UnitType.UT_Reinforcement_Area] = ParameterType.ReinforcementArea;
-               m_UnitToParameterType[UnitType.UT_Reinforcement_Area_per_Unit_Length] = ParameterType.ReinforcementAreaPerUnitLength;
-               m_UnitToParameterType[UnitType.UT_Reinforcement_Cover] = ParameterType.ReinforcementCover;
-               m_UnitToParameterType[UnitType.UT_Reinforcement_Spacing] = ParameterType.ReinforcementSpacing;
-               m_UnitToParameterType[UnitType.UT_Rotation] = ParameterType.Rotation;
-               m_UnitToParameterType[UnitType.UT_Section_Area] = ParameterType.SectionArea;
-               m_UnitToParameterType[UnitType.UT_Section_Dimension] = ParameterType.SectionDimension;
-               m_UnitToParameterType[UnitType.UT_Section_Modulus] = ParameterType.SectionModulus;
-               m_UnitToParameterType[UnitType.UT_Section_Property] = ParameterType.SectionProperty;
-               m_UnitToParameterType[UnitType.UT_Structural_Velocity] = ParameterType.StructuralVelocity;
-               m_UnitToParameterType[UnitType.UT_Warping_Constant] = ParameterType.WarpingConstant;
-               m_UnitToParameterType[UnitType.UT_Weight] = ParameterType.Weight;
-               m_UnitToParameterType[UnitType.UT_Weight_per_Unit_Length] = ParameterType.WeightPerUnitLength;
-               m_UnitToParameterType[UnitType.UT_HVAC_ThermalConductivity] = ParameterType.HVACThermalConductivity;
-               m_UnitToParameterType[UnitType.UT_HVAC_SpecificHeat] = ParameterType.HVACSpecificHeat;
-               m_UnitToParameterType[UnitType.UT_HVAC_SpecificHeatOfVaporization] = ParameterType.HVACSpecificHeatOfVaporization;
-               m_UnitToParameterType[UnitType.UT_HVAC_Permeability] = ParameterType.HVACPermeability;
-               m_UnitToParameterType[UnitType.UT_Electrical_Resistivity] = ParameterType.ElectricalResistivity;
-               m_UnitToParameterType[UnitType.UT_MassDensity] = ParameterType.MassDensity;
-               m_UnitToParameterType[UnitType.UT_MassPerUnitArea] = ParameterType.MassPerUnitArea;
-               m_UnitToParameterType[UnitType.UT_Pipe_Dimension] = ParameterType.Length;
-               m_UnitToParameterType[UnitType.UT_PipeMass] = ParameterType.Mass;
-               m_UnitToParameterType[UnitType.UT_PipeMassPerUnitLength] = ParameterType.MassPerUnitLength;
+               m_UnitToParameterType = new Dictionary<ForgeTypeId, ParameterType>();
+               m_UnitToParameterType[SpecTypeId.Length] = ParameterType.Length;
+               m_UnitToParameterType[SpecTypeId.SheetLength] = ParameterType.Length;
+               m_UnitToParameterType[SpecTypeId.Area] = ParameterType.Area;
+               m_UnitToParameterType[SpecTypeId.Volume] = ParameterType.Volume;
+               m_UnitToParameterType[SpecTypeId.Angle] = ParameterType.Angle;
+               m_UnitToParameterType[SpecTypeId.SiteAngle] = ParameterType.Angle;
+               m_UnitToParameterType[SpecTypeId.Number] = ParameterType.Number;
+               m_UnitToParameterType[SpecTypeId.HvacDensity] = ParameterType.HVACDensity;
+               m_UnitToParameterType[SpecTypeId.HvacEnergy] = ParameterType.HVACEnergy;
+               m_UnitToParameterType[SpecTypeId.HvacFriction] = ParameterType.HVACFriction;
+               m_UnitToParameterType[SpecTypeId.HvacPower] = ParameterType.HVACPower;
+               m_UnitToParameterType[SpecTypeId.HvacPowerDensity] = ParameterType.HVACPower;
+               m_UnitToParameterType[SpecTypeId.HvacPressure] = ParameterType.HVACPressure;
+               m_UnitToParameterType[SpecTypeId.HvacTemperature] = ParameterType.HVACTemperature;
+               m_UnitToParameterType[SpecTypeId.HvacVelocity] = ParameterType.HVACVelocity;
+               m_UnitToParameterType[SpecTypeId.AirFlow] = ParameterType.HVACAirflow;
+               m_UnitToParameterType[SpecTypeId.DuctSize] = ParameterType.HVACDuctSize;
+               m_UnitToParameterType[SpecTypeId.CrossSection] = ParameterType.HVACCrossSection;
+               m_UnitToParameterType[SpecTypeId.HeatGain] = ParameterType.HVACHeatGain;
+               m_UnitToParameterType[SpecTypeId.Current] = ParameterType.ElectricalCurrent;
+               m_UnitToParameterType[SpecTypeId.ElectricalPotential] = ParameterType.ElectricalPotential;
+               m_UnitToParameterType[SpecTypeId.ElectricalFrequency] = ParameterType.ElectricalFrequency;
+               m_UnitToParameterType[SpecTypeId.Illuminance] = ParameterType.ElectricalIlluminance;
+               m_UnitToParameterType[SpecTypeId.LuminousFlux] = ParameterType.ElectricalLuminousFlux;
+               m_UnitToParameterType[SpecTypeId.ElectricalPower] = ParameterType.ElectricalPower;
+               m_UnitToParameterType[SpecTypeId.HvacRoughness] = ParameterType.HVACRoughness;
+               m_UnitToParameterType[SpecTypeId.Force] = ParameterType.Force;
+               m_UnitToParameterType[SpecTypeId.LinearForce] = ParameterType.LinearForce;
+               m_UnitToParameterType[SpecTypeId.AreaForce] = ParameterType.AreaForce;
+               m_UnitToParameterType[SpecTypeId.Moment] = ParameterType.Moment;
+               m_UnitToParameterType[SpecTypeId.ApparentPower] = ParameterType.ElectricalApparentPower;
+               m_UnitToParameterType[SpecTypeId.ElectricalPowerDensity] = ParameterType.ElectricalPowerDensity;
+               m_UnitToParameterType[SpecTypeId.PipingDensity] = ParameterType.PipingDensity;
+               m_UnitToParameterType[SpecTypeId.Flow] = ParameterType.PipingFlow;
+               m_UnitToParameterType[SpecTypeId.PipingFriction] = ParameterType.PipingFriction;
+               m_UnitToParameterType[SpecTypeId.PipingPressure] = ParameterType.PipingPressure;
+               m_UnitToParameterType[SpecTypeId.PipingTemperature] = ParameterType.PipingTemperature;
+               m_UnitToParameterType[SpecTypeId.PipingVelocity] = ParameterType.PipingVelocity;
+               m_UnitToParameterType[SpecTypeId.PipingViscosity] = ParameterType.PipingViscosity;
+               m_UnitToParameterType[SpecTypeId.PipeSize] = ParameterType.PipeSize;
+               m_UnitToParameterType[SpecTypeId.PipingRoughness] = ParameterType.PipingRoughness;
+               m_UnitToParameterType[SpecTypeId.Stress] = ParameterType.Stress;
+               m_UnitToParameterType[SpecTypeId.UnitWeight] = ParameterType.UnitWeight;
+               m_UnitToParameterType[SpecTypeId.ThermalExpansionCoefficient] = ParameterType.ThermalExpansion;
+               m_UnitToParameterType[SpecTypeId.LinearMoment] = ParameterType.LinearMoment;
+               m_UnitToParameterType[SpecTypeId.PointSpringCoefficient] = ParameterType.ForcePerLength;
+               m_UnitToParameterType[SpecTypeId.RotationalPointSpringCoefficient] = ParameterType.ForceLengthPerAngle;
+               m_UnitToParameterType[SpecTypeId.LineSpringCoefficient] = ParameterType.LinearForcePerLength;
+               m_UnitToParameterType[SpecTypeId.RotationalLineSpringCoefficient] = ParameterType.LinearForceLengthPerAngle;
+               m_UnitToParameterType[SpecTypeId.AreaSpringCoefficient] = ParameterType.AreaForcePerLength;
+               m_UnitToParameterType[SpecTypeId.PipingVolume] = ParameterType.PipingVolume;
+               m_UnitToParameterType[SpecTypeId.HvacViscosity] = ParameterType.HVACViscosity;
+               m_UnitToParameterType[SpecTypeId.HeatTransferCoefficient] = ParameterType.HVACCoefficientOfHeatTransfer;
+               m_UnitToParameterType[SpecTypeId.AirFlowDensity] = ParameterType.HVACAirflowDensity;
+               m_UnitToParameterType[SpecTypeId.Slope] = ParameterType.Slope;
+               m_UnitToParameterType[SpecTypeId.CoolingLoad] = ParameterType.HVACCoolingLoad;
+               m_UnitToParameterType[SpecTypeId.CoolingLoadDividedByArea] = ParameterType.HVACCoolingLoadDividedByArea;
+               m_UnitToParameterType[SpecTypeId.CoolingLoadDividedByVolume] = ParameterType.HVACCoolingLoadDividedByVolume;
+               m_UnitToParameterType[SpecTypeId.HeatingLoad] = ParameterType.HVACHeatingLoad;
+               m_UnitToParameterType[SpecTypeId.HeatingLoadDividedByArea] = ParameterType.HVACHeatingLoadDividedByArea;
+               m_UnitToParameterType[SpecTypeId.HeatingLoadDividedByVolume] = ParameterType.HVACHeatingLoadDividedByVolume;
+               m_UnitToParameterType[SpecTypeId.AirFlowDividedByVolume] = ParameterType.HVACAirflowDividedByVolume;
+               m_UnitToParameterType[SpecTypeId.AirFlowDividedByCoolingLoad] = ParameterType.HVACAirflowDividedByCoolingLoad;
+               m_UnitToParameterType[SpecTypeId.AreaDividedByCoolingLoad] = ParameterType.HVACAreaDividedByCoolingLoad;
+               m_UnitToParameterType[SpecTypeId.WireDiameter] = ParameterType.WireSize;
+               m_UnitToParameterType[SpecTypeId.HvacSlope] = ParameterType.HVACSlope;
+               m_UnitToParameterType[SpecTypeId.PipingSlope] = ParameterType.PipingSlope;
+               m_UnitToParameterType[SpecTypeId.Currency] = ParameterType.Currency;
+               m_UnitToParameterType[SpecTypeId.Efficacy] = ParameterType.ElectricalEfficacy;
+               m_UnitToParameterType[SpecTypeId.Wattage] = ParameterType.ElectricalWattage;
+               m_UnitToParameterType[SpecTypeId.ColorTemperature] = ParameterType.ColorTemperature;
+               m_UnitToParameterType[SpecTypeId.DecimalSheetLength] = ParameterType.Length;
+               m_UnitToParameterType[SpecTypeId.LuminousIntensity] = ParameterType.ElectricalLuminousIntensity;
+               m_UnitToParameterType[SpecTypeId.Luminance] = ParameterType.ElectricalLuminance;
+               m_UnitToParameterType[SpecTypeId.AreaDividedByHeatingLoad] = ParameterType.HVACAreaDividedByHeatingLoad;
+               m_UnitToParameterType[SpecTypeId.Factor] = ParameterType.HVACFactor;
+               m_UnitToParameterType[SpecTypeId.ElectricalTemperature] = ParameterType.ElectricalTemperature;
+               m_UnitToParameterType[SpecTypeId.CableTraySize] = ParameterType.ElectricalCableTraySize;
+               m_UnitToParameterType[SpecTypeId.ConduitSize] = ParameterType.ElectricalConduitSize;
+               m_UnitToParameterType[SpecTypeId.ReinforcementVolume] = ParameterType.ReinforcementVolume;
+               m_UnitToParameterType[SpecTypeId.ReinforcementLength] = ParameterType.ReinforcementLength;
+               m_UnitToParameterType[SpecTypeId.DemandFactor] = ParameterType.ElectricalDemandFactor;
+               m_UnitToParameterType[SpecTypeId.DuctInsulationThickness] = ParameterType.HVACDuctInsulationThickness;
+               m_UnitToParameterType[SpecTypeId.DuctLiningThickness] = ParameterType.HVACDuctLiningThickness;
+               m_UnitToParameterType[SpecTypeId.PipeInsulationThickness] = ParameterType.PipeInsulationThickness;
+               m_UnitToParameterType[SpecTypeId.ThermalResistance] = ParameterType.HVACThermalResistance;
+               m_UnitToParameterType[SpecTypeId.ThermalMass] = ParameterType.HVACThermalMass;
+               m_UnitToParameterType[SpecTypeId.Acceleration] = ParameterType.Acceleration;
+               m_UnitToParameterType[SpecTypeId.BarDiameter] = ParameterType.BarDiameter;
+               m_UnitToParameterType[SpecTypeId.CrackWidth] = ParameterType.CrackWidth;
+               m_UnitToParameterType[SpecTypeId.Displacement] = ParameterType.DisplacementDeflection;
+               m_UnitToParameterType[SpecTypeId.Energy] = ParameterType.Energy;
+               m_UnitToParameterType[SpecTypeId.StructuralFrequency] = ParameterType.StructuralFrequency;
+               m_UnitToParameterType[SpecTypeId.Mass] = ParameterType.Mass;
+               m_UnitToParameterType[SpecTypeId.MassPerUnitLength] = ParameterType.MassPerUnitLength;
+               m_UnitToParameterType[SpecTypeId.MomentOfInertia] = ParameterType.MomentOfInertia;
+               m_UnitToParameterType[SpecTypeId.SurfaceAreaPerUnitLength] = ParameterType.SurfaceArea;
+               m_UnitToParameterType[SpecTypeId.Period] = ParameterType.Period;
+               m_UnitToParameterType[SpecTypeId.Pulsation] = ParameterType.Pulsation;
+               m_UnitToParameterType[SpecTypeId.ReinforcementArea] = ParameterType.ReinforcementArea;
+               m_UnitToParameterType[SpecTypeId.ReinforcementAreaPerUnitLength] = ParameterType.ReinforcementAreaPerUnitLength;
+               m_UnitToParameterType[SpecTypeId.ReinforcementCover] = ParameterType.ReinforcementCover;
+               m_UnitToParameterType[SpecTypeId.ReinforcementSpacing] = ParameterType.ReinforcementSpacing;
+               m_UnitToParameterType[SpecTypeId.Rotation] = ParameterType.Rotation;
+               m_UnitToParameterType[SpecTypeId.SectionArea] = ParameterType.SectionArea;
+               m_UnitToParameterType[SpecTypeId.SectionDimension] = ParameterType.SectionDimension;
+               m_UnitToParameterType[SpecTypeId.SectionModulus] = ParameterType.SectionModulus;
+               m_UnitToParameterType[SpecTypeId.SectionProperty] = ParameterType.SectionProperty;
+               m_UnitToParameterType[SpecTypeId.StructuralVelocity] = ParameterType.StructuralVelocity;
+               m_UnitToParameterType[SpecTypeId.WarpingConstant] = ParameterType.WarpingConstant;
+               m_UnitToParameterType[SpecTypeId.Weight] = ParameterType.Weight;
+               m_UnitToParameterType[SpecTypeId.WeightPerUnitLength] = ParameterType.WeightPerUnitLength;
+               m_UnitToParameterType[SpecTypeId.ThermalConductivity] = ParameterType.HVACThermalConductivity;
+               m_UnitToParameterType[SpecTypeId.SpecificHeat] = ParameterType.HVACSpecificHeat;
+               m_UnitToParameterType[SpecTypeId.SpecificHeatOfVaporization] = ParameterType.HVACSpecificHeatOfVaporization;
+               m_UnitToParameterType[SpecTypeId.Permeability] = ParameterType.HVACPermeability;
+               m_UnitToParameterType[SpecTypeId.ElectricalResistivity] = ParameterType.ElectricalResistivity;
+               m_UnitToParameterType[SpecTypeId.MassDensity] = ParameterType.MassDensity;
+               m_UnitToParameterType[SpecTypeId.MassPerUnitArea] = ParameterType.MassPerUnitArea;
+               m_UnitToParameterType[SpecTypeId.PipeDimension] = ParameterType.Length;
+               m_UnitToParameterType[SpecTypeId.PipingMass] = ParameterType.Mass;
+               m_UnitToParameterType[SpecTypeId.PipeMassPerUnitLength] = ParameterType.MassPerUnitLength;
 
                // TODO: figure out mappings for these types.
-               m_UnitToParameterType[UnitType.UT_ForceScale] = ParameterType.Number;
-               m_UnitToParameterType[UnitType.UT_LinearForceScale] = ParameterType.Number;
-               m_UnitToParameterType[UnitType.UT_AreaForceScale] = ParameterType.Number;
-               m_UnitToParameterType[UnitType.UT_MomentScale] = ParameterType.Number;
-               m_UnitToParameterType[UnitType.UT_LinearMomentScale] = ParameterType.Number;
+               m_UnitToParameterType[SpecTypeId.ForceScale] = ParameterType.Number;
+               m_UnitToParameterType[SpecTypeId.LinearForceScale] = ParameterType.Number;
+               m_UnitToParameterType[SpecTypeId.AreaForceScale] = ParameterType.Number;
+               m_UnitToParameterType[SpecTypeId.MomentScale] = ParameterType.Number;
+               m_UnitToParameterType[SpecTypeId.LinearMomentScale] = ParameterType.Number;
 
-               m_UnitToParameterType[UnitType.UT_TimeInterval] = ParameterType.TimeInterval;
-               m_UnitToParameterType[UnitType.UT_Speed] = ParameterType.Speed;
+               m_UnitToParameterType[SpecTypeId.Time] = ParameterType.TimeInterval;
+               m_UnitToParameterType[SpecTypeId.Speed] = ParameterType.Speed;
             }
 
             return m_UnitToParameterType;
@@ -449,17 +449,15 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       /// <param name="element">The element.</param>
       /// <param name="parameterName">The parameter name.</param>
-      /// <param name="unitType">The unit type of parameter (e.g. UT_Length)</param>
+      /// <param name="specTypeId">Identifier of the parameter spec (e.g. length)</param>
       /// <param name="allowedValues">The allowed values for the parameter (e.g. Nonnegative)</param>
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterDouble(Document doc, Element element, string parameterName, UnitType unitType, double parameterValue, int parameterSetId)
+      public static bool AddParameterDouble(Document doc, Element element, string parameterName, ForgeTypeId specTypeId, double parameterValue, int parameterSetId)
       {
-
-
          ParameterType parameterType;
-         if (!UnitToParameterType.TryGetValue(unitType, out parameterType))
+         if (!UnitToParameterType.TryGetValue(specTypeId, out parameterType))
             return false;
 
          Parameter parameter = AddParameterBase(doc, element, parameterName, parameterSetId, parameterType);

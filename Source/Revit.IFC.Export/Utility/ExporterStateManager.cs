@@ -203,7 +203,10 @@ namespace Revit.IFC.Export.Utility
       static public string GetCurrentCADLayerOverride()
       {
          if (CADLayerOverrides.Count > 0)
+         {
+            // Should this be 0 or Count-1?
             return CADLayerOverrides[0];
+         }
          return null;
       }
 

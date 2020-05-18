@@ -60,9 +60,6 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            //if (productWrapper != null)
-            //    productWrapper.ClearFinishMaterials();
-
             double scaledOffset = 0.0, scaledWallWidth = 0.0, wallHeight = 0.0;
             Wall wall = hostObject as Wall;
 
@@ -75,19 +72,8 @@ namespace Revit.IFC.Export.Exporter
                   wallHeight = boundingBox.Max.Z - boundingBox.Min.Z;
             }
 
-            List<ElementId> matIds;
-            IFCAnyHandle primaryMaterialHnd;
-            IFCAnyHandle materialLayerSet = ExporterUtil.CollectMaterialLayerSet(exporterIFC, hostObject, productWrapper, out matIds, out primaryMaterialHnd);
-
-            // For IFC4 RV, material layer may still be created even if the geometry is Brep/Tessellation
-            if ((containsBRepGeometry && matIds.Count > 0)
-                  && !(ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && !IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet)))
-            {
-               foreach (IFCAnyHandle elemHnd in elemHnds)
-               {
-                  CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, matIds);
-               }
-            }
+            MaterialLayerSetInfo mlsInfo = new MaterialLayerSetInfo(exporterIFC, hostObject, productWrapper);
+            IFCAnyHandle materialLayerSet = mlsInfo.MaterialLayerSetHandle;
 
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet))
             {
@@ -98,13 +84,11 @@ namespace Revit.IFC.Export.Exporter
                   {
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
                   }
-                  //else
-                  //{
-                     foreach (IFCAnyHandle elemHnd in elemHnds)
-                     {
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
-                     }
-                  //}
+
+                  foreach (IFCAnyHandle elemHnd in elemHnds)
+                  {
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                  }
                }
                else
                {
@@ -143,7 +127,6 @@ namespace Revit.IFC.Export.Exporter
                         if (typeHnd != null)
                         {
                            CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
-                              //materialAlreadyAssoc = true;
                         }
 
                         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
@@ -209,7 +192,7 @@ namespace Revit.IFC.Export.Exporter
                               CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
                            }
                         }
-                        else if (primaryMaterialHnd != null)
+                        else if (mlsInfo.PrimaryMaterialHandle != null)
                         {
                            if (typeHnd != null)
                            {

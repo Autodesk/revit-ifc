@@ -102,7 +102,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             }
          }
          
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Height", out m_Height);
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Height", out m_Height);
          m_Height = UnitUtil.ScaleLength(m_Height);
          if (m_Height > MathUtil.Eps())
             return true;

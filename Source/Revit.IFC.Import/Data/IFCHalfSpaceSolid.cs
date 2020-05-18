@@ -83,7 +83,7 @@ namespace Revit.IFC.Import.Data
          if (!(BaseSurface is IFCPlane))
             Importer.TheLog.LogUnhandledSubTypeError(baseSurface, IFCEntityType.IfcSurface, true);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(solid, IFCEntityType.IfcPolygonalBoundedHalfSpace))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(solid, IFCEntityType.IfcPolygonalBoundedHalfSpace))
          {
             IFCAnyHandle position = IFCImportHandleUtil.GetRequiredInstanceAttribute(solid, "Position", false);
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(position))
@@ -93,7 +93,7 @@ namespace Revit.IFC.Import.Data
 
             IFCAnyHandle boundaryCurveHandle = IFCImportHandleUtil.GetRequiredInstanceAttribute(solid, "PolygonalBoundary", true);
             BaseBoundingCurve = IFCCurve.ProcessIFCCurve(boundaryCurveHandle);
-            if (BaseBoundingCurve == null || BaseBoundingCurve.CurveLoop == null)
+            if (BaseBoundingCurve == null || BaseBoundingCurve.GetTheCurveLoop() == null)
                Importer.TheLog.LogError(Id, "IfcPolygonalBoundedHalfSpace has an invalid boundary, ignoring.", true);
          }
       }
@@ -141,7 +141,7 @@ namespace Revit.IFC.Import.Data
 
          if (BaseBoundingCurve != null)
          {
-            CurveLoop polygonalBoundary = BaseBoundingCurve.CurveLoop;
+            CurveLoop polygonalBoundary = BaseBoundingCurve.GetTheCurveLoop();
 
             Transform unscaledTotalTransform = unscaledLcs.Multiply(BaseBoundingCurveTransform);
             Transform scaledTotalTransform = scaledLcs.Multiply(BaseBoundingCurveTransform);

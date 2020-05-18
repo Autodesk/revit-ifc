@@ -29,7 +29,6 @@ using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Data;
 using Revit.IFC.Import.Geometry;
 using UnitSystem = Autodesk.Revit.DB.DisplayUnit;
-using UnitName = Autodesk.Revit.DB.DisplayUnitType;
 
 namespace Revit.IFC.Import.Utility
 {

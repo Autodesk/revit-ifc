@@ -86,7 +86,20 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// The exported material Ids
       /// </summary>
-      public HashSet<ElementId> MaterialIds { get; set; } = new HashSet<ElementId>();
+      public HashSet<ElementId> MaterialIds
+      {
+         get
+         {
+            if (MaterialIdList != null)
+               return new HashSet<ElementId>(MaterialIdList);
+            return null;
+         }
+      }
+
+      /// <summary>
+      /// Material Ids in a list to maintain its order and allows duplicate item (similar to MaterialIds)
+      /// </summary>
+      public IList<ElementId> MaterialIdList { get; set; } = new List<ElementId>();
 
       /// <summary>
       /// A handle for the Footprint representation
@@ -111,11 +124,13 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="materialIds">The material ids.</param>
       public BodyData(IFCAnyHandle representationHnd, Transform offsetTransform, HashSet<ElementId> materialIds)
       {
-         this.RepresentationHnd = representationHnd;
+         RepresentationHnd = representationHnd;
          if (offsetTransform != null)
-            this.OffsetTransform = offsetTransform;
+            OffsetTransform = offsetTransform;
          if (materialIds != null)
-            this.MaterialIds = materialIds;
+         {
+            MaterialIdList = new List<ElementId>(materialIds);
+         }
       }
 
       /// <summary>
@@ -129,7 +144,7 @@ namespace Revit.IFC.Export.Exporter
          RepresentationHnd = bodyData.RepresentationHnd;
          ShapeRepresentationType = bodyData.ShapeRepresentationType;
          OffsetTransform = bodyData.OffsetTransform;
-         MaterialIds = bodyData.MaterialIds;
+         MaterialIdList = bodyData.MaterialIdList;
       }
 
       /// <summary>
@@ -138,7 +153,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="matId">The new material id.</param>
       public void AddMaterial(ElementId matId)
       {
-         MaterialIds.Add(matId);
+         MaterialIdList.Add(matId);
       }
 
       /// <summary>
@@ -155,6 +170,18 @@ namespace Revit.IFC.Export.Exporter
             return MaterialAndProfile;
          }
          set { MaterialAndProfile = value; }
+      }
+
+      /// <summary>
+      /// Static function to create a new copy of BodyData but resetting the MaterialIds
+      /// </summary>
+      /// <param name="bodyDataIn">the input BodyData</param>
+      /// <returns>the new copy of BodyData with cleared MaterialIds</returns>
+      public static BodyData Create(BodyData bodyDataIn)
+      {
+         BodyData retBodyData = new BodyData(bodyDataIn);   // create a new copy of bodyDataIn
+         retBodyData.MaterialIdList.Clear();                // Clear the MaterialIdsList
+         return retBodyData;
       }
    }
 }

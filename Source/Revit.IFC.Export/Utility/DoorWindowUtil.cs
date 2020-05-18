@@ -224,7 +224,7 @@ namespace Revit.IFC.Export.Utility
             thresholdThicknessOpt = UnitUtil.ScaleLength(value2);
          }
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "ThreshholdOffset", out value1) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "ThresholdOffset", out value1) != null)
             liningOffsetOpt = UnitUtil.ScaleLength(value1);
 
          // both of these must be defined, or not defined - if only one is defined, we ignore the values.
@@ -870,9 +870,15 @@ namespace Revit.IFC.Export.Utility
           IFCAnyHandle hostObjHnd, ElementId hostId, ElementId insertId, string openingGUID, CurveLoop cutLoop, XYZ cutDir,
           double origUnscaledDepth, bool posHingeSide, bool isRecess)
       {
-         // calculate some values.
-         double openingHeight = -1.0;
-         double openingWidth = -1.0;
+         double openingHeight = 0.0, openingWidth = 0.0;
+         Transform loopLcs = cutLoop.HasPlane() ? GeometryUtil.CreateTransformFromPlane(cutLoop.GetPlane()) : null;
+         BoundingBoxXYZ cutLoopBBox = ComputeApproximateCurveLoopBBoxForOpening(cutLoop, loopLcs);
+         if (cutLoopBBox != null)
+         {
+            XYZ dist = cutLoopBBox.Max - cutLoopBBox.Min;
+            openingHeight = Math.Abs(dist.Z);
+            openingWidth = Math.Sqrt(dist.X * dist.X + dist.Y * dist.Y);
+         }
 
          Element wallElement = doc.GetElement(hostId);
          Wall wall = (wallElement != null) ? wallElement as Wall : null;
@@ -883,6 +889,14 @@ namespace Revit.IFC.Export.Utility
          // Don't export opening if we are exporting parts on a wall, as the parts will already have the openings cut out.
          if (PartExporter.CanExportParts(wall))
             return null;
+
+         Element doorWindowElement = doc.GetElement(insertId);
+
+         Parameter wallSlant = wall.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
+         bool wallIsSlanted = (wallSlant != null && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && !MathUtil.IsAlmostEqual(wallSlant.AsDouble(), 0.0));
+
+         Parameter insertOrientation = doorWindowElement.get_Parameter(BuiltInParameter.INSERT_ORIENTATION);
+         bool insertIsVertical = (insertOrientation != null && insertOrientation.HasValue && insertOrientation.StorageType == StorageType.Integer && insertOrientation.AsInteger() == 0 /*vertical orientation*/);
 
          ElementId catId = CategoryUtil.GetSafeCategoryId(wall);
 
@@ -895,73 +909,97 @@ namespace Revit.IFC.Export.Utility
          XYZ relZ = XYZ.BasisZ;
          XYZ relX = XYZ.BasisX;
 
-         double openingZNonScaled = -1.0;
-
-         // get height, width before transform
-         BoundingBoxXYZ cutLoopBBox = ComputeApproximateCurveLoopBBoxForOpening(cutLoop, null);
-         if (cutLoopBBox != null)
-         {
-            XYZ dist = cutLoopBBox.Max - cutLoopBBox.Min;
-            openingZNonScaled = cutLoopBBox.Min.Z;
-            openingHeight = Math.Abs(dist.Z);
-            openingWidth = Math.Sqrt(dist.X * dist.X + dist.Y * dist.Y);
-         }
-
          Transform openingTrf = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, hostObjPlacementHnd);
-         XYZ hostObjYDir = openingTrf.BasisY;
-         XYZ hostObjOrig = openingTrf.Origin;
          openingTrf = openingTrf.Inverse;
 
-         // move to wall axis
+         // Create a copy of the opening loop that will be expressed in the local coordinate system relative to the wall
          CurveLoop tmpCutLoop = GeometryUtil.TransformCurveLoop(cutLoop, openingTrf);
-
+         loopLcs = openingTrf.Multiply(loopLcs);
          cutDir = openingTrf.OfVector(cutDir);
+
          if (curve is Line)
          {
-            Plane cutLoopPlane = null;
-            try
+            if (wallIsSlanted != insertIsVertical) // For vertical inserts in vertical walls and slanted inserts in slanted walls
             {
-               cutLoopPlane = tmpCutLoop.GetPlane();
+               // Create a plane that goes through the center of the wall along its length
+               XYZ localExtrusionDir = openingTrf.OfVector(WallExporter.GetWallExtrusionDirection(wall));
+               Transform curveData = curve.ComputeDerivatives(curve.GetEndParameter(0), false);
+               if (curveData.BasisX.IsZeroLength())
+                  return null;
+
+               curveData = openingTrf.Multiply(curveData);
+               Plane wallCenterPlane = Plane.CreateByOriginAndBasis(curveData.Origin, curveData.BasisX.Normalize(), localExtrusionDir.Normalize());
+               // Calculate a center wall point relative to the origin of the opening loop
+               wallCenterPlane.Project(loopLcs.Origin, out UV uv, out _);
+
+               // Revit API doesn't seem to provide a plane evaluation method, so calculating the point by hand here
+               XYZ wallCenterPoint = wallCenterPlane.Origin + wallCenterPlane.XVec * uv.U + wallCenterPlane.YVec * uv.V;
+
+               // Place the opening loop on the proper side related to insert's hinge
+               // This is not applicable to vertical inserts in slanted walls, since they won't cut 
+               // the wall if cutout loop is placed on the side of the insert closer to the wall.
+               double desiredLoopOffset = posHingeSide ? (-unScaledDepth / 2.0) : (unScaledDepth / 2.0);
+               XYZ localY = localExtrusionDir.CrossProduct(curveData.BasisX).Normalize();
+               XYZ desiredPosition = wallCenterPoint + localY * desiredLoopOffset;
+               if (!loopLcs.Origin.IsAlmostEqualTo(desiredPosition))
+               {
+                  XYZ moveVec = desiredPosition - loopLcs.Origin;
+                  tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
+               }
+
+               bool cutDirRelToHostObjY = (cutDir[1] > 0.0); // true = same sense, false = opp. sense
+               if (posHingeSide != cutDirRelToHostObjY)
+               {
+                  cutDir = cutDir.Negate();
+               }
+
+               loopLcs.BasisX = localExtrusionDir;
             }
-            catch
+            else // For vertical inserts in slanted walls
             {
-               return null;
+               if (!wallIsSlanted && insertIsVertical)
+                  return null; // This shouldn't be possible
+
+               double slantAngle = wallSlant.AsDouble();
+               // Handle cases where cut direction is looking away from the wall
+               // Positive Y coordinate in cutDir means it's looking away from the positive slant direction
+               if ((cutDir[1] > 0.0) != (slantAngle < 0.0))
+               {
+                  // Move the cut loop forward to make sure that the width of the opening will also be cut out
+                  XYZ moveVec = cutDir * unScaledDepth;
+                  tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
+                  // Flip the cut direction so that the cut would intersect the wall
+                  cutDir = cutDir.Negate();
+               }
+
+               // Calculate the distance from the top of the insert to the wall
+               double distToWall = openingHeight * Math.Tan(Math.Abs(slantAngle));
+               // Add wall's width to make sure the cut reaches its opposite side
+               unScaledDepth = distToWall + wall.Width;
+
+               loopLcs.BasisX = XYZ.BasisZ;
             }
 
-            XYZ clOrig = cutLoopPlane.Origin;
-
-            double wantOriginAtY = posHingeSide ? (-unScaledDepth / 2.0) : (unScaledDepth / 2.0);
-
-            if (!MathUtil.IsAlmostEqual(wantOriginAtY, clOrig[1]))
-            {
-               XYZ moveVec = new XYZ(0, wantOriginAtY - clOrig[1], 0);
-               tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
-            }
-
-            bool cutDirRelToHostObjY = (cutDir[1] > 0.0); // true = same sense, false = opp. sense
-
-            if (posHingeSide != cutDirRelToHostObjY)
-            {
-               cutDir = cutDir * -1.0;
-               cutDirRelToHostObjY = !cutDirRelToHostObjY;  // not used beyond this point.
-            }
+            // In IFC the local X direction should point upwards along the wall, 
+            // and local Y direction should point horizontally along the wall.
+            loopLcs.BasisY = cutDir.CrossProduct(loopLcs.BasisX).Normalize();
+            loopLcs.BasisZ = cutDir;
          }
-         else if ((cutLoopBBox != null) && (curve is Arc))
+         else if (curve is Arc)
          {
             Arc arc = curve as Arc;
             double radius = arc.Radius;
-
+         
             XYZ curveCtr = arc.Center;
 
             // check orientation to cutDir, make sure it points to center of arc.
-
             XYZ origLL = new XYZ(cutLoopBBox.Min.X, cutLoopBBox.Min.Y, curveCtr.Z);
             XYZ origUR = new XYZ(cutLoopBBox.Max.X, cutLoopBBox.Max.Y, curveCtr.Z);
             XYZ origCtr = (origLL + origUR) / 2.0;
-
+         
             double centerDist = origCtr.DistanceTo(curveCtr);
             XYZ approxMoveDir = (origCtr - curveCtr).Normalize();
-
+         
             bool cutDirPointingIn = (cutDir.DotProduct(approxMoveDir) < 0.0);
             bool centerInsideArc = (centerDist < radius);
             if (centerInsideArc == cutDirPointingIn)
@@ -970,7 +1008,7 @@ namespace Revit.IFC.Export.Utility
                origCtr += moveVec;
                tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
             }
-
+         
             // not for windows that are too big ... forget about it.  Very rare case.
             double depthFactor = openingWidth / (2.0 * radius);
             double eps = MathUtil.Eps();
@@ -985,7 +1023,7 @@ namespace Revit.IFC.Export.Utility
                   unScaledDepth += extraDepth;
                }
             }
-
+         
             // extra fudge on the other side of the window opening.
             depthFactor = origUnscaledDepth / (2.0 * radius);
             if (depthFactor < 1.0 - eps)
@@ -996,10 +1034,10 @@ namespace Revit.IFC.Export.Utility
             }
          }
 
-         XYZ cutXDir = XYZ.BasisZ;
-         XYZ cutYDir = cutDir.CrossProduct(cutXDir);
-         cutYDir = cutYDir.Normalize();
-         Transform lcs = GeometryUtil.CreateTransformFromVectorsAndOrigin(cutXDir, cutYDir, cutDir, XYZ.Zero);
+         Transform lcs = new Transform(loopLcs)
+         {
+            Origin = XYZ.Zero
+         };
 
          // now move to origin in this coordinate system.
          // todo: update openingtrf if we are to use it again!
@@ -1015,8 +1053,6 @@ namespace Revit.IFC.Export.Utility
          oCutLoopList.Add(tmpCutLoop);
 
          double depth = UnitUtil.ScaleLength(unScaledDepth);
-
-         Element doorWindowElement = doc.GetElement(insertId);
 
          IFCAnyHandle openingRepHnd = RepresentationUtil.CreateExtrudedProductDefShape(exporterIFC, doorWindowElement, catId,
              oCutLoopList, lcs, cutDir, depth);

@@ -96,7 +96,7 @@ namespace Revit.IFC.Import.Data
                   XYZ vertex = Coordinates.CoordList[actualVIdx];
                   loopVertices.Add(scaledLcs.OfPoint(vertex));
                }
-               IList<XYZ> validVertices;
+               List<XYZ> validVertices;
                IFCGeometryUtil.CheckAnyDistanceVerticesWithinTolerance(Id, shapeEditScope, loopVertices, out validVertices);
 
                bool bPotentiallyAbortFace = false;
@@ -118,7 +118,7 @@ namespace Revit.IFC.Import.Data
                         // add vertex to the loop
                         innerLoopVertices.Add(scaledLcs.OfPoint(vertex));
                      }
-                     IList<XYZ> validInnerV;
+                     List<XYZ> validInnerV;
                      IFCGeometryUtil.CheckAnyDistanceVerticesWithinTolerance(Id, shapeEditScope, innerLoopVertices, out validInnerV);
 
                      if (!tsBuilderScope.AddLoopVertices(Id, validInnerV))

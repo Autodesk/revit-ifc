@@ -18,15 +18,8 @@
 //
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-
-using Revit.IFC.Export.Toolkit;
-using Revit.IFC.Export.Exporter.PropertySet;
-using Revit.IFC.Common.Enums;
+using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -191,22 +184,22 @@ namespace Revit.IFC.Export.Utility
          propertySetOptions.m_ExportInternalRevit = (!(cache.ExportAs2x3CoordinationView2 || cache.ExportAs2x3COBIE24DesignDeliverable));
 
          // "Revit property sets" override
-         propertySetOptions.ExportInternalRevitOverride = ExportOptionsCache.GetNamedBooleanOption(options, "ExportInternalRevitPropertySets");
+         propertySetOptions.ExportInternalRevitOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportInternalRevitPropertySets");
 
          // "ExportIFCCommonPropertySets" override
-         propertySetOptions.ExportIFCCommonOverride = ExportOptionsCache.GetNamedBooleanOption(options, "ExportIFCCommonPropertySets");
+         propertySetOptions.ExportIFCCommonOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportIFCCommonPropertySets");
 
          // "ExportSchedulesAsPsets" override
-         propertySetOptions.ExportSchedulesAsPsetsOverride = ExportOptionsCache.GetNamedBooleanOption(options, "ExportSchedulesAsPsets");
+         propertySetOptions.ExportSchedulesAsPsetsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportSchedulesAsPsets");
 
          // "ExportUserDefinedPsets" override
-         propertySetOptions.ExportUserDefinedPsetsOverride = ExportOptionsCache.GetNamedBooleanOption(options, "ExportUserDefinedPsets");
+         propertySetOptions.ExportUserDefinedPsetsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportUserDefinedPsets");
 
          // "ExportUserDefinedPsetsFileName" override
-         propertySetOptions.ExportUserDefinedPsetsFileName = ExportOptionsCache.GetNamedStringOption(options, "ExportUserDefinedPsetsFileName");
+         propertySetOptions.ExportUserDefinedPsetsFileName = OptionsUtil.GetNamedStringOption(options, "ExportUserDefinedPsetsFileName");
 
          // "ExportSpecificSchedules" overrid
-         propertySetOptions.ExportSpecificSchedulesOverride = ExportOptionsCache.GetNamedBooleanOption(options, "ExportSpecificSchedules");
+         propertySetOptions.ExportSpecificSchedulesOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportSpecificSchedules");
 
          return propertySetOptions;
       }

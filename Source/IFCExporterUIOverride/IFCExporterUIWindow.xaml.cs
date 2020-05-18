@@ -17,21 +17,22 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.IFC;
+using Autodesk.Revit.UI;
+using Autodesk.UI.Windows;
 using Microsoft.Win32;
+using Revit.IFC.Common.Utility;
 using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web.Script.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Autodesk.UI.Windows;
-using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
-using Autodesk.Revit.UI;
-using Revit.IFC.Common.Utility;
+using UserInterfaceUtility.Json;
 
-using Newtonsoft.Json;
 
 namespace BIM.IFC.Export.UI
 {
@@ -122,15 +123,15 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       private void InitializeConfigurationOptions()
       {
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3));
          comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3CV2));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCCOBIE));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCBCA));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3BFM));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
          comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
          comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCCOBIE));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3BFM));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCBCA));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
 
          // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
          string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
@@ -271,6 +272,8 @@ namespace BIM.IFC.Export.UI
             checkBox_TriangulationOnly.IsEnabled = false;
          checkBox_TriangulationOnly.IsChecked = configuration.UseOnlyTriangulation;
 
+         checkbox_UseVisibleRevitNameAsEntityName.IsChecked = configuration.UseVisibleRevitNameAsEntityName;
+         checkbox_UseTypeNameOnly.IsChecked = configuration.UseTypeNameOnlyForIfcType;
          userDefinedParameterMappingTable.Text = configuration.ExportUserDefinedParameterMappingFileName;
          checkBoxExportUserDefinedParameterMapping.IsChecked = configuration.ExportUserDefinedParameterMapping;
 
@@ -318,7 +321,9 @@ namespace BIM.IFC.Export.UI
                                                                 comboBoxLOD,
                                                                 checkBoxUseActiveViewGeometry,
                                                                 checkBoxExportSpecificSchedules,
-                                                                checkBox_TriangulationOnly
+                                                                checkBox_TriangulationOnly,
+                                                                checkbox_UseTypeNameOnly,
+                                                                checkbox_UseVisibleRevitNameAsEntityName
             };
 
          foreach (UIElement element in configurationElements)
@@ -331,17 +336,30 @@ namespace BIM.IFC.Export.UI
          buttonBrowse.IsEnabled = buttonBrowse.IsEnabled && configuration.ExportUserDefinedPsets;
          buttonParameterMappingBrowse.IsEnabled = buttonParameterMappingBrowse.IsEnabled && configuration.ExportUserDefinedParameterMapping;
 
-         if ((configuration.IFCVersion == IFCVersion.IFC2x3) || (configuration.IFCVersion == IFCVersion.IFCCOBIE) || (configuration.IFCVersion == IFCVersion.IFC2x3FM) || (configuration.IFCVersion == IFCVersion.IFC2x3BFM) || (configuration.IFCVersion == IFCVersion.IFC2x3CV2))
-            checkboxIncludeSteelElements.IsEnabled = true;
-         else
-            checkboxIncludeSteelElements.IsEnabled = false;
+         //if ((configuration.IFCVersion == IFCVersion.IFC2x3) 
+         //   || (configuration.IFCVersion == IFCVersion.IFCCOBIE) 
+         //   || (configuration.IFCVersion == IFCVersion.IFC2x3FM) 
+         //   || (configuration.IFCVersion == IFCVersion.IFC2x3BFM) 
+         //   || (configuration.IFCVersion == IFCVersion.IFC2x3CV2)
+         //   || (configuration.IFCVersion == IFCVersion.IFC4RV)
+         //   || (configuration.IFCVersion == IFCVersion.IFC4DTV))
+         //   checkboxIncludeSteelElements.IsEnabled = true;
+         //else
+         //   checkboxIncludeSteelElements.IsEnabled = false;
 
          // ExportRoomsInView option will only be enabled if it is not currently disabled AND the "export elements visible in view" option is checked
          bool? cboVisibleElementInCurrentView = checkboxVisibleElementsCurrView.IsChecked;
          checkBoxExportRoomsInView.IsEnabled = checkBoxExportRoomsInView.IsEnabled && cboVisibleElementInCurrentView.HasValue ? cboVisibleElementInCurrentView.Value : false;
          bool? triangulationOnly = checkBox_TriangulationOnly.IsChecked;
 
-         if ((configuration.IFCVersion == IFCVersion.IFC2x3) || (configuration.IFCVersion == IFCVersion.IFCCOBIE) || (configuration.IFCVersion == IFCVersion.IFC2x3FM) || (configuration.IFCVersion == IFCVersion.IFC2x3BFM) || (configuration.IFCVersion == IFCVersion.IFC2x3CV2))
+         if ((configuration.IFCVersion == IFCVersion.IFC2x3) 
+            || (configuration.IFCVersion == IFCVersion.IFCCOBIE) 
+            || (configuration.IFCVersion == IFCVersion.IFC2x3FM) 
+            || (configuration.IFCVersion == IFCVersion.IFC2x3BFM) 
+            || (configuration.IFCVersion == IFCVersion.IFC2x3CV2)
+            || (configuration.IFCVersion == IFCVersion.IFC4RV)
+            || (configuration.IFCVersion == IFCVersion.IFC4DTV)
+            || (configuration.IFCVersion == IFCVersion.IFC4))
          {
             checkboxIncludeSteelElements.IsChecked = configuration.IncludeSteelElements;
             checkboxIncludeSteelElements.IsEnabled = true;
@@ -350,6 +368,24 @@ namespace BIM.IFC.Export.UI
          {
             checkboxIncludeSteelElements.IsChecked = false;
             checkboxIncludeSteelElements.IsEnabled = false;
+         }
+
+         if ((configuration.IFCVersion == IFCVersion.IFC4RV)
+            || (configuration.IFCVersion == IFCVersion.IFC4DTV))
+         {
+            checkbox_UseTypeNameOnly.IsChecked = configuration.UseTypeNameOnlyForIfcType;
+            checkbox_UseTypeNameOnly.IsEnabled = true;
+
+            checkbox_UseVisibleRevitNameAsEntityName.IsChecked = configuration.UseVisibleRevitNameAsEntityName;
+            checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
+         }
+         else
+         {
+            checkbox_UseTypeNameOnly.IsChecked = false;
+            checkbox_UseTypeNameOnly.IsEnabled = true;
+
+            checkbox_UseVisibleRevitNameAsEntityName.IsChecked = false;
+            checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
          }
 
          LoadTreeviewFilterElement(treeView_FilterElement);
@@ -566,11 +602,10 @@ namespace BIM.IFC.Export.UI
          bool? fileDialogResult = saveFileDialog.ShowDialog();
          if (fileDialogResult.HasValue && fileDialogResult.Value)
          {
-            JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings();
-            jsonSerializerSettings.Formatting = Formatting.Indented;
             using (StreamWriter sw = new StreamWriter(saveFileDialog.FileName))
             {
-               sw.Write(JsonConvert.SerializeObject(configuration, jsonSerializerSettings));
+               JavaScriptSerializer js = new JavaScriptSerializer();
+               sw.Write(SerializerUtils.FormatOutput(js.Serialize(configuration)));
             }
          }
          //Process.Start(saveFileDialog.FileName);
@@ -594,7 +629,10 @@ namespace BIM.IFC.Export.UI
             {
                using (StreamReader sr = new StreamReader(openFileDialog.FileName))
                {
-                  IFCExportConfiguration configuration = JsonConvert.DeserializeObject<IFCExportConfiguration>(sr.ReadToEnd());
+                  JavaScriptSerializer jsConvert = new JavaScriptSerializer();
+                  jsConvert.RegisterConverters(new JavaScriptConverter[] {
+                     new IFCExportConfigurationConverter() });
+                  IFCExportConfiguration configuration = jsConvert.Deserialize<IFCExportConfiguration>(sr.ReadToEnd());
                   if (configuration != null)
                   {
                      if (m_configurationsMap.HasName(configuration.Name))
@@ -1226,7 +1264,7 @@ namespace BIM.IFC.Export.UI
 
          // Set filter for file extension and default file extension 
          dlg.DefaultExt = ".txt";
-         dlg.Filter = Properties.Resources.UserDefinedParameterSets + @"|*.txt; *.ifcxml; *.ifcjson";
+         dlg.Filter = Properties.Resources.UserDefinedParameterSets + @"|*.txt"; //@"|*.txt; *.ifcxml; *.ifcjson";
          if (configuration != null && !string.IsNullOrWhiteSpace(configuration.ExportUserDefinedPsetsFileName))
          {
             string pathName = System.IO.Path.GetDirectoryName(configuration.ExportUserDefinedPsetsFileName);

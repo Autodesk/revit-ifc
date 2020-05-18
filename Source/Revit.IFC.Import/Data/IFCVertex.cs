@@ -64,14 +64,14 @@ namespace Revit.IFC.Import.Data
       /// <returns>The IFCVertex object.</returns>
       public static IFCVertex ProcessIFCVertex(IFCAnyHandle ifcVertex)
       {
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcVertex, IFCEntityType.IfcVertexPoint))
-            return IFCVertexPoint.ProcessIFCVertexPoint(ifcVertex);
-
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcVertex))
          {
             Importer.TheLog.LogNullError(IFCEntityType.IfcVertex);
             return null;
          }
+
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcVertex, IFCEntityType.IfcVertexPoint))
+            return IFCVertexPoint.ProcessIFCVertexPoint(ifcVertex);
 
          IFCEntity vertex;
          if (!IFCImportFile.TheFile.EntityMap.TryGetValue(ifcVertex.StepId, out vertex))

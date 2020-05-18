@@ -57,7 +57,7 @@ namespace Revit.IFC.Import.Data
             return;
 
          XYZ pntXYZ = IFCPoint.ProcessScaledLengthIFCCartesianPoint(pnt);
-         XYZ dirXYZ = IFCUnitUtil.ScaleLength(IFCPoint.ProcessIFCVector(dir));
+         XYZ dirXYZ = IFCPoint.ProcessScaledLengthIFCVector(dir);
          ParametericScaling = dirXYZ.GetLength();
          if (MathUtil.IsAlmostZero(ParametericScaling))
          {
@@ -65,7 +65,7 @@ namespace Revit.IFC.Import.Data
             return;
          }
 
-         Curve = Line.CreateUnbound(pntXYZ, dirXYZ / ParametericScaling);
+         SetCurve(Line.CreateUnbound(pntXYZ, dirXYZ / ParametericScaling));
       }
 
       /// <summary>
@@ -77,7 +77,7 @@ namespace Revit.IFC.Import.Data
       {
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcLine))
          {
-            Importer.TheLog.LogNullError(IFCEntityType.IfcBSplineCurveWithKnots);
+            Importer.TheLog.LogNullError(IFCEntityType.IfcLine);
             return null;
          }
 

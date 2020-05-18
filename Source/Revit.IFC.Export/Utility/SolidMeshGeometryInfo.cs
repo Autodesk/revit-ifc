@@ -124,7 +124,7 @@ namespace Revit.IFC.Export.Utility
       {
          return m_SolidInfoList;
       }
-
+   
       /// <summary>
       /// Returns the list of Meshes. 
       /// </summary>

@@ -31,7 +31,7 @@ namespace Revit.IFC.Export.Toolkit
       {
          string enumValue = null;
 
-         if (typeName != null)
+         if (typeName != null || defaultValue != null)
          {
             try
             {
@@ -46,6 +46,11 @@ namespace Revit.IFC.Export.Toolkit
                }
                string desiredType = "Revit.IFC.Export.Toolkit." + desiredTypeExtra + theTypeEnumStr;
                Type theTypeEnum = Type.GetType(desiredType, false, true);
+               
+               // In this case, the entity doesn't have a predefined type.
+               if (theTypeEnum == null)
+                  return null;
+
                if (theTypeEnum != null && !string.IsNullOrEmpty(typeName))
                   enumValue = Enum.Parse(theTypeEnum, typeName, true).ToString();
             }

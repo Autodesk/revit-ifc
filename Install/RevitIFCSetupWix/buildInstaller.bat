@@ -14,6 +14,6 @@ candle.exe -dProjectDir=%2 -ext WixUtilExtension %2Product.wxs
 light.exe -ext WixUtilExtension -out RevitIFC2020.msi product.wixobj -ext WixUIExtension
 
 copy RevitIFC2021.msi %1..\Releasex64
-del RevitIFC202.msi
+del RevitIFC2021.msi
 
 echo %1..\Releasex64\RevitIFC2021.msi

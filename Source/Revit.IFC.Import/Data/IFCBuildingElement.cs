@@ -87,7 +87,7 @@ namespace Revit.IFC.Import.Data
 
          IFCBuildingElement newIFCBuildingElement = null;
          // other subclasses not handled yet.
-         if (SchemaSupportsBuildingElementComponentAsSubType() && IFCAnyHandleUtil.IsSubTypeOf(ifcBuildingElement, IFCEntityType.IfcBuildingElementComponent))
+         if (SchemaSupportsBuildingElementComponentAsSubType() && IFCAnyHandleUtil.IsValidSubTypeOf(ifcBuildingElement, IFCEntityType.IfcBuildingElementComponent))
             newIFCBuildingElement = IFCBuildingElementComponent.ProcessIFCBuildingElementComponent(ifcBuildingElement);
          else
             newIFCBuildingElement = new IFCBuildingElement(ifcBuildingElement);

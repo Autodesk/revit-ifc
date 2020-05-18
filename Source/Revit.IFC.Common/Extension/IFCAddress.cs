@@ -164,8 +164,7 @@ namespace Revit.IFC.Common.Extensions
 
             if (addressStorage.Count > 0)
             {
-
-               // expected only one address in the storage
+               // Expected only one address in the storage
                Entity savedAddress = addressStorage[0].GetEntity(m_schema);
                IDictionary<string, string> savedAddressMap = savedAddress.Get<IDictionary<string, string>>(s_addressMapField);
                if (savedAddressMap.ContainsKey(s_addressPurpose))

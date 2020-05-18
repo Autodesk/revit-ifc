@@ -191,12 +191,11 @@ namespace Revit.IFC.Export.Utility
          // Export Part element only if 'Current View Only' is checked and 'Show Parts' is selected. Or if it is exported as IFC4RV
          cache.ExportParts = (filterView != null && filterView.PartsVisibility == PartsVisibility.ShowPartsOnly);
          cache.ExportPartsAsBuildingElementsOverride = null;
-         //cache.ExportAllLevels = false;
          cache.ExportAnnotationsOverride = null;
 
          // We are going to default to "true" for IncludeSteelElements to allow the default API
          // export to match the default UI.
-         bool? includeSteelElements = GetNamedBooleanOption(options, "IncludeSteelElements");
+         bool? includeSteelElements = OptionsUtil.GetNamedBooleanOption(options, "IncludeSteelElements");
          cache.IncludeSteelElements = includeSteelElements.HasValue && includeSteelElements.Value;
 
          // There is a bug in the native code that doesn't allow us to cast the filterView to any sub-type of View.  Work around this by re-getting the element pointer.
@@ -211,13 +210,13 @@ namespace Revit.IFC.Export.Utility
          cache.PropertySetOptions = PropertySetOptions.Create(exporterIFC, cache);
 
          String use2DRoomBoundary = Environment.GetEnvironmentVariable("Use2DRoomBoundaryForRoomVolumeCalculationOnIFCExport");
-         bool? use2DRoomBoundaryOption = GetNamedBooleanOption(options, "Use2DRoomBoundaryForVolume");
+         bool? use2DRoomBoundaryOption = OptionsUtil.GetNamedBooleanOption(options, "Use2DRoomBoundaryForVolume");
          cache.Use2DRoomBoundaryForRoomVolumeCreation =
              ((use2DRoomBoundary != null && use2DRoomBoundary == "1") ||
              cache.ExportAs2x2 ||
              (use2DRoomBoundaryOption != null && use2DRoomBoundaryOption.GetValueOrDefault()));
 
-         bool? exportAdvancedSweptSolids = GetNamedBooleanOption(options, "ExportAdvancedSweptSolids");
+         bool? exportAdvancedSweptSolids = OptionsUtil.GetNamedBooleanOption(options, "ExportAdvancedSweptSolids");
          cache.ExportAdvancedSweptSolids = (exportAdvancedSweptSolids.HasValue) ? exportAdvancedSweptSolids.Value : false;
 
          // Set GUIDOptions here.
@@ -226,11 +225,11 @@ namespace Revit.IFC.Export.Utility
             String use2009GUID = Environment.GetEnvironmentVariable("Assign2009GUIDToBuildingStoriesOnIFCExport");
             cache.GUIDOptions.Use2009BuildingStoreyGUIDs = (use2009GUID != null && use2009GUID == "1");
 
-            bool? allowGUIDParameterOverride = GetNamedBooleanOption(options, "AllowGUIDParameterOverride");
+            bool? allowGUIDParameterOverride = OptionsUtil.GetNamedBooleanOption(options, "AllowGUIDParameterOverride");
             if (allowGUIDParameterOverride != null)
                cache.GUIDOptions.AllowGUIDParameterOverride = allowGUIDParameterOverride.Value;
 
-            bool? storeIFCGUID = GetNamedBooleanOption(options, "StoreIFCGUID");
+            bool? storeIFCGUID = OptionsUtil.GetNamedBooleanOption(options, "StoreIFCGUID");
             if (storeIFCGUID != null)
                cache.GUIDOptions.StoreIFCGUID = storeIFCGUID.Value;
          }
@@ -238,15 +237,15 @@ namespace Revit.IFC.Export.Utility
          // Set NamingOptions here.
          cache.NamingOptions = new NamingOptions();
          {
-            bool? useFamilyAndTypeNameForReference = GetNamedBooleanOption(options, "UseFamilyAndTypeNameForReference");
+            bool? useFamilyAndTypeNameForReference = OptionsUtil.GetNamedBooleanOption(options, "UseFamilyAndTypeNameForReference");
             cache.NamingOptions.UseFamilyAndTypeNameForReference =
                 (useFamilyAndTypeNameForReference != null) && useFamilyAndTypeNameForReference.GetValueOrDefault();
 
-            bool? useVisibleRevitNameAsEntityName = GetNamedBooleanOption(options, "UseVisibleRevitNameAsEntityName");
+            bool? useVisibleRevitNameAsEntityName = OptionsUtil.GetNamedBooleanOption(options, "UseVisibleRevitNameAsEntityName");
             cache.NamingOptions.UseVisibleRevitNameAsEntityName =
                 (useVisibleRevitNameAsEntityName != null) && useVisibleRevitNameAsEntityName.GetValueOrDefault();
 
-            bool? useOnlyTypeNameForIfcType = GetNamedBooleanOption(options, "UseTypeNameOnlyForIfcType");
+            bool? useOnlyTypeNameForIfcType = OptionsUtil.GetNamedBooleanOption(options, "UseTypeNameOnlyForIfcType");
             cache.NamingOptions.UseTypeNameOnlyForIfcType =
                 (useOnlyTypeNameForIfcType != null) && useOnlyTypeNameForIfcType.GetValueOrDefault();
          }
@@ -273,25 +272,25 @@ namespace Revit.IFC.Export.Utility
          }
 
          // "ExportAnnotations" override
-         cache.ExportAnnotationsOverride = GetNamedBooleanOption(options, "ExportAnnotations");
+         cache.ExportAnnotationsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportAnnotations");
 
          // "ExportSeparateParts" override
-         cache.ExportPartsAsBuildingElementsOverride = GetNamedBooleanOption(options, "ExportPartsAsBuildingElements");
+         cache.ExportPartsAsBuildingElementsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportPartsAsBuildingElements");
 
          // "ExportBoundingBox" override
-         cache.ExportBoundingBoxOverride = GetNamedBooleanOption(options, "ExportBoundingBox");
+         cache.ExportBoundingBoxOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportBoundingBox");
 
-         bool? exportRoomsInView = GetNamedBooleanOption(options, "ExportRoomsInView");
+         bool? exportRoomsInView = OptionsUtil.GetNamedBooleanOption(options, "ExportRoomsInView");
          cache.ExportRoomsInView = exportRoomsInView != null ? exportRoomsInView.Value : false;
 
          // Using the alternate UI or not.
-         cache.AlternateUIVersionOverride = GetNamedStringOption(options, "AlternateUIVersion");
+         cache.AlternateUIVersionOverride = OptionsUtil.GetNamedStringOption(options, "AlternateUIVersion");
 
          // Include IFCSITE elevation in the site local placement origin
-         bool? includeIfcSiteElevation = GetNamedBooleanOption(options, "IncludeSiteElevation");
+         bool? includeIfcSiteElevation = OptionsUtil.GetNamedBooleanOption(options, "IncludeSiteElevation");
          cache.IncludeSiteElevation = includeIfcSiteElevation != null ? includeIfcSiteElevation.Value : false;
 
-         int? siteTransformation = GetNamedIntOption(options, "SitePlacement");
+         int? siteTransformation = OptionsUtil.GetNamedIntOption(options, "SitePlacement");
          if (siteTransformation != null)
          {
             try
@@ -311,11 +310,11 @@ namespace Revit.IFC.Export.Utility
 
          cache.LevelOfDetail = ExportTessellationLevel.Low;
 
-         bool? useCoarseTessellation = GetNamedBooleanOption(options, "UseCoarseTessellation");
+         bool? useCoarseTessellation = OptionsUtil.GetNamedBooleanOption(options, "UseCoarseTessellation");
          if (useCoarseTessellation.HasValue)
             cache.LevelOfDetail = useCoarseTessellation.Value ? ExportTessellationLevel.ExtraLow : ExportTessellationLevel.High;
 
-         double? tessellationLOD = GetNamedDoubleOption(options, "TessellationLevelOfDetail");
+         double? tessellationLOD = OptionsUtil.GetNamedDoubleOption(options, "TessellationLevelOfDetail");
          if (tessellationLOD.HasValue)
          {
             int levelOfDetail = (int)(tessellationLOD.Value * 4.0 + 0.5);
@@ -324,11 +323,11 @@ namespace Revit.IFC.Export.Utility
             cache.LevelOfDetail = (ExportTessellationLevel)levelOfDetail;
          }
 
-         bool? useOnlyTriangulation = GetNamedBooleanOption(options, "UseOnlyTriangulation");
+         bool? useOnlyTriangulation = OptionsUtil.GetNamedBooleanOption(options, "UseOnlyTriangulation");
          cache.UseOnlyTriangulation = useOnlyTriangulation.HasValue ? useOnlyTriangulation.Value : false;
 
          /// Allow exporting a mix of extrusions and BReps as a solid model, if possible.
-         bool? canExportSolidModelRep = GetNamedBooleanOption(options, "ExportSolidModelRep");
+         bool? canExportSolidModelRep = OptionsUtil.GetNamedBooleanOption(options, "ExportSolidModelRep");
          cache.CanExportSolidModelRep = canExportSolidModelRep != null ? canExportSolidModelRep.Value : false;
 
          // Set the phase we are exporting
@@ -357,12 +356,12 @@ namespace Revit.IFC.Export.Utility
             cache.ActivePhaseElement = document.GetElement(cache.ActivePhaseId) as Phase;
          }
 
-         bool? useActiveViewGeometry = GetNamedBooleanOption(options, "UseActiveViewGeometry");
+         bool? useActiveViewGeometry = OptionsUtil.GetNamedBooleanOption(options, "UseActiveViewGeometry");
          cache.UseActiveViewGeometry = useActiveViewGeometry.HasValue ? useActiveViewGeometry.Value : false;
 
          if (cache.UseActiveViewGeometry)
          {
-            int? viewId = GetNamedIntOption(options, "ActiveViewId");
+            int? viewId = OptionsUtil.GetNamedIntOption(options, "ActiveViewId");
             int activeViewId = viewId.HasValue ? viewId.Value : -1;
             View activeView = null;
             try
@@ -378,20 +377,20 @@ namespace Revit.IFC.Export.Utility
          // "FileType" - note - setting is not respected yet
          ParseFileType(options, cache);
 
-         cache.SelectedConfigName = GetNamedStringOption(options, "ConfigName");
+         cache.SelectedConfigName = OptionsUtil.GetNamedStringOption(options, "ConfigName");
 
-         cache.SelectedParametermappingTableName = GetNamedStringOption(options, "ExportUserDefinedParameterMappingFileName");
+         cache.SelectedParametermappingTableName = OptionsUtil.GetNamedStringOption(options, "ExportUserDefinedParameterMappingFileName");
 
-         bool? bExportLinks = GetNamedBooleanOption(options, "ExportingLinks");
+         bool? bExportLinks = OptionsUtil.GetNamedBooleanOption(options, "ExportingLinks");
          cache.ExportingLink = (bExportLinks.HasValue && bExportLinks.Value == true);
 
          if (cache.ExportingLink)
          {
-            int? numInstances = GetNamedIntOption(options, "NumberOfExportedLinkInstances");
+            int? numInstances = OptionsUtil.GetNamedIntOption(options, "NumberOfExportedLinkInstances");
             for (int ii = 0; ii < numInstances; ii++)
             {
                string optionName = (ii == 0) ? "ExportLinkInstanceTransform" : "ExportLinkInstanceTransform" + (ii + 1).ToString();
-               String aLinkInstanceTransform = GetNamedStringOption(options, optionName);
+               String aLinkInstanceTransform = OptionsUtil.GetNamedStringOption(options, optionName);
 
                Transform currTransform = null;
                if (!String.IsNullOrEmpty(aLinkInstanceTransform))
@@ -408,7 +407,7 @@ namespace Revit.IFC.Export.Utility
                if (ii > 0)
                {
                   optionName = "ExportLinkInstanceFileName" + (ii + 1).ToString();
-                  fileName = GetNamedStringOption(options, optionName);
+                  fileName = OptionsUtil.GetNamedStringOption(options, optionName);
                }
 
                if (currTransform == null)
@@ -418,84 +417,8 @@ namespace Revit.IFC.Export.Utility
             }
          }
 
-         cache.ExcludeFilter = GetNamedStringOption(options, "ExcludeFilter");
+         cache.ExcludeFilter = OptionsUtil.GetNamedStringOption(options, "ExcludeFilter");
          return cache;
-      }
-
-      /// <summary>
-      /// Utility for processing boolean option from the options collection.
-      /// </summary>
-      /// <param name="options">The collection of named options for IFC export.</param>
-      /// <param name="optionName">The name of the target option.</param>
-      /// <returns>The value of the option, or null if the option is not set.</returns>
-      public static bool? GetNamedBooleanOption(IDictionary<String, String> options, String optionName)
-      {
-         String optionString;
-         if (options.TryGetValue(optionName, out optionString))
-         {
-            bool option;
-            if (Boolean.TryParse(optionString, out option))
-               return option;
-
-            // TODO: consider logging this error later and handling results better.
-            throw new Exception("Option '" + optionName + "' could not be parsed to boolean");
-         }
-         return null;
-      }
-
-      /// <summary>
-      /// Utility for processing integer option from the options collection.
-      /// </summary>
-      /// <param name="options">The collection of named options for IFC export.</param>
-      /// <param name="optionName">The name of the target option.</param>
-      /// <returns>The value of the option, or null if the option is not set.</returns>
-      public static int? GetNamedIntOption(IDictionary<String, String> options, String optionName)
-      {
-         String optionString;
-         if (options.TryGetValue(optionName, out optionString))
-         {
-            int option;
-            if (int.TryParse(optionString, out option))
-               return option;
-
-            // TODO: consider logging this error later and handling results better.
-            throw new Exception("Option '" + optionName + "' could not be parsed to int");
-         }
-         return null;
-      }
-
-      /// <summary>
-      /// Utility for processing double option from the options collection.
-      /// </summary>
-      /// <param name="options">The collection of named options for IFC export</param>
-      /// <param name="optionName">The name of the target option</param>
-      /// <returns>the value of the option, or null if the option is not set</returns>
-      public static double? GetNamedDoubleOption(IDictionary<String, String> options, String optionName)
-      {
-         String optionString;
-         if (options.TryGetValue(optionName, out optionString))
-         {
-            double option;
-            if (double.TryParse(optionString, out option))
-               return option;
-
-            // TODO: consider logging this error later and handling results better.
-            throw new Exception("Option '" + optionName + "' could not be parsed to double");
-         }
-         return null;
-      }
-
-      /// <summary>
-      /// Utility for processing string option from the options collection.
-      /// </summary>
-      /// <param name="options">The collection of named options for IFC export.</param>
-      /// <param name="optionName">The name of the target option.</param>
-      /// <returns>The value of the option, or null if the option is not set.</returns>
-      public static string GetNamedStringOption(IDictionary<String, String> options, String optionName)
-      {
-         String optionString;
-         options.TryGetValue(optionName, out optionString);
-         return optionString;
       }
 
       /// <summary>
@@ -960,23 +883,16 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// The filter view for export.
+      /// The filter view for export.  
       /// </summary>
+      /// <remarks>This is the optional view that determines which elements to
+      /// export based on visibility settings for the view.  It does not control
+      /// what geometry is exported for the element.</remarks>
       public View FilterViewForExport
       {
          get;
          set;
       }
-
-      /// <summary>
-      /// Whether or not to export all levels, or just export building stories.
-      /// This will be set to true by default if there are no building stories in the file.
-      /// </summary>
-      //public bool ExportAllLevels
-      //{
-         //get;
-         //set;
-      //}
 
       /// <summary>
       /// Determines how to generate space volumes on export.  True means that we use the 2D room boundary and extrude it upwards based

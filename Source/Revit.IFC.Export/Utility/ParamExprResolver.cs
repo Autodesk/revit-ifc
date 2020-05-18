@@ -101,6 +101,8 @@ namespace Revit.IFC.Export.Utility
          return val;
       }
 
+      public ForgeTypeId UnitType { get; private set; } = null;
+
       object Process(ExpectedValueEnum expectedValueType)
       {
          object val = null;
@@ -121,7 +123,10 @@ namespace Revit.IFC.Export.Utility
          {
             walker.Walk(eval, tree);
             if (eval.HasValue)
+            {
                val = eval.Value;
+               UnitType = eval.UnitType;
+            }
          }
          catch
          {
@@ -257,12 +262,18 @@ namespace Revit.IFC.Export.Utility
       /// <returns>integer value of the power</returns>
       public static int GetPowerOp(ParamExprGrammarParser.Power_opContext powerOp)
       {
-         int powerOpNumber = int.Parse(powerOp.INT().GetText());
+         int powerOpNumber = 0;
          if (powerOp.ChildCount == 3)
          {
+            powerOpNumber = int.Parse(powerOp.GetChild(2).GetText());
             if (powerOp.GetChild(1).GetText().Equals("-"))
                powerOpNumber = -1 * powerOpNumber;
          }
+         else if (powerOp.ChildCount == 2)
+         {
+            powerOpNumber = int.Parse(powerOp.GetChild(1).GetText());
+         }
+
          return powerOpNumber;
       }
 

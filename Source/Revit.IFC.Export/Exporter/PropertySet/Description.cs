@@ -185,7 +185,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             if (!string.IsNullOrEmpty(objectType))
             {
                if (ObjectType.IndexOf(objectType, StringComparison.InvariantCultureIgnoreCase) < 0)
-            return false;
+                  return false;
                else
                   return true;
             }
@@ -216,35 +216,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          //string objectType = IFCAnyHandleUtil.GetObjectType(handle);
          //return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
-      }
-
-      /// <summary>
-      /// Identifies if the input handle matches the predefined type only to which this description applies.
-      /// </summary>
-      /// <param name="handle">The handle.</param>
-      /// <param name="predefinedType">Optional predefined type.  Will be set if null.</param>
-      /// <returns>True if it matches, false otherwise. </returns>
-      /// <remarks>Currently only works with types that have "PredefinedType", not "ShapeType".</remarks>
-      public bool IsAppropriatePredefinedType(IFCAnyHandle handle, string predefinedType)
-      {
-         if (handle == null)
-            return false;
-         if (PredefinedType == "")
-            return true;
-
-         if (string.IsNullOrEmpty(predefinedType))
-         {
-            try
-            {
-               predefinedType = IFCAnyHandleUtil.GetEnumerationAttribute(handle, "PredefinedType");
-            }
-            catch
-            {
-               return false;
-            }
-         }
-
-         return (NamingUtil.IsEqualIgnoringCaseAndSpaces(PredefinedType, predefinedType));
       }
 
       /// <summary>

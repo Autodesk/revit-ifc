@@ -259,6 +259,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Location of the documentation (usually URL).
+        /// </summary>
+        public static string ClassificationAltLocation {
+            get {
+                return ResourceManager.GetString("ClassificationAltLocation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The optional alternate shared parameter name for this classification (default: ClassificationCode).
         /// </summary>
         public static string ClassificationAltName {
@@ -682,7 +691,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Export rooms in 3D views.
+        ///   Looks up a localized string similar to Export rooms, areas and spaces in 3D views.
         /// </summary>
         public static string ExportRoomsInView {
             get {
@@ -1204,7 +1213,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Internal coordinates.
+        ///   Looks up a localized string similar to Internal Origin.
         /// </summary>
         public static string InternalCoordinates {
             get {
@@ -1456,7 +1465,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Project base point.
+        ///   Looks up a localized string similar to Project Base Point.
         /// </summary>
         public static string ProjectBasePoint {
             get {
@@ -1492,7 +1501,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Project Origin.
+        ///   Looks up a localized string similar to Coordinate Base.
         /// </summary>
         public static string ProjectOrigin {
             get {
@@ -1735,7 +1744,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Current shared coordinates.
+        ///   Looks up a localized string similar to Shared Coordinates.
         /// </summary>
         public static string SharedCoordinates {
             get {
@@ -1771,7 +1780,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Site survey point.
+        ///   Looks up a localized string similar to Survey Point.
         /// </summary>
         public static string SiteSurveyPoint {
             get {

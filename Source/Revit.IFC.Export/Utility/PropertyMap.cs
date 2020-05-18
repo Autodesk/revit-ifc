@@ -177,7 +177,7 @@ namespace Revit.IFC.Export.Utility
                }
             }
             else
-            { 
+            {
                using (StreamReader sr = new StreamReader(filename))
                {
                   string line;

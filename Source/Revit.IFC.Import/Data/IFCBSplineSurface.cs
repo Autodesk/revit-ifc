@@ -202,7 +202,7 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcBSplineSurface, IFCEntityType.IfcBSplineSurface))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBSplineSurface, IFCEntityType.IfcBSplineSurface))
             return IFCBSplineSurfaceWithKnots.ProcessIFCBSplineSurfaceWithKnots(ifcBSplineSurface);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcBSplineSurface, IFCEntityType.IfcBSplineSurface, true);

@@ -43,6 +43,11 @@ namespace Revit.IFC.Common.Utility
          return 1.0e-9;
       }
 
+      public static double SmallGap()
+      {
+         return Eps() * 10;
+      }
+
       /// <summary>
       /// Check if two double variables are almost equal.
       /// </summary>

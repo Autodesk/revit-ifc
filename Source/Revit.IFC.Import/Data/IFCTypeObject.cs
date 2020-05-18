@@ -168,7 +168,7 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcTypeObject.StepId, out typeObject))
             return (typeObject as IFCTypeObject);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcTypeObject, IFCEntityType.IfcTypeProduct))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTypeObject, IFCEntityType.IfcTypeProduct))
          {
             return IFCTypeProduct.ProcessIFCTypeProduct(ifcTypeObject);
          }

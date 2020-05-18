@@ -82,9 +82,10 @@ name:             '(' STRING ')' ;
 unary_operator:   '+' | '-' ;
 ops:              MULTIPLY | DIVIDE | ADDITION | SUBTRACT ;
 power_op:         '^' ( '-' | '+' )? INT;
-value:              realliteral | stringliteral ;
+value:              realliteral | stringliteral | value_with_unit;
+value_with_unit:  UNITTYPE '(' atomic_param ')' | UNITTYPE '(' signed_number ')';
 stringliteral:		STRING ;
-realliteral:		signed_number | UNITTYPEENUM '(' signed_number ')';
+realliteral:		signed_number;
 signed_number:	   ( '+' | '-' )? NUMBER ;
 
 /*
@@ -96,7 +97,7 @@ ELEMENTID:          '$'[Ee][Ll][Ee][Mm][Ee][Nn][Tt][Ii][Dd];
 RUNNINGNUMBER:      '#';
 RUNNINGNUMBERINSTANCE:  '##';
 AUTOCALCULATE:      '$'[Aa][Uu][Tt][Oo] | '$'[Aa][Uu][Tt][Oo][Mm][Aa][Tt][Ii][Cc] ;
-UNITTYPEENUM:       [Uu][Tt] '_' ALPHANUMERIC+ ;
+UNITTYPE:       CHARONLY+ ;
 
 /* Operators */
 MULTIPLY:		'*';
@@ -113,6 +114,7 @@ NUMBER:			INT '.' INT? EXP?   // 1.35, 1.35E-9, 0.3
 				   ;
 INT:    INT_DIGITS; 
 fragment ALPHANUMERIC:          [a-zA-Z0-9_] ;
+fragment CHARONLY:              [a-zA-Z_];
 fragment ESC:			'\\' (["\\/bfnrt] | UNICODE) ;
 fragment UNICODE :		'u' HEX HEX HEX HEX ;
 fragment HEX :			[0-9a-fA-F] ;

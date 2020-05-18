@@ -137,7 +137,7 @@ namespace Revit.IFC.Export.Exporter
                      setter.LocalPlacement, prodShapeHnd);
                else
                   instHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, textNote, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
-                     setter.LocalPlacement, prodShapeHnd);
+                  setter.LocalPlacement, prodShapeHnd);
 
                productWrapper.AddAnnotation(instHnd, setter.LevelInfo, true);
             }

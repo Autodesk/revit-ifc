@@ -180,7 +180,10 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The IFCLevelInfo.</returns>
       public IFCLevelInfo GetLevelInfo(ExporterIFC exporterIFC, ElementId levelId)
       {
-         return exporterIFC.GetLevelInfos()[levelId];
+         IFCLevelInfo levelInfo = null;
+         if (!exporterIFC.GetLevelInfos().TryGetValue(levelId, out levelInfo))
+            return null;
+         return levelInfo;
       }
    }
 }

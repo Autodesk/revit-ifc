@@ -40,7 +40,7 @@ namespace BIM.IFC.Export.UI
         public NewExportSetupWindow(IFCExportConfigurationsMap configurationMap, String initialName)
         {
             m_configurationMap = configurationMap;
-            m_newName = initialName;           
+            m_newName = initialName;
             InitializeComponent();
             textBoxNewSetupName.Text = m_newName;
         }

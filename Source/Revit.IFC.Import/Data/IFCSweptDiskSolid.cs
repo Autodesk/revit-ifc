@@ -20,13 +20,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
 
@@ -34,64 +32,32 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCSweptDiskSolid : IFCSolidModel
    {
-      IFCCurve m_Directrix = null;
-
-      double m_Radius = 0.0;
-
-      double? m_InnerRadius = null;
-
-      double m_StartParam = 0.0;
-
-      // although end param is not optional, we will still allow it to be null, to default to 
-      // no trimming of the directrix.
-      double? m_EndParam = null;
-
       /// <summary>
       /// The curve used for the sweep.
       /// </summary>
-      public IFCCurve Directrix
-      {
-         get { return m_Directrix; }
-         protected set { m_Directrix = value; }
-      }
+      public IFCCurve Directrix { get; protected set; } = null;
 
       /// <summary>
       /// The outer radius of the swept disk.
       /// </summary>
-      public double Radius
-      {
-         get { return m_Radius; }
-         protected set { m_Radius = value; }
-      }
+      public double Radius { get; protected set; } = 0.0;
 
       /// <summary>
       /// The optional inner radius of the swept disk.
       /// </summary>
-      public double? InnerRadius
-      {
-         get { return m_InnerRadius; }
-         protected set { m_InnerRadius = value; }
-      }
+      public double? InnerRadius { get; protected set; } = null;
 
       /// <summary>
       /// The start parameter of the sweep, as measured along the length of the Directrix.
       /// </summary>
       /// <remarks>This is not optional in IFC, but we will default to 0.0 if not set.</remarks>
-      public double StartParameter
-      {
-         get { return m_StartParam; }
-         protected set { m_StartParam = value; }
-      }
+      public double StartParameter { get; protected set; } = 0.0;
 
       /// <summary>
       /// The optional end parameter of the sweep, as measured along the length of the Directrix.
       /// </summary>
       /// <remarks>This is not optional in IFC, but we will default to ParametricLength(curve) if not set.</remarks>
-      public double? EndParameter
-      {
-         get { return m_EndParam; }
-         protected set { m_EndParam = value; }
-      }
+      public double? EndParameter { get; protected set; } = null;
 
       protected IFCSweptDiskSolid()
       {
@@ -258,45 +224,49 @@ namespace Revit.IFC.Import.Data
          Transform unscaledSweptDiskPosition = (unscaledLcs == null) ? Transform.Identity : unscaledLcs;
          Transform scaledSweptDiskPosition = (scaledLcs == null) ? Transform.Identity : scaledLcs;
 
-         CurveLoop trimmedDirectrix = IFCGeometryUtil.TrimCurveLoop(Id, Directrix, StartParameter, EndParameter);
-         if (trimmedDirectrix == null)
+         IList<CurveLoop> trimmedDirectrices = IFCGeometryUtil.TrimCurveLoops(Id, Directrix, StartParameter, EndParameter);
+         if (trimmedDirectrices == null)
             return null;
 
-         CurveLoop trimmedDirectrixInWCS = IFCGeometryUtil.CreateTransformed(trimmedDirectrix, Id, unscaledSweptDiskPosition, scaledSweptDiskPosition);
-
-         // Create the disk.
-         Curve firstCurve = null;
-         foreach (Curve curve in trimmedDirectrixInWCS)
+         List<GeometryObject> myObjs = null;
+         foreach (CurveLoop trimmedDirectrix in trimmedDirectrices)
          {
-            firstCurve = curve;
-            break;
-         }
+            CurveLoop trimmedDirectrixInWCS = IFCGeometryUtil.CreateTransformed(trimmedDirectrix, Id, unscaledSweptDiskPosition, scaledSweptDiskPosition);
 
-         double startParam = 0.0;
-         IList<CurveLoop> profileCurveLoops = CreateProfileCurveLoopsForDirectrix(firstCurve, out startParam);
-         if (profileCurveLoops == null)
-            return null;
-
-         SolidOptions solidOptions = new SolidOptions(GetMaterialElementId(shapeEditScope), shapeEditScope.GraphicsStyleId);
-         IList<GeometryObject> myObjs = new List<GeometryObject>();
-
-         try
-         {
-            Solid sweptDiskSolid = GeometryCreationUtilities.CreateSweptGeometry(trimmedDirectrixInWCS, 0, startParam, profileCurveLoops,
-               solidOptions);
-            if (sweptDiskSolid != null)
-               myObjs.Add(sweptDiskSolid);
-         }
-         catch (Exception ex)
-         {
-            // If we can't create a solid, we will attempt to split the Solid into valid pieces (that will likely have some overlap).
-            if (ex.Message.Contains("self-intersections"))
+            // Create the disk.
+            Curve firstCurve = null;
+            foreach (Curve curve in trimmedDirectrixInWCS)
             {
-               Importer.TheLog.LogWarning(Id, "The IfcSweptDiskSolid definition does not define a valid solid, likely due to self-intersections or other such problems; the profile probably extends too far toward the inner curvature of the sweep path. Creating the minimum number of solids possible to represent the geometry.", false);
-               myObjs = SplitSweptDiskIntoValidPieces(trimmedDirectrixInWCS, profileCurveLoops, solidOptions);
+               firstCurve = curve;
+               break;
             }
-            else
-               throw ex;
+
+            double startParam = 0.0;
+            IList<CurveLoop> profileCurveLoops = CreateProfileCurveLoopsForDirectrix(firstCurve, out startParam);
+            if (profileCurveLoops == null)
+               return null;
+
+            SolidOptions solidOptions = new SolidOptions(GetMaterialElementId(shapeEditScope), shapeEditScope.GraphicsStyleId);
+            myObjs = new List<GeometryObject>();
+
+            try
+            {
+               Solid sweptDiskSolid = GeometryCreationUtilities.CreateSweptGeometry(trimmedDirectrixInWCS, 0, startParam, profileCurveLoops,
+                  solidOptions);
+               if (sweptDiskSolid != null)
+                  myObjs.Add(sweptDiskSolid);
+            }
+            catch (Exception ex)
+            {
+               // If we can't create a solid, we will attempt to split the Solid into valid pieces (that will likely have some overlap).
+               if (ex.Message.Contains("self-intersections"))
+               {
+                  Importer.TheLog.LogWarning(Id, "The IfcSweptDiskSolid definition does not define a valid solid, likely due to self-intersections or other such problems; the profile probably extends too far toward the inner curvature of the sweep path. Creating the minimum number of solids possible to represent the geometry.", false);
+                  myObjs.AddRange(SplitSweptDiskIntoValidPieces(trimmedDirectrixInWCS, profileCurveLoops, solidOptions));
+               }
+               else
+                  throw ex;
+            }
          }
 
          return myObjs;

@@ -58,7 +58,7 @@ namespace Revit.IFC.Export.Utility
             {
                m_ElementIdToHandleDictionary.Remove(elementId);
                handle = null;
-         }
+            }
          }
          return handle;
       }

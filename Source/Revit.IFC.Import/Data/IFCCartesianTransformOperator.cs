@@ -264,9 +264,9 @@ namespace Revit.IFC.Import.Data
          // Assume that the dimensionality of the IfcCartesianTransformationOperator is 2, unless determined otherwise below.
          int dim = 2;
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcCartesianTransformationOperator2DnonUniform))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(item, IFCEntityType.IfcCartesianTransformationOperator2DnonUniform))
             ScaleY = IFCImportHandleUtil.GetOptionalRealAttribute(item, "Scale2", Scale);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcCartesianTransformationOperator3D))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(item, IFCEntityType.IfcCartesianTransformationOperator3D))
          {
             dim = 3;
 

@@ -73,19 +73,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// DEPRECATED!!!
-      /// Register an ElementType with the ProductWrapper, to create its property sets on Dispose without the information of IFCExportInfoPair
-      /// </summary>
-      /// <param name="elementType">The element type</param>
-      /// <param name="prodTypeHnd">The handle</param>
-      /// <param name="existingPropertySets">Any existing propertysets</param>
-      public void RegisterHandleWithElementType(ElementType elementType, IFCAnyHandle prodTypeHnd, HashSet<IFCAnyHandle> existingPropertySets)
-      {
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         RegisterHandleWithElementType(elementType, exportType, prodTypeHnd, existingPropertySets);
-      }
-
-      /// <summary>
       /// Register an ElementType with the ProductWrapper, to create its property sets on Dispose.
       /// </summary>
       /// <param name="elementType">The element type.</param>
@@ -234,7 +221,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="element">The element.</param>
       /// <param name="handle">The handle.</param>
-      public void AddElement(Element element, IFCAnyHandle handle, IFCExportInfoPair exportType = null)
+      public void AddElement(Element element, IFCAnyHandle handle, IFCExportInfoPair exportType)
       {
          m_CreatedHandles.Add(handle);
          RegisterHandleWithElement(element, handle, exportType);
@@ -248,7 +235,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="setter">The placement setter.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      public void AddElement(Element element, IFCAnyHandle handle, PlacementSetter setter, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType = null)
+      public void AddElement(Element element, IFCAnyHandle handle, PlacementSetter setter, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
       {
          // There is a bug in the internal AddElement that requires us to do a levelInfo null check here.
          IFCLevelInfo levelInfo = setter.LevelInfo;
@@ -267,7 +254,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="levelInfo">The level information.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      public void AddElement(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType = null)
+      public void AddElement(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
       {
          // There is a bug in the internal AddElement that requires us to do a levelInfo null check here.
          bool actuallyRelateToLevel = relateToLevel && (levelInfo != null);

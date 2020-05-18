@@ -72,21 +72,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyVolume", out m_Volume) == null)
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "QtyVolume", out m_Volume);
+               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "QtyVolume", out m_Volume);
          m_Volume = UnitUtil.ScaleArea(m_Volume);
          if (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps())
             return true;
 
-      if (extrusionCreationData == null)
-               return false;
+         if (extrusionCreationData == null)
+            return false;
          double area = extrusionCreationData.ScaledArea;
          double height = extrusionCreationData.ScaledHeight;
          if (area < MathUtil.Eps() * MathUtil.Eps() || height < MathUtil.Eps())
-               return false;
+            return false;
          else
          {
                m_Volume = area * height;
-               return true;
+         return true;
          }
       }
 

@@ -59,19 +59,20 @@ namespace Revit.IFC.Import.Data
 
          try
          {
-            Curve = Arc.Create(Position.Origin, radius, 0, 2.0 * Math.PI, Position.BasisX, Position.BasisY);
+            SetCurve(Arc.Create(Position.Origin, radius, 0, 2.0 * Math.PI, Position.BasisX, Position.BasisY));
          }
          catch (Exception ex)
          {
             if (ex.Message.Contains("too small"))
             {
-               string lengthAsString = UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), UnitType.UT_Length, radius, true, false);
+               string lengthAsString = IFCUnitUtil.FormatLengthAsString(radius);
                Importer.TheLog.LogError(Id, "Found a circle with radius of " + lengthAsString + ", ignoring.", false);
-               Curve = null;
             }
             else
+            {
                Importer.TheLog.LogError(Id, ex.Message, false);
-            Curve = null;
+            }
+            SetCurve(null);
          }
       }
 

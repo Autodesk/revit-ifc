@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
@@ -15,12 +11,6 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCTriangulatedFaceSet : IFCTessellatedFaceSet
    {
-      IList<IList<double>> m_Normals = null;
-      bool? m_Closed = null;
-      IList<IList<int>> m_CoordIndex = null;
-      IList<IList<int>> m_NormalIndex = null;         // Removed in IFC4-ADD2
-      IList<int> m_PnIndex = null;                    // Added in IFC-ADD2
-
       protected IFCTriangulatedFaceSet()
       {
       }
@@ -29,47 +19,22 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// List of Normals from the Normals attribute
       /// </summary>
-      public IList<IList<double>> Normals
-      {
-         get { return m_Normals; }
-         protected set { m_Normals = value; }
-      }
+      public IList<IList<double>> Normals { get; protected set; }
 
       /// <summary>
       /// Closed attribute
       /// </summary>
-      public bool? Closed
-      {
-         get { return m_Closed; }
-         protected set { m_Closed = value; }
-      }
+      public bool? Closed { get; protected set; }
 
       /// <summary>
       /// List of triangle indexes (index to vertices in the Coordinates attribute)
       /// </summary>
-      public IList<IList<int>> CoordIndex
-      {
-         get { return m_CoordIndex; }
-         protected set { m_CoordIndex = value; }
-      }
-
-      /// <summary>
-      /// List of Normal indexes (index to the normals in the list of normals in the Normals attribute (no longer used in IFC4-ADD2. Index follows the Vertex index)
-      /// </summary>
-      public IList<IList<int>> NormalIndex
-      {
-         get { return m_NormalIndex; }
-         protected set { m_NormalIndex = value; }
-      }
+      public IList<IList<int>> CoordIndex { get; protected set; }
 
       /// <summary>
       /// List of Point index to the coordinates list (new in IFC4-ADD2)
       /// </summary>
-      public IList<int> PnIndex
-      {
-         get { return m_PnIndex; }
-         protected set { m_PnIndex = value; }
-      }
+      public IList<int> PnIndex { get; protected set; }
 
       protected IFCTriangulatedFaceSet(IFCAnyHandle item)
       {
@@ -98,22 +63,21 @@ namespace Revit.IFC.Import.Data
             if (coordIndex.Count > 0)
                CoordIndex = coordIndex;
 
-         IList<IList<int>> normalIndex;
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4Add2)
-            normalIndex = coordIndex;
-         else
-            normalIndex = IFCImportHandleUtil.GetListOfListOfIntegerAttribute(ifcTriangulatedFaceSet, "NormalIndex");
-
-         if (normalIndex != null)
-            if (normalIndex.Count > 0)
-               NormalIndex = normalIndex;
-
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4Add2)
+         // Note that obsolete IFC4 files had a "NormalIndex".  
+         // We ignore this because we can't actually distinguish between these files.
+         // "PnIndex" is new to IFC4Add2, so we'll protect here in case we see an obsolete file.
+         try
          {
-            IList<int> pnIndex = IFCAnyHandleUtil.GetAggregateIntAttribute<List<int>>(ifcTriangulatedFaceSet, "PnIndex");
-            if (pnIndex != null)
-               if (pnIndex.Count > 0)
-                  PnIndex = pnIndex;
+            if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4)
+            {
+               IList<int> pnIndex = IFCAnyHandleUtil.GetAggregateIntAttribute<List<int>>(ifcTriangulatedFaceSet, "PnIndex");
+               if (pnIndex != null)
+                  if (pnIndex.Count > 0)
+                     PnIndex = pnIndex;
+            }
+         }
+         catch
+         {
          }
       }
 
@@ -156,7 +120,7 @@ namespace Revit.IFC.Import.Data
                }
 
                // Check triangle that is too narrow (2 vertices are within the tolerance
-               IList<XYZ> validVertices;
+               List<XYZ> validVertices;
                IFCGeometryUtil.CheckAnyDistanceVerticesWithinTolerance(Id, shapeEditScope, transformedVertices, out validVertices);
 
                // We are going to catch any exceptions if the loop is invalid.  

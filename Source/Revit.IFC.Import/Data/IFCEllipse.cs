@@ -57,7 +57,7 @@ namespace Revit.IFC.Import.Data
          if (!found)
             Importer.TheLog.LogError(ifcCurve.StepId, "Cannot find the attribute SemiAxis2 of this curve", true);
 
-         Curve = Ellipse.CreateCurve(Position.Origin, radiusX, radiusY, Position.BasisX, Position.BasisY, 0, 2.0 * Math.PI);
+         SetCurve(Ellipse.CreateCurve(Position.Origin, radiusX, radiusY, Position.BasisX, Position.BasisY, 0, 2.0 * Math.PI));
       }
 
       /// <summary>

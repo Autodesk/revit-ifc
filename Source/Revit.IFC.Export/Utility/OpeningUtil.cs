@@ -59,7 +59,9 @@ namespace Revit.IFC.Export.Utility
          using (TransformSetter transformSetter = TransformSetter.Create())
          {
             if (offsetTransform != null)
+            {
                transformSetter.Initialize(exporterIFC, offsetTransform.Inverse);
+            }
 
             IFCFile file = exporterIFC.GetFile();
             ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
@@ -71,7 +73,8 @@ namespace Revit.IFC.Export.Utility
             for (int curr = info.Count - 1; curr >= 0; curr--)
             {
                Transform extrusionTrf = Transform.Identity;
-               IFCAnyHandle extrusionHandle = ExtrusionExporter.CreateExtrudedSolidFromExtrusionData(exporterIFC, element, info[curr]);
+               IFCAnyHandle extrusionHandle = 
+                  ExtrusionExporter.CreateExtrudedSolidFromExtrusionData(exporterIFC, element, info[curr]);
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionHandle))
                   continue;
 

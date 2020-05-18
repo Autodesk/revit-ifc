@@ -38,7 +38,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The list of properties contained in IFCWindowLiningProperties.
       /// </summary>
-      static IList<Tuple<string, UnitType, AllowedValues>> m_WindowLiningPropertyDescs = null;
+      static IList<Tuple<string, ForgeTypeId, AllowedValues>> m_WindowLiningPropertyDescs = null;
 
       /// <summary>
       /// Processes IfcWindowLiningProperties attributes.
@@ -59,20 +59,20 @@ namespace Revit.IFC.Import.Data
 
          if (m_WindowLiningPropertyDescs == null)
          {
-            m_WindowLiningPropertyDescs = new List<Tuple<string, UnitType, AllowedValues>>();
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("LiningDepth", UnitType.UT_Length, AllowedValues.Positive));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("LiningThickness", UnitType.UT_Length, AllowedValues.Positive));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("TransomThickness", UnitType.UT_Length, AllowedValues.Positive));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("MullionThickness", UnitType.UT_Length, AllowedValues.Positive));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("FirstTransomOffset", UnitType.UT_Length, AllowedValues.NonNegative));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("SecondTransomOffset", UnitType.UT_Length, AllowedValues.NonNegative));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("FirstMullionOffset", UnitType.UT_Length, AllowedValues.NonNegative));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("SecondMullionOffset", UnitType.UT_Length, AllowedValues.NonNegative));
+            m_WindowLiningPropertyDescs = new List<Tuple<string, ForgeTypeId, AllowedValues>>();
+            m_WindowLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("LiningDepth", SpecTypeId.Length, AllowedValues.Positive));
+            m_WindowLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("LiningThickness", SpecTypeId.Length, AllowedValues.Positive));
+            m_WindowLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("TransomThickness", SpecTypeId.Length, AllowedValues.Positive));
+            m_WindowLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("MullionThickness", SpecTypeId.Length, AllowedValues.Positive));
+            m_WindowLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("FirstTransomOffset", SpecTypeId.Length, AllowedValues.NonNegative));
+            m_WindowLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("SecondTransomOffset", SpecTypeId.Length, AllowedValues.NonNegative));
+            m_WindowLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("FirstMullionOffset", SpecTypeId.Length, AllowedValues.NonNegative));
+            m_WindowLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("SecondMullionOffset", SpecTypeId.Length, AllowedValues.NonNegative));
          }
 
          for (int ii = 0; ii < 4; ii++)
          {
-            Tuple<string, UnitType, AllowedValues> propertyDesc = m_WindowLiningPropertyDescs[ii];
+            Tuple<string, ForgeTypeId, AllowedValues> propertyDesc = m_WindowLiningPropertyDescs[ii];
             // Default is nonsense value.
             double currPropertyValue = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcWindowLiningProperties, propertyDesc.Item1, -1e+30);
             if (!MathUtil.IsAlmostEqual(currPropertyValue, -1e+30))
@@ -81,7 +81,7 @@ namespace Revit.IFC.Import.Data
 
          for (int ii = 4; ii < 8; ii++)
          {
-            Tuple<string, UnitType, AllowedValues> propertyDesc = m_WindowLiningPropertyDescs[ii];
+            Tuple<string, ForgeTypeId, AllowedValues> propertyDesc = m_WindowLiningPropertyDescs[ii];
             // Default is nonsense value.
             double currPropertyValue = IFCImportHandleUtil.GetOptionalDoubleAttribute(ifcWindowLiningProperties, propertyDesc.Item1, -1e+30);
             if (!MathUtil.IsAlmostEqual(currPropertyValue, -1e+30))

@@ -77,9 +77,9 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcConic, IFCEntityType.IfcCircle))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcConic, IFCEntityType.IfcCircle))
             return IFCCircle.ProcessIFCCircle(ifcConic);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(ifcConic, IFCEntityType.IfcEllipse))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcConic, IFCEntityType.IfcEllipse))
             return IFCEllipse.ProcessIFCEllipse(ifcConic);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcConic, IFCEntityType.IfcConic, true);
