@@ -56,8 +56,7 @@ namespace Revit.IFC.Import.Data
 
          int numPoints = pointXYZs.Count;
 
-         CurveLoop = IFCGeometryUtil.CreatePolyCurveLoop(pointXYZs, null, Id, false);
-         Curve = IFCGeometryUtil.CreateCurveFromPolyCurveLoop(CurveLoop, pointXYZs);
+         SetCurveLoop(IFCGeometryUtil.CreatePolyCurveLoop(pointXYZs, null, Id, false), pointXYZs);
       }
 
       /// <summary>

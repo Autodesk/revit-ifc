@@ -440,7 +440,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      {
                         bool cacheLabel = PropertyCalculator.CacheStringValues;
                         //if (cacheLabel)
-                           propHnd = PropertyUtil.CreateLabelPropertyFromCache(file, null, propertyName, PropertyCalculator.GetStringValue(), valueType, cacheLabel, propertyEnumerationType);
+                        propHnd = PropertyUtil.CreateLabelPropertyFromCache(file, null, propertyName, PropertyCalculator.GetStringValue(), valueType, cacheLabel, propertyEnumerationType);
                      }
                      break;
                   }

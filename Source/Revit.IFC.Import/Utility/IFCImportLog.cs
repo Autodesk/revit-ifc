@@ -30,7 +30,6 @@ using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Data;
 using Revit.IFC.Import.Properties;
 using UnitSystem = Autodesk.Revit.DB.DisplayUnit;
-using UnitName = Autodesk.Revit.DB.DisplayUnitType;
 
 namespace Revit.IFC.Import.Utility
 {
@@ -613,9 +612,13 @@ namespace Revit.IFC.Import.Utility
       /// Create a new log from a file name.
       /// </summary>
       /// <param name="logFileName">The file name.</param>
-      static public IFCImportLog CreateLog(string logFileName, string extension)
+      static public IFCImportLog CreateLog(string logFileName, string extension, bool createLogFile)
       {
          IFCImportLog importLog = new IFCImportLog();
+
+         // If we are maximizing performance, don't create a log file.
+         if (!createLogFile)
+            return importLog;
 
          if (!CreateLogInternal(importLog, logFileName + "." + extension))
          {

@@ -278,7 +278,7 @@ namespace Revit.IFC.Import.Geometry
          return xyz;
       }
 
-      private static XYZ ProcessIFCDirectionBase(IFCAnyHandle direction, bool normalize)
+      private static XYZ ProcessIFCDirectionBase(IFCAnyHandle direction, bool normalize, bool reportAndThrowOnError)
       {
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(direction))
          {
@@ -286,7 +286,7 @@ namespace Revit.IFC.Import.Geometry
             return null;
          }
 
-         if (!IFCAnyHandleUtil.IsSubTypeOf(direction, IFCEntityType.IfcDirection))
+         if (!IFCAnyHandleUtil.IsValidSubTypeOf(direction, IFCEntityType.IfcDirection))
          {
             Importer.TheLog.LogUnexpectedTypeError(direction, IFCEntityType.IfcDirection, false);
             return null;
@@ -310,16 +310,19 @@ namespace Revit.IFC.Import.Geometry
          XYZ normalizedXYZ = null;
          if (xyz != null)
          {
-            AddToCaches(stepId, IFCEntityType.IfcDirection, xyz);
             if (normalize)
             {
                normalizedXYZ = xyz.Normalize();
                if (normalizedXYZ.IsZeroLength())
                {
-                  Importer.TheLog.LogError(stepId, "Local transform contains 0 length vectors", true);
+                  if (reportAndThrowOnError)
+                     Importer.TheLog.LogError(stepId, "Local transform contains 0 length vectors.", true);
+                  else
+                     return XYZ.Zero;
                }
                IFCImportFile.TheFile.NormalizedXYZMap[direction.StepId] = normalizedXYZ;
             }
+            AddToCaches(stepId, IFCEntityType.IfcDirection, xyz);
          }
          return normalize ? normalizedXYZ : xyz;
       }
@@ -332,18 +335,20 @@ namespace Revit.IFC.Import.Geometry
       /// If the return is an XY point, the Z value will be set to 0.</returns>
       public static XYZ ProcessIFCDirection(IFCAnyHandle direction)
       {
-         return ProcessIFCDirectionBase(direction, false);
+         return ProcessIFCDirectionBase(direction, false, true);
       }
 
       /// <summary>
       /// Converts an IfcDirection into a normalized UV or XYZ value.
       /// </summary>
       /// <param name="direction">The handle to the IfcDirection.</param>
+      /// <param name="reportAndThrowError">If true, report and throw an error if the direction is invalid.  
+      /// If false, it is up to the calling function to deal with an invalid direction.</param>
       /// <returns>An XYZ value corresponding to the value in the file.  There are no transformations done in this routine.
       /// If the return is an XY point, the Z value will be set to 0.</returns>
-      public static XYZ ProcessNormalizedIFCDirection(IFCAnyHandle direction)
+      public static XYZ ProcessNormalizedIFCDirection(IFCAnyHandle direction, bool reportAndThrowError = true)
       {
-         return ProcessIFCDirectionBase(direction, true);
+         return ProcessIFCDirectionBase(direction, true, reportAndThrowError);
       }
 
       /// <summary>
@@ -352,7 +357,7 @@ namespace Revit.IFC.Import.Geometry
       /// <param name="vector">The handle to the IfcVector.</param>
       /// <returns>An XYZ value corresponding to the value in the file.  There are no transformations done in this routine.
       /// If the return is an XY point, the Z value will be set to 0.</returns>
-      public static XYZ ProcessIFCVector(IFCAnyHandle vector)
+      public static XYZ ProcessScaledLengthIFCVector(IFCAnyHandle vector)
       {
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(vector))
          {
@@ -360,7 +365,7 @@ namespace Revit.IFC.Import.Geometry
             return null;
          }
 
-         if (!IFCAnyHandleUtil.IsSubTypeOf(vector, IFCEntityType.IfcVector))
+         if (!IFCAnyHandleUtil.IsValidSubTypeOf(vector, IFCEntityType.IfcVector))
          {
             Importer.TheLog.LogUnexpectedTypeError(vector, IFCEntityType.IfcVector, false);
             return null;

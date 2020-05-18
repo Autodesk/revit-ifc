@@ -87,7 +87,7 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcFeatureElementSubtraction.StepId, out cachedFeatureElementSubtraction))
             return (cachedFeatureElementSubtraction as IFCFeatureElementSubtraction);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcFeatureElementSubtraction, IFCEntityType.IfcOpeningElement))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcFeatureElementSubtraction, IFCEntityType.IfcOpeningElement))
             return IFCOpeningElement.ProcessIFCOpeningElement(ifcFeatureElementSubtraction);
 
          return new IFCFeatureElementSubtraction(ifcFeatureElementSubtraction);

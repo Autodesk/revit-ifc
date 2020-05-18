@@ -1,7 +1,7 @@
 ﻿<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.RenameExportSetupWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                   xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
         Title="{x:Static p:Resources.RenameExportSetup}" Height="184" Width="347" Name="Rename" ResizeMode="NoResize">
     <Grid>

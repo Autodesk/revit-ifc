@@ -62,9 +62,13 @@ namespace Revit.IFC.Import.Data
          {
             IFCCurve ifcBasisCurve = IFCCurve.ProcessIFCCurve(basisCurve);
             if (ifcBasisCurve.Curve != null)
-               Curve = ifcBasisCurve.Curve.CreateOffset(distance, XYZ.BasisZ);
-            else if (ifcBasisCurve.CurveLoop != null)
-               CurveLoop = CurveLoop.CreateViaOffset(ifcBasisCurve.CurveLoop, distance, XYZ.BasisZ);
+               SetCurve(ifcBasisCurve.Curve.CreateOffset(distance, XYZ.BasisZ));
+            else
+            {
+               CurveLoop baseCurveLoop = ifcBasisCurve.GetTheCurveLoop();
+               if (baseCurveLoop != null)
+                  SetCurveLoop(CurveLoop.CreateViaOffset(baseCurveLoop, distance, XYZ.BasisZ));
+            }
          }
          catch
          {

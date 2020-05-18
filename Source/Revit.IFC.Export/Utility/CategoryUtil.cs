@@ -361,19 +361,16 @@ namespace Revit.IFC.Export.Utility
          HashSet<IFCAnyHandle> constituentSet = new HashSet<IFCAnyHandle>();
          foreach (ElementId materialId in materialList)
          {
-            if (materialId != ElementId.InvalidElementId)
-            {
-               IFCAnyHandle matHnd = GetOrCreateMaterialHandle(exporterIFC, materialId);
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(matHnd))
-                  materials.Add(matHnd);
+            IFCAnyHandle matHnd = GetOrCreateMaterialHandle(exporterIFC, materialId);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(matHnd))
+               materials.Add(matHnd);
 
-               // in IFC4 we will create IfcConstituentSet instead of MaterialList, create the associated IfcConstituent here from IfcMaterial
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-               {
-                  IFCAnyHandle constituentHnd = GetOrCreateMaterialConstituent(exporterIFC, materialId);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(constituentHnd))
-                     constituentSet.Add(constituentHnd);
-               }
+            // in IFC4 we will create IfcConstituentSet instead of MaterialList, create the associated IfcConstituent here from IfcMaterial
+            if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+            {
+               IFCAnyHandle constituentHnd = GetOrCreateMaterialConstituent(exporterIFC, materialId);
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(constituentHnd))
+                  constituentSet.Add(constituentHnd);
             }
          }
 
@@ -549,12 +546,20 @@ namespace Revit.IFC.Export.Utility
                         }
                      }
 
+                     IFCAnyHandle styledItemHnd;
+                     if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                     {
                      IFCAnyHandle presStyleHnd = IFCInstanceExporter.CreatePresentationStyleAssignment(file, styles);
 
                      HashSet<IFCAnyHandle> presStyleSet = new HashSet<IFCAnyHandle>();
                      presStyleSet.Add(presStyleHnd);
 
-                     IFCAnyHandle styledItemHnd = IFCInstanceExporter.CreateStyledItem(file, styledRepItem, presStyleSet, null);
+                        styledItemHnd = IFCInstanceExporter.CreateStyledItem(file, styledRepItem, presStyleSet, null);
+                     }
+                     else
+                     {
+                        styledItemHnd = IFCInstanceExporter.CreateStyledItem(file, styledRepItem, styles, null);
+                     }
 
                      IFCAnyHandle contextOfItems = exporterIFC.Get3DContextHandle("");
 

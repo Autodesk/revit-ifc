@@ -73,7 +73,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// </returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         ParameterUtil.GetStringValueFromElementOrSymbol(element, "Finish", out m_Finish);
+            ParameterUtil.GetStringValueFromElementOrSymbol(element, "Finish", out m_Finish);
          if (!string.IsNullOrEmpty(m_Finish))
             return true;
 

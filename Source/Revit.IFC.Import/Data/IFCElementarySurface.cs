@@ -87,9 +87,9 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcElementarySurface.StepId, out elementarySurface))
             return elementarySurface as IFCElementarySurface;
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcElementarySurface, IFCEntityType.IfcPlane))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElementarySurface, IFCEntityType.IfcPlane))
             return IFCPlane.ProcessIFCPlane(ifcElementarySurface);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcElementarySurface, IFCEntityType.IfcCylindricalSurface))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElementarySurface, IFCEntityType.IfcCylindricalSurface))
             return IFCCylindricalSurface.ProcessIfcCylindricalSurface(ifcElementarySurface);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcElementarySurface, IFCEntityType.IfcElementarySurface, true);

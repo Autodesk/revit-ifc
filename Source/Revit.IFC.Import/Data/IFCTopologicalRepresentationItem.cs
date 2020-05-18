@@ -52,15 +52,21 @@ namespace Revit.IFC.Import.Data
 
       public static IFCTopologicalRepresentationItem ProcessIFCTopologicalRepresentationItem(IFCAnyHandle ifcTopologicalRepresentationItem)
       {
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcConnectedFaceSet))
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcTopologicalRepresentationItem))
+         {
+            Importer.TheLog.LogNullError(IFCEntityType.IfcTopologicalRepresentationItem);
+            return null;
+         }
+
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcConnectedFaceSet))
             return IFCConnectedFaceSet.ProcessIFCConnectedFaceSet(ifcTopologicalRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcEdge))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcEdge))
             return IFCEdge.ProcessIFCEdge(ifcTopologicalRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcFace))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcFace))
             return IFCFace.ProcessIFCFace(ifcTopologicalRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcLoop))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcLoop))
             return IFCLoop.ProcessIFCLoop(ifcTopologicalRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcVertex))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTopologicalRepresentationItem, IFCEntityType.IfcVertex))
             return IFCVertex.ProcessIFCVertex(ifcTopologicalRepresentationItem);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcTopologicalRepresentationItem, IFCEntityType.IfcTopologicalRepresentationItem, true);

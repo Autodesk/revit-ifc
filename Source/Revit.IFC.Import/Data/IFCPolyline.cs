@@ -69,9 +69,7 @@ namespace Revit.IFC.Import.Data
          {
             Importer.TheLog.LogError(Id, "Some of the IFC points cannot be converted to Revit points", true);
          }
-
-         CurveLoop = IFCGeometryUtil.CreatePolyCurveLoop(pointXYZs, points, Id, false);
-         Curve = IFCGeometryUtil.CreateCurveFromPolyCurveLoop(CurveLoop, pointXYZs);
+         SetCurveLoop(IFCGeometryUtil.CreatePolyCurveLoop(pointXYZs, points, Id, false), pointXYZs);
       }
 
       /// <summary>

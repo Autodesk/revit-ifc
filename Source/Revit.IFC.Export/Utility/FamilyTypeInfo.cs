@@ -292,7 +292,7 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Material and Profile information for a family
       /// </summary>
-      public MaterialAndProfile materialAndProfile
+      public MaterialAndProfile MaterialAndProfile
       {
          get
          {

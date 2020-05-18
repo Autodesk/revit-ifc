@@ -32,33 +32,33 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Converts a value from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="specTypeId">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
-      static public double ScaleValue(UnitType unitType, double inValue)
+      static public double ScaleValue(ForgeTypeId specTypeId, double inValue)
       {
-         return ProjectScale(unitType, inValue);
+         return ProjectScale(specTypeId, inValue);
       }
 
       /// <summary>
       /// Converts an XYZ value from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="specTypeId">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
-      static public XYZ ScaleValue(UnitType unitType, XYZ inValue)
+      static public XYZ ScaleValue(ForgeTypeId specTypeId, XYZ inValue)
       {
-         return ProjectScale(unitType, inValue);
+         return ProjectScale(specTypeId, inValue);
       }
 
       /// <summary>
       /// Converts a list of XYZ values from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="specTypeId">Identifier of the spec for this value.</param>
       /// <param name="inValues">The values to convert.</param>
-      static public void ScaleValues(UnitType unitType, IList<XYZ> inValues)
+      static public void ScaleValues(ForgeTypeId specTypeId, IList<XYZ> inValues)
       {
-         ProjectScale(unitType, inValues);
+         ProjectScale(specTypeId, inValues);
       }
 
       /// <summary>
@@ -68,7 +68,7 @@ namespace Revit.IFC.Import.Utility
       /// <returns>The result value in Revit internal units.</returns>
       static public double ScaleAngle(double inValue)
       {
-         return ScaleValue(UnitType.UT_Angle, inValue);
+         return ScaleValue(SpecTypeId.Angle, inValue);
       }
 
       /// <summary>
@@ -78,7 +78,7 @@ namespace Revit.IFC.Import.Utility
       /// <returns>The result value in Revit internal units.</returns>
       static public double ScaleLength(double inValue)
       {
-         return ScaleValue(UnitType.UT_Length, inValue);
+         return ScaleValue(SpecTypeId.Length, inValue);
       }
 
       /// <summary>
@@ -88,7 +88,7 @@ namespace Revit.IFC.Import.Utility
       /// <returns>The result value in Revit internal units.</returns>
       static public XYZ ScaleLength(XYZ inValue)
       {
-         return ScaleValue(UnitType.UT_Length, inValue);
+         return ScaleValue(SpecTypeId.Length, inValue);
       }
 
       /// <summary>
@@ -98,18 +98,18 @@ namespace Revit.IFC.Import.Utility
       /// <returns>The result value in Revit internal units.</returns>
       static public void ScaleLengths(IList<XYZ> inValues)
       {
-         ScaleValues(UnitType.UT_Length, inValues);
+         ScaleValues(SpecTypeId.Length, inValues);
       }
 
       /// <summary>
       /// Converts a value from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="specTypeId">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
-      static private double ProjectScale(UnitType unitType, double inValue)
+      static private double ProjectScale(ForgeTypeId specTypeId, double inValue)
       {
-         IFCUnit projectUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(unitType);
+         IFCUnit projectUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(specTypeId);
          if (projectUnit != null)
             return inValue * projectUnit.ScaleFactor - projectUnit.OffsetFactor;
 
@@ -119,13 +119,13 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Converts a vector from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="specTypeId">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
       /// <remarks>Note that the OffsetFactor is ignored.</remarks>
-      static private XYZ ProjectScale(UnitType unitType, XYZ inValue)
+      static private XYZ ProjectScale(ForgeTypeId specTypeId, XYZ inValue)
       {
-         IFCUnit projectUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(unitType);
+         IFCUnit projectUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(specTypeId);
          if (projectUnit != null)
             return inValue * projectUnit.ScaleFactor;
 
@@ -135,16 +135,16 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Converts a list of vectors from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="specTypeId">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
       /// <remarks>Note that the OffsetFactor is ignored.</remarks>
-      static private void ProjectScale(UnitType unitType, IList<XYZ> inValues)
+      static private void ProjectScale(ForgeTypeId specTypeId, IList<XYZ> inValues)
       {
          if (inValues == null)
             return;
 
-         IFCUnit projectUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(unitType);
+         IFCUnit projectUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(specTypeId);
          if (projectUnit == null)
             return;
 
@@ -166,7 +166,12 @@ namespace Revit.IFC.Import.Utility
       {
          FormatValueOptions formatValueOptions = new FormatValueOptions();
          formatValueOptions.AppendUnitSymbol = true;
-         return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), UnitType.UT_Length, value, true, false, formatValueOptions);
+         FormatOptions lengthFormatOptions = IFCImportFile.TheFile.Document.GetUnits().GetFormatOptions(SpecTypeId.Length);
+         lengthFormatOptions.Accuracy = 1e-8;
+         if (lengthFormatOptions.CanSuppressTrailingZeros())
+            lengthFormatOptions.SuppressTrailingZeros = true;
+         formatValueOptions.SetFormatOptions(lengthFormatOptions);
+         return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), SpecTypeId.Length, value, false, formatValueOptions);
       }
    }
 }

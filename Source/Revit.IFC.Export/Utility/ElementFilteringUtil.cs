@@ -311,17 +311,20 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Gets export type from IFC class name.
       /// </summary>
-      /// <param name="ifcClassName">The IFC class name.</param>
+      /// <param name="originalIFCClassName">The IFC class name.</param>
       /// <returns>The export type.</returns>
-      public static IFCExportInfoPair GetExportTypeFromClassName(String ifcClassName)
+      public static IFCExportInfoPair GetExportTypeFromClassName(String originalIFCClassName)
       {
          IFCExportInfoPair exportInfoPair = new IFCExportInfoPair();
 
-         if (ifcClassName.StartsWith("Ifc", true, null))
+         string cleanIFCClassName = originalIFCClassName.Trim();
+         if (cleanIFCClassName.StartsWith("Ifc", true, null))
          {
             // Here we try to catch any possible types that are missing above by checking both the class name or the type name
             // Unless there is any special treatment needed most of the above check can be done here
-            string clName = ifcClassName.Substring(ifcClassName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ? ifcClassName.Substring(0, ifcClassName.Length - 4) : ifcClassName;
+            string clName = cleanIFCClassName.Substring(cleanIFCClassName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ?
+               cleanIFCClassName.Substring(0, cleanIFCClassName.Length - 4) :
+               cleanIFCClassName;
 
             // Deal with small number of IFC2x3/IFC4 types that have changed in a hardwired way.
             if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
@@ -356,14 +359,14 @@ namespace Revit.IFC.Export.Utility
                else
                {
                   exportInfoPair.SetValueWithPair(clName);
-               }
+            }
             }
 
             if (exportInfoPair.ExportInstance == IFCEntityType.UnKnown)
-            {
+               {
                exportInfoPair.SetValueWithPair(IFCEntityType.IfcBuildingElementProxy);
+               }
             }
-         }
 
          exportInfoPair.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType("NOTDEFINED", exportInfoPair.ExportType.ToString());
 
@@ -733,7 +736,7 @@ namespace Revit.IFC.Export.Utility
             if ((node.IsSubTypeOf("IfcObject") && 
                      (node.IsSubTypeOf("IfcProduct") || node.IsSubTypeOf("IfcGroup") || node.Name.Equals("IfcGroup", StringComparison.InvariantCultureIgnoreCase)))
                   || node.IsSubTypeOf("IfcProject") || node.Name.Equals("IfcProject", StringComparison.InvariantCultureIgnoreCase)
-               || node.IsSubTypeOf("IfcTypeObject"))
+                  || node.IsSubTypeOf("IfcTypeObject"))
             {
                if (IFCEntityType.TryParse(entityType, true, out ifcType))
                   ret = ifcType;

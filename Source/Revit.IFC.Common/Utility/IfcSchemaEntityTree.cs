@@ -141,7 +141,7 @@ namespace Revit.IFC.Common.Utility
       /// <param name="schemaFile">the schema file name</param>
       /// <returns>the entity Dictionary</returns>
       public static IDictionary<string, IfcSchemaEntityNode> GetEntityDictFor(string schemaFile)
-      { 
+      {
          if (string.IsNullOrEmpty(loadedIfcSchemaVersion) || !loadedIfcSchemaVersion.Equals(schemaFile, StringComparison.InvariantCultureIgnoreCase))
          {
             // Process IFCXml schema here, then search for IfcProduct and build TreeView beginning from that node. Allow checks for the tree nodes. Grey out (and Italic) the abstract entity

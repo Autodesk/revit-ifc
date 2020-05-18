@@ -580,7 +580,7 @@
     <value>General</value>
   </data>
   <data name="ExportRoomsInView" xml:space="preserve">
-    <value>Export rooms in 3D views</value>
+    <value>Export rooms, areas and spaces in 3D views</value>
   </data>
   <data name="UseActiveViewForGeometry" xml:space="preserve">
     <value>Use active view when creating geometry</value>
@@ -709,19 +709,19 @@
     <value>Save selected setup ...</value>
   </data>
   <data name="InternalCoordinates" xml:space="preserve">
-    <value>Internal coordinates</value>
+    <value>Internal Origin</value>
   </data>
   <data name="LoadSetup" xml:space="preserve">
     <value>Import setup ...</value>
   </data>
   <data name="ProjectBasePoint" xml:space="preserve">
-    <value>Project base point</value>
+    <value>Project Base Point</value>
   </data>
   <data name="ProjectOrigin" xml:space="preserve">
-    <value>Project Origin</value>
+    <value>Coordinate Base</value>
   </data>
   <data name="SiteSurveyPoint" xml:space="preserve">
-    <value>Site survey point</value>
+    <value>Survey Point</value>
   </data>
   <data name="BuildingDescription" xml:space="preserve">
     <value>Building description</value>
@@ -766,7 +766,7 @@
     <value>Project phase</value>
   </data>
   <data name="SharedCoordinates" xml:space="preserve">
-    <value>Current shared coordinates</value>
+    <value>Shared Coordinates</value>
   </data>
   <data name="SiteDescription" xml:space="preserve">
     <value>Site description</value>
@@ -797,5 +797,8 @@
   </data>
   <data name="UseVisibleRevitNameAsEntityName" xml:space="preserve">
     <value>Use visible Revit name as the IFCEntity name</value>
+  </data>
+  <data name="ClassificationAltLocation" xml:space="preserve">
+    <value>Location of the documentation (usually URL)</value>
   </data>
 </root>

@@ -52,7 +52,7 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Returns the property value as a string, for SetValueString().
+      /// Returns the property value as a string, for Set().
       /// </summary>
       /// <returns>The property value as a string.</returns>
       public abstract string PropertyValueAsString();
@@ -151,7 +151,7 @@ namespace Revit.IFC.Import.Data
          }
 
          IFCDataPrimitiveType dataType = IFCDataPrimitiveType.Unknown;
-         UnitType unitType = UnitType.UT_Undefined;
+         ForgeTypeId specTypeId = new ForgeTypeId();
 
          bool? boolValueToUse = null;
          IFCLogical? logicalValueToUse = null;
@@ -209,9 +209,9 @@ namespace Revit.IFC.Import.Data
                      break;
                   case IFCDataPrimitiveType.Double:
                      if (propertyValueToUse.IFCUnit != null)
-                        unitType = propertyValueToUse.IFCUnit.UnitType;
+                        specTypeId = propertyValueToUse.IFCUnit.Spec;
                      else
-                        unitType = IFCDataUtil.GetUnitTypeFromData(propertyValueToUse.Value, UnitType.UT_Number);
+                        specTypeId = IFCDataUtil.GetUnitTypeFromData(propertyValueToUse.Value, SpecTypeId.Number);
 
                      doubleValueToUse = propertyValueToUse.AsScaledDouble();
                      break;
@@ -264,7 +264,7 @@ namespace Revit.IFC.Import.Data
                      created = IFCPropertySet.AddParameterBoolean(doc, element, parameterName, (logicalValueToUse == IFCLogical.True), Id);
                   break;
                case IFCDataPrimitiveType.Double:
-                  created = IFCPropertySet.AddParameterDouble(doc, element, parameterName, unitType, doubleValueToUse.Value, Id);
+                  created = IFCPropertySet.AddParameterDouble(doc, element, parameterName, specTypeId, doubleValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Instance:
                   created = IFCPropertySet.AddParameterElementId(doc, element, parameterName, elementIdValueToUse, Id);

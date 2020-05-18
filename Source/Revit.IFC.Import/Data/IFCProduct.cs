@@ -19,13 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
 
@@ -37,8 +34,6 @@ namespace Revit.IFC.Import.Data
    public abstract class IFCProduct : IFCObject
    {
       protected int m_TypeId = 0;
-
-      private IFCLocation m_ObjectLocation = null;
 
       protected IFCProductRepresentation m_ProductRepresentation = null;
 
@@ -136,11 +131,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The local coordinate system of the IfcProduct.
       /// </summary>
-      public IFCLocation ObjectLocation
-      {
-         get { return m_ObjectLocation; }
-         protected set { m_ObjectLocation = value; }
-      }
+      public IFCLocation ObjectLocation { get; protected set; } = null;
 
       /// <summary>
       /// Default constructor.
@@ -452,16 +443,16 @@ namespace Revit.IFC.Import.Data
             if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcProduct.StepId, out cachedProduct))
                return (cachedProduct as IFCProduct);
 
-            if (IFCAnyHandleUtil.IsSubTypeOf(ifcProduct, IFCEntityType.IfcSpatialStructureElement))
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcSpatialStructureElement))
                return IFCSpatialStructureElement.ProcessIFCSpatialStructureElement(ifcProduct);
 
-            if (IFCAnyHandleUtil.IsSubTypeOf(ifcProduct, IFCEntityType.IfcElement))
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcElement))
                return IFCElement.ProcessIFCElement(ifcProduct);
 
-            if (IFCAnyHandleUtil.IsSubTypeOf(ifcProduct, IFCEntityType.IfcGrid))
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcGrid))
                return IFCGrid.ProcessIFCGrid(ifcProduct);
 
-            if (IFCAnyHandleUtil.IsSubTypeOf(ifcProduct, IFCEntityType.IfcProxy))
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcProxy))
                return IFCProxy.ProcessIFCProxy(ifcProduct);
          }
          catch (Exception ex)

@@ -76,12 +76,17 @@ namespace Revit.IFC.Export.Exporter
 
          ElementType elemType = element.Document.GetElement(element.GetTypeId()) as ElementType;
          IFCFile file = exporterIFC.GetFile();
+         MaterialLayerSetInfo layersetInfo = null;
 
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
+            // For IFC4RV export, Ceiling will be split into its parts(temporarily) in order to export the ceiling by its parts
+            bool exportByComponents = ExporterUtil.ShouldExportByComponents(element, exportParts);
+
             // Check for containment override
             IFCAnyHandle overrideContainerHnd = null;
             ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+            IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
 
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
             {
@@ -96,8 +101,16 @@ namespace Revit.IFC.Export.Exporter
                      ecData.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;
 
                      BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-                     prodRep = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC, element,
-                         categoryId, geomElem, bodyExporterOptions, null, ecData, true);
+                     if (exportByComponents)
+                     {
+                        prodRep = RepresentationUtil.CreateProductDefinitionShapeWithoutBodyRep(exporterIFC, element, categoryId, geomElem, representations);
+                     }
+                     else
+                     {
+                        prodRep = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC, element,
+                            categoryId, geomElem, bodyExporterOptions, null, ecData, true);
+                     }
+
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodRep))
                      {
                         ecData.ClearOpenings();
@@ -121,10 +134,17 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle covering = IFCInstanceExporter.CreateCovering(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
                       setter.LocalPlacement, prodRep, coveringType);
 
-                  if (exportParts)
+                  if (exportParts && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                   {
                      PartExporter.ExportHostPart(exporterIFC, element, covering, productWrapper, setter, setter.LocalPlacement, null);
                   }
+                  else if (exportByComponents)
+                  {
+                     IFCAnyHandle hostShapeRepFromParts = PartExporter.ExportHostPartAsShapeAspects(exporterIFC, element, prodRep,
+                        productWrapper, setter, setter.LocalPlacement, ElementId.InvalidElementId, out layersetInfo, ecData);
+                  }
+
+                  ExporterUtil.AddIntoComplexPropertyCache(covering, layersetInfo);
 
                   IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcCovering, IFCEntityType.IfcCoveringType, coveringType);
                   IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, coveringType, productWrapper);
@@ -141,7 +161,7 @@ namespace Revit.IFC.Export.Exporter
                      // Process Ceiling to be contained in a Space only when it is exactly bounding one Space
                      if (roomlist.Count == 1)
                      {
-                        productWrapper.AddElement(element, covering, setter, null, false, exportInfo);
+                        productWrapper.AddElement(element, covering, setter, ecData, false, exportInfo);
 
                         // Modify the Ceiling placement to be relative to the Space that it bounds 
                         IFCAnyHandle roomPlacement = IFCAnyHandleUtil.GetObjectPlacement(ExporterCacheManager.SpaceInfoCache.FindSpaceHandle(roomlist[0]));
@@ -158,7 +178,7 @@ namespace Revit.IFC.Export.Exporter
 
                   // if not contained in Space, assign it to default containment in Level
                   if (!containInSpace)
-                     productWrapper.AddElement(element, covering, setter, null, true, exportInfo);
+                     productWrapper.AddElement(element, covering, setter, ecData, true, exportInfo);
 
                   if (!exportParts)
                   {

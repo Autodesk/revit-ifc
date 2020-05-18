@@ -115,7 +115,7 @@ namespace Revit.IFC.Import.Data
          if (element != null)
          {
             // Set "IfcElevation" parameter.
-            IFCPropertySet.AddParameterDouble(doc, element, "IfcElevation", UnitType.UT_Length, m_Elevation, Id);
+            IFCPropertySet.AddParameterDouble(doc, element, "IfcElevation", SpecTypeId.Length, m_Elevation, Id);
          }
       }
 

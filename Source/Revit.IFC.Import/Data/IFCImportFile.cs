@@ -1040,24 +1040,8 @@ namespace Revit.IFC.Import.Data
          }
          else if (string.Compare(schemaName, "IFC4", true) == 0)
          {
-            //// We will still temporarily support the old IFC4.exp file.
-            //string ifc4Add1Path = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4_ADD1.exp");
-            //string ifc4Add2Path = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4_ADD2.exp");
-            //if (File.Exists(ifc4Add2Path))
-            //{
-            //   modelOptions.SchemaFile = ifc4Add2Path;
-            //   schemaVersion = IFCSchemaVersion.IFC4Add2;
-            //}
-            //else if (File.Exists(ifc4Add1Path))
-            //{
-            //   modelOptions.SchemaFile = ifc4Add1Path;
-            //   schemaVersion = IFCSchemaVersion.IFC4Add1;
-            //}
-            //else
-            {
-               modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4.exp");
-               schemaVersion = IFCSchemaVersion.IFC4;
-            }
+            modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4.exp");
+            schemaVersion = IFCSchemaVersion.IFC4;
          }
          else
             throw new ArgumentException("Invalid or unsupported schema: " + schemaName);

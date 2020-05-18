@@ -144,7 +144,7 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcFace, IFCEntityType.IfcFaceSurface))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcFace, IFCEntityType.IfcFaceSurface))
             return IFCFaceSurface.ProcessIFCFaceSurface(ifcFace);
 
          IFCEntity face;

@@ -610,7 +610,9 @@ namespace Revit.IFC.Import.Data
       /// <param name="ifcRelDecomposes">The IfcRelDecomposes handle.</param>
       void ProcessIFCRelDecomposes(IFCAnyHandle ifcRelDecomposes)
       {
-         ComposedObjectDefinitions.UnionWith(ProcessIFCRelation.ProcessRelatedObjects(this, ifcRelDecomposes));
+         ICollection<IFCObjectDefinition> relatedObjects = ProcessIFCRelation.ProcessRelatedObjects(this, ifcRelDecomposes);
+         if (relatedObjects != null)
+            ComposedObjectDefinitions.UnionWith(relatedObjects);
       }
 
       /// <summary>
@@ -748,7 +750,7 @@ namespace Revit.IFC.Import.Data
          string description = string.IsNullOrWhiteSpace(Description) ? "" : Description;
          Parameter descriptionParameter = element.get_Parameter(BuiltInParameter.ALL_MODEL_DESCRIPTION);
          if (descriptionParameter != null)
-            descriptionParameter.SetValueString(description);
+            descriptionParameter.Set(description);
          IFCPropertySet.AddParameterString(doc, element, this, IFCSharedParameters.IfcDescription, description, Id);
       }
 
@@ -877,7 +879,7 @@ namespace Revit.IFC.Import.Data
                   if (parItem.Value is string)
                      IFCPropertySet.AddParameterString(doc, element, parItem.Key, (string)parItem.Value, Id);
                   else if (parItem.Value is double)
-                     IFCPropertySet.AddParameterDouble(doc, element, parItem.Key, UnitType.UT_Custom, (double)parItem.Value, Id);
+                     IFCPropertySet.AddParameterDouble(doc, element, parItem.Key, SpecTypeId.Custom, (double)parItem.Value, Id);
                   else if (parItem.Value is int)
                      IFCPropertySet.AddParameterInt(doc, element, parItem.Key, (int)parItem.Value, Id);
                   else if (parItem.Value is bool)

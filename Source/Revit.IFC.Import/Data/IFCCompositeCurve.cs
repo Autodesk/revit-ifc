@@ -19,14 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.Import.Enums;
-using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
 
 using TemporaryVerboseLogging = Revit.IFC.Import.Utility.IFCImportOptions.TemporaryVerboseLogging;
@@ -62,6 +58,104 @@ namespace Revit.IFC.Import.Data
          Process(compositeCurve);
       }
 
+      /// <summary>
+      /// Class to manage replacing tiny consecutive curve segments with a single line segment.
+      /// </summary>
+      class ShortGapRepairer
+      {
+         /// <summary>
+         /// Constructor.
+         /// </summary>
+         /// <param name="shortCurveTolerance">Minimum allowed length for a Revit Curve.</param>
+         public ShortGapRepairer(double shortCurveTolerance)
+         {
+            ShortCurveTolerance = shortCurveTolerance;
+         }
+
+         /// <summary>
+         /// Add another short curve segment to a new or existing gap, and create a line segment if possible.
+         /// </summary>
+         /// <param name="startPoint">The start point of the new segment.</param>
+         /// <param name="endPoint">The end point of the new segment.</param>
+         /// <returns>A Revit Line, if the new segment makes the existing gap large enough to repair, or null.</returns>
+         public Line AddToGap(int id, XYZ startPoint, XYZ endPoint)
+         {
+            if (startPoint == null || endPoint == null)
+            {
+               ClearGapInformation();
+               return null;
+            }
+
+            if (StartGapPoint == null)
+            {
+               FirstSegmentStepId = id;
+               StartGapPoint = startPoint;
+               EndGapPoint = endPoint;
+               return null;
+            }
+
+            double distGapEndPtToNextStartPt = EndGapPoint.DistanceTo(startPoint);
+            double distGapEndPtToNextEndPt = EndGapPoint.DistanceTo(endPoint);
+
+            double distGapStartPtToNextEndPt = StartGapPoint.DistanceTo(endPoint);
+            double distGapStartPtToNextStartPt = StartGapPoint.DistanceTo(startPoint);
+
+            double minStartGap = Math.Min(distGapStartPtToNextEndPt, distGapStartPtToNextStartPt);
+            double minEndGap = Math.Min(distGapEndPtToNextStartPt, distGapEndPtToNextEndPt);
+
+            double minGap = Math.Min(minStartGap, minEndGap);
+            if (minGap > MathUtil.SmallGap())
+            {
+               ClearGapInformation();
+               return null;
+            }
+
+            if (minEndGap < minStartGap)
+            {
+               if (distGapEndPtToNextStartPt < distGapEndPtToNextEndPt)
+                  EndGapPoint = endPoint;
+               else
+                  EndGapPoint = startPoint;
+            }
+            else
+            {
+               if (distGapStartPtToNextStartPt < distGapStartPtToNextEndPt)
+                  StartGapPoint = endPoint;
+               else
+                  StartGapPoint = startPoint;
+            }
+
+            if (StartGapPoint.DistanceTo(EndGapPoint) < ShortCurveTolerance + MathUtil.Eps())
+               return null;
+
+            Line gapLine = Line.CreateBound(StartGapPoint, EndGapPoint);
+            ClearGapInformation(true);
+            return gapLine;
+         }
+
+         /// <summary>
+         /// Clear any existing gap information.
+         /// </summary>
+         /// <param name="dontShowError">If true, never show an error message.</param>
+         /// <returns>True if any information was removed, false otherwise.</returns>
+         public void ClearGapInformation(bool dontShowError = false)
+         {
+            StartGapPoint = null;
+            EndGapPoint = null;
+            if (!dontShowError && FirstSegmentStepId.HasValue)
+               Importer.TheLog.LogError(FirstSegmentStepId.Value, "Curve segment is too short, ignoring.", false);
+            FirstSegmentStepId = null;
+         }
+
+         private int? FirstSegmentStepId { get; set; } = null;
+
+         private double ShortCurveTolerance { get; set; } = 0.0;
+
+         private XYZ StartGapPoint { get; set; } = null;
+
+         private XYZ EndGapPoint { get; set; } = null;
+      }
+
       protected override void Process(IFCAnyHandle ifcCurve)
       {
          base.Process(ifcCurve);
@@ -69,13 +163,17 @@ namespace Revit.IFC.Import.Data
          // We are going to attempt minor repairs for small but reasonable gaps between Line/Line and Line/Arc pairs.  As such, we want to collect the
          // curves before we create the curve loop.
 
-         IList<IFCAnyHandle> segments = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcCurve, "Segments");
+         IList<IFCAnyHandle> segments = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcCurve, "Segments");
          if (segments == null)
             Importer.TheLog.LogError(Id, "Invalid IfcCompositeCurve with no segments.", true);
+
+         double shortCurveTol = IFCImportFile.TheFile.Document.Application.ShortCurveTolerance;
 
          // need List<> so that we can AddRange later.
          List<Curve> curveSegments = new List<Curve>();
          Segments.Clear();
+
+         ShortGapRepairer shortGapRepairer = new ShortGapRepairer(shortCurveTol);
 
          foreach (IFCAnyHandle segment in segments)
          {
@@ -84,18 +182,19 @@ namespace Revit.IFC.Import.Data
             if (currCurve != null)
             {
                Segments.Add(currCurve);
-
-               if (currCurve.Curve != null)
+               IList<Curve> newCurves = currCurve.GetCurves();
+               if (newCurves != null && newCurves.Count != 0)
                {
-                  curveSegments.Add(currCurve.Curve);
+                  curveSegments.AddRange(newCurves);
+                  // If we had a gap, we weren't able to correct it before getting new curves.
+                  shortGapRepairer.ClearGapInformation();
                }
-               else if (currCurve.CurveLoop != null)
+               else
                {
-                  foreach (Curve subCurve in currCurve.CurveLoop)
-                  {
-                     if (subCurve != null)
-                        curveSegments.Add(subCurve);
-                  }
+                  Line gapRepairLine = shortGapRepairer.AddToGap(currCurve.Id,
+                     currCurve.BackupCurveStartLocation, currCurve.BackupCurveEndLocation);
+                  if (gapRepairLine != null)
+                     curveSegments.Add(gapRepairLine);
                }
             }
          }
@@ -122,8 +221,7 @@ namespace Revit.IFC.Import.Data
             // This is intended to be "relatively large".  The idea here is that the user would rather have the information presented
             // than thrown away because of a gap that is architecturally insignificant.
             double gapVertexEps = Math.Max(vertexEps, 0.01); // 1/100th of a foot, or 3.048 mm.
-            double shortCurveTol = IFCImportFile.TheFile.Document.Application.ShortCurveTolerance;
-
+            
             // canRepairFirst may change over time, as we may potentially add curves to the start of the CurveLoop.
             bool canRepairFirst = (curveSegments[0] is Line);
             for (int ii = 1; ii < numSegments; ii++)
@@ -155,8 +253,8 @@ namespace Revit.IFC.Import.Data
                   // we can't fix the issue.
                   if (minGap > gapVertexEps)
                   {
-                     string lengthAsString = UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), UnitType.UT_Length, minGap, true, false);
-                     string maxGapAsString = UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), UnitType.UT_Length, gapVertexEps, true, false);
+                     string lengthAsString = IFCUnitUtil.FormatLengthAsString(minGap);
+                     string maxGapAsString = IFCUnitUtil.FormatLengthAsString(gapVertexEps);
                      throw new InvalidOperationException("IfcCompositeCurve contains a gap of " + lengthAsString +
                         " that is greater than the maximum gap size of " + maxGapAsString +
                         " and cannot be repaired.");
@@ -223,21 +321,25 @@ namespace Revit.IFC.Import.Data
                   else
                   {
                      // Can't add a line to fix a gap that is smaller than the short curve tolerance.
-                     // In the future, we may fix this gap by intersecting the two curves and extending one of them.
+                     // This will result in mutliple curve loops.
                      if (minGap < shortCurveTol + MathUtil.Eps())
-                        Importer.TheLog.LogError(Id, "IfcCompositeCurve contains a gap between two non-linear segments that is too short to be repaired by a connecting segment.", true);
-
-                     try
                      {
-                        Line repairLine = Line.CreateBound(originalCurveLoopEndPoint, curveSegments[ii].GetEndPoint(0));
-                        curveSegments.Insert(ii, repairLine);
-                        ii++; // Skip the repair line as we've already "added" it and the non-linear segment to our growing loop.
-                        numSegments++;
-                        createdRepairLine = true;
+                        Importer.TheLog.LogError(Id, "IfcCompositeCurve contains a gap between two non-linear segments that is too short to be repaired by a connecting segment.", false);
                      }
-                     catch
+                     else
                      {
-                        Importer.TheLog.LogError(Id, "IfcCompositeCurve contains a gap between two non-linear segments that can't be fixed.", true);
+                        try
+                        {
+                           Line repairLine = Line.CreateBound(originalCurveLoopEndPoint, curveSegments[ii].GetEndPoint(0));
+                           curveSegments.Insert(ii, repairLine);
+                           ii++; // Skip the repair line as we've already "added" it and the non-linear segment to our growing loop.
+                           numSegments++;
+                           createdRepairLine = true;
+                        }
+                        catch
+                        {
+                           Importer.TheLog.LogError(Id, "IfcCompositeCurve contains a gap between two non-linear segments that can't be fixed.", false);
+                        }
                      }
                   }
                }
@@ -280,22 +382,12 @@ namespace Revit.IFC.Import.Data
                }
             }
 
-            if (CurveLoop == null)
-               CurveLoop = new CurveLoop();
-
-            foreach (Curve curveSegment in curveSegments)
-            {
-               if (curveSegment != null)
-                  CurveLoop.Append(curveSegment);
-            }
+            SetCurveLoops(curveSegments);
          }
          catch (Exception ex)
          {
             Importer.TheLog.LogError(Id, ex.Message, true);
          }
-
-         // Try to create the curve representation of this IfcCompositeCurve
-         Curve = ConvertCurveLoopIntoSingleCurve(CurveLoop);
       }
 
       /// <summary>
@@ -340,9 +432,7 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         bool hasCurve = (parentCurve.Curve != null);
-         bool hasCurveLoop = (parentCurve.CurveLoop != null);
-         if (!hasCurve && !hasCurveLoop)
+         if (parentCurve.IsEmpty())
          {
             Importer.TheLog.LogWarning(ifcCurveSegment.StepId, "Error processing ParentCurve (#" + ifcParentCurve.StepId + ") for IfcCompositeCurveSegment; this may be repairable.", false);
             return null;
@@ -356,189 +446,6 @@ namespace Revit.IFC.Import.Data
          string gapAsString = IFCUnitUtil.FormatLengthAsString(gap);
          Importer.TheLog.LogWarning(id, "Repaired gap of size " + gapAsString + " in IfcCompositeCurve.", false);
          return Line.CreateBound(startPoint, endPoint);
-      }
-
-      /// <summary>
-      /// Create a curve representation of this IFCCompositeCurve from a curveloop
-      /// </summary>
-      /// <param name="curveLoop">The curveloop</param>
-      /// <returns>A Revit curve that is made by appending every curve in the given curveloop, if possible</returns>
-      private Curve ConvertCurveLoopIntoSingleCurve(CurveLoop curveLoop)
-      {
-         if (curveLoop == null)
-         {
-            return null;
-         }
-
-         CurveLoopIterator curveIterator = curveLoop.GetCurveLoopIterator();
-         Curve firstCurve = curveIterator.Current;
-         Curve returnCurve = null;
-
-         double vertexEps = IFCImportFile.TheFile.Document.Application.VertexTolerance;
-
-         // We only connect the curves if they are Line, Arc or Ellipse
-         if (!((firstCurve is Line) || (firstCurve is Arc) || (firstCurve is Ellipse)))
-         {
-            return null;
-         }
-
-         XYZ firstStartPoint = firstCurve.GetEndPoint(0);
-
-         Curve currentCurve = null;
-         if (firstCurve is Line)
-         {
-            Line firstLine = firstCurve as Line;
-            while (curveIterator.MoveNext())
-            {
-               currentCurve = curveIterator.Current;
-               if (!(currentCurve is Line))
-               {
-                  return null;
-               }
-               Line currentLine = currentCurve as Line;
-
-               if (!(firstLine.Direction.IsAlmostEqualTo(currentLine.Direction)))
-               {
-                  return null;
-               }
-            }
-            returnCurve = Line.CreateBound(firstStartPoint, currentCurve.GetEndPoint(1));
-         }
-         else if (firstCurve is Arc)
-         {
-            Arc firstArc = firstCurve as Arc;
-            XYZ firstCurveNormal = firstArc.Normal;
-
-            while (curveIterator.MoveNext())
-            {
-               currentCurve = curveIterator.Current;
-               if (!(currentCurve is Arc))
-               {
-                  return null;
-               }
-
-               XYZ currentStartPoint = currentCurve.GetEndPoint(0);
-               XYZ currentEndPoint = currentCurve.GetEndPoint(1);
-
-               Arc currentArc = currentCurve as Arc;
-               XYZ currentCenter = currentArc.Center;
-               double currentRadius = currentArc.Radius;
-               XYZ currentNormal = currentArc.Normal;
-
-               // We check if this circle is similar to the first circle by checking that they have the same center, same radius,
-               // and lie on the same plane
-               if (!(currentCenter.IsAlmostEqualTo(firstArc.Center, vertexEps) && MathUtil.IsAlmostEqual(currentRadius, firstArc.Radius)))
-               {
-                  return null;
-               }
-               if (!MathUtil.IsAlmostEqual(Math.Abs(currentNormal.DotProduct(firstCurveNormal)), 1))
-               {
-                  return null;
-               }
-            }
-            // If all of the curve segments are part of the same circle, then the returning curve will be a circle bounded
-            // by the start point of the first curve and the end point of the last curve.
-            XYZ lastPoint = currentCurve.GetEndPoint(1);
-            if (lastPoint.IsAlmostEqualTo(firstStartPoint, vertexEps))
-            {
-               firstCurve.MakeUnbound();
-            }
-            else
-            {
-               double startParameter = firstArc.GetEndParameter(0);
-               double endParameter = firstArc.Project(lastPoint).Parameter;
-
-               if (endParameter < startParameter)
-                  endParameter += Math.PI * 2;
-
-               firstCurve.MakeBound(startParameter, endParameter);
-            }
-            returnCurve = firstCurve;
-         }
-         else if (firstCurve is Ellipse)
-         {
-            Ellipse firstEllipse = firstCurve as Ellipse;
-            double radiusX = firstEllipse.RadiusX;
-            double radiusY = firstEllipse.RadiusY;
-            XYZ xDirection = firstEllipse.XDirection;
-            XYZ yDirection = firstEllipse.YDirection;
-            XYZ firstCurveNormal = firstEllipse.Normal;
-
-            while (curveIterator.MoveNext())
-            {
-               currentCurve = curveIterator.Current;
-               if (!(currentCurve is Ellipse))
-                  return null;
-
-               XYZ currentStartPoint = currentCurve.GetEndPoint(0);
-               XYZ currentEndPoint = currentCurve.GetEndPoint(1);
-
-               Ellipse currentEllipse = currentCurve as Ellipse;
-               XYZ currentCenter = currentEllipse.Center;
-
-               double currentRadiusX = currentEllipse.RadiusX;
-               double currentRadiusY = currentEllipse.RadiusY;
-               XYZ currentXDirection = currentEllipse.XDirection;
-               XYZ currentYDirection = currentEllipse.YDirection;
-
-               XYZ currentNormal = currentEllipse.Normal;
-
-               if (!MathUtil.IsAlmostEqual(Math.Abs(currentNormal.DotProduct(firstCurveNormal)), 1))
-               {
-                  return null;
-               }
-
-               // We determine whether this ellipse is the same as the initial ellipse by checking if their centers and corresponding
-               // radiuses as well as radius directions are the same or permutations of each other.
-               if (!currentCenter.IsAlmostEqualTo(firstEllipse.Center))
-               {
-                  return null;
-               }
-
-               // Checks if the corresponding radius and radius direction are the same
-               if (MathUtil.IsAlmostEqual(radiusX, currentRadiusX))
-               {
-                  if (!(MathUtil.IsAlmostEqual(radiusY, currentRadiusY) && currentXDirection.IsAlmostEqualTo(xDirection) && currentYDirection.IsAlmostEqualTo(yDirection)))
-                  {
-                     return null;
-                  }
-               }
-               // Checks if the corresponding radiuses and radius directions are permutations of each other
-               else if (MathUtil.IsAlmostEqual(radiusX, currentRadiusY))
-               {
-                  if (!(MathUtil.IsAlmostEqual(radiusY, currentRadiusX) && currentXDirection.IsAlmostEqualTo(yDirection) && currentYDirection.IsAlmostEqualTo(xDirection)))
-                  {
-                     return null;
-                  }
-               }
-               else
-               {
-                  return null;
-               }
-            }
-
-            // If all of the curve segments are part of the same ellipse then the returning curve will be the ellipse whose start point is the start 
-            // point of the first curve and the end point is the end point of the last curve
-            XYZ lastPoint = currentCurve.GetEndPoint(1);
-            if (lastPoint.IsAlmostEqualTo(firstStartPoint))
-            {
-               firstCurve.MakeUnbound();
-            }
-            else
-            {
-               double startParameter = firstEllipse.GetEndParameter(0);
-               double endParameter = firstEllipse.Project(lastPoint).Parameter;
-
-               if (endParameter < startParameter)
-               {
-                  endParameter += Math.PI * 2;
-               }
-               firstCurve.MakeBound(startParameter, endParameter);
-            }
-            returnCurve = firstCurve;
-         }
-
-         return returnCurve;
       }
    }
 }

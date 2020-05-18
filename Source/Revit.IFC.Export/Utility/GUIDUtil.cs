@@ -33,6 +33,18 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class GUIDUtil
    {
+      /// <summary>
+      /// An enum that contains fake element ids corresponding to the IfcProject, IfcSite, and IfcBuilding entities.
+      /// </summary>
+      /// <remarks>The numbers below allow for the generation of stable GUIDs for these entities, that are
+      /// consistent with previous versions of the exporter.</remarks>
+      public enum ProjectLevelGUIDType
+      {
+         Building = -15,
+         Project = -16,
+         Site = -14
+      };
+
       static string s_ConversionTable_2X = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$";
 
       static private string ConvertToIFCGuid(System.Guid guid)
@@ -66,8 +78,8 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Checks if a GUID string is properly formatted as an IFC GUID.
       /// </summary>
-      /// <param name="guid"></param>
-      /// <returns></returns>
+      /// <param name="guid">The GUID value to check.</param>
+      /// <returns>True if it qualifies as a valid IFC GUID.</returns>
       static public bool IsValidIFCGUID(string guid)
       {
          if (guid == null)
@@ -76,6 +88,12 @@ namespace Revit.IFC.Export.Utility
          if (guid.Length != 22)
             return false;
 
+         // The first character is limited to { 0, 1, 2, 3 }.
+         if (guid[0] < '0' || guid[0] > '3')
+            return false;
+
+         // Redundant check for the first character, but it's a fairly
+         // inexpensive check.
          foreach (char guidChar in guid)
          {
             if ((guidChar >= '0' && guidChar <= '9') ||
@@ -116,48 +134,55 @@ namespace Revit.IFC.Export.Utility
             case IFCProjectLevelGUIDType.Site:
                parameterId = BuiltInParameter.IFC_SITE_GUID;
                break;
+            default:
+               // This should eventually log an error.
+               return null;
          }
 
          if (projectInfo != null)
          {
             string paramValue = null;
             ParameterUtil.GetStringValueFromElement(projectInfo, parameterName, out paramValue);
-            if ((paramValue != null) && (IsValidIFCGUID(paramValue)))
+            if (!IsValidIFCGUID(paramValue) && parameterId != BuiltInParameter.INVALID)
+               ParameterUtil.GetStringValueFromElement(projectInfo, parameterId, out paramValue);
+
+            if (IsValidIFCGUID(paramValue))
                return paramValue;
-            if(parameterId != BuiltInParameter.INVALID && ParameterUtil.GetStringValueFromElement(projectInfo, parameterId, out paramValue) != null)
-            {
-               return paramValue;
-            }
          }
-         string guid = ExporterIFCUtils.CreateProjectLevelGUID(document, guidType);
+
+         // Only for 2022
+         //ElementId projectLevelElementId = new ElementId((int)guidType);
+         //System.Guid guid = ExportUtils.GetExportId(document, projectLevelElementId);
+         //string ifcGUID = ConvertToIFCGuid(guid);
+         string ifcGUID = ExporterIFCUtils.CreateProjectLevelGUID(document, guidType);
+
          if ((projectInfo != null) && ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID)
          {
-            
+
             if (parameterId != BuiltInParameter.INVALID)
-               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<Element, BuiltInParameter>(projectInfo, parameterId)] = guid;
+               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<Element, BuiltInParameter>(projectInfo, parameterId)] = ifcGUID;
          }
-         return guid;
+         return ifcGUID;
       }
 
       /// <summary>
-      /// Creates a Site GUID for a Site element.  If "IfcSite GUID" is set to a valid IFC GUID in Project Information, that value will
-      /// override the default GUID generation for the Site element.
+      /// Creates a Site GUID for a Site element.  If "IfcSite GUID" is set to a valid IFC GUID
+      /// in the site element, that value will override any value stored in ProjectInformation.
       /// </summary>
       /// <param name="document">The document pointer.</param>
       /// <param name="element">The Site element.</param>
-      /// <returns></returns>
+      /// <returns>The GUID as a string.</returns>
       static public string CreateSiteGUID(Document document, Element element)
       {
-         ProjectInfo projectInfo = document.ProjectInformation;
-
-         if (projectInfo != null)
+         if (element != null)
          {
             string paramValue = null;
-            ParameterUtil.GetStringValueFromElement(projectInfo, "IfcSiteGUID", out paramValue);
-            if ((paramValue != null) && (IsValidIFCGUID(paramValue)))
+            ParameterUtil.GetStringValueFromElement(element, "IfcSiteGUID", out paramValue);
+            if (IsValidIFCGUID(paramValue))
                return paramValue;
          }
 
+         //return CreateProjectLevelGUID(document, GUIDUtil.ProjectLevelGUIDType.Site);
          return CreateProjectLevelGUID(document, IFCProjectLevelGUIDType.Site);
       }
 
@@ -214,7 +239,7 @@ namespace Revit.IFC.Export.Utility
 
          if (ExporterCacheManager.ExportOptionsCache.GUIDOptions.AllowGUIDParameterOverride)
             ParameterUtil.GetStringValueFromElement(element, parameterName, out ifcGUID);
-         if (String.IsNullOrEmpty(ifcGUID))
+         if (!IsValidIFCGUID(ifcGUID))
          {
             System.Guid guid = ExportUtils.GetExportId(element.Document, element.Id);
             ifcGUID = ConvertToIFCGuid(guid);

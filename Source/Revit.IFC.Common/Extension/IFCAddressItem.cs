@@ -32,13 +32,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// The purpose of the address.
       /// </summary>
-      private string purpose;
+      private string m_purpose = null;
       public string Purpose
       {
-         get { return purpose; }
+         get { return m_purpose; }
          set
          {
-            purpose = value;
+            m_purpose = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("PurposeComboBox");
          }
@@ -47,13 +47,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// The description of the address.
       /// </summary>
-      private string description;
+      private string m_description = null;
       public string Description
       {
-         get { return description; }
+         get { return m_description; }
          set
          {
-            description = value;
+            m_description = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("DescriptionTextBox");
          }
@@ -63,13 +63,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// The user defined purpose of the address.
       /// </summary>
-      private string userDefinedPurpose;
+      private string m_userDefinedPurpose = null;
       public string UserDefinedPurpose
       {
-         get { return userDefinedPurpose; }
+         get { return m_userDefinedPurpose; }
          set
          {
-            userDefinedPurpose = value;
+            m_userDefinedPurpose = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("UserDefinedPurposeTextBox");
          }
@@ -78,13 +78,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// The internal location of the address.
       /// </summary>
-      private string internalLocation;
+      private string m_internalLocation = null;
       public string InternalLocation
       {
-         get { return internalLocation; }
+         get { return m_internalLocation; }
          set
          {
-            internalLocation = value;
+            m_internalLocation = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("InternalLocationTextBox");
          }
@@ -93,13 +93,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// First line for the address.
       /// </summary>
-      private string addressLine1;
+      private string m_addressLine1 = string.Empty;
       public string AddressLine1
       {
-         get { return addressLine1; }
+         get { return m_addressLine1; }
          set
          {
-            addressLine1 = value;
+            m_addressLine1 = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("AddressLine1TextBox");
          }
@@ -108,13 +108,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// Second line for the address. We limit to just 2 line addresses typically done in many applications.
       /// </summary>
-      private string addressLine2;
+      private string m_addressLine2 = string.Empty;
       public string AddressLine2
       {
-         get { return addressLine2; }
+         get { return m_addressLine2; }
          set
          {
-            addressLine2 = value;
+            m_addressLine2 = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("AddressLines2TextBox");
          }
@@ -123,13 +123,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// PO Box address
       /// </summary>
-      public string pOBox;
+      public string m_pOBox = null;
       public string POBox
       {
-         get { return pOBox; }
+         get { return m_pOBox; }
          set
          {
-            pOBox = value;
+            m_pOBox = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("POBoxTextBox");
          }
@@ -138,13 +138,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// The city of the address.
       /// </summary>
-      private string townOrCity;
+      private string m_townOrCity = null;
       public string TownOrCity
       {
-         get { return townOrCity; }
+         get { return m_townOrCity; }
          set
          {
-            townOrCity = value;
+            m_townOrCity = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("CityTextBox");
          }
@@ -153,13 +153,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// Region, province or state of the address.
       /// </summary>
-      private string regionOrState;
+      private string m_regionOrState = null;
       public string RegionOrState
       {
-         get { return regionOrState; }
+         get { return m_regionOrState; }
          set
          {
-            regionOrState = value;
+            m_regionOrState = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("StateTextBox");
          }
@@ -168,13 +168,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// The postal code or zip code of the address
       /// </summary>
-      private string postalCode;
+      private string m_postalCode = null;
       public string PostalCode
       {
-         get { return postalCode; }
+         get { return m_postalCode; }
          set
          {
-            postalCode = value;
+            m_postalCode = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("PostalCodeTextBox");
          }
@@ -183,13 +183,13 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// The country of the address.
       /// </summary>
-      private string country;
+      private string m_country = null;
       public string Country
       {
-         get { return country; }
+         get { return m_country; }
          set
          {
-            country = value;
+            m_country = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("CountryTextBox");
          }
@@ -221,17 +221,19 @@ namespace Revit.IFC.Common.Extensions
       }
 
       /// <summary>
-      /// Check whether the address is empty (first time used)
+      /// Check whether the address data has any value
       /// </summary>
-      public Boolean isInitial()
+      /// <returns>true/false</returns>
+      public bool HasData()
       {
-         if (this.Purpose == null && this.Description == null && this.UserDefinedPurpose == null
-               && this.AddressLine1 == null && this.AddressLine2 == null && this.POBox == null
-               && this.TownOrCity == null && this.RegionOrState == null && this.PostalCode == null
-               && this.Country == null && this.UpdateProjectInformation == false
-               && this.AssignAddressToBuilding == true && this.AssignAddressToSite == false)
+         if (string.IsNullOrWhiteSpace(m_purpose) && string.IsNullOrWhiteSpace(m_description)
+               && string.IsNullOrWhiteSpace(m_userDefinedPurpose) && string.IsNullOrWhiteSpace(m_addressLine1)
+               && string.IsNullOrWhiteSpace(m_addressLine2) && string.IsNullOrWhiteSpace(POBox)
+               && string.IsNullOrWhiteSpace(m_townOrCity) && string.IsNullOrWhiteSpace(m_regionOrState)
+               && string.IsNullOrWhiteSpace(PostalCode) && string.IsNullOrWhiteSpace(m_country))
+            return false;
+         else
             return true;
-         return false;
       }
 
       /// <summary>

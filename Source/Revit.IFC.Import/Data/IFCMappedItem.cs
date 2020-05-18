@@ -120,9 +120,9 @@ namespace Revit.IFC.Import.Data
 
          bool canCreateType = !shapeEditScope.PreventInstances && 
             (newLcs != null && newLcs.IsConformal) &&
-            (newScaledLcs != null && newScaledLcs.IsConformal) &&
-            isUnitScale &&
-            (shapeEditScope.ContainingRepresentation != null && !isFootprint);
+         (newScaledLcs != null && newScaledLcs.IsConformal) &&
+         isUnitScale &&
+         (shapeEditScope.ContainingRepresentation != null && !isFootprint);
 
          if (canCreateType)
          {

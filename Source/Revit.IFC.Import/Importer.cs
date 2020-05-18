@@ -192,8 +192,8 @@ namespace Revit.IFC.Import
          Importer importer = new Importer();
          TheImporter = importer;
          TheCache = IFCImportCache.Create(originalDocument, ifcFileName);
-         TheLog = IFCImportLog.CreateLog(ifcFileName, "log.html");
          TheOptions = importer.m_ImportOptions = IFCImportOptions.Create(importOptions);
+         TheLog = IFCImportLog.CreateLog(ifcFileName, "log.html", !TheOptions.DisableLogging);
          return importer;
       }
 
@@ -455,7 +455,7 @@ namespace Revit.IFC.Import
          // It is possible that the log file may have been created in CreateImporter above, 
          // if it is used by an external developer.
          if (TheLog == null)
-         m_ImportLog = IFCImportLog.CreateLog(localFileName, "log.html");
+            m_ImportLog = IFCImportLog.CreateLog(localFileName, "log.html", !m_ImportOptions.DisableLogging);
 
          Document originalDocument = document;
          Document ifcDocument = null;

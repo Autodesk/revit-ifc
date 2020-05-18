@@ -70,7 +70,7 @@ namespace Revit.IFC.Import.Data
          base.Process(ifcConnectedFaceSet);
 
          HashSet<IFCAnyHandle> ifcCfsFaces =
-             IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcConnectedFaceSet, "CfsFaces");
+             IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcConnectedFaceSet, "CfsFaces");
          if (ifcCfsFaces == null || ifcCfsFaces.Count == 0)
             throw new InvalidOperationException("#" + ifcConnectedFaceSet.StepId + ": no faces in connected face set, aborting.");
 

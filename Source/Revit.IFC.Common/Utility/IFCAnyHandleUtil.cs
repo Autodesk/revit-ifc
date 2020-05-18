@@ -829,10 +829,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of attribute values.</returns>
       public static T GetAggregateAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<IFCData>, new()
       {
-         if (handle == null)
-            throw new ArgumentNullException("handle");
-
-         if (!handle.HasValue)
+         if (IsNullOrHasNoValue(handle))
             throw new ArgumentException("Invalid handle.");
 
          IFCData ifcData = handle.GetAttribute(name);
@@ -863,10 +860,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of attribute values.</returns>
       public static T GetAggregateIntAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<int>, new()
       {
-         if (handle == null)
-            throw new ArgumentNullException("handle");
-
-         if (!handle.HasValue)
+         if (IsNullOrHasNoValue(handle))
             throw new ArgumentException("Invalid handle.");
 
          IFCData ifcData = handle.GetAttribute(name);
@@ -900,10 +894,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of attribute values.</returns>
       public static T GetAggregateDoubleAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<double>, new()
       {
-         if (handle == null)
-            throw new ArgumentNullException("handle");
-
-         if (!handle.HasValue)
+         if (IsNullOrHasNoValue(handle))
             throw new ArgumentException("Invalid handle.");
 
          IFCData ifcData = handle.GetAttribute(name);
@@ -937,10 +928,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of attribute values.</returns>
       public static T GetAggregateStringAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<string>, new()
       {
-         if (handle == null)
-            throw new ArgumentNullException("handle");
-
-         if (!handle.HasValue)
+         if (IsNullOrHasNoValue(handle))
             throw new ArgumentException("Invalid handle.");
 
          IFCData ifcData = handle.GetAttribute(name);
@@ -972,14 +960,8 @@ namespace Revit.IFC.Common.Utility
       /// <param name="handle">The handle.</param>
       /// <param name="name">The attribute name.</param>
       /// <returns>The collection of attribute values.</returns>
-      public static T GetAggregateInstanceAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<IFCAnyHandle>, new()
+      public static T GetValidAggregateInstanceAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<IFCAnyHandle>, new()
       {
-         if (handle == null)
-            throw new ArgumentNullException("handle");
-
-         if (!handle.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          IFCData ifcData = handle.GetAttribute(name);
 
          T aggregateAttribute = default(T);
@@ -1001,6 +983,21 @@ namespace Revit.IFC.Common.Utility
          }
          return aggregateAttribute;
       }
+      
+      /// <summary>
+      /// Gets aggregate attribute instance values from a handle.
+      /// </summary>
+      /// <typeparam name="T">The return type.</typeparam>
+      /// <param name="handle">The handle.</param>
+      /// <param name="name">The attribute name.</param>
+      /// <returns>The collection of attribute values.</returns>
+      public static T GetAggregateInstanceAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<IFCAnyHandle>, new()
+      {
+         if (IsNullOrHasNoValue(handle))
+            throw new ArgumentException("Invalid handle.");
+
+         return GetValidAggregateInstanceAttribute<T>(handle, name);
+      }
 
       /// <summary>
       /// Gets the IFCEntityType of a handle.
@@ -1012,8 +1009,9 @@ namespace Revit.IFC.Common.Utility
          if (handle == null)
             throw new ArgumentNullException("handle");
 
-         if (!handle.HasValue)
-            throw new ArgumentException("Invalid handle.");
+         // We used to check .HasValue here and throw, but handle.TypeName will
+         // throw an InvalidOperationException here anyway, so this seems
+         // like a redundant step.
 
          IFCEntityType entityType = GetIFCEntityTypeFromName(handle.TypeName);
 
@@ -1027,12 +1025,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The object type, or null if it doesn't exist.</returns>
       public static string GetObjectType(IFCAnyHandle handle)
       {
-         if (handle == null)
-            throw new ArgumentNullException("handle");
-
-         if (!handle.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(handle, IFCEntityType.IfcObject))
             return null;
 
@@ -1051,12 +1043,6 @@ namespace Revit.IFC.Common.Utility
       public static IList<double> GetCoordinates(IFCAnyHandle cartesianPoint)
       {
          IList<double> coordinates = null;
-
-         if (cartesianPoint == null)
-            throw new ArgumentNullException("cartesianPoint");
-
-         if (!cartesianPoint.HasValue)
-            throw new ArgumentException("Invalid handle.");
 
          if (!IsSubTypeOf(cartesianPoint, IFCEntityType.IfcCartesianPoint))
             throw new ArgumentException("Not an IfcCartesianPoint handle.");
@@ -1087,14 +1073,8 @@ namespace Revit.IFC.Common.Utility
       /// <param name="name">The handle.</param>
       /// <param name="name">The attribute name.</param>
       /// <returns>The handle to the attribute.</returns>
-      public static IFCAnyHandle GetInstanceAttribute(IFCAnyHandle hnd, string name)
+      public static IFCAnyHandle GetValidInstanceAttribute(IFCAnyHandle hnd, string name)
       {
-         if (hnd == null)
-            throw new ArgumentNullException("hnd");
-
-         if (!hnd.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          try
          {
             IFCData ifcData = hnd.GetAttribute(name);
@@ -1105,6 +1085,20 @@ namespace Revit.IFC.Common.Utility
 
          return null;
       }
+      
+      /// <summary>
+      /// Gets an arbitrary instance attribute.
+      /// </summary>
+      /// <param name="name">The handle.</param>
+      /// <param name="name">The attribute name.</param>
+      /// <returns>The handle to the attribute.</returns>
+      public static IFCAnyHandle GetInstanceAttribute(IFCAnyHandle hnd, string name)
+      {
+         if (IsNullOrHasNoValue(hnd))
+            throw new ArgumentException("Invalid handle.");
+
+         return GetValidInstanceAttribute(hnd, name);
+      }
 
       /// <summary>
       /// Gets an arbitrary string attribute.
@@ -1114,10 +1108,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The string.</returns>
       public static string GetStringAttribute(IFCAnyHandle hnd, string name)
       {
-         if (hnd == null)
-            throw new ArgumentNullException("hnd");
-
-         if (!hnd.HasValue)
+         if (IsNullOrHasNoValue(hnd))
             throw new ArgumentException("Invalid handle.");
 
          try
@@ -1139,10 +1130,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The integer.</returns>
       public static int? GetIntAttribute(IFCAnyHandle hnd, string name)
       {
-         if (hnd == null)
-            throw new ArgumentNullException("hnd");
-
-         if (!hnd.HasValue)
+         if (IsNullOrHasNoValue(hnd))
             throw new ArgumentException("Invalid handle.");
 
          try
@@ -1164,10 +1152,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The double.</returns>
       public static double? GetDoubleAttribute(IFCAnyHandle hnd, string name)
       {
-         if (hnd == null)
-            throw new ArgumentNullException("hnd");
-
-         if (!hnd.HasValue)
+         if (IsNullOrHasNoValue(hnd))
             throw new ArgumentException("Invalid handle.");
 
          try
@@ -1189,10 +1174,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The boolean value.</returns>
       public static bool? GetBooleanAttribute(IFCAnyHandle hnd, string name)
       {
-         if (hnd == null)
-            throw new ArgumentNullException("hnd");
-
-         if (!hnd.HasValue)
+         if (IsNullOrHasNoValue(hnd))
             throw new ArgumentException("Invalid handle.");
 
          try
@@ -1214,10 +1196,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The boolean value.</returns>
       public static IFCLogical? GetLogicalAttribute(IFCAnyHandle hnd, string name)
       {
-         if (hnd == null)
-            throw new ArgumentNullException("hnd");
-
-         if (!hnd.HasValue)
+         if (IsNullOrHasNoValue(hnd))
             throw new ArgumentException("Invalid handle.");
 
          try
@@ -1243,10 +1222,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The string.</returns>
       public static string GetEnumerationAttribute(IFCAnyHandle hnd, string name)
       {
-         if (hnd == null)
-            throw new ArgumentNullException("hnd");
-
-         if (!hnd.HasValue)
+         if (IsNullOrHasNoValue(hnd))
             throw new ArgumentException("Invalid handle.");
 
          try
@@ -1293,12 +1269,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if it has, false if not.</returns>
       public static bool HasRelDecomposes(IFCAnyHandle objectHandle)
       {
-         if (objectHandle == null)
-            throw new ArgumentNullException("objectHandle");
-
-         if (!objectHandle.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(objectHandle, IFCEntityType.IfcObject) &&
              !IsSubTypeOf(objectHandle, IFCEntityType.IfcTypeObject))
             throw new ArgumentException("The operation is not valid for this handle.");
@@ -1326,12 +1296,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of IfcRelDecomposes.</returns>
       public static HashSet<IFCAnyHandle> GetRelDecomposes(IFCAnyHandle objectHandle)
       {
-         if (objectHandle == null)
-            throw new ArgumentNullException("objectHandle");
-
-         if (!objectHandle.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(objectHandle, IFCEntityType.IfcObject) &&
              !IsSubTypeOf(objectHandle, IFCEntityType.IfcTypeObject))
             throw new ArgumentException("The operation is not valid for this handle.");
@@ -1362,12 +1326,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of IfcMaterialDefinitionRepresentation.</returns>
       public static HashSet<IFCAnyHandle> GetHasRepresentation(IFCAnyHandle objectHandle)
       {
-         if (objectHandle == null)
-            throw new ArgumentNullException("objectHandle");
-
-         if (!objectHandle.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(objectHandle, IFCEntityType.IfcMaterial))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1397,12 +1355,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The representation handle.</returns>
       public static IFCAnyHandle GetRepresentation(IFCAnyHandle productHandle)
       {
-         if (productHandle == null)
-            throw new ArgumentNullException("productHandle");
-
-         if (!productHandle.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(productHandle, IFCEntityType.IfcProduct))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1422,12 +1374,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The ContextOfItems handle.</returns>
       public static IFCAnyHandle GetContextOfItems(IFCAnyHandle representation)
       {
-         if (representation == null)
-            throw new ArgumentNullException("representation");
-
-         if (!representation.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1447,12 +1393,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The RepresentationIdentifier string.</returns>
       public static string GetRepresentationIdentifier(IFCAnyHandle representation)
       {
-         if (representation == null)
-            throw new ArgumentNullException("representation");
-
-         if (!representation.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1472,12 +1412,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The RepresentationType string.</returns>
       public static string GetRepresentationType(IFCAnyHandle representation)
       {
-         if (representation == null)
-            throw new ArgumentNullException("representation");
-
-         if (!representation.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1497,12 +1431,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The set of items.</returns>
       public static HashSet<IFCAnyHandle> GetItems(IFCAnyHandle representation)
       {
-         if (representation == null)
-            throw new ArgumentNullException("representation");
-
-         if (!representation.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1532,12 +1460,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The list of representations.</returns>
       public static List<IFCAnyHandle> GetRepresentations(IFCAnyHandle representation)
       {
-         if (representation == null)
-            throw new ArgumentNullException("representation");
-
-         if (!representation.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(representation, IFCEntityType.IfcProductRepresentation))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1567,12 +1489,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The list of representations.</returns>
       public static List<IFCAnyHandle> GetOpenings(IFCAnyHandle ifcElement)
       {
-         if (ifcElement == null)
-            throw new ArgumentNullException("ifcElement");
-
-         if (!ifcElement.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(ifcElement, IFCEntityType.IfcElement))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1604,14 +1520,8 @@ namespace Revit.IFC.Common.Utility
       /// <param name="representations">The representations handle.</param>
       public static void AddRepresentations(IFCAnyHandle productRepresentation, IList<IFCAnyHandle> representations)
       {
-         if (productRepresentation == null)
-            throw new ArgumentNullException("productRepresentation");
-
          if (representations == null)
             throw new ArgumentNullException("representations");
-
-         if (!productRepresentation.HasValue)
-            throw new ArgumentException("Invalid handle.");
 
          if (!IsSubTypeOf(productRepresentation, IFCEntityType.IfcProductRepresentation))
             throw new ArgumentException("The operation is not valid for this handle.");
@@ -1637,14 +1547,8 @@ namespace Revit.IFC.Common.Utility
       /// <param name="related">The entity handle to be added to the RelatedObjects attribute</param>
       public static void AssociatesAddRelated(IFCAnyHandle relAssociates, IFCAnyHandle related)
       {
-         if (relAssociates == null)
-            throw new ArgumentNullException("IfcRelAssociates");
-
          if (related == null)
             throw new ArgumentNullException("IfcRelAssociates related");
-
-         if (!relAssociates.HasValue)
-            throw new ArgumentException("Invalid handle.");
 
          if (!IsSubTypeOf(relAssociates, IFCEntityType.IfcRelAssociatesClassification))
             throw new ArgumentException("The operation is not valid for this handle.");
@@ -1667,12 +1571,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The Name string.</returns>
       public static string GetProductDefinitionShapeName(IFCAnyHandle productDefinitionShape)
       {
-         if (productDefinitionShape == null)
-            throw new ArgumentNullException("productDefinitionShape");
-
-         if (!productDefinitionShape.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(productDefinitionShape, IFCEntityType.IfcProductDefinitionShape))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1692,12 +1590,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The Description string.</returns>
       public static string GetProductDefinitionShapeDescription(IFCAnyHandle productDefinitionShape)
       {
-         if (productDefinitionShape == null)
-            throw new ArgumentNullException("productDefinitionShape");
-
-         if (!productDefinitionShape.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(productDefinitionShape, IFCEntityType.IfcProductDefinitionShape))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1717,12 +1609,6 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The list of representations.</returns>
       public static List<IFCAnyHandle> GetProductRepresentations(IFCAnyHandle productHandle)
       {
-         if (productHandle == null)
-            throw new ArgumentNullException("productHandle");
-
-         if (!productHandle.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(productHandle, IFCEntityType.IfcProduct))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1742,12 +1628,6 @@ namespace Revit.IFC.Common.Utility
       /// <param name="productHandle">The collection of representation handles.</param>
       public static void AddProductRepresentations(IFCAnyHandle productHandle, IList<IFCAnyHandle> representations)
       {
-         if (productHandle == null)
-            throw new ArgumentNullException("productHandle");
-
-         if (!productHandle.HasValue)
-            throw new ArgumentException("Invalid handle.");
-
          if (!IsSubTypeOf(productHandle, IFCEntityType.IfcProduct))
             throw new ArgumentException("The operation is not valid for this handle.");
 
@@ -1769,10 +1649,13 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
-      /// Checks if the handle points to a valid IFC entity.  A handle could point to an invalid entity if it were deleted after being stored in a cache.
+      /// Checks if the handle points to a valid IFC entity.  A handle could point to an 
+      /// invalid entity if it were deleted after being stored in a cache.
       /// </summary>
       /// <param name="handle">The handle.</param>
       /// <returns>True if it is valid, false otherwise.</returns>
+      /// <remarks>This really should only be used on export, where there are cases
+      /// of deleted handles in caches that we need to verify before use.</remarks>
       public static bool IsValidHandle(IFCAnyHandle handle)
       {
          if (IsNullOrHasNoValue(handle))
@@ -1790,11 +1673,11 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
-      /// Checks if the handle is of a particular type.
+      /// Checks if the handle is an entity of exactly the given type (not including its sub-types).
       /// </summary>
-      /// <param name="handle">The handle.</param>
-      /// <param name="type">The type.</param>
-      /// <returns>True if the handle is exactly of the specified type.</returns>
+      /// <param name="handle">The handle to be checked.</param>
+      /// <param name="type">The entity type to be checked against.</param>
+      /// <returns>True if the handle entity is an entity of the given type (not including its sub-types).</returns>
       public static bool IsTypeOf(IFCAnyHandle handle, IFCEntityType type)
       {
          if (IsNullOrHasNoValue(handle))
@@ -1804,30 +1687,41 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
-      /// Checks if the handle is a sub-type of a particular type.
+      /// Checks if the handle is an entity of either the given type or one of its sub-types.
       /// </summary>
-      /// <param name="handle">The handle.</param>
-      /// <param name="type">The type.</param>
-      /// <returns>True if the handle is exactly of the specified type.</returns>
+      /// <param name="handle">The handle to be checked.</param>
+      /// <param name="type">The entity type to be checked against.</param>
+      /// <returns>True if the handle entity is an entity of either the given type or one of its sub-types.</returns>
       public static bool IsSubTypeOf(IFCAnyHandle handle, IFCEntityType type)
       {
          if (IsNullOrHasNoValue(handle))
             return false;
 
-         return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
+         return IsValidSubTypeOf(handle, type);
       }
 
       /// <summary>
-      /// Updates the project information.
+      /// Checks if the handle is an entity of either the given type or one of its sub-types.
       /// </summary>
-      /// <param name="project">The project.</param>
-      /// <param name="projectName">The project name.</param>
-      /// <param name="projectLongName">The project long name.</param>
-      /// <param name="projectStatus">The project status.</param>
+      /// <param name="handle">The handle to be checked.</param>
+      /// <param name="type">The entity type to be checked against.</param>
+      /// <returns>True if the handle entity is an entity of either the given type or one of its sub-types.</returns>
+      public static bool IsValidSubTypeOf(IFCAnyHandle handle, IFCEntityType type)
+      {
+         return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
+      }
+      
+      /// <summary>
+             /// Updates the project information.
+             /// </summary>
+             /// <param name="project">The project.</param>
+             /// <param name="projectName">The project name.</param>
+             /// <param name="projectLongName">The project long name.</param>
+             /// <param name="projectStatus">The project status.</param>
       public static void UpdateProject(IFCAnyHandle project, string projectName, string projectLongName,
           string projectStatus)
       {
-         if (!IsNullOrHasNoValue(project) && project.IsSubTypeOf(GetIFCEntityTypeName(IFCEntityType.IfcProject)))
+         if (IsSubTypeOf(project, IFCEntityType.IfcProject))
          {
             SetAttribute(project, "Name", projectName);
             SetAttribute(project, "LongName", projectLongName);

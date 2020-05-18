@@ -148,7 +148,7 @@ namespace Revit.IFC.Import.Data
 
          if (checkPorts)
          {
-            ICollection<IFCAnyHandle> hasPorts = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcElement, "HasPorts");
+            ICollection<IFCAnyHandle> hasPorts = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcElement, "HasPorts");
             if (hasPorts != null)
             {
                foreach (IFCAnyHandle hasPort in hasPorts)
@@ -299,13 +299,13 @@ namespace Revit.IFC.Import.Data
 
          IFCElement newIFCElement = null;
          // other subclasses not handled yet.
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcElement, IFCEntityType.IfcBuildingElement))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcBuildingElement))
             newIFCElement = IFCBuildingElement.ProcessIFCBuildingElement(ifcElement);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(ifcElement, IFCEntityType.IfcFeatureElement))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcFeatureElement))
             newIFCElement = IFCFeatureElement.ProcessIFCFeatureElement(ifcElement);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(ifcElement, IFCEntityType.IfcElementAssembly))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementAssembly))
             newIFCElement = IFCElementAssembly.ProcessIFCElementAssembly(ifcElement);
-         else if (IFCAnyHandleUtil.IsSubTypeOf(ifcElement, IFCEntityType.IfcElementComponent))
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementComponent))
             newIFCElement = IFCElementComponent.ProcessIFCElementComponent(ifcElement);
          else
             newIFCElement = new IFCElement(ifcElement);

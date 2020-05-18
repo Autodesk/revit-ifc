@@ -128,6 +128,10 @@ namespace Revit.IFC.Import.Data
       /// <param name="parametersCreated">The created parameters.</param>
       protected void CreateScheduleForPropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap, ISet<string> parametersCreated)
       {
+         // Don't bother creating schedules if we are maximizing performance.
+         if (IFCImportFile.TheFile.Options.UseStreamlinedOptions)
+            return;
+
          if (parametersCreated.Count == 0)
             return;
 

@@ -529,8 +529,9 @@ namespace BIM.IFC.Export.UI
             }
 
             // get the link document unit scale
-            DisplayUnitType dutLink = documentCopy.GetUnits().GetFormatOptions(UnitType.UT_Length).DisplayUnits;
-            double lengthScaleFactorLink = UnitUtils.ConvertFromInternalUnits(1.0, dutLink);
+            double lengthScaleFactorLink = UnitUtils.ConvertFromInternalUnits(
+               1.0,
+               documentCopy.GetUnits().GetFormatOptions(SpecTypeId.Length).GetUnitTypeId());
 
             // get the link instances
             List<RevitLinkInstance> currRvtLinkInstances = rvtLinkNamesToInstancesDict[linkPathName];

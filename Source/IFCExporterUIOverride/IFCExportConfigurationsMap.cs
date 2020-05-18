@@ -161,6 +161,10 @@ namespace BIM.IFC.Export.UI
                      configuration.UseTypeNameOnlyForIfcType = bool.Parse(configMap[s_useTypeNameOnlyForIfcType]);
                   if (configMap.ContainsKey(s_useVisibleRevitNameAsEntityName))
                      configuration.UseVisibleRevitNameAsEntityName = bool.Parse(configMap[s_useVisibleRevitNameAsEntityName]);
+                  if (configMap.ContainsKey(s_useOnlyTriangulation))
+                     configuration.UseOnlyTriangulation = bool.Parse(configMap[s_useOnlyTriangulation]);
+                  if (configMap.ContainsKey(s_setupTessellationLevelOfDetail))
+                     configuration.TessellationLevelOfDetail = double.Parse(configMap[s_setupTessellationLevelOfDetail]);
 
                   Add(configuration);
                }
@@ -232,13 +236,18 @@ namespace BIM.IFC.Export.UI
                   Field fieldIncludeSteelElements = m_schema.GetField(s_includeSteelElements);
                   if (fieldIncludeSteelElements != null)
                      configuration.IncludeSteelElements = configEntity.Get<bool>(s_includeSteelElements);
-
+                  Field fieldUseOnlyTriangulation = m_schema.GetField(s_useOnlyTriangulation);
+                  if (fieldUseOnlyTriangulation != null)
+                     configuration.UseOnlyTriangulation = configEntity.Get<bool>(s_useOnlyTriangulation);
                   Field fieldUseTypeNameOnlyForIfcType = m_schema.GetField(s_useTypeNameOnlyForIfcType);
                   if (fieldUseTypeNameOnlyForIfcType != null)
                      configuration.UseTypeNameOnlyForIfcType = configEntity.Get<bool>(s_useTypeNameOnlyForIfcType);
                   Field fieldUseVisibleRevitNameAsEntityName = m_schema.GetField(s_useVisibleRevitNameAsEntityName);
                   if (fieldUseVisibleRevitNameAsEntityName != null)
                      configuration.UseVisibleRevitNameAsEntityName = configEntity.Get<bool>(s_useVisibleRevitNameAsEntityName);
+                  Field fieldTessellationLevelOfDetail = m_schema.GetField(s_setupTessellationLevelOfDetail);
+                  if (fieldTessellationLevelOfDetail != null)
+                     configuration.TessellationLevelOfDetail = configEntity.Get<double>(s_setupTessellationLevelOfDetail);
 
                   Add(configuration);
                }
@@ -278,7 +287,7 @@ namespace BIM.IFC.Export.UI
       private const string s_setupExportUserDefinedParameterMappingFileName = "ExportUserDefinedParameterMappingFileName";
       private const string s_setupExportLinkedFiles = "ExportLinkedFiles";
       private const string s_setupIncludeSiteElevation = "IncludeSiteElevation";
-      private const string s_setupUseCoarseTessellation = "UseCoarseTessellation";
+      private const string s_setupTessellationLevelOfDetail = "TessellationLevelOfDetail";
       private const string s_useOnlyTriangulation = "UseOnlyTriangulation";
       private const string s_setupStoreIFCGUID = "StoreIFCGUID";
       private const string s_setupActivePhase = "ActivePhase";
@@ -419,6 +428,7 @@ namespace BIM.IFC.Export.UI
                mapData.Add(s_setupSitePlacement, configuration.SitePlacement.ToString());
                mapData.Add(s_useTypeNameOnlyForIfcType, configuration.UseTypeNameOnlyForIfcType.ToString());
                mapData.Add(s_useVisibleRevitNameAsEntityName, configuration.UseVisibleRevitNameAsEntityName.ToString());
+               mapData.Add(s_setupTessellationLevelOfDetail, configuration.TessellationLevelOfDetail.ToString());
                // For COBie v2.4
                mapData.Add(s_cobieCompanyInfo, configuration.COBieCompanyInfo);
                mapData.Add(s_cobieProjectInfo, configuration.COBieProjectInfo);

@@ -110,9 +110,9 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcEdge, IFCEntityType.IfcOrientedEdge))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcEdge, IFCEntityType.IfcOrientedEdge))
             return IFCOrientedEdge.ProcessIFCOrientedEdge(ifcEdge);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcEdge, IFCEntityType.IfcEdgeCurve))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcEdge, IFCEntityType.IfcEdgeCurve))
             return IFCEdgeCurve.ProcessIFCEdgeCurve(ifcEdge);
 
          IFCEntity edge;

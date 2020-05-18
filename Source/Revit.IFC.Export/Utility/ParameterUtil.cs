@@ -157,7 +157,6 @@ namespace Revit.IFC.Export.Utility
             return null;
 
          Parameter parameter = GetParameterFromName(element.Id, null, propertyName);
-
          if (parameter != null && parameter.HasValue)
          {
             switch (parameter.StorageType)
@@ -212,6 +211,12 @@ namespace Revit.IFC.Export.Utility
          return null;
       }
 
+      public static Parameter GetDoubleValueFromElement(Element element, BuiltInParameterGroup? group, string propertyName, out double propertyValue)
+      {
+         ForgeTypeId unitType;
+         return GetDoubleValueFromElement(element, group, propertyName, out propertyValue, out unitType);
+      }
+
       /// <summary>
       /// Gets double value from parameter of an element.
       /// </summary>
@@ -222,18 +227,18 @@ namespace Revit.IFC.Export.Utility
       /// <exception cref="System.ArgumentNullException">Thrown when element is null.</exception>
       /// <exception cref="System.ArgumentException">Thrown when propertyName is null or empty.</exception>
       /// <returns>The parameter, or null if not found.</returns>
-      public static Parameter GetDoubleValueFromElement(Element element, BuiltInParameterGroup? group, string propertyName, out double propertyValue)
+      public static Parameter GetDoubleValueFromElement(Element element, BuiltInParameterGroup? group, string propertyName, out double propertyValue, out ForgeTypeId unitType)
       {
          if (String.IsNullOrEmpty(propertyName))
             throw new ArgumentException("It is null or empty.", "propertyName");
 
          propertyValue = 0.0;
+         unitType = null;
 
          if (element == null)
             return null;
 
          Parameter parameter = GetParameterFromName(element.Id, group, propertyName);
-
          if (parameter != null && parameter.HasValue)
          {
             switch (parameter.StorageType)
@@ -258,6 +263,7 @@ namespace Revit.IFC.Export.Utility
                         if (propertyDoubleValue.HasValue)
                         {
                            propertyValue = propertyDoubleValue.Value;
+                           unitType = pResv.UnitType;
                            return parameter;
                         }
                      }
@@ -320,6 +326,18 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The parameter, or null if not found.</returns>
       public static Parameter GetStringValueFromElementOrSymbol(Element element, BuiltInParameter builtInParameter, bool nullAllowed, out string propertyValue)
       {
+         return GetStringValueFromElementOrSymbol(element, null, builtInParameter, nullAllowed, out propertyValue);
+      }
+
+      /// <summary>Gets string value from built-in parameter of an element or its type.</summary>
+      /// <param name="element">The element, which can be null.</param>
+      /// <param name="elementType">The element, which can be null.  It will be calculated from the element if it is.</param>
+      /// <param name="builtInParameter">The built-in parameter.</param>
+      /// <param name="nullAllowed">true if we allow the property value to be empty.</param>
+      /// <param name="propertyValue">The output property value.</param>
+      /// <returns>The parameter, or null if not found.</returns>
+      public static Parameter GetStringValueFromElementOrSymbol(Element element, Element elementType, BuiltInParameter builtInParameter, bool nullAllowed, out string propertyValue)
+      {
          propertyValue = string.Empty;
          if (element == null)
             return null;
@@ -332,7 +350,9 @@ namespace Revit.IFC.Export.Utility
          }
 
          parameter = null;
-         Element elementType = element.Document.GetElement(element.GetTypeId());
+         if (elementType == null)
+            elementType = element.Document.GetElement(element.GetTypeId());
+
          if (elementType != null)
          {
             parameter = GetStringValueFromElement(elementType, builtInParameter, out propertyValue);
@@ -360,8 +380,8 @@ namespace Revit.IFC.Export.Utility
             throw new ArgumentException("BuiltInParameter is INVALID", "builtInParameter");
 
          Parameter parameter = element.get_Parameter(builtInParameter);
-         if (parameter != null && 
-            parameter.HasValue && 
+         if (parameter != null &&
+            parameter.HasValue &&
             parameter.StorageType == StorageType.String)
          {
             if (!parameter.IsReadOnly)
@@ -589,7 +609,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="elementId">The element id.</param>
       /// <param name="propertyName">The property name.</param>
-      /// <returns>The Parameter.</returns>
+      /// <returns>The parameter.</returns>
       static private Parameter getParameterByNameFromCache(ElementId elementId, string propertyName)
       {
          Parameter parameter = null;
@@ -613,7 +633,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="elementId">The element id.</param>
       /// <param name="group">The parameter group.</param>
       /// <param name="propertyName">The property name.</param>
-      /// <returns>The Parameter.</returns>
+      /// <returns>The parameter.</returns>
       static private Parameter getParameterByNameFromCache(ElementId elementId, BuiltInParameterGroup group,
           string propertyName)
       {
@@ -623,14 +643,13 @@ namespace Revit.IFC.Export.Utility
          if (group == BuiltInParameterGroup.PG_IFC)
          {
             m_IFCParameters[elementId].ParameterCache.TryGetValue(cleanPropertyName, out parameter);
-            return null;
+            return parameter;
          }
 
          ParameterElementCache otherCache = null;
          m_NonIFCParameters[elementId].TryGetValue(group, out otherCache);
          if (otherCache != null)
             otherCache.ParameterCache.TryGetValue(cleanPropertyName, out parameter);
-
          return parameter;
       }
 
@@ -640,7 +659,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="elementId">The element id.</param>
       /// <param name="handle">The subelement ifc handle.</param>
       /// <param name="propertyName">The property name.</param>
-      /// <returns>The Parameter.</returns>
+      /// <returns>The parameter.</returns>
       static public ParameterValue getParameterValueByNameFromSubelementCache(ElementId elementId, IFCAnyHandle subelementHandle, string propertyName)
       {
          ParameterValue parameterVal = null;
@@ -719,7 +738,7 @@ namespace Revit.IFC.Export.Utility
          if (parameterIds.Size == 0)
             return;
 
-         IDictionary<int, KeyValuePair<string, Parameter>> stableSortedParameterSet = 
+         IDictionary<int, KeyValuePair<string, Parameter>> stableSortedParameterSet =
             new SortedDictionary<int, KeyValuePair<string, Parameter>>();
 
          // We will do two passes.  In the first pass, we will look at parameters in the IFC group.
@@ -748,7 +767,7 @@ namespace Revit.IFC.Export.Utility
             if (string.IsNullOrWhiteSpace(name))
                continue;
 
-            stableSortedParameterSet[parameter.Id.IntegerValue] = new KeyValuePair<string,Parameter>(name, parameter);
+            stableSortedParameterSet[parameter.Id.IntegerValue] = new KeyValuePair<string, Parameter>(name, parameter);
          }
 
          foreach (KeyValuePair<string, Parameter> stableSortedParameter in stableSortedParameterSet.Values)
@@ -874,7 +893,7 @@ namespace Revit.IFC.Export.Utility
              getParameterByNameFromCache(elemId, propertyName);
       }
 
-      private static Parameter GetStringValueFromElementOrSymbolBase(Element element, string propertyName, bool allowUnset, out string propertyValue)
+      private static Parameter GetStringValueFromElementOrSymbolBase(Element element, Element elementType, string propertyName, bool allowUnset, out string propertyValue)
       {
          Parameter parameter = GetStringValueFromElementBase(element, propertyName, allowUnset, out propertyValue);
          if (parameter != null)
@@ -883,7 +902,9 @@ namespace Revit.IFC.Export.Utility
                return parameter;
          }
 
-         Element elementType = element.Document.GetElement(element.GetTypeId());
+         if (elementType == null)
+            elementType = element.Document.GetElement(element.GetTypeId());
+
          if (elementType != null)
          {
             parameter = GetStringValueFromElementBase(elementType, propertyName, allowUnset, out propertyValue);
@@ -904,7 +925,19 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The parameter, or null if not found.</returns>
       public static Parameter GetStringValueFromElementOrSymbol(Element element, string propertyName, out string propertyValue)
       {
-         return GetStringValueFromElementOrSymbolBase(element, propertyName, false, out propertyValue);
+         return GetStringValueFromElementOrSymbolBase(element, null, propertyName, false, out propertyValue);
+      }
+
+      /// <summary>
+      /// Gets string value from parameter of an element or its element type.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="propertyName">The property name.</param>
+      /// <param name="propertyValue">The output property value.</param>
+      /// <returns>The parameter, or null if not found.</returns>
+      public static Parameter GetStringValueFromElementOrSymbol(Element element, Element elementType, string propertyName, out string propertyValue)
+      {
+         return GetStringValueFromElementOrSymbolBase(element, elementType, propertyName, false, out propertyValue);
       }
 
       /// <summary>
@@ -916,7 +949,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The parameter, or null if not found.</returns>
       public static Parameter GetOptionalStringValueFromElementOrSymbol(Element element, string propertyName, out string propertyValue)
       {
-         return GetStringValueFromElementOrSymbolBase(element, propertyName, true, out propertyValue);
+         return GetStringValueFromElementOrSymbolBase(element, null, propertyName, true, out propertyValue);
       }
 
       /// <summary>
@@ -998,11 +1031,12 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Get override containment value through a parameter "IfcSpatialContainer" or "OverrideElementContainer". Value can be "IFCSITE", "IFCBUILDING", or the appropriate Level name
+      /// Get override containment value through a parameter "IfcSpatialContainer" or "OverrideElementContainer". 
+      /// Value can be "IFCSITE", "IFCBUILDING", or the appropriate Level name.
       /// </summary>
-      /// <param name="element">the element</param>
-      /// <param name="overrideContainerHnd">the override container Handle</param>
-      /// <returns>true if there is override</returns>
+      /// <param name="element">The input element.</param>
+      /// <param name="overrideContainerHnd">The entity handle of the container.</param>
+      /// <returns>The element id of the container.</returns>
       public static ElementId OverrideContainmentParameter(ExporterIFC exporterIFC, Element element, out IFCAnyHandle overrideContainerHnd)
       {
          ElementId containerElemId = ElementId.InvalidElementId;
@@ -1046,6 +1080,23 @@ namespace Revit.IFC.Export.Utility
          }
 
          return containerElemId;
+      }
+
+      /// <summary>
+      /// Get override containment value through a parameter "IfcSpatialContainer" or "OverrideElementContainer". 
+      /// Value can be "IFCSITE", "IFCBUILDING", or the appropriate Level name, given an IfcSpace entity handle.
+      /// </summary>
+      /// <param name="exporterIFC">The export context.</param>
+      /// <param name="document">The document containing the element corresponding the the IfcSpace handle.</param>
+      /// <param name="spaceHnd">The entity handle of the IfcSpace.</param>
+      /// <param name="overrideContainerHnd">The entity handle of the container.</param>
+      /// <returns>The element id of the container.</returns>
+      public static ElementId OverrideSpaceContainmentParameter(ExporterIFC exporterIFC, Document document,
+         IFCAnyHandle spaceHnd, out IFCAnyHandle overrideContainerHnd)
+      {
+         ElementId spaceId = ExporterCacheManager.HandleToElementCache.Find(spaceHnd);
+         Element elem = document.GetElement(spaceId);
+         return ParameterUtil.OverrideContainmentParameter(exporterIFC, elem, out overrideContainerHnd);
       }
    }
 }

@@ -90,7 +90,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyWidth", out m_Width) == null)
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Width", out m_Width);
+               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Width", out m_Width);
 
          m_Width = UnitUtil.ScaleArea(m_Width);
          if (m_Width > MathUtil.Eps())

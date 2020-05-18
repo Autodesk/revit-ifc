@@ -36,6 +36,7 @@ namespace Revit.IFC.Export.Utility
    {
       public object nodePropertyValue { get; set; }
       public object originalNodePropertyValue { get; set; }
+      public ForgeTypeId uomTypeId { get; set; } = null;
    }
 
    class ParamExprListener : ParamExprGrammarBaseListener
@@ -57,6 +58,16 @@ namespace Revit.IFC.Export.Utility
       /// Get/set Revit element that owns the parameter being processed
       /// </summary>
       public Element RevitElement { get; set; }
+
+      /// <summary>
+      /// Get/Set Unit of Measure for value marked as having uom
+      /// </summary>
+      public string formattedValue { get; set; } = null;
+
+      /// <summary>
+      /// Get the unit type of the value
+      /// </summary>
+      public ForgeTypeId UnitType { get; private set; } = null;
 
       // Dictionary to keep information of which parameter that contains the running number. Key is a tuple of Revit_category and parameter name
       static IDictionary<Tuple<string, string>, int> LastRunningNumberCollection = new Dictionary<Tuple<string, string>, int>();
@@ -220,7 +231,8 @@ namespace Revit.IFC.Export.Utility
       public override void ExitParam_expr([NotNull] ParamExprGrammarParser.Param_exprContext context)
       {
          base.ExitParam_expr(context);
-         object parValue = GetNodePropertyValue(context.expr()).nodePropertyValue;
+         NodeProperty paramExprNodeProp = GetNodePropertyValue(context.expr());
+         object parValue = paramExprNodeProp.nodePropertyValue;
          // Unique parameter value can only be "enforced" for a string datatype by appending a running number: <parValue> (#), starting with 2
          if (isUnique && parValue is string)
          {
@@ -238,6 +250,16 @@ namespace Revit.IFC.Export.Utility
             }
          }
          FinalParameterValue = parValue;
+         UnitType = paramExprNodeProp.uomTypeId;
+         if (paramExprNodeProp.uomTypeId != null)
+         {
+            if (FinalParameterValue is double)
+            {
+               double? paramValueDouble = FinalParameterValue as double?;
+               formattedValue = UnitFormatUtils.Format(RevitElement.Document.GetUnits(), paramExprNodeProp.uomTypeId, paramValueDouble.Value, false);
+               FinalParameterValue = UnitUtils.ConvertToInternalUnits(paramValueDouble.Value, paramExprNodeProp.uomTypeId);
+            }
+         }
       }
 
       /// <summary>
@@ -275,7 +297,7 @@ namespace Revit.IFC.Export.Utility
             }
             else if (spParCtx.RUNNINGNUMBERINSTANCE() != null)
             {
-               var key = new Tuple<string, string>(RevitElement.Id.ToString(), RevitParameterName);
+               var key = new Tuple<string, string>(RevitElement.Id.ToString(), null);
                int lastNumber;
                if (LastRunningNumberCollection.ContainsKey(key))
                {
@@ -368,6 +390,7 @@ namespace Revit.IFC.Export.Utility
       {
          base.ExitValue(context);
          object value = null;
+         ForgeTypeId convertUnit = SpecTypeId.Number;
 
          string valueStr = context.GetChild(0).GetText();
          if (context.GetChild(0) is ParamExprGrammarParser.StringliteralContext)
@@ -377,14 +400,7 @@ namespace Revit.IFC.Export.Utility
          }
          else if (context.GetChild(0) is ParamExprGrammarParser.RealliteralContext)
          {
-            UnitType convertUnit = UnitType.UT_Length;
-            bool hasUnit = false;
-
             ParamExprGrammarParser.RealliteralContext realCtx = context.GetChild(0) as ParamExprGrammarParser.RealliteralContext;
-            if (realCtx.UNITTYPEENUM() != null)
-            {
-               hasUnit = Enum.TryParse<UnitType>(realCtx.UNITTYPEENUM().GetText(), true, out convertUnit);
-            }
 
             valueStr = realCtx.signed_number().GetText();
             int valueInt;
@@ -395,16 +411,50 @@ namespace Revit.IFC.Export.Utility
                double valueDbl;
                if (Double.TryParse(valueStr, out valueDbl))
                {
-                  if (hasUnit)
-                     value = (double)valueDbl / UnitUtil.ScaleDouble(convertUnit, 1.0);
-                  else
-                     value = (double)valueDbl;
+                  value = (double)valueDbl;
                }
+            }
+         }
+         else if (context.GetChild(0) is ParamExprGrammarParser.Value_with_unitContext)
+         {
+            ParamExprGrammarParser.Value_with_unitContext vwunitCtx = context.GetChild(0) as ParamExprGrammarParser.Value_with_unitContext;
+            if (vwunitCtx.UNITTYPE() != null)
+            {
+               try
+               {
+                  if (vwunitCtx.GetChild(2) is ParamExprGrammarParser.Atomic_paramContext)
+                  {
+                     NodeProperty val = GetNodePropertyValue(vwunitCtx.GetChild(2));
+                     if (val.nodePropertyValue is double)
+                     {
+                        value = (double)val.nodePropertyValue;
+                     }
+                  }
+                  else if (vwunitCtx.GetChild(2) is ParamExprGrammarParser.Signed_numberContext)
+                  {
+                     ParamExprGrammarParser.Signed_numberContext signedNum = vwunitCtx.GetChild(2) as ParamExprGrammarParser.Signed_numberContext;
+                     valueStr = signedNum.GetText();
+                     double valueDbl;
+                     if (Double.TryParse(valueStr, out valueDbl))
+                     {
+                        value = (double)valueDbl;
+                     }
+                  }
+
+                  string unitTypeName = vwunitCtx.UNITTYPE().GetText();
+                  System.Reflection.PropertyInfo unitType = typeof(Autodesk.Revit.DB.SpecTypeId).GetProperty(unitTypeName);
+                  if (unitType != null)
+                  {
+                     convertUnit = unitType.GetValue(null, null) as ForgeTypeId;
+                  }
+               }
+               catch { }
             }
          }
          NodeProperty nodeP = new NodeProperty();
          nodeP.originalNodePropertyValue = valueStr;
          nodeP.nodePropertyValue = value;
+         nodeP.uomTypeId = convertUnit;
 
          SetNodePropertyValue(context, nodeP);
       }

@@ -477,6 +477,11 @@ namespace Revit.IFC.Import.Geometry
             param2 = MathUtil.PutInRange(param2, param1 + period / 2, period);
       }
 
+      private static bool NeedsTrimming(double startVal, double? origEndVal)
+      {
+         return (origEndVal.HasValue || !MathUtil.IsAlmostZero(startVal));
+      }
+
       /// <summary>
       /// Trims the CurveLoop contained in an IFCCurve by the start and optional end parameter values.
       /// </summary>
@@ -485,15 +490,27 @@ namespace Revit.IFC.Import.Geometry
       /// <param name="startVal">The starting trim parameter.</param>
       /// <param name="origEndVal">The optional end trim parameter.  If not supplied, assume no end trim.</param>
       /// <returns>The original curve loop, if no trimming has been done, otherwise a trimmed copy.</returns>
-      public static CurveLoop TrimCurveLoop(int id, IFCCurve ifcCurve, double startVal, double? origEndVal)
+      private static CurveLoop TrimCurveLoop(int id, IFCCurve ifcCurve, double startVal, double? origEndVal)
       {
-         CurveLoop origCurveLoop = ifcCurve.GetCurveLoop();
-         if (origCurveLoop == null)
+         CurveLoop origCurveLoop = ifcCurve.GetTheCurveLoop();
+         if (origCurveLoop == null || origCurveLoop.Count() == 0)
             return null;
 
-         // Trivial case: no trimming.
-         if (!origEndVal.HasValue && MathUtil.IsAlmostZero(startVal))
-            return origCurveLoop;
+         // Trivial case: unbound curve.
+         Curve possiblyUnboundCurve = origCurveLoop.First();
+         if (!possiblyUnboundCurve.IsBound)
+         {
+            if (!origEndVal.HasValue)
+            {
+               Importer.TheLog.LogError(id, "Can't trim unbound curve with no given end parameter.", true);
+            }
+
+            CurveLoop boundCurveLoop = new CurveLoop();
+            Curve boundCurve = possiblyUnboundCurve.Clone();
+            boundCurve.MakeBound(startVal, origEndVal.Value * ifcCurve.ParametericScaling);
+            boundCurveLoop.Append(boundCurve);
+            return boundCurveLoop;
+         }
 
          IList<double> curveLengths = new List<double>();
          IList<Curve> loopCurves = new List<Curve>();
@@ -596,6 +613,29 @@ namespace Revit.IFC.Import.Geometry
          foreach (Curve curve in newLoopCurves)
             trimmedCurveLoop.Append(curve);
          return trimmedCurveLoop;
+      }
+
+      public static IList<CurveLoop> TrimCurveLoops(int id, IFCCurve ifcCurve, double startVal, double? origEndVal)
+      {
+         if (ifcCurve.CurveLoops == null)
+            return null;
+
+         if (!NeedsTrimming(startVal, origEndVal))
+            return ifcCurve.CurveLoops;
+
+         if (ifcCurve.CurveLoops.Count != 1)
+         {
+            Importer.TheLog.LogError(id, "Ignoring potential trimming for disjoint curve.", false);
+            return ifcCurve.CurveLoops;
+         }
+
+         CurveLoop trimmedDirectrix = TrimCurveLoop(id, ifcCurve, startVal, origEndVal);
+         if (trimmedDirectrix == null)
+            return null;
+
+         IList<CurveLoop> trimmedDirectrices = new List<CurveLoop>();
+         trimmedDirectrices.Add(trimmedDirectrix);
+         return trimmedDirectrices;
       }
 
       /// <summary>
@@ -797,15 +837,14 @@ namespace Revit.IFC.Import.Geometry
       /// <param name="inputVerticesList">Input list of the vertices</param>
       /// <param name="outputVerticesList">Output List of the valid vertices, i.e. not vertices that are too close to each other</param>
       /// <returns></returns>
-      public static void CheckAnyDistanceVerticesWithinTolerance(int entityId, IFCImportShapeEditScope shapeEditScope, IList<XYZ> inputVerticesList, out IList<XYZ> outputVerticesList)
+      public static void CheckAnyDistanceVerticesWithinTolerance(int entityId, 
+         IFCImportShapeEditScope shapeEditScope, IList<XYZ> inputVerticesList, out List<XYZ> outputVerticesList)
       {
          // Check triangle that is too narrow (2 vertices are within the tolerance)
-         double shortSegmentTolerance = shapeEditScope.TryToCreateSolid() ?
-                                         shapeEditScope.Document.Application.ShortCurveTolerance :
-                                         shapeEditScope.Document.Application.VertexTolerance;
-
+         double shortSegmentTolerance = shapeEditScope.GetShortSegmentTolerance();
+         
          int lastVertex = 0;
-         IList<XYZ> vertList = new List<XYZ>();
+         List<XYZ> vertList = new List<XYZ>();
          outputVerticesList = vertList;
          for (int ii = 1; ii <= inputVerticesList.Count; ii++)
          {
@@ -826,8 +865,8 @@ namespace Revit.IFC.Import.Geometry
                string distAsString = IFCUnitUtil.FormatLengthAsString(dist);
                string shortDistAsString = IFCUnitUtil.FormatLengthAsString(shortSegmentTolerance);
                string warningString = "Distance between vertices " + lastVertex + " and " + currIdx +
-                                       " is " + distAsString + ", which is less than the minimum " + (shapeEditScope.TryToCreateSolid() ? "Solid" : "Mesh") +
-                                       " distance of " + shortDistAsString + ", removing second point.";
+                                       " is " + distAsString + ", which is less than the minimum distance of " + 
+                                       shortDistAsString + ", removing second point.";
 
                Importer.TheLog.LogComment(entityId, warningString, false);
             }

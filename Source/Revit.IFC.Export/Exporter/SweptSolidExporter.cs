@@ -147,7 +147,8 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="solid">The solid.</param>
       /// <param name="normal">The normal of the plane that the path lies on.</param>
       /// <returns>The SweptSolidExporter.</returns>
-      public static SweptSolidExporter Create(ExporterIFC exporterIFC, Element element, SimpleSweptSolidAnalyzer sweptAnalyzer, GeometryObject geomObject, GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.None)
+      public static SweptSolidExporter Create(ExporterIFC exporterIFC, Element element, SimpleSweptSolidAnalyzer sweptAnalyzer, GeometryObject geomObject,
+         GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody)
       {
          try
          {
@@ -183,10 +184,7 @@ namespace Revit.IFC.Export.Exporter
                    line.Direction, UnitUtil.ScaleLength(line.Length), false);
                if ((addInfo & GenerateAdditionalInfo.GenerateFootprint) != 0)
                {
-                  FootPrintInfo fInfo = new FootPrintInfo();
-                  fInfo.LCSTransformUsed = lcs;
-                  fInfo.FootPrintHandle = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, faceBoundaries[0], lcs, line.Direction);
-                  sweptSolidExporter.FootprintInfo = fInfo;
+                  sweptSolidExporter.FootprintInfo = new FootPrintInfo(faceBoundaries, lcs);
                }
             }
             else
@@ -208,11 +206,8 @@ namespace Revit.IFC.Export.Exporter
                      sweptSolidExporter.RepresentationType = ShapeRepresentationType.AdvancedSweptSolid;
                      if ((addInfo & GenerateAdditionalInfo.GenerateFootprint) != 0)
                      {
-                        FootPrintInfo fInfo = new FootPrintInfo();
                         Transform lcs = GeometryUtil.CreateTransformFromPlanarFace(sweptAnalyzer.ProfileFace);
-                        fInfo.LCSTransformUsed = lcs;
-                        fInfo.FootPrintHandle = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, faceBoundaries[0], lcs, sweptAnalyzer.ReferencePlaneNormal);
-                        sweptSolidExporter.FootprintInfo = fInfo;
+                        sweptSolidExporter.FootprintInfo = new FootPrintInfo(faceBoundaries, lcs);
                      }
                   }
                }
@@ -590,7 +585,7 @@ namespace Revit.IFC.Export.Exporter
          foreach (double parameter in tessellatedDirectrixParameters)
          {
             Transform directrixDirs = CreateProfileCurveTransform(exporterIFC, directrix, parameter);
-
+            
             IList<IList<IFCAnyHandle>> currTessellatedOutline = new List<IList<IFCAnyHandle>>();
             foreach (IList<XYZ> projectedPointLoop in projectedTessellatedOutline)
             {

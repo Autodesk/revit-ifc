@@ -38,7 +38,7 @@ namespace Revit.IFC.Import.Utility
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcRelAssigns))
             throw new ArgumentNullException("ifcRelAssigns");
 
-         if (!IFCAnyHandleUtil.IsSubTypeOf(ifcRelAssigns, IFCEntityType.IfcRelAssigns))
+         if (!IFCAnyHandleUtil.IsValidSubTypeOf(ifcRelAssigns, IFCEntityType.IfcRelAssigns))
             throw new ArgumentException("ifcRelAssigns");
       }
 
@@ -47,8 +47,8 @@ namespace Revit.IFC.Import.Utility
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcRelAssignsOrAggregates))
             throw new ArgumentNullException("ifcRelAssignsOrAggregates");
 
-         if (!IFCAnyHandleUtil.IsSubTypeOf(ifcRelAssignsOrAggregates, IFCEntityType.IfcRelAssigns) &&
-             (!IFCAnyHandleUtil.IsSubTypeOf(ifcRelAssignsOrAggregates, IFCEntityType.IfcRelAggregates)))
+         if (!IFCAnyHandleUtil.IsValidSubTypeOf(ifcRelAssignsOrAggregates, IFCEntityType.IfcRelAssigns) &&
+             (!IFCAnyHandleUtil.IsValidSubTypeOf(ifcRelAssignsOrAggregates, IFCEntityType.IfcRelAggregates)))
             throw new ArgumentException("ifcRelAssignsOrAggregates");
       }
 
@@ -112,14 +112,9 @@ namespace Revit.IFC.Import.Utility
             return null;
          }
 
-         IFCAnyHandle relatingGroup = IFCAnyHandleUtil.GetInstanceAttribute(ifcRelAssignsToGroup, "RelatingGroup");
+         IFCAnyHandle relatingGroup = IFCAnyHandleUtil.GetValidInstanceAttribute(ifcRelAssignsToGroup, "RelatingGroup");
 
-         // Receiving apps need to decide whether to post an error or not.
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(relatingGroup))
-            return null;
-
-         IFCGroup group = IFCGroup.ProcessIFCGroup(relatingGroup);
-         return group;
+         return IFCGroup.ProcessIFCGroup(relatingGroup);
       }
 
       /// <summary>

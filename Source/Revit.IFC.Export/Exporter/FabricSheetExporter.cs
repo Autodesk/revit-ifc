@@ -53,7 +53,7 @@ namespace Revit.IFC.Export.Exporter
          Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcGroup;
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return false;
-         
+
          HashSet<IFCAnyHandle> fabricSheetHandles = null;
          if (!ExporterCacheManager.FabricAreaHandleCache.TryGetValue(element.Id, out fabricSheetHandles))
             return false;
@@ -86,6 +86,21 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
+      public struct FabricSheetExportConfig
+      {
+         public FabricSheet Sheet { get; set; }
+         public Document Doc { get; set; }
+         public FabricSheetType SheetType { get; set; }
+         public ISet<IFCAnyHandle> BodyItems { get; set; }
+         public ElementId CategoryId { get; set; }
+         public ExporterIFC ExporterIFC { get; set; }
+         public IFCFile File { get; set; }
+         public PlacementSetter PlacementSetter { get; set; }
+         public ElementId MaterialId { get; set; }
+         public ProductWrapper ProductWrapper { get; set; }
+         public IFCExtrusionCreationData EcData { get; set; }
+      }
+
       /// <summary>
       /// Exports an element as an IfcReinforcingMesh.
       /// </summary>
@@ -100,19 +115,13 @@ namespace Revit.IFC.Export.Exporter
          if (sheet == null || geometryElement == null)
             return false;
 
-         // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcReinforcingMesh;
-         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
-            return false;
-
-         Document doc = sheet.Document;
          IFCFile file = exporterIFC.GetFile();
-
          using (IFCTransaction tr = new IFCTransaction(file))
          {
             // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, sheet, out overrideContainerHnd);
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, sheet, out IFCAnyHandle overrideContainerHnd);
+            if (!(sheet.Document?.GetElement(sheet.GetTypeId()) is FabricSheetType fsType))
+               return false;
 
             using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, sheet, null, null, overrideContainerId, overrideContainerHnd))
             {
@@ -120,108 +129,213 @@ namespace Revit.IFC.Export.Exporter
                {
                   ecData.SetLocalPlacement(placementSetter.LocalPlacement);
 
-                  ElementId categoryId = CategoryUtil.GetSafeCategoryId(sheet);
-
-                  ElementId materialId = ElementId.InvalidElementId;
-                  ParameterUtil.GetElementIdValueFromElementOrSymbol(sheet, BuiltInParameter.MATERIAL_ID_PARAM, out materialId);
-
-                  string guid = GUIDUtil.CreateGUID(sheet);
-                  IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-                  string revitObjectType = NamingUtil.GetFamilyAndTypeName(sheet);
-
-                  IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
-
-                  string steelGrade = NamingUtil.GetOverrideStringValue(sheet, "SteelGrade", null);
-                  double? meshLength = sheet.CutOverallLength;
-                  double? meshWidth = sheet.CutOverallWidth;
-
-                  Element fabricSheetTypeElem = doc.GetElement(sheet.GetTypeId());
-                  FabricSheetType fabricSheetType = (fabricSheetTypeElem == null) ? null : (fabricSheetTypeElem as FabricSheetType);
-
-                  double longitudinalBarNominalDiameter = 0.0;
-                  double transverseBarNominalDiameter = 0.0;
-                  double longitudinalBarCrossSectionArea = 0.0;
-                  double transverseBarCrossSectionArea = 0.0;
-                  double longitudinalBarSpacing = 0.0;
-                  double transverseBarSpacing = 0.0;
-                  if (fabricSheetType != null)
+                  FabricSheetExportConfig config = new FabricSheetExportConfig()
                   {
-                     Element majorFabricWireTypeElem = doc.GetElement(fabricSheetType.MajorDirectionWireType);
-                     FabricWireType majorFabricWireType = (majorFabricWireTypeElem == null) ? null : (majorFabricWireTypeElem as FabricWireType);
-                     if (majorFabricWireType != null)
-                     {
-                        longitudinalBarNominalDiameter = UnitUtil.ScaleLength(majorFabricWireType.WireDiameter);
-                        double localRadius = longitudinalBarNominalDiameter / 2.0;
-                        longitudinalBarCrossSectionArea = localRadius * localRadius * Math.PI;
-                     }
+                     BodyItems = new HashSet<IFCAnyHandle>(),
+                     CategoryId = CategoryUtil.GetSafeCategoryId(sheet),
+                     Doc = sheet.Document,
+                     Sheet = sheet,
+                     EcData = ecData,
+                     ExporterIFC = exporterIFC,
+                     File = file,
+                     PlacementSetter = placementSetter,
+                     ProductWrapper = productWrapper,
+                     SheetType = fsType
+                  };
 
-                     Element minorFabricWireTypeElem = doc.GetElement(fabricSheetType.MinorDirectionWireType);
-                     FabricWireType minorFabricWireType = (minorFabricWireTypeElem == null) ? null : (minorFabricWireTypeElem as FabricWireType);
-                     if (minorFabricWireType != null)
-                     {
-                        transverseBarNominalDiameter = UnitUtil.ScaleLength(minorFabricWireType.WireDiameter);
-                        double localRadius = transverseBarNominalDiameter / 2.0;
-                        transverseBarCrossSectionArea = localRadius * localRadius * Math.PI;
-                     }
+                  ParameterUtil.GetElementIdValueFromElementOrSymbol(config.Sheet, BuiltInParameter.MATERIAL_ID_PARAM, out ElementId materialId);
+                  config.MaterialId = materialId;
 
-                     longitudinalBarSpacing = UnitUtil.ScaleLength(fabricSheetType.MajorSpacing);
-                     transverseBarSpacing = UnitUtil.ScaleLength(fabricSheetType.MinorSpacing);
+                  bool status = true;
+                  if (config.SheetType.IsCustom())
+                  {
+                     if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(IFCEntityType.IfcElementAssembly))
+                        return false;
+                     else
+                        status = ExportCustomFabricSheet(config);
+                  }
+                  else
+                  {
+                     if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(IFCEntityType.IfcReinforcingMesh))
+                        return false;
+                     else
+                        status = ExportStandardFabricSheet(config);
                   }
 
-                  ISet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
-
-                  IList<Curve> wireCenterlines = sheet.GetWireCenterlines(WireDistributionDirection.Major);
-                  foreach (Curve wireCenterline in wireCenterlines)
+                  if (!status)
                   {
-                     IFCAnyHandle bodyItem = GeometryUtil.CreateSweptDiskSolid(exporterIFC, file, wireCenterline, longitudinalBarNominalDiameter, null);
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyItem))
-                        bodyItems.Add(bodyItem);
+                     tr.RollBack();
+                     return false;
                   }
-
-                  wireCenterlines = sheet.GetWireCenterlines(WireDistributionDirection.Minor);
-                  foreach (Curve wireCenterline in wireCenterlines)
-                  {
-                     IFCAnyHandle bodyItem = GeometryUtil.CreateSweptDiskSolid(exporterIFC, file, wireCenterline, transverseBarNominalDiameter, null);
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyItem))
-                        bodyItems.Add(bodyItem);
-                  }
-
-                  IFCAnyHandle shapeRep = (bodyItems.Count > 0) ?
-                      RepresentationUtil.CreateAdvancedSweptSolidRep(exporterIFC, sheet, categoryId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null) :
-                      null;
-                  IList<IFCAnyHandle> shapeReps = null;
-                  if (shapeRep != null)
-                  {
-                     shapeReps = new List<IFCAnyHandle>();
-                     shapeReps.Add(shapeRep);
-                  }
-                  IFCAnyHandle prodRep = (shapeReps != null) ? IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps) : null;
-
-                  IFCAnyHandle fabricSheet = IFCInstanceExporter.CreateReinforcingMesh(exporterIFC, sheet, guid, ownerHistory, localPlacement,
-                      prodRep, steelGrade, meshLength, meshWidth, longitudinalBarNominalDiameter, transverseBarNominalDiameter,
-                      longitudinalBarCrossSectionArea, transverseBarCrossSectionArea, longitudinalBarSpacing, transverseBarSpacing);
-                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingMesh);
-
-                  ElementId fabricAreaId = sheet.FabricAreaOwnerId;
-                  if (fabricAreaId != ElementId.InvalidElementId)
-                  {
-                     HashSet<IFCAnyHandle> fabricSheets = null;
-                     if (!ExporterCacheManager.FabricAreaHandleCache.TryGetValue(fabricAreaId, out fabricSheets))
-                     {
-                        fabricSheets = new HashSet<IFCAnyHandle>();
-                        ExporterCacheManager.FabricAreaHandleCache[fabricAreaId] = fabricSheets;
-                     }
-                     fabricSheets.Add(fabricSheet);
-                  }
-
-                  productWrapper.AddElement(sheet, fabricSheet, placementSetter.LevelInfo, ecData, true, exportInfo);
-
-                  CategoryUtil.CreateMaterialAssociation(exporterIFC, fabricSheet, materialId);
                }
             }
             tr.Commit();
             return true;
          }
+      }
+
+      private static void GetFabricSheetParams(FabricSheet sheet, out string steelGrade, out double meshLength, out double meshWidth,
+         out double longitudinalBarNominalDiameter, out double transverseBarNominalDiameter, out double longitudinalBarCrossSectionArea,
+         out double transverseBarCrossSectionArea, out double longitudinalBarSpacing, out double transverseBarSpacing)
+      {
+         steelGrade = String.Empty;
+         meshLength = sheet.CutOverallLength;
+         meshWidth = sheet.CutOverallWidth;
+         longitudinalBarNominalDiameter = 0.0;
+         transverseBarNominalDiameter = 0.0;
+         longitudinalBarCrossSectionArea = 0.0;
+         transverseBarCrossSectionArea = 0.0;
+         longitudinalBarSpacing = 0.0;
+         transverseBarSpacing = 0.0;
+
+         if (sheet == null) 
+            return;
+
+         Document doc = sheet.Document;
+         Element fabricSheetTypeElem = doc?.GetElement(sheet.GetTypeId());
+         FabricSheetType fabricSheetType = fabricSheetTypeElem as FabricSheetType;
+         steelGrade = NamingUtil.GetOverrideStringValue(sheet, "SteelGrade", null);
+
+         Element majorFabricWireTypeElem = doc?.GetElement(fabricSheetType?.MajorDirectionWireType);
+         FabricWireType majorFabricWireType = (majorFabricWireTypeElem == null) ? null : (majorFabricWireTypeElem as FabricWireType);
+         if (majorFabricWireType != null)
+         {
+            longitudinalBarNominalDiameter = UnitUtil.ScaleLength(majorFabricWireType.WireDiameter);
+            double localRadius = longitudinalBarNominalDiameter / 2.0;
+            longitudinalBarCrossSectionArea = localRadius * localRadius * Math.PI;
+         }
+
+         Element minorFabricWireTypeElem = doc?.GetElement(fabricSheetType?.MinorDirectionWireType);
+         FabricWireType minorFabricWireType = (minorFabricWireTypeElem == null) ? null : (minorFabricWireTypeElem as FabricWireType);
+         if (minorFabricWireType != null)
+         {
+            transverseBarNominalDiameter = UnitUtil.ScaleLength(minorFabricWireType.WireDiameter);
+            double localRadius = transverseBarNominalDiameter / 2.0;
+            transverseBarCrossSectionArea = localRadius * localRadius * Math.PI;
+         }
+
+         longitudinalBarSpacing = UnitUtil.ScaleLength(fabricSheetType.MajorSpacing);
+         transverseBarSpacing = UnitUtil.ScaleLength(fabricSheetType.MinorSpacing);
+      }
+
+      private static bool ExportCustomFabricSheet(FabricSheetExportConfig cfg)
+      {
+         if (cfg.Equals(null) || cfg.Sheet.IsBent)
+            return false;
+
+         string guid = GUIDUtil.CreateGUID(cfg.Sheet);
+         IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+         HashSet<IFCAnyHandle> rebarHandles = new HashSet<IFCAnyHandle>();
+         string matName = (cfg.Doc.GetElement(cfg.MaterialId) as Material)?.Name;
+
+         int ii = 0;
+         do
+         {
+            WireDistributionDirection dir = (WireDistributionDirection)ii;
+            IList<Curve> wireCenterlines = cfg.Sheet.GetWireCenterlines(dir);
+            for (int jj = 0; jj < wireCenterlines.Count; jj++)
+            {
+               double wireDiam = 0.0;
+
+               FabricWireItem wire = cfg.SheetType.GetWireItem(jj, dir);
+               if (cfg.Doc.GetElement(wire.WireType) is FabricWireType wireType)
+                  wireDiam = UnitUtil.ScaleLength(wireType.WireDiameter);
+
+               IFCAnyHandle bodyItem = GeometryUtil.CreateSweptDiskSolid(cfg.ExporterIFC, cfg.File, wireCenterlines[jj], wireDiam / 2.0, null);
+
+               ISet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle> { bodyItem };
+               IFCAnyHandle shapeRep = null;
+               if (bodyItems.Count > 0)
+                  shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(cfg.ExporterIFC, cfg.Sheet, cfg.CategoryId,
+                     cfg.ExporterIFC.Get3DContextHandle("Body"), bodyItems, null);
+               IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
+               if (shapeRep != null)
+                  shapeReps.Add(shapeRep);
+
+               IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(cfg.File, null, null, shapeReps);
+               IFCAnyHandle handle = IFCInstanceExporter.CreateReinforcingBar(cfg.ExporterIFC, cfg.Sheet, guid, ExporterCacheManager.OwnerHistoryHandle,
+                  cfg.PlacementSetter.LocalPlacement, prodRep, matName, wireDiam, 0, 0, IFCReinforcingBarRole.NotDefined, null);
+               IFCAnyHandleUtil.SetAttribute(handle, "ObjectType", "Generic");
+               CategoryUtil.CreateMaterialAssociation(cfg.ExporterIFC, handle, cfg.MaterialId);
+               rebarHandles.Add(handle);
+            }
+            ii++;
+         }
+         while (ii < 2);
+
+         IFCAnyHandle assemblyInstanceHnd = IFCInstanceExporter.CreateElementAssembly(cfg.ExporterIFC, cfg.Sheet, guid,
+            ownerHistory, cfg.PlacementSetter.LocalPlacement, null, IFCAssemblyPlace.NotDefined, IFCElementAssemblyType.UserDefined);
+         IFCExportInfoPair assemblyExportInfo = new IFCExportInfoPair(IFCEntityType.IfcElementAssembly);
+         cfg.ProductWrapper.AddElement(cfg.Sheet, assemblyInstanceHnd, cfg.PlacementSetter.LevelInfo, null, true, assemblyExportInfo);
+         ExporterCacheManager.AssemblyInstanceCache.RegisterAssemblyInstance(cfg.Sheet.Id, assemblyInstanceHnd);
+         IFCInstanceExporter.CreateRelAggregates(cfg.File, guid, ownerHistory, null, null, assemblyInstanceHnd, rebarHandles);
+
+         return true;
+      }
+
+      private static bool ExportStandardFabricSheet(FabricSheetExportConfig cfg)
+      {
+         if (cfg.Equals(null))
+            return false;
+
+         string guid = GUIDUtil.CreateGUID(cfg.Sheet);
+         IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+
+         int ii = 0;
+         do
+         {
+            WireDistributionDirection dir = (WireDistributionDirection)ii;
+            IList<Curve> wireCenterlines = cfg.Sheet?.GetWireCenterlines(dir);
+            for (int jj = 0; jj < wireCenterlines.Count; jj++)
+            {
+               double wireDiam = 0.0;
+
+               Element wireTypeElem = (dir == WireDistributionDirection.Major) ? cfg.Doc?.GetElement(cfg.SheetType?.MajorDirectionWireType) :
+                  cfg.Doc?.GetElement(cfg.SheetType?.MinorDirectionWireType);
+
+               if (wireTypeElem is FabricWireType wireType)
+                  wireDiam = UnitUtil.ScaleLength(wireType.WireDiameter);
+               IFCAnyHandle bodyItem = GeometryUtil.CreateSweptDiskSolid(cfg.ExporterIFC, cfg.File, wireCenterlines[jj], wireDiam / 2.0, null);
+
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyItem))
+                  cfg.BodyItems?.Add(bodyItem);
+            }
+            ii++;
+         }
+         while (ii < 2);
+
+         IFCAnyHandle shapeRep = null;
+         if (cfg.BodyItems.Count > 0)
+            shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(cfg.ExporterIFC, cfg.Sheet, cfg.CategoryId, 
+               cfg.ExporterIFC.Get3DContextHandle("Body"), cfg.BodyItems, null);
+
+         IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
+         if (shapeRep != null)
+            shapeReps.Add(shapeRep);
+
+         IFCAnyHandle prodRep = (shapeReps != null) ? IFCInstanceExporter.CreateProductDefinitionShape(cfg.File, null, null, shapeReps) : null;
+
+         GetFabricSheetParams(cfg.Sheet, out string steelGrade, out double meshLength, out double meshWidth,
+            out double longitudinalBarNominalDiameter, out double transverseBarNominalDiameter, out double longitudinalBarCrossSectionArea,
+            out double transverseBarCrossSectionArea, out double longitudinalBarSpacing, out double transverseBarSpacing);
+         IFCAnyHandle handle = IFCInstanceExporter.CreateReinforcingMesh(cfg.ExporterIFC, cfg.Sheet, guid, ownerHistory, cfg.EcData.GetLocalPlacement(),
+            prodRep, steelGrade, meshLength, meshWidth, longitudinalBarNominalDiameter, transverseBarNominalDiameter,
+            longitudinalBarCrossSectionArea, transverseBarCrossSectionArea, longitudinalBarSpacing, transverseBarSpacing);
+         IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingMesh);
+         ElementId fabricAreaId = cfg.Sheet?.FabricAreaOwnerId;
+         if (fabricAreaId != ElementId.InvalidElementId)
+         {
+            if (!ExporterCacheManager.FabricAreaHandleCache.TryGetValue(fabricAreaId, out HashSet<IFCAnyHandle> fabricSheets))
+            {
+               fabricSheets = new HashSet<IFCAnyHandle>();
+               ExporterCacheManager.FabricAreaHandleCache[fabricAreaId] = fabricSheets;
+            }
+            fabricSheets.Add(handle);
+         }
+         cfg.ProductWrapper.AddElement(cfg.Sheet, handle, cfg.PlacementSetter?.LevelInfo, cfg.EcData, true, exportInfo);
+         CategoryUtil.CreateMaterialAssociation(cfg.ExporterIFC, handle, cfg.MaterialId);
+
+         return true;
       }
    }
 }

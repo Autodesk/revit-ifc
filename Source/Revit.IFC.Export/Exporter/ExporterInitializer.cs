@@ -45,9 +45,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="commonPropertySets">List to store property sets.</param>
       private static void InitPset_ProvisionForVoid2x(IList<PropertySetDescription> commonPropertySets)
       {
-         //// The IFC4 version is contained in ExporterInitializer_PsetDef.cs.
-         //if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-         //   return;
+         // The IFC4 version is contained in ExporterInitializer_PsetDef.cs.
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            return;
 
          PropertySetDescription propertySetProvisionForVoid = new PropertySetDescription();
          propertySetProvisionForVoid.Name = "Pset_ProvisionForVoid";
@@ -483,6 +483,9 @@ namespace Revit.IFC.Export.Exporter
             foreach (Element containedElement in elementsInViewScheduleCollector)
             {
                containedElementIds.Add(containedElement.Id);
+               ElementId typeId = containedElement.GetTypeId();
+               if (typeId != ElementId.InvalidElementId)
+                  containedElementIds.Add(typeId);
             }
             ExporterCacheManager.ViewScheduleElementCache.Add(new KeyValuePair<ElementId, HashSet<ElementId>>(schedule.Id, containedElementIds));
 
@@ -710,14 +713,17 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities">List to store quantities.</param>
       private static void InitCeilingBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
+         // It is duplicated with InitCoveringBaseQuantities. Leaving it here for backward compatibility
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         {
          QuantityDescription ifcCeilingQuantity = new QuantityDescription();
          QuantityEntry ifcQE;
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcCeilingQuantity.Name = "Qto_CoveringBaseQuantities";
-            ifcQE = new QuantityEntry("NetArea", BuiltInParameter.HOST_AREA_COMPUTED);
-         }
-         else
+            //if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+            //{
+            //   ifcCeilingQuantity.Name = "Qto_CoveringBaseQuantities";
+            //   ifcQE = new QuantityEntry("NetArea", BuiltInParameter.HOST_AREA_COMPUTED);
+            //}
+            //else
          {
             ifcCeilingQuantity.Name = "BaseQuantities";
             ifcQE = new QuantityEntry("GrossCeilingArea", BuiltInParameter.HOST_AREA_COMPUTED);
@@ -728,6 +734,7 @@ namespace Revit.IFC.Export.Exporter
          ifcCeilingQuantity.AddEntry(ifcQE);
 
          baseQuantities.Add(ifcCeilingQuantity);
+      }
       }
 
       /// <summary>
@@ -796,10 +803,10 @@ namespace Revit.IFC.Export.Exporter
          ifcQE.PropertyCalculator = PerimeterCalculator.Instance;
          ifcSlabQuantity.AddEntry(ifcQE);
 
-         ifcQE = new QuantityEntry("Width");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = WidthCalculator.Instance;
-         ifcSlabQuantity.AddEntry(ifcQE);
+            ifcQE = new QuantityEntry("Width");
+            ifcQE.QuantityType = QuantityType.PositiveLength;
+            ifcQE.PropertyCalculator = WidthCalculator.Instance;
+            ifcSlabQuantity.AddEntry(ifcQE);
 
          ifcQE = new QuantityEntry("GrossWeight");
          ifcQE.QuantityType = QuantityType.PositiveLength;
@@ -1031,8 +1038,14 @@ namespace Revit.IFC.Export.Exporter
          ifcQE.QuantityType = QuantityType.Area;
          ifcBaseQuantity.AddEntry(ifcQE);
 
-         ifcQE = new QuantityEntry("NetArea", "IfcQtyNetArea");
+         ifcQE = new QuantityEntry("NetArea", BuiltInParameter.HOST_AREA_COMPUTED);
+         //ifcQE = new QuantityEntry("NetArea", "IfcQtyNetArea");
          ifcQE.QuantityType = QuantityType.Area;
+         ifcBaseQuantity.AddEntry(ifcQE);
+
+         ifcQE = new QuantityEntry("Width");
+         ifcQE.QuantityType = QuantityType.PositiveLength;
+         ifcQE.PropertyCalculator = WidthCalculator.Instance;
          ifcBaseQuantity.AddEntry(ifcQE);
 
          baseQuantities.Add(ifcBaseQuantity);

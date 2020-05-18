@@ -121,6 +121,7 @@ namespace Revit.IFC.Export.Utility
          {
             if (!(face is PlanarFace))
                continue;
+
             PlanarFace planarFace = face as PlanarFace;
             // Candidate face must be Orthogonal to the plane where the directrix curve is
             if (MathUtil.VectorsAreOrthogonal(normal, planarFace.FaceNormal))

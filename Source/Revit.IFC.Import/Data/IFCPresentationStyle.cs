@@ -68,7 +68,7 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcPresentationStyle.StepId, out presentationStyle))
             return (presentationStyle as IFCPresentationStyle);
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcPresentationStyle, IFCEntityType.IfcSurfaceStyle))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcPresentationStyle, IFCEntityType.IfcSurfaceStyle))
             return IFCSurfaceStyle.ProcessIFCSurfaceStyle(ifcPresentationStyle);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcPresentationStyle, "IfcPresentationStyle", false);

@@ -68,7 +68,7 @@ namespace Revit.IFC.Import.Data
          base.Process(ifcEdgeLoop);
 
          // TODO in REVIT-61368: checks that edgeList is closed and continuous
-         IList<IFCAnyHandle> edgeList = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcEdgeLoop, "EdgeList");
+         IList<IFCAnyHandle> edgeList = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcEdgeLoop, "EdgeList");
          if (edgeList == null)
          {
             Importer.TheLog.LogError(Id, "Cannot find the EdgeList of this loop", true);

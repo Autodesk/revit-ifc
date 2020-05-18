@@ -19,8 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
@@ -32,42 +30,25 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCStyledItem : IFCRepresentationItem
    {
-      private IFCRepresentationItem m_Item = null;
-
-      private IFCPresentationStyleAssignment m_Styles = null;
-
-      private string m_Name = null;
-
       // Currently the only created element would be a material.  May expand to a list of elements.
       private ElementId m_CreatedElementId = ElementId.InvalidElementId;
 
       /// <summary>
       /// The optional associated representation item.
       /// </summary>
-      public IFCRepresentationItem Item
-      {
-         get { return m_Item; }
-         protected set { m_Item = value; }
-      }
+      public IFCRepresentationItem Item { get; protected set; } = null;
 
       /// <summary>
       /// Get the styles associated with the IfcStyledItem.
-      /// Note that the IFC specification allows a set of these, but usage restricts this to one item.
+      /// Note that the IFC specification allows a set of these, but usage restricts 
+      /// this to one item.
       /// </summary>
-      public IFCPresentationStyleAssignment Styles
-      {
-         get { return m_Styles; }
-         protected set { m_Styles = value; }
-      }
+      public List<IFCPresentationStyle> Styles { get; } = new List<IFCPresentationStyle>();
 
       /// <summary>
       /// The optional name of the styled item.
       /// </summary>
-      public string Name
-      {
-         get { return m_Name; }
-         protected set { m_Name = value; }
-      }
+      public string Name { get; protected set; } = null;
 
       /// <summary>
       /// Returns the main element id associated with this material.
@@ -136,12 +117,32 @@ namespace Revit.IFC.Import.Data
          Name = IFCImportHandleUtil.GetOptionalStringAttribute(styledItem, "Name", null);
 
          List<IFCAnyHandle> styles = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(styledItem, "Styles");
-         if (styles == null || styles.Count == 0 || IFCAnyHandleUtil.IsNullOrHasNoValue(styles[0]))
+         if (styles == null || styles.Count == 0)
             Importer.TheLog.LogMissingRequiredAttributeError(styledItem, "Styles", true);
-         if (styles.Count > 1)
-            Importer.TheLog.LogWarning(styledItem.StepId, "Multiple presentation styles found for IfcStyledItem - using first.", false);
+         
+         foreach (IFCAnyHandle style in styles)
+         {
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(style))
+               continue;
 
-         Styles = IFCPresentationStyleAssignment.ProcessIFCPresentationStyleAssignment(styles[0]);
+            if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4 && IFCAnyHandleUtil.IsValidSubTypeOf(style, IFCEntityType.IfcPresentationStyle))
+            {
+               Styles.Add(IFCPresentationStyle.ProcessIFCPresentationStyle(style));
+            }
+            else
+            {
+               if (Styles.Count != 0)
+               {
+                  Importer.TheLog.LogWarning(styledItem.StepId, "Multiple presentation styles found for IfcStyledItem - using first.", false);
+                  continue;
+               }
+
+               IFCPresentationStyleAssignment presentationStyleAssignment = 
+                  IFCPresentationStyleAssignment.ProcessIFCPresentationStyleAssignment(style);
+               if (presentationStyleAssignment != null && presentationStyleAssignment.Styles != null)
+                  Styles.AddRange(presentationStyleAssignment.Styles);
+            }
+         }
       }
 
       protected IFCStyledItem(IFCAnyHandle item)
@@ -155,15 +156,11 @@ namespace Revit.IFC.Import.Data
       /// <returns>The IFCSurfaceStyle, if any.</returns>
       public IFCSurfaceStyle GetSurfaceStyle()
       {
-         IFCPresentationStyleAssignment styles = Styles;
-         if (styles != null)
+         IList<IFCPresentationStyle> presentationStyles = Styles;
+         foreach (IFCPresentationStyle presentationStyle in presentationStyles)
          {
-            ISet<IFCPresentationStyle> presentationStyles = styles.Styles;
-            foreach (IFCPresentationStyle presentationStyle in presentationStyles)
-            {
-               if (presentationStyle is IFCSurfaceStyle)
-                  return (presentationStyle as IFCSurfaceStyle);
-            }
+            if (presentationStyle is IFCSurfaceStyle)
+               return (presentationStyle as IFCSurfaceStyle);
          }
 
          return null;

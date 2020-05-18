@@ -184,7 +184,7 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcManifoldSolidBrep, IFCEntityType.IfcFacetedBrep))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcManifoldSolidBrep, IFCEntityType.IfcFacetedBrep))
             return IFCFacetedBrep.ProcessIFCFacetedBrep(ifcManifoldSolidBrep);
          if (IFCImportFile.TheFile.SchemaVersion > IFCSchemaVersion.IFC2x3 && IFCAnyHandleUtil.IsSubTypeOf(ifcManifoldSolidBrep, IFCEntityType.IfcAdvancedBrep))
             return IFCAdvancedBrep.ProcessIFCAdvancedBrep(ifcManifoldSolidBrep);

@@ -111,9 +111,9 @@ namespace Revit.IFC.Import.Data
          if (cachedIFCGroup != null)
             return cachedIFCGroup as IFCGroup;
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcGroup, IFCEntityType.IfcZone))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcGroup, IFCEntityType.IfcZone))
             return IFCZone.ProcessIFCZone(ifcGroup);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcGroup, IFCEntityType.IfcSystem))
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcGroup, IFCEntityType.IfcSystem))
             return IFCSystem.ProcessIFCSystem(ifcGroup);
 
          return new IFCGroup(ifcGroup);

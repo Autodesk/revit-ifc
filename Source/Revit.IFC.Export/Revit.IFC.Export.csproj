@@ -258,6 +258,7 @@
     <Compile Include="Utility\LogicalPropertyInfoCache.cs" />
     <Compile Include="Utility\MaterialAndProfile.cs" />
     <Compile Include="Utility\MaterialConstituentSetCache.cs" />
+    <Compile Include="Utility\MaterialLayerSetInfo.cs" />
     <Compile Include="Utility\MEPCache.cs" />
     <Compile Include="Utility\NamingOptions.cs" />
     <Compile Include="Utility\NamingUtil.cs" />

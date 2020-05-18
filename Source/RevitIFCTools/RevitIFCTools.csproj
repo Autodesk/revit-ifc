@@ -54,9 +54,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="RevitAPI, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPI, Version=20.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />

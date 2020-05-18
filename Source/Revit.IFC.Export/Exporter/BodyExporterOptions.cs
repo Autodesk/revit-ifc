@@ -34,38 +34,6 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Try to export the solids as extrusions, if possible.
-      /// </summary>
-      private bool m_TryToExportAsExtrusion = false;
-
-      /// <summary>
-      /// A local coordinate system that, if supplied, allows use of ExtrusionAnalyzer to try to generate extrusion.
-      /// </summary>
-      private Transform m_ExtrusionLocalCoordinateSystem = null;
-
-      /// <summary>
-      /// Try to export the solids as swept solids, if possible.
-      /// </summary>
-      private bool m_TryToExportAsSweptSolid = true;
-
-      /// <summary>
-      /// Allow an offset transform for the body.  Set this to false if BodyData is not processed on return.
-      /// </summary>
-      private bool m_AllowOffsetTransform = true;
-
-      /// <summary>
-      /// If the body contains geometries that are identical except position and orientation, use mapped items to reuse the geometry.
-      /// NOTE: This functionality is untested, and should be used with caution.
-      /// </summary>
-      private bool m_UseMappedGeometriesIfPossible = false;
-
-      /// <summary>
-      /// If the element is part of a group, and has unmodified geoemtry, use mapped items to share the geometry between groups.
-      /// NOTE: This functionality is untested, and should be used with caution.
-      /// </summary>
-      private bool m_UseGroupsIfPossible = false;
-
-      /// <summary>
       /// The parameters used in the solid faceter.
       /// </summary>
       private SolidOrShellTessellationControls m_TessellationControls = null;
@@ -81,16 +49,6 @@ namespace Revit.IFC.Export.Exporter
       private BodyExporterOptions() { }
 
       /// <summary>
-      /// Collect Material and Profile information for constucting IfcMaterialProfileSet (IFC4)
-      /// </summary>
-      private bool m_CollectMaterialAndProfile = false;
-
-      /// <summary>
-      /// Collect Footprint handle for IfcSlabStandardCase and IfcPlateStandardCase (IFC4)
-      /// </summary>
-      private bool m_CollectFootprintHandle = false;
-
-      /// <summary>
       /// Constructs a copy of a BodyExporterOptions object.
       /// </summary>
       public BodyExporterOptions(BodyExporterOptions options)
@@ -99,12 +57,23 @@ namespace Revit.IFC.Export.Exporter
          ExtrusionLocalCoordinateSystem = options.ExtrusionLocalCoordinateSystem;
          TryToExportAsSweptSolid = options.TryToExportAsSweptSolid;
          AllowOffsetTransform = options.AllowOffsetTransform;
-         UseMappedGeometriesIfPossible = options.UseMappedGeometriesIfPossible;
-         UseGroupsIfPossible = options.UseGroupsIfPossible;
          TessellationControls = options.TessellationControls;
          TessellationLevel = options.TessellationLevel;
-         m_CollectMaterialAndProfile = options.m_CollectMaterialAndProfile;
-         m_CollectFootprintHandle = options.m_CollectFootprintHandle;
+         CollectMaterialAndProfile = options.CollectMaterialAndProfile;
+         CollectFootprintHandle = options.CollectFootprintHandle;
+      }
+
+      /// <summary>
+      /// Set SolidOrShellTessellationControls to use Coarse options. 
+      /// </summary>
+      /// <param name="tessellationControls">The SolidOrShellTessellationControls to modify.</param>
+      static public void SetDefaultCoarseTessellationControls(SolidOrShellTessellationControls tessellationControls)
+      {
+         // Note that this is consistent to how setting Coarse currently works; there could 
+         // potentially be other options we'd want to tweak upon switching to coarse, but this 
+         // routine will let us make those changes in one code location.
+         tessellationControls.LevelOfDetail = 0.25;
+         tessellationControls.MinAngleInTriangle = 0;
       }
 
       /// <summary>
@@ -125,58 +94,22 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Try to export the solids as extrusions, if possible.
       /// </summary>
-      public bool TryToExportAsExtrusion
-      {
-         get { return m_TryToExportAsExtrusion; }
-         set { m_TryToExportAsExtrusion = value; }
-      }
+      public bool TryToExportAsExtrusion { get; set; } = false;
 
       /// <summary>
       /// A local coordinate system that, if supplied, allows use of ExtrusionAnalyzer to try to generate extrusion.
       /// </summary>
-      public Transform ExtrusionLocalCoordinateSystem
-      {
-         get { return m_ExtrusionLocalCoordinateSystem; }
-         set { m_ExtrusionLocalCoordinateSystem = value; }
-      }
+      public Transform ExtrusionLocalCoordinateSystem { get; set; } = null;
 
       /// <summary>
       /// Try to export the solids as swept solids, if possible.
       /// </summary>
-      public bool TryToExportAsSweptSolid
-      {
-         get { return m_TryToExportAsSweptSolid; }
-         set { m_TryToExportAsSweptSolid = value; }
-      }
+      public bool TryToExportAsSweptSolid { get; set; } = true;
 
       /// <summary>
       /// Allow an offset transform for the body.  Set this to false if BodyData is not processed on return.
       /// </summary>
-      public bool AllowOffsetTransform
-      {
-         get { return m_AllowOffsetTransform; }
-         set { m_AllowOffsetTransform = value; }
-      }
-
-      /// <summary>
-      /// If the body contains geometries that are identical except position and orientation, use mapped items to reuse the geometry.
-      /// NOTE: This functionality is untested, and should be used with caution.
-      /// </summary>
-      public bool UseMappedGeometriesIfPossible
-      {
-         get { return m_UseMappedGeometriesIfPossible; }
-         set { m_UseMappedGeometriesIfPossible = value; }
-      }
-
-      /// <summary>
-      /// If the element is part of a group, and has unmodified geoemtry, use mapped items to share the geometry between groups.
-      /// NOTE: This functionality is untested, and should be used with caution.
-      /// </summary>
-      public bool UseGroupsIfPossible
-      {
-         get { return m_UseGroupsIfPossible; }
-         set { m_UseGroupsIfPossible = value; }
-      }
+      public bool AllowOffsetTransform { get; set; } = true;
 
       /// <summary>
       /// The accuracy parameter used in the solid faceter.
@@ -208,8 +141,7 @@ namespace Revit.IFC.Export.Exporter
             {
                case BodyTessellationLevel.Coarse:
                   {
-                     TessellationControls.LevelOfDetail = 0.25;
-                     TessellationControls.MinAngleInTriangle = 0;
+                     SetDefaultCoarseTessellationControls(TessellationControls);
                      //TessellationControls.MinExternalAngleBetweenTriangles = 2.0 * Math.PI;
                      return;
                   }
@@ -225,19 +157,11 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Flag to tell whether Material and Profile are to be collected when creating extrusion body. Needed for Ifc*StandardCase (Column, Beam, Member)
       /// </summary>
-      public bool CollectMaterialAndProfile
-      {
-         get { return m_CollectMaterialAndProfile; }
-         set { m_CollectMaterialAndProfile = value; }
-      }
+      public bool CollectMaterialAndProfile { get; set; } = false;
 
       /// <summary>
       /// Flag to tell whether Footprint geometry is to be collected for Ifc*StandardCase (Slab, Plate) 
       /// </summary>
-      public bool CollectFootprintHandle
-      {
-         get { return m_CollectFootprintHandle; }
-         set { m_CollectFootprintHandle = value; }
-      }
+      public bool CollectFootprintHandle { get; set; } = false;
    }
 }

@@ -156,4 +156,7 @@
   <data name="RuledFaceProfileCurve" xml:space="preserve">
     <value>Ruled Face Profile Curve</value>
   </data>
+  <data name="Shape" xml:space="preserve">
+    <value>Shape</value>
+  </data>
 </root>

@@ -94,9 +94,6 @@ namespace Revit.IFC.Export.Utility
          if (level == null)
             return false;
 
-         //if (ExporterCacheManager.ExportOptionsCache.ExportAllLevels)
-         //   return true;
-
          Parameter isBuildingStorey = level.get_Parameter(BuiltInParameter.LEVEL_IS_BUILDING_STORY);
          if (isBuildingStorey == null)
             return true;

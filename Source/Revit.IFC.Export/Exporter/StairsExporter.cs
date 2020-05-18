@@ -657,7 +657,7 @@ namespace Revit.IFC.Export.Exporter
             {
                string componentType = IFCAnyHandleUtil.GetEnumerationAttribute(component, ExporterCacheManager.ExportOptionsCache.ExportAs4 ? "PredefinedType" : "ShapeType");
                string localStairType = GetIFCStairType(componentType);
-
+               
                ElementId catId = CategoryUtil.GetSafeCategoryId(stair);
 
                for (int ii = 0; ii < numFlights - 1; ii++)
@@ -705,9 +705,6 @@ namespace Revit.IFC.Export.Exporter
                Element landingElem = (landingIter == null) ? stair : stair.Document.GetElement(landingIter.Current);
                Element landingElemToUse = (landingElem == null) ? stair : landingElem;
                ElementId catId = CategoryUtil.GetSafeCategoryId(landingElemToUse);
-
-               //string componentType = IFCValidateEntry.GetValidIFCPredefinedType(landingElemToUse, IFCAnyHandleUtil.GetEnumerationAttribute(component, "PredefinedType"));
-               // IFCSlabType localLandingType = FloorExporter.GetIFCSlabType(componentType);
 
                for (int ii = 0; ii < numFlights - 1; ii++)
                {
@@ -774,11 +771,11 @@ namespace Revit.IFC.Export.Exporter
                   stairTypeAsString = IFCAnyHandleUtil.GetEnumerationAttribute(stairHnd, "PredefinedType");
                else
                   stairTypeAsString = IFCAnyHandleUtil.GetEnumerationAttribute(stairHnd, "ShapeType");
-               string stairType = GetIFCStairType(stairTypeAsString);
+                  string stairType = GetIFCStairType(stairTypeAsString);
 
                string containerStairName = IFCAnyHandleUtil.GetStringAttribute(stairHnd, "Name") + ":" + (ii + 2);
                IFCAnyHandle containerStairHnd = IFCInstanceExporter.CreateStair(exporterIFC, stair, GUIDUtil.CreateGUID(), ownerHistory,
-                   stairLocalPlacementHnds[ii], null, stairType);
+                  stairLocalPlacementHnds[ii], null, stairType);
                IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcStair, stairType);
                stairCopyHnds.Add(containerStairHnd);
                IFCAnyHandleUtil.OverrideNameAttribute(containerStairHnd, containerStairName);
@@ -1032,7 +1029,7 @@ namespace Revit.IFC.Export.Exporter
                      string runElementTag = NamingUtil.GetTagOverride(run, NamingUtil.CreateIFCElementId(run));
 
                      string flightPredefType = GetValidatedStairFlightType(run);
-                     
+
                      IFCAnyHandle stairFlightHnd = IFCInstanceExporter.CreateStairFlight(exporterIFC, run, runGUID, ownerHistory, runLocalPlacement,
                          representation, run.ActualRisersNumber, run.ActualTreadsNumber, stair.ActualRiserHeight, stair.ActualTreadDepth, flightPredefType);
                      IFCAnyHandleUtil.OverrideNameAttribute(stairFlightHnd, runName);

@@ -283,15 +283,10 @@ namespace Revit.IFC.Export.Exporter
 
                string gridGUID = GUIDUtil.CreateGUID();
 
-               //// Get the first grid's override name, if cannot find it, use null.
-               //string gridName = GetGridName(sameDirectionAxesU, sameDirectionAxesV, sameDirectionAxesW);
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                IFCAnyHandle gridLevelHandle = useLevelInfo ? levelInfo.GetBuildingStorey() : ExporterCacheManager.BuildingHandle;
-               IFCAnyHandle levelObjectPlacement = IFCAnyHandleUtil.GetObjectPlacement(gridLevelHandle);
-               double elev = useLevelInfo ? levelInfo.Elevation : 0.0;
-               double elevation = UnitUtil.ScaleLength(elev);
-               XYZ orig = new XYZ(0.0, 0.0, elevation);
-               IFCAnyHandle copyLevelPlacement = ExporterUtil.CopyLocalPlacement(ifcFile, levelObjectPlacement);
+               IFCAnyHandle levelObjectPlacement = (gridLevelHandle != null) ? IFCAnyHandleUtil.GetObjectPlacement(gridLevelHandle) : null;
+               IFCAnyHandle copyLevelPlacement = (levelObjectPlacement != null) ? ExporterUtil.CopyLocalPlacement(ifcFile, levelObjectPlacement) : null;
                IFCAnyHandle ifcGrid = IFCInstanceExporter.CreateGrid(exporterIFC, gridGUID, ownerHistory, gridName, copyLevelPlacement, productRep, axesU, axesV, axesW);
 
                productWrapper.AddElement(null, ifcGrid, levelInfo, null, true, null);
@@ -341,7 +336,9 @@ namespace Revit.IFC.Export.Exporter
             // Because the IfcGrid is a collection of Revit Grids, any one of them can override the IFC CAD Layer.
             // We will take the first name, and not do too much checking.
             if (string.IsNullOrWhiteSpace(gridRepresentationData.m_IFCCADLayer))
-               ParameterUtil.GetStringValueFromElementOrSymbol(grid, "IFCCadLayer", out gridRepresentationData.m_IFCCADLayer);
+            {
+               gridRepresentationData.m_IFCCADLayer = RepresentationUtil.GetPresentationLayerOverride(grid);
+            }
 
             // Get the handle of curve.
             XYZ projectionDirection = lcs.BasisZ;
@@ -454,15 +451,19 @@ namespace Revit.IFC.Export.Exporter
             XYZ maxPoint = grid.GetExtents().MaximumPoint;
 
             // Find level where the Grid min point is at higher elevation but lower than the next level
-            KeyValuePair<double, ElementId> levelGrid = levelIds.First();
-            foreach (KeyValuePair<double, ElementId> levelInfo in levelIds)
+            KeyValuePair<double, ElementId> levelGrid = new KeyValuePair<double, ElementId>(0.0, ElementId.InvalidElementId);
+            if (levelIds.Count != 0)
             {
-               //if (levelInfo.Key + eps >= minPoint.Z)
-               //   break;
-               if (minPoint.Z <= levelInfo.Key + eps && levelInfo.Key - eps <= maxPoint.Z)
+               levelGrid = levelIds.First();
+               foreach (KeyValuePair<double, ElementId> levelInfo in levelIds)
                {
-                  levelGrid = levelInfo;
-                  break;
+                  //if (levelInfo.Key + eps >= minPoint.Z)
+                  //   break;
+                  if (minPoint.Z <= levelInfo.Key + eps && levelInfo.Key - eps <= maxPoint.Z)
+                  {
+                     levelGrid = levelInfo;
+                     break;
+                  }
                }
             }
 

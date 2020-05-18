@@ -19,16 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Data;
-using UnitSystem = Autodesk.Revit.DB.DisplayUnit;
-using UnitName = Autodesk.Revit.DB.DisplayUnitType;
 
 namespace Revit.IFC.Import.Utility
 {
@@ -54,20 +47,10 @@ namespace Revit.IFC.Import.Utility
       // or potentially degenerate faces.
       private TessellatedShapeBuilderTarget m_TargetGeometry = TessellatedShapeBuilderTarget.AnyGeometry;
 
-      // The fallback geometry being created.
-      private TessellatedShapeBuilderFallback m_FallbackGeometry = TessellatedShapeBuilderFallback.Mesh;
-
-      // The number of created faces (so far).
-      private int m_CreatedFacesCount = 0;
-
       /// <summary>
       /// The number of successfully created faces so far.
       /// </summary>
-      public int CreatedFacesCount
-      {
-         get { return m_CreatedFacesCount; }
-         protected set { m_CreatedFacesCount = value; }
-      }
+      public int CreatedFacesCount { get; protected set; } = 0;
 
       // The target geometry being created.  This may affect tolerances used to include or exclude vertices that are very 
       // close to one another, or potentially degenerate faces.
@@ -82,12 +65,8 @@ namespace Revit.IFC.Import.Utility
       }
 
       // The fallback geometry that will be created if we can't make the target geometry.
-      public TessellatedShapeBuilderFallback FallbackGeometry
-      {
-         get { return m_FallbackGeometry; }
-         private set { m_FallbackGeometry = value; }
-      }
-
+      public TessellatedShapeBuilderFallback FallbackGeometry { get; private set; } = TessellatedShapeBuilderFallback.Mesh;
+ 
       public TessellatedShapeBuilderScope(IFCImportShapeEditScope container)
           : base(container)
       {
@@ -230,7 +209,7 @@ namespace Revit.IFC.Import.Utility
       /// <param name="id">The id of the IFCEntity, for error reporting.</param>
       /// <param name="loopVertices">The list of vertices.</param>
       /// <returns>True if the operation succeeded, false oherwise.</returns>
-      public bool AddLoopVertices(int id, IList<XYZ> loopVertices)
+      public bool AddLoopVertices(int id, List<XYZ> loopVertices)
       {
          int vertexCount = (loopVertices == null) ? 0 : loopVertices.Count;
          if (vertexCount < 3)
@@ -239,41 +218,110 @@ namespace Revit.IFC.Import.Utility
             return false;
          }
 
-         IList<XYZ> adjustedLoopVertices = new List<XYZ>();
-         IDictionary<IFCFuzzyXYZ, int> createdVertices = new SortedDictionary<IFCFuzzyXYZ, int>();
+         List<XYZ> adjustedLoopVertices = null;
+         IList<Tuple<int,int>> interiorLoops = null;
 
-         int numCreated = 0;
-         for (int ii = 0; ii < vertexCount; ii++)
+         int numOuterCreated = 0;
+
+         bool succeeded = false;
+         for (int pass = 0; pass < 2 && !succeeded; pass++)
          {
-            IFCFuzzyXYZ fuzzyXYZ = new IFCFuzzyXYZ(loopVertices[ii]);
+            // If we have AnyGeometry as a target, we are using Solid tolerances on a first pass.
+            // If that would fail, try again using Mesh tolerances.
+            if (pass == 1 && !RevertToMeshIfPossible())
+               break;
+         
+            succeeded = true;
 
-            int createdVertexIndex = -1;
-            if (createdVertices.TryGetValue(fuzzyXYZ, out createdVertexIndex))
+            // numOuterCreated is the size of the main "outer" loop after removing duplicates
+            // and self-intersecting loops.  In all valid cases, numOuterCreated = numTotalCreated.
+            numOuterCreated = 0;
+
+            // The total number of non-duplicate loops.  This can differ if we are trying to create
+            // a solid vs. a mesh.
+            int numTotalCreated = 0;
+
+            // The vertices of the main (presumably outer) loop.
+            adjustedLoopVertices = new List<XYZ>();
+
+            // The list of vertices of the self-intersecting loops.
+            // Note that we will check that the self-interecting loops do not themselves self-intersect.
+            interiorLoops = new List<Tuple<int, int>>();
+            int lastInteriorLoopIndex = -1;
+
+            IDictionary<IFCFuzzyXYZ, int> createdVertices = new SortedDictionary<IFCFuzzyXYZ, int>();
+
+            for (int ii = 0; ii < vertexCount; ii++)
             {
-               // We will allow the first and last point to be equivalent, or the current and last point.  Otherwise we will throw.
-               if (((createdVertexIndex == 0) && (ii == vertexCount - 1)) || (createdVertexIndex == numCreated - 1))
-                  continue;
+               IFCFuzzyXYZ fuzzyXYZ = new IFCFuzzyXYZ(loopVertices[ii]);
 
-               Importer.TheLog.LogComment(id, "Loop is self-intersecting, ignoring.", false);
-               return false;
+               int createdVertexIndex = -1;
+               if (createdVertices.TryGetValue(fuzzyXYZ, out createdVertexIndex))
+               {
+                  // We will allow the first and last point to be equivalent, or the current and last point.  Otherwise we will throw.
+                  if (((createdVertexIndex == 0) && (ii == vertexCount - 1)) || (createdVertexIndex == numTotalCreated - 1))
+                     continue;
+
+                  // If we have a real self-intersection, mark the loop created by the intersection
+                  // for removal later.
+                  if (loopVertices[ii].DistanceTo(loopVertices[createdVertexIndex]) < MathUtil.SmallGap())
+                  {
+                     if (lastInteriorLoopIndex > createdVertexIndex)
+                     {
+                        // The interior loops overlap; this is probably too much to try to fix.
+                        succeeded = false;
+                        break;
+                     }
+                     // Sorted in reverse order so we can more easily create the interior loops later.
+                     int numToRemove = ii - createdVertexIndex;
+                     interiorLoops.Insert(0, new Tuple<int, int>(createdVertexIndex, numToRemove));
+                     lastInteriorLoopIndex = ii;
+                     numOuterCreated -= numToRemove;
+                     continue;
+                  }
+
+                  // Note that if pass == 1, CanRevertToMesh will be false.
+                  if (!CanRevertToMesh())
+                     Importer.TheLog.LogWarning(id, "Loop is self-intersecting, truncating.", false);
+                  succeeded = false;
+                  break;
+               }
+
+               XYZ adjustedXYZ;
+               if (!m_TessellatedFaceVertices.TryGetValue(fuzzyXYZ, out adjustedXYZ))
+                  adjustedXYZ = m_TessellatedFaceVertices[fuzzyXYZ] = loopVertices[ii];
+
+               adjustedLoopVertices.Add(adjustedXYZ);
+               createdVertices[new IFCFuzzyXYZ(adjustedXYZ)] = numTotalCreated;
+               numTotalCreated++;
+               numOuterCreated++;
             }
 
-            XYZ adjustedXYZ;
-            if (!m_TessellatedFaceVertices.TryGetValue(fuzzyXYZ, out adjustedXYZ))
-               adjustedXYZ = m_TessellatedFaceVertices[fuzzyXYZ] = loopVertices[ii];
-
-            adjustedLoopVertices.Add(adjustedXYZ);
-            createdVertices[new IFCFuzzyXYZ(adjustedXYZ)] = numCreated;
-            numCreated++;
+            if (numOuterCreated < 3)
+               succeeded = false;
          }
 
          // Checking start and end points should be covered above.
-         if (numCreated < 3)
+         if (numOuterCreated < 3)
          {
             Importer.TheLog.LogComment(id, "Loop has less than 3 distinct vertices, ignoring.", false);
             return false;
          }
 
+         // Remove the interior loops from the loop boundary, in reverse order, and add them
+         // to the tessellated face boundary.
+         foreach (Tuple<int, int> interiorLoop in interiorLoops)
+         {
+            int startIndex = interiorLoop.Item1;
+            int count = interiorLoop.Item2;
+            if (count >= 3)
+               m_TessellatedFaceBoundary.Add(loopVertices.GetRange(startIndex, count));
+            adjustedLoopVertices.RemoveRange(startIndex, count);
+         }
+
+         if (interiorLoops.Count > 0)
+            Importer.TheLog.LogWarning(id, "Loop is self-intersecting, fixing.", false);
+         
          m_TessellatedFaceBoundary.Add(adjustedLoopVertices);
          return true;
       }
@@ -441,17 +489,32 @@ namespace Revit.IFC.Import.Utility
          // sphere of equivalence.  In the case of AnyGeometry, we resort to the Solid tolerance as we are
          // generally trying to create Solids over Meshes.
          IFCFuzzyXYZ.IFCFuzzyXYZEpsilon = (TargetGeometry == TessellatedShapeBuilderTarget.Mesh) ?
-             IFCImportFile.TheFile.Document.Application.VertexTolerance :
+             MathUtil.Eps() :
              IFCImportFile.TheFile.Document.Application.ShortCurveTolerance;
       }
 
       /// <summary>
-      /// Indicates if the geometry can be created as a mesh instead
+      /// Indicates if the geometry can be created as a mesh as a fallback.
       /// </summary>
-      /// <returns></returns>
+      /// <returns>True if it can be.</returns>
       public bool CanRevertToMesh()
       {
-         return TargetGeometry == TessellatedShapeBuilderTarget.AnyGeometry && FallbackGeometry == TessellatedShapeBuilderFallback.Mesh;
+         return FallbackGeometry == TessellatedShapeBuilderFallback.Mesh;
+      }
+
+      /// <summary>
+      /// Revert to using a mesh representation if that's allowed.
+      /// </summary>
+      /// <returns>True if the change is made.</returns>
+      public bool RevertToMeshIfPossible()
+      {
+         // Note that CanRevertToMesh() is redundant, but a trivial enough check.
+         if (CanRevertToMesh())
+         {
+            SetTargetAndFallbackGeometry(TessellatedShapeBuilderTarget.Mesh, TessellatedShapeBuilderFallback.Salvage);
+            return true;
+         }
+         return false;
       }
    }
 }

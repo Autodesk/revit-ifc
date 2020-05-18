@@ -148,7 +148,6 @@ namespace BIM.IFC.Export.UI
          get { return textBoxSetupFileName.Text; }
       }
 
-
       /// <summary>
       /// Restores the previous window. If no previous window found, place on the left top.
       /// </summary>

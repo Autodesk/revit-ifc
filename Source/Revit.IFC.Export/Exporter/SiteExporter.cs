@@ -107,8 +107,9 @@ namespace Revit.IFC.Export.Exporter
       {
          IFCAnyHandle siteHandle = ExporterCacheManager.SiteHandle;
 
-         int numSiteElements = (!IFCAnyHandleUtil.IsNullOrHasNoValue(siteHandle) ? 1 : 0);
-         if (element == null && (numSiteElements != 0))
+         // Nothing to do if we've already created an IfcSite, and have no site element to try to
+         // export or append to the existing site.
+         if (element == null && !IFCAnyHandleUtil.IsNullOrHasNoValue(siteHandle))
             return;
 
          Document doc = document;
@@ -301,11 +302,9 @@ namespace Revit.IFC.Export.Exporter
 
             if (exportSite)
             {
-               bool assignToBldg = false;
-               bool assignToSite = false;
-               IFCAnyHandle address = Exporter.CreateIFCAddress(file, doc, projectInfo, out assignToBldg, out assignToSite);
-               if (!assignToSite)
-                  address = null;
+               IFCAnyHandle address = null;
+               if (Exporter.NeedToCreateAddressForSite(doc))
+                  address = Exporter.CreateIFCAddress(file, doc, projectInfo);
 
                siteHandle = IFCInstanceExporter.CreateSite(exporterIFC, element, siteGUID, ownerHistory, siteName, siteDescription, siteObjectType, localPlacement,
                   siteRepresentation, siteLongName, IFCElementComposition.Element, latitude, longitude, elevation, siteLandTitleNumber, address);
@@ -356,8 +355,8 @@ namespace Revit.IFC.Export.Exporter
                       GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle, "Pset_SiteCommon",
                       null, properties);
                }
-               ExporterUtil.ExportRelatedProperties(exporterIFC, projectInfo, productWrapper);
             }
+
 
             tr.Commit();
          }
