@@ -127,7 +127,10 @@ namespace Revit.IFC.Export.Toolkit
    enum IFCRampSubElements
    {
       ContainedRamp = 2,
-      ContainmentRelation = 3 // same as IFCStairSubElements.ContainmentRelation
+      ContainmentRelation = 3, // same as IFCStairSubElements.ContainmentRelation
+      FlightIdOffset = 4,
+      LandingIdOffset = 201,
+      StringerIdOffset = 401
    }
 
    enum IFCReinforcingBarSubElements
@@ -151,7 +154,10 @@ namespace Revit.IFC.Export.Toolkit
    enum IFCStairSubElements
    {
       ContainedStair = 2,
-      ContainmentRelation = 3
+      ContainmentRelation = 3,
+      FlightIdOffset = 4,
+      LandingIdOffset = 201,
+      StringerIdOffset = 401,
    }
 
    enum IFCWallSubElements

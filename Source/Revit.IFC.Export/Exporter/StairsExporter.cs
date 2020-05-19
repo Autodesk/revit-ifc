@@ -35,10 +35,6 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    class StairsExporter
    {
-      static private int m_FlightIdOffset = 1;
-      static private int m_LandingIdOffset = 201;
-      static private int m_StringerIdOffset = 401;
-
       /// <summary>
       /// The IfcMemberType shared by all stringers to keep their type.  This is a placeholder IfcMemberType.
       /// </summary>
@@ -1293,7 +1289,7 @@ namespace Revit.IFC.Export.Exporter
                      string stairName = NamingUtil.GetNameOverride(legacyStair, NamingUtil.GetIFCNamePlusIndex(legacyStair, ii + 1));
                      string ifcType = "NOTDEFINED";
 
-                     string flightGUID = GUIDUtil.CreateSubElementGUID(legacyStair, ii + m_FlightIdOffset);
+                     string flightGUID = GUIDUtil.CreateSubElementGUID(legacyStair, ii + (int) IFCStairSubElements.FlightIdOffset);
                      if (isRamp)
                      {
                         flightHnd = IFCInstanceExporter.CreateRampFlight(exporterIFC, legacyStair, flightGUID, ExporterCacheManager.OwnerHistoryHandle,
@@ -1318,7 +1314,7 @@ namespace Revit.IFC.Export.Exporter
                      for (int compIdx = 1; compIdx < numFlights; compIdx++)
                      {
                         IFCExportInfoPair exportInfo = new IFCExportInfoPair();
-                        string flightCompGUID = GUIDUtil.CreateSubElementGUID(legacyStair, ((ii * numFlights) + m_FlightIdOffset + compIdx));
+                        string flightCompGUID = GUIDUtil.CreateSubElementGUID(legacyStair, ((ii * numFlights) + (int)IFCStairSubElements.FlightIdOffset + compIdx));
                         if (isRamp)
                         {
                            IFCAnyHandle newLocalPlacement = ExporterUtil.CreateLocalPlacement(file, localPlacementForFlights[compIdx - 1], null);
@@ -1380,7 +1376,7 @@ namespace Revit.IFC.Export.Exporter
                         IFCAnyHandle shapeHnd = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
                         IFCAnyHandle landingLocalPlacement = ExporterUtil.CreateLocalPlacement(file, placementSetter.LocalPlacement, null);
                         string stairName = NamingUtil.GetIFCNamePlusIndex(legacyStair, ii + 1);
-                        string landingGUID = GUIDUtil.CreateSubElementGUID(legacyStair, ii + m_LandingIdOffset);
+                        string landingGUID = GUIDUtil.CreateSubElementGUID(legacyStair, ii + (int)IFCStairSubElements.LandingIdOffset);
 
                         string ifcType = "LANDING";
                         IFCAnyHandle slabHnd = IFCInstanceExporter.CreateSlab(exporterIFC, legacyStair, landingGUID, ExporterCacheManager.OwnerHistoryHandle,
@@ -1393,7 +1389,7 @@ namespace Revit.IFC.Export.Exporter
                         components[0].Add(slabHnd);
                         for (int compIdx = 1; compIdx < numFlights; compIdx++)
                         {
-                           string landingCompGUID = GUIDUtil.CreateSubElementGUID(legacyStair, (numFlights * ii) + m_LandingIdOffset + compIdx);
+                           string landingCompGUID = GUIDUtil.CreateSubElementGUID(legacyStair, (numFlights * ii) + (int)IFCStairSubElements.LandingIdOffset + compIdx);
                            IFCAnyHandle newLocalPlacement = ExporterUtil.CreateLocalPlacement(file, localPlacementForFlights[compIdx - 1], null);
                            IFCAnyHandle newProdRep = ExporterUtil.CopyProductDefinitionShape(exporterIFC, legacyStair, categoryId, IFCAnyHandleUtil.GetRepresentation(slabHnd));
 
@@ -1436,7 +1432,7 @@ namespace Revit.IFC.Export.Exporter
                         IFCAnyHandle stringerRepHnd = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
                         IFCAnyHandle stringerLocalPlacement = ExporterUtil.CreateLocalPlacement(file, placementSetter.LocalPlacement, null);
                         string stairName = NamingUtil.GetIFCNamePlusIndex(legacyStair, ii + 1);
-                        string stringerGIUD = GUIDUtil.CreateSubElementGUID(legacyStair, ii + m_StringerIdOffset);
+                        string stringerGIUD = GUIDUtil.CreateSubElementGUID(legacyStair, ii + (int)IFCStairSubElements.StringerIdOffset);
                         string ifcType = "STRINGER";
                         IFCAnyHandle memberHnd = IFCInstanceExporter.CreateMember(exporterIFC, legacyStair, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
                             stringerLocalPlacement, stringerRepHnd, ifcType);
@@ -1449,7 +1445,7 @@ namespace Revit.IFC.Export.Exporter
                         components[0].Add(memberHnd);
                         for (int compIdx = 1; compIdx < numFlights; compIdx++)
                         {
-                           string stringerCompGIUD = GUIDUtil.CreateSubElementGUID(legacyStair, (numFlights * ii) + m_StringerIdOffset + compIdx);
+                           string stringerCompGIUD = GUIDUtil.CreateSubElementGUID(legacyStair, (numFlights * ii) + (int)IFCStairSubElements.StringerIdOffset + compIdx);
                            IFCAnyHandle newLocalPlacement = ExporterUtil.CreateLocalPlacement(file, localPlacementForFlights[compIdx - 1], null);
                            IFCAnyHandle newProdRep = ExporterUtil.CopyProductDefinitionShape(exporterIFC, legacyStair, categoryId, IFCAnyHandleUtil.GetRepresentation(memberHnd));
 
@@ -1645,16 +1641,6 @@ namespace Revit.IFC.Export.Exporter
                if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                {
                   IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
-                  //IList<int> segmentIndex = null;
-                  //IList<IList<double>> pointList = GeometryUtil.PointListFromCurve(exporterIFC, curve, null, null, out segmentIndex);
-
-                  //// For now because of no support in creating IfcLineIndex and IfcArcIndex yet, it is set to null
-                  ////IList<IList<int>> segmentIndexList = new List<IList<int>>();
-                  ////segmentIndexList.Add(segmentIndex);
-                  //IList<IList<int>> segmentIndexList = null;
-
-                  //IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, pointList);
-                  //IFCAnyHandle curveHnd = IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentIndexList, false);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveHnd))
                      curveSet.Add(curveHnd);
                }

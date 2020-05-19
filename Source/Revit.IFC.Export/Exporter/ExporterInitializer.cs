@@ -718,16 +718,8 @@ namespace Revit.IFC.Export.Exporter
          {
          QuantityDescription ifcCeilingQuantity = new QuantityDescription();
          QuantityEntry ifcQE;
-            //if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-            //{
-            //   ifcCeilingQuantity.Name = "Qto_CoveringBaseQuantities";
-            //   ifcQE = new QuantityEntry("NetArea", BuiltInParameter.HOST_AREA_COMPUTED);
-            //}
-            //else
-         {
             ifcCeilingQuantity.Name = "BaseQuantities";
             ifcQE = new QuantityEntry("GrossCeilingArea", BuiltInParameter.HOST_AREA_COMPUTED);
-         }
          ifcCeilingQuantity.EntityTypes.Add(IFCEntityType.IfcCovering);
 
          ifcQE.QuantityType = QuantityType.Area;
@@ -1039,7 +1031,6 @@ namespace Revit.IFC.Export.Exporter
          ifcBaseQuantity.AddEntry(ifcQE);
 
          ifcQE = new QuantityEntry("NetArea", BuiltInParameter.HOST_AREA_COMPUTED);
-         //ifcQE = new QuantityEntry("NetArea", "IfcQtyNetArea");
          ifcQE.QuantityType = QuantityType.Area;
          ifcBaseQuantity.AddEntry(ifcQE);
 
