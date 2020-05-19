@@ -219,17 +219,6 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {
             IFCAnyHandle axisHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
-            //IFCFile file = exporterIFC.GetFile();
-            //IList<int> segmentIndex = null;
-            //IList<IList<double>> pointList = GeometryUtil.PointListFromCurve(exporterIFC, curve, null, null, out segmentIndex);
-
-            //// For now because of no support in creating IfcLineIndex and IfcArcIndex yet, it is set to null
-            ////IList<IList<int>> segmentIndexList = new List<IList<int>>();
-            ////segmentIndexList.Add(segmentIndex);
-            //IList<IList<int>> segmentIndexList = null;
-
-            //IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, pointList);
-            //IFCAnyHandle axisHnd = IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentIndexList, false);
             axis_items = new List<IFCAnyHandle>();
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisHnd))
             {

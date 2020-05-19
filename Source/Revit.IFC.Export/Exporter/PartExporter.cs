@@ -549,7 +549,7 @@ namespace Revit.IFC.Export.Exporter
          ElementId catId = CategoryUtil.GetSafeCategoryId(hostElement);
          IList<int> partMaterialLayerIndexList = new List<int>();
 
-         if (IsElementWithMultipleComponents(hostElement) || (hostElement is FamilyInstance && associatedPartsList.Count > 0))
+         if (IsElementWithMultipleComponents(hostElement))
          {
             List<GeometryObject> geometryObjects = new List<GeometryObject>();
             if (associatedPartsList.Count > 0)
@@ -983,7 +983,8 @@ namespace Revit.IFC.Export.Exporter
          if (hostElement is Floor
             || hostElement is RoofBase
             || hostElement is Ceiling
-            || hostElement is Wall)
+            || hostElement is Wall
+            || hostElement is FamilyInstance)
             return true;
          else
             return false;
@@ -1150,6 +1151,12 @@ namespace Revit.IFC.Export.Exporter
             {
                theSplitLevelId = levelId;
             }
+         }
+
+         // If there is no associated level id, it has to be linked to the lowest level
+         if (theSplitLevelId == ElementId.InvalidElementId && levelIds.Count > 0)
+         {
+            theSplitLevelId = levelIds[0];
          }
 
          return theSplitLevelId;

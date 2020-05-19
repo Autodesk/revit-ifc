@@ -2547,8 +2547,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          IFCFile file = exporterIFC.GetFile();
          HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
          double scaledLength = typeInfo.ScaledDepth;
-         double scaledArea = typeInfo.ScaledArea;
-         double crossSectionArea = scaledArea;
+         //According to investigation of current code the passed in typeInfo contains grossArea
+         double scaledGrossArea = typeInfo.ScaledArea;
+         double crossSectionArea = scaledGrossArea;
          double scaledOuterPerimeter = typeInfo.ScaledOuterPerimeter;
          double scaledInnerPerimeter = typeInfo.ScaledInnerPerimeter;
          double outSurfaceArea = 0.0;
@@ -2574,7 +2575,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             quantityHnds.Add(quantityHnd);
          }
 
-         if (!MathUtil.AreaIsAlmostZero(scaledArea) && !MathUtil.IsAlmostZero(scaledLength) && !MathUtil.IsAlmostZero(scaledOuterPerimeter))
+         if (!MathUtil.AreaIsAlmostZero(scaledGrossArea) && !MathUtil.IsAlmostZero(scaledLength) && !MathUtil.IsAlmostZero(scaledOuterPerimeter))
          {
             double scaledPerimeter = scaledOuterPerimeter + scaledInnerPerimeter;
             //According to the IFC documentation, OuterSurfaceArea does not include the end caps area, only Length * Perimeter
@@ -2587,12 +2588,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (MathUtil.AreaIsAlmostZero(crossSectionArea) && MathUtil.AreaIsAlmostZero(outSurfaceArea))
          {
             double scaledPerimeter = scaledOuterPerimeter + scaledInnerPerimeter;
-            double grossSurfaceArea = scaledArea * 2 + scaledLength * scaledPerimeter;
+            double grossSurfaceArea = scaledGrossArea * 2 + scaledLength * scaledPerimeter;
             IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "GrossSurfaceArea", null, null, grossSurfaceArea);
             quantityHnds.Add(quantityHnd);
          }
 
-         double volume = 0.0;
+         double grossVolume = scaledLength * scaledGrossArea;
+         double netVolume = 0.0;
          if (element != null)
          {
             // If we are splitting columns, we will look at the actual geometry used when exporting this segment
@@ -2604,26 +2606,28 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   // We don't suport calculating the volume of Meshes at this time.
                   if (geomObj is Mesh)
                   {
-                     volume = 0.0;
+                     netVolume = 0.0;
                      break;
                   }
 
                   if (geomObj is Solid)
-                     volume += (geomObj as Solid).Volume;
+                     netVolume += (geomObj as Solid).Volume;
                }
             }
             else
-               ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.HOST_VOLUME_COMPUTED, out volume);
-            volume = UnitUtil.ScaleVolume(volume);
+               ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.HOST_VOLUME_COMPUTED, out netVolume);
+            netVolume = UnitUtil.ScaleVolume(netVolume);
          }
 
-         // If we didn't calculate the volume above, but we did pass in a non-zero scaled length and area, calculate the volume.
-         if (MathUtil.VolumeIsAlmostZero(volume))
-            volume = scaledLength * scaledArea;
-
-         if (!MathUtil.VolumeIsAlmostZero(volume))
+         if (!MathUtil.VolumeIsAlmostZero(grossVolume))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "GrossVolume", null, null, volume);
+            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "GrossVolume", null, null, grossVolume);
+            quantityHnds.Add(quantityHnd);
+         }
+
+         if (!MathUtil.VolumeIsAlmostZero(netVolume))
+         {
+            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "NetVolume", null, null, netVolume);
             quantityHnds.Add(quantityHnd);
          }
 

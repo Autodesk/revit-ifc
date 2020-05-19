@@ -588,7 +588,7 @@ namespace Revit.IFC.Export.Utility
                //   geometryList.Add(solid);
                //}
                geometryList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref solidList, ref meshes);
-               if (geometryList.Count == 0)
+               if (geometryList.Count == 0 && !skipBody)
                   return null;
             }
          }
