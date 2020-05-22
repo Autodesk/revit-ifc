@@ -140,181 +140,55 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// The associated handle to an IfcTypeProduct for the type.
       /// </summary>
-      IFCAnyHandle m_Style = null;
+      public IFCAnyHandle Style { get; set; } = null;
 
       /// <summary>
       /// The associated handle to a 2D IfcRepresentationMap for the type.
       /// </summary>
-      IFCAnyHandle m_Map2DHandle = null;
+      public IFCAnyHandle Map2DHandle { get; set; } = null;
 
       /// <summary>
       /// The associated handle to a 3D IfcRepresentationMap for the type.
       /// </summary>
-      IFCAnyHandle m_Map3DHandle = null;
+      public IFCAnyHandle Map3DHandle { get; set; } = null;
 
       /// <summary>
       /// The material id associated with this type.
       /// </summary>
-      HashSet<ElementId> m_MaterialIds = null;
+      public IList<ElementId> MaterialIds { get; set; } = new List<ElementId>();
 
       /// <summary>  
       /// The transform between the coordinate system of the type and the coordinate system of the 
       /// instance's location in the Revit model.
       /// </summary>
-      Transform m_StyleTransform = null;
+      public Transform StyleTransform { get; set; } = Transform.Identity;
 
       /// <summary>
       /// The area of the type's cross-section, scaled into the units of export.
       /// This property is typically used only for columns, beams and other framing members.
       /// </summary>
-      double m_ScaledArea = 0.0;
+      public double ScaledArea { get; set; } = 0.0;
 
       /// <summary>
       /// The depth of the type, scaled into the units of export.
       /// This property is typically used only for columns, beams and other framing members.
       /// </summary>
-      double m_ScaledDepth = 0.0;
+      public double ScaledDepth { get; set; } = 0.0;
 
       /// <summary>
       /// The inner perimeter of the boundaries of the type's cross-section, scaled into the units of export.
       /// This property is typically used only for columns, beams and other framing members.
       /// </summary>
-      double m_ScaledInnerPerimeter = 0.0;
+      public double ScaledInnerPerimeter { get; set; } = 0.0;
 
       /// <summary>
       /// The outer perimeter of the boundaries of the type's cross-section, scaled into the units of export.
       /// This property is typically used only for columns, beams and other framing members.
       /// </summary>
-      double m_ScaledOuterPerimeter = 0.0;
+      public double ScaledOuterPerimeter { get; set; } = 0.0;
 
-      MaterialAndProfile m_MaterialAndProfile = null;
+      public MaterialAndProfile MaterialAndProfile { get; set; } = new MaterialAndProfile();
 
-      FamilyGeometrySummaryData m_FamilyGeometrySummaryData = null;
-
-      /// <summary>
-      /// The associated handle to an IfcTypeProduct for the type.
-      /// </summary>
-      public IFCAnyHandle Style
-      {
-         get { return m_Style; }
-         set { m_Style = value; }
-      }
-
-      /// <summary>
-      /// The associated handle to a 2D IfcRepresentationMap for the type.
-      /// Typically used only for Building Element Proxy elements (masses).
-      /// </summary>
-      public IFCAnyHandle Map2DHandle
-      {
-         get { return m_Map2DHandle; }
-         set { m_Map2DHandle = value; }
-      }
-
-      /// <summary>
-      /// The associated handle to a 3D IfcRepresentationMap for the type.
-      /// Typically used only for Building Element Proxy elements (masses).
-      /// </summary>
-      public IFCAnyHandle Map3DHandle
-      {
-         get { return m_Map3DHandle; }
-         set { m_Map3DHandle = value; }
-      }
-
-      /// <summary>
-      /// The material ids associated with this type.
-      /// </summary>
-      public HashSet<ElementId> MaterialIds
-      {
-         get
-         {
-            if (m_MaterialIds == null)
-               m_MaterialIds = new HashSet<ElementId>();
-            return m_MaterialIds;
-         }
-         set { m_MaterialIds = value; }
-      }
-
-      /// <summary>  
-      /// The transform between the coordinate system of the type and the coordinate system of the 
-      /// instance's location in the Revit model.
-      /// </summary>
-      public Transform StyleTransform
-      {
-         get
-         {
-            if (m_StyleTransform == null)
-               m_StyleTransform = Transform.Identity;
-            return m_StyleTransform;
-         }
-         set { m_StyleTransform = value; }
-      }
-
-      /// <summary>
-      /// The area of the type's cross-section, scaled into the units of export.
-      /// This property is typically used only for columns, beams and other framing members.
-      /// </summary>
-      public double ScaledArea
-      {
-         get { return m_ScaledArea; }
-         set { m_ScaledArea = value; }
-      }
-
-      /// <summary>
-      /// The depth of the type, scaled into the units of export.
-      /// This property is typically used only for columns, beams and other framing members.
-      /// </summary>
-      public double ScaledDepth
-      {
-         get { return m_ScaledDepth; }
-         set { m_ScaledDepth = value; }
-      }
-
-      /// <summary>
-      /// The inner perimeter of the boundaries of the type's cross-section, scaled into the units of export.
-      /// This property is typically used only for columns, beams and other framing members.
-      /// </summary>
-      public double ScaledInnerPerimeter
-      {
-         get { return m_ScaledInnerPerimeter; }
-         set { m_ScaledInnerPerimeter = value; }
-      }
-
-      /// <summary>
-      /// The outer perimeter of the boundaries of the type's cross-section, scaled into the units of export.
-      /// This property is typically used only for columns, beams and other framing members.
-      /// </summary>
-      public double ScaledOuterPerimeter
-      {
-         get { return m_ScaledOuterPerimeter; }
-         set { m_ScaledOuterPerimeter = value; }
-      }
-
-      /// <summary>
-      /// Material and Profile information for a family
-      /// </summary>
-      public MaterialAndProfile MaterialAndProfile
-      {
-         get
-         {
-            if (m_MaterialAndProfile == null)
-               m_MaterialAndProfile = new MaterialAndProfile();
-            return m_MaterialAndProfile;
-         }
-         set { m_MaterialAndProfile = value; }
-      }
-
-      /// <summary>
-      /// A summary of family geometry data useful for comparison purpose
-      /// </summary>
-      public FamilyGeometrySummaryData familyGeometrySummaryData
-      {
-         get
-         {
-            if (m_FamilyGeometrySummaryData == null)
-               m_FamilyGeometrySummaryData = new FamilyGeometrySummaryData();
-            return m_FamilyGeometrySummaryData;
-         }
-         set { m_FamilyGeometrySummaryData = value; }
-      }
+      public FamilyGeometrySummaryData FamilyGeometrySummaryData { get; set; } = new FamilyGeometrySummaryData();
    }
 }

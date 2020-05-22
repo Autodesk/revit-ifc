@@ -84,22 +84,10 @@ namespace Revit.IFC.Export.Exporter
       public Transform OffsetTransform { get; set; } = null;
 
       /// <summary>
-      /// The exported material Ids
-      /// </summary>
-      public HashSet<ElementId> MaterialIds
-      {
-         get
-         {
-            if (MaterialIdList != null)
-               return new HashSet<ElementId>(MaterialIdList);
-            return null;
-         }
-      }
-
-      /// <summary>
       /// Material Ids in a list to maintain its order and allows duplicate item (similar to MaterialIds)
       /// </summary>
-      public IList<ElementId> MaterialIdList { get; set; } = new List<ElementId>();
+      public IList<ElementId> MaterialIds { get; set; } = new List<ElementId>();
+
 
       /// <summary>
       /// A handle for the Footprint representation
@@ -129,7 +117,7 @@ namespace Revit.IFC.Export.Exporter
             OffsetTransform = offsetTransform;
          if (materialIds != null)
          {
-            MaterialIdList = new List<ElementId>(materialIds);
+            MaterialIds = new List<ElementId>(materialIds);
          }
       }
 
@@ -144,7 +132,7 @@ namespace Revit.IFC.Export.Exporter
          RepresentationHnd = bodyData.RepresentationHnd;
          ShapeRepresentationType = bodyData.ShapeRepresentationType;
          OffsetTransform = bodyData.OffsetTransform;
-         MaterialIdList = bodyData.MaterialIdList;
+         MaterialIds = bodyData.MaterialIds;
       }
 
       /// <summary>
@@ -153,7 +141,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="matId">The new material id.</param>
       public void AddMaterial(ElementId matId)
       {
-         MaterialIdList.Add(matId);
+         MaterialIds.Add(matId);
       }
 
       /// <summary>
@@ -180,7 +168,7 @@ namespace Revit.IFC.Export.Exporter
       public static BodyData Create(BodyData bodyDataIn)
       {
          BodyData retBodyData = new BodyData(bodyDataIn);   // create a new copy of bodyDataIn
-         retBodyData.MaterialIdList.Clear();                // Clear the MaterialIdsList
+         retBodyData.MaterialIds.Clear();                // Clear the MaterialIdsList
          return retBodyData;
       }
    }

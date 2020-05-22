@@ -30,6 +30,33 @@ namespace Revit.IFC.Export.Utility
          CollectMaterialLayerSet();
       }
 
+      public void SingleMaterialOverride (ElementId materialId, double materialWidth)
+      {
+         Material material = m_Element.Document.GetElement(materialId) as Material;
+         string layerName = "Layer";
+         if (material != null)
+         {
+            layerName = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Name", material.Name);
+         }
+         Tuple<ElementId, string, double> matInfo = new Tuple<ElementId, string, double>(materialId, layerName, materialWidth);
+         MaterialIds.Add(matInfo);
+
+         IFCAnyHandle singleMaterialOverrideHnd = IFCInstanceExporter.CreateMaterial(m_ExporterIFC.GetFile(), layerName, null, null);
+         ExporterCacheManager.MaterialHandleCache.Register(MaterialIds[0].Item1, singleMaterialOverrideHnd);
+         MaterialLayerSetHandle = singleMaterialOverrideHnd;
+      }
+
+      /// <summary>
+      /// Return status whether the LayerSetInfo is empty
+      /// </summary>
+      public bool IsEmpty
+      {
+         get
+         {
+            return (MaterialLayerSetHandle == null && MaterialIds.Count == 0);
+         }
+      }
+
       /// <summary>
       /// MaterialLayerSet Collected or MaterialConstituentSet (for IFC4RV)
       /// </summary>
@@ -270,14 +297,10 @@ namespace Revit.IFC.Export.Utility
 
             for (int ii = 0; ii < numLayersToCreate; ii++)
             {
-               // This might be null.
-               if (MaterialIds[ii].Item1 == ElementId.InvalidElementId)
-                  continue;
-
                int widthIndex = widthIndices[ii];
                double scaledWidth = UnitUtil.ScaleLength(widths[widthIndex]);
 
-               string layerName = null;
+               string layerName = "Layer";
                string description = null;
                string category = null;
                int? priority = null;

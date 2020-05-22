@@ -716,17 +716,17 @@ namespace Revit.IFC.Export.Exporter
          // It is duplicated with InitCoveringBaseQuantities. Leaving it here for backward compatibility
          if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-         QuantityDescription ifcCeilingQuantity = new QuantityDescription();
-         QuantityEntry ifcQE;
+            QuantityDescription ifcCeilingQuantity = new QuantityDescription();
+            QuantityEntry ifcQE;
             ifcCeilingQuantity.Name = "BaseQuantities";
             ifcQE = new QuantityEntry("GrossCeilingArea", BuiltInParameter.HOST_AREA_COMPUTED);
-         ifcCeilingQuantity.EntityTypes.Add(IFCEntityType.IfcCovering);
+            ifcCeilingQuantity.EntityTypes.Add(IFCEntityType.IfcCovering);
 
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcCeilingQuantity.AddEntry(ifcQE);
+            ifcQE.QuantityType = QuantityType.Area;
+            ifcCeilingQuantity.AddEntry(ifcQE);
 
-         baseQuantities.Add(ifcCeilingQuantity);
-      }
+            baseQuantities.Add(ifcCeilingQuantity);
+         }
       }
 
       /// <summary>

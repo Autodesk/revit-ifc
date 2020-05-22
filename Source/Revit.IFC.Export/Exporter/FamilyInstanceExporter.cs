@@ -552,7 +552,7 @@ namespace Revit.IFC.Export.Exporter
                         if (solids.Count > 0)
                         {
                            bool completelyClipped = false;
-                           HashSet<ElementId> materialIds = null;
+                           IList<ElementId> materialIds = null;
                            FootPrintInfo footprintInfo = null;
                            // The "extrudeDirection" passed in is in global coordinates if it represents
                            // a custom axis, while the geometry is in either the FamilyInstance or 

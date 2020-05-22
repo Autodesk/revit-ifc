@@ -36,37 +36,37 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// The handle of the created representation.
       /// </summary>
-      public IFCAnyHandle Handle = null;
+      public IFCAnyHandle Handle { get; set; } = null;
 
       /// <summary>
       /// The type of shape representation created.
       /// </summary>
-      public ShapeRepresentationType ShapeRepresentationType = ShapeRepresentationType.Undefined;
+      public ShapeRepresentationType ShapeRepresentationType { get; set; } = ShapeRepresentationType.Undefined;
 
       /// <summary>
       /// The extra parameters for the extrusion.
       /// </summary>
-      public IFCExtrusionCreationData Data = null;
+      public IFCExtrusionCreationData Data { get; set; } = null;
 
       /// <summary>
       /// The material ids for the extrusion.
       /// </summary>
-      public HashSet<ElementId> MaterialIds = null;
+      public IList<ElementId> MaterialIds { get; set; } = new List<ElementId>();
 
       /// <summary>
       /// The handles that represent the base representation items inside the final shape representation, without any openings or clippings.
       /// In general, these are extrusions, but could be triangulated face sets for the Reference View.
       /// </summary>
-      public IList<IFCAnyHandle> BaseRepresentationItems = null;
+      public IList<IFCAnyHandle> BaseRepresentationItems { get; set; } = new List<IFCAnyHandle>();
 
       /// <summary>
       /// A handle for the Footprint representation
       /// </summary>
-      public FootPrintInfo FootprintInfo = null;
+      public FootPrintInfo FootprintInfo { get; set; } = null;
 
       /// <summary>
       /// A Dictionary for Material Profile
       /// </summary>
-      public MaterialAndProfile MaterialAndProfile = null;
+      public MaterialAndProfile MaterialAndProfile { get; set; } = null;
    }
 }
