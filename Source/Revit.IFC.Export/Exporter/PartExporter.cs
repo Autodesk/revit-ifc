@@ -535,7 +535,7 @@ namespace Revit.IFC.Export.Exporter
       {
          IFCAnyHandle hostShapeRep = null;
          layersetInfo = new MaterialLayerSetInfo(exporterIFC, hostElement, originalWrapper);
-         HashSet<ElementId> materialIdsFromBodyData = new HashSet<ElementId>();
+         IList<ElementId> materialIdsFromBodyData = new List<ElementId>();
          IFCFile file = exporterIFC.GetFile();
          BodyData bodyData = null;
          bool isSplitWall = (hostElement is Wall) && ExporterCacheManager.ExportOptionsCache.WallAndColumnSplitting;
@@ -548,8 +548,9 @@ namespace Revit.IFC.Export.Exporter
          Options options = GeometryUtil.GetIFCExportGeometryOptions();
          ElementId catId = CategoryUtil.GetSafeCategoryId(hostElement);
          IList<int> partMaterialLayerIndexList = new List<int>();
+         IList<Tuple<ElementId, string, double>> layersetInfoList = new List<Tuple<ElementId, string, double>>();
 
-         if (IsElementWithMultipleComponents(hostElement))
+         if (ElementCanHaveMultipleComponents(hostElement))
          {
             List<GeometryObject> geometryObjects = new List<GeometryObject>();
             if (associatedPartsList.Count > 0)
@@ -641,9 +642,6 @@ namespace Revit.IFC.Export.Exporter
          string shapeIdent = "Body";
          IFCAnyHandle contextOfItems = exporterIFC.Get3DContextHandle(shapeIdent);
          string representationType = IFCAnyHandleUtil.GetRepresentationType(hostShapeRep);
-
-         IList<Tuple<ElementId, string, double>> layersetInfoList = new List<Tuple<ElementId, string, double>>();
-
          // If material layer indices are available, we can use the material sequence as is, 
          // but otherwise layersetInfoList must be collected manually in the right order using a geometric method
          if (partMaterialLayerIndexList.Count > 0)
@@ -652,21 +650,40 @@ namespace Revit.IFC.Export.Exporter
          }
          else
          {
-            if (partIsNotObtainable)
+            if (partIsNotObtainable || layersetInfo.IsEmpty)
             {
-               // Since Part cannot be obtained the geometry will be only one from the original object. In this case we will take only the first
-               // material. It is not very correct, but it will produce consistent output
-               var matList = (from x in layersetInfo.MaterialIds
-                              where !MathUtil.IsAlmostZero(x.Item3)
-                              select new Tuple<ElementId, string, double>(x.Item1, x.Item2, x.Item3)).ToList();
-               if (matList != null && matList.Count > 0)
-                  layersetInfoList.Add(matList[0]);   // add only the first non-zero thickness
+               if (partIsNotObtainable && layersetInfo != null)
+               {
+                  // Since Part cannot be obtained the geometry will be only one from the original object. In this case we will take only the first
+                  // material. It is not very correct, but it will produce consistent output
+
+                  var matList = (from x in layersetInfo.MaterialIds
+                                 where !MathUtil.IsAlmostZero(x.Item3)
+                                 select new Tuple<ElementId, string, double>(x.Item1, x.Item2, x.Item3)).ToList();
+                  if (matList != null && matList.Count > 0)
+                     layersetInfoList.Add(matList[0]);   // add only the first non-zero thickness
+               }
+               else
+               {
+                  ElementId matId = ElementId.InvalidElementId;
+                  if (materialIdsFromBodyData != null && materialIdsFromBodyData.Count > 0)
+                  {
+                     matId = materialIdsFromBodyData.First();
+                  }
+                  Double width = 0.0;
+                  if (extrusionCreationData != null)
+                  {
+                     width = extrusionCreationData.ScaledLength;
+                  }
+                  layersetInfo.SingleMaterialOverride(matId, width);
+                  layersetInfoList.Add(layersetInfo.MaterialIds[0]);
+               }
             }
             else
             {
                IList<ElementId> matInfoList = layersetInfo.MaterialIds.Where(x => !MathUtil.IsAlmostZero(x.Item3)).Select(x => x.Item1).ToList();
                // There is a chance that the material list is already correct or just in reverse order, so handle it before moving on to manual sequencing
-               MaterialLayerSetInfo.CompareTwoLists compStat = MaterialLayerSetInfo.CompareMaterialInfoList(bodyData.MaterialIdList, matInfoList);
+               MaterialLayerSetInfo.CompareTwoLists compStat = MaterialLayerSetInfo.CompareMaterialInfoList(bodyData.MaterialIds, matInfoList);
                switch (compStat)
                {
                   case MaterialLayerSetInfo.CompareTwoLists.ListsSequentialEqual:
@@ -690,12 +707,18 @@ namespace Revit.IFC.Export.Exporter
                         compStat = MaterialLayerSetInfo.CompareMaterialInfoList(newMatInfoList, matInfoList);
                         if (compStat == MaterialLayerSetInfo.CompareTwoLists.ListsReversedEqual)
                            layersetInfoList = layersetInfoList.Reverse().ToList();
-                        else if (compStat == MaterialLayerSetInfo.CompareTwoLists.ListsUnequal)
-                           return null; // We did all we could
                         break;
                      }
                   default:
                      break;
+               }
+
+               if (compStat == MaterialLayerSetInfo.CompareTwoLists.ListsUnequal)
+               {
+                  // We still cannot match the layer, it could be no layer. Use only the first material
+                  Tuple<ElementId, string, double> layer1 = layersetInfo.MaterialIds[0];
+                  layersetInfo.SingleMaterialOverride(layer1.Item1, layer1.Item3);
+                  layersetInfoList.Add(layer1);
                }
             }
          }
@@ -708,7 +731,7 @@ namespace Revit.IFC.Export.Exporter
             if (cnt >= layersetInfoList.Count)
                break;
 
-            string layerName = "Default";
+            string layerName = "Layer";
             if (partMaterialLayerIndexList.Count > 0)
             {
                int layerInfoIdx = partMaterialLayerIndexList[cnt];
@@ -786,19 +809,18 @@ namespace Revit.IFC.Export.Exporter
                SolidMeshGeometryInfo solidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(geometryElement);
                foreach (Solid solid in solidMeshInfo.GetSolids())
                {
-                  foreach (Face face in solid.Faces)
+                  foreach (Face sFace in solid.Faces)
                   {
-                     // Check only planar faces
-                     Plane surface = face.GetSurface() as Plane;
-                     if (surface == null)
-                        continue;
+                     PlanarFace face = sFace as PlanarFace;
+                     if (face == null)
+                        continue;      // Not a planar face
 
                      // Check only top faces
-                     if (MathUtil.IsAlmostEqual(surface.Normal.DotProduct(XYZ.BasisZ), 1.0))
+                     if (MathUtil.IsAlmostEqual(face.FaceNormal.DotProduct(XYZ.BasisZ), 1.0))
                      {
                         // Create a line perpendicular to the wall at face's height
                         // It may not be strictly necessary for the height to be the same if we use projections instead of intersections
-                        Line rightLine = Line.CreateUnbound(rightLineOrigin + new XYZ(0.0, 0.0, surface.Origin.Z), rightVec);
+                        Line rightLine = Line.CreateUnbound(rightLineOrigin + new XYZ(0.0, 0.0, face.Origin.Z), rightVec);
 
                         if (locationCurve is Line)
                         {
@@ -977,7 +999,7 @@ namespace Revit.IFC.Export.Exporter
          return (exportType.ExportInstance == IFCEntityType.IfcWall) || (exportType.ExportInstance == IFCEntityType.IfcColumn);
       }
 
-      private static bool IsElementWithMultipleComponents(Element hostElement)
+      private static bool ElementCanHaveMultipleComponents(Element hostElement)
       {
          // Currently only objects with multi-layer/structure are supported
          if (hostElement is Floor
@@ -1234,7 +1256,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       private static IFCAnyHandle ShapeRepFromOriginalGeometry(ExporterIFC exporterIFC, Element hostElement, List<GeometryObject> geometryObjects,
-         ref BodyData bodyData, ref HashSet<ElementId> materialIds, IFCExtrusionCreationData extrusionCreationData)
+         ref BodyData bodyData, ref IList<ElementId> materialIds, IFCExtrusionCreationData extrusionCreationData)
       {
          IFCAnyHandle hostShapeRep = null;
          Options options = GeometryUtil.GetIFCExportGeometryOptions();

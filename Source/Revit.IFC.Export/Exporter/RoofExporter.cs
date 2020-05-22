@@ -121,10 +121,6 @@ namespace Revit.IFC.Export.Exporter
 
                      productWrapper.AddElement(roof, roofHnd, placementSetter.LevelInfo, ecData, true, roofExportType);
 
-                     // will export its host object materials later if it is a roof
-                     if (!(roof is RoofBase))
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, bodyData.MaterialIds);
-
                      if (exportSlab)
                      {
                         string slabGUID = GUIDUtil.CreateSubElementGUID(roof, (int)IFCRoofSubElements.RoofSlabStart);
@@ -162,6 +158,10 @@ namespace Revit.IFC.Export.Exporter
                         if (layersetInfo != null && !IFCAnyHandleUtil.IsNullOrHasNoValue(layersetInfo.MaterialLayerSetHandle))
                         {
                            CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, layersetInfo.MaterialLayerSetHandle);
+                        }
+                        else if (!(roof is RoofBase))
+                        {
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, bodyData.MaterialIds);
                         }
                      }
                   }

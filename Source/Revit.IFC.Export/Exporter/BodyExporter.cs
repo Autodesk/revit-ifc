@@ -3008,7 +3008,7 @@ namespace Revit.IFC.Export.Exporter
                            // 2. We are in the Reference View, and we created a TriangulatedFaceSet.
                            if (extrusionData.BaseRepresentationItems != null && extrusionData.BaseRepresentationItems.Count == 1)
                            {
-                              HashSet<ElementId> materialIds = extrusionData.MaterialIds;
+                              IList<ElementId> materialIds = extrusionData.MaterialIds;
 
                               // We skip setting and getting the material id from the exporter as unnecessary.
                               ElementId matIdFromGeom = (materialIds != null && materialIds.Count > 0) ? materialIds.First() : ElementId.InvalidElementId;
@@ -3126,8 +3126,7 @@ namespace Revit.IFC.Export.Exporter
                         int geomIndex = exportAsExtrusion[ii];
 
                         ElementId matId = SetBestMaterialIdInExporter(geometryList[geomIndex], element, overrideMaterialId, exporterIFC);
-                        if (matId != ElementId.InvalidElementId)
-                           bodyData.AddMaterial(matId);
+                        bodyData.AddMaterial(matId);
 
                         if (exportBodyParams != null && exportBodyParams.AreInnerRegionsOpenings)
                         {
