@@ -26,7 +26,7 @@ using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Common.Enums;
-
+using System.Security.Cryptography;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -519,40 +519,47 @@ namespace Revit.IFC.Export.Utility
          // iterate through the GeometryObjects contained in the GeometryElement
          foreach (GeometryObject geomObj in currGeomElem)
          {
-            Solid solid = geomObj as Solid;
-            if (solid != null && solid.Faces.Size > 0)
+            // Add try catch here because in a rare cases we find solid that throws exception/invalid solid.Faces
+            try
             {
-               solidMeshCapsule.AddSolid(solid, containingElement);
-            }
-            else
-            {
-               Mesh mesh = geomObj as Mesh;
-               if (mesh != null)
+               Solid solid = geomObj as Solid;
+               if (solid != null && solid.Faces.Size > 0)
                {
-                  solidMeshCapsule.AddMesh(mesh);
+                  solidMeshCapsule.AddSolid(solid, containingElement);
                }
                else
                {
-                  // if the current geomObj is castable as a GeometryInstance, then we perform the same collection on its symbol geometry
-                  GeometryInstance inst = geomObj as GeometryInstance;
-
-                  if (inst != null)
+                  Mesh mesh = geomObj as Mesh;
+                  if (mesh != null)
                   {
-                     try
+                     solidMeshCapsule.AddMesh(mesh);
+                  }
+                  else
+                  {
+                     // if the current geomObj is castable as a GeometryInstance, then we perform the same collection on its symbol geometry
+                     GeometryInstance inst = geomObj as GeometryInstance;
+
+                     if (inst != null)
                      {
-                        GeometryElement instanceSymbol = inst.GetSymbolGeometry();
-                        if (instanceSymbol != null && instanceSymbol.Count() != 0)
+                        try
                         {
-                           Transform instanceTransform = localTrf.Multiply(inst.Transform);
-                           CollectSolidMeshGeometry(instanceSymbol, inst.Symbol,
-                              instanceTransform, solidMeshCapsule);
+                           GeometryElement instanceSymbol = inst.GetSymbolGeometry();
+                           if (instanceSymbol != null && instanceSymbol.Count() != 0)
+                           {
+                              Transform instanceTransform = localTrf.Multiply(inst.Transform);
+                              CollectSolidMeshGeometry(instanceSymbol, inst.Symbol,
+                                 instanceTransform, solidMeshCapsule);
+                           }
                         }
-                     }
-                     catch
-                     {
+                        catch
+                        {
+                        }
                      }
                   }
                }
+            }
+            catch
+            {
             }
          }
       }
@@ -2740,16 +2747,16 @@ namespace Revit.IFC.Export.Utility
          int normalizedEnd = arc.IsBound ? 10 : 9;
          IList<double> lastPoint = null;
          for (int ii = 0; ii <= normalizedEnd; ++ii)
-            {
-            XYZ tessellationPt = arc.Evaluate(ii / 10.0, true);
-               IList<double> point = use3DPoint ?
+         {
+            XYZ tessellationPt = arc.Evaluate(ii / 10.0, arc.IsBound);
+            IList<double> point = use3DPoint ?
                Scaled3dListFromXYZ(exporterIFC, tessellationPt) :
                ScaledUVListFromXYZ(tessellationPt, lcs, projectDir);
 
-               // Avoid consecutive duplicates
+            // Avoid consecutive duplicates
             if (lastPoint == null || !CoordsAreWithinVertexTol(point, lastPoint))
-               {
-                  pointList.Add(point);
+            {
+               pointList.Add(point);
                lastPoint = point;
             }
          }
