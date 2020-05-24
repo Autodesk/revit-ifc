@@ -1128,13 +1128,13 @@ namespace Revit.IFC.Export.Exporter
                         {
                            using (IFCExtrusionCreationData partECData = new IFCExtrusionCreationData())
                            {
-                           IFCAnyHandle hostShapeRepFromPartsList = PartExporter.ExportHostPartAsShapeAspects(exporterIFC, element, prodRep, 
+                              IFCAnyHandle hostShapeRepFromPartsList = PartExporter.ExportHostPartAsShapeAspects(exporterIFC, element, prodRep, 
                                  localWrapper, setter, localPlacement, overrideLevelId, out layersetInfo, partECData, solidsOfWallSweep);
-                           if (IFCAnyHandleUtil.IsNullOrHasNoValue(hostShapeRepFromPartsList))
-                           {
-                              // Delete Wall handle when there is no representation from the parts and return null
-                              IFCAnyHandleUtil.Delete(wallHnd);
-                              return null;
+                              if (IFCAnyHandleUtil.IsNullOrHasNoValue(hostShapeRepFromPartsList))
+                              {
+                                 // Delete Wall handle when there is no representation from the parts and return null
+                                 IFCAnyHandleUtil.Delete(wallHnd);
+                                 return null;
                               }
                            }
                         }

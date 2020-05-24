@@ -25,6 +25,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
+using System.Linq;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -87,11 +88,14 @@ namespace Revit.IFC.Export.Exporter
                      BodyData bodyData = null;
                      IFCAnyHandle prodRep = null;
                      IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
+                     IList<ElementId> materialIds = new List<ElementId>();
 
                      if (!exportByComponents)
                      {
                         prodRep = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC, roof,
                             categoryId, geometryElement, bodyExporterOptions, null, ecData, out bodyData);
+                        if (bodyData != null && bodyData.MaterialIds != null)
+                           materialIds = bodyData.MaterialIds;
                      }
                      else
                      {
@@ -131,6 +135,8 @@ namespace Revit.IFC.Export.Exporter
                         {
                            IFCAnyHandle hostShapeRepFromParts = PartExporter.ExportHostPartAsShapeAspects(exporterIFC, roof, prodRep,
                               productWrapper, placementSetter, localPlacement, ElementId.InvalidElementId, out layersetInfo, ecData);
+                           if (layersetInfo != null && layersetInfo.MaterialIds != null)
+                              materialIds = layersetInfo.MaterialIds.Select(x => x.Item1).ToList();
                         }
 
                         IFCAnyHandle slabHnd = IFCInstanceExporter.CreateSlab(exporterIFC, roof, slabGUID, ownerHistory,
@@ -161,7 +167,7 @@ namespace Revit.IFC.Export.Exporter
                         }
                         else if (!(roof is RoofBase))
                         {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, bodyData.MaterialIds);
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, materialIds);
                         }
                      }
                   }
