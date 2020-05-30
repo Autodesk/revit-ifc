@@ -166,18 +166,13 @@ namespace Revit.IFC.Export.Utility
       /// Get various color values from element's material
       /// </summary>
       /// <param name="element">the element</param>
-      /// <param name="materialColor">element's material color</param>
-      /// <param name="surfacePatternColor">element's material surface pattern color</param>
-      /// <param name="cutPatternColor">element's material cut pattern color</param>
       /// <param name="opacity">material opacity</param>
-      public static void GetElementColorAndTransparency(Element element, out Color materialColor, out Color surfacePatternColor, out Color cutPatternColor, out double? opacity)
+      /// <returns>The preferred color if any: material, surfacePatternColor, cutPatternColor in that order.</returns>
+      public static Color GetBestElementColorAndTransparency(Element element, out double opacity)
       {
          Category category = element.Category;
 
-         materialColor = null;
-         surfacePatternColor = null;
-         cutPatternColor = null;
-         opacity = null;
+         opacity = 1.0;
 
          ElementId materialId = element.GetMaterialIds(false).FirstOrDefault();
          Material matElem = (materialId != null) ? element.Document.GetElement(materialId) as Material : null;
@@ -186,32 +181,25 @@ namespace Revit.IFC.Export.Utility
          {
             if (category == null)
             {
-               return;
+               return null;
             }
             matElem = category.Material;
          }
 
          if (matElem != null)
          {
-            materialColor = GetSafeColor(matElem.Color);
-            surfacePatternColor = GetSafeColor(matElem.SurfaceForegroundPatternColor);
-            cutPatternColor = GetSafeColor(matElem.CutForegroundPatternColor);
             opacity = (double) (100 - matElem.Transparency)/100;
+            return GetSafeColor(matElem.Color);
          }
-         else
-         {
+
             Color color = GetSafeColor(category.LineColor);
 
-            // Grey is returned in place of pure black.  For systems which default to a black background color, 
-            // Grey is more of a contrast.  
+         // Grey is returned in place of pure black.  For systems which default to a black 
+         // background color, Grey is more of a contrast.  
             if (color.Red == 0 && color.Green == 0 && color.Blue == 0)
                color = new Color(0x7f, 0x7f, 0x7f);
 
-            materialColor = color;
-            surfacePatternColor = color;
-            cutPatternColor = color;
-            opacity = 1.0;
-         }
+         return color;
       }
 
       /// <summary>

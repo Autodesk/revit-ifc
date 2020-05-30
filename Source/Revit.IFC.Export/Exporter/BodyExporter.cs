@@ -1780,47 +1780,18 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
-      /// <summary>
-      /// Export Plannar Solid geometry as IfcPolygonalFaceSet (IFC4-Add2)
-      /// </summary>
-      /// <param name="exporterIFC">the exporterIFC</param>
-      /// <param name="element">the element</param>
-      /// <param name="options">exporter options</param>
-      /// <param name="geomObject">the geometry object of the element</param>
-      /// <returns>a handle to the created IFCPolygonalFaceSet</returns>
-      public static IList<IFCAnyHandle> ExportBodyAsPolygonalFaceSet(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
-                  GeometryObject geomObject, Transform trfToUse = null)
+      private static IList<GeometryObject> GetGeometriesFromGeometryElement(
+         ExporterIFC exporterIFC, Document document,  
+         GeometryObject geomObject, bool hideInvisible, out bool allNotToBeExported)
       {
-         IFCFile file = exporterIFC.GetFile();
-         Document document = element.Document;
-         IList<IFCAnyHandle> polygonalFaceSetList = new List<IFCAnyHandle>();
-
-         Color matColor = null;
-         Color surfPatternColor = null;
-         Color cutPatternColor = null;
-         double? opacity = null;
-         CategoryUtil.GetElementColorAndTransparency(element, out matColor, out surfPatternColor, out cutPatternColor, out opacity);
-         if (opacity == null || !opacity.HasValue)
-            opacity = 1.0;
-
-         IFCAnyHandle ifcColourRgbList = null;
-
-         // For now we will only support a single color for the tessellation since there is no good way to associate the face and the color
-         if (matColor != null)
-         {
-            ifcColourRgbList = ColourRgbListFromColor(file, matColor);
-         }
-         else if (surfPatternColor != null)
-         {
-            ifcColourRgbList = ColourRgbListFromColor(file, surfPatternColor);
-         }
-         else if (cutPatternColor != null)
-         {
-            ifcColourRgbList = ColourRgbListFromColor(file, cutPatternColor);
-         }
+         // TODO: Determine why for polygonal face sets hideInvisible is true, but for
+         // triangulated face sets, fideInvisible is false.
+         IList<Solid> solidGeom = new List<Solid>();
+         IList<Mesh> meshGeom = new List<Mesh>();
+         bool geometryToSort = false;
 
          // If the geomObject is GeometryELement or GeometryInstance, we need to collect their primitive Solid and Mesh first
-         bool allNotToBeExported = false;
+         allNotToBeExported = false;
          List<GeometryObject> geomObjectPrimitives = new List<GeometryObject>();
          if (geomObject is GeometryElement)
          {
@@ -1832,9 +1803,65 @@ namespace Revit.IFC.Export.Exporter
             geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(document, exporterIFC, geomInst.GetInstanceGeometry(), out allNotToBeExported));
          }
          else if (geomObject is Solid)
-            geomObjectPrimitives.Add(geomObject);
+         {
+            if (hideInvisible)
+            {
+               solidGeom.Add(geomObject as Solid);
+               geometryToSort = true;
+            }
+            else
+               {
+               geomObjectPrimitives.Add(geomObject);
+            }
+         }
          else if (geomObject is Mesh)
-            geomObjectPrimitives.Add(geomObject);
+                  {
+            if (hideInvisible)
+                     {
+               meshGeom.Add(geomObject as Mesh);
+               geometryToSort = true;
+            }
+            else
+                        {
+               geomObjectPrimitives.Add(geomObject);
+            }
+         }
+
+         if (hideInvisible && geometryToSort)
+                              {
+            IList<GeometryObject> visibleSolids = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(document, exporterIFC, ref solidGeom, ref meshGeom);
+            if (visibleSolids != null && visibleSolids.Count > 0)
+               geomObjectPrimitives.AddRange(visibleSolids);
+            else
+               allNotToBeExported = true;
+                              }
+
+         return geomObjectPrimitives;
+                        }
+
+      /// <summary>
+      /// Export Planar Solid geometry as IfcPolygonalFaceSet (IFC4-Add2)
+      /// </summary>
+      /// <param name="exporterIFC">the exporterIFC</param>
+      /// <param name="element">the element</param>
+      /// <param name="options">exporter options</param>
+      /// <param name="geomObject">the geometry object of the element</param>
+      /// <returns>a handle to the created IFCPolygonalFaceSet</returns>
+      public static IList<IFCAnyHandle> ExportBodyAsPolygonalFaceSet(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
+                  GeometryObject geomObject, Transform trfToUse = null)
+      {
+         IFCFile file = exporterIFC.GetFile();
+
+         double opacity;
+         IFCAnyHandle ifcColourRgbList = GetColourAndOpacity(file, element, out opacity);
+
+         Document document = element.Document;
+         IList<IFCAnyHandle> polygonalFaceSetList = new List<IFCAnyHandle>();
+
+         // If the geomObject is GeometryELement or GeometryInstance, we need to collect their primitive Solid and Mesh first
+         bool allNotToBeExported;
+         IList<GeometryObject> geomObjectPrimitives = GetGeometriesFromGeometryElement(
+            exporterIFC, document, geomObject, false, out allNotToBeExported);
 
          // At this point all collected geometry will only contains Solid and/or Mesh
          foreach (GeometryObject geom in geomObjectPrimitives)
@@ -1842,57 +1869,8 @@ namespace Revit.IFC.Export.Exporter
             try
             {
                if (geom is Solid)
-               {
+                  {
                   Solid solid = geom as Solid;
-                  IEnumerable<Face> faces = solid.Faces.OfType<Face>();
-                  // If Solid's faces are all planar, export them as-is without tessellation
-                  if (faces.All(x => x is PlanarFace))
-                  {
-                     List<IFCAnyHandle> ifcFaceHandles = new List<IFCAnyHandle>();
-                     List<IList<double>> vertices = new List<IList<double>>();
-                     foreach (Face face in faces)
-                     {
-                        List<IList<int>> indexedLoops = new List<IList<int>>();
-                        foreach (CurveLoop loop in face.GetEdgesAsCurveLoops())
-                        {
-                           List<int> indexedLoop = new List<int>();
-                           foreach (Curve curve in loop)
-                           {
-                              // Check if vertex exists and take its index
-                              XYZ vertex = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, curve.GetEndPoint(0));
-                              int newVertexIndex = vertices.FindIndex(x =>
-                                       MathUtil.IsAlmostEqual(x[0], vertex[0])
-                                    && MathUtil.IsAlmostEqual(x[1], vertex[1])
-                                    && MathUtil.IsAlmostEqual(x[2], vertex[2]));
-
-                              if (newVertexIndex == -1)
-                              {
-                                 // Couldn't find an existing vertex, add a new one
-                                 vertices.Add(new List<double>() { vertex.X, vertex.Y, vertex.Z });
-                                 newVertexIndex = vertices.Count - 1;
-                              }
-
-                              // IFC indices start from 1
-                              indexedLoop.Add(newVertexIndex + 1);
-                           }
-                           indexedLoops.Add(indexedLoop);
-                        }
-
-                        if (indexedLoops.Count > 1)
-                           ifcFaceHandles.Add(IFCInstanceExporter.CreateIndexedPolygonalFaceWithVoids(file, indexedLoops[0], indexedLoops.Skip(1).ToList()));
-                        else if (indexedLoops.Count == 1)
-                           ifcFaceHandles.Add(IFCInstanceExporter.CreateIndexedPolygonalFace(file, indexedLoops[0]));
-                        else
-                           throw new InvalidOperationException();
-                     }
-
-                     bool isClosed = solid.Volume > 0 && !MathUtil.IsAlmostEqual(solid.Volume, 0.0);
-                     IFCAnyHandle polygonalFaceSet = ExportIfcFacesAsPolygonalFaceSet(file, ifcFaceHandles, vertices, isClosed, ifcColourRgbList, opacity);
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(polygonalFaceSet))
-                        polygonalFaceSetList.Add(polygonalFaceSet);
-                  }
-                  else
-                  {
                      TriangulatedSolidOrShell solidFacetation = SolidUtils.TessellateSolidOrShell(solid, options.TessellationControls);
                   for (int ii = 0; ii < solidFacetation.ShellComponentCount; ++ii)
                   {
@@ -1911,7 +1889,6 @@ namespace Revit.IFC.Export.Exporter
                      polygonalFaceSetList.Add(polygonalFaceSet);
                   }
                   }
-               }
                else if (geom is Mesh)
                {
                   Mesh mesh = geom as Mesh;
@@ -2046,72 +2023,24 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="options">the options</param>
       /// <param name="geomObject">geometry objects</param>
       /// <returns>returns a handle</returns>
-      public static IList<IFCAnyHandle> ExportBodyAsTriangulatedFaceSet(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
-                  GeometryObject geomObject, Transform lcs = null)
+      public static IList<IFCAnyHandle> ExportBodyAsTriangulatedFaceSet(ExporterIFC exporterIFC, 
+         Element element, BodyExporterOptions options, GeometryObject geomObject, Transform lcs = null)
       {
          IFCFile file = exporterIFC.GetFile();
          Document document = element.Document;
 
+         double opacity;
+         IFCAnyHandle ifcColourRgbList = GetColourAndOpacity(file, element, out opacity);
+
          IList<IFCAnyHandle> triangulatedBodyList = new List<IFCAnyHandle>();
 
-         Color matColor = null;
-         Color surfPatternColor = null;
-         Color cutPatternColor = null;
-         double? opacity = null;
-         CategoryUtil.GetElementColorAndTransparency(element, out matColor, out surfPatternColor, out cutPatternColor, out opacity);
-         if (opacity == null || !opacity.HasValue)
-            opacity = 1.0;
-
-         IFCAnyHandle ifcColourRgbList = null;
-
-         // For now we will only support a single color for the tessellation since there is no good way to associate the face and the color
-         if (matColor != null)
-         {
-            ifcColourRgbList = ColourRgbListFromColor(file, matColor);
-         }
-         else if (surfPatternColor != null)
-         {
-            ifcColourRgbList = ColourRgbListFromColor(file, surfPatternColor);
-         }
-         else if (cutPatternColor != null)
-         {
-            ifcColourRgbList = ColourRgbListFromColor(file, cutPatternColor);
-         }
-
          List<int> colourIndex = new List<int>();
-         IList<Solid> solidGeom = new List<Solid>();
-         IList<Mesh> meshGeom = new List<Mesh>();
 
          // We need to collect all SOlids and Meshes from the GeometryObject if it is of types GeometryElement or GeometryInstance
-         bool allNotToBeExported = false;
-         List<GeometryObject> geomObjectPrimitives = new List<GeometryObject>();
-         if (geomObject is GeometryElement)
-         {
-            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(document, exporterIFC, geomObject as GeometryElement, out allNotToBeExported));
-         }
-         else if (geomObject is GeometryInstance)
-         {
-            GeometryInstance geomInst = geomObject as GeometryInstance;
-            geomObjectPrimitives.AddRange(GetGeometryObjectListFromGeometryElement(document, exporterIFC, geomInst.GetInstanceGeometry(), out allNotToBeExported));
-         }
-         else if (geomObject is Solid)
-         {
-            solidGeom.Add(geomObject as Solid);
-            IList<GeometryObject> visibleSolids = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(document, exporterIFC, ref solidGeom, ref meshGeom);
-            if (visibleSolids != null && visibleSolids.Count > 0)
-               geomObjectPrimitives.AddRange(visibleSolids);
-            else
-               allNotToBeExported = true;
-         }
-         else if (geomObject is Mesh)
-         {
-            meshGeom.Add(geomObject as Mesh);
-            IList<GeometryObject> visibleMeshes = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(document, exporterIFC, ref solidGeom, ref meshGeom);
-            if (visibleMeshes != null && visibleMeshes.Count > 0)
-               geomObjectPrimitives.AddRange(visibleMeshes);
-            else
-               allNotToBeExported = true;
-         }
+         // If the geomObject is GeometryELement or GeometryInstance, we need to collect their primitive Solid and Mesh first
+         bool allNotToBeExported;
+         IList<GeometryObject> geomObjectPrimitives = GetGeometriesFromGeometryElement(
+            exporterIFC, document, geomObject, true, out allNotToBeExported);
 
          // At this point the collection will only contains Solids and/or Meshes. Loop through each of them
          foreach (GeometryObject geom in geomObjectPrimitives)
@@ -2272,6 +2201,19 @@ namespace Revit.IFC.Export.Exporter
          return tessellatedBodyList;
       }
 
+      private static IFCAnyHandle GetColourAndOpacity(IFCFile file, Element element, out double opacity)
+      {
+         Color exportColor = 
+            CategoryUtil.GetBestElementColorAndTransparency(element, out opacity);
+
+         if (exportColor == null)
+            return null;
+
+         // For now we will only support a single color for the tessellation since there is no 
+         // good way to associate the face and the color.
+         return ColourRgbListFromColor(file, exportColor);
+      }
+
       /// <summary>
       /// Return a triangulated face set from the list of faces
       /// </summary>
@@ -2285,29 +2227,8 @@ namespace Revit.IFC.Export.Exporter
       {
          IFCFile file = exporterIFC.GetFile();
 
-         Color matColor = null;
-         Color surfPatternColor = null;
-         Color cutPatternColor = null;
-         double? opacity = null;
-         CategoryUtil.GetElementColorAndTransparency(element, out matColor, out surfPatternColor, out cutPatternColor, out opacity);
-         if (opacity == null || !opacity.HasValue)
-            opacity = 1.0;
-
-         IFCAnyHandle ifcColourRgbList = null;
-
-         // For now we will only support a single color for the tessellation since there is no good way to associate the face and the color
-         if (matColor != null)
-         {
-            ifcColourRgbList = ColourRgbListFromColor(file, matColor);
-         }
-         else if (surfPatternColor != null)
-         {
-            ifcColourRgbList = ColourRgbListFromColor(file, surfPatternColor);
-         }
-         else if (cutPatternColor != null)
-         {
-            ifcColourRgbList = ColourRgbListFromColor(file, cutPatternColor);
-         }
+         double opacity;
+         IFCAnyHandle ifcColourRgbList = GetColourAndOpacity(file, element, out opacity);
 
          IList<int> colourIndex = new List<int>();
 
