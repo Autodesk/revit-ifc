@@ -1090,13 +1090,16 @@ namespace Revit.IFC.Export.Exporter
             {
                ElementId bottomLevelId = FindPartSplitLevel(exporterIFC, part);
 
+               // Assign a single range from the bounding box of the Part, otherwise it may cause problem somewhere that expects the non null value
+               BoundingBoxXYZ partBBox = part.get_BoundingBox(null);
+               IFCRange range = new IFCRange(partBBox.Min.Z, partBBox.Max.Z);
                if (bottomLevelId == ElementId.InvalidElementId)
                   bottomLevelId = part.LevelId;
 
                if (!levelParts.ContainsKey(bottomLevelId))
                   levelParts.Add(bottomLevelId, new List<KeyValuePair<Part, IFCRange>>());
 
-               KeyValuePair<Part, IFCRange> splitPartRange = new KeyValuePair<Part, IFCRange>(part, null);
+               KeyValuePair<Part, IFCRange> splitPartRange = new KeyValuePair<Part, IFCRange>(part, range);
                levelParts[bottomLevelId].Add(splitPartRange);
 
                continue;
