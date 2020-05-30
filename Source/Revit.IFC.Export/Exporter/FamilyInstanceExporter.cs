@@ -580,7 +580,7 @@ namespace Revit.IFC.Export.Exporter
                               extraParams.ScaledOuterPerimeter = extrusionData.ScaledOuterPerimeter;
                            }
 
-                           typeInfo.MaterialIds = materialIds;
+                           typeInfo.MaterialIdList = materialIds;
                            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepresentation))
                            {
                               representations3D.Add(bodyRepresentation);
@@ -652,7 +652,7 @@ namespace Revit.IFC.Export.Exporter
                         GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
                         bodyData = BodyExporter.ExportBody(exporterIFC, familyInstance, categoryId, ElementId.InvalidElementId,
                             geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName);
-                        typeInfo.MaterialIds = bodyData.MaterialIds;
+                        typeInfo.MaterialIdList = bodyData.MaterialIds;
                         //if (!bodyData.OffsetTransform.IsIdentity)
                         offsetTransform = bodyData.OffsetTransform;
 
@@ -896,7 +896,7 @@ namespace Revit.IFC.Export.Exporter
                   }
 
                   if (!addedMaterialAssociation)
-                     CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, typeInfo.MaterialIds);
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, typeInfo.MaterialIdList);
 
                   ClassificationUtil.CreateClassification(exporterIFC, file, familySymbol, typeStyle);        // Create other generic classification from ClassificationCode(s)
                   ClassificationUtil.CreateUniformatClassification(exporterIFC, file, originalFamilySymbol, typeStyle);
@@ -1411,7 +1411,7 @@ namespace Revit.IFC.Export.Exporter
                      ExporterCacheManager.HandleToElementCache.Register(instanceHandle, familyInstance.Id);
 
                      if (!exportParts && !materialAlreadyAssociated)
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, typeInfo.MaterialIds);
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, typeInfo.MaterialIdList);
 
                      if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Style))
                         ExporterCacheManager.TypeRelationsCache.Add(typeInfo.Style, instanceHandle);

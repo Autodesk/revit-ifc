@@ -22,7 +22,8 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Utility;
-
+using System.Linq;
+using System;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -155,7 +156,19 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// The material id associated with this type.
       /// </summary>
-      public IList<ElementId> MaterialIds { get; set; } = new List<ElementId>();
+      public IList<ElementId> MaterialIdList { get; set; } = new List<ElementId>();
+
+      [Obsolete("MaterialIds as HashSet has been replaced with IList<ElementId> MaterialIdList")]
+      public HashSet<ElementId> MaterialIds {
+         get
+         {
+            return MaterialIdList.ToHashSet();
+         }
+         set 
+         {
+            MaterialIdList = value.ToList();
+         } 
+      }
 
       /// <summary>  
       /// The transform between the coordinate system of the type and the coordinate system of the 

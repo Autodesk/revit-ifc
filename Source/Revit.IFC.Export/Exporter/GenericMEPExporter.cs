@@ -217,7 +217,7 @@ namespace Revit.IFC.Export.Exporter
 
                   if (matId != ElementId.InvalidElementId)
                   {
-                     currentTypeInfo.MaterialIds = new List<ElementId>() { matId };
+                     currentTypeInfo.MaterialIdList = new List<ElementId>() { matId };
                      hasMaterialAssociatedToType = true;
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, styleHandle, matId);
                   }
@@ -226,7 +226,7 @@ namespace Revit.IFC.Export.Exporter
             else
             {
                styleHandle = currentTypeInfo.Style;
-               if (currentTypeInfo.MaterialIds != null && currentTypeInfo.MaterialIds.Count > 0)
+               if (currentTypeInfo.MaterialIdList != null && currentTypeInfo.MaterialIdList.Count > 0)
                   hasMaterialAssociatedToType = true;
             }
          }

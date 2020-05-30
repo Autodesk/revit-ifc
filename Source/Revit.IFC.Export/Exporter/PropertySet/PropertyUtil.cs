@@ -25,6 +25,7 @@ using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
+using System.ComponentModel;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
@@ -61,7 +62,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
       private static void ValidateEnumeratedValue(string value, Type propertyEnumerationType)
       {
-         if (propertyEnumerationType != null && propertyEnumerationType.IsEnum)
+         if (propertyEnumerationType != null && propertyEnumerationType.IsEnum && !string.IsNullOrEmpty(value))
          {
             foreach (object enumeratedValue in Enum.GetValues(propertyEnumerationType))
             {
@@ -72,8 +73,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   return;
                }
             }
-            value = null;
+            //value = null;
          }
+
+         throw new InvalidEnumArgumentException("Enum value cannot be empty!");
       }
 
       protected static IFCAnyHandle CreateCommonProperty(IFCFile file, string propertyName, IFCData valueData, PropertyValueType valueType, string unitTypeKey)
