@@ -1132,9 +1132,11 @@ namespace Revit.IFC.Export.Exporter
                                  localWrapper, setter, localPlacement, overrideLevelId, out layersetInfo, partECData, solidsOfWallSweep);
                               if (IFCAnyHandleUtil.IsNullOrHasNoValue(hostShapeRepFromPartsList))
                               {
-                                 // Delete Wall handle when there is no representation from the parts and return null
-                                 IFCAnyHandleUtil.Delete(wallHnd);
-                                 return null;
+                                 // If the above export fails, try the conventional export
+                                 PartExporter.ExportHostPart(exporterIFC, element, wallHnd, localWrapper, setter, localPlacement, overrideLevelId);
+                                 //// Delete Wall handle when there is no representation from the parts and return null
+                                 //IFCAnyHandleUtil.Delete(wallHnd);
+                                 //return null;
                               }
                            }
                         }

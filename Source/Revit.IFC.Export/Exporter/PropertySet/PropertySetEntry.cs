@@ -388,12 +388,23 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          return m_DefaultProperty;
       }
 
-      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element,
+      /// <summary>
+      /// Process to create element property.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="owningPsetName">Name of Property Set this entry belongs to .</param>
+      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="element">The element of which this property is created for.</param>
+      /// <param name="elementType">The element type of which this property is created for.</param>
+      /// <param name="handle">The handle for which this property is created for.</param>
+      /// <returns>The created property handle.</returns>
+      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, IFCExtrusionCreationData extrusionCreationData, Element element,
          ElementType elementType, IFCAnyHandle handle)
       {
          foreach (PropertySetEntryMap map in m_Entries)
          {
-            IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, extrusionCreationData, element, elementType, handle, PropertyType, PropertyValueType, PropertyEnumerationType, PropertyName);
+            IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName, extrusionCreationData, element, elementType, handle, PropertyType, PropertyValueType, PropertyEnumerationType, PropertyName);
             if (propHnd != null)
                return propHnd;
          }
