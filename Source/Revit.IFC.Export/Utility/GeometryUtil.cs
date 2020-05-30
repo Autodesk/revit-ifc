@@ -26,7 +26,7 @@ using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Common.Enums;
-using System.Security.Cryptography;
+
 
 namespace Revit.IFC.Export.Utility
 {

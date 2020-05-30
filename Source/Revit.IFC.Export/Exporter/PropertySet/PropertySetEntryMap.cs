@@ -72,12 +72,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </summary>
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="owningPsetName">Name of Property Set this entry belongs to .</param>
       /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
       /// <param name="element">The element of which this property is created for.</param>
       /// <param name="elementType">The element type of which this property is created for.</param>
       /// <param name="handle">The handle for which this property is created for.</param>
       /// <returns>The created property handle.</returns>
-      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, 
+      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, IFCExtrusionCreationData extrusionCreationData, 
          Element element, ElementType elementType, IFCAnyHandle handle, 
          PropertyType propertyType, PropertyValueType valueType, Type propertyEnumerationType, string propertyName)
       {
@@ -85,11 +86,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          if (ParameterNameIsValid)
          {
-            //// We don't want to create duplicate instance and type parameters, if possible.  For some
-            //// IFC2x3 entities, however, we will never create a type parameter, and as such we can lose information.
-            //// For these, we will pass a non-null elementType to CreatePropertyFromElementOrSymbol.
-            //Element elementTypeToUse = ElementTypeToUseBasedOnInstanceType(elementType, handle);
-            propHnd = CreatePropertyFromElementOrSymbol(file, exporterIFC, element, elementType,
+            propHnd = CreatePropertyFromElementOrSymbol(file, exporterIFC, owningPsetName, element, elementType,
                propertyType, valueType, propertyEnumerationType, propertyName);
          }
 
@@ -366,7 +363,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="element">The element.</param>
       /// <param name="elementType">The element type, if it is appropriate to look in it for value.</param>
       /// <returns>The property handle.</returns>
-      IFCAnyHandle CreatePropertyFromElementOrSymbol(IFCFile file, ExporterIFC exporterIFC, Element element, Element elementType,
+      IFCAnyHandle CreatePropertyFromElementOrSymbol(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, Element element, Element elementType,
          PropertyType propertyType, PropertyValueType valueType, Type propertyEnumerationType, string propertyName)
       {
          string localizedRevitParameterName = LocalizedRevitParameterName(ExporterCacheManager.LanguageType);
@@ -399,10 +396,19 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                  revitParameterName, propertyName, RevitBuiltInParameter,
                  propertyType, valueType, propertyEnumerationType);
             }
+            //When querying values from ProjectInfo we need to try alternative parameter names too.
+            //These names are constructed as shown below.
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (element is ProjectInfo))
+            {
+               revitParameterName = owningPsetName + "." + revitParameterName;
+               propHnd = PropertySetEntryMap.CreatePropertyFromElementBase(file, exporterIFC, element,
+                 revitParameterName, propertyName, RevitBuiltInParameter,
+                 propertyType, valueType, propertyEnumerationType);
+            }
          }
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (elementType != null))
-            return CreatePropertyFromElementOrSymbol(file, exporterIFC, elementType, null, 
+            return CreatePropertyFromElementOrSymbol(file, exporterIFC, owningPsetName, elementType, null,
                propertyType, valueType, propertyEnumerationType, propertyName);
          return propHnd;
       }

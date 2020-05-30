@@ -180,7 +180,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             try
             {
-               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, ifcParams, elementToUse, elemTypeToUse, handle);
+               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementToUse, elemTypeToUse, handle);
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
                   continue;
 

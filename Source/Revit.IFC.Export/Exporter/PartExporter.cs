@@ -624,7 +624,7 @@ namespace Revit.IFC.Export.Exporter
                geometryObjects.AddRange(GeomObjectsFromOriginalGeometry(exporterIFC, hostElement));
             }
 
-            hostShapeRep = ShapeRepFromOriginalGeometry(exporterIFC, hostElement, geometryObjects, ref bodyData, ref materialIdsFromBodyData, extrusionCreationData);
+            hostShapeRep = ShapeRepFromListOfGeomObjects(exporterIFC, hostElement, geometryObjects, ref bodyData, ref materialIdsFromBodyData, extrusionCreationData);
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(hostShapeRep))
                return null;
          }
@@ -633,7 +633,7 @@ namespace Revit.IFC.Export.Exporter
             // Return nothing if there is no material layer
             List<GeometryObject> geometryObjects = new List<GeometryObject>();
             geometryObjects.AddRange(GeomObjectsFromOriginalGeometry(exporterIFC, hostElement));
-            hostShapeRep = ShapeRepFromOriginalGeometry(exporterIFC, hostElement, geometryObjects, ref bodyData, ref materialIdsFromBodyData, extrusionCreationData);
+            hostShapeRep = ShapeRepFromListOfGeomObjects(exporterIFC, hostElement, geometryObjects, ref bodyData, ref materialIdsFromBodyData, extrusionCreationData);
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(hostShapeRep))
                return null;
          }
@@ -1258,7 +1258,7 @@ namespace Revit.IFC.Export.Exporter
          return geometryObjects;
       }
 
-      private static IFCAnyHandle ShapeRepFromOriginalGeometry(ExporterIFC exporterIFC, Element hostElement, List<GeometryObject> geometryObjects,
+      private static IFCAnyHandle ShapeRepFromListOfGeomObjects(ExporterIFC exporterIFC, Element hostElement, List<GeometryObject> geometryObjects,
          ref BodyData bodyData, ref IList<ElementId> materialIds, IFCExtrusionCreationData extrusionCreationData)
       {
          IFCAnyHandle hostShapeRep = null;
