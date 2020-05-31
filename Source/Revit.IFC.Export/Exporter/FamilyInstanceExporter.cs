@@ -446,7 +446,7 @@ namespace Revit.IFC.Export.Exporter
             Family family = familySymbol.Family;
 
             IList<GeometryObject> geomObjects = new List<GeometryObject>();
-            Transform offsetTransform = null;
+            Transform offsetTransform = Transform.Identity;
 
             Transform doorWindowTrf = Transform.Identity;
 
