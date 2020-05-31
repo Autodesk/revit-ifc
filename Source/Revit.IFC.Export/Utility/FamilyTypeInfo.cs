@@ -158,7 +158,7 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       public IList<ElementId> MaterialIdList { get; set; } = new List<ElementId>();
 
-      [Obsolete("MaterialIds as HashSet has been replaced with IList<ElementId> MaterialIdList")]
+      [Obsolete("MaterialIds as HashSet has been replaced with IList<ElementId> MaterialIdList", false)]
       public HashSet<ElementId> MaterialIds {
          get
          {
