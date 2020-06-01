@@ -24,13 +24,13 @@
     <Reference Include="RevitAPI">
       <SpecificVersion>False</SpecificVersion>
 	  <!-- Change to your directory of Revit installation. -->
-      <HintPath>C:\Program Files\Autodesk\Revit 2019\RevitAPI.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIIFC">
       <SpecificVersion>False</SpecificVersion>
 	  <!-- Change to your directory of Revit installation. -->
-      <HintPath>C:\Program Files\Autodesk\Revit 2019\RevitAPIIFC.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIIFC.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>  
