@@ -215,6 +215,8 @@ working on expanding and eventually removing this limit, and we will be tracking
 			<ul>
             <li>This version contains multiple updates and improvements over the default Revit IFC for Revit 2021 out-of-the-box.
             <li>The main features are a lot of works done towards IFC4 RV 1.2 certification (currently for Architecture). It is still work in progress though most of the requirements have been implemented in this version.
+				<li>The shared parameter files have been consolidated to only 2 files one for the Instance and the other one for the Type (with [Type] suffix). The file contains special parameters influencing exporter behavior and automatically collected parameters from IFC property set definitions (collections from IFC2x2, IFC2x3, and IFC4)
+				<li>Various improvements for consistent geometry (conforming to Euler formula)
 			</ul>	
          <br>
        <p>
@@ -225,19 +227,65 @@ working on expanding and eventually removing this limit, and we will be tracking
 				<li>IfcName can also be assigned to Revit Material that will override the name of the material upon export
 				<li>Pset_SiteCommon can be exported with special parameters attached top Project Information when there is no object exported as Site geometry. The parameters are prefixed with "Pset_SiteCommon."
 				<li>Better support for custom Ramps. Export will try to detect flights and landings for the custom Ramp. Specific property sets for the the flights and landings can be assigned to the custom Ramp or Stair object using special parameters that are prefixed with "Pset_rampFlightCommon." and "PsetSlabCommon." (for landing). The parameters can be appended with (#). # represents a number that follow sorting order from bottom up
+				<li>Option "Export of rooms in 3D views" in current view is now extended to support Area
+				<li>General improvements for IFC4 file import to Revit
+				<li>Support IFC4 IfcMaterialConstituentSet for export
+				<li>Check validity of the content of IfcGUID parameter for export
+				<li>Update support for IFC4-Add2-TC1 schema version
+				<li>Support Global Project Positioning information from Project base point and Map projection information for GIS integration
 			</ul>
 		</p>
 			<br>
      <p>
          Bug Fixes:
+			<p>
+			Export bug fixes:
 			<ul>
 				<li>Corrected issue with presentation colors in IFC4 RV export
 				<li>Option <strong>Include Steel Elements</strong> might not work properly in the past. It is now working. 
 				<li>Fixed issue with copy of standard export configuration is not editable
 				<li>Fixed issue that export of IfcRampFlight always gets a new GUID
+				<li>Fixed issue related to steel elements do not respect "Export only elements in visible view" option
+				<li>Improved export of rebars, which in some cases were not exported
+				<li>Missing small pipes on export
+				<li>Missing Family geometry if it contains very small segments 
+				<li>Toposurface is always exported even though it is not visible in view when exporting with "Export only elements in visible view" option
+				<li>Missing opening elements in facade elements
+				<li>Issue when Grid is exported without building storey
+				<li>Unable to export Slab/Mass/Structural Slab to IfcCivilElement
+				<li>Custom property set for Windows are not exported
+				<li>Fixed some general issue exporting in IFC2x2 format
+				<li>Corrected URL for UniFormat classifications in exported IFC files
+				<li>Issue on exporting a slab as IfcCivilElement with predefinedtype
+				<li>Room or Area is not exported when section box is active and options "Export only elements visible in view" and "Export rooms from 3D views" are selected
+				<li>Issue exporting edited shape as IfcCovering
+				<li>Fixed minor issue on FRA version of export UI due to length of the label for File Header and Project Address dialog boxes
+				<li>Fixed issue that GUID changes when using Steel tab
+				<li>Wrong placement of Rooms, Furnitures, or grids when no Level is selected to be exported as a building storey (will be exported in either IfcBuilding or IfcSite instead)
+				<li>Improve export of slanted walls
+				<li>Fixed crash issue when Steel elements are exported
+				<li>Wrong placement for BRep stairs and toposurfaces on export
+				<li>Missing Steel Connection Anchor on export
+				<li>Improved export for overly faceted geometries
+				<li>Some propertysets may be exported twice in IFC4RV export
+				<li>Missing NetVolume quantity in IFC4RV export
+				<li>Improved export of openings in some extruded families with setter placement offsets
 			</ul>
+			</p>
+			<p>
+			Import bug fixes:
+			<ul>
+				<li>Improved linking of IFC rebars that contains very small line segments in the directrix
+				<li>Some IFC4 data containing IfcColumns from AllPlan failed to be imported
+				<li>Fixed several issues related to importing IFC file from Tekla
+				<li>Improve text processing in import IFC class mapping table
+				<li>Import entities containing swept disk solid geometry
+				<li>More tolerant import for certain "bad" geometry, e.g. self intersecting geometry
+				<li>More tolerant import for geometry with very small curve segments
+				<li>Improve import of IFC file that is located far away from origin
+			</ul></p>
 			<br>
-      <p>
+      	<p>
          Known Issues:
 			<ul>
 				<li>Combination of a section box in the current view and the use of option <strong>Use active view when creating geometry</strong> may cause certain walls that are cut by the section box to fail during export resulting of missing some geometries. Workaround for this is to avoid using section box that cuts walls
