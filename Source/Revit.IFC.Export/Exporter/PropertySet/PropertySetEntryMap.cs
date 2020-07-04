@@ -368,10 +368,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          string localizedRevitParameterName = LocalizedRevitParameterName(ExporterCacheManager.LanguageType);
          string revitParameterName = RevitParameterName;
-         if (ParamExprResolver.IsParameterExpr(RevitParameterName))
-         {
-            revitParameterName = propertyName;
-         }
 
          IFCAnyHandle propHnd = null;
          if (localizedRevitParameterName != null)
