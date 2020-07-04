@@ -1159,7 +1159,7 @@ namespace Revit.IFC.Export.Exporter
 
          try
          {
-            NurbsSurfaceData nurbsSurfaceData = ExportUtils.GetNurbsSurfaceDataForSurface(face.GetSurface());
+            NurbsSurfaceData nurbsSurfaceData = ExportUtils.GetNurbsSurfaceDataForFace(face);
 
             int uDegree = nurbsSurfaceData.DegreeU;
             int vDegree = nurbsSurfaceData.DegreeV;

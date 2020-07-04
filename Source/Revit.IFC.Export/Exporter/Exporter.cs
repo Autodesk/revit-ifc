@@ -236,10 +236,10 @@ namespace Revit.IFC.Export.Exporter
          {
             try
             {
-               Assembly assembly = Assembly.LoadFrom(AppDomain.CurrentDomain.BaseDirectory + @"\Addins\SteelConnections\Autodesk.SteelConnections.ASIFC.dll");
+               Assembly assembly = Assembly.LoadFrom(AppDomain.CurrentDomain.BaseDirectory + @"\Addins\SteelConnections\RvtAS_IFC.dll");
                if (assembly != null)
                {
-                  Type type = assembly.GetType("Autodesk.SteelConnections.ASIFC.ASExporter");
+                  Type type = assembly.GetType("RvtAS_IFC.ASExporter");
                   if (type != null)
                   {
                      MethodInfo method = type.GetMethod("ExportASElements");
@@ -323,7 +323,7 @@ namespace Revit.IFC.Export.Exporter
                // Note that the TopographySurface exporter in ExportElementImpl does nothing if the
                // element has already been processed here.
                Element topoElem = document.GetElement(topoElemId);
-               if (ExportElement(exporterIFC, topoElem))
+               if (nonVirtualExportElement(exporterIFC, topoElem))
                   break; // Process only the first exportable one to create the IfcSite
             }
          }
@@ -576,7 +576,7 @@ namespace Revit.IFC.Export.Exporter
                   if (graphicsCell != null) // Concrete elements with cell that have HasGraphics set to true, must be handled by Revit exporter.
                      hasGraphics = (bool)graphicsCell.GetValue(cell, null);
 
-                  if (!hasGraphics)
+                  if (hasGraphics)
                      return false;
                }
             }
@@ -595,7 +595,20 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>False if the element can't be exported at all, true otherwise.</returns>
       /// <remarks>A true return value doesn't mean something was exported, but that the
       /// routine did a quick reject on the element, or an exception occurred.</remarks>
-      public virtual bool ExportElement(ExporterIFC exporterIFC, Autodesk.Revit.DB.Element element)
+      public virtual void ExportElement(ExporterIFC exporterIFC, Autodesk.Revit.DB.Element element)
+      {
+         nonVirtualExportElement(exporterIFC, element);
+      }
+
+      /// <summary>
+      /// Performs the export of elements, including spatial and non-spatial elements.
+      /// </summary>
+      /// <param name="exporterIFC">The IFC exporter object.</param>
+      /// <param name="element">The element to export.</param>
+      /// <returns>False if the element can't be exported at all, true otherwise.</returns>
+      /// <remarks>A true return value doesn't mean something was exported, but that the
+      /// routine did a quick reject on the element, or an exception occurred.</remarks>
+      private bool nonVirtualExportElement(ExporterIFC exporterIFC, Autodesk.Revit.DB.Element element)
       {
          if (!CanExportElement(exporterIFC, element))
          {
@@ -2918,13 +2931,13 @@ namespace Revit.IFC.Export.Exporter
          return postalAddress;
       }
 
-      private IFCAnyHandle CreateSIUnit(IFCFile file, ForgeTypeId specTypeId, IFCUnit ifcUnitType, IFCSIUnitName unitName, IFCSIPrefix? prefix, ForgeTypeId unitTypeId)
+      private IFCAnyHandle CreateSIUnit(IFCFile file, UnitType? unitType, IFCUnit ifcUnitType, IFCSIUnitName unitName, IFCSIPrefix? prefix, DisplayUnitType? dut)
       {
          IFCAnyHandle siUnit = IFCInstanceExporter.CreateSIUnit(file, ifcUnitType, prefix, unitName);
-         if (specTypeId != null && unitTypeId != null)
+         if (unitType.HasValue && dut.HasValue)
          {
-            double scaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, unitTypeId);
-            ExporterCacheManager.UnitsCache.AddUnit(specTypeId, siUnit, scaleFactor, 0.0);
+            double scaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, dut.Value);
+            ExporterCacheManager.UnitsCache.AddUnit(unitType.Value, siUnit, scaleFactor, 0.0);
          }
 
          return siUnit;
@@ -2952,23 +2965,20 @@ namespace Revit.IFC.Export.Exporter
             IFCSIUnitName lenUnitName = IFCSIUnitName.Metre;
             string lenConvName = null;
 
-            FormatOptions lenFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Length);
-            ForgeTypeId lengthUnit = lenFormatOptions.GetUnitTypeId();
-            if (lengthUnit.Equals(UnitTypeId.Meters) ||
-               lengthUnit.Equals(UnitTypeId.MetersCentimeters))
+            FormatOptions lenFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Length);
+            switch (lenFormatOptions.DisplayUnits)
             {
-               // This space intentionally left blank
-            }
-            else if (lengthUnit.Equals(UnitTypeId.Centimeters))
-            {
+               case DisplayUnitType.DUT_METERS:
+               case DisplayUnitType.DUT_METERS_CENTIMETERS:
+                  break;
+               case DisplayUnitType.DUT_CENTIMETERS:
                lenPrefix = IFCSIPrefix.Centi;
-            }
-            else if (lengthUnit.Equals(UnitTypeId.Millimeters))
-            {
+                  break;
+               case DisplayUnitType.DUT_MILLIMETERS:
                lenPrefix = IFCSIPrefix.Milli;
-            }
-            else if (lengthUnit.Equals(UnitTypeId.Feet) ||
-               lengthUnit.Equals(UnitTypeId.FeetFractionalInches))
+                  break;
+               case DisplayUnitType.DUT_DECIMAL_FEET:
+               case DisplayUnitType.DUT_FEET_FRACTIONAL_INCHES:
             {
                if (exportToCOBIE)
                   lenConvName = "foot";
@@ -2976,16 +2986,18 @@ namespace Revit.IFC.Export.Exporter
                   lenConvName = "FOOT";
                lenConversionBased = true;
             }
-            else if (lengthUnit.Equals(UnitTypeId.FractionalInches) ||
-               lengthUnit.Equals(UnitTypeId.Inches))
+                  break;
+               case DisplayUnitType.DUT_FRACTIONAL_INCHES:
+               case DisplayUnitType.DUT_DECIMAL_INCHES:
             {
                if (exportToCOBIE)
                   lenConvName = "inch";
                else
                   lenConvName = "INCH";
+                  }
                lenConversionBased = true;
-            }
-            else
+                  break;
+               default:
             {
                //Couldn't find display unit type conversion -- assuming foot
                if (exportToCOBIE)
@@ -2995,8 +3007,10 @@ namespace Revit.IFC.Export.Exporter
                lenConversionBased = true;
                lenUseDefault = true;
             }
+                  break;
+            }
 
-            double lengthScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, lenUseDefault ? UnitTypeId.Feet : lenFormatOptions.GetUnitTypeId());
+            double lengthScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, lenUseDefault ? DisplayUnitType.DUT_DECIMAL_FEET : lenFormatOptions.DisplayUnits);
             IFCAnyHandle lenSIUnit = IFCInstanceExporter.CreateSIUnit(file, lenUnitType, lenPrefix, lenUnitName);
             if (lenPrefix == null)
                lenSIBaseUnit = lenSIUnit;
@@ -3005,7 +3019,7 @@ namespace Revit.IFC.Export.Exporter
 
             if (lenConversionBased)
             {
-               double lengthSIScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Meters) / lengthScaleFactor;
+               double lengthSIScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_METERS) / lengthScaleFactor;
                IFCAnyHandle lenDims = IFCInstanceExporter.CreateDimensionalExponents(file, 1, 0, 0, 0, 0, 0, 0); // length
                IFCAnyHandle lenConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(lengthSIScaleFactor),
                    lenSIUnit);
@@ -3013,7 +3027,7 @@ namespace Revit.IFC.Export.Exporter
             }
 
             unitSet.Add(lenSIUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Length, lenSIUnit, lengthScaleFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Length, lenSIUnit, lengthScaleFactor, 0.0);
          }
 
          {
@@ -3025,21 +3039,18 @@ namespace Revit.IFC.Export.Exporter
             IFCSIUnitName areaUnitName = IFCSIUnitName.Square_Metre;
             string areaConvName = null;
 
-            FormatOptions areaFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Area);
-            ForgeTypeId areaUnit = areaFormatOptions.GetUnitTypeId();
-            if (areaUnit.Equals(UnitTypeId.SquareMeters))
+            FormatOptions areaFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Area);
+            switch (areaFormatOptions.DisplayUnits)
             {
-               // This space intentionally left blank.
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareCentimeters))
-            {
+               case DisplayUnitType.DUT_SQUARE_METERS:
+                  break;
+               case DisplayUnitType.DUT_SQUARE_CENTIMETERS:
                areaPrefix = IFCSIPrefix.Centi;
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareMillimeters))
-            {
+                  break;
+               case DisplayUnitType.DUT_SQUARE_MILLIMETERS:
                areaPrefix = IFCSIPrefix.Milli;
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareFeet))
+                  break;
+               case DisplayUnitType.DUT_SQUARE_FEET:
             {
                if (exportToCOBIE)
                   areaConvName = "foot";
@@ -3047,15 +3058,17 @@ namespace Revit.IFC.Export.Exporter
                   areaConvName = "SQUARE FOOT";
                areaConversionBased = true;
             }
-            else if (areaUnit.Equals(UnitTypeId.SquareInches))
+                  break;
+               case DisplayUnitType.DUT_SQUARE_INCHES:
             {
                if (exportToCOBIE)
                   areaConvName = "inch";
                else
                   areaConvName = "SQUARE INCH";
+                  }
                areaConversionBased = true;
-            }
-            else
+                  break;
+               default:
             {
                //Couldn't find display unit type conversion -- assuming foot
                if (exportToCOBIE)
@@ -3065,19 +3078,21 @@ namespace Revit.IFC.Export.Exporter
                areaConversionBased = true;
                areaUseDefault = true;
             }
+                  break;
+            }
 
-            double areaScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, areaUseDefault ? UnitTypeId.SquareFeet : areaFormatOptions.GetUnitTypeId());
+            double areaScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, areaUseDefault ? DisplayUnitType.DUT_SQUARE_FEET : areaFormatOptions.DisplayUnits);
             IFCAnyHandle areaSiUnit = IFCInstanceExporter.CreateSIUnit(file, areaUnitType, areaPrefix, areaUnitName);
             if (areaConversionBased)
             {
-               double areaSIScaleFactor = areaScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.SquareMeters);
+               double areaSIScaleFactor = areaScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_SQUARE_METERS);
                IFCAnyHandle areaDims = IFCInstanceExporter.CreateDimensionalExponents(file, 2, 0, 0, 0, 0, 0, 0); // area
                IFCAnyHandle areaConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(areaSIScaleFactor), areaSiUnit);
                areaSiUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, areaDims, areaUnitType, areaConvName, areaConvFactor);
             }
 
             unitSet.Add(areaSiUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Area, areaSiUnit, areaScaleFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Area, areaSiUnit, areaScaleFactor, 0.0);
          }
 
          {
@@ -3089,25 +3104,21 @@ namespace Revit.IFC.Export.Exporter
             IFCSIUnitName volumeUnitName = IFCSIUnitName.Cubic_Metre;
             string volumeConvName = null;
 
-            FormatOptions volumeFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Volume);
-            ForgeTypeId volumeUnit = volumeFormatOptions.GetUnitTypeId();
-            if (volumeUnit.Equals(UnitTypeId.CubicMeters))
+            FormatOptions volumeFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Volume);
+            switch (volumeFormatOptions.DisplayUnits)
             {
-               // This space intentionally left blank.
-            }
-            else if (volumeUnit.Equals(UnitTypeId.Liters))
-            {
+               case DisplayUnitType.DUT_CUBIC_METERS:
+                  break;
+               case DisplayUnitType.DUT_LITERS:
                volumePrefix = IFCSIPrefix.Deci;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicCentimeters))
-            {
+                  break;
+               case DisplayUnitType.DUT_CUBIC_CENTIMETERS:
                volumePrefix = IFCSIPrefix.Centi;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicMillimeters))
-            {
+                  break;
+               case DisplayUnitType.DUT_CUBIC_MILLIMETERS:
                volumePrefix = IFCSIPrefix.Milli;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicFeet))
+                  break;
+               case DisplayUnitType.DUT_CUBIC_FEET:
             {
                if (exportToCOBIE)
                   volumeConvName = "foot";
@@ -3115,15 +3126,17 @@ namespace Revit.IFC.Export.Exporter
                   volumeConvName = "CUBIC FOOT";
                volumeConversionBased = true;
             }
-            else if (volumeUnit.Equals(UnitTypeId.CubicInches))
+                  break;
+               case DisplayUnitType.DUT_CUBIC_INCHES:
             {
                if (exportToCOBIE)
                   volumeConvName = "inch";
                else
                   volumeConvName = "CUBIC INCH";
+                  }
                volumeConversionBased = true;
-            }
-            else
+                  break;
+               default:
             {
                //Couldn't find display unit type conversion -- assuming foot
                if (exportToCOBIE)
@@ -3133,20 +3146,22 @@ namespace Revit.IFC.Export.Exporter
                volumeConversionBased = true;
                volumeUseDefault = true;
             }
+                  break;
+            }
 
             double volumeScaleFactor =
-                UnitUtils.ConvertFromInternalUnits(1.0, volumeUseDefault ? UnitTypeId.CubicFeet : volumeFormatOptions.GetUnitTypeId());
+                UnitUtils.ConvertFromInternalUnits(1.0, volumeUseDefault ? DisplayUnitType.DUT_CUBIC_FEET : volumeFormatOptions.DisplayUnits);
             IFCAnyHandle volumeSiUnit = IFCInstanceExporter.CreateSIUnit(file, volumeUnitType, volumePrefix, volumeUnitName);
             if (volumeConversionBased)
             {
-               double volumeSIScaleFactor = volumeScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.CubicMeters);
+               double volumeSIScaleFactor = volumeScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_CUBIC_METERS);
                IFCAnyHandle volumeDims = IFCInstanceExporter.CreateDimensionalExponents(file, 3, 0, 0, 0, 0, 0, 0); // area
                IFCAnyHandle volumeConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(volumeSIScaleFactor), volumeSiUnit);
                volumeSiUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, volumeDims, volumeUnitType, volumeConvName, volumeConvFactor);
             }
 
             unitSet.Add(volumeSiUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Volume, volumeSiUnit, volumeScaleFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Volume, volumeSiUnit, volumeScaleFactor, 0.0);
          }
 
          {
@@ -3157,44 +3172,41 @@ namespace Revit.IFC.Export.Exporter
 
             string convName = null;
 
-            FormatOptions angleFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Angle);
+            FormatOptions angleFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Angle);
             bool angleUseDefault = false;
-            ForgeTypeId angleUnit = angleFormatOptions.GetUnitTypeId();
-            if (angleUnit.Equals(UnitTypeId.Degrees) ||
-               angleUnit.Equals(UnitTypeId.DegreesMinutes))
+            switch (angleFormatOptions.DisplayUnits)
             {
+               case DisplayUnitType.DUT_DECIMAL_DEGREES:
+               case DisplayUnitType.DUT_DEGREES_AND_MINUTES:
                convName = "DEGREE";
-            }
-            else if (angleUnit.Equals(UnitTypeId.Gradians))
-            {
+                  break;
+               case DisplayUnitType.DUT_GRADS:
                convName = "GRAD";
-            }
-            else if (angleUnit.Equals(UnitTypeId.Radians))
-            {
-               // This space intentionally left blank.
-            }
-            else
-            {
+                  break;
+               case DisplayUnitType.DUT_RADIANS:
+                  break;
+               default:
                angleUseDefault = true;
                convName = "DEGREE";
+                  break;
             }
 
             IFCAnyHandle dims = IFCInstanceExporter.CreateDimensionalExponents(file, 0, 0, 0, 0, 0, 0, 0);
 
-            double angleScaleFactor = UnitUtils.Convert(1.0, angleUseDefault ? UnitTypeId.Degrees : angleFormatOptions.GetUnitTypeId(), UnitTypeId.Radians);
+            double angleScaleFactor = UnitUtils.Convert(1.0, angleUseDefault ? DisplayUnitType.DUT_DECIMAL_DEGREES : angleFormatOptions.DisplayUnits, DisplayUnitType.DUT_RADIANS);
             if (convName != null)
             {
                IFCAnyHandle convFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(angleScaleFactor), planeAngleUnit);
                planeAngleUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, dims, unitType, convName, convFactor);
             }
             unitSet.Add(planeAngleUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Angle, planeAngleUnit, 1.0 / angleScaleFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Angle, planeAngleUnit, 1.0 / angleScaleFactor, 0.0);
          }
 
          // Mass
          IFCAnyHandle massSIUnit = null;
          {
-            massSIUnit = CreateSIUnit(file, SpecTypeId.Mass, IFCUnit.MassUnit, IFCSIUnitName.Gram, IFCSIPrefix.Kilo, null);
+            massSIUnit = CreateSIUnit(file, UnitType.UT_Mass, IFCUnit.MassUnit, IFCSIUnitName.Gram, IFCSIPrefix.Kilo, null);
             // If we are exporting to GSA standard, we will override kg with pound below.
             if (!exportToCOBIE)
                unitSet.Add(massSIUnit);      // created above, so unique.
@@ -3210,8 +3222,8 @@ namespace Revit.IFC.Export.Exporter
                 IFCDerivedUnitEnum.MassDensityUnit, null);
             unitSet.Add(massDensityUnit);
 
-            double massDensityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.KilogramsPerCubicMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.MassDensity, massDensityUnit, massDensityFactor, 0.0);
+            double massDensityFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_KILOGRAMS_PER_CUBIC_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_MassDensity, massDensityUnit, massDensityFactor, 0.0);
          }
 
          // Moment of inertia - support metric m^4.
@@ -3223,8 +3235,8 @@ namespace Revit.IFC.Export.Exporter
                 IFCDerivedUnitEnum.MomentOfInertiaUnit, null);
             unitSet.Add(momentOfInertiaUnit);
 
-            double momentOfInertiaFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.MetersToTheFourthPower);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.MomentOfInertia, momentOfInertiaUnit, momentOfInertiaFactor, 0.0);
+            double momentOfInertiaFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_METERS_TO_THE_FOURTH_POWER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Moment_of_Inertia, momentOfInertiaUnit, momentOfInertiaFactor, 0.0);
          }
 
          // Time -- support seconds only.
@@ -3247,19 +3259,19 @@ namespace Revit.IFC.Export.Exporter
             tempBaseSIUnit = CreateSIUnit(file, null, IFCUnit.ThermoDynamicTemperatureUnit, IFCSIUnitName.Kelvin, null, null);
 
             // We are going to have two entries: one for thermodynamic temperature (default), and one for color temperature.
-            FormatOptions tempFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.HvacTemperature);
+            FormatOptions tempFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_HVAC_Temperature);
             IFCSIUnitName thermalTempUnit;
             double offset = 0.0;
-            ForgeTypeId tempUnit = tempFormatOptions.GetUnitTypeId();
-            if (tempUnit.Equals(UnitTypeId.Celsius) ||
-               tempUnit.Equals(UnitTypeId.Fahrenheit))
+            switch (tempFormatOptions.DisplayUnits)
             {
-               thermalTempUnit = IFCSIUnitName.Degree_Celsius;
-               offset = -273.15;
-            }
-            else
-            {
-               thermalTempUnit = IFCSIUnitName.Kelvin;
+               case DisplayUnitType.DUT_CELSIUS:
+               case DisplayUnitType.DUT_FAHRENHEIT:
+                  thermalTempUnit = IFCSIUnitName.Degree_Celsius;
+                  offset = -273.15;
+                  break;
+               default:
+                  thermalTempUnit = IFCSIUnitName.Kelvin;
+                  break;
             }
 
             IFCAnyHandle temperatureSIUnit = null;
@@ -3267,7 +3279,7 @@ namespace Revit.IFC.Export.Exporter
                temperatureSIUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.ThermoDynamicTemperatureUnit, null, thermalTempUnit);
             else
                temperatureSIUnit = tempBaseSIUnit;
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacTemperature, temperatureSIUnit, 1.0, offset);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_HVAC_Temperature, temperatureSIUnit, 1.0, offset);
 
             unitSet.Add(temperatureSIUnit);      // created above, so unique.
 
@@ -3295,15 +3307,16 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle volumetricFlowRateLenUnit = null;
             double volumetricFlowRateFactor = 1.0;
 
-            FormatOptions flowFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.AirFlow);
-            if (flowFormatOptions.GetUnitTypeId().Equals(UnitTypeId.LitersPerSecond))
+            FormatOptions tempFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_HVAC_Airflow);
+            switch (tempFormatOptions.DisplayUnits)
             {
-               volumetricFlowRateLenUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.LengthUnit, IFCSIPrefix.Deci, IFCSIUnitName.Metre);
-            }
-            else
-            {
-               volumetricFlowRateLenUnit = lenSIBaseUnit;   // use m^3/s by default.
-               volumetricFlowRateFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.CubicMetersPerSecond);
+               case DisplayUnitType.DUT_LITERS_PER_SECOND:
+                  volumetricFlowRateLenUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.LengthUnit, IFCSIPrefix.Deci, IFCSIUnitName.Metre);
+                  break;
+               default:
+                  volumetricFlowRateLenUnit = lenSIBaseUnit;   // use m^3/s by default.
+                  volumetricFlowRateFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_CUBIC_METERS_PER_SECOND);
+                  break;
             }
 
             elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, 3));
@@ -3313,58 +3326,57 @@ namespace Revit.IFC.Export.Exporter
                 IFCDerivedUnitEnum.VolumetricFlowRateUnit, null);
             unitSet.Add(volumetricFlowRateUnit);
 
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.AirFlow, volumetricFlowRateUnit, volumetricFlowRateFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_HVAC_Airflow, volumetricFlowRateUnit, volumetricFlowRateFactor, 0.0);
          }
 
          // Electrical current - support metric ampere only.
          {
-            IFCAnyHandle currentSIUnit = CreateSIUnit(file, SpecTypeId.Current, IFCUnit.ElectricCurrentUnit, IFCSIUnitName.Ampere,
-                null, UnitTypeId.Amperes);
+            IFCAnyHandle currentSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Current, IFCUnit.ElectricCurrentUnit, IFCSIUnitName.Ampere,
+                null, DisplayUnitType.DUT_AMPERES);
             unitSet.Add(currentSIUnit);      // created above, so unique.
          }
 
          // Electrical voltage - support metric volt only.
          {
-            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, SpecTypeId.ElectricalPotential, IFCUnit.ElectricVoltageUnit, IFCSIUnitName.Volt,
-                null, UnitTypeId.Volts);
+            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Potential, IFCUnit.ElectricVoltageUnit, IFCSIUnitName.Volt,
+                null, DisplayUnitType.DUT_VOLTS);
             unitSet.Add(voltageSIUnit);      // created above, so unique.
          }
 
          // Power - support metric watt only.
          {
-            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, SpecTypeId.HvacPower, IFCUnit.PowerUnit, IFCSIUnitName.Watt,
-                null, UnitTypeId.Watts);
+            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, UnitType.UT_HVAC_Power, IFCUnit.PowerUnit, IFCSIUnitName.Watt,
+                null, DisplayUnitType.DUT_WATTS);
             unitSet.Add(voltageSIUnit);      // created above, so unique.
          }
 
          // Force - support newtons (N) and kN only.
          {
             IFCSIPrefix? prefix = null;
-            FormatOptions forceFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Force);
-            ForgeTypeId forceUnit = forceFormatOptions.GetUnitTypeId();
-            if (forceUnit.Equals(UnitTypeId.Newtons))
+            FormatOptions forceFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Force);
+            DisplayUnitType dut = forceFormatOptions.DisplayUnits;
+            switch (dut)
             {
-               // This space intentionally left blank.
-            }
-            else if (forceUnit.Equals(UnitTypeId.Kilonewtons))
-            {
+               case DisplayUnitType.DUT_NEWTONS:
+                  break;
+               case DisplayUnitType.DUT_KILONEWTONS:
                prefix = IFCSIPrefix.Kilo;
-            }
-            else
-            {
-               forceUnit = UnitTypeId.Newtons;
+                  break;
+               default:
+                  dut = DisplayUnitType.DUT_NEWTONS;
+                  break;
             }
 
-            IFCAnyHandle forceSIUnit = CreateSIUnit(file, SpecTypeId.Force, IFCUnit.ForceUnit, IFCSIUnitName.Newton,
-                prefix, forceUnit);
+            IFCAnyHandle forceSIUnit = CreateSIUnit(file, UnitType.UT_Force, IFCUnit.ForceUnit, IFCSIUnitName.Newton,
+                prefix, dut);
             unitSet.Add(forceSIUnit);      // created above, so unique.
          }
 
          // Illuminance
          {
             IFCSIPrefix? prefix = null;
-            IFCAnyHandle luxSIUnit = CreateSIUnit(file, SpecTypeId.Illuminance, IFCUnit.IlluminanceUnit, IFCSIUnitName.Lux,
-                prefix, UnitTypeId.Lux);
+            IFCAnyHandle luxSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Illuminance, IFCUnit.IlluminanceUnit, IFCSIUnitName.Lux,
+                prefix, DisplayUnitType.DUT_LUX);
             unitSet.Add(luxSIUnit);      // created above, so unique.
             ExporterCacheManager.UnitsCache["LUX"] = luxSIUnit;
          }
@@ -3373,16 +3385,16 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle lumenSIUnit = null;
          {
             IFCSIPrefix? prefix = null;
-            lumenSIUnit = CreateSIUnit(file, SpecTypeId.LuminousFlux, IFCUnit.LuminousFluxUnit, IFCSIUnitName.Lumen,
-                prefix, UnitTypeId.Lumens);
+            lumenSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Luminous_Flux, IFCUnit.LuminousFluxUnit, IFCSIUnitName.Lumen,
+                prefix, DisplayUnitType.DUT_LUMENS);
             unitSet.Add(lumenSIUnit);      // created above, so unique.
          }
 
          // Luminous Intensity
          {
             IFCSIPrefix? prefix = null;
-            IFCAnyHandle candelaSIUnit = CreateSIUnit(file, SpecTypeId.LuminousIntensity, IFCUnit.LuminousIntensityUnit, IFCSIUnitName.Candela,
-                prefix, UnitTypeId.Candelas);
+            IFCAnyHandle candelaSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Luminous_Intensity, IFCUnit.LuminousIntensityUnit, IFCSIUnitName.Candela,
+                prefix, DisplayUnitType.DUT_CANDELAS);
             unitSet.Add(candelaSIUnit);      // created above, so unique.
          }
 
@@ -3397,8 +3409,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle luminousEfficacyUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.UserDefined, "Luminous Efficacy");
 
-            double electricalEfficacyFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.LumensPerWatt);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Efficacy, luminousEfficacyUnit, electricalEfficacyFactor, 0.0);
+            double electricalEfficacyFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_LUMENS_PER_WATT);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Electrical_Efficacy, luminousEfficacyUnit, electricalEfficacyFactor, 0.0);
             ExporterCacheManager.UnitsCache["LUMINOUSEFFICACY"] = luminousEfficacyUnit;
 
             unitSet.Add(luminousEfficacyUnit);
@@ -3413,8 +3425,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle linearVelocityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.LinearVelocityUnit, null);
 
-            double linearVelocityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.MetersPerSecond);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacVelocity, linearVelocityUnit, linearVelocityFactor, 0.0);
+            double linearVelocityFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_METERS_PER_SECOND);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_HVAC_Velocity, linearVelocityUnit, linearVelocityFactor, 0.0);
 
             unitSet.Add(linearVelocityUnit);
          }
@@ -3422,8 +3434,8 @@ namespace Revit.IFC.Export.Exporter
          // Currency - disallowed for IC2x3 Coordination View 2.0.  If we find a currency, export it as a real.
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs2x3CoordinationView2)
          {
-            FormatOptions currencyFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Currency);
-            ForgeTypeId currencySymbol = currencyFormatOptions.GetSymbolTypeId();
+            FormatOptions currencyFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Currency);
+            UnitSymbolType ust = currencyFormatOptions.UnitSymbol;
 
             IFCAnyHandle currencyUnit = null;
 
@@ -3434,7 +3446,7 @@ namespace Revit.IFC.Export.Exporter
                string currencyLabel = null;
                try
                {
-                  currencyLabel = LabelUtils.GetLabelForSymbol(currencySymbol);
+                  currencyLabel = LabelUtils.GetLabelFor(ust);
                   currencyUnit = IFCInstanceExporter.CreateMonetaryUnit4(file, currencyLabel);
                }
                catch
@@ -3446,46 +3458,39 @@ namespace Revit.IFC.Export.Exporter
             {
                IFCCurrencyType? currencyType = null;
 
-               if (currencySymbol.Equals(SymbolTypeId.UsDollar))
+               switch (ust)
                {
-                  currencyType = IFCCurrencyType.USD;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.EuroPrefix) ||
-                  currencySymbol.Equals(SymbolTypeId.EuroSuffix))
-               {
-                  currencyType = IFCCurrencyType.EUR;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.UkPound))
-               {
-                  currencyType = IFCCurrencyType.GBP;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.ChineseHongKongDollar))
-               {
-                  currencyType = IFCCurrencyType.HKD;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Krone))
-               {
-                  currencyType = IFCCurrencyType.NOK;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Shekel))
-               {
-                  currencyType = IFCCurrencyType.ILS;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Yen))
-               {
-                  currencyType = IFCCurrencyType.JPY;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Won))
-               {
-                  currencyType = IFCCurrencyType.KRW;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Baht))
-               {
-                  currencyType = IFCCurrencyType.THB;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Dong))
-               {
-                  currencyType = IFCCurrencyType.VND;
+                  case UnitSymbolType.UST_DOLLAR:
+                     currencyType = IFCCurrencyType.USD;
+                     break;
+                  case UnitSymbolType.UST_EURO_PREFIX:
+                  case UnitSymbolType.UST_EURO_SUFFIX:
+                     currencyType = IFCCurrencyType.EUR;
+                     break;
+                  case UnitSymbolType.UST_POUND:
+                     currencyType = IFCCurrencyType.GBP;
+                     break;
+                  case UnitSymbolType.UST_CHINESE_HONG_KONG_SAR:
+                     currencyType = IFCCurrencyType.HKD;
+                     break;
+                  case UnitSymbolType.UST_KRONER:
+                     currencyType = IFCCurrencyType.NOK;
+                     break;
+                  case UnitSymbolType.UST_SHEQEL:
+                     currencyType = IFCCurrencyType.ILS;
+                     break;
+                  case UnitSymbolType.UST_YEN:
+                     currencyType = IFCCurrencyType.JPY;
+                     break;
+                  case UnitSymbolType.UST_WON:
+                     currencyType = IFCCurrencyType.KRW;
+                     break;
+                  case UnitSymbolType.UST_BAHT:
+                     currencyType = IFCCurrencyType.THB;
+                     break;
+                  case UnitSymbolType.UST_DONG:
+                     currencyType = IFCCurrencyType.VND;
+                     break;
                }
 
                if (currencyType.HasValue)
@@ -3503,27 +3508,25 @@ namespace Revit.IFC.Export.Exporter
          // Pressure - support Pascal, kPa and MPa.
          {
             IFCSIPrefix? prefix = null;
-            FormatOptions pressureFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.HvacPressure);
-            ForgeTypeId pressureUnit = pressureFormatOptions.GetUnitTypeId();
-            if (pressureUnit.Equals(UnitTypeId.Pascals))
+            FormatOptions pressureFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_HVAC_Pressure);
+            DisplayUnitType dut = pressureFormatOptions.DisplayUnits;
+            switch (dut)
             {
-               // This space intentionally left blank.
-            }
-            else if (pressureUnit.Equals(UnitTypeId.Kilopascals))
-            {
+               case DisplayUnitType.DUT_PASCALS:
+                  break;
+               case DisplayUnitType.DUT_KILOPASCALS:
                prefix = IFCSIPrefix.Kilo;
-            }
-            else if (pressureUnit.Equals(UnitTypeId.Megapascals))
-            {
+                  break;
+               case DisplayUnitType.DUT_MEGAPASCALS:
                prefix = IFCSIPrefix.Mega;
-            }
-            else
-            {
-               pressureUnit = UnitTypeId.Pascals;
+                  break;
+               default:
+                  dut = DisplayUnitType.DUT_PASCALS;
+                  break;
             }
 
-            IFCAnyHandle pressureSIUnit = CreateSIUnit(file, SpecTypeId.HvacPressure, IFCUnit.PressureUnit, IFCSIUnitName.Pascal,
-                prefix, pressureUnit);
+            IFCAnyHandle pressureSIUnit = CreateSIUnit(file, UnitType.UT_HVAC_Pressure, IFCUnit.PressureUnit, IFCSIUnitName.Pascal,
+                prefix, dut);
             unitSet.Add(pressureSIUnit);      // created above, so unique.
          }
 
@@ -3537,8 +3540,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle frictionLossUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.UserDefined, "Friction Loss");
 
-            double frictionLossFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.PascalsPerMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacFriction, frictionLossUnit, frictionLossFactor, 0.0);
+            double frictionLossFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_PASCALS_PER_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_HVAC_Friction, frictionLossUnit, frictionLossFactor, 0.0);
             ExporterCacheManager.UnitsCache["FRICTIONLOSS"] = frictionLossUnit;
 
             unitSet.Add(frictionLossUnit);
@@ -3555,8 +3558,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle linearForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.LinearForceUnit, null);
 
-            double linearForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NewtonsPerMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.LinearForce, linearForceUnit, linearForceFactor, 0.0);
+            double linearForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_NEWTONS_PER_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_LinearForce, linearForceUnit, linearForceFactor, 0.0);
             unitSet.Add(linearForceUnit);
 
             elements = new HashSet<IFCAnyHandle>();
@@ -3568,8 +3571,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle planarForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.PlanarForceUnit, null);
 
-            double planarForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NewtonsPerSquareMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.AreaForce, planarForceUnit, planarForceFactor, 0.0);
+            double planarForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_NEWTONS_PER_SQUARE_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_AreaForce, planarForceUnit, planarForceFactor, 0.0);
             unitSet.Add(planarForceUnit);
          }
 

@@ -46,12 +46,12 @@ namespace Revit.IFC.Import.Data
          if (IFCUnit != null)
          {
             FormatValueOptions formatValueOptions = new FormatValueOptions();
-            FormatOptions specFormatOptions = IFCImportFile.TheFile.Document.GetUnits().GetFormatOptions(IFCUnit.Spec);
+            FormatOptions specFormatOptions = IFCImportFile.TheFile.Document.GetUnits().GetFormatOptions(IFCUnit.UnitType);
             specFormatOptions.Accuracy = 1e-8;
             if (specFormatOptions.CanSuppressTrailingZeros())
                specFormatOptions.SuppressTrailingZeros = true;
             formatValueOptions.SetFormatOptions(specFormatOptions);
-            return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), IFCUnit.Spec, propertyValue.AsDouble(), false, formatValueOptions);
+            return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), IFCUnit.UnitType, propertyValue.AsDouble(), true, false, formatValueOptions);
          }
          else
             return propertyValue.ValueAsString();

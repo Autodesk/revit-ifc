@@ -101,7 +101,7 @@ namespace Revit.IFC.Export.Utility
          return val;
       }
 
-      public ForgeTypeId UnitType { get; private set; } = null;
+      public UnitType UnitType { get; private set; } = UnitType.UT_Undefined;
 
       object Process(ExpectedValueEnum expectedValueType)
       {
@@ -292,6 +292,48 @@ namespace Revit.IFC.Export.Utility
             ret.nodePropertyValue = Math.Pow((double)expr.nodePropertyValue, (double)powerOp);
          }
          return ret;
+      }
+
+      /// <summary>
+      /// Check for a special parameter value containing the Paramater expression
+      /// </summary>
+      /// <param name="paramValue">the Parameter value</param>
+      /// <param name="element">the Element</param>
+      /// <param name="paramName">the Parameter Name</param>
+      /// <returns>the resolved Parameter Expression value or null if not resolved</returns>
+      public static object CheckForParameterExpr(string paramValue, Element element, string paramName, ExpectedValueEnum expectedDataType)
+      {
+         object propertyValue = null;
+         string paramValuetrim = paramValue.Trim();
+         // This is kind of hack to quickly check whether we need to parse the parameter or not by checking that the value is enclosed by "{ }" or "u{ }" for unique value
+         //if (((paramValuetrim.Length > 1 && paramValuetrim[0] == '{') || (paramValuetrim.Length > 2 && paramValuetrim[1] == '{')) && (paramValuetrim[paramValuetrim.Length - 1] == '}'))
+         if (IsParameterExpr(paramValue))
+         {
+            ParamExprResolver pResv = new ParamExprResolver(element, paramName, paramValuetrim);
+            switch (expectedDataType)
+            {
+               case ExpectedValueEnum.STRINGVALUE:
+                  propertyValue = pResv.GetStringValue();
+                  break;
+               case ExpectedValueEnum.DOUBLEVALUE:
+                  propertyValue = pResv.GetDoubleValue();
+                  break;
+               case ExpectedValueEnum.INTVALUE:
+                  propertyValue = pResv.GetIntValue();
+                  break;
+               default:
+                  break;
+            }
+         }
+
+         return propertyValue;
+      }
+
+      public static bool IsParameterExpr(string paramValue)
+      {
+         string paramValuetrim = paramValue.Trim();
+         return ((paramValuetrim.Length > 1 && paramValuetrim[0] == '{') 
+            || (paramValuetrim.Length > 2 && paramValuetrim[1] == '{')) && (paramValuetrim[paramValuetrim.Length - 1] == '}');
       }
    }
 }

@@ -93,16 +93,18 @@ namespace Revit.IFC.Export.Utility
 
                if (!string.IsNullOrEmpty(propValue))
                {
-                  string propValuetrim = propValue.Trim();
-                  // This is kind of hack to quickly check whether we need to parse the parameter or not
-                  if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
-                  {
-                     ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
-                     propertyValue = pResv.GetStringValue();
-                     if (string.IsNullOrEmpty(propertyValue))
-                        propertyValue = propValue;    // return the original propValue (un-trimmed)
-                  }
-                  else
+                  propertyValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE) as string;
+                  //string propValuetrim = propValue.Trim();
+                  //// This is kind of hack to quickly check whether we need to parse the parameter or not
+                  //if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
+                  //{
+                  //   ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
+                  //   propertyValue = pResv.GetStringValue();
+                  //   if (string.IsNullOrEmpty(propertyValue))
+                  //      propertyValue = propValue;    // return the original propValue (un-trimmed)
+                  //}
+                  //else
+                  if (string.IsNullOrEmpty(propertyValue))
                      propertyValue = propValue;    // return the original propValue (un-trimmed)
 
                   return parameter;
@@ -183,18 +185,19 @@ namespace Revit.IFC.Export.Utility
                      string propValue;
                      propValue = parameter.AsString();
 
-                     string propValuetrim = propValue.Trim();
-                     // This is kind of hack to quickly check whether we need to parse the parameter or not
-                     if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
+                     //string propValuetrim = propValue.Trim();
+                     //// This is kind of hack to quickly check whether we need to parse the parameter or not
+                     //if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
+                     //{
+                     //   ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
+                     //   int? propertyIntValue = pResv.GetIntValue();
+                     int? propertyIntValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE) as int?;
+                     if (propertyIntValue.HasValue)
                      {
-                        ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
-                        int? propertyIntValue = pResv.GetIntValue();
-                        if (propertyIntValue.HasValue)
-                        {
-                           propertyValue = propertyIntValue.Value;
-                           return parameter;
-                        }
+                        propertyValue = propertyIntValue.Value;
+                        return parameter;
                      }
+                     //}
 
                      try
                      {
@@ -211,12 +214,6 @@ namespace Revit.IFC.Export.Utility
          return null;
       }
 
-      public static Parameter GetDoubleValueFromElement(Element element, BuiltInParameterGroup? group, string propertyName, out double propertyValue)
-      {
-         ForgeTypeId unitType;
-         return GetDoubleValueFromElement(element, group, propertyName, out propertyValue, out unitType);
-      }
-
       /// <summary>
       /// Gets double value from parameter of an element.
       /// </summary>
@@ -227,13 +224,12 @@ namespace Revit.IFC.Export.Utility
       /// <exception cref="System.ArgumentNullException">Thrown when element is null.</exception>
       /// <exception cref="System.ArgumentException">Thrown when propertyName is null or empty.</exception>
       /// <returns>The parameter, or null if not found.</returns>
-      public static Parameter GetDoubleValueFromElement(Element element, BuiltInParameterGroup? group, string propertyName, out double propertyValue, out ForgeTypeId unitType)
+      public static Parameter GetDoubleValueFromElement(Element element, BuiltInParameterGroup? group, string propertyName, out double propertyValue)
       {
          if (String.IsNullOrEmpty(propertyName))
             throw new ArgumentException("It is null or empty.", "propertyName");
 
          propertyValue = 0.0;
-         unitType = null;
 
          if (element == null)
             return null;
@@ -254,19 +250,19 @@ namespace Revit.IFC.Export.Utility
                      string propValue;
                      propValue = parameter.AsString();
 
-                     string propValuetrim = propValue.Trim();
-                     // This is kind of hack to quickly check whether we need to parse the parameter or not
-                     if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
-                     {
-                        ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
-                        double? propertyDoubleValue = pResv.GetDoubleValue();
+                     //string propValuetrim = propValue.Trim();
+                     //// This is kind of hack to quickly check whether we need to parse the parameter or not
+                     //if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
+                     //{
+                        //ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
+                        //double? propertyDoubleValue = pResv.GetDoubleValue();
+                        double? propertyDoubleValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE) as double?;
                         if (propertyDoubleValue.HasValue)
                         {
                            propertyValue = propertyDoubleValue.Value;
-                           unitType = pResv.UnitType;
                            return parameter;
                         }
-                     }
+                     //}
 
                      return Double.TryParse(propValue, out propertyValue) ? parameter : null;
                   }

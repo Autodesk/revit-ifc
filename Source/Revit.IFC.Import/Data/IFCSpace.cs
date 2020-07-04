@@ -74,7 +74,7 @@ namespace Revit.IFC.Import.Data
          if (element != null)
          {
             // Set "ElevationWithFlooring" parameter.
-            IFCPropertySet.AddParameterDouble(doc, element, "ElevationWithFlooring", SpecTypeId.Length, ElevationWithFlooring, Id);
+            IFCPropertySet.AddParameterDouble(doc, element, "ElevationWithFlooring", UnitType.UT_Length, ElevationWithFlooring, Id);
 
             // Set "PredefinedType" parameter.
             if (PredefinedType != null)

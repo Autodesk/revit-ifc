@@ -1108,5 +1108,11 @@ namespace Revit.IFC.Export.Utility
                return false;
          }
       }
+
+      [Obsolete("This method has been moved to OptionsUtil in Revit.IFC.Common project")]
+      public static int? GetNamedIntOption(IDictionary<String, String> options, String optionName)
+      {
+         return OptionsUtil.GetNamedIntOption(options, optionName);
+      }
    }
 }
