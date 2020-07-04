@@ -222,9 +222,9 @@ namespace Revit.IFC.Import.Data
             {
                try
                {
-                  FormatOptions formatOptions = new FormatOptions(unit.Unit);
-                  formatOptions.SetSymbolTypeId(unit.Symbol);
-                  documentUnits.SetFormatOptions(unit.Spec, formatOptions);
+                  FormatOptions formatOptions = new FormatOptions(unit.UnitName);
+                  formatOptions.UnitSymbol = unit.UnitSymbol;
+                  documentUnits.SetFormatOptions(unit.UnitType, formatOptions);
                }
                catch (Exception ex)
                {

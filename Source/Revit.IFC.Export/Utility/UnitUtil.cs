@@ -41,7 +41,7 @@ namespace Revit.IFC.Export.Utility
       /// For .NET routines, use ScaleLength() instead.</remarks>
       static public double ScaleLengthForRevitAPI()
       {
-         return ExporterCacheManager.UnitsCache.Scale(SpecTypeId.Length, 1.0);
+         return ExporterCacheManager.UnitsCache.Scale(UnitType.UT_Length, 1.0);
       }
 
       /// <summary>
@@ -51,7 +51,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The position in IFC units.</returns>
       static public UV ScaleLength(UV unscaledUV)
       {
-         return ExporterCacheManager.UnitsCache.Scale(SpecTypeId.Length, unscaledUV);
+         return ExporterCacheManager.UnitsCache.Scale(UnitType.UT_Length, unscaledUV);
       }
 
       /// <summary>
@@ -61,18 +61,18 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The position in IFC units.</returns>
       static public XYZ ScaleLength(XYZ unscaledXYZ)
       {
-         return ExporterCacheManager.UnitsCache.Scale(SpecTypeId.Length, unscaledXYZ);
+         return ExporterCacheManager.UnitsCache.Scale(UnitType.UT_Length, unscaledXYZ);
       }
 
       /// <summary>
       /// Converts an unscaled value in Revit internal units to IFC units, given the unit type.
       /// </summary>
-      /// <param name="specTypeId">Identifier of the spec.</param>
+      /// <param name="unitType">The unit Type.</param>
       /// <param name="unscaledValue">The value in Revit internal units.</param>
       /// <returns>The value in IFC units.</returns>
-      static public double ScaleDouble(ForgeTypeId specTypeId, double unscaledValue)
+      static public double ScaleDouble(UnitType unitType, double unscaledValue)
       {
-         return ExporterCacheManager.UnitsCache.Scale(specTypeId, unscaledValue);
+         return ExporterCacheManager.UnitsCache.Scale(unitType, unscaledValue);
       }
 
       /// <summary>
@@ -82,7 +82,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The length in IFC units.</returns>
       static public double ScaleLength(double unscaledLength)
       {
-         return ScaleDouble(SpecTypeId.Length, unscaledLength);
+         return ScaleDouble(UnitType.UT_Length, unscaledLength);
       }
 
       /// <summary>
@@ -92,17 +92,17 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The force in IFC units.</returns>
       static public double ScaleForce(double unscaledForce)
       {
-         return ScaleDouble(SpecTypeId.Force, unscaledForce);
+         return ScaleDouble(UnitType.UT_Force, unscaledForce);
       }
 
       static public double ScaleLinearForce(double unscaledLinearForce)
       {
-         return UnitUtils.ConvertFromInternalUnits(unscaledLinearForce, UnitTypeId.NewtonsPerMeter);
+         return UnitUtils.ConvertFromInternalUnits(unscaledLinearForce, DisplayUnitType.DUT_NEWTONS_PER_METER);
       }
 
       static public double ScalePlanarForce(double unscaledPlanarForce)
       {
-         return UnitUtils.ConvertFromInternalUnits(unscaledPlanarForce, UnitTypeId.NewtonsPerSquareMeter);
+         return UnitUtils.ConvertFromInternalUnits(unscaledPlanarForce, DisplayUnitType.DUT_NEWTONS_PER_SQUARE_METER);
       }
 
       /// <summary>
@@ -112,7 +112,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The power in IFC units.</returns>
       static public double ScalePower(double unscaledPower)
       {
-         return ScaleDouble(SpecTypeId.HvacPower, unscaledPower);
+         return ScaleDouble(UnitType.UT_HVAC_Power, unscaledPower);
       }
 
       /// <summary>
@@ -122,7 +122,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The area in IFC units.</returns>
       static public double ScaleArea(double unscaledArea)
       {
-         return ScaleDouble(SpecTypeId.Area, unscaledArea);
+         return ScaleDouble(UnitType.UT_Area, unscaledArea);
       }
 
       /// <summary>
@@ -132,7 +132,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The volume in IFC units.</returns>
       static public double ScaleVolume(double unscaledVolume)
       {
-         return ScaleDouble(SpecTypeId.Volume, unscaledVolume);
+         return ScaleDouble(UnitType.UT_Volume, unscaledVolume);
       }
 
       /// <summary>
@@ -142,7 +142,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The volumetric flow rate in IFC units.</returns>
       static public double ScaleVolumetricFlowRate(double unscaledVolumetricFlowRate)
       {
-         return ScaleDouble(SpecTypeId.AirFlow, unscaledVolumetricFlowRate);
+         return ScaleDouble(UnitType.UT_HVAC_Airflow, unscaledVolumetricFlowRate);
       }
 
       /// <summary>
@@ -152,7 +152,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The luminous flux in IFC units.</returns>
       static public double ScaleLuminousFlux(double unscaledLuminousFlux)
       {
-         return ScaleDouble(SpecTypeId.LuminousFlux, unscaledLuminousFlux);
+         return ScaleDouble(UnitType.UT_Electrical_Luminous_Flux, unscaledLuminousFlux);
       }
 
       /// <summary>
@@ -162,7 +162,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The luminous intensity in IFC units.</returns>
       static public double ScaleLuminousIntensity(double unscaledLuminousIntensity)
       {
-         return ScaleDouble(SpecTypeId.LuminousIntensity, unscaledLuminousIntensity);
+         return ScaleDouble(UnitType.UT_Electrical_Luminous_Intensity, unscaledLuminousIntensity);
       }
 
       /// <summary>
@@ -172,7 +172,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The angle in Revit display units.</returns>
       static public double ScaleAngle(double unscaledAngle)
       {
-         return ScaleDouble(SpecTypeId.Angle, unscaledAngle);
+         return ScaleDouble(UnitType.UT_Angle, unscaledAngle);
       }
 
       // <summary>
@@ -182,7 +182,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The electrical current in Revit display units.</returns>
       static public double ScaleElectricCurrent(double unscaledCurrent)
       {
-         return ScaleDouble(SpecTypeId.Current, unscaledCurrent);
+         return ScaleDouble(UnitType.UT_Electrical_Current, unscaledCurrent);
       }
 
       // <summary>
@@ -192,7 +192,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The electrical illuminance in Revit display units.</returns>
       static public double ScaleIlluminance(double unscaledIlluminance)
       {
-         return ScaleDouble(SpecTypeId.Illuminance, unscaledIlluminance);
+         return ScaleDouble(UnitType.UT_Electrical_Illuminance, unscaledIlluminance);
       }
 
       // <summary>
@@ -202,7 +202,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The electrical current in Revit display units.</returns>
       static public double ScaleElectricVoltage(double unscaledVoltage)
       {
-         return ScaleDouble(SpecTypeId.ElectricalPotential, unscaledVoltage);
+         return ScaleDouble(UnitType.UT_Electrical_Potential, unscaledVoltage);
       }
 
       /// <summary>
@@ -212,7 +212,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The position in Revit internal units.</returns>
       static public XYZ UnscaleLength(XYZ scaledXYZ)
       {
-         return ExporterCacheManager.UnitsCache.Unscale(SpecTypeId.Length, scaledXYZ);
+         return ExporterCacheManager.UnitsCache.Unscale(UnitType.UT_Length, scaledXYZ);
       }
 
       /// <summary>
@@ -222,7 +222,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The length in Revit internal units.</returns>
       static public double UnscaleLength(double scaledLength)
       {
-         return ExporterCacheManager.UnitsCache.Unscale(SpecTypeId.Length, scaledLength);
+         return ExporterCacheManager.UnitsCache.Unscale(UnitType.UT_Length, scaledLength);
       }
 
       /// <summary>
@@ -232,7 +232,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The area in Revit internal units.</returns>
       static public double UnscaleArea(double scaledArea)
       {
-         return ExporterCacheManager.UnitsCache.Unscale(SpecTypeId.Area, scaledArea);
+         return ExporterCacheManager.UnitsCache.Unscale(UnitType.UT_Area, scaledArea);
       }
    }
 }

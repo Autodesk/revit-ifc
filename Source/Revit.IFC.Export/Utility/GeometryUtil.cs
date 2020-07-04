@@ -3447,7 +3447,7 @@ namespace Revit.IFC.Export.Utility
             // Based on IFC4 specification, curveForm is for information only, leave it as UNSPECIFIED for now.
             Revit.IFC.Export.Toolkit.IFC4.IFCBSplineCurveForm curveForm = Toolkit.IFC4.IFCBSplineCurveForm.UNSPECIFIED;
 
-            IFCLogical closedCurve = nurbSpline.IsClosed ? IFCLogical.True : IFCLogical.False;
+            IFCLogical closedCurve = nurbSpline.isClosed ? IFCLogical.True : IFCLogical.False;
 
             // Based on IFC4 specification, selfIntersect is for information only, leave it as Unknown for now
             IFCLogical selfIntersect = IFCLogical.Unknown;

@@ -38,7 +38,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The base unit type, if not defined in the IFC file, based on the type of quantity.
       /// </summary>
-      ForgeTypeId m_BaseUnitType = new ForgeTypeId();
+      UnitType m_BaseUnitType;
 
       /// <summary>
       /// The optional unit for the quantity.
@@ -53,7 +53,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The base unit type, if not defined in the IFC file, based on the type of quantity.
       /// </summary>
-      protected ForgeTypeId BaseUnitType
+      protected UnitType BaseUnitType
       {
          get { return m_BaseUnitType; }
          set { m_BaseUnitType = value; }
@@ -102,27 +102,27 @@ namespace Revit.IFC.Import.Data
          // Process subtypes of IfcPhysicalSimpleQuantity here.
          string attributeName = ifcPhysicalSimpleQuantity.TypeName.Substring(11) + "Value";
          Value = ifcPhysicalSimpleQuantity.GetAttribute(attributeName);
-         BaseUnitType = IFCDataUtil.GetUnitTypeFromData(Value, new ForgeTypeId());
+         BaseUnitType = IFCDataUtil.GetUnitTypeFromData(Value, UnitType.UT_Number);
 
-         if (BaseUnitType.Empty())
+         if (BaseUnitType == UnitType.UT_Undefined)
          {
             // Determine it from the attributeName.
             if (string.Compare(attributeName, "LengthValue", true) == 0)
-               BaseUnitType = SpecTypeId.Length;
+               BaseUnitType = UnitType.UT_Length;
             else if (string.Compare(attributeName, "AreaValue", true) == 0)
-               BaseUnitType = SpecTypeId.Area;
+               BaseUnitType = UnitType.UT_Area;
             else if (string.Compare(attributeName, "VolumeValue", true) == 0)
-               BaseUnitType = SpecTypeId.Volume;
+               BaseUnitType = UnitType.UT_Volume;
             else if (string.Compare(attributeName, "CountValue", true) == 0)
-               BaseUnitType = SpecTypeId.Number;
+               BaseUnitType = UnitType.UT_Number;
             else if (string.Compare(attributeName, "WeightValue", true) == 0)
-               BaseUnitType = SpecTypeId.Mass;
+               BaseUnitType = UnitType.UT_Mass;
             else if (string.Compare(attributeName, "TimeValue", true) == 0)
-               BaseUnitType = SpecTypeId.Number;  // No time unit type in Revit.
+               BaseUnitType = UnitType.UT_Number;  // No time unit type in Revit.
             else
             {
                Importer.TheLog.LogWarning(Id, "Can't determine unit type for IfcPhysicalSimpleQuantity of type: " + attributeName, true);
-               BaseUnitType = SpecTypeId.Number;
+               BaseUnitType = UnitType.UT_Number;
             }
          }
 
@@ -188,13 +188,13 @@ namespace Revit.IFC.Import.Data
 
             if (existingParameter == null)
             {
-               ForgeTypeId specTypeId = new ForgeTypeId();
+               UnitType unitType = UnitType.UT_Undefined;
                if (IFCUnit != null)
-                  specTypeId = IFCUnit.Spec;
+                  unitType = IFCUnit.UnitType;
                else
-                  specTypeId = IFCDataUtil.GetUnitTypeFromData(Value, SpecTypeId.Number);
+                  unitType = IFCDataUtil.GetUnitTypeFromData(Value, UnitType.UT_Number);
 
-               bool created = IFCPropertySet.AddParameterDouble(doc, element, parameterName, specTypeId, doubleValueToUse, Id);
+               bool created = IFCPropertySet.AddParameterDouble(doc, element, parameterName, unitType, doubleValueToUse, Id);
                if (created)
                   createdParameters.Add(parameterName);
 

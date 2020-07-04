@@ -879,7 +879,7 @@ namespace Revit.IFC.Import.Data
                   if (parItem.Value is string)
                      IFCPropertySet.AddParameterString(doc, element, parItem.Key, (string)parItem.Value, Id);
                   else if (parItem.Value is double)
-                     IFCPropertySet.AddParameterDouble(doc, element, parItem.Key, SpecTypeId.Custom, (double)parItem.Value, Id);
+                     IFCPropertySet.AddParameterDouble(doc, element, parItem.Key, UnitType.UT_Custom, (double)parItem.Value, Id);
                   else if (parItem.Value is int)
                      IFCPropertySet.AddParameterInt(doc, element, parItem.Key, (int)parItem.Value, Id);
                   else if (parItem.Value is bool)

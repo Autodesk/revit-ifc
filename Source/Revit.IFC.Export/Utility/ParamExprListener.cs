@@ -36,7 +36,7 @@ namespace Revit.IFC.Export.Utility
    {
       public object nodePropertyValue { get; set; }
       public object originalNodePropertyValue { get; set; }
-      public ForgeTypeId uomTypeId { get; set; } = null;
+      public UnitType uomTypeId { get; set; } = UnitType.UT_Undefined;
    }
 
    class ParamExprListener : ParamExprGrammarBaseListener
@@ -67,7 +67,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Get the unit type of the value
       /// </summary>
-      public ForgeTypeId UnitType { get; private set; } = null;
+      public UnitType UnitType { get; private set; } = UnitType.UT_Undefined;
 
       // Dictionary to keep information of which parameter that contains the running number. Key is a tuple of Revit_category and parameter name
       static IDictionary<Tuple<string, string>, int> LastRunningNumberCollection = new Dictionary<Tuple<string, string>, int>();
@@ -251,13 +251,13 @@ namespace Revit.IFC.Export.Utility
          }
          FinalParameterValue = parValue;
          UnitType = paramExprNodeProp.uomTypeId;
-         if (paramExprNodeProp.uomTypeId != null)
+         if (paramExprNodeProp.uomTypeId != UnitType.UT_Undefined)
          {
             if (FinalParameterValue is double)
             {
                double? paramValueDouble = FinalParameterValue as double?;
-               formattedValue = UnitFormatUtils.Format(RevitElement.Document.GetUnits(), paramExprNodeProp.uomTypeId, paramValueDouble.Value, false);
-               FinalParameterValue = UnitUtils.ConvertToInternalUnits(paramValueDouble.Value, paramExprNodeProp.uomTypeId);
+               formattedValue = UnitFormatUtils.Format(RevitElement.Document.GetUnits(), paramExprNodeProp.uomTypeId, paramValueDouble.Value, true, false);
+               FinalParameterValue = UnitUtils.ConvertToInternalUnits(paramValueDouble.Value, UnitUtils.GetValidDisplayUnits(paramExprNodeProp.uomTypeId).FirstOrDefault());
             }
          }
       }
@@ -390,7 +390,7 @@ namespace Revit.IFC.Export.Utility
       {
          base.ExitValue(context);
          object value = null;
-         ForgeTypeId convertUnit = SpecTypeId.Number;
+         UnitType convertUnit = UnitType.UT_Number;
 
          string valueStr = context.GetChild(0).GetText();
          if (context.GetChild(0) is ParamExprGrammarParser.StringliteralContext)
@@ -442,10 +442,10 @@ namespace Revit.IFC.Export.Utility
                   }
 
                   string unitTypeName = vwunitCtx.UNITTYPE().GetText();
-                  System.Reflection.PropertyInfo unitType = typeof(Autodesk.Revit.DB.SpecTypeId).GetProperty(unitTypeName);
+                  System.Reflection.PropertyInfo unitType = typeof(Autodesk.Revit.DB.UnitType).GetProperty(unitTypeName);
                   if (unitType != null)
                   {
-                     convertUnit = unitType.GetValue(null, null) as ForgeTypeId;
+                     Enum.TryParse(unitType.GetValue(null, null).ToString(), out convertUnit);
                   }
                }
                catch { }

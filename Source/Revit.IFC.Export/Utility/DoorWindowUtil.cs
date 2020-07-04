@@ -892,11 +892,11 @@ namespace Revit.IFC.Export.Utility
 
          Element doorWindowElement = doc.GetElement(insertId);
 
-         Parameter wallSlant = wall.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         bool wallIsSlanted = (wallSlant != null && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && !MathUtil.IsAlmostEqual(wallSlant.AsDouble(), 0.0));
+         //Parameter wallSlant = wall.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
+         //bool wallIsSlanted = (wallSlant != null && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && !MathUtil.IsAlmostEqual(wallSlant.AsDouble(), 0.0));
 
-         Parameter insertOrientation = doorWindowElement.get_Parameter(BuiltInParameter.INSERT_ORIENTATION);
-         bool insertIsVertical = (insertOrientation != null && insertOrientation.HasValue && insertOrientation.StorageType == StorageType.Integer && insertOrientation.AsInteger() == 0 /*vertical orientation*/);
+         //Parameter insertOrientation = doorWindowElement.get_Parameter(BuiltInParameter.INSERT_ORIENTATION);
+         //bool insertIsVertical = (insertOrientation != null && insertOrientation.HasValue && insertOrientation.StorageType == StorageType.Integer && insertOrientation.AsInteger() == 0 /*vertical orientation*/);
 
          ElementId catId = CategoryUtil.GetSafeCategoryId(wall);
 
@@ -919,8 +919,8 @@ namespace Revit.IFC.Export.Utility
 
          if (curve is Line)
          {
-            if (wallIsSlanted != insertIsVertical) // For vertical inserts in vertical walls and slanted inserts in slanted walls
-            {
+            //if (wallIsSlanted != insertIsVertical) // For vertical inserts in vertical walls and slanted inserts in slanted walls
+            //{
                // Create a plane that goes through the center of the wall along its length
                XYZ localExtrusionDir = openingTrf.OfVector(WallExporter.GetWallExtrusionDirection(wall));
                Transform curveData = curve.ComputeDerivatives(curve.GetEndParameter(0), false);
@@ -954,31 +954,31 @@ namespace Revit.IFC.Export.Utility
                }
 
                loopLcs.BasisX = localExtrusionDir;
-            }
-            else // For vertical inserts in slanted walls
-            {
-               if (!wallIsSlanted && insertIsVertical)
-                  return null; // This shouldn't be possible
+            //}
+            //else // For vertical inserts in slanted walls
+            //{
+            //   if (!wallIsSlanted && insertIsVertical)
+            //      return null; // This shouldn't be possible
 
-               double slantAngle = wallSlant.AsDouble();
-               // Handle cases where cut direction is looking away from the wall
-               // Positive Y coordinate in cutDir means it's looking away from the positive slant direction
-               if ((cutDir[1] > 0.0) != (slantAngle < 0.0))
-               {
-                  // Move the cut loop forward to make sure that the width of the opening will also be cut out
-                  XYZ moveVec = cutDir * unScaledDepth;
-                  tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
-                  // Flip the cut direction so that the cut would intersect the wall
-                  cutDir = cutDir.Negate();
-               }
+            //   double slantAngle = wallSlant.AsDouble();
+            //   // Handle cases where cut direction is looking away from the wall
+            //   // Positive Y coordinate in cutDir means it's looking away from the positive slant direction
+            //   if ((cutDir[1] > 0.0) != (slantAngle < 0.0))
+            //   {
+            //      // Move the cut loop forward to make sure that the width of the opening will also be cut out
+            //      XYZ moveVec = cutDir * unScaledDepth;
+            //      tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
+            //      // Flip the cut direction so that the cut would intersect the wall
+            //      cutDir = cutDir.Negate();
+            //   }
 
-               // Calculate the distance from the top of the insert to the wall
-               double distToWall = openingHeight * Math.Tan(Math.Abs(slantAngle));
-               // Add wall's width to make sure the cut reaches its opposite side
-               unScaledDepth = distToWall + wall.Width;
+            //   // Calculate the distance from the top of the insert to the wall
+            //   double distToWall = openingHeight * Math.Tan(Math.Abs(slantAngle));
+            //   // Add wall's width to make sure the cut reaches its opposite side
+            //   unScaledDepth = distToWall + wall.Width;
 
-               loopLcs.BasisX = XYZ.BasisZ;
-            }
+            //   loopLcs.BasisX = XYZ.BasisZ;
+            //}
 
             // In IFC the local X direction should point upwards along the wall, 
             // and local Y direction should point horizontally along the wall.

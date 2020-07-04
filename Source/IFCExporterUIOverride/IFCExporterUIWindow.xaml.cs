@@ -31,8 +31,8 @@ using System.Web.Script.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using UserInterfaceUtility.Json;
 
+using Newtonsoft.Json;
 
 namespace BIM.IFC.Export.UI
 {
@@ -602,10 +602,11 @@ namespace BIM.IFC.Export.UI
          bool? fileDialogResult = saveFileDialog.ShowDialog();
          if (fileDialogResult.HasValue && fileDialogResult.Value)
          {
+            JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings();
+            jsonSerializerSettings.Formatting = Formatting.Indented;
             using (StreamWriter sw = new StreamWriter(saveFileDialog.FileName))
             {
-               JavaScriptSerializer js = new JavaScriptSerializer();
-               sw.Write(SerializerUtils.FormatOutput(js.Serialize(configuration)));
+               sw.Write(JsonConvert.SerializeObject(configuration, jsonSerializerSettings));
             }
          }
          //Process.Start(saveFileDialog.FileName);
@@ -629,10 +630,7 @@ namespace BIM.IFC.Export.UI
             {
                using (StreamReader sr = new StreamReader(openFileDialog.FileName))
                {
-                  JavaScriptSerializer jsConvert = new JavaScriptSerializer();
-                  jsConvert.RegisterConverters(new JavaScriptConverter[] {
-                     new IFCExportConfigurationConverter() });
-                  IFCExportConfiguration configuration = jsConvert.Deserialize<IFCExportConfiguration>(sr.ReadToEnd());
+                  IFCExportConfiguration configuration = JsonConvert.DeserializeObject<IFCExportConfiguration>(sr.ReadToEnd());
                   if (configuration != null)
                   {
                      if (m_configurationsMap.HasName(configuration.Name))

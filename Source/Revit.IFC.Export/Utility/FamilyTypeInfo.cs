@@ -162,7 +162,7 @@ namespace Revit.IFC.Export.Exporter
       public HashSet<ElementId> MaterialIds {
          get
          {
-            return MaterialIdList.ToHashSet();
+            return new HashSet<ElementId>(MaterialIdList);
          }
          set 
          {

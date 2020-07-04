@@ -38,7 +38,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The contained set of double IFC properties, values already scaled.
       /// </summary>
-      IDictionary<Tuple<string, ForgeTypeId, AllowedValues>, double> m_DoubleProperties = null;
+      IDictionary<Tuple<string, UnitType, AllowedValues>, double> m_DoubleProperties = null;
 
       /// <summary>
       /// The contained set of string IFC properties.
@@ -48,12 +48,12 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The double properties, values already scaled.
       /// </summary>
-      public IDictionary<Tuple<string, ForgeTypeId, AllowedValues>, double> DoubleProperties
+      public IDictionary<Tuple<string, UnitType, AllowedValues>, double> DoubleProperties
       {
          get
          {
             if (m_DoubleProperties == null)
-               m_DoubleProperties = new Dictionary<Tuple<string, ForgeTypeId, AllowedValues>, double>();
+               m_DoubleProperties = new Dictionary<Tuple<string, UnitType, AllowedValues>, double>();
             return m_DoubleProperties;
          }
       }
@@ -102,7 +102,7 @@ namespace Revit.IFC.Import.Data
       {
          IDictionary<string, IFCData> parametersToAdd = new Dictionary<string, IFCData>();
 
-         foreach (KeyValuePair<Tuple<string, ForgeTypeId, AllowedValues>, double> property in DoubleProperties)
+         foreach (KeyValuePair<Tuple<string, UnitType, AllowedValues>, double> property in DoubleProperties)
          {
             string name = property.Key.Item1;
             Parameter existingParameter = null;

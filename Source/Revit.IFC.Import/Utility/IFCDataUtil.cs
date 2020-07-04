@@ -34,46 +34,45 @@ namespace Revit.IFC.Import.Utility
    /// </summary>
    public class IFCDataUtil
    {
-      static private IDictionary<string, ForgeTypeId> m_MeasureCache = null;
+      static private IDictionary<string, UnitType> m_MeasureCache = null;
 
       static private void InitializeMeasureCache()
       {
-         m_MeasureCache = new SortedDictionary<string, ForgeTypeId>(StringComparer.InvariantCultureIgnoreCase);
+         m_MeasureCache = new SortedDictionary<string, UnitType>(StringComparer.InvariantCultureIgnoreCase);
 
-         m_MeasureCache["IfcAreaMeasure"] = SpecTypeId.Area;
-         m_MeasureCache["IfcCountMeasure"] = SpecTypeId.Number;
-         m_MeasureCache["IfcElectricCurrentMeasure"] = SpecTypeId.Current;
-         m_MeasureCache["IfcElectricVoltageMeasure"] = SpecTypeId.ElectricalPotential;
-         m_MeasureCache["IfcForceMeasure"] = SpecTypeId.Force;
-         m_MeasureCache["IfcFrequencyMeasure"] = SpecTypeId.ElectricalFrequency;
-         m_MeasureCache["IfcLengthMeasure"] = SpecTypeId.Length;
-         m_MeasureCache["IfcIlluminanceMeasure"] = SpecTypeId.Illuminance;
-         m_MeasureCache["IfcInteger"] = SpecTypeId.Number;
-         m_MeasureCache["IfcLinearVelocityMeasure"] = SpecTypeId.HvacVelocity;
-         m_MeasureCache["IfcLuminousFluxMeasure"] = SpecTypeId.LuminousFlux;
-         m_MeasureCache["IfcLuminousIntensityMeasure"] = SpecTypeId.LuminousIntensity;
-         m_MeasureCache["IfcMassMeasure"] = SpecTypeId.Mass;
-         m_MeasureCache["IfcMassDensityMeasure"] = SpecTypeId.MassDensity;
-         m_MeasureCache["IfcMonetaryMeasure"] = SpecTypeId.Currency;
-         m_MeasureCache["IfcNormalisedRatioMeasure"] = SpecTypeId.Number;
-         m_MeasureCache["IfcNumericMeasure"] = SpecTypeId.Number;
-         m_MeasureCache["IfcPositiveRatioMeasure"] = SpecTypeId.Number;
-         m_MeasureCache["IfcPositiveLengthMeasure"] = SpecTypeId.Length;
-         m_MeasureCache["IfcPlaneAngleMeasure"] = SpecTypeId.Angle;
-         m_MeasureCache["IfcPositivePlaneAngleMeasure"] = SpecTypeId.Angle;
-         m_MeasureCache["IfcPowerMeasure"] = SpecTypeId.HvacPower;
-         m_MeasureCache["IfcPressureMeasure"] = SpecTypeId.HvacPressure;
-         m_MeasureCache["IfcRatioMeasure"] = SpecTypeId.Number;
-         m_MeasureCache["IfcReal"] = SpecTypeId.Number;
-         m_MeasureCache["IfcTimeMeasure"] = SpecTypeId.Time;
-         m_MeasureCache["IfcTimeStamp"] = SpecTypeId.Number;  // No unit type for time in Revit.
-         m_MeasureCache["IfcThermalTransmittanceMeasure"] = SpecTypeId.HeatTransferCoefficient;
-         m_MeasureCache["IfcThermodynamicTemperatureMeasure"] = SpecTypeId.HvacTemperature;
-         m_MeasureCache["IfcVolumeMeasure"] = SpecTypeId.Volume;
-         m_MeasureCache["IfcVolumetricFlowRateMeasure"] = SpecTypeId.AirFlow;
+         m_MeasureCache["IfcAreaMeasure"] = UnitType.UT_Area;
+         m_MeasureCache["IfcCountMeasure"] = UnitType.UT_Number;
+         m_MeasureCache["IfcElectricCurrentMeasure"] = UnitType.UT_Electrical_Current;
+         m_MeasureCache["IfcElectricVoltageMeasure"] = UnitType.UT_Electrical_Potential;
+         m_MeasureCache["IfcForceMeasure"] = UnitType.UT_Force;
+         m_MeasureCache["IfcFrequencyMeasure"] = UnitType.UT_Electrical_Frequency;
+         m_MeasureCache["IfcLengthMeasure"] = UnitType.UT_Length;
+         m_MeasureCache["IfcIlluminanceMeasure"] = UnitType.UT_Electrical_Illuminance;
+         m_MeasureCache["IfcInteger"] = UnitType.UT_Number;
+         m_MeasureCache["IfcLinearVelocityMeasure"] = UnitType.UT_HVAC_Velocity;
+         m_MeasureCache["IfcLuminousFluxMeasure"] = UnitType.UT_Electrical_Luminous_Flux;
+         m_MeasureCache["IfcLuminousIntensityMeasure"] = UnitType.UT_Electrical_Luminous_Intensity;
+         m_MeasureCache["IfcMassMeasure"] = UnitType.UT_Mass;
+         m_MeasureCache["IfcMassDensityMeasure"] = UnitType.UT_MassDensity;
+         m_MeasureCache["IfcMonetaryMeasure"] = UnitType.UT_Currency;
+         m_MeasureCache["IfcNumericMeasure"] = UnitType.UT_Number;
+         m_MeasureCache["IfcPositiveRatioMeasure"] = UnitType.UT_Number;
+         m_MeasureCache["IfcPositiveLengthMeasure"] = UnitType.UT_Length;
+         m_MeasureCache["IfcPlaneAngleMeasure"] = UnitType.UT_Angle;
+         m_MeasureCache["IfcPositivePlaneAngleMeasure"] = UnitType.UT_Angle;
+         m_MeasureCache["IfcPowerMeasure"] = UnitType.UT_HVAC_Power;
+         m_MeasureCache["IfcPressureMeasure"] = UnitType.UT_HVAC_Pressure;
+         m_MeasureCache["IfcRatioMeasure"] = UnitType.UT_Number;
+         m_MeasureCache["IfcReal"] = UnitType.UT_Number;
+         m_MeasureCache["IfcTimeMeasure"] = UnitType.UT_TimeInterval;
+         m_MeasureCache["IfcTimeStamp"] = UnitType.UT_Number;  // No unit type for time in Revit.
+         m_MeasureCache["IfcThermalTransmittanceMeasure"] = UnitType.UT_HVAC_CoefficientOfHeatTransfer;
+         m_MeasureCache["IfcThermodynamicTemperatureMeasure"] = UnitType.UT_HVAC_Temperature;
+         m_MeasureCache["IfcVolumeMeasure"] = UnitType.UT_Volume;
+         m_MeasureCache["IfcVolumetricFlowRateMeasure"] = UnitType.UT_HVAC_Airflow;
       }
 
-      static public IDictionary<string, ForgeTypeId> MeasureCache
+      static public IDictionary<string, UnitType> MeasureCache
       {
          get
          {
@@ -87,38 +86,38 @@ namespace Revit.IFC.Import.Utility
       /// Gets the unit type from an IFC data.
       /// </summary>
       /// <param name="data">The IFC data.</param>
-      /// <param name="defaultSpec">The default spec, if no spec is found.</param>
+      /// <param name="defaultType">The default value, if no type is found.</param>
       /// <param name="propertyType">The string value of the simple type, returned for logging purposes.</param>
       /// <returns>The unit type.</returns>
-      public static ForgeTypeId GetUnitTypeFromData(IFCData data, ForgeTypeId defaultSpec, out string propertyType)
+      public static UnitType GetUnitTypeFromData(IFCData data, UnitType defaultType, out string propertyType)
       {
-         ForgeTypeId specTypeId = new ForgeTypeId();
+         UnitType unitType = UnitType.UT_Undefined;
 
          if (data.HasSimpleType())
          {
             propertyType = data.GetSimpleType();
-            if (!MeasureCache.TryGetValue(propertyType, out specTypeId))
-               specTypeId = defaultSpec;
+            if (!MeasureCache.TryGetValue(propertyType, out unitType))
+               unitType = defaultType;
          }
          else
          {
             propertyType = "";
-            specTypeId = defaultSpec;
+            unitType = defaultType;
          }
 
-         return specTypeId;
+         return unitType;
       }
 
       /// <summary>
       /// Gets the unit type from an IFC data.
       /// </summary>
       /// <param name="data">The IFC data.</param>
-      /// <param name="defaultSpec">The default spec, if no spec is found.</param>
+      /// <param name="defaultType">The default value, if no type is found.</param>
       /// <returns>The unit type.</returns>
-      public static ForgeTypeId GetUnitTypeFromData(IFCData data, ForgeTypeId defaultSpec)
+      public static UnitType GetUnitTypeFromData(IFCData data, UnitType defaultType)
       {
          string propertyType;
-         return GetUnitTypeFromData(data, defaultSpec, out propertyType);
+         return GetUnitTypeFromData(data, defaultType, out propertyType);
       }
    }
 }

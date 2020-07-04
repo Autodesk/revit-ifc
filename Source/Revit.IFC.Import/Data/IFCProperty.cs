@@ -151,7 +151,7 @@ namespace Revit.IFC.Import.Data
          }
 
          IFCDataPrimitiveType dataType = IFCDataPrimitiveType.Unknown;
-         ForgeTypeId specTypeId = new ForgeTypeId();
+         UnitType unitType = UnitType.UT_Undefined;
 
          bool? boolValueToUse = null;
          IFCLogical? logicalValueToUse = null;
@@ -209,9 +209,9 @@ namespace Revit.IFC.Import.Data
                      break;
                   case IFCDataPrimitiveType.Double:
                      if (propertyValueToUse.IFCUnit != null)
-                        specTypeId = propertyValueToUse.IFCUnit.Spec;
+                        unitType = propertyValueToUse.IFCUnit.UnitType;
                      else
-                        specTypeId = IFCDataUtil.GetUnitTypeFromData(propertyValueToUse.Value, SpecTypeId.Number);
+                        unitType = IFCDataUtil.GetUnitTypeFromData(propertyValueToUse.Value, UnitType.UT_Number);
 
                      doubleValueToUse = propertyValueToUse.AsScaledDouble();
                      break;
@@ -264,7 +264,7 @@ namespace Revit.IFC.Import.Data
                      created = IFCPropertySet.AddParameterBoolean(doc, element, parameterName, (logicalValueToUse == IFCLogical.True), Id);
                   break;
                case IFCDataPrimitiveType.Double:
-                  created = IFCPropertySet.AddParameterDouble(doc, element, parameterName, specTypeId, doubleValueToUse.Value, Id);
+                  created = IFCPropertySet.AddParameterDouble(doc, element, parameterName, unitType, doubleValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Instance:
                   created = IFCPropertySet.AddParameterElementId(doc, element, parameterName, elementIdValueToUse, Id);

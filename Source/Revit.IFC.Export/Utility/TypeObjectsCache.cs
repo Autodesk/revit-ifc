@@ -52,6 +52,23 @@ namespace Revit.IFC.Export.Utility
       /// <param name="flipped">
       /// Indicates if the element is flipped.
       /// </param>
+      /// <param name="exportType">The export type of the element.</param>
+      [Obsolete("This method has been changed to take in IFCExportInfoPair instead of IFCEntityType")]
+      public void Register(ElementId elementId, bool flipped, IFCEntityType entityType, FamilyTypeInfo typeInfo)
+      {
+         IFCExportInfoPair exportType = new IFCExportInfoPair(entityType);
+         Register(elementId, flipped, exportType, typeInfo);
+      }
+
+      /// <summary>
+      /// Adds the FamilyTypeInfo to the dictionary.
+      /// </summary>
+      /// <param name="elementId">
+      /// The element elementId.
+      /// </param>
+      /// <param name="flipped">
+      /// Indicates if the element is flipped.
+      /// </param>
       /// <param name="exportType">
       /// The export type of the element.
       /// </param>
@@ -59,6 +76,28 @@ namespace Revit.IFC.Export.Utility
       {
          var key = new TypeObjectKey(elementId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType);
          this[key] = typeInfo;
+      }
+
+      /// <summary>
+      /// Finds the FamilyTypeInfo from the dictionary.
+      /// </summary>
+      /// <param name="elementId">
+      /// The element elementId.
+      /// </param>
+      /// <param name="flipped">
+      /// Indicates if the element is flipped.
+      /// </param>
+      /// <param name="exportType">
+      /// The export type of the element.
+      /// </param>
+      /// <returns>
+      /// The FamilyTypeInfo object.
+      /// </returns>
+      [Obsolete("This method has been changed to take in IFCExportInfoPair instead of IFCEntityType")]
+      public FamilyTypeInfo Find(ElementId elementId, bool flipped, IFCEntityType entityType)
+      {
+         IFCExportInfoPair exportType = new IFCExportInfoPair(entityType);
+         return Find(elementId, flipped, exportType);
       }
 
       /// <summary>

@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="DF385412-AB15-4DED-A046-FE32CE0BCC5E" Name="Revit IFC 2021" Language="1033" Version="21.1.0.0" Manufacturer="Autodesk" UpgradeCode="D8344D14-F520-44DA-9583-9AF4BD489CF8">
+   <Product Id="F2D04214-ECD3-4EC3-8631-DC9C7A6FD777" Name="Revit IFC 2020" Language="1033" Version="20.2.0.0" Manufacturer="Autodesk" UpgradeCode="4B4E5B70-E64C-4BC6-A149-2CE79BB899D1">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -19,7 +19,7 @@
       <WixVariable Id="WixUIDefUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt"></WixVariable>
       <WixVariable Id="WixUICOBieUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\IFC2x3 Extended FM HandOver View.txt"></WixVariable>
 
-      <Feature Id="ProductFeature" Title="Revit IFC 2021" Level="1" ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id="ProductFeature" Title="Revit IFC 2020" Level="1" ConfigurableDirectory='INSTALLDIR'>
          <ComponentGroupRef Id="ProductComponents" />
          <ComponentGroupRef Id="ProductResourceComponents" />
          <ComponentGroupRef Id="ProductFRFiles" />
@@ -44,7 +44,7 @@
       <Fragment>
          <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFilesFolder">
-               <Directory Id="INSTALLDIR" Name="Revit IFC 2021">
+               <Directory Id="INSTALLDIR" Name="Revit IFC 2020">
                   <Directory Id="INSTALLRESOURCE" Name="Resource" />
                   <Directory Id="INSTALLFRUI" Name="fr" />
                   <Directory Id="INSTALLDEUI" Name="de" />
@@ -55,12 +55,12 @@
                <Directory Id="DIR_ADSK" Name="Autodesk">
                   <Directory Id="DIR_REVIT" Name="Revit">
                      <Directory Id="DIR_ADDINS" Name="Addins">
-                        <Directory Id="DIR_Addins" Name="2021"/>
+                        <Directory Id="DIR_Addins" Name="2020"/>
                      </Directory>
                   </Directory>
                   <Directory Id="DIR_REVIT_LT" Name="RevitLT">
                      <Directory Id="DIR_ADDINS_LT" Name="Addins">
-                        <Directory Id="DIR_Addins_LT" Name="2021"/>
+                        <Directory Id="DIR_Addins_LT" Name="2020"/>
                      </Directory>
                   </Directory>
                </Directory>
@@ -73,9 +73,9 @@
             <Directory Id="CommonAppDataFolder" Name="MyAppDataFolder">
                <Directory Id="DIR_ADSK" Name="Autodesk">
                   <Directory Id="DIR_PLUGINS" Name="ApplicationPlugins">
-                     <Directory Id="DIR_PACKAGE" Name="IFC 2021.bundle">
+                     <Directory Id="DIR_PACKAGE" Name="IFC 2020.bundle">
                         <Directory Id="DIR_Contents" Name="Contents">
-                          <Directory Id="INSTALLDIR" Name="2021">
+                          <Directory Id="INSTALLDIR" Name="2020">
                             <Directory Id="INSTALLRESOURCE" Name="Resource" />
                             <Directory Id="INSTALLFRUI" Name="fr" />
                             <Directory Id="INSTALLDEUI" Name="de" />

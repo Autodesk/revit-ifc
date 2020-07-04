@@ -12,7 +12,6 @@
                   WindowStyle="SingleBorderWindow" 
                   ContentRendered="ChildWindow_ContentRendered"
                   ResizeMode="NoResize" 
-                  SaveWindowSettings="False"
                   Closing="Window_Closing" 
                   Height="326" 
                   Width="731">
