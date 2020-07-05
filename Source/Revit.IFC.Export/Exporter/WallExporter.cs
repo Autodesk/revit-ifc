@@ -1699,34 +1699,6 @@ namespace Revit.IFC.Export.Exporter
       public static XYZ GetWallExtrusionDirection(Wall wallElement)
       {
          return new XYZ(0, 0, 1);
-         //Parameter angleParam = wallElement.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         //if (angleParam == null || !angleParam.HasValue || angleParam.StorageType != StorageType.Double)
-         //   return new XYZ(0, 0, 1);
-
-         //double slantAngle = angleParam.AsDouble();
-         //if (MathUtil.IsAlmostZero(slantAngle))
-         //   return new XYZ(0, 0, 1);
-
-         //// Wall is definitely slanted; check if it has an extrusion direction.
-         //Line pathCurve = GetWallAxis(wallElement) as Line;
-         //if (pathCurve == null)
-         //   return null;
-
-         //XYZ referenceDirection = pathCurve.Direction;
-         //if (referenceDirection == null)
-         //   return null;
-
-         //// First, rotate Z direction based on slantAngle around the X axis,
-         //// Then based on refDirection around the Z axis.
-
-         //// The slant direction vector is a unit vector perpendicular to referenceDirection
-         //// and making an angle "slantAngle" with respect to the vertical direction. For a 
-         //// positive angle, it slants toward the right as seen by an upright observer looking
-         //// along the path curve's direction; for a negative angle, it slants toward the left.
-         //double yRot = Math.Sin(slantAngle);
-         //return new XYZ(yRot * referenceDirection.Y,
-         //   -yRot * referenceDirection.X,
-         //   Math.Cos(slantAngle));
       }
 
       /// <summary>
@@ -1736,10 +1708,6 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>The slant angle of the wall, or zero if it is not slanted.</returns>
       public static double GetWallSlantAngle(Wall wallElement)
       {
-         //Parameter wallSlant = wallElement.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         //if (wallSlant != null && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && !MathUtil.IsAlmostEqual(wallSlant.AsDouble(), 0.0))
-         //   return wallSlant.AsDouble();
-         //else
             return 0.0;
       }
 
