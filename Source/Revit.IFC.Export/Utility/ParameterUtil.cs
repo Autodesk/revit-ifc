@@ -88,13 +88,15 @@ namespace Revit.IFC.Export.Utility
 
             if (parameter.HasValue)
             {
-               string propValue;
-               propValue = parameter.AsString();
-
+               string propValue = parameter.AsString();
+               object strValue = null;
                if (!string.IsNullOrEmpty(propValue))
                {
-                  propertyValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE) as string;
-                  if (string.IsNullOrEmpty(propertyValue))
+                  ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE,
+                           out strValue);
+                  if (strValue != null && strValue is string)
+                     propertyValue = strValue as string;
+                  else
                      propertyValue = propValue;    // return the original propValue (un-trimmed)
 
                   return parameter;
@@ -172,25 +174,17 @@ namespace Revit.IFC.Export.Utility
                   }
                case StorageType.String:
                   {
-                     string propValue;
-                     propValue = parameter.AsString();
+                     string propValue = parameter.AsString();
+                     object intValue = null;
+                     ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE,
+                              out intValue);
 
-                     int? propertyIntValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE) as int?;
-                     if (propertyIntValue.HasValue)
+                     if (intValue != null && intValue is int)
                      {
-                        propertyValue = propertyIntValue.Value;
+                        propertyValue = (int) intValue;
                         return parameter;
                      }
-
-                     try
-                     {
-                        propertyValue = Convert.ToInt32(parameter.AsString());
-                        return parameter;
-                     }
-                     catch
-                     {
-                        return null;
-                     }
+                     return int.TryParse(propValue, out propertyValue) ? parameter : null;
                   }
             }
          }
@@ -230,13 +224,14 @@ namespace Revit.IFC.Export.Utility
                   return parameter;
                case StorageType.String:
                   {
-                     string propValue;
-                     propValue = parameter.AsString();
+                     string propValue = parameter.AsString();
+                     object dblValue = null;
+                     ParamExprResolver pResv = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE, 
+                              out dblValue);
 
-                     double? propertyDoubleValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE) as double?;
-                     if (propertyDoubleValue.HasValue)
+                     if (dblValue != null && dblValue is double)
                      {
-                        propertyValue = propertyDoubleValue.Value;
+                        propertyValue = (double) dblValue;
                         return parameter;
                      }
                      return Double.TryParse(propValue, out propertyValue) ? parameter : null;
