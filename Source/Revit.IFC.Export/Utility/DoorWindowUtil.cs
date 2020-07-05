@@ -891,13 +891,6 @@ namespace Revit.IFC.Export.Utility
             return null;
 
          Element doorWindowElement = doc.GetElement(insertId);
-
-         //Parameter wallSlant = wall.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         //bool wallIsSlanted = (wallSlant != null && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && !MathUtil.IsAlmostEqual(wallSlant.AsDouble(), 0.0));
-
-         //Parameter insertOrientation = doorWindowElement.get_Parameter(BuiltInParameter.INSERT_ORIENTATION);
-         //bool insertIsVertical = (insertOrientation != null && insertOrientation.HasValue && insertOrientation.StorageType == StorageType.Integer && insertOrientation.AsInteger() == 0 /*vertical orientation*/);
-
          ElementId catId = CategoryUtil.GetSafeCategoryId(wall);
 
          double unScaledDepth = origUnscaledDepth;
@@ -919,66 +912,39 @@ namespace Revit.IFC.Export.Utility
 
          if (curve is Line)
          {
-            //if (wallIsSlanted != insertIsVertical) // For vertical inserts in vertical walls and slanted inserts in slanted walls
-            //{
-               // Create a plane that goes through the center of the wall along its length
-               XYZ localExtrusionDir = openingTrf.OfVector(WallExporter.GetWallExtrusionDirection(wall));
-               Transform curveData = curve.ComputeDerivatives(curve.GetEndParameter(0), false);
-               if (curveData.BasisX.IsZeroLength())
-                  return null;
+            // Create a plane that goes through the center of the wall along its length
+            XYZ localExtrusionDir = openingTrf.OfVector(WallExporter.GetWallExtrusionDirection(wall));
+            Transform curveData = curve.ComputeDerivatives(curve.GetEndParameter(0), false);
+            if (curveData.BasisX.IsZeroLength())
+               return null;
 
-               curveData = openingTrf.Multiply(curveData);
-               Plane wallCenterPlane = Plane.CreateByOriginAndBasis(curveData.Origin, curveData.BasisX.Normalize(), localExtrusionDir.Normalize());
-               // Calculate a center wall point relative to the origin of the opening loop
-               wallCenterPlane.Project(loopLcs.Origin, out UV uv, out _);
+            curveData = openingTrf.Multiply(curveData);
+            Plane wallCenterPlane = Plane.CreateByOriginAndBasis(curveData.Origin, curveData.BasisX.Normalize(), localExtrusionDir.Normalize());
+            // Calculate a center wall point relative to the origin of the opening loop
+            wallCenterPlane.Project(loopLcs.Origin, out UV uv, out _);
 
-               // Revit API doesn't seem to provide a plane evaluation method, so calculating the point by hand here
-               XYZ wallCenterPoint = wallCenterPlane.Origin + wallCenterPlane.XVec * uv.U + wallCenterPlane.YVec * uv.V;
+            // Revit API doesn't seem to provide a plane evaluation method, so calculating the point by hand here
+            XYZ wallCenterPoint = wallCenterPlane.Origin + wallCenterPlane.XVec * uv.U + wallCenterPlane.YVec * uv.V;
 
-               // Place the opening loop on the proper side related to insert's hinge
-               // This is not applicable to vertical inserts in slanted walls, since they won't cut 
-               // the wall if cutout loop is placed on the side of the insert closer to the wall.
-               double desiredLoopOffset = posHingeSide ? (-unScaledDepth / 2.0) : (unScaledDepth / 2.0);
-               XYZ localY = localExtrusionDir.CrossProduct(curveData.BasisX).Normalize();
-               XYZ desiredPosition = wallCenterPoint + localY * desiredLoopOffset;
-               if (!loopLcs.Origin.IsAlmostEqualTo(desiredPosition))
-               {
-                  XYZ moveVec = desiredPosition - loopLcs.Origin;
-                  tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
-               }
+            // Place the opening loop on the proper side related to insert's hinge
+            // This is not applicable to vertical inserts in slanted walls, since they won't cut 
+            // the wall if cutout loop is placed on the side of the insert closer to the wall.
+            double desiredLoopOffset = posHingeSide ? (-unScaledDepth / 2.0) : (unScaledDepth / 2.0);
+            XYZ localY = localExtrusionDir.CrossProduct(curveData.BasisX).Normalize();
+            XYZ desiredPosition = wallCenterPoint + localY * desiredLoopOffset;
+            if (!loopLcs.Origin.IsAlmostEqualTo(desiredPosition))
+            {
+               XYZ moveVec = desiredPosition - loopLcs.Origin;
+               tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
+            }
 
-               bool cutDirRelToHostObjY = (cutDir[1] > 0.0); // true = same sense, false = opp. sense
-               if (posHingeSide != cutDirRelToHostObjY)
-               {
-                  cutDir = cutDir.Negate();
-               }
+            bool cutDirRelToHostObjY = (cutDir[1] > 0.0); // true = same sense, false = opp. sense
+            if (posHingeSide != cutDirRelToHostObjY)
+            {
+               cutDir = cutDir.Negate();
+            }
 
-               loopLcs.BasisX = localExtrusionDir;
-            //}
-            //else // For vertical inserts in slanted walls
-            //{
-            //   if (!wallIsSlanted && insertIsVertical)
-            //      return null; // This shouldn't be possible
-
-            //   double slantAngle = wallSlant.AsDouble();
-            //   // Handle cases where cut direction is looking away from the wall
-            //   // Positive Y coordinate in cutDir means it's looking away from the positive slant direction
-            //   if ((cutDir[1] > 0.0) != (slantAngle < 0.0))
-            //   {
-            //      // Move the cut loop forward to make sure that the width of the opening will also be cut out
-            //      XYZ moveVec = cutDir * unScaledDepth;
-            //      tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
-            //      // Flip the cut direction so that the cut would intersect the wall
-            //      cutDir = cutDir.Negate();
-            //   }
-
-            //   // Calculate the distance from the top of the insert to the wall
-            //   double distToWall = openingHeight * Math.Tan(Math.Abs(slantAngle));
-            //   // Add wall's width to make sure the cut reaches its opposite side
-            //   unScaledDepth = distToWall + wall.Width;
-
-            //   loopLcs.BasisX = XYZ.BasisZ;
-            //}
+            loopLcs.BasisX = localExtrusionDir;
 
             // In IFC the local X direction should point upwards along the wall, 
             // and local Y direction should point horizontally along the wall.

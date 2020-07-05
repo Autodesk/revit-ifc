@@ -94,16 +94,6 @@ namespace Revit.IFC.Export.Utility
                if (!string.IsNullOrEmpty(propValue))
                {
                   propertyValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE) as string;
-                  //string propValuetrim = propValue.Trim();
-                  //// This is kind of hack to quickly check whether we need to parse the parameter or not
-                  //if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
-                  //{
-                  //   ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
-                  //   propertyValue = pResv.GetStringValue();
-                  //   if (string.IsNullOrEmpty(propertyValue))
-                  //      propertyValue = propValue;    // return the original propValue (un-trimmed)
-                  //}
-                  //else
                   if (string.IsNullOrEmpty(propertyValue))
                      propertyValue = propValue;    // return the original propValue (un-trimmed)
 
@@ -185,19 +175,12 @@ namespace Revit.IFC.Export.Utility
                      string propValue;
                      propValue = parameter.AsString();
 
-                     //string propValuetrim = propValue.Trim();
-                     //// This is kind of hack to quickly check whether we need to parse the parameter or not
-                     //if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
-                     //{
-                     //   ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
-                     //   int? propertyIntValue = pResv.GetIntValue();
                      int? propertyIntValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE) as int?;
                      if (propertyIntValue.HasValue)
                      {
                         propertyValue = propertyIntValue.Value;
                         return parameter;
                      }
-                     //}
 
                      try
                      {
@@ -250,20 +233,12 @@ namespace Revit.IFC.Export.Utility
                      string propValue;
                      propValue = parameter.AsString();
 
-                     //string propValuetrim = propValue.Trim();
-                     //// This is kind of hack to quickly check whether we need to parse the parameter or not
-                     //if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
-                     //{
-                        //ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
-                        //double? propertyDoubleValue = pResv.GetDoubleValue();
-                        double? propertyDoubleValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE) as double?;
-                        if (propertyDoubleValue.HasValue)
-                        {
-                           propertyValue = propertyDoubleValue.Value;
-                           return parameter;
-                        }
-                     //}
-
+                     double? propertyDoubleValue = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE) as double?;
+                     if (propertyDoubleValue.HasValue)
+                     {
+                        propertyValue = propertyDoubleValue.Value;
+                        return parameter;
+                     }
                      return Double.TryParse(propValue, out propertyValue) ? parameter : null;
                   }
             }
