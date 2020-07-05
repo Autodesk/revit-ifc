@@ -74,6 +74,7 @@ PARAM	4a37833e-59c1-4532-8fe0-2a0f5214c2ad	FrameDepth[Type]	LENGTH		2	1	IfcPosit
 PARAM	b552f0e3-1bc1-496b-a001-08b1f4a9a251	FrameThickness[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	158072f2-668a-4f50-ad27-f74384061856	IfcExportAs[Type]	TEXT		2	1	Parameter to instruct export to assign a specific entity	1
 PARAM	0511d859-633b-4326-a8ea-5ab75dc311c0	IfcExportType[Type]	TEXT		2	1	Parameter to assign PredefinedType	1
+PARAM	b5696f65-8fbb-45af-9014-746ebb0150ef	IfcSingleMaterialOverride[Type]	TEXT		2	1	Parameter to force a single material assignment when there is only a single material	1
 PARAM	1e5288bb-b350-4e22-8198-42d5c82f1ac7	RequestSourceType[Type]	TEXT		2	1	PEnum_RequestSourceType	1
 PARAM	5e29b11b-22d4-4b45-b06c-f4069a9a18b8	RequestSourceLabel[Type]	TEXT		2	1	IfcLabel	1
 PARAM	ddd31e1d-8da8-45ee-ba51-24d5445e11cb	RequestSourceName[Type]	MULTILINETEXT		2	1	IfcPerson	1
