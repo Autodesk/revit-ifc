@@ -121,15 +121,18 @@ namespace Revit.IFC.Export.Utility
       /// </returns>
       public static string GetOverrideStringValue(Element element, string paramName, string originalValue)
       {
-         //string strValue;
+         string propertyValue;
          string paramValue;
 
          if (element != null)
          {
             if (ParameterUtil.GetStringValueFromElement(element, paramName, out paramValue) != null && !string.IsNullOrEmpty(paramValue))
             {
-               string propertyValue = ParamExprResolver.CheckForParameterExpr(paramValue, element, paramName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE) as string;
-               if (string.IsNullOrEmpty(propertyValue))
+               object strValue = null;
+               ParamExprResolver.CheckForParameterExpr(paramValue, element, paramName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE, out strValue);
+               if (strValue != null && strValue is string)
+                  propertyValue = strValue as string;
+               else
                   propertyValue = paramValue;   // return the original paramValue
 
                //return paramValue;
