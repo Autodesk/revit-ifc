@@ -155,6 +155,8 @@ namespace BIM.IFC.Export.UI
                      configuration.StoreIFCGUID = bool.Parse(configMap[s_setupStoreIFCGUID]);
                   if (configMap.ContainsKey(s_setupExportRoomsInView))
                      configuration.ExportRoomsInView = bool.Parse(configMap[s_setupExportRoomsInView]);
+                  if (configMap.ContainsKey(s_setupSitePlacement))
+                     configuration.SitePlacement = int.Parse(configMap[s_setupSitePlacement]);
                   if (configMap.ContainsKey(s_includeSteelElements))
                      configuration.IncludeSteelElements = bool.Parse(configMap[s_includeSteelElements]);
                   if (configMap.ContainsKey(s_useTypeNameOnlyForIfcType))
