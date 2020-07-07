@@ -196,6 +196,10 @@ namespace Revit.IFC.Common.Extensions
                address = addressItemSaved;
                return true;
             }
+            else
+            {
+               addressItemSaved.AssignAddressToBuilding = true;
+            }
          }
 
          address = addressItemSaved;
