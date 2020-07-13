@@ -104,42 +104,42 @@ namespace Revit.IFC.Import.Data
          protected set { m_Document = value; }
       }
 
-      private static void StoreIFCCreatorInfo(IFCFile ifcFile, ProjectInfo projectInfo)
-      {
-         if (ifcFile == null || projectInfo == null)
-            return;
+      //private static void StoreIFCCreatorInfo(IFCFile ifcFile, ProjectInfo projectInfo)
+      //{
+      //   if (ifcFile == null || projectInfo == null)
+      //      return;
 
-         IList<IFCAnyHandle> applications = ifcFile.GetInstances(IFCAnyHandleUtil.GetIFCEntityTypeName(IFCEntityType.IfcApplication), false);
-         IFCAnyHandle application = applications.FirstOrDefault();
-         if (application != null)
-         {
-            var appFullName = IFCAnyHandleUtil.GetStringAttribute(application, "ApplicationFullName");
-            if (!string.IsNullOrEmpty(appFullName))
-            {
-               var applicationNameId = new ElementId(BuiltInParameter.IFC_APPLICATION_NAME);
-               ExporterIFCUtils.AddValueString(projectInfo, applicationNameId, appFullName);
-            }
+      //   IList<IFCAnyHandle> applications = ifcFile.GetInstances(IFCAnyHandleUtil.GetIFCEntityTypeName(IFCEntityType.IfcApplication), false);
+      //   IFCAnyHandle application = applications.FirstOrDefault();
+      //   if (application != null)
+      //   {
+      //      var appFullName = IFCAnyHandleUtil.GetStringAttribute(application, "ApplicationFullName");
+      //      if (!string.IsNullOrEmpty(appFullName))
+      //      {
+      //         var applicationNameId = new ElementId(BuiltInParameter.IFC_APPLICATION_NAME);
+      //         ExporterIFCUtils.AddValueString(projectInfo, applicationNameId, appFullName);
+      //      }
 
-            var appVersion = IFCAnyHandleUtil.GetStringAttribute(application, "Version");
-            if (!string.IsNullOrEmpty(appVersion))
-            {
-               var applicationVersionId = new ElementId(BuiltInParameter.IFC_APPLICATION_VERSION);
-               ExporterIFCUtils.AddValueString(projectInfo, applicationVersionId, appVersion);
-            }
-         }
+      //      var appVersion = IFCAnyHandleUtil.GetStringAttribute(application, "Version");
+      //      if (!string.IsNullOrEmpty(appVersion))
+      //      {
+      //         var applicationVersionId = new ElementId(BuiltInParameter.IFC_APPLICATION_VERSION);
+      //         ExporterIFCUtils.AddValueString(projectInfo, applicationVersionId, appVersion);
+      //      }
+      //   }
 
-         IList<IFCAnyHandle> organisations = ifcFile.GetInstances(IFCAnyHandleUtil.GetIFCEntityTypeName(IFCEntityType.IfcOrganization), false);
-         IFCAnyHandle organisation = organisations.LastOrDefault();
-         if (organisation != null)
-         {
-            var orgName = IFCAnyHandleUtil.GetStringAttribute(organisation, "Name");
-            if (!string.IsNullOrEmpty(orgName))
-            {
-               var organizationId = new ElementId(BuiltInParameter.IFC_ORGANIZATION);
-               ExporterIFCUtils.AddValueString(projectInfo, organizationId, orgName);
-            }
-         }
-      }
+      //   IList<IFCAnyHandle> organisations = ifcFile.GetInstances(IFCAnyHandleUtil.GetIFCEntityTypeName(IFCEntityType.IfcOrganization), false);
+      //   IFCAnyHandle organisation = organisations.LastOrDefault();
+      //   if (organisation != null)
+      //   {
+      //      var orgName = IFCAnyHandleUtil.GetStringAttribute(organisation, "Name");
+      //      if (!string.IsNullOrEmpty(orgName))
+      //      {
+      //         var organizationId = new ElementId(BuiltInParameter.IFC_ORGANIZATION);
+      //         ExporterIFCUtils.AddValueString(projectInfo, organizationId, orgName);
+      //      }
+      //   }
+      //}
 
       /// <summary>
       /// Do a Parametric import operation.
@@ -171,7 +171,7 @@ namespace Revit.IFC.Import.Data
 
             importer.ProcessIFCProject(project);
 
-            StoreIFCCreatorInfo(ifcFile, importer.Document.ProjectInformation);
+            //StoreIFCCreatorInfo(ifcFile, importer.Document.ProjectInformation);
          }
          finally
          {
@@ -436,8 +436,8 @@ namespace Revit.IFC.Import.Data
                success = ProcessReference();
                break;
          }
-         if (success)
-            StoreIFCCreatorInfo(m_IfcFile, doc.ProjectInformation);
+         //if (success)
+         //   StoreIFCCreatorInfo(m_IfcFile, doc.ProjectInformation);
 
          return success;
       }
