@@ -18,7 +18,7 @@
 //
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using Autodesk.UI.Windows;
+using Autodesk.Revit.WPFFramework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -739,6 +739,12 @@ namespace BIM.IFC.Export.UI
 
          // The SelectionChanged event will be activated after the Modify Config Window is closed
          currentSelectedSetup.SelectionChanged += currentSelectedSetup_SelectionChanged;
+      }
+
+      private void OnHelpClick(object sender, RoutedEventArgs e)
+      {
+         // handle using the context help command handler
+         e.Handled = OnContextHelp();
       }
    }
 }

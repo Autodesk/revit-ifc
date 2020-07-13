@@ -20,7 +20,7 @@
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.UI;
-using Autodesk.UI.Windows;
+using Autodesk.Revit.WPFFramework;
 using Microsoft.Win32;
 using Revit.IFC.Common.Utility;
 using System;

@@ -24,19 +24,19 @@
     <Reference Include="RevitAPI">
       <SpecificVersion>False</SpecificVersion>
 	  <!-- Change to your directory of Revit installation. -->
-      <HintPath>C:\Program Files\Autodesk\Revit 2020\RevitAPI.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2019\RevitAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIIFC">
       <SpecificVersion>False</SpecificVersion>
 	  <!-- Change to your directory of Revit installation. -->
-      <HintPath>C:\Program Files\Autodesk\Revit 2020\RevitAPIIFC.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2019\RevitAPIIFC.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
 	  <!-- Change to your directory of Revit installation. -->
-      <HintPath>C:\Program Files\Autodesk\Revit 2020\Newtonsoft.Json.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2019\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>  
