@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="F2D04214-ECD3-4EC3-8631-DC9C7A6FD777" Name="Revit IFC 2020" Language="1033" Version="20.2.0.0" Manufacturer="Autodesk" UpgradeCode="4B4E5B70-E64C-4BC6-A149-2CE79BB899D1">
+   <Product Id="A553F44D-80A7-45A6-BF2D-255CF0D0EC5A" Name="Revit IFC 2020" Language="1033" Version="20.2.0.0" Manufacturer="Autodesk" UpgradeCode="FA32511B-DA6D-405A-B735-33C943730AAB">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />

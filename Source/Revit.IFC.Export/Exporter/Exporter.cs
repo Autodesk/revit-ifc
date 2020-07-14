@@ -2162,8 +2162,13 @@ namespace Revit.IFC.Export.Exporter
             // Reuse almost all of the information above to write out extra copies of the IFC file.
             if (exportOptionsCache.ExportingLink)
             {
-               IFCAnyHandle buildingHnd = ExporterCacheManager.BuildingHandle;
-               IFCAnyHandle buildingPlacement = IFCAnyHandleUtil.GetObjectPlacement(buildingHnd);
+               IFCAnyHandle buildingOrSiteHnd = ExporterCacheManager.BuildingHandle;
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(buildingOrSiteHnd))
+               {
+                  buildingOrSiteHnd = ExporterCacheManager.SiteHandle;
+               }
+
+               IFCAnyHandle buildingOrSitePlacement = IFCAnyHandleUtil.GetObjectPlacement(buildingOrSiteHnd);
 
                int numRevitLinkInstances = exportOptionsCache.GetNumLinkInstanceInfos();
                for (int ii = 1; ii < numRevitLinkInstances; ii++)
@@ -2174,7 +2179,7 @@ namespace Revit.IFC.Export.Exporter
                   // Note that we overwrite this here for subsequent writes, which clobbers the
                   // original placement, so the IfcBuilding handle is suspect after this without
                   // explicit cleanup.
-                  GeometryUtil.SetRelativePlacement(buildingPlacement, relativePlacement);
+                  GeometryUtil.SetRelativePlacement(buildingOrSitePlacement, relativePlacement);
 
                   writeOptions.FileName = exportOptionsCache.GetLinkInstanceFileName(ii);
                   file.Write(writeOptions);
