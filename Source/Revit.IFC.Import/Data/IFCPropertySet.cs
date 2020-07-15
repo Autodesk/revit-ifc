@@ -154,7 +154,6 @@ namespace Revit.IFC.Import.Data
                m_UnitToParameterType[UnitType.UT_Mass] = ParameterType.Mass;
                m_UnitToParameterType[UnitType.UT_MassPerUnitArea] = ParameterType.MassPerUnitLength;
                m_UnitToParameterType[UnitType.UT_Moment_of_Inertia] = ParameterType.MomentOfInertia;
-               m_UnitToParameterType[UnitType.UT_Area] = ParameterType.Area;
                m_UnitToParameterType[UnitType.UT_Period] = ParameterType.Period;
                m_UnitToParameterType[UnitType.UT_Pulsation] = ParameterType.Pulsation;
                m_UnitToParameterType[UnitType.UT_Reinforcement_Area] = ParameterType.ReinforcementArea;
