@@ -233,7 +233,7 @@ namespace Revit.IFC.Export.Utility
                   {
                      string propValue = parameter.AsString();
                      object dblValue = null;
-                     ParamExprResolver pResv = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE, 
+                     ParamExprResolver pResv = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.DOUBLEVALUE, 
                               out dblValue);
                      
                      if (dblValue != null && dblValue is double)
