@@ -11,9 +11,9 @@ rem It is necessary to add the Wix bin directory to the system path temporarily 
 SET PATH=%PATH%;%WixRoot%
 
 candle.exe -dProjectDir=%2 -ext WixUtilExtension %2Product.wxs 
-light.exe -ext WixUtilExtension -out RevitIFC20.2.0.0.msi product.wixobj -ext WixUIExtension
+light.exe -ext WixUtilExtension -out RevitIFC20.2.1.0.msi product.wixobj -ext WixUIExtension
 
-copy RevitIFC20.2.0.0.msi %1..\Releasex64
-del RevitIFC20.2.0.0.msi
+copy RevitIFC20.2.1.0.msi %1..\Releasex64
+del RevitIFC20.2.1.0.msi
 
-echo %1..\Releasex64\RevitIFC20.2.0.0.msi
+echo %1..\Releasex64\RevitIFC20.2.1.0.msi

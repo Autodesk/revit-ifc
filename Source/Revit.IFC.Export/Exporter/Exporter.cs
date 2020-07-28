@@ -2615,7 +2615,8 @@ namespace Revit.IFC.Export.Exporter
             }
 
             XYZ basePointPosition = null;
-            BasePoint basePoint = BasePoint.GetSurveyPoint(doc);
+            //BasePoint basePoint = BasePoint.GetSurveyPoint(doc);
+            BasePoint basePoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_SharedBasePoint)).First() as BasePoint;
             if (basePoint != null)
                basePointPosition = basePoint.Position;
 
