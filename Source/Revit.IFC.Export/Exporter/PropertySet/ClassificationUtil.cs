@@ -102,8 +102,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          int numCustomCodes = ExporterCacheManager.ClassificationCache.CustomClassificationCodeNames.Count;
 
          // Note that we do the "custom" nodes first, and then the 10 standard ones.
-         // We will try to process all of the custom ones, but will stop processing the standard ones when
-         // we find a blank one.
          Element elementType = element.Document.GetElement(element.GetTypeId());
          while (standardPass <= 10)
          {
@@ -125,13 +123,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                standardPass++;
             }
 
+            // Skip if the parameter is not present in the element parameters
+            if (!element.ParametersMap.Contains(classificationCodeFieldName))
+               continue;
+
             if (ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, classificationCodeFieldName,
                out paramClassificationCode) == null)
             {
-               // We expect users to use the classification codes in sequential order for the 10 standard codes.
-               // If a standard classification code is missing, we will assume that there are no others to check.
-               if (standardPass > 0)
-                  break;
                continue;
             }
 
