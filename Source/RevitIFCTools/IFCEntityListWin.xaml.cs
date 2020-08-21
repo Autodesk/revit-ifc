@@ -147,7 +147,7 @@ namespace RevitIFCTools
             ProcessPsetDefinition procPdef = new ProcessPsetDefinition(logF);
 
             string schemaName = f.Name.Replace(".xsd", "");
-            IDictionary<string, IfcSchemaEntityNode> entDict = IfcSchemaEntityTree.GetEntityDictFor(schemaName);
+            IDictionary<string, IfcSchemaEntityNode> entDict = IfcSchemaEntityTree.GetEntityDictFor(f.Name);
             IFCEntityAndPsetList schemaEntities = new IFCEntityAndPsetList();
             schemaEntities.Version = schemaName;
             schemaEntities.EntityList = new HashSet<IFCEntityInfo>();
@@ -277,31 +277,31 @@ namespace RevitIFCTools
          {
             string entityList;
             entityList = "using System;"
-                        + "\nusing System.Collections.Generic;"
-                        + "\nusing System.Linq;"
-                        + "\nusing System.Text;"
-                        + "\n"
-                        + "\nnamespace Revit.IFC.Common.Enums"
-                        + "\n{"
-                        + "\n\t/// <summary>"
-                        + "\n\t/// IFC entity types. Combining IFC2x3 and IFC4 (Add2) entities."
-                        + "\n\t/// List of Entities for IFC2x is found in IFC2xEntityType.cs"
-                        + "\n\t/// List of Entities for IFC4 is found in IFC4EntityType.cs"
-                        + "\n\t/// </summary>"
-                        + "\n\tpublic enum IFCEntityType"
-                        + "\n\t{";
+                        + "\r\nusing System.Collections.Generic;"
+                        + "\r\nusing System.Linq;"
+                        + "\r\nusing System.Text;"
+                        + "\r\n"
+                        + "\r\nnamespace Revit.IFC.Common.Enums"
+                        + "\r\n{"
+                        + "\r\n   /// <summary>"
+                        + "\r\n   /// IFC entity types. Combining IFC2x3 and IFC4 (Add2) entities."
+                        + "\r\n   /// List of Entities for IFC2x is found in IFC2xEntityType.cs"
+                        + "\r\n   /// List of Entities for IFC4 is found in IFC4EntityType.cs"
+                        + "\r\n   /// </summary>"
+                        + "\r\n   public enum IFCEntityType"
+                        + "\r\n   {";
 
             foreach (string ent in aggregateEntities)
             {
-               entityList += "\n\t\t/// <summary>"
-                           + "\n\t\t/// IFC Entity " + ent + " enumeration"
-                           + "\n\t\t/// </summary>"
-                           + "\n\t\t" + ent + ",\n";
+               entityList += "\r\n      /// <summary>"
+                           + "\r\n      /// IFC Entity " + ent + " enumeration"
+                           + "\r\n      /// </summary>"
+                           + "\r\n      " + ent + ",\n";
             }
-            entityList += "\n\t\tUnknown,"
-                        + "\n\t\tDontExport"
-                        + "\n\t}"
-                        + "\n}";
+            entityList += "\r\n      Unknown,"
+                        + "\r\n      DontExport"
+                        + "\r\n   }"
+                        + "\r\n}";
             System.IO.File.WriteAllText(outputFolder + @"\IFCEntityType.cs", entityList);
          }
 
@@ -309,29 +309,29 @@ namespace RevitIFCTools
          {
             string entityList;
             entityList = "using System;"
-                        + "\nusing System.Collections.Generic;"
-                        + "\nusing System.Linq;"
-                        + "\nusing System.Text;"
-                        + "\n"
-                        + "\nnamespace Revit.IFC.Common.Enums." + fxEntityNPset.Version
-                        + "\n{"
-                        + "\n\t/// <summary>"
-                        + "\n\t/// List of Entities for " + fxEntityNPset.Version
-                        + "\n\t/// </summary>"
-                        + "\n\tpublic enum EntityType"
-                        + "\n\t{";
+                        + "\r\nusing System.Collections.Generic;"
+                        + "\r\nusing System.Linq;"
+                        + "\r\nusing System.Text;"
+                        + "\r\n"
+                        + "\r\nnamespace Revit.IFC.Common.Enums." + fxEntityNPset.Version
+                        + "\r\n{"
+                        + "\r\n   /// <summary>"
+                        + "\r\n   /// List of Entities for " + fxEntityNPset.Version
+                        + "\r\n   /// </summary>"
+                        + "\r\n   public enum EntityType"
+                        + "\r\n   {";
 
             foreach (IFCEntityInfo entInfo in fxEntityNPset.EntityList)
             {
-               entityList += "\n\t\t/// <summary>"
-                           + "\n\t\t/// IFC Entity " + entInfo.Entity + " enumeration"
-                           + "\n\t\t/// </summary>"
-                           + "\n\t\t" + entInfo.Entity + ",\n";
+               entityList += "\r\n      /// <summary>"
+                           + "\r\n      /// IFC Entity " + entInfo.Entity + " enumeration"
+                           + "\r\n      /// </summary>"
+                           + "\r\n      " + entInfo.Entity + ",\r\n";
             }
-            entityList += "\n\t\tUnknown,"
-                        + "\n\t\tDontExport"
-                        + "\n\t}"
-                        + "\n}";
+            entityList += "\r\n      Unknown,"
+                        + "\r\n      DontExport"
+                        + "\r\n   }"
+                        + "\r\n}";
             System.IO.File.WriteAllText(outputFolder + @"\" + fxEntityNPset.Version + "EntityType.cs", entityList);
          }
 
@@ -426,7 +426,7 @@ namespace RevitIFCTools
 
          exportInfo.SetValueWithPair(entType, predefType);
          textBox_type2.Text = "Instance: " + exportInfo.ExportInstance + "\nType: " + exportInfo.ExportType 
-               + "\nPredefinedTpe: " + exportInfo.ValidatedPredefinedType;
+               + "\r\nPredefinedTpe: " + exportInfo.ValidatedPredefinedType;
       }
    }
 }

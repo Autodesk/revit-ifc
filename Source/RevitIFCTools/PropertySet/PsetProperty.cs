@@ -33,18 +33,18 @@ namespace RevitIFCTools.PropertySet
       public IList<NameAlias> NameAliases { get; set; }
       public override string ToString()
       {
-         string propStr = "\n\tPropertyName:\t" + Name;
+         string propStr = "\r\n\tPropertyName:\t" + Name;
          if (!string.IsNullOrEmpty(IfdGuid))
-            propStr += "\n\tIfdGuid:\t" + IfdGuid;
+            propStr += "\r\n\tIfdGuid:\t" + IfdGuid;
          if (NameAliases != null)
          {
             foreach (NameAlias na in NameAliases)
             {
-               propStr += "\n\t\tAliases:\tlang: " + na.lang + " :\t" + na.Alias;
+               propStr += "\r\n\t\tAliases:\tlang: " + na.lang + " :\t" + na.Alias;
             }
          }
          if (PropertyType != null)
-            propStr += "\n\tPropertyType:\t" + PropertyType.ToString();
+            propStr += "\r\n\tPropertyType:\t" + PropertyType.ToString();
          return propStr;
       }
    }

@@ -33,7 +33,7 @@ namespace RevitIFCTools.PropertySet
       {
          string compT = Name;
          foreach (PsetProperty p in Properties)
-            compT += "\n" + p.ToString();
+            compT += "\r\n" + p.ToString();
          return compT;
       }
    }
