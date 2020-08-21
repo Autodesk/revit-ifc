@@ -125,7 +125,7 @@ namespace RevitIFCTools
          var psdFolders = new DirectoryInfo(textBox_PSDSourceDir.Text).GetDirectories("psd", SearchOption.AllDirectories);
 
          string dirName = Path.GetDirectoryName(textBox_OutputFile.Text);
-         string penumFileName = Path.GetFileNameWithoutExtension(textBox_OutputFile.Text);
+         string penumFileName = Path.Combine(dirName, Path.GetFileNameWithoutExtension(textBox_OutputFile.Text));
 
          if (File.Exists(textBox_OutputFile.Text))
             File.Delete(textBox_OutputFile.Text);
@@ -153,8 +153,8 @@ namespace RevitIFCTools
          outF.WriteLine("");
          outF.WriteLine("namespace Revit.IFC.Export.Exporter");
          outF.WriteLine("{");
-         outF.WriteLine("\tpartial class ExporterInitializer");
-         outF.WriteLine("\t{");
+         outF.WriteLine("   partial class ExporterInitializer");
+         outF.WriteLine("   {");
 
          // Collect all Pset definition for psd folders
          foreach (DirectoryInfo psd in psdFolders)
@@ -162,7 +162,7 @@ namespace RevitIFCTools
             string schemaFolder = psd.FullName.Remove(0, textBox_PSDSourceDir.Text.Length + 1).Split('\\')[0];
 
 #if DEBUG
-            logF.WriteLine("\n*** Processing " + schemaFolder);
+            logF.WriteLine("\r\n*** Processing " + schemaFolder);
 #endif
             foreach (DirectoryInfo subDir in psd.GetDirectories())
             {
@@ -180,10 +180,10 @@ namespace RevitIFCTools
                pSetDump += "**** Property Set Name: " + psetDefEntry.Key;
                foreach (VersionSpecificPropertyDef vPdef in psetDefEntry.Value)
                {
-                  pSetDump += "\n  ===> IfcVersion: " + vPdef.IfcVersion;
-                  pSetDump += "\n" + vPdef.PropertySetDef.ToString() + "\n";
+                  pSetDump += "\r\n  ===> IfcVersion: " + vPdef.IfcVersion;
+                  pSetDump += "\r\n" + vPdef.PropertySetDef.ToString() + "\r\n";
                }
-               pSetDump += "\n\n";
+               pSetDump += "\r\n\n";
             }
             string dumpDir = Path.GetDirectoryName(textBox_OutputFile.Text);
             string dumpFile = Path.GetFileNameWithoutExtension(textBox_OutputFile.Text) + ".txt";
@@ -198,44 +198,44 @@ namespace RevitIFCTools
          }
 
          // Method to initialize all the propertysets
-         outF.WriteLine("\t\tpublic static void InitCommonPropertySets(IList<IList<PropertySetDescription>> propertySets)");
-         outF.WriteLine("\t\t{");
-         outF.WriteLine("\t\t\tIList<PropertySetDescription> commonPropertySets = new List<PropertySetDescription>();");
+         outF.WriteLine("      public static void InitCommonPropertySets(IList<IList<PropertySetDescription>> propertySets)");
+         outF.WriteLine("      {");
+         outF.WriteLine("         IList<PropertySetDescription> commonPropertySets = new List<PropertySetDescription>();");
          foreach (KeyValuePair<string, IList<VersionSpecificPropertyDef>> psetDefEntry in procPsetDef.allPDefDict)
          {
-            outF.WriteLine("\t\t\tInit" + psetDefEntry.Key + "(commonPropertySets);");
+            outF.WriteLine("         Init" + psetDefEntry.Key + "(commonPropertySets);");
          }
-         outF.WriteLine("\n\t\t\tpropertySets.Add(commonPropertySets);");
-         outF.WriteLine("\t\t}");
+         outF.WriteLine("\r\n         propertySets.Add(commonPropertySets);");
+         outF.WriteLine("      }");
          outF.WriteLine("");
 
          // For generated codes and shared parameters
          foreach (KeyValuePair<string, IList<VersionSpecificPropertyDef>> psetDefEntry in procPsetDef.allPDefDict)
          {
             string psetName = psetDefEntry.Key;
-            outF.WriteLine("\t\tprivate static void Init" + psetName + "(IList<PropertySetDescription> commonPropertySets)");
-            outF.WriteLine("\t\t{");
+            outF.WriteLine("      private static void Init" + psetName + "(IList<PropertySetDescription> commonPropertySets)");
+            outF.WriteLine("      {");
 
             string varName = psetDefEntry.Key.Replace("Pset_", "propertySet");
 
-            outF.WriteLine("\t\t\tPropertySetDescription {0} = new PropertySetDescription();", varName);
+            outF.WriteLine("         PropertySetDescription {0} = new PropertySetDescription();", varName);
 
             string psetEnumStr = psetName.Replace("PSet_", "PSet");
             try
             {
                Revit.IFC.Export.Toolkit.IFCCommonPSets psetEnum = (Revit.IFC.Export.Toolkit.IFCCommonPSets)Enum.Parse(typeof(Revit.IFC.Export.Toolkit.IFCCommonPSets), psetEnumStr);
-               outF.WriteLine("\t\t\t{0}.SubElementIndex = (int)IFCCommonPSets.{1};", varName, psetName.Replace("PSet_", "PSet"));
+               outF.WriteLine("         {0}.SubElementIndex = (int)IFCCommonPSets.{1};", varName, psetName.Replace("PSet_", "PSet"));
             }
             catch(ArgumentException)
             {
 #if DEBUG
-               logF.WriteLine("\t%Info: " + psetEnumStr + " is not defined in Revit.IFC.Export.Toolkit.IFCCommonPSets.");
+               logF.WriteLine("   %Info: " + psetEnumStr + " is not defined in Revit.IFC.Export.Toolkit.IFCCommonPSets.");
 #endif
             }
 
-            outF.WriteLine("\t\t\t{0}.Name = \"{1}\";", varName, psetName);
-            outF.WriteLine("\t\t\tPropertySetEntry ifcPSE = null;");
-            outF.WriteLine("\t\t\tType calcType = null;");
+            outF.WriteLine("         {0}.Name = \"{1}\";", varName, psetName);
+            outF.WriteLine("         PropertySetEntry ifcPSE = null;");
+            outF.WriteLine("         Type calcType = null;");
 
             foreach (VersionSpecificPropertyDef vspecPDef in psetDefEntry.Value)
             {
@@ -243,86 +243,86 @@ namespace RevitIFCTools
 
                if (vspecPDef.IfcVersion.Equals("IFC2X2", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
-                  outF.WriteLine("\t\t\t{");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         {");
                   foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   {
                      string applEnt2 = applEnt;
                      if (string.IsNullOrEmpty(applEnt))
                         applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                     outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                     outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                   }
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
-                     outF.WriteLine("\t\t\t\t{0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                     outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("\t\t\t\t{0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                else if (vspecPDef.IfcVersion.Equals("IFC2X3TC1", StringComparison.CurrentCultureIgnoreCase)
                   || vspecPDef.IfcVersion.Equals("IFC2X3_TC1", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
-                  outF.WriteLine("\t\t\t{");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         {");
                   foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   {
                      string applEnt2 = applEnt;
                      if (string.IsNullOrEmpty(applEnt))
                         applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                     outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                     outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                   }
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
-                     outF.WriteLine("\t\t\t\t{0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                     outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("\t\t\t\t{0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                //else if (vspecPDef.IfcVersion.Equals("IFC4_ADD1"))
                //{
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD1", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
-                  outF.WriteLine("\t\t\t{");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         {");
                   foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   {
                      string applEnt2 = applEnt;
                      if (string.IsNullOrEmpty(applEnt))
                         applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                     outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                     outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                   }
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
-                     outF.WriteLine("\t\t\t\t{0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                     outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("\t\t\t\t{0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD2", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
-                  outF.WriteLine("\t\t\t{");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         {");
                   foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   {
                      string applEnt2 = applEnt;
                      if (string.IsNullOrEmpty(applEnt))
                         applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                     outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                     outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                   }
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
-                     outF.WriteLine("\t\t\t\t{0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                     outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("\t\t\t\t{0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("\t\t\tif (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
-                  outF.WriteLine("\t\t\t{");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         {");
                   foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   {
                      string applEnt2 = applEnt;
                      if (string.IsNullOrEmpty(applEnt))
                         applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                     outF.WriteLine("\t\t\t\t{0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                     outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
                   }
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
-                     outF.WriteLine("\t\t\t\t{0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                     outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("\t\t\t\t{0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                else
                {
@@ -342,28 +342,29 @@ namespace RevitIFCTools
                      // For complex property the properties will be flattened by using <Pset>.<Property>.<SubProperty>
                      foreach (PsetProperty propCx in complexProp.Properties)
                      {
-                        string prefixName = pDef.Name + "." + prop.Name;
+                        string prefixName = prop.Name;
                         procPsetDef.processSimpleProperty(outF, propCx, prefixName, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef, penumFileName);
                      }
                   }
                   else
                   {
-                     procPsetDef.processSimpleProperty(outF, prop, pDef.Name, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef, penumFileName);
+                     procPsetDef.processSimpleProperty(outF, prop, null, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef, penumFileName);
                   }                    
                }
-               outF.WriteLine("\t\t\t}");
+               outF.WriteLine("         }");
             }
 
-            outF.WriteLine("\t\t\tif (ifcPSE != null)");
-            outF.WriteLine("\t\t\t{");
-            //outF.WriteLine("\t\t\t\t{0}.Name = \"{1}\";", varName, psetName);
-            outF.WriteLine("\t\t\t\tcommonPropertySets.Add({0});", varName);
-            outF.WriteLine("\t\t\t}");
-            outF.WriteLine("\t\t}");
-            outF.WriteLine("\n");
+            outF.WriteLine("         if (ifcPSE != null)");
+            outF.WriteLine("         {");
+            //outF.WriteLine("............{0}.Name = \"{1}\";", varName, psetName);
+            outF.WriteLine("            commonPropertySets.Add({0});", varName);
+            outF.WriteLine("         }");
+            outF.WriteLine("      }");
+            outF.WriteLine("");
+            outF.WriteLine("");
          }
 
-         outF.WriteLine("\t}");
+         outF.WriteLine("   }");
          outF.WriteLine("}");
          outF.Close();
          procPsetDef.endWriteEnumFile();
