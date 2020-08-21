@@ -37,8 +37,8 @@ namespace RevitIFCTools.PropertySet
          {
             tv += "Expression:\t" + Expression;
          }
-         tv += "\nDefiningValueType:\t" + DefiningValueType;
-         tv += "\nDefinedValueType:\t" + DefinedValueType;
+         tv += "\r\nDefiningValueType:\t" + DefiningValueType;
+         tv += "\r\nDefinedValueType:\t" + DefinedValueType;
          return tv;
       }
    }

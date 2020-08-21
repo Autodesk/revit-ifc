@@ -36,10 +36,10 @@ namespace RevitIFCTools.PropertySet
          {
             foreach (PropertyEnumItem ei in EnumDef)
             {
-               dt += "\n\tEnum:\t" + ei.EnumItem;
+               dt += "\r\n\tEnum:\t" + ei.EnumItem;
                foreach (NameAlias na in ei.Aliases)
                {
-                  dt += "\n\t\tAliases:\tlang: " + na.lang + " :\t" + na.Alias;
+                  dt += "\r\n\t\tAliases:\tlang: " + na.lang + " :\t" + na.Alias;
                }
             }
          }
