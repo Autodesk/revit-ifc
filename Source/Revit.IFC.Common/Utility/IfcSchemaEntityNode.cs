@@ -132,18 +132,29 @@ namespace Revit.IFC.Common.Utility
       /// </summary>
       /// <param name="superTypeName">the name of the potential supertype</param>
       /// <returns>true: is the valid supertype</returns>
-      public bool IsSubTypeOf(string superTypeName)
+      public bool IsSubTypeOf(string superTypeName, bool strict = true)
       {
          bool res = false;
 
          IfcSchemaEntityNode node = this;
          while (node.superType != null)
          {
-            if (string.Compare(superTypeName, node.superType.Name) == 0)
+            if (strict)
             {
-               res = true;
-               break;
+               if (superTypeName.Equals(node.superType.Name, StringComparison.InvariantCultureIgnoreCase))
+               {
+                  return true;
+               }
             }
+            else
+            {
+               if (superTypeName.Equals(node.superType.Name, StringComparison.InvariantCultureIgnoreCase)
+                  || superTypeName.Equals(node.Name, StringComparison.InvariantCultureIgnoreCase))
+               {
+                  return true;
+               }
+            }
+            
             node = node.superType;
          }
 
