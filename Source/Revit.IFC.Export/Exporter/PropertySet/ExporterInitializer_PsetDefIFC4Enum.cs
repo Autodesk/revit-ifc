@@ -16,7 +16,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
 {
 
 
-   public enum PEnum_Status {
+   public enum PEnum_ElementStatus {
       NEW,
       EXISTING,
       DEMOLISH,
@@ -69,15 +69,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
       SINGLEDUCT,
       DUALDUCT,
       MULTIZONE,
-      OTHER,
-      NOTKNOWN,
-      UNSET}
-
-   public enum PEnum_ElementStatus {
-      NEW,
-      EXISTING,
-      DEMOLISH,
-      TEMPORARY,
       OTHER,
       NOTKNOWN,
       UNSET}
@@ -570,7 +561,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
       NOTKNOWN,
       UNSET}
 
-   public enum PEnum_PipeConnection {
+   public enum PEnum_CooledBeamPipeConnection {
       STRAIGHT,
       RIGHT,
       LEFT,
@@ -579,7 +570,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
       NOTKNOWN,
       UNSET}
 
-   public enum PEnum_WaterFlowControlSystemType {
+   public enum PEnum_CooledBeamWaterFlowControlSystemType {
       NONE,
       ONOFFVALVE,
       _2WAYVALVE,
@@ -588,7 +579,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
       NOTKNOWN,
       UNSET}
 
-   public enum PEnum_IntegratedLightingType {
+   public enum PEnum_CooledBeamIntegratedLightingType {
       NONE,
       DIRECT,
       INDIRECT,
@@ -1521,21 +1512,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
       USERDEFINED,
       NOTDEFINED}
 
-   public enum PEnum_BarSurface {
-      PLAIN,
-      TEXTURED,
-      OTHER,
-      USERDEFINED,
-      NOTDEFINED}
-
-   public enum PEnum_LongitudinalBarSurface {
-      PLAIN,
-      TEXTURED,
-      OTHER,
-      USERDEFINED,
-      NOTDEFINED}
-
-   public enum PEnum_TransverseBarSurface {
+   public enum PEnum_ReinforcementBarSurface {
       PLAIN,
       TEXTURED,
       OTHER,
