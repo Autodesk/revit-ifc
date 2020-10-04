@@ -20,20 +20,6 @@
     <DebugType>none</DebugType>
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="RevitAPI">
-      <SpecificVersion>False</SpecificVersion>
-	  <!-- Change to your directory of Revit installation. -->
-      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="RevitAPIIFC">
-      <SpecificVersion>False</SpecificVersion>
-	  <!-- Change to your directory of Revit installation. -->
-      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIIFC.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>  
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup />
 </Project>
