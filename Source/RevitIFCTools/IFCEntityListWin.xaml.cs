@@ -231,7 +231,7 @@ namespace RevitIFCTools
                   continue;
 
                // Collect only the IfcProducts or IfcGroup
-               if (!ent.Value.IsSubTypeOf("IfcProduct") && !ent.Value.IsSubTypeOf("IfcGroup") && !ent.Value.IsSubTypeOf("IfcTypeProduct"))
+               if (!ent.Value.IsSubTypeOf("IfcProduct") && !ent.Value.IsSubTypeOf("IfcGroup", strict:false) && !ent.Value.IsSubTypeOf("IfcTypeProduct"))
                   continue;
 
                entInfo.Entity = ent.Key;
