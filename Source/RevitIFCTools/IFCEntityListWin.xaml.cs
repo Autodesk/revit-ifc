@@ -153,19 +153,40 @@ namespace RevitIFCTools
             schemaEntities.EntityList = new HashSet<IFCEntityInfo>();
             schemaEntities.PsetDefList = new HashSet<IFCPropertySetDef>();
 
+            Dictionary<ItemsInPsetQtoDefs, string> keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.PROPERTYSET];
             DirectoryInfo[] psdFolders = new DirectoryInfo(System.IO.Path.Combine(textBox_folderLocation.Text, schemaName)).GetDirectories("psd", SearchOption.AllDirectories);
             DirectoryInfo[] underpsdFolders = psdFolders[0].GetDirectories();
             if (underpsdFolders.Count() > 0)
             {
                foreach (DirectoryInfo subDir in psdFolders[0].GetDirectories())
                {
-                  procPdef.ProcessSchemaPsetDef(schemaName, subDir);
+                  procPdef.ProcessSchemaPsetDef(schemaName, subDir, keywordsToProcess);
                }
             }
             else
             {
-               procPdef.ProcessSchemaPsetDef(schemaName, psdFolders[0]);
+               procPdef.ProcessSchemaPsetDef(schemaName, psdFolders[0], keywordsToProcess);
             }
+
+            keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.QTOSET];
+            DirectoryInfo[] qtoFolders = new DirectoryInfo(System.IO.Path.Combine(textBox_folderLocation.Text, schemaName)).GetDirectories("qto", SearchOption.AllDirectories);
+            if (qtoFolders.Count() > 0)
+            {
+               DirectoryInfo[] underqtoFolders = qtoFolders[0].GetDirectories();
+               if (underqtoFolders.Count() > 0)
+               {
+                  foreach (DirectoryInfo subDir in qtoFolders[0].GetDirectories())
+                  {
+                     procPdef.ProcessSchemaPsetDef(schemaName, subDir, keywordsToProcess);
+                  }
+               }
+               else
+               {
+                  procPdef.ProcessSchemaPsetDef(schemaName, qtoFolders[0], keywordsToProcess);
+               }
+            }
+
+            procPdef.ProcessPredefinedPsets(schemaName);
 
             //Collect information on applicable Psets for Entity
             IDictionary<string, HashSet<string>> entPsetDict = new Dictionary<string, HashSet<string>>();
