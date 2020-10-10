@@ -123,6 +123,7 @@
     <Compile Include="PropertySet\PropertyTableValue.cs" />
     <Compile Include="PropertySet\PsetDefinition.cs" />
     <Compile Include="PropertySet\PsetProperty.cs" />
+    <Compile Include="RevitIFCToolsEnum.cs" />
     <Page Include="IFCEntityListWin.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
