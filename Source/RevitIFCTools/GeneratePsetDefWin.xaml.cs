@@ -123,6 +123,7 @@ namespace RevitIFCTools
             return;
 
          var psdFolders = new DirectoryInfo(textBox_PSDSourceDir.Text).GetDirectories("psd", SearchOption.AllDirectories);
+         //var qtoFolders = new DirectoryInfo(textBox_PSDSourceDir.Text).GetDirectories("qto", SearchOption.AllDirectories);
 
          string dirName = Path.GetDirectoryName(textBox_OutputFile.Text);
          string penumFileName = Path.Combine(dirName, Path.GetFileNameWithoutExtension(textBox_OutputFile.Text));
@@ -157,6 +158,8 @@ namespace RevitIFCTools
          outF.WriteLine("   {");
 
          // Collect all Pset definition for psd folders
+         Dictionary<ItemsInPsetQtoDefs, string> keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.PROPERTYSET];
+         HashSet<string> IfcSchemaProcessed = new HashSet<string>();
          foreach (DirectoryInfo psd in psdFolders)
          {
             string schemaFolder = psd.FullName.Remove(0, textBox_PSDSourceDir.Text.Length + 1).Split('\\')[0];
@@ -166,10 +169,36 @@ namespace RevitIFCTools
 #endif
             foreach (DirectoryInfo subDir in psd.GetDirectories())
             {
-               procPsetDef.ProcessSchemaPsetDef(schemaFolder, subDir);
+               procPsetDef.ProcessSchemaPsetDef(schemaFolder, subDir, keywordsToProcess);
             }
-            procPsetDef.ProcessSchemaPsetDef(schemaFolder, psd);
+            procPsetDef.ProcessSchemaPsetDef(schemaFolder, psd, keywordsToProcess);
+            IfcSchemaProcessed.Add(schemaFolder);
          }
+
+//         // Collect all QtoSet definition for qto folders
+//         keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.QTOSET];
+//         foreach (DirectoryInfo qto in qtoFolders)
+//         {
+//            string schemaFolder = qto.FullName.Remove(0, textBox_PSDSourceDir.Text.Length + 1).Split('\\')[0];
+
+//#if DEBUG
+//            logF.WriteLine("\r\n*** Processing " + schemaFolder);
+//#endif
+//            foreach (DirectoryInfo subDir in qto.GetDirectories())
+//            {
+//               procPsetDef.ProcessSchemaPsetDef(schemaFolder, subDir, keywordsToProcess);
+//            }
+//            procPsetDef.ProcessSchemaPsetDef(schemaFolder, qto, keywordsToProcess);
+//         }
+
+//         // Process predefined properties
+//         foreach (string schemaName in IfcSchemaProcessed)
+//         {
+//#if DEBUG
+//            logF.WriteLine("\r\n*** Processing " + schemaName);
+//#endif
+//            procPsetDef.ProcessPredefinedPsets(schemaName);
+//         }
 
          // For testing purpose: Dump all the propertyset definition in a text file
          if (checkBox_Dump.IsChecked.HasValue && checkBox_Dump.IsChecked.Value)
