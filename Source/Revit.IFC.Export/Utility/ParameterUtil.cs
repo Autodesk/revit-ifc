@@ -88,20 +88,14 @@ namespace Revit.IFC.Export.Utility
 
             if (parameter.HasValue)
             {
-               string propValue;
-               propValue = parameter.AsString();
-
+               string propValue = parameter.AsString();
+               object strValue = null;
                if (!string.IsNullOrEmpty(propValue))
                {
-                  string propValuetrim = propValue.Trim();
-                  // This is kind of hack to quickly check whether we need to parse the parameter or not
-                  if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
-                  {
-                     ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
-                     propertyValue = pResv.GetStringValue();
-                     if (string.IsNullOrEmpty(propertyValue))
-                        propertyValue = propValue;    // return the original propValue (un-trimmed)
-                  }
+                  ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE,
+                           out strValue);
+                  if (strValue != null && strValue is string)
+                     propertyValue = strValue as string;
                   else
                      propertyValue = propValue;    // return the original propValue (un-trimmed)
 
@@ -180,31 +174,17 @@ namespace Revit.IFC.Export.Utility
                   }
                case StorageType.String:
                   {
-                     string propValue;
-                     propValue = parameter.AsString();
+                     string propValue = parameter.AsString();
+                     object intValue = null;
+                     ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.INTVALUE,
+                              out intValue);
 
-                     string propValuetrim = propValue.Trim();
-                     // This is kind of hack to quickly check whether we need to parse the parameter or not
-                     if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
+                     if (intValue != null && intValue is int)
                      {
-                        ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
-                        int? propertyIntValue = pResv.GetIntValue();
-                        if (propertyIntValue.HasValue)
-                        {
-                           propertyValue = propertyIntValue.Value;
-                           return parameter;
-                        }
-                     }
-
-                     try
-                     {
-                        propertyValue = Convert.ToInt32(parameter.AsString());
+                        propertyValue = (int) intValue;
                         return parameter;
                      }
-                     catch
-                     {
-                        return null;
-                     }
+                     return int.TryParse(propValue, out propertyValue) ? parameter : null;
                   }
             }
          }
@@ -251,25 +231,19 @@ namespace Revit.IFC.Export.Utility
                   return parameter;
                case StorageType.String:
                   {
-                     string propValue;
-                     propValue = parameter.AsString();
-
-                     string propValuetrim = propValue.Trim();
-                     // This is kind of hack to quickly check whether we need to parse the parameter or not
-                     if (((propValuetrim.Length > 1 && propValuetrim[0] == '{') || (propValuetrim.Length > 2 && propValuetrim[1] == '{')) && (propValuetrim[propValuetrim.Length - 1] == '}'))
+                     string propValue = parameter.AsString();
+                     object dblValue = null;
+                     ParamExprResolver pResv = ParamExprResolver.CheckForParameterExpr(propValue, element, propertyName, ParamExprResolver.ExpectedValueEnum.DOUBLEVALUE, 
+                              out dblValue);
+                     
+                     if (dblValue != null && dblValue is double)
                      {
-                        ParamExprResolver pResv = new ParamExprResolver(element, propertyName, propValuetrim);
-                        double? propertyDoubleValue = pResv.GetDoubleValue();
-                        if (propertyDoubleValue.HasValue)
-                        {
-                           propertyValue = propertyDoubleValue.Value;
-                           unitType = pResv.UnitType;
-                           return parameter;
-                        }
+                        propertyValue = (double) dblValue;
+                        unitType = pResv.UnitType;
+                        return parameter;
                      }
-
-                     return Double.TryParse(propValue, out propertyValue) ? parameter : null;
-                  }
+	                  return Double.TryParse(propValue, out propertyValue) ? parameter : null;
+	               }
             }
          }
 
