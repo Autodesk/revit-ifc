@@ -65,9 +65,11 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums\CommonEnum.cs" />
     <Compile Include="Enums\IFC2xEntityType.cs" />
     <Compile Include="Enums\IFC4EntityType.cs" />
     <Compile Include="Enums\IFCEntityType.cs" />
+    <Compile Include="Enums\IFCKnownMVDAndER.cs" />
     <Compile Include="Extension\IFCAddress.cs" />
     <Compile Include="Extension\IFCAddressItem.cs" />
     <Compile Include="Extension\IFCClassification.cs" />

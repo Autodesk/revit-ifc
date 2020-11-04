@@ -454,7 +454,6 @@ namespace Revit.IFC.Export.Exporter
             KeyValuePair<double, ElementId> levelGrid = new KeyValuePair<double, ElementId>(0.0, ElementId.InvalidElementId);
             if (levelIds.Count != 0)
             {
-               levelGrid = levelIds.First();
                foreach (KeyValuePair<double, ElementId> levelInfo in levelIds)
                {
                   //if (levelInfo.Key + eps >= minPoint.Z)
@@ -462,16 +461,15 @@ namespace Revit.IFC.Export.Exporter
                   if (minPoint.Z <= levelInfo.Key + eps && levelInfo.Key - eps <= maxPoint.Z)
                   {
                      levelGrid = levelInfo;
-                     break;
+
+                     string gridName = NamingUtil.GetNameOverride(element, "Default Grid");
+                     Tuple<ElementId, string> gridGroupKey = new Tuple<ElementId, string>(levelGrid.Value, gridName);
+                     if (!levelGrids.ContainsKey(gridGroupKey))
+                        levelGrids.Add(gridGroupKey, new List<Grid>());
+                     levelGrids[gridGroupKey].Add(grid);
                   }
                }
-            }
-
-            string gridName = NamingUtil.GetNameOverride(element, "Default Grid");
-            Tuple<ElementId, string> gridGroupKey = new Tuple<ElementId, string>(levelGrid.Value, gridName);
-            if (!levelGrids.ContainsKey(gridGroupKey))
-               levelGrids.Add(gridGroupKey, new List<Grid>());
-            levelGrids[gridGroupKey].Add(grid);
+            } 
          }
          return levelGrids;
       }

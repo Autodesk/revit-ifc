@@ -26,6 +26,8 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Extensions;
+using System.Text.RegularExpressions;
 
 
 // CQ_TODO: Better storage of pipe insulation options
@@ -37,14 +39,7 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class ExportOptionsCache
    {
-      public enum SiteTransformBasis
-      {
-         Shared = 0,
-         Site = 1,
-         Project = 2,
-         Internal = 3,
-      }
-      public SiteTransformBasis SiteTransformation { get; set; } = ExportOptionsCache.SiteTransformBasis.Shared;
+      public SiteTransformBasis SiteTransformation { get; set; } = SiteTransformBasis.Shared;
 
       public enum ExportTessellationLevel
       {
@@ -55,19 +50,24 @@ namespace Revit.IFC.Export.Utility
       }
 
       private GUIDOptions m_GUIDOptions;
-      //private bool m_ExportAs4_ADD1;
-      //private bool m_ExportAs4_ADD2;
       private IFCVersion m_FileVersion;
       public COBieCompanyInfo COBieCompanyInfo { get; set; }
       public COBieProjectInfo COBieProjectInfo { get; set; }
-      public bool IncludeSteelElements { get; set; }
+      public IFCFileHeaderItem FileHeaderItem { get; private set; } 
+      private KnownERNames m_exchangeRequirement = KnownERNames.NotDefined;
+      public KnownERNames GetExchangeRequirement { get { return m_exchangeRequirement; } }
+      public string GeoRefCRSName { get; private set; }
+      public string GeoRefCRSDesc { get; private set; }
+      public string GeoRefEPSGCode { get; private set; }
+      public string GeoRefGeodeticDatum { get; private set; }
+      public string GeoRefMapUnit { get; private set; }
+
+   public bool IncludeSteelElements { get; set; }
 
       /// Private default constructor.
       /// </summary>
       private ExportOptionsCache()
       {
-         //m_ExportAs4_ADD1 = false;
-         //m_ExportAs4_ADD2 = false;
       }
 
 
@@ -290,14 +290,12 @@ namespace Revit.IFC.Export.Utility
          bool? includeIfcSiteElevation = OptionsUtil.GetNamedBooleanOption(options, "IncludeSiteElevation");
          cache.IncludeSiteElevation = includeIfcSiteElevation != null ? includeIfcSiteElevation.Value : false;
 
-         int? siteTransformation = OptionsUtil.GetNamedIntOption(options, "SitePlacement");
-         if (siteTransformation != null)
+         string siteTransformation = OptionsUtil.GetNamedStringOption(options, "SitePlacement");
+         if (!string.IsNullOrEmpty(siteTransformation))
          {
-            try
-            {
-               cache.SiteTransformation = (SiteTransformBasis)siteTransformation;
-            }
-            catch (Exception) { }
+            SiteTransformBasis trfBasis = SiteTransformBasis.Shared;
+            if (Enum.TryParse(siteTransformation, out trfBasis))
+               cache.SiteTransformation = trfBasis;
          }
          // We have two ways to get information about level of detail:
          // 1. The old Boolean "UseCoarseTessellation".
@@ -377,6 +375,18 @@ namespace Revit.IFC.Export.Utility
          // "FileType" - note - setting is not respected yet
          ParseFileType(options, cache);
 
+         string erName = OptionsUtil.GetNamedStringOption(options, "ExchangeRequirement");
+         Enum.TryParse(erName, out cache.m_exchangeRequirement);
+         // Get stored File Header information from the UI and use it for export
+         IFCFileHeaderItem fileHeaderItem = new IFCFileHeaderItem();
+         new IFCFileHeader().GetSavedFileHeader(document, out fileHeaderItem);
+         if (cache.m_exchangeRequirement != KnownERNames.NotDefined)
+         {
+            // It override existing value (if present) in the saved FileHeader, to use the selected ER from the UI
+            fileHeaderItem.FileDescription = "ExchangeRequirement [" + erName + "]";
+         }
+         cache.FileHeaderItem = fileHeaderItem;
+
          cache.SelectedConfigName = OptionsUtil.GetNamedStringOption(options, "ConfigName");
 
          cache.SelectedParametermappingTableName = OptionsUtil.GetNamedStringOption(options, "ExportUserDefinedParameterMappingFileName");
@@ -418,6 +428,14 @@ namespace Revit.IFC.Export.Utility
          }
 
          cache.ExcludeFilter = OptionsUtil.GetNamedStringOption(options, "ExcludeFilter");
+         
+         // Geo Reference info
+         cache.GeoRefCRSName = OptionsUtil.GetNamedStringOption(options, "GeoRefCRSName");
+         cache.GeoRefCRSDesc = OptionsUtil.GetNamedStringOption(options, "GeoRefCRSDesc");
+         cache.GeoRefEPSGCode = OptionsUtil.GetNamedStringOption(options, "GeoRefEPSGCode");
+         cache.GeoRefGeodeticDatum = OptionsUtil.GetNamedStringOption(options, "GeoRefGeodeticDatum");
+         cache.GeoRefMapUnit = OptionsUtil.GetNamedStringOption(options, "GeoRefMapUnit");
+
          return cache;
       }
 
@@ -505,7 +523,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return FileVersion == IFCVersion.IFC2x2 || FileVersion == IFCVersion.IFCBCA;
+            return OptionsUtil.ExportAs2x2(FileVersion);
          }
       }
 
@@ -516,7 +534,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC2x3);
+            return OptionsUtil.ExportAs2x3CoordinationView1(FileVersion);
          }
       }
 
@@ -527,7 +545,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC2x3CV2);
+            return OptionsUtil.ExportAs2x3CoordinationView2(FileVersion);
          }
       }
 
@@ -538,7 +556,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC2x3FM);
+            return OptionsUtil.ExportAs2x3ExtendedFMHandoverView(FileVersion);
          }
       }
 
@@ -550,7 +568,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC2x3CV2) || (FileVersion == IFCVersion.IFC4) || (FileVersion == IFCVersion.IFC2x3FM) || (FileVersion == IFCVersion.IFC2x3BFM);
+            return OptionsUtil.ExportAsCoordinationView2(FileVersion); 
          }
       }
 
@@ -561,7 +579,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return ExportAs2x2 || ExportAs2x3;
+            return OptionsUtil.ExportAsOlderThanIFC4(FileVersion);
          }
       }
 
@@ -572,43 +590,9 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC4) || (FileVersion == IFCVersion.IFC4RV) || (FileVersion == IFCVersion.IFC4DTV);
+            return OptionsUtil.ExportAs4(FileVersion);
          }
       }
-
-      /// <summary>
-      /// Identifies if the schema used is IFC4 Addendum 1 in place of IFC4 for version 4.
-      /// </summary>
-      //public bool ExportAs4_ADD1
-      //{
-      //   get
-      //   {
-      //      return m_ExportAs4_ADD1;
-      //   }
-
-      //   set
-      //   {
-      //      m_ExportAs4_ADD1 = value;
-      //   }
-
-      //}
-
-      ///// <summary>
-      ///// Identifies if the schema used is IFC4 Addendum 2 in place of IFC4 for version 4.
-      ///// </summary>
-      //public bool ExportAs4_ADD2
-      //{
-      //   get
-      //   {
-      //      return m_ExportAs4_ADD2;
-      //   }
-
-      //   set
-      //   {
-      //      m_ExportAs4_ADD2 = value;
-      //   }
-
-      //}
 
       /// <summary>
       /// Identifies if the schema used is IFC 2x3.
@@ -617,7 +601,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return ((FileVersion == IFCVersion.IFC2x3) || (FileVersion == IFCVersion.IFCCOBIE) || (FileVersion == IFCVersion.IFC2x3FM) || (FileVersion == IFCVersion.IFC2x3BFM) || (FileVersion == IFCVersion.IFC2x3CV2));
+            return OptionsUtil.ExportAs2x3(FileVersion);
          }
       }
 
@@ -628,7 +612,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFCCOBIE);
+            return OptionsUtil.ExportAsCOBIE(FileVersion);
          }
       }
 
@@ -639,7 +623,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC4RV);
+            return OptionsUtil.ExportAs4ReferenceView(FileVersion);
          }
       }
 
@@ -650,7 +634,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC4DTV);
+            return OptionsUtil.ExportAs4DesignTransferView(FileVersion);
          }
       }
 
@@ -662,7 +646,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC4);
+            return OptionsUtil.ExportAs4General(FileVersion);
          }
       }
 
@@ -673,7 +657,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (FileVersion == IFCVersion.IFC2x3FM);
+            return OptionsUtil.ExportAs2x3COBIE24DesignDeliverable(FileVersion);
          }
       }
 
@@ -1086,26 +1070,6 @@ namespace Revit.IFC.Export.Utility
             }
             _excludesElementSet = exclSet;
             return _excludesElementSet;
-         }
-      }
-
-      /// <summary>
-      /// Checks if using IFCBCA - Building Code Authority code checking.
-      /// </summary>
-      /// <param name="exportOptionsCache">The export options cache.</param>
-      /// <returns>True if it is, false otherwise.</returns>
-      public bool DoCodeChecking()
-      {
-         switch (FileVersion)
-         {
-            case IFCVersion.IFC2x2:
-               {
-                  return WallAndColumnSplitting;
-               }
-            case IFCVersion.IFCBCA:
-               return true;
-            default:
-               return false;
          }
       }
    }

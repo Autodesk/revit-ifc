@@ -153,7 +153,7 @@ namespace Revit.IFC.Export.Utility
          if (expr.nodePropertyValue is Int32)
          {
             if (unaryOp.Equals("-"))
-               ret.nodePropertyValue = -1 * ((int) expr.nodePropertyValue);
+               ret.nodePropertyValue = -1 * ((int)expr.nodePropertyValue);
             else
                ret.nodePropertyValue = (int)expr.nodePropertyValue;
          }
@@ -245,7 +245,7 @@ namespace Revit.IFC.Export.Utility
             if (ops.MULTIPLY() != null)
                ret.nodePropertyValue = (int)expr1.nodePropertyValue * (int)expr2.nodePropertyValue;
             if (ops.DIVIDE() != null)
-               ret.nodePropertyValue = (double) ((int)expr1.nodePropertyValue / (int)expr2.nodePropertyValue);
+               ret.nodePropertyValue = (double)((int)expr1.nodePropertyValue / (int)expr2.nodePropertyValue);
             if (ops.ADDITION() != null)
                ret.nodePropertyValue = (int)expr1.nodePropertyValue + (int)expr2.nodePropertyValue;
             if (ops.SUBTRACT() != null)
@@ -294,6 +294,7 @@ namespace Revit.IFC.Export.Utility
          return ret;
       }
 
+
       /// <summary>
       /// Check for a special parameter value containing the Paramater expression
       /// </summary>
@@ -337,7 +338,7 @@ namespace Revit.IFC.Export.Utility
       {
          // This is kind of hack to quickly check whether we need to parse the parameter or not by checking that the value is enclosed by "{ }" or "u{ }" for unique value
          string paramValuetrim = paramValue.Trim();
-         return ((paramValuetrim.Length > 1 && paramValuetrim[0] == '{') 
+         return ((paramValuetrim.Length > 1 && paramValuetrim[0] == '{')
             || (paramValuetrim.Length > 2 && paramValuetrim[1] == '{')) && (paramValuetrim[paramValuetrim.Length - 1] == '}');
       }
    }

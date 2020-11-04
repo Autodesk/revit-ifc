@@ -70,7 +70,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="lcs">The local transform for this entity.</param>
       /// <returns>An XYZ representing a unit direction vector, or null if no direction is suggested.</returns>
       /// <remarks>If the 2nd attempt fails, a third attempt will be done with a shift in the opposite direction.</remarks>
-      public XYZ GetSuggestedShiftDirection(Transform lcs)
+      public virtual XYZ GetSuggestedShiftDirection(Transform lcs)
       {
          // Sub-classes may have a better guess.
          return null;

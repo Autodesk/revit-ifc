@@ -129,10 +129,11 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The element being created.</param>
+      /// <param name="category">The category of the element being created.</param>
       /// <param name="parameterMap">The parameters of the element.  Cached for performance.</param>
       /// <param name="propertySetName">The name of the containing property set.</param>
       /// <param name="createdParameters">The names of the created parameters.</param>
-      public void Create(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
+      public void Create(Document doc, Element element, Category category, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
       {
          // Try to get the single value from the property.  If we can't get a single value, get it as a string.
          IFCPropertyValue propertyValueToUse = null;
@@ -251,23 +252,23 @@ namespace Revit.IFC.Import.Data
                case IFCDataPrimitiveType.String:
                case IFCDataPrimitiveType.Enumeration:
                case IFCDataPrimitiveType.Binary:
-                  created = IFCPropertySet.AddParameterString(doc, element, parameterName, stringValueToUse, Id);
+                  created = IFCPropertySet.AddParameterString(doc, element, category, parameterName, stringValueToUse, Id);
                   break;
                case IFCDataPrimitiveType.Integer:
-                  created = IFCPropertySet.AddParameterInt(doc, element, parameterName, intValueToUse.Value, Id);
+                  created = IFCPropertySet.AddParameterInt(doc, element, category, parameterName, intValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Boolean:
-                  created = IFCPropertySet.AddParameterBoolean(doc, element, parameterName, boolValueToUse.Value, Id);
+                  created = IFCPropertySet.AddParameterBoolean(doc, element, category, parameterName, boolValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Logical:
                   if (logicalValueToUse != IFCLogical.Unknown)
-                     created = IFCPropertySet.AddParameterBoolean(doc, element, parameterName, (logicalValueToUse == IFCLogical.True), Id);
+                     created = IFCPropertySet.AddParameterBoolean(doc, element, category, parameterName, (logicalValueToUse == IFCLogical.True), Id);
                   break;
                case IFCDataPrimitiveType.Double:
-                  created = IFCPropertySet.AddParameterDouble(doc, element, parameterName, specTypeId, doubleValueToUse.Value, Id);
+                  created = IFCPropertySet.AddParameterDouble(doc, element, category, parameterName, specTypeId, doubleValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Instance:
-                  created = IFCPropertySet.AddParameterElementId(doc, element, parameterName, elementIdValueToUse, Id);
+                  created = IFCPropertySet.AddParameterElementId(doc, element, category, parameterName, elementIdValueToUse, Id);
                   break;
             }
 

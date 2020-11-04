@@ -128,7 +128,7 @@ namespace Revit.IFC.Import.Data
 
          IFCData lowerBoundValue = ifcPropertyBoundedValue.GetAttribute("LowerBoundValue");
          IFCData upperBoundValue = ifcPropertyBoundedValue.GetAttribute("UpperBoundValue");
-         IFCData setPointValue = (IFCImportFile.TheFile.SchemaVersion > IFCSchemaVersion.IFC2x3) ? ifcPropertyBoundedValue.GetAttribute("SetPointValue") : null;
+         IFCData setPointValue = (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete)) ? ifcPropertyBoundedValue.GetAttribute("SetPointValue") : null;
 
          if (lowerBoundValue != null)
          {

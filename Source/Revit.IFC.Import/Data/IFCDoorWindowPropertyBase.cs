@@ -98,9 +98,10 @@ namespace Revit.IFC.Import.Data
       /// <param name="element">The element being created.</param>
       /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
       /// <returns>The name of the property set created, if it was created, and a Boolean value if it should be added to the property set list.</returns>
-      public override KeyValuePair<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
+      public override Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
       {
          IDictionary<string, IFCData> parametersToAdd = new Dictionary<string, IFCData>();
+         Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
 
          foreach (KeyValuePair<Tuple<string, ForgeTypeId, AllowedValues>, double> property in DoubleProperties)
          {
@@ -108,7 +109,7 @@ namespace Revit.IFC.Import.Data
             Parameter existingParameter = null;
             if (!parameterGroupMap.TryFindParameter(name, out existingParameter))
             {
-               IFCPropertySet.AddParameterDouble(doc, element, name, property.Key.Item2, property.Value, Id);
+               IFCPropertySet.AddParameterDouble(doc, element, category, name, property.Key.Item2, property.Value, Id);
                continue;
             }
 
@@ -132,7 +133,7 @@ namespace Revit.IFC.Import.Data
             Parameter existingParameter = null;
             if (!parameterGroupMap.TryFindParameter(name, out existingParameter))
             {
-               IFCPropertySet.AddParameterString(doc, element, property.Key, property.Value, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, property.Key, property.Value, Id);
                continue;
             }
 
@@ -147,7 +148,7 @@ namespace Revit.IFC.Import.Data
             }
          }
 
-         return new KeyValuePair<string, bool>("\"" + EntityType.ToString() + "\"", false);
+         return Tuple.Create("\"" + EntityType.ToString() + "\"", false);
       }
    }
 }

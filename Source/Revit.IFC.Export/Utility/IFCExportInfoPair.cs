@@ -235,6 +235,7 @@ namespace Revit.IFC.Export.Utility
                typeName += "Type";
 
             IFCEntityType entityType = ElementFilteringUtil.GetValidIFCEntityType(typeName);
+
             if (entityType != IFCEntityType.UnKnown)
                m_ExportType = entityType;
             else

@@ -88,7 +88,7 @@ namespace Revit.IFC.Common.Utility
             return;
          IFCAnyHandleUtil.SetAttribute(handle, "Name", value);
       }
-                  
+
       /// <summary>
       /// New overload for ValidateSubType that takes the string of IFC type instead of the enum. String must be validated first!
       /// </summary>
@@ -983,7 +983,7 @@ namespace Revit.IFC.Common.Utility
          }
          return aggregateAttribute;
       }
-      
+
       /// <summary>
       /// Gets aggregate attribute instance values from a handle.
       /// </summary>
@@ -1085,7 +1085,7 @@ namespace Revit.IFC.Common.Utility
 
          return null;
       }
-      
+
       /// <summary>
       /// Gets an arbitrary instance attribute.
       /// </summary>
@@ -1710,14 +1710,30 @@ namespace Revit.IFC.Common.Utility
       {
          return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
       }
+
+      /// <summary>
+      /// Checks if the handle is an entity of either the given type or one of its sub-types.
+      /// </summary>
+      /// <param name="handle">The handle to be checked.</param>
+      /// <param name="handleType">The handle's entity type.</param>
+      /// <param name="type">The entity type to be checked against.</param>
+      /// <returns>True if the handle entity is an entity of either the given type or one of its sub-types.</returns>
+      /// <remarks>Use this function if the handle's entity type has already been generated.
+      /// If so, we can avoid the call into native code.</remarks>
+      public static bool IsValidSubTypeOf(IFCAnyHandle handle, IFCEntityType handleType, IFCEntityType type)
+      {
+         if (handleType == type)
+            return true;
+         return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
+      }
       
       /// <summary>
-             /// Updates the project information.
-             /// </summary>
-             /// <param name="project">The project.</param>
-             /// <param name="projectName">The project name.</param>
-             /// <param name="projectLongName">The project long name.</param>
-             /// <param name="projectStatus">The project status.</param>
+       /// Updates the project information.
+       /// </summary>
+       /// <param name="project">The project.</param>
+       /// <param name="projectName">The project name.</param>
+       /// <param name="projectLongName">The project long name.</param>
+       /// <param name="projectStatus">The project status.</param>
       public static void UpdateProject(IFCAnyHandle project, string projectName, string projectLongName,
           string projectStatus)
       {

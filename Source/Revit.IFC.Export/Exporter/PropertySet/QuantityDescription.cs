@@ -19,11 +19,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Utility;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
@@ -37,37 +37,82 @@ namespace Revit.IFC.Export.Exporter.PropertySet
    public class QuantityDescription : Description
    {
       /// <summary>
-      /// Defines the building code used to calculate the element quantity.
-      /// </summary>
-      string m_MethodOfMeasurement = String.Empty;
-
-      /// <summary>
       /// The quantities stored in this quantity description.
       /// </summary>
-      IList<QuantityEntry> m_Entries = new List<QuantityEntry>();
+      IList<QuantityEntry> Entries { get; set; } = new List<QuantityEntry>();
 
       /// <summary>
       /// Defines the building code used to calculate the element quantity.
       /// </summary>
-      public string MethodOfMeasurement
+      public string MethodOfMeasurement { get; set; } = String.Empty;
+
+      public QuantityDescription() { }
+
+      public QuantityDescription(string baseName, IFCEntityType entityType)
       {
-         get
-         {
-            return m_MethodOfMeasurement;
-         }
-         set
-         {
-            m_MethodOfMeasurement = value;
-         }
+         string quantitySetName = (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4) ?
+             "BaseQuantities" : "Qto_" + baseName + "BaseQuantities";
+         Name = quantitySetName;
+         EntityTypes.Add(entityType);
       }
 
       /// <summary>
-      /// The entries stored in this property set description.
+      /// Add an entry to the quantity map.
       /// </summary>
+      /// <param name="entry">The entry to add.</param>
       public void AddEntry(QuantityEntry entry)
       {
          entry.UpdateEntry();
-         m_Entries.Add(entry);
+         Entries.Add(entry);
+      }
+
+      /// <summary>
+      /// Add an entry to the quantity map.
+      /// </summary>
+      /// <param name="name">The name of the quantity.</param>
+      /// <param name="quantityType">The type of the quantity (e.g., area).</param>
+      /// <param name="calculator">The PropertyCalculator that can generate the quantity value.</param>
+      /// <param name="ignoreInternalValue">If true, don't use the internal Revit parameter of the same name.</param>
+      /// <remarks>
+      /// <paramref name="ignoreInternalValue"/> is intended to be used when the internal Revit 
+      /// parameter of the same name (depending on localization) has a different calculation than
+      /// the IFC parameter.
+      /// </remarks>
+      public QuantityEntry AddEntry(string name, QuantityType quantityType, 
+         PropertyCalculator calculator, bool ignoreInternalValue = false)
+      {
+         QuantityEntry ifcQE = new QuantityEntry(name);
+         ifcQE.QuantityType = quantityType;
+         ifcQE.PropertyCalculator = calculator;
+         ifcQE.IgnoreInternalValue = ignoreInternalValue;
+         AddEntry(ifcQE);
+         return ifcQE;
+      }
+
+      /// <summary>
+      /// Add an entry to the quantity map.
+      /// </summary>
+      /// <param name="entry">The entry to add.</param>
+      public QuantityEntry AddEntry(string name, string revitName, QuantityType quantityType, PropertyCalculator calculator)
+      {
+         QuantityEntry ifcQE = new QuantityEntry(name, revitName);
+         ifcQE.QuantityType = quantityType;
+         ifcQE.PropertyCalculator = calculator;
+         AddEntry(ifcQE);
+         return ifcQE;
+      }
+
+      /// <summary>
+      /// Add an entry to the quantity map.
+      /// </summary>
+      /// <param name="entry">The entry to add.</param>
+      public QuantityEntry AddEntry(string name, BuiltInParameter parameterName, QuantityType quantityType, PropertyCalculator calculator)
+      {
+         QuantityEntry ifcQE = new QuantityEntry(name, parameterName);
+         ifcQE.QuantityType = quantityType;
+         ifcQE.PropertyCalculator = calculator;
+         AddEntry(ifcQE);
+         return ifcQE;
       }
 
       /// <summary>
@@ -82,7 +127,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public HashSet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData ifcParams, Element elementToUse, ElementType elemTypeToUse)
       {
          HashSet<IFCAnyHandle> props = new HashSet<IFCAnyHandle>();
-         foreach (QuantityEntry entry in m_Entries)
+         foreach (QuantityEntry entry in Entries)
          {
             IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, ifcParams, elementToUse, elemTypeToUse);
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))

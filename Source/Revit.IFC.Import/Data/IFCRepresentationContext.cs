@@ -181,7 +181,7 @@ namespace Revit.IFC.Import.Data
             else
                WorldCoordinateSystem = Transform.Identity;
 
-            bool isSubContext = IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x2 &&
+            bool isSubContext = IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) &&
                IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationContext, IFCEntityType.IfcGeometricRepresentationSubContext);
 
             if (isSubContext)

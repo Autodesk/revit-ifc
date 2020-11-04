@@ -1535,120 +1535,82 @@ namespace Revit.IFC.Export.Exporter
          bool exportToCOBIE = ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE;
 
          // Extra zone information, since Revit doesn't have architectural zones.
-         int val = 0;
-         string basePropZoneName = "ZoneName";
-         string basePropZoneObjectType = "ZoneObjectType";
-         string basePropZoneDescription = "ZoneDescription";
-         string basePropZoneLongName = "ZoneLongName";
-         string basePropZoneClassificationCode = "ZoneClassificationCode";
+         ZoneInfoFinder zoneInfoFinder = new ZoneInfoFinder();
 
          // While a room may contain multiple zones, only one can have the extra parameters.  We will allow the first zone encountered
          // to be defined by them. If we require defining multiple zones in one room, then the code below should be modified to modify the 
          // names of the shared parameters to include the index of the appropriate room.
          bool exportedExtraZoneInformation = false;
 
-         while (++val < 1000)   // prevent infinite loop.
+         do
          {
-            string propZoneName, propZoneObjectType, propZoneDescription, propZoneLongName, propZoneClassificationCode;
-            if (val == 1)
-            {
-               propZoneName = basePropZoneName;
-               propZoneObjectType = basePropZoneObjectType;
-               propZoneDescription = basePropZoneDescription;
-               propZoneLongName = basePropZoneLongName;
-               propZoneClassificationCode = basePropZoneClassificationCode;
-            }
-            else
-            {
-               propZoneName = basePropZoneName + " " + val;
-               propZoneObjectType = basePropZoneObjectType + " " + val;
-               propZoneDescription = basePropZoneDescription + " " + val;
-               propZoneLongName = basePropZoneLongName + " " + val;
-               propZoneClassificationCode = basePropZoneClassificationCode + " " + val;
-            }
-
-            string zoneName;
-            string zoneObjectType;
-            string zoneDescription;
-            string zoneLongName;
-            string zoneClassificationCode;
-            IFCAnyHandle zoneClassificationReference;
-
-            if (ParameterUtil.GetOptionalStringValueFromElementOrSymbol(element, propZoneName, out zoneName) == null)
+            string propZoneClassificationCode = null;
+            bool hasZoneValues = zoneInfoFinder.SetPropZoneValues(element);
+            if (!hasZoneValues)
                break;
 
             // If we have an empty zone name, but the value exists, keep looking to make sure there aren't valid values later.
-            if (!String.IsNullOrEmpty(zoneName))
+            string zoneName = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.Name);
+            if (string.IsNullOrWhiteSpace(zoneName))
+               continue;
+
+            Dictionary<string, IFCAnyHandle> classificationHandles = new Dictionary<string, IFCAnyHandle>();
+
+            string classificationName, classificationCode, classificationDescription;
+
+            string zoneClassificationCode = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.ClassificationCode);
+            if (!String.IsNullOrEmpty(zoneClassificationCode))
             {
-               Dictionary<string, IFCAnyHandle> classificationHandles = new Dictionary<string, IFCAnyHandle>();
-
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, propZoneObjectType, out zoneObjectType);
-
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, propZoneDescription, out zoneDescription);
-
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, propZoneLongName, out zoneLongName);
-
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, propZoneClassificationCode, out zoneClassificationCode);
-               string classificationName, classificationCode, classificationDescription;
-
-               if (!String.IsNullOrEmpty(zoneClassificationCode))
-               {
-                  ClassificationUtil.parseClassificationCode(zoneClassificationCode, propZoneClassificationCode, out classificationName, out classificationCode, out classificationDescription);
-                  string location = null;
-                  ExporterCacheManager.ClassificationLocationCache.TryGetValue(classificationName, out location);
-                  zoneClassificationReference = ClassificationUtil.CreateClassificationReference(file, classificationName, classificationCode, classificationDescription, location);
-                  classificationHandles.Add(classificationName, zoneClassificationReference);
-               }
-
-               IFCAnyHandle roomHandle = productWrapper.GetElementOfType(IFCEntityType.IfcSpace);
-
-               IFCAnyHandle energyAnalysisPSetHnd = null;
-
-               if (exportToCOBIE && !exportedExtraZoneInformation)
-               {
-                  exportedExtraZoneInformation = CreateGSAInformation(exporterIFC, element, zoneObjectType,
-                      classificationHandles, energyAnalysisPSetHnd);
-               }
-
-               ZoneInfo zoneInfo = ExporterCacheManager.ZoneInfoCache.Find(zoneName);
-               if (zoneInfo == null)
-               {
-                  IFCAnyHandle zoneCommonPropertySetHandle = CreateZoneCommonPSet(exporterIFC, file, element);
-                  zoneInfo = new ZoneInfo(zoneObjectType, zoneDescription, zoneLongName, roomHandle, classificationHandles, energyAnalysisPSetHnd, zoneCommonPropertySetHandle);
-                  ExporterCacheManager.ZoneInfoCache.Register(zoneName, zoneInfo);
-               }
-               else
-               {
-                  // if description, long name or object type were empty, overwrite.
-                  if (!String.IsNullOrEmpty(zoneObjectType) && String.IsNullOrEmpty(zoneInfo.ObjectType))
-                     zoneInfo.ObjectType = zoneObjectType;
-                  if (!String.IsNullOrEmpty(zoneDescription) && String.IsNullOrEmpty(zoneInfo.Description))
-                     zoneInfo.Description = zoneDescription;
-                  if (!String.IsNullOrEmpty(zoneLongName) && String.IsNullOrEmpty(zoneInfo.LongName))
-                     zoneInfo.LongName = zoneLongName;
-
-                  zoneInfo.RoomHandles.Add(roomHandle);
-                  foreach (KeyValuePair<string, IFCAnyHandle> classificationReference in classificationHandles)
-                  {
-                     if (!zoneInfo.ClassificationReferences[classificationReference.Key].HasValue)
-                        zoneInfo.ClassificationReferences[classificationReference.Key] = classificationReference.Value;
-                     else
-                     {
-                        // Delete redundant IfcClassificationReference from file.
-                        IFCAnyHandleUtil.Delete(classificationReference.Value);
-                     }
-                  }
-
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.EnergyAnalysisProperySetHandle))
-                     zoneInfo.EnergyAnalysisProperySetHandle = energyAnalysisPSetHnd;
-                  else if (energyAnalysisPSetHnd.HasValue)
-                     IFCAnyHandleUtil.Delete(energyAnalysisPSetHnd);
-
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.ZoneCommonProperySetHandle))
-                     zoneInfo.ZoneCommonProperySetHandle = CreateZoneCommonPSet(exporterIFC, file, element);
-               }
+               ClassificationUtil.parseClassificationCode(zoneClassificationCode, propZoneClassificationCode, out classificationName, out classificationCode, out classificationDescription);
+               string location = null;
+               ExporterCacheManager.ClassificationLocationCache.TryGetValue(classificationName, out location);
+               IFCAnyHandle zoneClassificationReference = ClassificationUtil.CreateClassificationReference(file, classificationName, classificationCode, classificationDescription, location);
+               classificationHandles.Add(classificationName, zoneClassificationReference);
             }
-         }
+
+            IFCAnyHandle roomHandle = productWrapper.GetElementOfType(IFCEntityType.IfcSpace);
+
+            IFCAnyHandle energyAnalysisPSetHnd = null;
+
+            if (exportToCOBIE && !exportedExtraZoneInformation)
+            {
+               string zoneObjectType = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.ObjectType);
+               exportedExtraZoneInformation = CreateGSAInformation(exporterIFC, element, zoneObjectType,
+                   classificationHandles, energyAnalysisPSetHnd);
+            }
+
+            ZoneInfo zoneInfo = ExporterCacheManager.ZoneInfoCache.Find(zoneName);
+            if (zoneInfo == null)
+            {
+               IFCAnyHandle zoneCommonPropertySetHandle = CreateZoneCommonPSet(exporterIFC, file, element);
+               zoneInfo = new ZoneInfo(zoneInfoFinder, roomHandle, classificationHandles, energyAnalysisPSetHnd, zoneCommonPropertySetHandle);
+               ExporterCacheManager.ZoneInfoCache.Register(zoneName, zoneInfo);
+            }
+            else
+            {
+               // if description, long name or object type were empty, overwrite.
+               zoneInfo.UpdateZoneInfo(zoneInfoFinder);
+               zoneInfo.RoomHandles.Add(roomHandle);
+               foreach (KeyValuePair<string, IFCAnyHandle> classificationReference in classificationHandles)
+               {
+                  if (!zoneInfo.ClassificationReferences[classificationReference.Key].HasValue)
+                     zoneInfo.ClassificationReferences[classificationReference.Key] = classificationReference.Value;
+                  else
+                  {
+                     // Delete redundant IfcClassificationReference from file.
+                     IFCAnyHandleUtil.Delete(classificationReference.Value);
+                  }
+               }
+
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.EnergyAnalysisProperySetHandle))
+                  zoneInfo.EnergyAnalysisProperySetHandle = energyAnalysisPSetHnd;
+               else if (energyAnalysisPSetHnd.HasValue)
+                  IFCAnyHandleUtil.Delete(energyAnalysisPSetHnd);
+
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.ZoneCommonProperySetHandle))
+                  zoneInfo.ZoneCommonProperySetHandle = CreateZoneCommonPSet(exporterIFC, file, element);
+            }
+         } while (zoneInfoFinder.IncrementCount()); // prevent infinite loop.
       }
    }
 }

@@ -21,8 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Autodesk.Revit.DB;
-using Revit.IFC.Import.Data;
+using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Import.Data;
 
 namespace Revit.IFC.Import.Utility
 {
@@ -31,254 +33,165 @@ namespace Revit.IFC.Import.Utility
    /// </summary>
    public class IFCImportCache
    {
-      private Category m_GenericModelsCategory = null;
+      /// <summary>
+      /// The ParameterBindings map associated with accessed documents.
+      /// </summary>
+      /// <remarks>
+      /// We only really expect one document here, but this is safer.
+      /// </remarks>
+      private IDictionary<Document, BindingMap> ParameterBindings { get; set; }  = null;
 
-      private Categories m_DocumentCategories = null;
+      public BindingMap GetParameterBinding(Document doc)
+      {
+         if (doc == null)
+            throw new ArgumentNullException("Missing document.");
 
-      private ElementId m_ProjectInformationId = ElementId.InvalidElementId;
+         if (ParameterBindings == null)
+            ParameterBindings = new Dictionary<Document, BindingMap>();
 
-      private IDictionary<string, Category> m_CreatedSubcategories = null;
+         BindingMap bindingMap;
+         if (ParameterBindings.TryGetValue(doc, out bindingMap))
+         {
+            return bindingMap;
+         }
 
-      private IDictionary<string, ElementId> m_GUIDToElementMap = null;
-
-      private IDictionary<string, ElementId> m_GridNameToElementMap = null;
-
-      private IDictionary<int, ISet<string>> m_TypeProductToRepLabel = null;
-
-      private IDictionary<int, IFCTypeProduct> m_RepMapToTypeProduct = null;
-
-      private IDictionary<int, ElementId> m_CreatedDirectShapeTypes = null;
-
-      private ISet<string> m_CreatedGUIDs = null;
-
-      private IFCMaterialCache m_CreatedMaterials = null;
-
-      private IDictionary<Tuple<ElementId, bool, string>, ElementId> m_ViewSchedules = null;
-
-      private ISet<string> m_ViewScheduleNames = null;
-
-      private ISet<ElementId> m_MaterialsWithNoColor = null;
-
-      private string m_OriginalSharedParametersFile = null;
-
-      private DefinitionGroup m_DefinitionInstanceGroup = null;
-
-      private DefinitionGroup m_DefinitionTypeGroup = null;
-
-      private RevitStatusBar m_StatusBar = null;
+         bindingMap = doc.ParameterBindings;
+         ParameterBindings[doc] = bindingMap;
+         return bindingMap;
+      }
 
       /// <summary>
       /// The Categories class for the document associated with this import.
       /// </summary>
-      public Categories DocumentCategories
-      {
-         get { return m_DocumentCategories; }
-         protected set { m_DocumentCategories = value; }
-      }
+      public Categories DocumentCategories { get; protected set; } = null;
 
       /// <summary>
       /// The id of the ProjectInformation class for the document associated with this import.
       /// </summary>
-      public ElementId ProjectInformationId
-      {
-         get { return m_ProjectInformationId; }
-         protected set { m_ProjectInformationId = value; }
-      }
+      public ElementId ProjectInformationId { get; protected set; } = ElementId.InvalidElementId;
 
+      /// <summary>
+      /// A mapping of representation items to IfcStyledItems.
+      /// </summary>
+      public IDictionary<IFCAnyHandle, ICollection<IFCAnyHandle>> StyledByItems { get; } = new Dictionary<IFCAnyHandle, ICollection<IFCAnyHandle>>();
+     
+      public IDictionary<IFCAnyHandle, IFCAnyHandle> LayerAssignment { get; } = new Dictionary<IFCAnyHandle, IFCAnyHandle>();
+      
       /// <summary>
       /// A mapping from an IFCRepresentationMap entity id to an IFCTypeProduct.
       /// If a mapping entry exists here, it means that the IFCRepresentationMap is referenced by exactly 1 IFCTypeProduct.
       /// </summary>
-      public IDictionary<int, IFCTypeProduct> RepMapToTypeProduct
-      {
-         get
-         {
-            if (m_RepMapToTypeProduct == null)
-               m_RepMapToTypeProduct = new Dictionary<int, IFCTypeProduct>();
-            return m_RepMapToTypeProduct;
-         }
-         protected set { m_RepMapToTypeProduct = value; }
-      }
-
+      public IDictionary<int, IFCTypeProduct> RepMapToTypeProduct { get; protected set; } = new Dictionary<int, IFCTypeProduct>();
+      
       /// <summary>
       /// A mapping from an IFCTypeProduct entity id to a IFCRepresentation label.
       /// If a mapping entry exists here, it means that the IFCTypeProduct has exactly 1 IFCRepresentation 
       /// of a particular label, accessed via an IFCRepresentationMap.
       /// </summary>
-      public IDictionary<int, ISet<string>> TypeProductToRepLabel
-      {
-         get
-         {
-            if (m_TypeProductToRepLabel == null)
-               m_TypeProductToRepLabel = new Dictionary<int, ISet<string>>();
-            return m_TypeProductToRepLabel;
-         }
-         protected set { m_TypeProductToRepLabel = value; }
-      }
-
+      public IDictionary<int, ISet<string>> TypeProductToRepLabel { get; protected set; } = new Dictionary<int, ISet<string>>();
+      
       /// <summary>
       /// A mapping from an IFCTypeProduct entity id to its corresponding DirectShapeType element id.
       /// In conjunction with RepMapToTypeProduct, this allows us to access the parent DirectShapeType to set its geometry
       /// when parsing the IFCRepresentationMap.
       /// </summary>
-      public IDictionary<int, ElementId> CreatedDirectShapeTypes
-      {
-         get
-         {
-            if (m_CreatedDirectShapeTypes == null)
-               m_CreatedDirectShapeTypes = new Dictionary<int, ElementId>();
-            return m_CreatedDirectShapeTypes;
-         }
-         protected set { m_CreatedDirectShapeTypes = value; }
-      }
-
+      public IDictionary<int, ElementId> CreatedDirectShapeTypes { get; protected set; } = new Dictionary<int, ElementId>();
+      
       /// <summary>
       /// The Category class associated with OST_GenericModels for the document associated with this import.
       /// </summary>
-      public Category GenericModelsCategory
-      {
-         get { return m_GenericModelsCategory; }
-         protected set { m_GenericModelsCategory = value; }
-      }
+      public Category GenericModelsCategory { get; protected set; } = null;
 
       /// <summary>
       /// The set of GUIDs imported.
       /// </summary>
-      public ISet<string> CreatedGUIDs
-      {
-         get
-         {
-            if (m_CreatedGUIDs == null)
-               m_CreatedGUIDs = new HashSet<string>();
-            return m_CreatedGUIDs;
-         }
-      }
-
+      public ISet<string> CreatedGUIDs { get; } = new HashSet<string>();
+      
       /// <summary>
       /// A map of material name to created material.
       /// Intended to disallow creation of multiple materials with the same name and attributes.
       /// </summary>
-      public IFCMaterialCache CreatedMaterials
-      {
-         get
-         {
-            if (m_CreatedMaterials == null)
-               m_CreatedMaterials = new IFCMaterialCache();
-            return m_CreatedMaterials;
-         }
-      }
+      public IFCMaterialCache CreatedMaterials { get; } = new IFCMaterialCache();
 
       /// <summary>
       /// The name of the shared parameters file, if any, set before this import operation.
       /// </summary>
-      public string OriginalSharedParametersFile
-      {
-         get { return m_OriginalSharedParametersFile; }
-         protected set { m_OriginalSharedParametersFile = value; }
-      }
+      public string OriginalSharedParametersFile { get; protected set; } = null;
 
       /// <summary>
-      /// The instance shared parameters group associated with this import.
+      /// The instance shared parameters group definitions associated with this import.
       /// </summary>
-      public DefinitionGroup DefinitionInstanceGroup
-      {
-         get { return m_DefinitionInstanceGroup; }
-         protected set { m_DefinitionInstanceGroup = value; }
-      }
+      public Definitions InstanceGroupDefinitions { get; protected set; } = null;
 
       /// <summary>
-      /// The type shared parameters group associated with this import.
+      /// The type shared parameters group definitions associated with this import.
       /// </summary>
-      public DefinitionGroup DefinitionTypeGroup
-      {
-         get { return m_DefinitionTypeGroup; }
-         protected set { m_DefinitionTypeGroup = value; }
-      }
+      public Definitions TypeGroupDefinitions { get; protected set; } = null;
 
       /// <summary>
       /// A map of create schedules, sorted by category, element type, and property set name.
       /// </summary>
-      public IDictionary<Tuple<ElementId, bool, string>, ElementId> ViewSchedules
-      {
-         get
-         {
-            if (m_ViewSchedules == null)
-               m_ViewSchedules = new Dictionary<Tuple<ElementId, bool, string>, ElementId>();
-            return m_ViewSchedules;
-         }
-      }
+      public IDictionary<Tuple<ElementId, bool, string>, ElementId> ViewSchedules { get; } = new Dictionary<Tuple<ElementId, bool, string>, ElementId>();
+      
+      /// <summary>
+      /// The set of create schedule names, to prevent duplicates.
+      /// </summary>
+      public ISet<string> ViewScheduleNames { get; } = new HashSet<string>();
 
       /// <summary>
       /// The set of create schedule names, to prevent duplicates.
       /// </summary>
-      public ISet<string> ViewScheduleNames
-      {
-         get
-         {
-            if (m_ViewScheduleNames == null)
-               m_ViewScheduleNames = new HashSet<string>();
-            return m_ViewScheduleNames;
-         }
-      }
-
-      /// <summary>
-      /// The set of create schedule names, to prevent duplicates.
-      /// </summary>
-      public ISet<ElementId> MaterialsWithNoColor
-      {
-         get
-         {
-            if (m_MaterialsWithNoColor == null)
-               m_MaterialsWithNoColor = new HashSet<ElementId>();
-            return m_MaterialsWithNoColor;
-         }
-      }
+      public ISet<ElementId> MaterialsWithNoColor { get; } = new HashSet<ElementId>();
 
       /// <summary>
       /// The pointer to the status bar in the running Revit executable, if found.
       /// </summary>
-      public RevitStatusBar StatusBar
-      {
-         get { return m_StatusBar; }
-         protected set { m_StatusBar = value; }
-      }
+      public RevitStatusBar StatusBar { get; protected set; } = null;
 
       /// <summary>
       /// Get the map from custom subcategory name to Category class.
       /// </summary>
-      public IDictionary<string, Category> CreatedSubcategories
-      {
-         get
-         {
-            if (m_CreatedSubcategories == null)
-               m_CreatedSubcategories = new Dictionary<string, Category>();
-            return m_CreatedSubcategories;
-         }
-      }
-
+      public IDictionary<string, Category> CreatedSubcategories { get; } = new Dictionary<string, Category>();
+      
       /// <summary>
       /// The map of GUIDs to created elements, used when reloading a link.
       /// </summary>
-      public IDictionary<string, ElementId> GUIDToElementMap
-      {
-         get
-         {
-            if (m_GUIDToElementMap == null)
-               m_GUIDToElementMap = new Dictionary<string, ElementId>();
-            return m_GUIDToElementMap;
-         }
-      }
-
+      public IDictionary<string, ElementId> GUIDToElementMap { get; } = new Dictionary<string, ElementId>();
+      
       /// <summary>
       /// The map of grid names to created elements, used when reloading a link.
       /// </summary>
-      public IDictionary<string, ElementId> GridNameToElementMap
+      public IDictionary<string, ElementId> GridNameToElementMap { get; } = new Dictionary<string, ElementId>();
+
+      private bool HavePreProcessedGrids { get; set; } = false;
+
+      /// <summary>
+      /// Pre-process IfcGrids before processing IfcGridLocation.
+      /// </summary>
+      /// <remarks>
+      /// Before using IfcGridLocation, we need to make sure that grid axes have been processed.  
+      /// However:
+      /// 1. IfcGridLocation is rare, and shouldn't affect the performance of other files.
+      /// 2. We still need to process IfcGridLocation after IfcSite, otherwise may get
+      /// spurious errors about local placement not being relative to site.
+      /// As such, we only pre-process grids at most once, when we find an IfcGridLocation.
+      /// There is a potential case where we could generate spurious warning if IfcSite had an
+      /// IfcGridLocation, but this seems highly unlikely.
+      /// </remarks>
+      public void PreProcessGrids()
       {
-         get
+         if (HavePreProcessedGrids)
+            return;
+
+         HavePreProcessedGrids = true;
+
+         IList<IFCAnyHandle> gridHandles = IFCImportFile.TheFile.GetInstances(IFCEntityType.IfcGrid, false);
+         if (gridHandles == null)
+            return;
+
+         foreach (IFCAnyHandle gridHandle in gridHandles)
          {
-            if (m_GridNameToElementMap == null)
-               m_GridNameToElementMap = new Dictionary<string, ElementId>();
-            return m_GridNameToElementMap;
+            IFCGrid.ProcessIFCGrid(gridHandle);
          }
       }
 
@@ -419,13 +332,15 @@ namespace Revit.IFC.Import.Utility
             if (definitionFile == null)
                throw new InvalidOperationException("Can't create definition file for shared parameters.");
 
-            DefinitionInstanceGroup = definitionFile.Groups.get_Item("IFC Parameters");
-            if (DefinitionInstanceGroup == null)
-               DefinitionInstanceGroup = definitionFile.Groups.Create("IFC Parameters");
+            DefinitionGroup definitionInstanceGroup = definitionFile.Groups.get_Item("IFC Parameters");
+            if (definitionInstanceGroup == null)
+               definitionInstanceGroup = definitionFile.Groups.Create("IFC Parameters");
+            InstanceGroupDefinitions = definitionInstanceGroup.Definitions;
 
-            DefinitionTypeGroup = definitionFile.Groups.get_Item("IFC Type Parameters");
-            if (DefinitionTypeGroup == null)
-               DefinitionTypeGroup = definitionFile.Groups.Create("IFC Type Parameters");
+            DefinitionGroup definitionTypeGroup = definitionFile.Groups.get_Item("IFC Type Parameters");
+            if (definitionTypeGroup == null)
+               definitionTypeGroup = definitionFile.Groups.Create("IFC Type Parameters");
+            TypeGroupDefinitions = definitionTypeGroup.Definitions;
          }
          catch (System.Exception)
          {
@@ -449,8 +364,8 @@ namespace Revit.IFC.Import.Utility
             string viewScheduleName = viewSchedule.Name;
             ElementId viewScheduleId = viewSchedule.Id;
 
-            ViewSchedules[new Tuple<ElementId, bool, string>(categoryId, false, viewScheduleName)] = viewScheduleId;
-            ViewSchedules[new Tuple<ElementId, bool, string>(categoryId, true, viewScheduleName)] = viewScheduleId;
+            ViewSchedules[Tuple.Create(categoryId, false, viewScheduleName)] = viewScheduleId;
+            ViewSchedules[Tuple.Create(categoryId, true, viewScheduleName)] = viewScheduleId;
             ViewScheduleNames.Add(viewScheduleName);
          }
 

@@ -73,8 +73,6 @@
     <Compile Include="Exporter\BeamExporter.cs" />
     <Compile Include="Exporter\BodyData.cs" />
     <Compile Include="Exporter\BodyExporterOptions.cs" />
-    <Compile Include="Exporter\BodyGroupData.cs" />
-    <Compile Include="Exporter\BodyGroupKey.cs" />
     <Compile Include="Exporter\BoundingBoxExporter.cs" />
     <Compile Include="Exporter\CeilingExporter.cs" />
     <Compile Include="Exporter\ConnectorExporter.cs" />
@@ -124,7 +122,6 @@
     <Compile Include="Exporter\PropertySet\Calculators\RollCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FinishCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766BendingEndHookCalculator.cs" />
-    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766BendingRadiusCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766BendingStartHookCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeCode.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterACalculator.cs" />
@@ -241,12 +238,12 @@
     <Compile Include="Utility\ExporterStateManager.cs" />
     <Compile Include="Utility\ExporterUtil.cs" />
     <Compile Include="Utility\ExportOptionsCache.cs" />
+    <Compile Include="Utility\FabricParams.cs" />
     <Compile Include="Utility\FamilyExporterUtil.cs" />
     <Compile Include="Utility\FamilyTypeInfo.cs" />
     <Compile Include="Utility\FootPrintInfo.cs" />
     <Compile Include="Utility\GeometryUtil.cs" />
     <Compile Include="Utility\GroupCache.cs" />
-    <Compile Include="Utility\GroupElementGeometryCache.cs" />
     <Compile Include="Utility\GUIDOptions.cs" />
     <Compile Include="Utility\GUIDUtil.cs" />
     <Compile Include="Utility\HandleToElementCache.cs" />
@@ -257,6 +254,7 @@
     <Compile Include="Utility\LevelUtil.cs" />
     <Compile Include="Utility\LogicalPropertyInfoCache.cs" />
     <Compile Include="Utility\MaterialAndProfile.cs" />
+    <Compile Include="Utility\MaterialConstituentCache.cs" />
     <Compile Include="Utility\MaterialConstituentSetCache.cs" />
     <Compile Include="Utility\MaterialLayerSetInfo.cs" />
     <Compile Include="Utility\MEPCache.cs" />

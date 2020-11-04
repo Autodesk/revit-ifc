@@ -117,6 +117,7 @@
     <Compile Include="IFCNewExportSetup.xaml.cs">
       <DependentUpon>IFCNewExportSetup.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Win32API.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IFCExport.xaml.cs">
