@@ -60,16 +60,16 @@ namespace Revit.IFC.Import.Data
          if (m_DoorLiningPropertyDescs == null)
          {
             m_DoorLiningPropertyDescs = new List<Tuple<string, ForgeTypeId, AllowedValues>>();
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("LiningDepth", SpecTypeId.Length, AllowedValues.Positive));
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("LiningThickness", SpecTypeId.Length, AllowedValues.Positive));
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("ThresholdDepth", SpecTypeId.Length, AllowedValues.Positive));
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("ThresholdThickness", SpecTypeId.Length, AllowedValues.Positive));
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("TransomThickness", SpecTypeId.Length, AllowedValues.Positive));
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("TransomOffset", SpecTypeId.Length, AllowedValues.All));
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("LiningOffset", SpecTypeId.Length, AllowedValues.All));
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("ThresholdOffset", SpecTypeId.Length, AllowedValues.All));
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("CasingThickness", SpecTypeId.Length, AllowedValues.Positive));
-            m_DoorLiningPropertyDescs.Add(new Tuple<string, ForgeTypeId, AllowedValues>("CasingDepth", SpecTypeId.Length, AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("LiningDepth", SpecTypeId.Length, AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("LiningThickness", SpecTypeId.Length, AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("ThresholdDepth", SpecTypeId.Length, AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("ThresholdThickness", SpecTypeId.Length, AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("TransomThickness", SpecTypeId.Length, AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("TransomOffset", SpecTypeId.Length, AllowedValues.All));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("LiningOffset", SpecTypeId.Length, AllowedValues.All));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("ThresholdOffset", SpecTypeId.Length, AllowedValues.All));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("CasingThickness", SpecTypeId.Length, AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("CasingDepth", SpecTypeId.Length, AllowedValues.Positive));
          }
 
          foreach (Tuple<string, ForgeTypeId, AllowedValues> propertyDesc in m_DoorLiningPropertyDescs)

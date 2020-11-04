@@ -144,7 +144,7 @@ namespace Revit.IFC.Common.Utility
                if (superTypeName.Equals(node.superType.Name, StringComparison.InvariantCultureIgnoreCase))
                {
                   return true;
-               }
+            }
             }
             else
             {

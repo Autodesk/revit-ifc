@@ -17,10 +17,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
@@ -39,62 +35,44 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       private double m_Volume = 0;
 
       /// <summary>
-      /// A static instance of this class.
-      /// </summary>
-      static GrossVolumeCalculator s_Instance = new GrossVolumeCalculator();
-
-      /// <summary>
       /// The SlabGrossVolumeCalculator instance.
       /// </summary>
-      public static GrossVolumeCalculator Instance
-      {
-         get { return s_Instance; }
-      }
-
+      public static GrossVolumeCalculator Instance { get; } = new GrossVolumeCalculator();
+      
       /// <summary>
       /// Calculates gross volume.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
-      /// </param>
-      /// <param name="element">
-      /// The element to calculate the value.
-      /// </param>
-      /// <param name="elementType">
-      /// The element type.
-      /// </param>
-      /// <returns>
-      /// True if the operation succeed, false otherwise.
-      /// </returns>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <returns>True if the operation succeeded, false otherwise.</returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyGrossVolume", out m_Volume) == null)
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "GrossVolume", out m_Volume);
-         m_Volume = UnitUtil.ScaleVolume(m_Volume);
-         if (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps())
-            return true;
+         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyGrossVolume", out m_Volume) != null) ||
+               (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "GrossVolume", out m_Volume) != null))
+         {
+            m_Volume = UnitUtil.ScaleVolume(m_Volume);
+            if (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps())
+               return true;
+         }
 
          if (extrusionCreationData == null)
             return false;
 
-         double area = extrusionCreationData.ScaledArea;
-         double length = extrusionCreationData.ScaledLength;
-         m_Volume = area * length;
-         if (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps())
-            return true;
-
-         return false;
+         // While it would be unlikely that area and volume have different base length units,
+         // it is still safer to unscale and rescale the results.  For length, it is somewhat
+         // common to have mm as the length unit and m^3 as the volume unit.
+         double area = UnitUtil.UnscaleArea(extrusionCreationData.ScaledArea);
+         double length = UnitUtil.UnscaleLength(extrusionCreationData.ScaledLength);
+         m_Volume = UnitUtil.ScaleVolume(area * length);
+         return (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps());
       }
 
       /// <summary>
       /// Gets the calculated double value.
       /// </summary>
-      /// <returns>
-      /// The double value.
-      /// </returns>
+      /// <returns>The calculated volume.</returns>
       public override double GetDoubleValue()
       {
          return m_Volume;

@@ -738,6 +738,13 @@ namespace Revit.IFC.Export.Exporter
          return !curveLoop.IsCounterclockwise(dir);
       }
 
+      /// <summary>
+      /// Set the  LCS for the curveloops using the information from the member curves
+      /// </summary>
+      /// <param name="curveLoops">The curveLoops</param>
+      /// <param name="extrDir">Extrusion direction</param>
+      /// <param name="lcs">Output parameter for the "corrected" LCS</param>
+      /// <returns>True if the LCS is set</returns>
       private static bool CorrectCurveLoopOrientation(IList<CurveLoop> curveLoops, XYZ extrDir, out Transform lcs)
       {
          lcs = null;
@@ -1082,9 +1089,10 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="extrusionData">The extrusion data.</param>
       /// <returns>The IfcExtrudedAreaSolid handle.</returns>
-      public static IFCAnyHandle CreateExtrudedSolidFromExtrusionData(ExporterIFC exporterIFC, Element element, IFCExtrusionData extrusionData, string profileName=null)
+      public static IFCAnyHandle CreateExtrudedSolidFromExtrusionData(ExporterIFC exporterIFC, Element element, IFCExtrusionData extrusionData,
+          out Transform lcs, string profileName=null)
       {
-         Transform lcs = null;
+         lcs = null;
          if (!extrusionData.IsValid())
             return null;
 

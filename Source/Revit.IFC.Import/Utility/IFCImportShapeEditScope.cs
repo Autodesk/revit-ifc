@@ -37,16 +37,6 @@ namespace Revit.IFC.Import.Utility
    /// </summary>
    public class IFCImportShapeEditScope : IDisposable
    {
-      private Document m_Document = null;
-
-      private IFCProduct m_Creator = null;
-
-      private IFCRepresentation m_ContainingRepresentation = null;
-
-      private ElementId m_GraphicsStyleId = ElementId.InvalidElementId;
-
-      private ElementId m_CategoryId = ElementId.InvalidElementId;
-
       // The names of the associated IfcPresentationLayerWithStyles
       private ISet<string> m_PresentationLayerNames = null;
 
@@ -54,30 +44,17 @@ namespace Revit.IFC.Import.Utility
       private IList<ElementId> m_MaterialIdList = null;
 
       // store all curves for 2D plan representation.  
-      private ViewShapeBuilder m_ViewShapeBuilder = null;
+      private ViewShapeBuilder ViewShapeBuilder { get; set; } = null;
 
-      private BuilderScope m_BuilderScope = null;
-
-      // Prevent Instances if shape will be voided
-      private bool m_PreventInstances = false;
+      /// <summary>
+      /// Prevent Instances if shape will be voided
+      /// </summary>
+      public bool PreventInstances { get; set; } = false;
 
       /// <summary>
       /// Returns the builder scope which contains the ShapeBuilder that is used to create the geometry
       /// </summary>
-      public bool PreventInstances
-      {
-         get { return m_PreventInstances; }
-         set { m_PreventInstances = value; }
-      }
-
-      /// <summary>
-      /// Returns the builder scope which contains the ShapeBuilder that is used to create the geometry
-      /// </summary>
-      public BuilderScope BuilderScope
-      {
-         get { return m_BuilderScope; }
-         set { m_BuilderScope = value; }
-      }
+      public BuilderScope BuilderScope { get; set; } = null;
 
       private IList<ElementId> MaterialIdList
       {
@@ -89,34 +66,21 @@ namespace Revit.IFC.Import.Utility
          }
       }
 
-      private IFCShapeBuilderType m_BuilderType = IFCShapeBuilderType.Unknown;
-
       /// <summary>
       /// Returns the type of the shape builder that is used to create the geometry
       /// </summary>
-      public IFCShapeBuilderType BuilderType
-      {
-         get { return m_BuilderType; }
-         set { m_BuilderType = value; }
-      }
+      public IFCShapeBuilderType BuilderType { get; set; } = IFCShapeBuilderType.Unknown;
 
       /// <summary>
       /// The id of the associated graphics style, if any.
       /// </summary>
-      public ElementId GraphicsStyleId
-      {
-         get { return m_GraphicsStyleId; }
-         set { m_GraphicsStyleId = value; }
-      }
+      public ElementId GraphicsStyleId { get; set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// The id of the associated category.
       /// </summary>
-      public ElementId CategoryId
-      {
-         get { return m_CategoryId; }
-         set { m_CategoryId = value; }
-      }
+      public ElementId CategoryId { get; set; } = ElementId.InvalidElementId;
+
 
       private void PushMaterialId(ElementId materialId)
       {
@@ -130,16 +94,10 @@ namespace Revit.IFC.Import.Utility
             MaterialIdList.RemoveAt(count - 1);
       }
 
-      private BuildPreferenceType m_BuildPreference = BuildPreferenceType.AnyGeometry;
-
       /// <summary>
       /// Returns the BuildPreferenceType of the IFCImportShapeEditScope
       /// </summary>
-      public BuildPreferenceType BuildPreference
-      {
-         get { return m_BuildPreference; }
-         set { m_BuildPreference = value; }
-      }
+      public BuildPreferenceType BuildPreference { get; set; } = BuildPreferenceType.AnyGeometry;
 
       /// <summary>
       /// The material id associated with the representation item currently being processed.
@@ -240,29 +198,18 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// The document associated with this element.
       /// </summary>
-      public Document Document
-      {
-         get { return m_Document; }
-         protected set { m_Document = value; }
-      }
+      public Document Document { get; protected set; } = null;
 
       /// <summary>
       /// Get the top-level IFC entity associated with this shape.
       /// </summary>
-      public IFCProduct Creator
-      {
-         get { return m_Creator; }
-         protected set { m_Creator = value; }
-      }
+      public IFCProduct Creator { get; protected set; } = null;
+
 
       /// <summary>
       /// The IFCRepresentation that contains the currently processed IFC entity.
       /// </summary>
-      public IFCRepresentation ContainingRepresentation
-      {
-         get { return m_ContainingRepresentation; }
-         protected set { m_ContainingRepresentation = value; }
-      }
+      public IFCRepresentation ContainingRepresentation { get; protected set; } = null;
 
       protected IFCImportShapeEditScope()
       {
@@ -309,14 +256,7 @@ namespace Revit.IFC.Import.Utility
       }
 
       // End temporary classes for holding BRep information.
-      private void SetIFCFuzzyXYZEpsilon()
-      {
-         // Note that this tolerance is slightly larger than required, as it is a cube instead of a
-         // sphere of equivalence.  In the case of AnyGeoemtry, we resort to the Solid tolerance as we are
-         // generally trying to create Solids over Meshes.
-         IFCFuzzyXYZ.IFCFuzzyXYZEpsilon = GetShortSegmentTolerance();
-      }
-
+      
       /// <summary>
       /// Add a Solid to the current DirectShape element.
       /// </summary>
@@ -384,18 +324,18 @@ namespace Revit.IFC.Import.Utility
       /// <returns>True if any curves were added to the plan view representation.</returns>
       public bool AddPlanViewCurves(IList<Curve> curves, int id)
       {
-         m_ViewShapeBuilder = null;
+         ViewShapeBuilder = null;
          int numCurves = curves.Count;
          if (numCurves > 0)
          {
-            m_ViewShapeBuilder = new ViewShapeBuilder(DirectShapeTargetViewType.Plan);
+            ViewShapeBuilder = new ViewShapeBuilder(DirectShapeTargetViewType.Plan);
 
             // Ideally we'd form these curves into a CurveLoop and get the Plane of the CurveLoop.  However, there is no requirement
             // that the plan view curves form one contiguous loop.
             foreach (Curve curve in curves)
             {
-               if (m_ViewShapeBuilder.ValidateCurve(curve))
-                  m_ViewShapeBuilder.AddCurve(curve);
+               if (ViewShapeBuilder.ValidateCurve(curve))
+                  ViewShapeBuilder.AddCurve(curve);
                else
                {
                   // We will move the origin to Z=0 if necessary, since the VSB requires all curves to be in the Z=0 plane.
@@ -429,9 +369,9 @@ namespace Revit.IFC.Import.Utility
 
                      // We may have missed a case above - for example, a curve whose end points have the same Z value, and whose normal at the
                      // start point is in +/-Z, but is regardless non-planar.  ValidateCurve has a final chance to reject such curves here.
-                     if (projectedCurve == null || !m_ViewShapeBuilder.ValidateCurve(projectedCurve))
+                     if (projectedCurve == null || !ViewShapeBuilder.ValidateCurve(projectedCurve))
                         throw new InvalidOperationException("Invalid curve in footprint representation.");
-                     m_ViewShapeBuilder.AddCurve(projectedCurve);
+                     ViewShapeBuilder.AddCurve(projectedCurve);
                      continue;
                   }
                   catch
@@ -444,10 +384,10 @@ namespace Revit.IFC.Import.Utility
             }
 
             if (numCurves == 0)
-               m_ViewShapeBuilder = null;
+               ViewShapeBuilder = null;
          }
 
-         return (m_ViewShapeBuilder != null);
+         return (ViewShapeBuilder != null);
       }
 
       /// <summary>
@@ -456,17 +396,17 @@ namespace Revit.IFC.Import.Utility
       /// <param name="shape">The DirectShape or DirectShapeType.</param>
       public void SetPlanViewRep(Element shape)
       {
-         if (m_ViewShapeBuilder != null)
+         if (ViewShapeBuilder != null)
          {
             if (shape is DirectShape)
             {
                DirectShape ds = shape as DirectShape;
-               ds.SetShape(m_ViewShapeBuilder);
+               ds.SetShape(ViewShapeBuilder);
             }
             else if (shape is DirectShapeType)
             {
                DirectShapeType dst = shape as DirectShapeType;
-               dst.SetShape(m_ViewShapeBuilder);
+               dst.SetShape(ViewShapeBuilder);
             }
             else
                throw new ArgumentException("SetPlanViewRep only works on DirectShape and DirectShapeType.");
@@ -495,8 +435,7 @@ namespace Revit.IFC.Import.Utility
          }
 
          BuilderType = builderType;
-         BuildPreference = BuildPreference;
-
+         
          if (builderType == IFCShapeBuilderType.BrepBuilder)
          {
             BuilderScope = new BrepBuilderScope(this);
@@ -505,8 +444,7 @@ namespace Revit.IFC.Import.Utility
          {
             BuilderScope = new TessellatedShapeBuilderScope(this);
          }
-
-         SetIFCFuzzyXYZEpsilon();
+         
          return BuilderScope;
       }
 

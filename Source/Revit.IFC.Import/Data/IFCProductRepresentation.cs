@@ -135,7 +135,7 @@ namespace Revit.IFC.Import.Data
             }
          }
 
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x3)
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x3))
          {
             if (IFCAnyHandleUtil.IsSubTypeOf(ifcProductRepresentation, IFCEntityType.IfcMaterialDefinitionRepresentation))
             {

@@ -44,27 +44,25 @@ namespace Revit.IFC.Import.Data
 
       private static bool HasPredefinedType(IFCEntityType type)
       {
-         if (IFCImportFile.TheFile.SchemaVersion < IFCSchemaVersion.IFC4)
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
+            return true;
+
+         // Note that this is just a list of entity types that are dealt with generically; 
+         // other types may override the base function.
+         if (m_sNoPredefinedTypePreIFC4 == null)
          {
-            // Note that this is just a list of entity types that are dealt with generically; 
-            // other types may override the base function.
-            if (m_sNoPredefinedTypePreIFC4 == null)
+            m_sNoPredefinedTypePreIFC4 = new HashSet<IFCEntityType>()
             {
-               m_sNoPredefinedTypePreIFC4 = new HashSet<IFCEntityType>();
-               m_sNoPredefinedTypePreIFC4.Add(IFCEntityType.IfcDiscreteAccessoryType);
-               m_sNoPredefinedTypePreIFC4.Add(IFCEntityType.IfcDistributionElementType);
-               m_sNoPredefinedTypePreIFC4.Add(IFCEntityType.IfcDoorStyle);
-               m_sNoPredefinedTypePreIFC4.Add(IFCEntityType.IfcFastenerType);
-               m_sNoPredefinedTypePreIFC4.Add(IFCEntityType.IfcFurnishingElementType);
-               m_sNoPredefinedTypePreIFC4.Add(IFCEntityType.IfcFurnitureType);
-               m_sNoPredefinedTypePreIFC4.Add(IFCEntityType.IfcWindowStyle);
-            }
-
-            if (m_sNoPredefinedTypePreIFC4.Contains(type))
-               return false;
+               IFCEntityType.IfcDiscreteAccessoryType,
+               IFCEntityType.IfcDistributionElementType,
+               IFCEntityType.IfcDoorStyle,
+               IFCEntityType.IfcFastenerType,
+               IFCEntityType.IfcFurnishingElementType,
+               IFCEntityType.IfcFurnitureType,
+               IFCEntityType.IfcWindowStyle
+            };
          }
-
-         return true;
+         return !m_sNoPredefinedTypePreIFC4.Contains(type);
       }
 
       /// <summary>
@@ -198,7 +196,7 @@ namespace Revit.IFC.Import.Data
          if (shapeType == null)
             throw new InvalidOperationException("Couldn't create DirectShapeType for IfcTypeObject.");
 
-         m_CreatedElementId = shapeType.Id;
+         CreatedElementId = shapeType.Id;
 
          base.Create(doc);
 

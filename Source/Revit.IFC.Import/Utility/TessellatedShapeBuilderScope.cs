@@ -30,22 +30,86 @@ namespace Revit.IFC.Import.Utility
    /// </summary>
    public class TessellatedShapeBuilderScope : BuilderScope
    {
+      /// <summary>
+      /// A class that contains a grouping of arbitary XYZ values that are all "distinct",
+      /// based on a tolerance.
+      /// </summary>
+      /// <remarks>Note: We cannot assume that we won't have duplicate entries.
+      /// For example, assume tolerance=1.0, and we have values (10.2,10.2,10.2) and 
+      /// (11.5,11.5,11.5) in the set.
+      /// If we look for (11.0, 11.0, 11.0) then either of the 2 values above would match, 
+      /// even though they are distinct values from one another.  This means that as the set
+      /// grows, a second duplicate (11.0, 11.0, 11.0) entry could take a different path
+      /// and not find the original match.  Aside from performance issues, this is harmless
+      /// for current usage, but should be taken into account if the use is expanded.</remarks>
+      private class IFCFuzzyXYZSet
+      {
+         /// <summary>
+         /// The constructor. 
+         /// </summary>
+         /// <param name="tol">The tolerance at which 2 XYZ values are considered equal.</param>
+         public IFCFuzzyXYZSet(double tol)
+         {
+            Tolerance = tol;
+            VertexSet = new SortedSet<XYZ>(new IFCXYZFuzzyComparer(tol));
+         }
+
+         /// <summary>
+         /// Clear the existing set. 
+         /// </summary>
+         public void Clear()
+         {
+            if (VertexSet != null)
+               VertexSet.Clear();
+         }
+
+         /// <summary>
+         /// Looks for a possibly adjusted vertex value in the current set.
+         /// </summary>
+         /// <param name="vertex">The original vertex value.</param>
+         /// <returns>The possibly adjusted vertex value.</returns>
+         public XYZ FindOrAdd(XYZ vertex)
+         {
+            XYZ adjustedVertex = null;
+            if (!VertexSet.TryGetValue(vertex, out adjustedVertex))
+            {
+               adjustedVertex = vertex;
+               VertexSet.Add(adjustedVertex);
+            }
+            return adjustedVertex;
+         }
+
+         /// <summary>
+         /// Lowers the tolerance used for vertex matching.
+         /// </summary>
+         /// <param name="tol">The new tolerance, that must be lower than the old one.</param>
+         public void ResetTolerance(double tol)
+         {
+            if (tol > Tolerance)
+               throw new ArgumentException("The tolerance can only be reset to be stricter.");
+            
+            Tolerance = tol;
+            var newVertexSet = new SortedSet<XYZ>(VertexSet, new IFCXYZFuzzyComparer(tol));
+            VertexSet = newVertexSet;
+         }
+
+         private double Tolerance { get; set; } = 0.0;
+
+         private SortedSet<XYZ> VertexSet { get; set; } = null;
+      }
+
       // stores all faces from the face set which will be built
-      private TessellatedShapeBuilder m_TessellatedShapeBuilder = null;
+      private TessellatedShapeBuilder TessellatedShapeBuilder { get; set; } = null;
 
       /// <summary>
-      /// A map of IFCFuzzyXYZ to XYZ values.  In practice, the two values will be the same, but this allows us to
-      /// "look up" an XYZ value and get the fuzzy equivalent.  Internally, this is represented by a SortedDictionary.
+      /// A set of "disjoint" XYZ.  This allows us to "look up" an XYZ value and get 
+      /// the fuzzy equivalent.
       /// </summary>
-      private IDictionary<IFCFuzzyXYZ, XYZ> m_TessellatedFaceVertices = null;
+      private IFCFuzzyXYZSet TessellatedFaceVertices { get; set; } = null;
 
       // stores the current face being input. After the face will be
       // completely set, it will be inserted into the resident shape builder.
-      private IList<IList<XYZ>> m_TessellatedFaceBoundary = null;
-
-      // The target geometry being created.  This may affect tolerances used to include or exclude vertices that are very close to one another,
-      // or potentially degenerate faces.
-      private TessellatedShapeBuilderTarget m_TargetGeometry = TessellatedShapeBuilderTarget.AnyGeometry;
+      private IList<IList<XYZ>> TessellatedFaceBoundary { get; set; } = null;
 
       /// <summary>
       /// The number of successfully created faces so far.
@@ -54,15 +118,8 @@ namespace Revit.IFC.Import.Utility
 
       // The target geometry being created.  This may affect tolerances used to include or exclude vertices that are very 
       // close to one another, or potentially degenerate faces.
-      public TessellatedShapeBuilderTarget TargetGeometry
-      {
-         get { return m_TargetGeometry; }
-         private set
-         {
-            m_TargetGeometry = value;
-            SetIFCFuzzyXYZEpsilon();
-         }
-      }
+      public TessellatedShapeBuilderTarget TargetGeometry { get; private set; } = TessellatedShapeBuilderTarget.AnyGeometry;
+
 
       // The fallback geometry that will be created if we can't make the target geometry.
       public TessellatedShapeBuilderFallback FallbackGeometry { get; private set; } = TessellatedShapeBuilderFallback.Mesh;
@@ -110,19 +167,28 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public void StartCollectingFaceSet()
       {
-         if (m_TessellatedShapeBuilder == null)
-            m_TessellatedShapeBuilder = new TessellatedShapeBuilder();
+         if (TessellatedShapeBuilder == null)
+            TessellatedShapeBuilder = new TessellatedShapeBuilder();
 
-         m_TessellatedShapeBuilder.OpenConnectedFaceSet(false);
+         TessellatedShapeBuilder.OpenConnectedFaceSet(false);
          ResetCreatedFacesCount();
 
-         if (m_TessellatedFaceVertices != null)
-            m_TessellatedFaceVertices.Clear();
+         if (TessellatedFaceVertices != null)
+            TessellatedFaceVertices.Clear();
 
-         if (m_TessellatedFaceBoundary != null)
-            m_TessellatedFaceBoundary.Clear();
+         if (TessellatedFaceBoundary != null)
+            TessellatedFaceBoundary.Clear();
 
          FaceMaterialId = ElementId.InvalidElementId;
+      }
+
+      private double GetVertexTolerance()
+      {
+         // Note that this tolerance is slightly larger than required, as it is a cube instead of a
+         // sphere of equivalence.  In the case of AnyGeometry, we resort to the Solid tolerance as we are
+         // generally trying to create Solids over Meshes.
+         return (TargetGeometry == TessellatedShapeBuilderTarget.Mesh) ?
+            MathUtil.Eps() : IFCImportFile.TheFile.Document.Application.ShortCurveTolerance;
       }
 
       /// <summary>
@@ -130,16 +196,16 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public void StopCollectingFaceSet()
       {
-         if (m_TessellatedShapeBuilder == null)
+         if (TessellatedShapeBuilder == null)
             throw new InvalidOperationException("StartCollectingFaceSet has not been called.");
 
-         m_TessellatedShapeBuilder.CloseConnectedFaceSet();
+         TessellatedShapeBuilder.CloseConnectedFaceSet();
 
-         if (m_TessellatedFaceBoundary != null)
-            m_TessellatedFaceBoundary.Clear();
+         if (TessellatedFaceBoundary != null)
+            TessellatedFaceBoundary.Clear();
 
-         if (m_TessellatedFaceVertices != null)
-            m_TessellatedFaceVertices.Clear();
+         if (TessellatedFaceVertices != null)
+            TessellatedFaceVertices.Clear();
 
          FaceMaterialId = ElementId.InvalidElementId;
       }
@@ -149,24 +215,26 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public void StartCollectingFace(ElementId materialId)
       {
-         if (m_TessellatedShapeBuilder == null)
+         if (TessellatedShapeBuilder == null)
             throw new InvalidOperationException("StartCollectingFaceSet has not been called.");
 
-         if (m_TessellatedFaceBoundary == null)
-            m_TessellatedFaceBoundary = new List<IList<XYZ>>();
+         if (TessellatedFaceBoundary == null)
+            TessellatedFaceBoundary = new List<IList<XYZ>>();
          else
-            m_TessellatedFaceBoundary.Clear();
+            TessellatedFaceBoundary.Clear();
 
-         if (m_TessellatedFaceVertices == null)
-            m_TessellatedFaceVertices = new SortedDictionary<IFCFuzzyXYZ, XYZ>();
+         if (TessellatedFaceVertices == null)
+         {
+            TessellatedFaceVertices = new IFCFuzzyXYZSet(GetVertexTolerance());
+         }
 
          FaceMaterialId = materialId;
       }
 
       private void AddFaceToTessellatedShapeBuilder(TessellatedFace theFace)
       {
-         m_TessellatedShapeBuilder.AddFace(theFace);
-         m_TessellatedFaceBoundary.Clear();
+         TessellatedShapeBuilder.AddFace(theFace);
+         TessellatedFaceBoundary.Clear();
          FaceMaterialId = ElementId.InvalidElementId;
          CreatedFacesCount++;
       }
@@ -176,10 +244,10 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public void StopCollectingFace()
       {
-         if (m_TessellatedShapeBuilder == null || m_TessellatedFaceBoundary == null)
+         if (TessellatedShapeBuilder == null || TessellatedFaceBoundary == null)
             throw new InvalidOperationException("StartCollectingFace has not been called.");
 
-         TessellatedFace theFace = new TessellatedFace(m_TessellatedFaceBoundary, FaceMaterialId);
+         TessellatedFace theFace = new TessellatedFace(TessellatedFaceBoundary, FaceMaterialId);
          AddFaceToTessellatedShapeBuilder(theFace);
       }
 
@@ -189,7 +257,7 @@ namespace Revit.IFC.Import.Utility
       /// <returns>True if we have collected at least one face boundary, false otherwise.
       public bool HaveActiveFace()
       {
-         return (m_TessellatedFaceBoundary != null && m_TessellatedFaceBoundary.Count > 0);
+         return (TessellatedFaceBoundary != null && TessellatedFaceBoundary.Count > 0);
       }
 
       /// <summary>
@@ -197,8 +265,8 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       override public void AbortCurrentFace()
       {
-         if (m_TessellatedFaceBoundary != null)
-            m_TessellatedFaceBoundary.Clear();
+         if (TessellatedFaceBoundary != null)
+            TessellatedFaceBoundary.Clear();
 
          FaceMaterialId = ElementId.InvalidElementId;
       }
@@ -249,14 +317,15 @@ namespace Revit.IFC.Import.Utility
             interiorLoops = new List<Tuple<int, int>>();
             int lastInteriorLoopIndex = -1;
 
-            IDictionary<IFCFuzzyXYZ, int> createdVertices = new SortedDictionary<IFCFuzzyXYZ, int>();
+            IDictionary<XYZ, int> createdVertices = 
+               new SortedDictionary<XYZ, int>(new IFCXYZFuzzyComparer(GetVertexTolerance()));
 
             for (int ii = 0; ii < vertexCount; ii++)
             {
-               IFCFuzzyXYZ fuzzyXYZ = new IFCFuzzyXYZ(loopVertices[ii]);
+               XYZ loopVertex = loopVertices[ii];
 
                int createdVertexIndex = -1;
-               if (createdVertices.TryGetValue(fuzzyXYZ, out createdVertexIndex))
+               if (createdVertices.TryGetValue(loopVertex, out createdVertexIndex))
                {
                   // We will allow the first and last point to be equivalent, or the current and last point.  Otherwise we will throw.
                   if (((createdVertexIndex == 0) && (ii == vertexCount - 1)) || (createdVertexIndex == numTotalCreated - 1))
@@ -264,7 +333,7 @@ namespace Revit.IFC.Import.Utility
 
                   // If we have a real self-intersection, mark the loop created by the intersection
                   // for removal later.
-                  if (loopVertices[ii].DistanceTo(loopVertices[createdVertexIndex]) < MathUtil.SmallGap())
+                  if (loopVertex.DistanceTo(loopVertices[createdVertexIndex]) < MathUtil.SmallGap())
                   {
                      if (lastInteriorLoopIndex > createdVertexIndex)
                      {
@@ -274,7 +343,7 @@ namespace Revit.IFC.Import.Utility
                      }
                      // Sorted in reverse order so we can more easily create the interior loops later.
                      int numToRemove = ii - createdVertexIndex;
-                     interiorLoops.Insert(0, new Tuple<int, int>(createdVertexIndex, numToRemove));
+                     interiorLoops.Insert(0, Tuple.Create(createdVertexIndex, numToRemove));
                      lastInteriorLoopIndex = ii;
                      numOuterCreated -= numToRemove;
                      continue;
@@ -287,12 +356,10 @@ namespace Revit.IFC.Import.Utility
                   break;
                }
 
-               XYZ adjustedXYZ;
-               if (!m_TessellatedFaceVertices.TryGetValue(fuzzyXYZ, out adjustedXYZ))
-                  adjustedXYZ = m_TessellatedFaceVertices[fuzzyXYZ] = loopVertices[ii];
-
+               XYZ adjustedXYZ = TessellatedFaceVertices.FindOrAdd(loopVertex);
+                  
                adjustedLoopVertices.Add(adjustedXYZ);
-               createdVertices[new IFCFuzzyXYZ(adjustedXYZ)] = numTotalCreated;
+               createdVertices[adjustedXYZ] = numTotalCreated;
                numTotalCreated++;
                numOuterCreated++;
             }
@@ -315,20 +382,20 @@ namespace Revit.IFC.Import.Utility
             int startIndex = interiorLoop.Item1;
             int count = interiorLoop.Item2;
             if (count >= 3)
-               m_TessellatedFaceBoundary.Add(loopVertices.GetRange(startIndex, count));
+               TessellatedFaceBoundary.Add(loopVertices.GetRange(startIndex, count));
             adjustedLoopVertices.RemoveRange(startIndex, count);
          }
 
          if (interiorLoops.Count > 0)
             Importer.TheLog.LogWarning(id, "Loop is self-intersecting, fixing.", false);
          
-         m_TessellatedFaceBoundary.Add(adjustedLoopVertices);
+         TessellatedFaceBoundary.Add(adjustedLoopVertices);
          return true;
       }
 
       private void ClearTessellatedShapeBuilder()
       {
-         m_TessellatedShapeBuilder.Clear();
+         TessellatedShapeBuilder.Clear();
          CreatedFacesCount = 0;
       }
 
@@ -346,20 +413,20 @@ namespace Revit.IFC.Import.Utility
       {
          try
          {
-            m_TessellatedShapeBuilder.CloseConnectedFaceSet();
+            TessellatedShapeBuilder.CloseConnectedFaceSet();
 
             // The OwnerInfo is currently unused; the value doesn't really matter.
-            m_TessellatedShapeBuilder.LogString = IFCImportFile.TheFileName;
-            m_TessellatedShapeBuilder.LogInteger = IFCImportFile.TheBrepCounter;
-            m_TessellatedShapeBuilder.OwnerInfo = guid != null ? guid : "Temporary Element";
+            TessellatedShapeBuilder.LogString = IFCImportFile.TheFileName;
+            TessellatedShapeBuilder.LogInteger = IFCImportFile.TheBrepCounter;
+            TessellatedShapeBuilder.OwnerInfo = guid != null ? guid : "Temporary Element";
 
-            m_TessellatedShapeBuilder.Target = TargetGeometry;
-            m_TessellatedShapeBuilder.Fallback = FallbackGeometry;
-            m_TessellatedShapeBuilder.GraphicsStyleId = GraphicsStyleId;
+            TessellatedShapeBuilder.Target = TargetGeometry;
+            TessellatedShapeBuilder.Fallback = FallbackGeometry;
+            TessellatedShapeBuilder.GraphicsStyleId = GraphicsStyleId;
 
-            m_TessellatedShapeBuilder.Build();
+            TessellatedShapeBuilder.Build();
 
-            TessellatedShapeBuilderResult result = m_TessellatedShapeBuilder.GetBuildResult();
+            TessellatedShapeBuilderResult result = TessellatedShapeBuilder.GetBuildResult();
 
             // It is important that we clear the TSB after we build above, otherwise we will "collect" geometries
             // in the DirectShape and create huge files with redundant data.
@@ -483,16 +550,7 @@ namespace Revit.IFC.Import.Utility
       }
 
       // End temporary classes for holding BRep information.
-      private void SetIFCFuzzyXYZEpsilon()
-      {
-         // Note that this tolerance is slightly larger than required, as it is a cube instead of a
-         // sphere of equivalence.  In the case of AnyGeometry, we resort to the Solid tolerance as we are
-         // generally trying to create Solids over Meshes.
-         IFCFuzzyXYZ.IFCFuzzyXYZEpsilon = (TargetGeometry == TessellatedShapeBuilderTarget.Mesh) ?
-             MathUtil.Eps() :
-             IFCImportFile.TheFile.Document.Application.ShortCurveTolerance;
-      }
-
+      
       /// <summary>
       /// Indicates if the geometry can be created as a mesh as a fallback.
       /// </summary>
@@ -509,12 +567,17 @@ namespace Revit.IFC.Import.Utility
       public bool RevertToMeshIfPossible()
       {
          // Note that CanRevertToMesh() is redundant, but a trivial enough check.
-         if (CanRevertToMesh())
-         {
-            SetTargetAndFallbackGeometry(TessellatedShapeBuilderTarget.Mesh, TessellatedShapeBuilderFallback.Salvage);
-            return true;
-         }
-         return false;
+         if (!CanRevertToMesh())
+            return false;
+
+         SetTargetAndFallbackGeometry(TessellatedShapeBuilderTarget.Mesh, TessellatedShapeBuilderFallback.Salvage);
+
+         // We also need to reset the Comparer for TessellatedFaceVertices to a new tolerance.
+         // Note that since we are always lowering the tolerance, there should be no concern that 
+         // previous entries would disappear.  That isn't always true; see the remarks of
+         // IFCFuzzyXYZSet.
+         TessellatedFaceVertices.ResetTolerance(GetVertexTolerance());
+         return true;
       }
    }
 }

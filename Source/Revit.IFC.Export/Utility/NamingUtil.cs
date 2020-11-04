@@ -121,13 +121,14 @@ namespace Revit.IFC.Export.Utility
       /// </returns>
       public static string GetOverrideStringValue(Element element, string paramName, string originalValue)
       {
-         string propertyValue;
+         //string strValue;
          string paramValue;
 
          if (element != null)
          {
             if (ParameterUtil.GetStringValueFromElement(element, paramName, out paramValue) != null && !string.IsNullOrEmpty(paramValue))
             {
+               string propertyValue = null;
                object strValue = null;
                ParamExprResolver.CheckForParameterExpr(paramValue, element, paramName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE, out strValue);
                if (strValue != null && strValue is string)
@@ -135,7 +136,6 @@ namespace Revit.IFC.Export.Utility
                else
                   propertyValue = paramValue;   // return the original paramValue
 
-               //return paramValue;
                return propertyValue;
             }
          }
@@ -144,30 +144,77 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Gets override name from element.
+      /// Gets the IFC name for a material layer, taking into account shared parameter overrides.
       /// </summary>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <param name="originalValue">
-      /// The original value.
-      /// </param>
-      /// <returns>
-      /// The string contains the name string value.
-      /// </returns>
+      /// <param name="material">The material.</param>
+      /// <returns>The IFC name of the material.</returns>
+      public static string GetMaterialLayerName(Material material)
+      {
+         return GetOverrideStringValue(material, "IfcMaterialLayer.Name", GetMaterialName(material));
+      }
+
+      /// <summary>
+      /// Gets the category name for a material, taking into account shared parameter overrides.
+      /// </summary>
+      /// <param name="material">The material.</param>
+      /// <returns>The category name of the material.</returns>
+      /// <remarks>This is a convenience function for Materials only.</remarks>
+      public static string GetMaterialCategoryName(Material material)
+      {
+         if (material == null)
+            return null;
+
+         return GetOverrideStringValue(material, "IfcCategory",
+            GetOverrideStringValue(material, "Category", material.MaterialCategory));
+      }
+      
+      /// <summary>
+       /// Gets the IFC name for a material, taking into account shared parameter overrides.
+       /// </summary>
+       /// <param name="material">The material.</param>
+       /// <returns>The IFC name of the material.</returns>
+       /// <remarks>This is a convenience function for Materials only.</remarks>
+      public static string GetMaterialName(Material material)
+      {
+         if (material == null)
+            return null;
+
+         return GetNameOverride(material, material.Name);
+      }
+
+      /// <summary>
+      /// Gets the IFC name for a material by id, taking into account shared parameter overrides.
+      /// </summary>
+      /// <param name="doc">The document.</param>
+      /// <param name="materialId">The id of the material.</param>
+      /// <returns>The IFC name of the material.</returns>
+      /// <remarks>This is a convenience function for Materials only.</remarks>
+      public static string GetMaterialName(Document doc, ElementId materialId)
+      {
+         Material material = doc.GetElement(materialId) as Material;
+         return GetMaterialName(material);
+      }
+
+      /// <summary>
+      /// Gets the IFC name for an element, taking into account shared parameter overrides.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="originalValue">The default IFC name of the element, if not overriden.</param>
+      /// <returns>The IFC name of the element.</returns>
       public static string GetNameOverride(Element element, string originalValue)
       {
-         string nameOverride = "IfcName";
+         if (element == null)
+            return originalValue;
+
          // CQ_TODO: Understand the naming here and possible use GetCleanName - have it as UI option?
 
-         string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+         string overrideValue = GetOverrideStringValue(element, "IfcName", originalValue);
 
          // For backward compatibility where the old parameter name may still be use (NameOverride), handle it also if the above returns nothing
          if (string.IsNullOrEmpty(overrideValue)
             || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
          { 
-            nameOverride = "NameOverride";
-            overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            overrideValue = GetOverrideStringValue(element, "NameOverride", originalValue);
          }
 
          if (element is ElementType || element is FamilySymbol)
@@ -175,8 +222,7 @@ namespace Revit.IFC.Export.Utility
             if (string.IsNullOrEmpty(overrideValue)
                || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
          {
-            nameOverride = "IfcName[Type]";
-            overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            overrideValue = GetOverrideStringValue(element, "IfcName[Type]", originalValue);
          }
       }
 
@@ -387,12 +433,11 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">
       /// The element.
       /// </param>
-      /// <param name="originalValue">
-      /// The original value.
-      /// </param>
       /// <returns>The string contains the object type string value.</returns>
-      public static string GetTagOverride(Element element, string originalValue)
+      public static string GetTagOverride(Element element)
       {
+         string originalValue = NamingUtil.CreateIFCElementId(element);
+
          string nameOverride = "IfcTag";
          string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
          if (string.IsNullOrEmpty(overrideValue)
@@ -401,15 +446,16 @@ namespace Revit.IFC.Export.Utility
             overrideValue = GetOverrideStringValue(element, "TagOverride", originalValue);
          }
 
-            if (element is ElementType || element is FamilySymbol)
+         if (element is ElementType || element is FamilySymbol)
          {
             if (string.IsNullOrEmpty(overrideValue)
                || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
-         {
-            nameOverride = "IfcTag[Type]";
-            overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            {
+               nameOverride = "IfcTag[Type]";
+               overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+            }
          }
-         }
+
          return overrideValue;
       }
 

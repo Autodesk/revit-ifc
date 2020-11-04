@@ -53,7 +53,7 @@ namespace Revit.IFC.Import.Data
 
       static IDictionary<string, double> m_sPrefixToScaleFactor = null;
 
-      static IDictionary<ForgeTypeId, IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>>> m_sSupportedMetricUnitTypes = null;
+      static IDictionary<ForgeTypeId, IDictionary<string, Tuple<ForgeTypeId, ForgeTypeId>>> m_sSupportedMetricUnitTypes = null;
 
       /// <summary>
       /// The type of unit, such as Length.
@@ -223,86 +223,86 @@ namespace Revit.IFC.Import.Data
          m_sPrefixToScaleFactor["ATTO"] = 1e-18;
       }
 
-      private IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>> GetSupportedDisplayTypes(ForgeTypeId specTypeId)
+      private IDictionary<string, Tuple<ForgeTypeId, ForgeTypeId>> GetSupportedDisplayTypes(ForgeTypeId specTypeId)
       {
          if (m_sSupportedMetricUnitTypes == null)
-            m_sSupportedMetricUnitTypes = new Dictionary<ForgeTypeId, IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>>>();
+            m_sSupportedMetricUnitTypes = new Dictionary<ForgeTypeId, IDictionary<string, Tuple<ForgeTypeId, ForgeTypeId>>>();
 
-         IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>> supportedTypes = null;
+         IDictionary<string, Tuple<ForgeTypeId, ForgeTypeId>> supportedTypes = null;
          if (!m_sSupportedMetricUnitTypes.TryGetValue(specTypeId, out supportedTypes))
          {
-            supportedTypes = new Dictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>>();
+            supportedTypes = new Dictionary<string, Tuple<ForgeTypeId, ForgeTypeId>>();
             if (specTypeId.Equals(SpecTypeId.Area))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.SquareMeters, SymbolTypeId.MSup2);
-               supportedTypes["CENTI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.SquareCentimeters, SymbolTypeId.CmSup2);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.SquareMillimeters, SymbolTypeId.MmSup2);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.SquareMeters, SymbolTypeId.MSup2);
+               supportedTypes["CENTI"] = Tuple.Create(UnitTypeId.SquareCentimeters, SymbolTypeId.CmSup2);
+               supportedTypes["MILLI"] = Tuple.Create(UnitTypeId.SquareMillimeters, SymbolTypeId.MmSup2);
             }
             else if (specTypeId.Equals(SpecTypeId.Current))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Amperes, SymbolTypeId.Ampere);
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kiloamperes, SymbolTypeId.KA);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Milliamperes, SymbolTypeId.MA);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Amperes, SymbolTypeId.Ampere);
+               supportedTypes["KILO"] = Tuple.Create(UnitTypeId.Kiloamperes, SymbolTypeId.KA);
+               supportedTypes["MILLI"] = Tuple.Create(UnitTypeId.Milliamperes, SymbolTypeId.MA);
             }
             else if (specTypeId.Equals(SpecTypeId.ElectricalFrequency))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Hertz, SymbolTypeId.Hz);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Hertz, SymbolTypeId.Hz);
             }
             else if (specTypeId.Equals(SpecTypeId.Illuminance))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Lux, SymbolTypeId.Lx);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Lux, SymbolTypeId.Lx);
             }
             else if (specTypeId.Equals(SpecTypeId.LuminousFlux))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Lumens, SymbolTypeId.Lm);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Lumens, SymbolTypeId.Lm);
             }
             else if (specTypeId.Equals(SpecTypeId.LuminousIntensity))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Candelas, SymbolTypeId.Cd);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Candelas, SymbolTypeId.Cd);
             }
             else if (specTypeId.Equals(SpecTypeId.ElectricalPotential))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Volts, SymbolTypeId.Volt);
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilovolts, SymbolTypeId.KV);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Millivolts, SymbolTypeId.MV);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Volts, SymbolTypeId.Volt);
+               supportedTypes["KILO"] = Tuple.Create(UnitTypeId.Kilovolts, SymbolTypeId.KV);
+               supportedTypes["MILLI"] = Tuple.Create(UnitTypeId.Millivolts, SymbolTypeId.MV);
             }
             else if (specTypeId.Equals(SpecTypeId.Force))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Newtons, SymbolTypeId.Newton);    // Even if unit is grams, display kg.
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilonewtons, SymbolTypeId.KN);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Newtons, SymbolTypeId.Newton);    // Even if unit is grams, display kg.
+               supportedTypes["KILO"] = Tuple.Create(UnitTypeId.Kilonewtons, SymbolTypeId.KN);
             }
             else if (specTypeId.Equals(SpecTypeId.HvacPower))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Watts, SymbolTypeId.Watt);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Watts, SymbolTypeId.Watt);
             }
             else if (specTypeId.Equals(SpecTypeId.HvacPressure))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Pascals, SymbolTypeId.Pa);
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilopascals, SymbolTypeId.KPa);
-               supportedTypes["MEGA"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Megapascals, SymbolTypeId.MPa);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Pascals, SymbolTypeId.Pa);
+               supportedTypes["KILO"] = Tuple.Create(UnitTypeId.Kilopascals, SymbolTypeId.KPa);
+               supportedTypes["MEGA"] = Tuple.Create(UnitTypeId.Megapascals, SymbolTypeId.MPa);
             }
             else if (specTypeId.Equals(SpecTypeId.Length))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Meters, SymbolTypeId.Meter);
-               supportedTypes["CENTI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Centimeters, SymbolTypeId.Cm);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Millimeters, SymbolTypeId.Mm);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Meters, SymbolTypeId.Meter);
+               supportedTypes["CENTI"] = Tuple.Create(UnitTypeId.Centimeters, SymbolTypeId.Cm);
+               supportedTypes["MILLI"] = Tuple.Create(UnitTypeId.Millimeters, SymbolTypeId.Mm);
             }
             else if (specTypeId.Equals(SpecTypeId.Mass))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilograms, SymbolTypeId.Kg);    // Even if unit is grams, display kg.
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilograms, SymbolTypeId.Kg);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Kilograms, SymbolTypeId.Kg);    // Even if unit is grams, display kg.
+               supportedTypes["KILO"] = Tuple.Create(UnitTypeId.Kilograms, SymbolTypeId.Kg);
             }
             else if (specTypeId.Equals(SpecTypeId.MassDensity))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);    // Even if unit is grams, display kg.
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);    // Even if unit is grams, display kg.
+               supportedTypes["KILO"] = Tuple.Create(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);
             }
             else if (specTypeId.Equals(SpecTypeId.Volume))
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.CubicMeters, SymbolTypeId.MSup3);
-               supportedTypes["DECI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Liters, SymbolTypeId.Liter);
-               supportedTypes["CENTI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.CubicCentimeters, SymbolTypeId.CmSup3);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.CubicMillimeters, SymbolTypeId.MmSup3);
+               supportedTypes[""] = Tuple.Create(UnitTypeId.CubicMeters, SymbolTypeId.MSup3);
+               supportedTypes["DECI"] = Tuple.Create(UnitTypeId.Liters, SymbolTypeId.Liter);
+               supportedTypes["CENTI"] = Tuple.Create(UnitTypeId.CubicCentimeters, SymbolTypeId.CmSup3);
+               supportedTypes["MILLI"] = Tuple.Create(UnitTypeId.CubicMillimeters, SymbolTypeId.MmSup3);
             }
             m_sSupportedMetricUnitTypes[specTypeId] = supportedTypes;
          }
@@ -364,7 +364,7 @@ namespace Revit.IFC.Import.Data
          if (prefix == null)
             prefix = "";
 
-         IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>> supportedDisplayTypes = GetSupportedDisplayTypes(specTypeId);
+         IDictionary<string, Tuple<ForgeTypeId, ForgeTypeId>> supportedDisplayTypes = GetSupportedDisplayTypes(specTypeId);
          if (!supportedDisplayTypes.ContainsKey(prefix))
             return false;
 
@@ -374,9 +374,9 @@ namespace Revit.IFC.Import.Data
          if (!m_sPrefixToScaleFactor.ContainsKey(prefix))
             return false;
 
-         KeyValuePair<ForgeTypeId, ForgeTypeId> unitNameAndSymbol = supportedDisplayTypes[prefix];
-         Unit = unitNameAndSymbol.Key;
-         Symbol = unitNameAndSymbol.Value;
+         Tuple<ForgeTypeId, ForgeTypeId> unitNameAndSymbol = supportedDisplayTypes[prefix];
+         Unit = unitNameAndSymbol.Item1;
+         Symbol = unitNameAndSymbol.Item2;
          ScaleFactor *= GetScaleFactorForUnitType(prefix, specTypeId);
          return true;
       }
@@ -440,10 +440,10 @@ namespace Revit.IFC.Import.Data
          /// <param name="unitName">The name of the base unit.</param>
          public void AddCustomExpectedType(int exponent, string unitName)
          {
-            ExpectedTypes.Add(new Tuple<int, ForgeTypeId, string>(exponent, SpecTypeId.Custom, unitName));
+            ExpectedTypes.Add(Tuple.Create(exponent, SpecTypeId.Custom, unitName));
          }
 
-         public bool Matches(IList<KeyValuePair<IFCUnit, int>> derivedElementUnitHnds, out double scaleFactor)
+         public bool Matches(IList<Tuple<IFCUnit, int>> derivedElementUnitHnds, out double scaleFactor)
          {
             scaleFactor = 1.0;
 
@@ -452,14 +452,14 @@ namespace Revit.IFC.Import.Data
 
             ISet<Tuple<int, ForgeTypeId, string>> expectedTypes = ExpectedTypesCopy();
 
-            foreach (KeyValuePair<IFCUnit, int> derivedElementUnitHnd in derivedElementUnitHnds)
+            foreach (Tuple<IFCUnit, int> derivedElementUnitHnd in derivedElementUnitHnds)
             {
-               int dimensionality = derivedElementUnitHnd.Value;
-               Tuple<int, ForgeTypeId, string> currKey = new Tuple<int, ForgeTypeId, string>(dimensionality, derivedElementUnitHnd.Key.Spec, derivedElementUnitHnd.Key.CustomSpec);
+               int dimensionality = derivedElementUnitHnd.Item2;
+               Tuple<int, ForgeTypeId, string> currKey = Tuple.Create(dimensionality, derivedElementUnitHnd.Item1.Spec, derivedElementUnitHnd.Item1.CustomSpec);
                if (expectedTypes.Contains(currKey))
                {
                   expectedTypes.Remove(currKey);
-                  scaleFactor *= Math.Pow(derivedElementUnitHnd.Key.ScaleFactor, dimensionality);
+                  scaleFactor *= Math.Pow(derivedElementUnitHnd.Item1.ScaleFactor, dimensionality);
                }
                else
                   break;
@@ -484,7 +484,7 @@ namespace Revit.IFC.Import.Data
          List<IFCAnyHandle> elements =
              IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(unitHnd, "Elements");
 
-         IList<KeyValuePair<IFCUnit, int>> derivedElementUnitHnds = new List<KeyValuePair<IFCUnit, int>>();
+         IList<Tuple<IFCUnit, int>> derivedElementUnitHnds = new List<Tuple<IFCUnit, int>>();
          foreach (IFCAnyHandle subElement in elements)
          {
             IFCAnyHandle derivedElementUnitHnd = IFCImportHandleUtil.GetRequiredInstanceAttribute(subElement, "Unit", false);
@@ -494,7 +494,7 @@ namespace Revit.IFC.Import.Data
                bool found;
                int exponent = IFCImportHandleUtil.GetRequiredIntegerAttribute(subElement, "Exponent", out found);
                if (found)
-                  derivedElementUnitHnds.Add(new KeyValuePair<IFCUnit, int>(subUnit, exponent));
+                  derivedElementUnitHnds.Add(Tuple.Create(subUnit, exponent));
             }
          }
 
@@ -840,10 +840,10 @@ namespace Revit.IFC.Import.Data
       /// <param name="monetaryUnitHnd">The monetary unit handle.</param>
       void ProcessIFCMonetaryUnit(IFCAnyHandle monetaryUnitHnd)
       {
-         string currencyType = (IFCImportFile.TheFile.SchemaVersion < IFCSchemaVersion.IFC4) ?
-            IFCAnyHandleUtil.GetEnumerationAttribute(monetaryUnitHnd, "Currency") :
-            IFCImportHandleUtil.GetOptionalStringAttribute(monetaryUnitHnd, "Currency", string.Empty);
-
+         string currencyType = (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete)) ?
+            IFCImportHandleUtil.GetOptionalStringAttribute(monetaryUnitHnd, "Currency", string.Empty) :
+            IFCAnyHandleUtil.GetEnumerationAttribute(monetaryUnitHnd, "Currency");
+      
          Spec = SpecTypeId.Currency;
          Unit = UnitTypeId.Currency;
 

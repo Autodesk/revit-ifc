@@ -40,18 +40,16 @@ namespace Revit.IFC.Import.Utility
       static ISet<IFCEntityType> m_EntityDontImport = null;
 
       // Determines which entity and predefined type combinations should be ignored on import.
-      static ISet<KeyValuePair<IFCEntityType, string>> m_EntityDontImportPredefinedType = null;
+      static ISet<Tuple<IFCEntityType, string>> m_EntityDontImportPredefinedType = null;
 
       // Used for entity types that have a simple mapping to a built-in catgory.
       static IDictionary<IFCEntityType, BuiltInCategory> m_EntityTypeToCategory = null;
 
       // Used for entity types and predefined type pairs that have a simple mapping to a built-in catgory.
-      static IDictionary<KeyValuePair<IFCEntityType, string>, BuiltInCategory> m_EntityPredefinedTypeToCategory = null;
+      static IDictionary<Tuple<IFCEntityType, string>, BuiltInCategory> m_EntityPredefinedTypeToCategory = null;
 
       // Maps entity types to the type contained in the dictionary above, to avoid duplicate instance/type mappings.
       static IDictionary<IFCEntityType, IFCEntityType> m_EntityTypeKey = null;
-
-      static IDictionary<string, KeyValuePair<Color, int>> m_SubCategoryNameToMaterialData = null;
 
       /// <summary>
       /// Clear the maps at the start of import, to force reload of options.
@@ -68,10 +66,10 @@ namespace Revit.IFC.Import.Utility
       private static void InitializeCategoryMaps()
       {
          m_EntityDontImport = new HashSet<IFCEntityType>();
-         m_EntityDontImportPredefinedType = new HashSet<KeyValuePair<IFCEntityType, string>>();
+         m_EntityDontImportPredefinedType = new HashSet<Tuple<IFCEntityType, string>>();
          m_EntityTypeToCategory = new Dictionary<IFCEntityType, BuiltInCategory>();
          m_EntityTypeKey = new Dictionary<IFCEntityType, IFCEntityType>();
-         m_EntityPredefinedTypeToCategory = new Dictionary<KeyValuePair<IFCEntityType, string>, BuiltInCategory>();
+         m_EntityPredefinedTypeToCategory = new Dictionary<Tuple<IFCEntityType, string>, BuiltInCategory>();
 
          if (!InitFromFile())
             InitEntityTypeToCategoryMaps();
@@ -87,7 +85,7 @@ namespace Revit.IFC.Import.Utility
          }
       }
 
-      private static ISet<KeyValuePair<IFCEntityType, string>> EntityDontImportPredefinedType
+      private static ISet<Tuple<IFCEntityType, string>> EntityDontImportPredefinedType
       {
          get
          {
@@ -117,7 +115,7 @@ namespace Revit.IFC.Import.Utility
          }
       }
 
-      private static IDictionary<KeyValuePair<IFCEntityType, string>, BuiltInCategory> EntityPredefinedTypeToCategory
+      private static IDictionary<Tuple<IFCEntityType, string>, BuiltInCategory> EntityPredefinedTypeToCategory
       {
          get
          {
@@ -127,27 +125,78 @@ namespace Revit.IFC.Import.Utility
          }
       }
 
-      private static IDictionary<string, KeyValuePair<Color, int>> SubCategoryNameToMaterialData
+      private static string GetTypeNameFromCategoryName(string categoryName)
       {
-         get
+         if (categoryName == null)
+            return null;
+
+         string[] entityAndType = categoryName.Split('.');
+         if (entityAndType == null)
+            return null;
+
+         return (entityAndType.Length > 1) ? entityAndType[1] : null;
+      }
+
+      private static Tuple<Color, int> GetPredefinedColorAndTransparencyForCategoryByName(string categoryName)
+      {
+         if (categoryName == null)
+            return null;
+
+         Func<string, string, bool> StringStartsWith = (origString, subsetString) =>
+            origString.StartsWith(subsetString, StringComparison.OrdinalIgnoreCase);
+
+         Func<string, string, bool> StringEquals = (origString, subsetString) =>
+            origString.Equals(subsetString, StringComparison.OrdinalIgnoreCase);
+         
+         if (StringStartsWith(categoryName, "IfcDistributionPort"))
          {
-            if (m_SubCategoryNameToMaterialData == null)
+            string optionalTypeValue = GetTypeNameFromCategoryName(categoryName);
+            if (optionalTypeValue != null)
             {
-               m_SubCategoryNameToMaterialData = new Dictionary<string, KeyValuePair<Color, int>>(StringComparer.InvariantCultureIgnoreCase);
-               m_SubCategoryNameToMaterialData["IfcDistributionPort"] = new KeyValuePair<Color, int>(new Color(0, 0, 0), 127);
-               m_SubCategoryNameToMaterialData["IfcDistributionPort.SourceAndSink"] = new KeyValuePair<Color, int>(new Color(0, 255, 0), 127);
-               m_SubCategoryNameToMaterialData["IfcDistributionPort.Source"] = new KeyValuePair<Color, int>(new Color(0, 0, 255), 127);
-               m_SubCategoryNameToMaterialData["IfcDistributionPort.Sink"] = new KeyValuePair<Color, int>(new Color(255, 0, 0), 127);
-               m_SubCategoryNameToMaterialData["IfcOpeningElement"] = new KeyValuePair<Color, int>(new Color(255, 165, 0), 64);
-               m_SubCategoryNameToMaterialData["IfcOpeningStandardCase"] = new KeyValuePair<Color, int>(new Color(255, 165, 0), 64);
-               m_SubCategoryNameToMaterialData["IfcSpace"] = new KeyValuePair<Color, int>(new Color(164, 232, 232), 64); // Default is "Internal".
-               m_SubCategoryNameToMaterialData["IfcSpace.Internal"] = new KeyValuePair<Color, int>(new Color(164, 232, 232), 64); // Similar to "Light Sky Blue"
-               m_SubCategoryNameToMaterialData["IfcSpace.External"] = new KeyValuePair<Color, int>(new Color(141, 184, 78), 64); // A nice shade of green.
-               m_SubCategoryNameToMaterialData["IfcZone"] = new KeyValuePair<Color, int>(new Color(24, 167, 181), 64); // (Teal Blue (Crayola)), according to Wikipedia.
-               m_SubCategoryNameToMaterialData["Box"] = new KeyValuePair<Color, int>(new Color(255, 250, 205), 64); // Lemon chiffon, a lovely color for a bounding box.
+               if (StringEquals(optionalTypeValue, "SourceAndSink"))
+                  return Tuple.Create(new Color(0, 255, 0), 127);
+               if (StringEquals(optionalTypeValue, "Source"))
+                  return Tuple.Create(new Color(0, 0, 255), 127);
+               if (StringEquals(optionalTypeValue, "Sink"))
+                  return Tuple.Create(new Color(255, 0, 0), 127);
             }
-            return m_SubCategoryNameToMaterialData;
+            return Tuple.Create(new Color(0, 0, 0), 127);
          }
+
+         if (StringStartsWith(categoryName, "IfcOpening"))
+         {
+            return Tuple.Create(new Color(255, 165, 0), 64);
+         }
+         
+         // There are other entities that start with IfcSpace, such as IfcSpaceHeater.  But
+         // we won't be creating subcategories for those, and we want to get IfcSpace and
+         // IfcSpaceType with or without an optional predefined type.
+         if (StringStartsWith(categoryName, "IfcSpace"))
+         {
+            string optionalTypeValue = GetTypeNameFromCategoryName(categoryName);
+            if (optionalTypeValue != null && StringEquals(optionalTypeValue, "External"))
+            {
+               // A nice shade of green.
+               return Tuple.Create(new Color(141, 184, 78), 64);
+            }
+            // Default is internal.
+            // Similar to "Light Sky Blue"
+            return Tuple.Create(new Color(164, 232, 232), 64); 
+         }
+
+         if (StringStartsWith(categoryName, "IfcZone"))
+         {
+            // (Teal Blue (Crayola)), according to Wikipedia.
+            return Tuple.Create(new Color(24, 167, 181), 64);
+         }
+
+         if (StringEquals(categoryName, "Box"))
+         {
+            // Lemon chiffon, a lovely color for a bounding box.                             
+            return Tuple.Create(new Color(255, 250, 205), 64);
+         }
+
+         return null;
       }
 
       /// <summary>
@@ -421,50 +470,52 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeKey[IFCEntityType.IfcSlabType] = IFCEntityType.IfcSlab;
          m_EntityTypeKey[IFCEntityType.IfcValveType] = IFCEntityType.IfcValve;
 
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcCableSegmentType, "CABLESEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcCableSegmentType, "CONDUCTORSEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcColumn, "[LoadBearing]")] = BuiltInCategory.OST_StructuralColumns;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcColumn, "COLUMN")] = BuiltInCategory.OST_Columns;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcColumn, "USERDEFINED")] = BuiltInCategory.OST_Columns;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcColumn, "NOTDEFINED")] = BuiltInCategory.OST_Columns;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcColumnStandardCase, "[LoadBearing]")] = BuiltInCategory.OST_StructuralColumns;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcColumnStandardCase, "COLUMN")] = BuiltInCategory.OST_Columns;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcColumnStandardCase, "USERDEFINED")] = BuiltInCategory.OST_Columns;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcColumnStandardCase, "NOTDEFINED")] = BuiltInCategory.OST_Columns; m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcCovering, "CEILING")] = BuiltInCategory.OST_Ceilings;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcCovering, "FLOORING")] = BuiltInCategory.OST_Floors;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcCovering, "ROOFING")] = BuiltInCategory.OST_Roofs;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcElectricAppliance, "DISHWASHER")] = BuiltInCategory.OST_PlumbingFixtures;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcElectricAppliance, "ELECTRICCOOKER")] = BuiltInCategory.OST_ElectricalFixtures;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcElectricAppliance, "FRIDGE_FREEZER")] = BuiltInCategory.OST_SpecialityEquipment;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcElectricAppliance, "TUMBLEDRYER")] = BuiltInCategory.OST_ElectricalFixtures;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcElectricAppliance, "WASHINGMACHINE")] = BuiltInCategory.OST_ElectricalFixtures;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcElectricAppliance, "USERDEFINED")] = BuiltInCategory.OST_ElectricalFixtures;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcFireSuppressionTerminal, "SPRINKLER")] = BuiltInCategory.OST_Sprinklers;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcFlowController, "CIRCUITBREAKER")] = BuiltInCategory.OST_ElectricalEquipment;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcFlowSegment, "CABLESEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcFlowSegment, "CONDUCTORSEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcFlowTerminal, "AUDIOVISUALOUTLET")] = BuiltInCategory.OST_DataDevices;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcFlowTerminal, "COMMUNICATIONSOUTLET")] = BuiltInCategory.OST_DataDevices;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcFlowTerminal, "NOTDEFINED")] = BuiltInCategory.OST_GenericModel;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcFlowTerminal, "POWEROUTLET")] = BuiltInCategory.OST_ElectricalFixtures;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcMember, "MULLION")] = BuiltInCategory.OST_CurtainWallMullions;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcMemberStandardCase, "MULLION")] = BuiltInCategory.OST_CurtainWallMullions;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcOutletType, "AUDIOVISUALOUTLET")] = BuiltInCategory.OST_DataDevices;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcOutletType, "COMMUNICATIONSOUTLET")] = BuiltInCategory.OST_DataDevices;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcOutletType, "POWEROUTLET")] = BuiltInCategory.OST_ElectricalFixtures;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcOutletType, "NOTDEFINED")] = BuiltInCategory.OST_GenericModel;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcPlate, "CURTAIN_PANEL")] = BuiltInCategory.OST_CurtainWallPanels;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcPlateStandardCase, "CURTAIN_PANEL")] = BuiltInCategory.OST_CurtainWallPanels;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcProtectiveDeviceType, "CIRCUITBREAKER")] = BuiltInCategory.OST_ElectricalEquipment;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcSlab, "BASESLAB")] = BuiltInCategory.OST_StructuralFoundation;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcSlab, "FLOOR")] = BuiltInCategory.OST_Floors;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcSlab, "LANDING")] = BuiltInCategory.OST_StairsLandings;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcSlab, "ROOF")] = BuiltInCategory.OST_Roofs;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcSlabStandardCase, "BASESLAB")] = BuiltInCategory.OST_StructuralFoundation;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcSlabStandardCase, "FLOOR")] = BuiltInCategory.OST_Floors;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcSlabStandardCase, "LANDING")] = BuiltInCategory.OST_StairsLandings;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcSlabStandardCase, "ROOF")] = BuiltInCategory.OST_Roofs; m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcValve, "DRAWOFFCOCK")] = BuiltInCategory.OST_PlumbingFixtures;
-         m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(IFCEntityType.IfcValve, "FAUCET")] = BuiltInCategory.OST_PlumbingFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcCableSegmentType, "CABLESEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcCableSegmentType, "CONDUCTORSEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcColumn, "[LoadBearing]")] = BuiltInCategory.OST_StructuralColumns;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcColumn, "COLUMN")] = BuiltInCategory.OST_Columns;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcColumn, "USERDEFINED")] = BuiltInCategory.OST_Columns;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcColumn, "NOTDEFINED")] = BuiltInCategory.OST_Columns;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcColumnStandardCase, "[LoadBearing]")] = BuiltInCategory.OST_StructuralColumns;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcColumnStandardCase, "COLUMN")] = BuiltInCategory.OST_Columns;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcColumnStandardCase, "USERDEFINED")] = BuiltInCategory.OST_Columns;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcColumnStandardCase, "NOTDEFINED")] = BuiltInCategory.OST_Columns; 
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcCovering, "CEILING")] = BuiltInCategory.OST_Ceilings;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcCovering, "FLOORING")] = BuiltInCategory.OST_Floors;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcCovering, "ROOFING")] = BuiltInCategory.OST_Roofs;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "DISHWASHER")] = BuiltInCategory.OST_PlumbingFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "ELECTRICCOOKER")] = BuiltInCategory.OST_ElectricalFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "FRIDGE_FREEZER")] = BuiltInCategory.OST_SpecialityEquipment;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "TUMBLEDRYER")] = BuiltInCategory.OST_ElectricalFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "WASHINGMACHINE")] = BuiltInCategory.OST_ElectricalFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "USERDEFINED")] = BuiltInCategory.OST_ElectricalFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFireSuppressionTerminal, "SPRINKLER")] = BuiltInCategory.OST_Sprinklers;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowController, "CIRCUITBREAKER")] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowSegment, "CABLESEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowSegment, "CONDUCTORSEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowTerminal, "AUDIOVISUALOUTLET")] = BuiltInCategory.OST_DataDevices;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowTerminal, "COMMUNICATIONSOUTLET")] = BuiltInCategory.OST_DataDevices;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowTerminal, "NOTDEFINED")] = BuiltInCategory.OST_GenericModel;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowTerminal, "POWEROUTLET")] = BuiltInCategory.OST_ElectricalFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcMember, "MULLION")] = BuiltInCategory.OST_CurtainWallMullions;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcMemberStandardCase, "MULLION")] = BuiltInCategory.OST_CurtainWallMullions;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcOutletType, "AUDIOVISUALOUTLET")] = BuiltInCategory.OST_DataDevices;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcOutletType, "COMMUNICATIONSOUTLET")] = BuiltInCategory.OST_DataDevices;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcOutletType, "POWEROUTLET")] = BuiltInCategory.OST_ElectricalFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcOutletType, "NOTDEFINED")] = BuiltInCategory.OST_GenericModel;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcPlate, "CURTAIN_PANEL")] = BuiltInCategory.OST_CurtainWallPanels;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcPlateStandardCase, "CURTAIN_PANEL")] = BuiltInCategory.OST_CurtainWallPanels;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcProtectiveDeviceType, "CIRCUITBREAKER")] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcSlab, "BASESLAB")] = BuiltInCategory.OST_StructuralFoundation;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcSlab, "FLOOR")] = BuiltInCategory.OST_Floors;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcSlab, "LANDING")] = BuiltInCategory.OST_StairsLandings;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcSlab, "ROOF")] = BuiltInCategory.OST_Roofs;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcSlabStandardCase, "BASESLAB")] = BuiltInCategory.OST_StructuralFoundation;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcSlabStandardCase, "FLOOR")] = BuiltInCategory.OST_Floors;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcSlabStandardCase, "LANDING")] = BuiltInCategory.OST_StairsLandings;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcSlabStandardCase, "ROOF")] = BuiltInCategory.OST_Roofs; 
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcValve, "DRAWOFFCOCK")] = BuiltInCategory.OST_PlumbingFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcValve, "FAUCET")] = BuiltInCategory.OST_PlumbingFixtures;
       }
 
       private static bool InitFromFile()
@@ -530,7 +581,7 @@ namespace Revit.IFC.Import.Utility
             if (string.IsNullOrWhiteSpace(ifcTypeName))
                alreadyPresent = m_EntityTypeToCategory.ContainsKey(ifcClassType);
             else
-               alreadyPresent = m_EntityPredefinedTypeToCategory.ContainsKey(new KeyValuePair<IFCEntityType, string>(ifcClassType, ifcTypeName));
+               alreadyPresent = m_EntityPredefinedTypeToCategory.ContainsKey(Tuple.Create(ifcClassType, ifcTypeName));
 
             if (alreadyPresent)
                continue;
@@ -545,7 +596,7 @@ namespace Revit.IFC.Import.Utility
                if (string.IsNullOrWhiteSpace(ifcTypeName))
                   m_EntityDontImport.Add(ifcClassType);
                else
-                  m_EntityDontImportPredefinedType.Add(new KeyValuePair<IFCEntityType, string>(ifcClassType, ifcTypeName));
+                  m_EntityDontImportPredefinedType.Add(Tuple.Create(ifcClassType, ifcTypeName));
                continue;
             }
 
@@ -598,7 +649,7 @@ namespace Revit.IFC.Import.Utility
             if (string.IsNullOrWhiteSpace(ifcTypeName))
                m_EntityTypeToCategory[ifcClassType] = (BuiltInCategory)category.Id.IntegerValue;
             else
-               m_EntityPredefinedTypeToCategory[new KeyValuePair<IFCEntityType, string>(ifcClassType, ifcTypeName)] = (BuiltInCategory)category.Id.IntegerValue;
+               m_EntityPredefinedTypeToCategory[Tuple.Create(ifcClassType, ifcTypeName)] = (BuiltInCategory)category.Id.IntegerValue;
          }
 
          return true;
@@ -610,12 +661,12 @@ namespace Revit.IFC.Import.Utility
 
          // Check to see if the entity type and predefined type have a known mapping.
          // Otherwise special cases follow that could be cached later.
-         if (EntityPredefinedTypeToCategory.TryGetValue(new KeyValuePair<IFCEntityType, string>(entityType, predefinedType), out catId))
+         if (EntityPredefinedTypeToCategory.TryGetValue(Tuple.Create(entityType, predefinedType), out catId))
             return new ElementId(catId);
 
          IFCEntityType key;
          if (EntityTypeKey.TryGetValue(entityType, out key) &&
-             EntityPredefinedTypeToCategory.TryGetValue(new KeyValuePair<IFCEntityType, string>(key, predefinedType), out catId))
+             EntityPredefinedTypeToCategory.TryGetValue(Tuple.Create(key, predefinedType), out catId))
             return new ElementId(catId);
 
          // Check if there is a simple entity type to category mapping, and return if found.
@@ -636,7 +687,7 @@ namespace Revit.IFC.Import.Utility
          if (EntityDontImport.Contains(type))
             return false;
 
-         if (!string.IsNullOrWhiteSpace(predefinedType) && EntityDontImportPredefinedType.Contains(new KeyValuePair<IFCEntityType, string>(type, predefinedType)))
+         if (!string.IsNullOrWhiteSpace(predefinedType) && EntityDontImportPredefinedType.Contains(Tuple.Create(type, predefinedType)))
             return false;
 
          return true;
@@ -685,23 +736,14 @@ namespace Revit.IFC.Import.Utility
       private static void CreateMaterialsForSpecialSubcategories(Document doc, int id, Category category, string subCategoryName)
       {
          // A pair of material color (key) and transparency (value).
-         KeyValuePair<Color, int> colorAndTransparency = new KeyValuePair<Color, int>(null, 127);
+         Tuple<Color, int> colorAndTransparency =
+            GetPredefinedColorAndTransparencyForCategoryByName(subCategoryName);
 
-         if (!SubCategoryNameToMaterialData.TryGetValue(subCategoryName, out colorAndTransparency))
-         {
-            // Search for just the entity part of the subcategory name.
-            int dot = subCategoryName.IndexOf('.');
-            if (dot > 0 && dot < subCategoryName.Length)
-            {
-               string entityNameOnly = subCategoryName.Substring(dot);
-               if (!SubCategoryNameToMaterialData.TryGetValue(subCategoryName, out colorAndTransparency))
-                  return;
-            }
-         }
+         if (colorAndTransparency == null)
+            return;
 
-         IFCMaterialInfo materialInfo = null;
-         if (colorAndTransparency.Key != null)
-            materialInfo = IFCMaterialInfo.Create(colorAndTransparency.Key, colorAndTransparency.Value, null, null, ElementId.InvalidElementId);
+         IFCMaterialInfo materialInfo = 
+            IFCMaterialInfo.Create(colorAndTransparency.Item1, colorAndTransparency.Item2, null, null, ElementId.InvalidElementId);
 
          if (materialInfo != null)
          {

@@ -51,8 +51,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="hostElement">The host element having parts to export.</param>
       /// <param name="hostHandle">The host element handle.</param>
       /// <param name="originalWrapper">The ProductWrapper object.</param>
+      /// <param name="setMaterialNameToPartName">If set to true then generated parts will have names same as their material names.</param>
       public static void ExportHostPart(ExporterIFC exporterIFC, Element hostElement, IFCAnyHandle hostHandle,
-          ProductWrapper originalWrapper, PlacementSetter placementSetter, IFCAnyHandle originalPlacement, ElementId overrideLevelId)
+          ProductWrapper originalWrapper, PlacementSetter placementSetter, IFCAnyHandle originalPlacement, ElementId overrideLevelId, bool setMaterialNameToPartName = false)
       {
          using (ProductWrapper subWrapper = ProductWrapper.Create(exporterIFC, true))
          {
@@ -80,7 +81,7 @@ namespace Revit.IFC.Export.Exporter
                   foreach (KeyValuePair<Part, IFCRange> partRange in splitPartRangeList)
                   {
                      PartExporter.ExportPart(exporterIFC, partRange.Key, subWrapper, placementSetter, originalPlacement,
-                        partRange.Value, ifcExtrusionAxes, hostElement, overrideLevelId, PartExportMode.Standard);
+                        partRange.Value, ifcExtrusionAxes, hostElement, overrideLevelId, PartExportMode.Standard, setMaterialNameToPartName);
                   }
                }
             }
@@ -90,7 +91,7 @@ namespace Revit.IFC.Export.Exporter
                {
                   Part part = hostElement.Document.GetElement(partId) as Part;
                   PartExporter.ExportPart(exporterIFC, part, subWrapper, placementSetter, originalPlacement, null, ifcExtrusionAxes,
-                     hostElement, overrideLevelId, PartExportMode.Standard);
+                     hostElement, overrideLevelId, PartExportMode.Standard, setMaterialNameToPartName);
                }
             }
 
@@ -260,9 +261,10 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="hostElement">The host of the part.  This can be null.</param>
       /// <param name="overrideLevelId">The id of the level that the part is one, overridding other sources.</param>
       /// <param name="asBuildingElement">If true, export the Part as a building element instead of an IfcElementPart.</param>
+      /// <param name="setMaterialNameToPartName">If set to true then generated part will have name same as its material name.</param>
       public static IFCAnyHandle ExportPart(ExporterIFC exporterIFC, Element partElement, ProductWrapper productWrapper,
           PlacementSetter placementSetter, IFCAnyHandle originalPlacement, IFCRange range, IFCExtrusionAxes ifcExtrusionAxes,
-          Element hostElement, ElementId overrideLevelId, PartExportMode exportMode)
+          Element hostElement, ElementId overrideLevelId, PartExportMode exportMode, bool setMaterialNameToPartName = false)
       {
          IFCAnyHandle shapeRepresentation = null;
 
@@ -282,7 +284,7 @@ namespace Revit.IFC.Export.Exporter
             case PartExportMode.Standard:
             {
                // Check the intended IFC entity or type name is in the exclude list specified in the UI
-               Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcBuildingElementPart;
+               IFCEntityType elementClassTypeEnum = IFCEntityType.IfcBuildingElementPart;
                if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
                         return null;
                      break;
@@ -294,9 +296,9 @@ namespace Revit.IFC.Export.Exporter
                IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, hostElement, out ifcEnumType);
 
                // Check the intended IFC entity or type name is in the exclude list specified in the UI
-               Common.Enums.IFCEntityType elementClassTypeEnum;
-               if (Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
-                  || Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportType.ToString(), out elementClassTypeEnum))
+               IFCEntityType elementClassTypeEnum;
+               if (Enum.TryParse(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
+                  || Enum.TryParse(exportType.ExportType.ToString(), out elementClassTypeEnum))
                   if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
                            return null;
                break;
@@ -486,8 +488,17 @@ namespace Revit.IFC.Export.Exporter
 	                           break;
 	                     }
 	                  }
-	
-	                  bool containedInLevel = standaloneExport;
+
+                     if (setMaterialNameToPartName)
+                     {
+                        Material material = partElement.Document.GetElement(bodyData.MaterialIds[0]) as Material;
+                        if (material != null)
+                        {
+                           IFCAnyHandleUtil.OverrideNameAttribute(ifcPart, NamingUtil.GetMaterialLayerName(material));
+                        }
+                     }
+
+                     bool containedInLevel = standaloneExport;
 	                  PlacementSetter whichPlacementSetter = containedInLevel ? standalonePlacementSetter : placementSetter;
 	                  productWrapper.AddElement(partElement, ifcPart, whichPlacementSetter, extrusionCreationData, containedInLevel, exportType);
 	
@@ -518,6 +529,42 @@ namespace Revit.IFC.Export.Exporter
          return shapeRepresentation;
       }
 
+      //private static int? GetLayerIndex(Element part)
+      //{
+      //   string layerIndexStr;
+      //   if (ParameterUtil.GetStringValueFromElement(part, BuiltInParameter.DPART_LAYER_INDEX, out layerIndexStr) != null)
+      //   {
+      //      int layerIndex = int.Parse(layerIndexStr) - 1; //The index starts at 1
+      //      if (layerIndex >= 0)
+      //         return layerIndex;
+      //   }
+
+      //   return null;
+      //}
+
+      private static void AddGeometries(ExporterIFC exporterIFC, Element part, IFCRange range,
+         ref List<GeometryObject> geometryObjects, IList<Solid> solidsToExclude)
+      {
+         Options options = GeometryUtil.GetIFCExportGeometryOptions();
+         GeometryElement geometryElement = part.get_Geometry(options);
+         if (geometryElement == null)
+            return;
+
+         // GetSplitClippedSolidMeshGeometry will call GetSplitSolidMeshGeometry is range is null.
+         SolidMeshGeometryInfo solidMeshInfo;
+         if (range == null)
+            solidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(geometryElement);
+         else
+            solidMeshInfo = GeometryUtil.GetSplitClippedSolidMeshGeometry(geometryElement, range);
+
+         if (solidMeshInfo.GetSolids().Count == 0 && solidMeshInfo.GetMeshes().Count == 0)
+            return;
+
+         IList<Solid> solids = solidMeshInfo.GetSolids();
+         IList<Mesh> meshes = solidMeshInfo.GetMeshes();
+         geometryObjects.AddRange(FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(part.Document, exporterIFC, ref solids, ref meshes, solidsToExclude));
+      }
+
       /// <summary>
       /// Export parts for IFC4RV. This will export the individual part representations as IfcShapeAspect, and return the main shape representation handle
       /// </summary>
@@ -531,10 +578,9 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>the host shape representation with multiple items from its parts</returns>
       public static IFCAnyHandle ExportHostPartAsShapeAspects(ExporterIFC exporterIFC, Element hostElement, IFCAnyHandle hostProdDefShape,
           ProductWrapper originalWrapper, PlacementSetter placementSetter, IFCAnyHandle originalPlacement, ElementId overrideLevelId,
-          out MaterialLayerSetInfo layersetInfo, IFCExtrusionCreationData extrusionCreationData, IList<Solid> solidsToExclude = null) 
+          MaterialLayerSetInfo layersetInfo, IFCExtrusionCreationData extrusionCreationData, IList<Solid> solidsToExclude = null) 
       {
          IFCAnyHandle hostShapeRep = null;
-         layersetInfo = new MaterialLayerSetInfo(exporterIFC, hostElement, originalWrapper);
          IList<ElementId> materialIdsFromBodyData = new List<ElementId>();
          IFCFile file = exporterIFC.GetFile();
          BodyData bodyData = null;
@@ -545,10 +591,9 @@ namespace Revit.IFC.Export.Exporter
          bool partIsNotObtainable = false;
          bool isWallOrColumn = IsHostWallOrColumn(exporterIFC, hostElement);
          bool hasOverrideLevel = overrideLevelId != null && overrideLevelId != ElementId.InvalidElementId;
-         Options options = GeometryUtil.GetIFCExportGeometryOptions();
          ElementId catId = CategoryUtil.GetSafeCategoryId(hostElement);
          IList<int> partMaterialLayerIndexList = new List<int>();
-         IList<Tuple<ElementId, string, double>> layersetInfoList = new List<Tuple<ElementId, string, double>>();
+         IList<MaterialLayerSetInfo.MaterialInfo> layersetInfoList = new List<MaterialLayerSetInfo.MaterialInfo>();
 
          if (ElementCanHaveMultipleComponents(hostElement))
          {
@@ -570,25 +615,11 @@ namespace Revit.IFC.Export.Exporter
                      if (validRange)
                      {
                         Part part = partRange.Key;
+                        //int? layerIndex = GetLayerIndex(part);
+                        //if (layerIndex.HasValue)
+                        //   partMaterialLayerIndexList.Add(layerIndex.Value);
 
-                        // These commented lines are only available in Revit 2022
-                        //string layerIndexStr;
-                        //if (ParameterUtil.GetStringValueFromElement(part, BuiltInParameter.DPART_LAYER_INDEX, out layerIndexStr) != null)
-                        //{
-                        //   int layerIndex = int.Parse(layerIndexStr) - 1; //The index starts at 1
-                        //   partMaterialLayerIndexList.Add(layerIndex);
-                        //}
-                        GeometryElement geometryElement = part.get_Geometry(options);
-                        if (geometryElement == null)
-                           continue;
-
-                        SolidMeshGeometryInfo solidMeshInfo = GeometryUtil.GetSplitClippedSolidMeshGeometry(geometryElement, range);
-                        if (solidMeshInfo.GetSolids().Count == 0 && solidMeshInfo.GetMeshes().Count == 0)
-                           continue;
-
-                        IList<Solid> solids = solidMeshInfo.GetSolids();
-                        IList<Mesh> meshes = solidMeshInfo.GetMeshes();
-                        geometryObjects.AddRange(FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(part.Document, exporterIFC, ref solids, ref meshes, solidsToExclude));
+                        AddGeometries(exporterIFC, part, range, ref geometryObjects, solidsToExclude);
                      }
                   }
                }
@@ -599,23 +630,14 @@ namespace Revit.IFC.Export.Exporter
                   foreach (ElementId partId in associatedPartsList)
                   {
                      Part part = hostElement.Document.GetElement(partId) as Part;
-
-                     // These lines are only available in Revit 2022
-                     //string layerIndexStr;
-                     //if (ParameterUtil.GetStringValueFromElement(part, BuiltInParameter.DPART_LAYER_INDEX, out layerIndexStr) != null)
-                     //{
-                     //   int layerIndex = int.Parse(layerIndexStr) - 1; //The index starts at 1
-                     //   partMaterialLayerIndexList.Add(layerIndex);
-                     //}
-                     GeometryElement geometryElement = part.get_Geometry(options);
-                     if (geometryElement == null)
-                        continue;
-                     SolidMeshGeometryInfo solidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(geometryElement);
-                     IList<Solid> solids = solidMeshInfo.GetSolids();
-                     IList<Mesh> meshes = solidMeshInfo.GetMeshes();
-                     geometryObjects.AddRange(FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(part.Document, exporterIFC, ref solids, ref meshes, solidsToExclude));
+                     //int? layerIndex = GetLayerIndex(part);
+                     //if (layerIndex.HasValue)
+                     //   partMaterialLayerIndexList.Add(layerIndex.Value);
+                     AddGeometries(exporterIFC, part, null, ref geometryObjects, solidsToExclude);
                   }
                }
+
+               partMaterialLayerIndexList = RenumberPartMaterialIndexList(partMaterialLayerIndexList.ToList());
             }
             else
             {
@@ -658,8 +680,8 @@ namespace Revit.IFC.Export.Exporter
                   // material. It is not very correct, but it will produce consistent output
 
                   var matList = (from x in layersetInfo.MaterialIds
-                                 where !MathUtil.IsAlmostZero(x.Item3)
-                                 select new Tuple<ElementId, string, double>(x.Item1, x.Item2, x.Item3)).ToList();
+                                 where !MathUtil.IsAlmostZero(x.m_matWidth)
+                                 select new MaterialLayerSetInfo.MaterialInfo(x.m_baseMatId, x.m_layerName, x.m_matWidth, x.m_function)).ToList();
                   if (matList != null && matList.Count > 0)
                      layersetInfoList.Add(matList[0]);   // add only the first non-zero thickness
                }
@@ -681,19 +703,19 @@ namespace Revit.IFC.Export.Exporter
             }
             else
             {
-               IList<ElementId> matInfoList = layersetInfo.MaterialIds.Where(x => !MathUtil.IsAlmostZero(x.Item3)).Select(x => x.Item1).ToList();
+               IList<ElementId> matInfoList = layersetInfo.MaterialIds.Where(x => !MathUtil.IsAlmostZero(x.m_matWidth)).Select(x => x.m_baseMatId).ToList();
                // There is a chance that the material list is already correct or just in reverse order, so handle it before moving on to manual sequencing
                MaterialLayerSetInfo.CompareTwoLists compStat = MaterialLayerSetInfo.CompareMaterialInfoList(bodyData.MaterialIds, matInfoList);
                switch (compStat)
                {
                   case MaterialLayerSetInfo.CompareTwoLists.ListsSequentialEqual:
                      {
-                        layersetInfoList = new List<Tuple<ElementId, string, double>>(layersetInfo.MaterialIds);
+                        layersetInfoList = new List<MaterialLayerSetInfo.MaterialInfo>(layersetInfo.MaterialIds);
                         break;
                      }
                   case MaterialLayerSetInfo.CompareTwoLists.ListsReversedEqual:
                      {
-                        layersetInfoList = new List<Tuple<ElementId, string, double>>(layersetInfo.MaterialIds);
+                        layersetInfoList = new List<MaterialLayerSetInfo.MaterialInfo>(layersetInfo.MaterialIds);
                         layersetInfoList = layersetInfoList.Reverse().ToList();
                         break;
                      }
@@ -703,7 +725,7 @@ namespace Revit.IFC.Export.Exporter
                         layersetInfoList = CollectMaterialInfoList(hostElement, associatedPartsList, layersetInfo);
 
                         // There is a chance that the manually collected list will be reversed or incorrect, so check it again
-                        IList<ElementId> newMatInfoList = layersetInfoList.Where(x => !MathUtil.IsAlmostZero(x.Item3)).Select(x => x.Item1).ToList();
+                        IList<ElementId> newMatInfoList = layersetInfoList.Where(x => !MathUtil.IsAlmostZero(x.m_matWidth)).Select(x => x.m_baseMatId).ToList();
                         compStat = MaterialLayerSetInfo.CompareMaterialInfoList(newMatInfoList, matInfoList);
                         if (compStat == MaterialLayerSetInfo.CompareTwoLists.ListsReversedEqual)
                            layersetInfoList = layersetInfoList.Reverse().ToList();
@@ -716,41 +738,15 @@ namespace Revit.IFC.Export.Exporter
                if (compStat == MaterialLayerSetInfo.CompareTwoLists.ListsUnequal)
                {
                   // We still cannot match the layer, it could be no layer. Use only the first material
-                  Tuple<ElementId, string, double> layer1 = layersetInfo.MaterialIds[0];
-                  layersetInfo.SingleMaterialOverride(layer1.Item1, layer1.Item3);
+                  MaterialLayerSetInfo.MaterialInfo layer1 = layersetInfo.MaterialIds[0];
+                  layersetInfo.SingleMaterialOverride(layer1.m_baseMatId, layer1.m_matWidth);
                   layersetInfoList.Add(layer1);
                }
             }
          }
 
-         // Create IfcShapeAspects for each of the ShapeRepresentation
-         int cnt = 0;
-         foreach (IFCAnyHandle itemRep in itemReps)
-         {
-            // stop if the last layer info is already used
-            if (cnt >= layersetInfoList.Count)
-               break;
-
-            string layerName = "Layer";
-            if (partMaterialLayerIndexList.Count > 0)
-            {
-               int layerInfoIdx = partMaterialLayerIndexList[cnt];
-               layerName = layersetInfoList[layerInfoIdx].Item2;
-            }
-            else
-            {
-               layerName = layersetInfoList[cnt].Item2;
-            }
-
-            IFCAnyHandle representationOfItem = RepresentationUtil.CreateShapeRepresentation(exporterIFC, hostElement, catId, contextOfItems, shapeIdent,
-               representationType, new HashSet<IFCAnyHandle>() {itemRep});
-            IFCAnyHandle shapeAspect = IFCInstanceExporter.CreateShapeAspect(file, new List<IFCAnyHandle>() { representationOfItem }, layerName, null, null, hostProdDefShape);
-            cnt++;
-         }
-
+         // Scan through the prodReps and remove any existing "Body" rep if it is already in there, if there is, it will be removed and replaced with the parts
          List<IFCAnyHandle> prodReps = IFCAnyHandleUtil.GetRepresentations(hostProdDefShape);
-         
-         // Scan through the prodReps and remove any existing "Body" rep if it is already in there, if there is, it will be removed abd replaced with the parts
          int repToRemove = -1;
          for (int rCnt = 0; rCnt < prodReps.Count; ++rCnt)
          {
@@ -758,7 +754,7 @@ namespace Revit.IFC.Export.Exporter
             {
                repToRemove = rCnt;
                break;
-            } 
+            }
          }
          if (repToRemove < prodReps.Count && repToRemove > -1)
             prodReps.RemoveAt(repToRemove);
@@ -766,12 +762,36 @@ namespace Revit.IFC.Export.Exporter
          // Add the body from the parts to replace the Body representation
          prodReps.Add(hostShapeRep);
          IFCAnyHandleUtil.SetAttribute(hostProdDefShape, "Representations", prodReps);
+
+         // Create IfcShapeAspects for each of the ShapeRepresentation
+         int partMatLayIdxCount = partMaterialLayerIndexList.Count;
+         int layerSetInfoCount = layersetInfoList.Count;
+         int cnt = 0;
+         foreach (IFCAnyHandle itemRep in itemReps)
+         {
+            string layerName = "Layer";
+            if (partMatLayIdxCount > 0 && cnt < partMatLayIdxCount)
+            {
+               int layerInfoIdx = partMaterialLayerIndexList[cnt];
+               if (layerInfoIdx < layerSetInfoCount)
+                  layerName = layersetInfoList[layerInfoIdx].m_layerName;
+            }
+            else
+            {
+               if (cnt < layerSetInfoCount)
+                  layerName = layersetInfoList[cnt].m_layerName;
+            }
+
+            RepresentationUtil.CreateRepForShapeAspect(exporterIFC, hostElement, hostProdDefShape, representationType, layerName, itemRep);
+            cnt++;
+         }
+
          return hostShapeRep;
       }
 
-      private static IList<Tuple<ElementId, string, double>> CollectMaterialInfoList(Element hostElement, List<ElementId> associatedPartsList, MaterialLayerSetInfo layersetInfo)
+      private static IList<MaterialLayerSetInfo.MaterialInfo> CollectMaterialInfoList(Element hostElement, List<ElementId> associatedPartsList, MaterialLayerSetInfo layersetInfo)
       {
-         IList<Tuple<ElementId, string, double>> layersetInfoList = new List<Tuple<ElementId, string, double>>();
+         IList<MaterialLayerSetInfo.MaterialInfo> layersetInfoList = new List<MaterialLayerSetInfo.MaterialInfo>();
 
          if (hostElement is Wall)
          {
@@ -887,10 +907,10 @@ namespace Revit.IFC.Export.Exporter
 
             foreach (KeyValuePair<double, Tuple<double, Face>> faceInfo in sortedFaces)
             {
-               foreach (Tuple<ElementId, string, double> layerInfo in layersetInfo.MaterialIds)
+               foreach (MaterialLayerSetInfo.MaterialInfo layerInfo in layersetInfo.MaterialIds)
                {
                   // Face's material ID == layer's material ID && face's width == layer's width
-                  if (faceInfo.Value.Item2.MaterialElementId == layerInfo.Item1 && MathUtil.IsAlmostEqual(faceInfo.Value.Item1, layerInfo.Item3))
+                  if (faceInfo.Value.Item2.MaterialElementId == layerInfo.m_baseMatId && MathUtil.IsAlmostEqual(faceInfo.Value.Item1, layerInfo.m_matWidth))
                   {
                      layersetInfoList.Add(layerInfo);
                      break;
@@ -925,13 +945,29 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Identifies if the host element can export the associated parts.
+      /// Identifies if the host element should be exported as parts.
+      /// If MVD is older then IFC4 we rely on ExportOptionsCache.ExportParts option.
+      /// If MVD is IFC4RV and if Exchange type is Structural we need to export Parts if they exist. If number of parts is 1 we need to export it as ShapeAspect and not as Part.
       /// </summary>
       /// <param name="hostElement">The host element.</param>
-      /// <returns>True if host element can export the parts and have any associated parts, false otherwise.</returns>
+      /// <param name="layersCount">The number of layers or parts the hostElemnt consists of.</param>
+      /// <returns>True if host element should be exported as parts, false otherwise.</returns>
+      public static bool ShouldExportParts(Element hostElement, int layersCount)
+      {
+
+         return hostElement != null && (ExporterCacheManager.ExportOptionsCache.ExportParts ||
+                                        (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && ExporterCacheManager.ExportOptionsCache.GetExchangeRequirement == KnownERNames.Structural
+                                                                                                        && layersCount > 1)
+                                       );
+      }
+      /// <summary>
+      /// Checks if elemnt has associated parts and all conditions are met for exporting it as Parts.
+      /// </summary>
+      /// <param name="hostElement">The host element.</param>
+      /// <returns>True if host element can export the parts, false otherwise.</returns>
       public static bool CanExportParts(Element hostElement)
       {
-         if (hostElement != null && ExporterCacheManager.ExportOptionsCache.ExportParts)
+         if (ShouldExportParts(hostElement, PartUtils.GetAssociatedParts(hostElement.Document, hostElement.Id, false, true).Count))
          {
             return PartUtils.HasAssociatedParts(hostElement.Document, hostElement.Id);
          }
@@ -1268,13 +1304,44 @@ namespace Revit.IFC.Export.Exporter
          BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
          if (geometryObjects.Count > 0)
          {
-               bodyData = BodyExporter.ExportBody(exporterIFC, hostElement, catId, ElementId.InvalidElementId, geometryObjects,
-                  bodyExporterOptions, extrusionCreationData);
-               hostShapeRep = bodyData.RepresentationHnd;
-               materialIds = bodyData.MaterialIds;
+            bodyData = BodyExporter.ExportBody(exporterIFC, hostElement, catId, ElementId.InvalidElementId, geometryObjects,
+               bodyExporterOptions, extrusionCreationData);
+            hostShapeRep = bodyData.RepresentationHnd;
+            materialIds = bodyData.MaterialIds;
          }
 
          return hostShapeRep;
+      }
+
+      static IList<int> RenumberPartMaterialIndexList(List<int> partMaterialLayerIndexList)
+      {
+         // There is potentially a problem here when obtaining layer index since it include zero width layer in the numbering, 
+         //   but the CompoundStructure will only return the list of components that is non-zero width
+         // The list will be sorted here and "re-numbered" to be in contiguous sequence
+         partMaterialLayerIndexList.Sort();
+         int seqNo = 0;
+         int indToReplace = -1;
+         for (int contIdx = 0; contIdx < partMaterialLayerIndexList.Count; ++contIdx)
+         {
+            int currentVal = partMaterialLayerIndexList[contIdx];
+            if (currentVal > seqNo)
+            {
+               if (currentVal == indToReplace)
+               {
+                  partMaterialLayerIndexList[contIdx] = seqNo;
+                  continue;
+               }
+               seqNo++;
+               if (currentVal > seqNo)
+               {
+                  // There is a gap. We will replace this with a continguous index
+                  indToReplace = currentVal;
+                  partMaterialLayerIndexList[contIdx] = seqNo;
+               }
+            }
+         }
+
+         return partMaterialLayerIndexList;
       }
    }
 }

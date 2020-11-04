@@ -51,6 +51,8 @@ namespace Revit.IFC.Common.Utility
       /// <summary>
       /// Check if two double variables are almost equal.
       /// </summary>
+      /// <param name="d1">The first value.</param>
+      /// <param name="d2">The second value.</param>
       /// <returns>
       /// True if they are almost equal, false otherwise.
       /// </returns>
@@ -59,6 +61,15 @@ namespace Revit.IFC.Common.Utility
          return IsAlmostEqual(d1, d2, Eps());
       }
 
+      /// <summary>
+      /// Check if two double variables are almost equal within a relative eps tolerance.
+      /// </summary>
+      /// <param name="d1">The first value.</param>
+      /// <param name="d2">The second value.</param>
+      /// <param name="eps">The tolerance value.</param>
+      /// <returns>
+      /// True if they are almost equal, false otherwise.
+      /// </returns>
       public static bool IsAlmostEqual(double d1, double d2, double eps)
       {
          double sum = Math.Abs(d1) + Math.Abs(d2);
@@ -76,6 +87,26 @@ namespace Revit.IFC.Common.Utility
       public static bool IsAlmostEqual(UV uv1, UV uv2)
       {
          return IsAlmostEqual(uv1.U, uv2.U) && IsAlmostEqual(uv1.V, uv2.V);
+      }
+
+      /// <summary>
+      /// Check if two points are almost equal, regardless of scale of points.
+      /// </summary>
+      /// <param name="xyz1">The first point.</param>
+      /// <param name="xyz2">The second point.</param>
+      /// <returns>
+      /// True if they are almost equal, false otherwise.
+      /// </returns>
+      /// <remarks>
+      /// This function does an absolute, not relative, equality
+      /// comparision.  This can generate different results
+      /// than xyz1.IsAlmostEqualTo(xyz2) for large coordinates.</remarks>
+      public static bool IsAlmostEqualAbsolute(XYZ xyz1, XYZ xyz2)
+      {
+         if (xyz1 == null || xyz2 == null)
+            return (xyz1 == null && xyz2 == null);
+
+         return (xyz1 - xyz2).IsZeroLength();
       }
 
       /// <summary>

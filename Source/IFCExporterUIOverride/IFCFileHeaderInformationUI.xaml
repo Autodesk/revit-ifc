@@ -45,8 +45,6 @@
             <TextBox Text="{Binding Path=FileSchema, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetByExportOption}}" Height="23" HorizontalAlignment="Stretch" Margin="72,251,33,0" Name="FileSchemaTextBox" VerticalAlignment="Top" Grid.Column="1" IsReadOnly="True" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
             <Button Content="{x:Static p:Resources.OK}" Height="22" Name="buttonOK" Width="75" Click="buttonOK_Click" RenderTransformOrigin="0.48,-5.227" Grid.Column="1" Margin="230,343,113,11"/>
             <Button Content="{x:Static p:Resources.Cancel}" Height="22" x:Name="buttonCancel" Width="75" Click="bottonCancel_Click" Margin="310,343,33,11" Grid.Column="1" RenderTransformOrigin="0.547,1.273"/>
-            <ComboBox x:Name="comboBoxExchangeRequirement" Grid.Column="1" HorizontalAlignment="Left" Margin="72,281,0,0" VerticalAlignment="Top" Width="313" IsEditable="True" SelectionChanged="comboBoxExchangeRequirement_SelectionChanged"/>
-            <Label Content="{x:Static p:Resources.ExchangeRequirement}" Height="28" HorizontalAlignment="Left" Margin="0,277,0,0" Name="labelExchangeRequirement" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
         </Grid>
     </Grid>
 </auiw:ChildWindow>

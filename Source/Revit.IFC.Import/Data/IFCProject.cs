@@ -157,10 +157,6 @@ namespace Revit.IFC.Import.Data
                }
             }
          }
-
-         // Special read of IfcPresentationLayerAssignment if the INVERSE flag isn't properly set in the EXPRESS file.
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x2)
-            IFCPresentationLayerAssignment.ProcessAllLayerAssignments();
       }
 
       /// <summary>
@@ -180,18 +176,22 @@ namespace Revit.IFC.Import.Data
       /// Allow for override of IfcObjectDefinition shared parameter names.
       /// </summary>
       /// <param name="name">The enum corresponding of the shared parameter.</param>
+      /// <param name="isType">True if the shared parameter is a type parameter.</param>
       /// <returns>The name appropriate for this IfcObjectDefinition.</returns>
-      public override string GetSharedParameterName(IFCSharedParameters name)
+      public override string GetSharedParameterName(IFCSharedParameters name, bool isType)
       {
-         switch (name)
+         if (!isType)
          {
-            case IFCSharedParameters.IfcName:
-               return "IfcProject Name";
-            case IFCSharedParameters.IfcDescription:
-               return "IfcProject Description";
-            default:
-               return base.GetSharedParameterName(name);
+            switch (name)
+            {
+               case IFCSharedParameters.IfcName:
+                  return "IfcProject Name";
+               case IFCSharedParameters.IfcDescription:
+                  return "IfcProject Description";
+            }
          }
+
+         return base.GetSharedParameterName(name, isType);
       }
 
       /// <summary>
