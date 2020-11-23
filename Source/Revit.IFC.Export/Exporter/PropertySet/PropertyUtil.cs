@@ -3058,7 +3058,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                               case ParameterType.HVACCrossSection:
                               case ParameterType.ReinforcementArea:
                               case ParameterType.SectionArea:
-                              case ParameterType.SurfaceArea:
                            {
                               double scaledValue = UnitUtil.ScaleArea(value);
                               propertyHandle = CreateAreaMeasureProperty(file, parameterCaption,
@@ -3084,6 +3083,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                               case ParameterType.SectionDimension:
                               case ParameterType.SectionProperty:
                               case ParameterType.WireSize:
+                              case ParameterType.SurfaceArea:           // This is actually SurfaceAreaPerUnitLength (SpecTypeId.SurfaceAreaPerUnitLength)
                            {
                               propertyHandle = CreateLengthMeasurePropertyFromCache(file, parameterCaption,
                                     UnitUtil.ScaleLength(value), PropertyValueType.SingleValue);

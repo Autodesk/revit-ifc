@@ -133,5 +133,6 @@
       <Button Height="23" HorizontalAlignment="Left" Margin="164,486,0,0" Name="buttonSaveSetup" VerticalAlignment="Top" Width="25" Click="buttonSaveSetup_Click" ToolTip="{x:Static p:Resources.ExportSelectedSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
          <Image HorizontalAlignment="Stretch" Name="image5" Stretch="Fill" VerticalAlignment="Stretch" Source="icons/save.ico" Width="16" Height="16" RenderTransformOrigin="0.5,0.688" />
       </Button>
+      <Button Content="{x:Static p:Resources.ResetToOriginals}" Name="button_ResetConfigurations" Margin="0,0,216,9" VerticalAlignment="Bottom" Height="23" HorizontalAlignment="Right" Width="75" Click="button_ResetConfigurations_Click"/>
    </Grid>
 </auiw:ChildWindow>
