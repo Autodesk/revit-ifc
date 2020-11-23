@@ -41,6 +41,11 @@ namespace BIM.IFC.Export.UI
    {
       // The list of available configurations
       IFCExportConfigurationsMap m_configMap;
+      
+      /// <summary>
+      /// Keep the cache for the last selected configuration regardless whether it is built-in or not
+      /// </summary>
+      public static IDictionary<string, IFCExportConfiguration> LastSelectedConfig { get; } = new Dictionary<string, IFCExportConfiguration>();
 
       /// <summary>
       /// The dialog result.
@@ -90,6 +95,11 @@ namespace BIM.IFC.Export.UI
       /// The last successful export location
       /// </summary>
       private String m_ExportPath = null;
+
+      /// <summary>
+      /// Identification whether the IFCExporterUIWindow (Modify setup) is visited
+      /// </summary>
+      private bool EditConfigVisited = false;
 
       /// <summary>
       /// The default Extension of the file
@@ -195,7 +205,10 @@ namespace BIM.IFC.Export.UI
          if (config != null)
          {
             textBoxSetupDescription.Text = config.FileVersionDescription;
-            textBoxSetupCoordinateBase.Text = (new IFCSitePlacementAttributes(config.SitePlacement)).ToString();
+            if (LastSelectedConfig.ContainsKey(config.Name))
+               textBoxSetupCoordinateBase.Text = (new IFCSitePlacementAttributes(LastSelectedConfig[config.Name].SitePlacement)).ToString();
+            else
+               textBoxSetupCoordinateBase.Text = (new IFCSitePlacementAttributes(config.SitePlacement)).ToString();
          }
       }
 
@@ -437,7 +450,10 @@ namespace BIM.IFC.Export.UI
          currentSelectedSetup.SelectionChanged -= currentSelectedSetup_SelectionChanged;
 
          editorWindow.Owner = this;
-         editorWindow.ShowDialog();
+         bool? ret = editorWindow.ShowDialog();
+         if (ret.HasValue)
+            EditConfigVisited = ret.Value;
+
          if (editorWindow.DialogResult.HasValue && editorWindow.DialogResult.Value)
          {
             IFCCommandOverrideApplication.PotentiallyUpdatedConfigurations = true;
@@ -497,6 +513,8 @@ namespace BIM.IFC.Export.UI
             }
 
             IFCExportConfiguration selectedConfig = GetSelectedConfiguration();
+            if (!EditConfigVisited && LastSelectedConfig.ContainsKey(selectedConfig.Name))
+               selectedConfig = LastSelectedConfig[selectedConfig.Name];
 
             // This check will be done only for IFC4 and above as this only affects IfcMapConversion use that starts in IFC4 onward
             if (!OptionsUtil.ExportAsOlderThanIFC4(selectedConfig.IFCVersion))
@@ -555,6 +573,7 @@ namespace BIM.IFC.Export.UI
                ifcFileHeader.UpdateFileHeader(IFCCommandOverrideApplication.TheDocument, fileHeaderItem);
             }
 
+            LastSelectedConfig[selectedConfig.Name] = selectedConfig;
             TheDocument.Application.WriteJournalComment("Dialog Closed", true);
          }
       }
@@ -567,6 +586,8 @@ namespace BIM.IFC.Export.UI
       private void buttonCancel_Click(object sender, RoutedEventArgs args)
       {
          Result = IFCExportResult.Cancel;
+         IFCExportConfiguration selectedConfig = GetSelectedConfiguration();
+         LastSelectedConfig[selectedConfig.Name] = selectedConfig;
          Close();
       }
 

@@ -1798,6 +1798,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Reset.
+        /// </summary>
+        public static string ResetToOriginals {
+            get {
+                return ResourceManager.GetString("ResetToOriginals", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Save Setup &amp;amp; Close.
         /// </summary>
         public static string SaveSetupAndClose {

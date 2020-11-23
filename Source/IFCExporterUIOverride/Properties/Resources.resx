@@ -827,4 +827,7 @@
   <data name="Reset" xml:space="preserve">
     <value>Reset</value>
   </data>
+  <data name="ResetToOriginals" xml:space="preserve">
+    <value>Reset</value>
+  </data>
 </root>

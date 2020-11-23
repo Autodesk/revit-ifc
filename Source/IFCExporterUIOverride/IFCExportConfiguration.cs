@@ -35,8 +35,6 @@ namespace BIM.IFC.Export.UI
    /// </summary>
    public class IFCExportConfiguration
    {
-
-
       /// <summary>
       /// The name of the configuration.
       /// </summary>

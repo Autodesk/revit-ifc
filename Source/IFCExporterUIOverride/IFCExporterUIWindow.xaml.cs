@@ -34,7 +34,6 @@ using System.Windows.Media;
 using UserInterfaceUtility.Json;
 using Revit.IFC.Common.Enums;
 
-
 namespace BIM.IFC.Export.UI
 {
    /// <summary>
@@ -68,13 +67,30 @@ namespace BIM.IFC.Export.UI
          InitializeComponent();
          m_configurationsMap = configurationsMap;
 
+         ResetToOriginalConfigSettings(currentConfigName);
+      }
+
+      /// <summary>
+      /// Reset the configuration settings back to the original settings
+      /// </summary>
+      /// <param name="currentConfigName">The current selected configuration</param>
+      public void ResetToOriginalConfigSettings(string currentConfigName)
+      {
          InitializeConfigurationList(currentConfigName);
 
          IFCExportConfiguration originalConfiguration = m_configurationsMap[currentConfigName];
          InitializeConfigurationOptions();
-         UpdateActiveConfigurationOptions(originalConfiguration);
-
-         GetGeoReferenceInfo(originalConfiguration);
+         if (IFCExport.LastSelectedConfig.ContainsKey(originalConfiguration.Name))
+         {
+            IFCExportConfiguration selectedConfig = IFCExport.LastSelectedConfig[originalConfiguration.Name];
+            UpdateActiveConfigurationOptions(selectedConfig);
+            SetupGeoReferenceInfo(selectedConfig);
+         }
+         else
+         {
+            UpdateActiveConfigurationOptions(originalConfiguration);
+            GetGeoReferenceInfo(originalConfiguration);
+         }
       }
 
       private void GetGeoReferenceInfo(IFCExportConfiguration configuration, string newEPSGCode = "")
@@ -150,50 +166,67 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       private void InitializeConfigurationOptions()
       {
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3CV2));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCCOBIE));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3BFM));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
-
-         // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
-         string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
-         if (!string.IsNullOrEmpty(nonMVDOption) && nonMVDOption.Equals("true", StringComparison.InvariantCultureIgnoreCase))
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4));
-
-         foreach (IFCFileFormat fileType in Enum.GetValues(typeof(IFCFileFormat)))
+         if (!comboboxIfcType.HasItems)
          {
-            IFCFileFormatAttributes item = new IFCFileFormatAttributes(fileType);
-            comboboxFileType.Items.Add(item);
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3CV2));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCCOBIE));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3BFM));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
+
+            // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
+            string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
+            if (!string.IsNullOrEmpty(nonMVDOption) && nonMVDOption.Equals("true", StringComparison.InvariantCultureIgnoreCase))
+               comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4));
          }
 
-
-         for (int level = 0; level <= 2; level++)
+         if (!comboboxFileType.HasItems)
          {
-            IFCSpaceBoundariesAttributes item = new IFCSpaceBoundariesAttributes(level);
-            comboboxSpaceBoundaries.Items.Add(item);
+            foreach (IFCFileFormat fileType in Enum.GetValues(typeof(IFCFileFormat)))
+            {
+               IFCFileFormatAttributes item = new IFCFileFormatAttributes(fileType);
+               comboboxFileType.Items.Add(item);
+            }
          }
 
-         PhaseArray phaseArray = IFCCommandOverrideApplication.TheDocument.Phases;
-         comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId));  // Default.
-         foreach (Phase phase in phaseArray)
+         if (!comboboxSpaceBoundaries.HasItems)
          {
-            comboboxActivePhase.Items.Add(new IFCPhaseAttributes(phase.Id));
+            for (int level = 0; level <= 2; level++)
+            {
+               IFCSpaceBoundariesAttributes item = new IFCSpaceBoundariesAttributes(level);
+               comboboxSpaceBoundaries.Items.Add(item);
+            }
+         }
+
+         if (!comboboxActivePhase.HasItems)
+         {
+            PhaseArray phaseArray = IFCCommandOverrideApplication.TheDocument.Phases;
+            comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId));  // Default.
+            foreach (Phase phase in phaseArray)
+            {
+               comboboxActivePhase.Items.Add(new IFCPhaseAttributes(phase.Id));
+            }
          }
 
          // Initialize level of detail combo box
-         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelExtraLow);
-         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelLow);
-         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelMedium);
-         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelHigh);
+         if (!comboBoxLOD.HasItems)
+         {
+            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelExtraLow);
+            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelLow);
+            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelMedium);
+            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelHigh);
+         }
 
-         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Shared));
-         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Site));
-         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Project));
-         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Internal));
+         if (!comboBoxSitePlacement.HasItems)
+         {
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Shared));
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Site));
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Project));
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Internal));
+         }
       }
 
       private void UpdatePhaseAttributes(IFCExportConfiguration configuration)
@@ -385,23 +418,23 @@ namespace BIM.IFC.Export.UI
             checkboxIncludeSteelElements.IsEnabled = false;
          }
 
-         if ((configuration.IFCVersion == IFCVersion.IFC4RV)
-            || (configuration.IFCVersion == IFCVersion.IFC4DTV))
-         {
+         //if ((configuration.IFCVersion == IFCVersion.IFC4RV)
+         //   || (configuration.IFCVersion == IFCVersion.IFC4DTV))
+         //{
             checkbox_UseTypeNameOnly.IsChecked = configuration.UseTypeNameOnlyForIfcType;
             checkbox_UseTypeNameOnly.IsEnabled = true;
 
             checkbox_UseVisibleRevitNameAsEntityName.IsChecked = configuration.UseVisibleRevitNameAsEntityName;
             checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
-         }
-         else
-         {
-            checkbox_UseTypeNameOnly.IsChecked = false;
-            checkbox_UseTypeNameOnly.IsEnabled = true;
+         //}
+         //else
+         //{
+         //   checkbox_UseTypeNameOnly.IsChecked = false;
+         //   checkbox_UseTypeNameOnly.IsEnabled = true;
 
-            checkbox_UseVisibleRevitNameAsEntityName.IsChecked = false;
-            checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
-         }
+         //   checkbox_UseVisibleRevitNameAsEntityName.IsChecked = false;
+         //   checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
+         //}
 
          LoadTreeviewFilterElement(treeView_FilterElement);
 
@@ -549,6 +582,7 @@ namespace BIM.IFC.Export.UI
             configuration.ExportUserDefinedPsetsFileName = userDefinedPropertySetFileName.Text;
             configuration.ExportUserDefinedParameterMappingFileName = userDefinedParameterMappingTable.Text;
             configuration.ExcludeFilter = GetSelectedExcludeFilter(treeView_FilterElement);
+            IFCExport.LastSelectedConfig[configuration.Name] = configuration;
          }
 
          Close();
@@ -844,6 +878,9 @@ namespace BIM.IFC.Export.UI
          IFCExportConfiguration configuration = GetSelectedConfiguration();
          if (configuration != null)
          {
+            if (IFCExport.LastSelectedConfig.ContainsKey(configuration.Name))
+               configuration = IFCExport.LastSelectedConfig[configuration.Name];
+
             UpdateActiveConfigurationOptions(configuration);
             UpdateConfigurationControls(configuration.IsBuiltIn, configuration.IsInSession);
             SetupGeoReferenceInfo(configuration);
@@ -1899,6 +1936,23 @@ namespace BIM.IFC.Export.UI
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
          GetGeoReferenceInfo(configuration);
+      }
+
+      private void button_ResetConfigurations_Click(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         m_configurationsMap = new IFCExportConfigurationsMap();
+         if (listBoxConfigurations.HasItems)
+            listBoxConfigurations.Items.Clear();
+         IFCExport.LastSelectedConfig.Clear();
+
+         m_configurationsMap.Add(IFCExportConfiguration.GetInSession());
+         m_configurationsMap.AddBuiltInConfigurations();
+
+         if (configuration != null && m_configurationsMap.HasName(configuration.Name))
+            ResetToOriginalConfigSettings(configuration.Name);
+         else
+            ResetToOriginalConfigSettings(Properties.Resources.InSessionConfiguration);
       }
    }
 }
