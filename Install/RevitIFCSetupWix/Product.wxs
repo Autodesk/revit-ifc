@@ -202,6 +202,12 @@
          <Component Id = "COMP_IFC_16_PNG" Guid="E6CF83A5-A19C-4190-9A88-D54C390A6971">
             <File Id ="FILE_IFC_16_PNG" Name="IFCExporter_16.png" Source="$(var.ProjectDir)..\Program Files to Install\bundle\Contents\Resources\IFCExporter_16.png" KeyPath="yes" />
          </Component>
+         <Component Id = "COMP_IFC4RV_A_CERT" Guid="EDC0912A-5AA0-44D6-8272-E8BBB4A99B3B">
+            <File Id ="FILE_IFC4RV_A_CERT" Name="Software Certifcation Certificate Revit - Architectural export ER.png" Source="$(var.ProjectDir)..\Program Files to Install\bundle\Contents\Resources\Software Certifcation Certificate Revit - Architectural export ER.png" KeyPath="yes" />
+         </Component>
+         <Component Id = "COMP_IFC4RV_S_CERT" Guid="0D2A0278-2D37-4C20-89C0-5D68AD4A06B3">
+            <File Id ="FILE_IFC4RV_S_CERT" Name="Software Certifcation Certificate Revit - Structural export ER.png" Source="$(var.ProjectDir)..\Program Files to Install\bundle\Contents\Resources\Software Certifcation Certificate Revit - Structural export ER.png" KeyPath="yes" />
+         </Component>
       </ComponentGroup>
 
       <ComponentGroup Id="ProductFRFiles" Directory="INSTALLFRUI">

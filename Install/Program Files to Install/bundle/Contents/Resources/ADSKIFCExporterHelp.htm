@@ -47,6 +47,22 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 	font-size:11.0pt;
 	font-family:"Calibri","sans-serif";
 	}
+* {
+  box-sizing: border-box;
+}
+
+.column {
+  float: left;
+  width: 30%;
+  padding: 5px;
+}
+
+/* Clearfix (clear floats) */
+.row::after {
+  content: "";
+  clear: both;
+  display: table;
+}
 </style>
 <body>
 <div id="heading">
@@ -85,10 +101,8 @@ The export alternate interface is loaded when users access the Export functional
 <li>IFC 2x3 Coordination View 2.0</li>
 <li>IFC 2x3 Coordination View</li>
 <li>IFC 2x2 Coordination View</li>
-<li>IFC 2x2 Singapore BCA e-Plan Check</li>
 <li>IFC 2x3 GSA Concept Design BIM 2010 – This is a variant of the standard IFC 2x3 used for submitting files to the US Government Services Administration.  Additional property sets will be included.</li> 
-<li>IFC 2x2 Singapore BCA e-Plan Check - This is a certified variant of IFC 2x2 used for submitting files to the Singapore BCA e-Plan Check Server. When exporting to this file type, you should make sure that all room-bounding elements are selected.</li>
-<li>IFC 4 Reference View - This is the version for the buildingSMART IFC certification (IFC4 RV 1.2) that is currently on-going</li>
+<li>IFC 4 Reference View - This version is buildingSMART IFC certification (IFC4 RV 1.2) certified version for Architectural and Structural export Exchange Requirements. MEP export and Import are still on-going</li>
 <li>IFC 4 Design Transfer View</li>
 </menu>
 <p><strong>File Type</strong>: The file format</p>
@@ -149,7 +163,6 @@ The export alternate interface is loaded when users access the Export functional
 <li>IFC 2x3 Basic FM Handover View</li>
 <li>IFC 2x3 Extended FM Handover View</li>
 <li>IFC 2x2 Coordination View</li>
-<li>IFC 2x2 Singapore BCA e-Plan Check</li>
 <li>IFC 4 Reference View</li>
 <li>IFC 4 Design Transfer View</li>
 
@@ -172,7 +185,6 @@ The installer that ran when you downloaded this plug-in from Revit Exchange
 </p>
 <p>
 To uninstall this plug-in, exit Revit if you are currently running it, 
-  simply rerun the installer by downloading it again 
   from Exchange, and select the 'Uninstall' button, or you can uninstall it from 
   'Control Panel\Programs\Programs and Features' (Windows 7) or Add/Remove 
   Programs (Windows XP), just as you would uninstall any other application from 
@@ -208,6 +220,125 @@ working on expanding and eventually removing this limit, and we will be tracking
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
 <div class="versionset">
+   <div class="version">21.2.0.0</div><div class="versioninfo-bullet">
+      <br>
+	<div class="row">
+		<div class="column">
+			<img width=300 src="Software Certifcation Certificate Revit - Architectural export ER.png" alt=Icon>
+		</div>
+		<div class="column">
+			<img width=300 src="Software Certifcation Certificate Revit - Structural export ER.png" alt=Icon>
+		</div>
+	</div>
+
+	</br>
+      <br><p>
+         General:
+			<ul>
+				<li>This version marks a significant milestone for IFC Exporter as it is now IFC4 Reverence View certified (for Architectural Export and Structural Export Exchange Requirements
+			</ul>	
+         <br>
+       <p>
+         New Features/Improvements:
+			<ul>
+				<li>Support exporting IfcGroup using ZoneGroupName parameter
+				<li>Improved heuristic for assigning color to polygonal face sets
+				<li>Improved handling to support for direct export of polygonal face geometry in IFC4
+				<li>General improvements for export performance with optimization for shared parameter saving and binding
+				<li>Support for IfcShapeAspect in other objects that have part geometries
+				<li>Improved handling of Complex Property in the PropertySet definition
+				<li>General improvements to support IFC4 based geo-referencing information with addition UI in export, and integration to the information found inside Revit file (usually comes from AutoCAD or Civil3D)
+				<li>Reorganize the location for Exchange Requirement setting in the header of IFC File to be less hidden (now located right after the IFC version in export option UI)
+				<li>Updates shared parameter definitions and Property set definitions based on the latest IFC4 (4.4.0.2.2) specifications
+				<li>Support allowing a predefined type for standard walls on export
+				<li>General improvements dealing with objects with many holes
+			</ul>
+		</p>
+			<br>
+     <p>
+         Bug Fixes:
+			<p>
+			Export bug fixes:
+			<ul>
+				<li>Fixed exporting issue for a Ceiling containing Arc geometry
+				<li>Duplicate steel connection geometries or missing connection
+				<li>ifc export - steel connection \ steel connection elements missing or wrongly exported
+				<li>Fixed issue on missing ceiling geometries in IFC4 RV export mode
+				<li>Fixed issue on objects with Parts that is below the fist (lowest) level
+				<li>Unable to export Roof in some cases
+				<li>IFC export fails (without any error message, crash; file just not written) from attached file if the "Rasters" are set to be exported to "IFCGrid"
+				<li>IFC option "export links as separate models" causes wrong objects placement
+				<li>Export parts option may result in inconsistent output or missing object
+				<li>IFC Version doesn't update when changing the "<In-Session setup>"
+				<li>Fix IsExternal calculation on element types to correctly determine value
+				<li>New shared parameter assigned to Curtain walls get lost after IFC export from Revit to Navisworks
+				<li>Update category mapping to deal with IfcSpaceTypes and IfcOpeningTypes
+				<li>Opening IFC in Revit shows incorrect slab thickness
+				<li>Fixed some issues on export with different coordinate base
+				<li>Fixed some issues on exporting Wall elements
+				<li>No error / warning message when exporting an IFC file using a reserved windows name
+				<li>Export HVAC_HEAT_GAIN with current units (Watts)
+				<li>Duplicate base quantity netsidearea exported for walls
+				<li>Property Set option "Export schedules as property sets" does not create IFC file in some cases
+				<li>IFC4 Reference view fails for some models from Factory Live
+				<li>Update the CSIORG link in the IFC exporter
+				<li>Change IfcGeometricRepresentationContext from "Annotation" to "Plan"
+				<li>ClassificationCode(2) is not processed during export
+				<li>Properties of door are incorrect after exporting model to IFC: Area quantity
+				<li>Materials are exported for some of these floors and not others of the same type in some cases
+				<li>IFC export 2x3 Coordination View - Wrong Base Quantity information in some scenarios
+				<li>Fixed issues with warnings are shown when exporting to IFC4RV in some models
+				<li>Railings are not fully imported to Revit via IFC
+				<li>Properly convert this Flow_Rate parameter on Export
+				<li>IFC Export incorrectly shows 2D curtainwall door swing
+				<li>Nested curtain wall element does not get proper parameter while export to ifc
+				<li>IFC-Export presets: "Project Origin/Coordinate Base" always resets in Revit
+				<li>Material parameter missing in IFC export in some cases
+				<li>IFC4 RV Exchange Requirement missing when File Header is not initialized
+				<li>Support allowing a predefined type for standard railings on export
+				<li>Fix IFC4 "opening as recess" code for ReinforcingMesh case
+				<li>ifc export - some geometries are exported slightly longer extrusion
+			</ul>
+			</p>
+			<p>
+			Import bug fixes:
+			<ul>
+				<li>Rebars may be lost upon import
+				<li>Windows are not cutting a wall in a linked or opened IFC
+				<li>Revit IFC import/link does not recognize the angle between Project North and Survey Point properly
+				<li>Columns come into the wrong location on IFC Link in some cases
+				<li>Missing beam cover
+				<li>Certain Tekla IFC geometry not visible when using Link IFC
+				<li>link IFC - incorrect geometry imported for some cases
+				<li>When Link IFC file in Revit the model is empty and an error appears in log file
+				<li>Translation IFC having mm units using Revit IFC loader makes default model view small unexpectedly on LMV
+				<li>Invalid/corrupt IFC files "load" without any errors
+				<li>IFC file is not linked properly inside Revit 2020
+				<li>Grids placed by IFCOFFSETCURVE2D will be placed at open IFC always by feet unit
+				<li>Multiple versions of the same IFC file get loaded into Revit Cloud Worksharing Host resulting in duplicate geometry
+				<li>ifc link - structure upside down
+				<li>IFC data with material information missing upon import
+				<li>Recreate IFC/Import_Quantities/Import_Quantities.txt
+				<li>Support IfcGridPlacement for Link IFC
+				<li>Avoid duplicate instance and type names when linking in an IFC file
+				<li>Geometry IFC missing for some IFC models
+				<li>Some IFC files not showing in BIM 360 viewer
+				<li>ifc link - model not correctly positioned when there is rotation component in IFCSite local placement
+				<li>Differences between IFC from Allplan opened/imported vs linked in Revit due to "bad" data involving Wall with zero thickness
+				<li>REVIT 2020 and 2021 fails to imports some detailed geometry containing IfcAdvancedBrep
+				<li>Missing slab elements in some IFC file
+				<li>IfcPort ConnectedTo IfcGUID seems to contains its own GUID instead of the GUID of its connected Port
+			</ul></p>
+			<br>
+      	<p>
+         Known Issues/additional notes:
+			<ul>
+				<li>Export configuration IFC2x2 ePlan Check has been removed as it is already obsolete. If there is any saved configuration, the option will be automatically assign to IFC2x3 as default
+			</ul>
+
+	</div>
+	<br>
+
    <div class="version">21.1.0.0</div><div class="versioninfo-bullet">
 
       <br><p>
