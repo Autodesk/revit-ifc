@@ -158,32 +158,42 @@ namespace Revit.IFC.Export.Exporter
                         productWrapper.AddElement(null, slabHnd, placementSetter.LevelInfo, ecData, false, slabRoofExportType);
 
                         // Create type
-
                         IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(roof, slabRoofExportType, exporterIFC.GetFile(), ownerHistory, slabRoofPredefinedType, productWrapper);
                         ExporterCacheManager.TypeRelationsCache.Add(slabRoofTypeHnd, slabHnd);
 
-                        if (!ExporterUtil.AddIntoComplexPropertyCache(slabHnd, layersetInfo) && bodyData != null)
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, bodyData.MaterialIds);
-
-                        // Create material association here
-                        if (layersetInfo != null && !IFCAnyHandleUtil.IsNullOrHasNoValue(layersetInfo.MaterialLayerSetHandle))
+                        ExporterUtil.AddIntoComplexPropertyCache(slabHnd, layersetInfo);
+                        // For earlier than IFC4 version of IFC export, the material association will be done at the Roof host level with MaterialSetUsage
+                        // This one is only for IFC4 and above
+                        if ((roof is RoofBase) && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                         {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, layersetInfo.MaterialLayerSetHandle);
+                           if (layersetInfo != null && !IFCAnyHandleUtil.IsNullOrHasNoValue(layersetInfo.MaterialLayerSetHandle))
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, layersetInfo.MaterialLayerSetHandle);
+                           }
+                           else if (bodyData != null)
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, bodyData.MaterialIds);
+                           }
                         }
                      }
-                     else if (exportRoofAsSingleGeometry)
+                     else /*if (exportRoofAsSingleGeometry)*/
                      {
                         OpeningUtil.CreateOpeningsIfNecessary(roofHnd, roof, ecData, offsetTransform,
                            exporterIFC, localPlacement, placementSetter, productWrapper);
 
-                        if (layersetInfo != null && !IFCAnyHandleUtil.IsNullOrHasNoValue(layersetInfo.MaterialLayerSetHandle))
+                        // For earlier than IFC4 version of IFC export, the material association will be done at the Roof host level with MaterialSetUsage
+                        // This one is only for IFC4 and above
+                        if ((roof is RoofBase) && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                         {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, layersetInfo.MaterialLayerSetHandle);
-                        }
-                        else if (layersetInfo != null && layersetInfo.MaterialIds != null)
-                        {
-                           materialIds = layersetInfo.MaterialIds.Select(x => x.m_baseMatId).ToList();
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, materialIds);
+                           if (layersetInfo != null && !IFCAnyHandleUtil.IsNullOrHasNoValue(layersetInfo.MaterialLayerSetHandle))
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, layersetInfo.MaterialLayerSetHandle);
+                           }
+                           else if (layersetInfo != null && layersetInfo.MaterialIds != null)
+                           {
+                              materialIds = layersetInfo.MaterialIds.Select(x => x.m_baseMatId).ToList();
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, materialIds);
+                           }
                         }
                      }
                   }
@@ -226,11 +236,21 @@ namespace Revit.IFC.Export.Exporter
             }
             else
             {
+               string ifcEnumType;
+               IFCExportInfoPair roofExportType = ExporterUtil.GetExportType(exporterIFC, roof, out ifcEnumType);
+
+               if (roofExportType.ExportInstance != IFCEntityType.IfcRoof)
+               {
+                  ExportRoof(exporterIFC, roof, ref geometryElement, productWrapper, exportAsSingleGeometry);
+               }
+               else
+               {
                IFCAnyHandle roofHnd = ExportRoofOrFloorAsContainer(exporterIFC, roof,
                    geometryElement, productWrapper);
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(roofHnd))
                {
                   ExportRoof(exporterIFC, roof, ref geometryElement, productWrapper, exportAsSingleGeometry);
+               }
                }
 
                // call for host objects; curtain roofs excused from call (no material information)
@@ -262,13 +282,20 @@ namespace Revit.IFC.Export.Exporter
          if (!elementIsRoof && !elementIsFloor)
             return null;
 
-         string ifcEnumType;
-         IFCExportInfoPair roofExportType = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
+         string subSlabType = null;
+         IFCExportInfoPair roofExportType = ExporterUtil.GetExportType(exporterIFC, element, out _);
          if (roofExportType.IsUnKnown)
          {
             IFCEntityType elementClassTypeEnum = 
                elementIsFloor ? IFCEntityType.IfcSlab: IFCEntityType.IfcRoof;
             roofExportType = new IFCExportInfoPair(elementClassTypeEnum, "");
+         }
+         else
+         {
+            if (elementIsFloor)
+               subSlabType = "FLOOR";
+            else if (elementIsRoof)
+               subSlabType = "ROOF";
          }
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
@@ -363,7 +390,6 @@ namespace Revit.IFC.Export.Exporter
 
                               int loopNum = 0;
                               int subElementStart = elementIsRoof ? (int)IFCRoofSubElements.RoofSlabStart : (int)IFCSlabSubElements.SubSlabStart;
-                              string subSlabType = roofExportType.ValidatedPredefinedType;
 
                               foreach (HostObjectSubcomponentInfo hostObjectSubcomponent in hostObjectSubcomponents)
                               {
@@ -442,11 +468,11 @@ namespace Revit.IFC.Export.Exporter
                                  slabExtrusionCreationData.ScaledOuterPerimeter = UnitUtil.ScaleLength(curveLoops[0].GetExactLength());
                                  slabExtrusionCreationData.Slope = UnitUtil.ScaleAngle(MathUtil.SafeAcos(Math.Abs(slope)));
 
-                                 IFCExportInfoPair slabRoofExportType = new IFCExportInfoPair(IFCEntityType.IfcSlab, slabRoofPredefinedType);
+                                 IFCExportInfoPair slabRoofExportType = new IFCExportInfoPair(IFCEntityType.IfcSlab, subSlabType);
                                  productWrapper.AddElement(null, slabHnd, setter, slabExtrusionCreationData, false, slabRoofExportType);
 
                                  // Create type
-                                 IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(element, slabRoofExportType, exporterIFC.GetFile(), ownerHistory, slabRoofPredefinedType, productWrapper);
+                                 IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(element, slabRoofExportType, exporterIFC.GetFile(), ownerHistory, subSlabType, productWrapper);
                                  ExporterCacheManager.TypeRelationsCache.Add(slabRoofTypeHnd, slabHnd);
 
                                  elementHandles.Add(slabHnd);

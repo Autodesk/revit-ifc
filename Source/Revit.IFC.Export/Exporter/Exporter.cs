@@ -3979,11 +3979,16 @@ namespace Revit.IFC.Export.Exporter
                }
                else if (crsMapUnitStr.Equals("foot", StringComparison.InvariantCultureIgnoreCase))
                {
+                  lengthScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Feet);
                }
                else if (crsMapUnitStr.Equals("yard", StringComparison.InvariantCultureIgnoreCase))
-               { }
+               {
+                  lengthScaleFactor = 1/3;
+               }
                else if (crsMapUnitStr.Equals("mile", StringComparison.InvariantCultureIgnoreCase))
-               { }
+               {
+                  lengthScaleFactor = 1/5280;
+               }
                
                double lengthSIScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Meters) / lengthScaleFactor;
                IFCAnyHandle lenDims = IFCInstanceExporter.CreateDimensionalExponents(file, 1, 0, 0, 0, 0, 0, 0); // length

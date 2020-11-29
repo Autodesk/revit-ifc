@@ -91,7 +91,7 @@ namespace Revit.IFC.Import.Data
          {
             if (m_ConnectedTo == null && m_ConnectedToHandle != null)
             {
-               m_ConnectedTo = ProcessIFCRelation.ProcessRelatingPort(m_ConnectedToHandle);
+               m_ConnectedTo = ProcessIFCRelation.ProcessRelatedPort(m_ConnectedToHandle);
                m_ConnectedToHandle = null;
             }
             return m_ConnectedTo;
