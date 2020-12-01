@@ -422,7 +422,7 @@ namespace Revit.IFC.Export.Utility
             if (GUIDUtil.IsGUIDFor(insertElement, openingGUID))
                elementForProperties = insertElement;
 
-            localWrapper.AddElement(insertElement, openingHnd, setter, extrusionCreationData, true, exportInfo);
+            localWrapper.AddElement(insertElement, openingHnd, setter, extrusionCreationData, false, exportInfo);
          }
 
          string voidGuid = GUIDUtil.CreateGUID();
