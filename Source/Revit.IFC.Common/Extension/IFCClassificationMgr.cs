@@ -44,6 +44,8 @@ namespace Revit.IFC.Common.Extensions
       private const String s_ClassificationLocation = "ClassificationLocation";
       // Not in v1.
       private const String s_ClassificationFieldName = "ClassificationFieldName";
+      private const String s_ClassificationTitleFieldName = "ClassificationTitleFieldName";
+      private const String s_IFCClassification = "IFCClassificationSchema";
 
       private static Schema GetSchema()
       {
@@ -51,15 +53,16 @@ namespace Revit.IFC.Common.Extensions
          if (schema == null)
          {
             SchemaBuilder classificationBuilder = new SchemaBuilder(s_schemaId);
-            classificationBuilder.SetSchemaName("IFCClassification");
-            classificationBuilder.AddSimpleField(s_ClassificationName, typeof(string));
-            classificationBuilder.AddSimpleField(s_ClassificationSource, typeof(string));
-            classificationBuilder.AddSimpleField(s_ClassificationEdition, typeof(string));
-            classificationBuilder.AddSimpleField(s_ClassificationEditionDate_Day, typeof(Int32));
-            classificationBuilder.AddSimpleField(s_ClassificationEditionDate_Month, typeof(Int32));
-            classificationBuilder.AddSimpleField(s_ClassificationEditionDate_Year, typeof(Int32));
-            classificationBuilder.AddSimpleField(s_ClassificationLocation, typeof(string));
-            classificationBuilder.AddSimpleField(s_ClassificationFieldName, typeof(string));
+            classificationBuilder.SetSchemaName(s_IFCClassification);
+            classificationBuilder.AddMapField(s_ClassificationName, typeof(string), typeof(string));
+            //classificationBuilder.AddSimpleField(s_ClassificationName, typeof(string));
+            //classificationBuilder.AddSimpleField(s_ClassificationSource, typeof(string));
+            //classificationBuilder.AddSimpleField(s_ClassificationEdition, typeof(string));
+            //classificationBuilder.AddSimpleField(s_ClassificationEditionDate_Day, typeof(Int32));
+            //classificationBuilder.AddSimpleField(s_ClassificationEditionDate_Month, typeof(Int32));
+            //classificationBuilder.AddSimpleField(s_ClassificationEditionDate_Year, typeof(Int32));
+            //classificationBuilder.AddSimpleField(s_ClassificationLocation, typeof(string));
+            //classificationBuilder.AddSimpleField(s_ClassificationFieldName, typeof(string));
             schema = classificationBuilder.Finish();
          }
          return schema;
@@ -83,8 +86,7 @@ namespace Revit.IFC.Common.Extensions
          {
             Schema schema = GetSchema();
 
-            IList<IFCClassification> classifications;
-            bool hasOldClassifications = GetSavedClassifications(document, schemaV1, out classifications);
+            bool hasOldClassifications = GetSavedClassifications(document, schemaV1, out _);
             if (hasOldClassifications)
             {
                try
@@ -157,7 +159,7 @@ namespace Revit.IFC.Common.Extensions
       /// </summary>
       /// <param name="document">The document storing the saved Classification.</param>
       /// <param name="fileHeaderItem">The Classification item to save.</param>
-      public static void UpdateClassification(Document document, IFCClassification classification)
+      public static void UpdateClassification(Document document, IDictionary<string, IFCClassification> classificationMap)
       {
          // TO DO: To handle individual item and not the whole since in the future we may support multiple classification systems!!!
          Schema schema = GetSchema();
@@ -176,29 +178,40 @@ namespace Revit.IFC.Common.Extensions
                document.Delete(dataStorageToDelete);
                deleteTransaction.Commit();
             }
-         }
 
-         // Update the address using the new information
-         if (schema != null)
-         {
+            // Update the address using the new information
             Transaction transaction = new Transaction(document, "Update saved IFC classification");
             transaction.Start();
 
             DataStorage classificationStorage = DataStorage.Create(document);
 
             Entity entIFCClassification = new Entity(schema);
-            if (classification.ClassificationName != null) entIFCClassification.Set<string>(s_ClassificationName, classification.ClassificationName.ToString());
-            if (classification.ClassificationSource != null) entIFCClassification.Set<string>(s_ClassificationSource, classification.ClassificationSource.ToString());
-            if (classification.ClassificationEdition != null) entIFCClassification.Set<string>(s_ClassificationEdition, classification.ClassificationEdition.ToString());
-            if (classification.ClassificationEditionDate != null)
+            IDictionary<string, string> classificationDef = new Dictionary<string, string>();
+            foreach (KeyValuePair<string, IFCClassification> classificationEntry in classificationMap)
             {
-               entIFCClassification.Set<Int32>(s_ClassificationEditionDate_Day, classification.ClassificationEditionDate.Day);
-               entIFCClassification.Set<Int32>(s_ClassificationEditionDate_Month, classification.ClassificationEditionDate.Month);
-               entIFCClassification.Set<Int32>(s_ClassificationEditionDate_Year, classification.ClassificationEditionDate.Year);
+               IFCClassification classification = classificationEntry.Value;
+               if (classification.ClassificationName != null)
+                  classificationDef.Add(s_ClassificationName, classification.ClassificationName.ToString());
+               if (classification.ClassificationSource != null)
+                  classificationDef.Add(s_ClassificationSource, classification.ClassificationSource.ToString());
+               if (classification.ClassificationEdition != null) 
+                  classificationDef.Add(s_ClassificationEdition, classification.ClassificationEdition.ToString());
+               if (classification.ClassificationEditionDate != null)
+               {
+                  classificationDef.Add(s_ClassificationEditionDate_Day, classification.ClassificationEditionDate.Day.ToString());
+                  classificationDef.Add(s_ClassificationEditionDate_Month, classification.ClassificationEditionDate.Month.ToString());
+                  classificationDef.Add(s_ClassificationEditionDate_Year, classification.ClassificationEditionDate.Year.ToString());
+               }
+               if (classification.ClassificationLocation != null) 
+                  classificationDef.Add(s_ClassificationLocation, classification.ClassificationLocation.ToString());
+               if (classification.ClassificationFieldName != null) 
+                  classificationDef.Add(s_ClassificationFieldName, classification.ClassificationFieldName.ToString());
+               if (classification.ClassificationTitleFieldName != null)
+                  classificationDef.Add(s_ClassificationTitleFieldName, classification.ClassificationTitleFieldName.ToString());
+
+               entIFCClassification.Set<IDictionary<string, String>>(s_ClassificationName, classificationDef);
+               classificationStorage.SetEntity(entIFCClassification);
             }
-            if (classification.ClassificationLocation != null) entIFCClassification.Set<string>(s_ClassificationLocation, classification.ClassificationLocation.ToString());
-            if (classification.ClassificationFieldName != null) entIFCClassification.Set<string>(s_ClassificationFieldName, classification.ClassificationFieldName.ToString());
-            classificationStorage.SetEntity(entIFCClassification);
             transaction.Commit();
          }
       }
@@ -210,12 +223,12 @@ namespace Revit.IFC.Common.Extensions
       /// <param name="schema">The schema.  If null is passed in, the default schema is used.</param>
       /// <param name="classifications">The list of classifications.</param>
       /// <returns>True if any classifications were found.<returns>
-      public static bool GetSavedClassifications(Document document, Schema schema, out IList<IFCClassification> classifications)
+      public static bool GetSavedClassifications(Document document, Schema schema, out IDictionary<string,IFCClassification> classifications)
       {
-         IList<IFCClassification> ifcClassificationSaved = new List<IFCClassification>();
+         IDictionary<string, IFCClassification> ifcClassificationSaved = new Dictionary<string, IFCClassification>();
          Boolean ret = false;
 
-         if (schema == null)
+         if (schema == null) 
             schema = GetSchema();
 
          if (schema != null)
@@ -225,39 +238,59 @@ namespace Revit.IFC.Common.Extensions
             // This section handles multiple definitions of Classifications, but at the moment not in the UI
             IList<DataStorage> classificationStorage = GetClassificationInStorage(document, schema);
 
-            for (int noClass = 0; noClass < classificationStorage.Count; noClass++)
+            foreach (DataStorage storedClassif in classificationStorage)
             {
-               Entity savedClassification = classificationStorage[noClass].GetEntity(schema);
+               Entity savedClassification = storedClassif.GetEntity(schema);
+               IDictionary<string, string> classifDef = savedClassification.Get<IDictionary<string, string>>(s_ClassificationName);
+               IFCClassification classification = new IFCClassification();
 
-               ifcClassificationSaved.Add(new IFCClassification());
+               if (classifDef.ContainsKey(s_ClassificationName))
+                  classification.ClassificationName = classifDef[s_ClassificationName];
+               if (classifDef.ContainsKey(s_ClassificationSource))
+                  classification.ClassificationSource = classifDef[s_ClassificationSource];
+               if (classifDef.ContainsKey(s_ClassificationEdition))
+                  classification.ClassificationEdition = classifDef[s_ClassificationEdition];
 
-               ifcClassificationSaved[noClass].ClassificationName = savedClassification.Get<string>(schema.GetField(s_ClassificationName));
-               ifcClassificationSaved[noClass].ClassificationSource = savedClassification.Get<string>(schema.GetField(s_ClassificationSource));
-               ifcClassificationSaved[noClass].ClassificationEdition = savedClassification.Get<string>(schema.GetField(s_ClassificationEdition));
-
-               Int32 cldateDay = savedClassification.Get<Int32>(schema.GetField(s_ClassificationEditionDate_Day));
-               Int32 cldateMonth = savedClassification.Get<Int32>(schema.GetField(s_ClassificationEditionDate_Month));
-               Int32 cldateYear = savedClassification.Get<Int32>(schema.GetField(s_ClassificationEditionDate_Year));
-               try
+               if (classifDef.ContainsKey(s_ClassificationEditionDate_Day)
+                  && classifDef.ContainsKey(s_ClassificationEditionDate_Month)
+                  && classifDef.ContainsKey(s_ClassificationEditionDate_Year))
                {
-                  ifcClassificationSaved[noClass].ClassificationEditionDate = new DateTime(cldateYear, cldateMonth, cldateDay);
-               }
-               catch
-               {
-                  ifcClassificationSaved[noClass].ClassificationEditionDate = DateTime.Now;
+                  Int32.TryParse(classifDef[s_ClassificationEditionDate_Day], out Int32 cldateDay);
+                  Int32.TryParse(classifDef[s_ClassificationEditionDate_Month], out Int32 cldateMonth);
+                  Int32.TryParse(classifDef[s_ClassificationEditionDate_Year], out Int32 cldateYear);
+                  try
+                  {
+                     classification.ClassificationEditionDate = new DateTime(cldateYear, cldateMonth, cldateDay);
+                  }
+                  catch
+                  {
+                     classification.ClassificationEditionDate = DateTime.Now;
+                  }
                }
 
-               ifcClassificationSaved[noClass].ClassificationLocation = savedClassification.Get<string>(schema.GetField(s_ClassificationLocation));
+               if (classifDef.ContainsKey(s_ClassificationLocation))
+                  classification.ClassificationLocation = classifDef[s_ClassificationLocation];
+ 
                // Only for newest schema.
                if (schemaV1 == null || (schema.GUID != schemaV1.GUID))
-                  ifcClassificationSaved[noClass].ClassificationFieldName = savedClassification.Get<string>(schema.GetField(s_ClassificationFieldName));
+               {
+                  if (classifDef.ContainsKey(s_ClassificationFieldName))
+                     classification.ClassificationFieldName = classifDef[s_ClassificationFieldName];
+                  if (classifDef.ContainsKey(s_ClassificationTitleFieldName))
+                     classification.ClassificationTitleFieldName = classifDef[s_ClassificationTitleFieldName];
+               }
+
+               ifcClassificationSaved.Add(classification.ClassificationName, classification);
                ret = true;
             }
          }
 
          // Create at least one new Classification in the List, otherwise caller may fail
          if (ifcClassificationSaved.Count == 0)
-            ifcClassificationSaved.Add(new IFCClassification());
+         {
+            IFCClassification classification = new IFCClassification("new Classification");
+            ifcClassificationSaved.Add(classification.ClassificationName, classification);
+         }
 
          classifications = ifcClassificationSaved;
          return ret;

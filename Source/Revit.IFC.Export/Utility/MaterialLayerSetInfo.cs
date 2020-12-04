@@ -326,7 +326,7 @@ namespace Revit.IFC.Export.Utility
                         layerName = "Layer";
 
                      // Ensure layer name is unique
-                     layerName = NamingUtil.GetUniqueNameWithinSet(layerName, ref layerNameUsed);
+                     layerName = NameUtils.GetUniqueNameWithinSet(layerName, ref layerNameUsed);
 
                      description = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Description",
                         IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Description"));

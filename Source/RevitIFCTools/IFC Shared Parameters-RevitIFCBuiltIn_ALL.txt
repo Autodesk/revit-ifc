@@ -22,9 +22,6 @@ PARAM	b623d495-dc76-46cb-ac7b-bfe126728bf2	Assembly Description	TEXT		2	1	Unifor
 #
 # Parameters to support Project Global Positioning
 PARAM	33c16c61-6659-4117-9de9-61841142aa81	ProjectGlobalPositioning.Scale	NUMBER		2	1		1
-PARAM	9ed03820-7425-4d90-868e-2ab0f5319495	ProjectGlobalPositioning.CRSName	TEXT		2	1		1
-PARAM	e4090d66-012c-45fe-9ac9-4cfe51c0dd29	ProjectGlobalPositioning.CRSDescription	TEXT		2	1		1
-PARAM	e66c0e06-0383-480f-854e-950bb0d435f8	ProjectGlobalPositioning.CRSGeodeticDatum	TEXT		2	1		1
 PARAM	bc47059f-e418-41f2-85b9-8b556dacae5e	ProjectGlobalPositioning.CRSVerticalDatum	TEXT		2	1		1
 PARAM	b1d60aea-e267-4ca1-b899-cb06d5eaa9c8	ProjectGlobalPositioning.CRSMapProjection	TEXT		2	1		1
 PARAM	91150f20-dc6c-4691-be1e-fe0ed0dfae6f	ProjectGlobalPositioning.CRSMapZone	TEXT		2	1		1

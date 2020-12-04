@@ -31,7 +31,7 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// The Classification system name, e.g. DIN or STABU
       /// </summary>
-      private string classificationName;
+      private string classificationName = "";
       public string ClassificationName
       {
          get { return classificationName; }
@@ -39,14 +39,14 @@ namespace Revit.IFC.Common.Extensions
          {
             classificationName = value;
             // Call OnPropertyChanged whenever the property is updated
-            OnPropertyChanged("ClassificationNameTextBox");
+            OnPropertyChanged("TextBox_ClassificationName");
          }
       }
 
       /// <summary>
       /// The Classification system edition number.
       /// </summary>
-      private string classificationEdition;
+      private string classificationEdition = "";
       public string ClassificationEdition
       {
          get { return classificationEdition; }
@@ -54,14 +54,14 @@ namespace Revit.IFC.Common.Extensions
          {
             classificationEdition = value;
             // Call OnPropertyChanged whenever the property is updated
-            OnPropertyChanged("ClassificationEditionTextBox");
+            OnPropertyChanged("TextBox_ClassificationEdition");
          }
       }
 
       /// <summary>
       /// The Source or publisher of the Classification system, usually in form of URL.
       /// </summary>
-      private string classificationSource;
+      private string classificationSource = "";
       public string ClassificationSource
       {
          get { return classificationSource; }
@@ -69,7 +69,7 @@ namespace Revit.IFC.Common.Extensions
          {
             classificationSource = value;
             // Call OnPropertyChanged whenever the property is updated
-            OnPropertyChanged("ClassificationSourceTextBox");
+            OnPropertyChanged("TextBox_ClassificationSource");
          }
       }
 
@@ -84,14 +84,14 @@ namespace Revit.IFC.Common.Extensions
          {
             classificationEditionDate = value;
             // Call OnPropertyChanged whenever the property is updated
-            OnPropertyChanged("ClassificationEditionDateTextBox");
+            OnPropertyChanged("DatePicker_EditionDate");
          }
       }
 
       /// <summary>
       /// The Classification location
       /// </summary>
-      private string classificationLocation;
+      private string classificationLocation = "";
       public string ClassificationLocation
       {
          get { return classificationLocation; }
@@ -99,14 +99,14 @@ namespace Revit.IFC.Common.Extensions
          {
             classificationLocation = value;
             // Call OnPropertyChanged whenever the property is updated
-            OnPropertyChanged("ClassificationLocationTextBox");
+            OnPropertyChanged("TextBox_ClassificationLocation");
          }
       }
 
       /// <summary>
       /// The (optional) Classification field name, to override "ClassificationCode".
       /// </summary>
-      private string m_ClassificationFieldName;
+      private string m_ClassificationFieldName = "";
       public string ClassificationFieldName
       {
          get { return m_ClassificationFieldName; }
@@ -114,7 +114,22 @@ namespace Revit.IFC.Common.Extensions
          {
             m_ClassificationFieldName = value;
             // Call OnPropertyChanged whenever the property is updated
-            OnPropertyChanged("ClassificationFieldNameTextBox");
+            OnPropertyChanged("TextBox_ClassificationIdField");
+         }
+      }
+
+      /// <summary>
+      /// The (optional) Classification field name, to override "ClassificationCode".
+      /// </summary>
+      private string m_ClassificationTitleFieldName = "";
+      public string ClassificationTitleFieldName
+      {
+         get { return m_ClassificationTitleFieldName; }
+         set
+         {
+            m_ClassificationTitleFieldName = value;
+            // Call OnPropertyChanged whenever the property is updated
+            OnPropertyChanged("TextBox_ClassificationTitleField");
          }
       }
 
@@ -138,14 +153,13 @@ namespace Revit.IFC.Common.Extensions
       /// </summary>
       public bool IsUnchanged(IFCClassification classificationToCheck)
       {
-         // Only check 4 properties that are stored into the schema.
-
          if (string.Compare(this.ClassificationName, classificationToCheck.ClassificationName) == 0
              && string.Compare(this.ClassificationSource, classificationToCheck.ClassificationSource) == 0
              && string.Compare(this.ClassificationEdition, classificationToCheck.ClassificationEdition) == 0
              && this.ClassificationEditionDate.Equals(classificationToCheck.ClassificationEditionDate)
              && string.Compare(this.ClassificationLocation, classificationToCheck.ClassificationLocation) == 0
-             && string.Compare(this.ClassificationFieldName, classificationToCheck.ClassificationFieldName) == 0)
+             && string.Compare(this.ClassificationFieldName, classificationToCheck.ClassificationFieldName) == 0
+             && string.Compare(this.ClassificationTitleFieldName, classificationToCheck.ClassificationTitleFieldName) == 0)
             return true;
 
          return false;
@@ -162,7 +176,8 @@ namespace Revit.IFC.Common.Extensions
              && string.IsNullOrEmpty(ClassificationSource)
              && string.IsNullOrEmpty(ClassificationEdition)
              && string.IsNullOrEmpty(ClassificationLocation)
-             && string.IsNullOrEmpty(ClassificationFieldName));
+             && string.IsNullOrEmpty(ClassificationFieldName)
+             && string.IsNullOrEmpty(ClassificationTitleFieldName));
       }
 
       /// <summary>
@@ -216,6 +231,11 @@ namespace Revit.IFC.Common.Extensions
       {
       }
 
+      public IFCClassification(string name)
+      {
+         ClassificationName = name;
+      }
+
       /// <summary>
       /// Actual copy/clone of the IFC Classification.
       /// </summary>
@@ -228,6 +248,7 @@ namespace Revit.IFC.Common.Extensions
          this.ClassificationEditionDate = other.ClassificationEditionDate;
          this.ClassificationLocation = other.ClassificationLocation;
          this.ClassificationFieldName = other.ClassificationFieldName;
+         this.ClassificationTitleFieldName = other.ClassificationTitleFieldName;
       }
    }
 }

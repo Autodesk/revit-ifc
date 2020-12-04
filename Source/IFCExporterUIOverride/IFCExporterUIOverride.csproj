@@ -237,6 +237,9 @@
       <Name>Revit.IFC.Common</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="icons\edit.ico" />
+  </ItemGroup>
   <Import Project=".\IFCExporterUIOverride.props" />
   <PropertyGroup>
   </PropertyGroup>

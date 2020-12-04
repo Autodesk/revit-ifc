@@ -104,14 +104,11 @@ namespace Revit.IFC.Export.Utility
       public ClassificationCache(Document doc)
       {
          // The UI currently supports only one, but future UIs may support a list.
-         IList<IFCClassification> classifications;
-         if (IFCClassificationMgr.GetSavedClassifications(doc, null, out classifications))
+         if (IFCClassificationMgr.GetSavedClassifications(doc, null, out m_ClassificationsByName))
          {
-            foreach (IFCClassification classification in classifications)
+            foreach (KeyValuePair<string,IFCClassification> classificationEntry in m_ClassificationsByName)
             {
-               bool classificationHasName = !string.IsNullOrWhiteSpace(classification.ClassificationName);
-               if (classificationHasName)
-                  ClassificationsByName[classification.ClassificationName] = classification;
+               IFCClassification classification = classificationEntry.Value;
                if (!string.IsNullOrWhiteSpace(classification.ClassificationFieldName))
                {
                   string[] splitResult = classification.ClassificationFieldName.Split(new Char[] { ',', ';', '\t', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -122,8 +119,7 @@ namespace Revit.IFC.Export.Utility
                      if (string.Compare("Assembly Code", classificationFieldName, true) == 0)
                         m_UniformatOverridden = true;
                      CustomClassificationCodeNames.Add(classificationFieldName);
-                     if (classificationHasName)
-                        FieldNameToClassificationNames[classificationFieldName] = classification.ClassificationName;
+                     FieldNameToClassificationNames[classificationFieldName] = classification.ClassificationName;
                   }
                }
             }

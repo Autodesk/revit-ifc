@@ -348,8 +348,8 @@
   <data name="Classification" xml:space="preserve">
     <value>Classification Settings...</value>
   </data>
-  <data name="ClassificationFieldName" xml:space="preserve">
-    <value>Classification field name</value>
+  <data name="ClassificationIdFieldName" xml:space="preserve">
+    <value>Classification identifier field name</value>
   </data>
   <data name="Country" xml:space="preserve">
     <value>Country</value>
@@ -800,5 +800,20 @@
   </data>
   <data name="ClassificationAltLocation" xml:space="preserve">
     <value>Location of the documentation (usually URL)</value>
+  </data>
+  <data name="EditClassification" xml:space="preserve">
+    <value>Edit Existing Classification</value>
+  </data>
+  <data name="NewClassification" xml:space="preserve">
+    <value>Add New Classification</value>
+  </data>
+  <data name="SaveClassification" xml:space="preserve">
+    <value>Save New or Changed Classification</value>
+  </data>
+  <data name="DeleteClassification" xml:space="preserve">
+    <value>Delete Classification</value>
+  </data>
+  <data name="ClassificationTitleFieldName" xml:space="preserve">
+    <value>Classification title field name</value>
   </data>
 </root>

@@ -277,11 +277,11 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Classification field name.
+        ///   Looks up a localized string similar to Classification identifier field name.
         /// </summary>
-        public static string ClassificationFieldName {
+        public static string ClassificationIdFieldName {
             get {
-                return ResourceManager.GetString("ClassificationFieldName", resourceCulture);
+                return ResourceManager.GetString("ClassificationIdFieldName", resourceCulture);
             }
         }
         
@@ -318,6 +318,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string ClassificationSystemSource {
             get {
                 return ResourceManager.GetString("ClassificationSystemSource", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Classification title field name.
+        /// </summary>
+        public static string ClassificationTitleFieldName {
+            get {
+                return ResourceManager.GetString("ClassificationTitleFieldName", resourceCulture);
             }
         }
         
@@ -448,6 +457,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Delete Classification.
+        /// </summary>
+        public static string DeleteClassification {
+            get {
+                return ResourceManager.GetString("DeleteClassification", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Delete old IFC export setups.
         /// </summary>
         public static string DeleteOldSetups {
@@ -534,6 +552,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string DocumentationLocation {
             get {
                 return ResourceManager.GetString("DocumentationLocation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Edit Existing Classification.
+        /// </summary>
+        public static string EditClassification {
+            get {
+                return ResourceManager.GetString("EditClassification", resourceCulture);
             }
         }
         
@@ -1366,6 +1393,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Add New Classification.
+        /// </summary>
+        public static string NewClassification {
+            get {
+                return ResourceManager.GetString("NewClassification", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to New export setup.
         /// </summary>
         public static string NewExportSetup {
@@ -1713,6 +1749,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string RenameSelectedSetup {
             get {
                 return ResourceManager.GetString("RenameSelectedSetup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save New or Changed Classification.
+        /// </summary>
+        public static string SaveClassification {
+            get {
+                return ResourceManager.GetString("SaveClassification", resourceCulture);
             }
         }
         
