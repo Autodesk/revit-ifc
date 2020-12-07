@@ -32,20 +32,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <summary>
       /// A boolean variable to keep the calculated value.
       /// </summary>
-      private bool m_Concealed = false;
-
-      /// <summary>
-      /// A static instance of this class.
-      /// </summary>
-      static ConcealedCalculator s_Instance = new ConcealedCalculator();
+      private bool Concealed { get; set; } = false;
 
       /// <summary>
       /// The SpaceConcealCalculator instance.
       /// </summary>
-      public static ConcealedCalculator Instance
-      {
-         get { return s_Instance; }
-      }
+      public static ConcealedCalculator Instance { get; } = new ConcealedCalculator();
 
       /// <summary>
       /// Calculates concealed value for a space.
@@ -57,17 +49,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>True if the operation succeed, false otherwise.</returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         int concealedFlooring = 0, concealedCovering = 0;
-         if ((ParameterUtil.GetIntValueFromElementOrSymbol(element, "ConcealedFlooring", out concealedFlooring) != null) ||
-               (ParameterUtil.GetIntValueFromElementOrSymbol(element, "ConcealedCovering", out concealedCovering) != null))
+         int? concealedFlooring = ParameterUtil.GetIntValueFromElementOrSymbol(element, "ConcealedFlooring");
+         int? concealedCovering = ParameterUtil.GetIntValueFromElementOrSymbol(element, "ConcealedCovering");
+         if (concealedFlooring.HasValue || concealedCovering.HasValue)
          {
-               m_Concealed = concealedFlooring != 0 || concealedCovering != 0;
-               return true;
+            Concealed = 
+               concealedFlooring.GetValueOrDefault(0) != 0 || concealedCovering.GetValueOrDefault(0) != 0;
+            return true;
          }
 
-         int concealed = 0;
-         ParameterUtil.GetIntValueFromElementOrSymbol(element, "Concealed", out concealed);
-         m_Concealed = concealed != 0;
+         int? concealed = ParameterUtil.GetIntValueFromElementOrSymbol(element, "Concealed");
+         Concealed = concealed.GetValueOrDefault(0) != 0;
 
          return true;
       }
@@ -80,7 +72,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// </returns>
       public override bool GetBooleanValue()
       {
-         return m_Concealed;
+         return Concealed;
       }
    }
 }

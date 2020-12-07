@@ -104,7 +104,7 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCImportFile.TheFile.SchemaVersion > IFCSchemaVersion.IFC2x3 && IFCAnyHandleUtil.IsValidSubTypeOf(ifcFaceSurface, IFCEntityType.IfcAdvancedFace))
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && IFCAnyHandleUtil.IsValidSubTypeOf(ifcFaceSurface, IFCEntityType.IfcAdvancedFace))
          {
             return IFCAdvancedFace.ProcessIFCAdvancedFace(ifcFaceSurface);
          }

@@ -288,7 +288,7 @@ namespace Revit.IFC.Export.Toolkit
                   }
                }
 
-               trf.Origin = lpOrig;
+               trf.Origin = UnitUtil.UnscaleLength(lpOrig);
             }
          }
          return trf;

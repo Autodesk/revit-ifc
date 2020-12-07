@@ -123,10 +123,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                standardPass++;
             }
 
-            // Skip if the parameter is not present in the element parameters
-            if (!element.ParametersMap.Contains(classificationCodeFieldName))
-               continue;
-
             if (ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, classificationCodeFieldName,
                out paramClassificationCode) == null)
             {

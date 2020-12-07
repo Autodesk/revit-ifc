@@ -25,7 +25,6 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
-using UnitName = Autodesk.Revit.DB.DisplayUnitType;
 
 namespace Revit.IFC.Import.Data
 {
@@ -42,7 +41,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// Gets the unit of a type.
       /// </summary>
-      /// <param name="unitType">The unit type.</param>
+      /// <param name="UnitType.UT_">Identifier of the spec.</param>
       /// <returns>The Unit object.</returns>
       public IFCUnit GetIFCProjectUnit(UnitType unitType)
       {
@@ -56,7 +55,7 @@ namespace Revit.IFC.Import.Data
             //default units
             if (unitType == UnitType.UT_Length)
             {
-               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, UnitSystem.Metric, UnitName.DUT_METERS, 1.0 / 0.3048);
+               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, UnitSystem.Metric, DisplayUnitType.DUT_METERS, 1.0 / 0.3048);
                m_ProjectUnitsDictionary[unitType] = unit;
                return unit;
             }
@@ -65,8 +64,8 @@ namespace Revit.IFC.Import.Data
                IFCUnit projectLengthUnit = GetIFCProjectUnit(UnitType.UT_Length);
 
                UnitSystem unitSystem = projectLengthUnit.UnitSystem;
-               UnitName unitName = unitSystem == UnitSystem.Metric ?
-                   UnitName.DUT_SQUARE_METERS : UnitName.DUT_SQUARE_FEET;
+               DisplayUnitType unitName = unitSystem == UnitSystem.Metric ?
+                   DisplayUnitType.DUT_SQUARE_METERS : DisplayUnitType.DUT_SQUARE_FEET;
                double scaleFactor = unitSystem == UnitSystem.Metric ?
                    (1.0 / 0.3048) * (1.0 / 0.3048) : 1.0;
 
@@ -79,8 +78,8 @@ namespace Revit.IFC.Import.Data
                IFCUnit projectLengthUnit = GetIFCProjectUnit(UnitType.UT_Length);
 
                UnitSystem unitSystem = projectLengthUnit.UnitSystem;
-               UnitName unitName = unitSystem == UnitSystem.Metric ?
-                   UnitName.DUT_CUBIC_METERS : UnitName.DUT_CUBIC_FEET;
+               DisplayUnitType unitName = unitSystem == UnitSystem.Metric ?
+                   DisplayUnitType.DUT_CUBIC_METERS : DisplayUnitType.DUT_CUBIC_FEET;
                double scaleFactor = unitSystem == UnitSystem.Metric ?
                    (1.0 / 0.3048) * (1.0 / 0.3048) * (1.0 / 0.3048) : 1.0;
 
@@ -90,13 +89,13 @@ namespace Revit.IFC.Import.Data
             }
             else if (unitType == UnitType.UT_Angle)
             {
-               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, UnitSystem.Metric, UnitName.DUT_DECIMAL_DEGREES, Math.PI / 180);
+               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, UnitSystem.Metric, DisplayUnitType.DUT_SLOPE_DEGREES, Math.PI / 180);
                m_ProjectUnitsDictionary[unitType] = unit;
                return unit;
             }
             else if (unitType == UnitType.UT_HVAC_Temperature)
             {
-               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, UnitSystem.Metric, UnitName.DUT_KELVIN, 1.0);
+               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, UnitSystem.Metric, DisplayUnitType.DUT_KELVIN, 1.0);
                m_ProjectUnitsDictionary[unitType] = unit;
                return unit;
             }
@@ -113,7 +112,7 @@ namespace Revit.IFC.Import.Data
       {
          IFCUnit unit = IFCUnit.ProcessIFCUnit(unitHnd);
          if (unit != null)
-            m_ProjectUnitsDictionary[unit.UnitType] = unit;
+            m_ProjectUnitsDictionary[unit.Spec] = unit;
 
          return unit;
       }

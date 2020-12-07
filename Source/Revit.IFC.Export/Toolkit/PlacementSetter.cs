@@ -24,6 +24,8 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Utility;
+using Revit.IFC.Export.Exporter;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Toolkit
 {
@@ -177,18 +179,35 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      ///   Obtains the handle to an alternate local placement for a room-related element.
+      /// </summary>
+      /// <param name="roomHnd">Handle to the element.</param>
+      /// <param name="placementToUse">The handle to the IfcLocalPlacement to use for the given room-related element.</param>
+      /// <returns>  
+      /// </returns>
+      private void UpdatePlacement(IFCAnyHandle roomHnd, out IFCAnyHandle placement)
+      {
+         placement = LocalPlacement;
+
+         if (roomHnd == null)
+            return;
+
+         IFCAnyHandle roomPlacementHnd = IFCAnyHandleUtil.GetObjectPlacement(roomHnd);
+         Transform trf = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(placement, roomPlacementHnd);
+         placement = ExporterUtil.CreateLocalPlacement(ExporterIFC.GetFile(), roomPlacementHnd, trf.Origin, trf.BasisZ, trf.BasisX);
+      }
+
+      /// <summary>
       ///    Obtains the handle to an alternate local placement for a room-related element.
       /// </summary>
       /// <param name="element">The element.</param>
-      /// <param name="placementToUse">The handle to the IfcLocalPlacement to use for the given room-related element.</param>
       /// <returns>
       ///    The id of the spatial element related to the element.  InvalidElementId if the element
       ///    is not room-related, in which case the output will contain the placement handle from
       ///    LocalPlacement.
       /// </returns>
-      public ElementId UpdateRoomRelativeCoordinates(Element elem, out IFCAnyHandle placement)
+      private ElementId GetIdInSpatialStructure(Element elem)
       {
-         placement = LocalPlacement;
          FamilyInstance famInst = elem as FamilyInstance;
          if (famInst == null)
             return ElementId.InvalidElementId;
@@ -221,15 +240,82 @@ namespace Revit.IFC.Export.Toolkit
          if (roomOrSpace == null || roomOrSpace.Location == null)
             return ElementId.InvalidElementId;
 
-         ElementId roomId = roomOrSpace.Id;
-         IFCAnyHandle roomHnd = ExporterCacheManager.SpaceInfoCache.FindSpaceHandle(roomId);
+         return roomOrSpace.Id;
+      }
+
+      /// <summary>
+      ///    Obtains the handle to an alternate local placement for a room-related element.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="placementToUse">The handle to the IfcLocalPlacement to use for the given room-related element.</param>
+      /// <returns>
+      ///    The id of the spatial element related to the element.  InvalidElementId if the element
+      ///    is not room-related, in which case the output will contain the placement handle from
+      ///    LocalPlacement.
+      /// </returns>
+      public ElementId UpdateRoomRelativeCoordinates(Element elem, out IFCAnyHandle placement)
+      {
+         placement = LocalPlacement;
+         ElementId roomId = ElementId.InvalidElementId;
+
+         if (elem == null)
+            return roomId;
+
+         IFCAnyHandle roomHnd = null;
+         GroupInfo groupInfo;
+         if (ExporterCacheManager.GroupCache.TryGetValue(elem.Id, out groupInfo))
+         {
+            if (groupInfo != null && groupInfo.ElementHandles != null && groupInfo.ElementHandles.Count != 0)
+            {
+               Document document = elem.Document;
+               if (document == null)
+                  return roomId;
+               
+               bool initialized = false;
+               foreach (IFCAnyHandle handleElem in groupInfo.ElementHandles)
+               {
+                  ElementId elementId = ExporterCacheManager.HandleToElementCache.Find(handleElem);
+                  Element element = document.GetElement(elementId);
+                  if (element == null)
+                     continue;
+                  
+                  ElementId currentRoomId = GetIdInSpatialStructure(element);
+                  if (currentRoomId == ElementId.InvalidElementId)
+                     return ElementId.InvalidElementId;
+                  
+                  if (!initialized)
+                  { 
+                     roomId = currentRoomId;
+                     initialized = true;
+                  }
+                  
+                  if (currentRoomId != roomId)
+                     return ElementId.InvalidElementId;
+               }
+
+               roomHnd = ExporterCacheManager.SpaceInfoCache.FindSpaceHandle(roomId);
+
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(roomHnd))
+                  return ElementId.InvalidElementId;
+
+               UpdatePlacement(roomHnd, out placement);
+
+               return roomId;
+            }
+         }
+
+         roomId = GetIdInSpatialStructure(elem);
+
+         if (roomId == ElementId.InvalidElementId)
+            return ElementId.InvalidElementId;
+
+         roomHnd = ExporterCacheManager.SpaceInfoCache.FindSpaceHandle(roomId);
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(roomHnd))
             return ElementId.InvalidElementId;
 
-         IFCAnyHandle roomPlacementHnd = IFCAnyHandleUtil.GetObjectPlacement(roomHnd);
-         Transform trf = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(placement, roomPlacementHnd);
-         placement = ExporterUtil.CreateLocalPlacement(ExporterIFC.GetFile(), roomPlacementHnd, trf.Origin, trf.BasisZ, trf.BasisX);
+         UpdatePlacement(roomHnd, out placement);
+
          return roomId;
       }
 

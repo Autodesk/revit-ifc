@@ -82,7 +82,8 @@ namespace Revit.IFC.Import.Data
 
          if (element != null)
          {
-            IFCPropertySet.AddParameterString(doc, element, "Flow Direction", FlowDirection.ToString(), Id);
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+            IFCPropertySet.AddParameterString(doc, element, category, "Flow Direction", FlowDirection.ToString(), Id);
          }
       }
 

@@ -28,6 +28,7 @@ using Revit.IFC.Common.Enums;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Exporter.PropertySet;
+using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -77,7 +78,7 @@ namespace Revit.IFC.Export.Exporter
             else if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             {
                if (exportAs.ExportInstance == IFCEntityType.IfcBuildingSystem)
-               groupHnd = IFCInstanceExporter.CreateBuildingSystem(file, exportAs, guid, ownerHistory, name, description, objectType, longName);
+                  groupHnd = IFCInstanceExporter.CreateBuildingSystem(file, exportAs, guid, ownerHistory, name, description, objectType, longName);
                else if (exportAs.ExportInstance == IFCEntityType.IfcFurniture)
                   groupHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, exporterIFC, element, guid, ownerHistory, null, null);
             }
@@ -85,9 +86,27 @@ namespace Revit.IFC.Export.Exporter
             if (groupHnd == null)
                return false;
 
-            productWrapper.AddElement(element, groupHnd, exportAs);
-
             GroupInfo groupInfo = ExporterCacheManager.GroupCache.RegisterGroup(element.Id, groupHnd);
+
+            if (IFCAnyHandleUtil.IsSubTypeOf(groupHnd, IFCEntityType.IfcProduct))
+            {
+               IFCAnyHandle overrideContainerHnd = null;
+               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+
+               using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+               {
+                  IFCAnyHandle localPlacementToUse;
+                  ElementId roomId = setter.UpdateRoomRelativeCoordinates(element, out localPlacementToUse);
+                  
+                  bool containedInSpace = (roomId != ElementId.InvalidElementId);
+                  productWrapper.AddElement(element, groupHnd, setter.LevelInfo, null, !containedInSpace, exportAs);
+                  
+                  if (containedInSpace)
+                     ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, groupHnd);
+               }
+            }
+            else
+               productWrapper.AddElement(element, groupHnd, exportAs);
 
             // Check or set the cached Group's export type
             if (groupInfo.GroupType.ExportInstance == IFCEntityType.UnKnown)

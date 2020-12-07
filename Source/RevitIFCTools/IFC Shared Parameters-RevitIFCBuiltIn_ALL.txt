@@ -28,7 +28,6 @@ PARAM	e66c0e06-0383-480f-854e-950bb0d435f8	ProjectGlobalPositioning.CRSGeodeticD
 PARAM	bc47059f-e418-41f2-85b9-8b556dacae5e	ProjectGlobalPositioning.CRSVerticalDatum	TEXT		2	1		1
 PARAM	b1d60aea-e267-4ca1-b899-cb06d5eaa9c8	ProjectGlobalPositioning.CRSMapProjection	TEXT		2	1		1
 PARAM	91150f20-dc6c-4691-be1e-fe0ed0dfae6f	ProjectGlobalPositioning.CRSMapZone	TEXT		2	1		1
-PARAM	093a80c9-4a77-4076-a71c-041e3521608c	ProjectGlobalPositioning.CRSMapUnit	TEXT		2	1		1
 #
 # Parameters to override quantity information
 PARAM	9c5ad3aa-75d4-448a-a75c-db72ae2139f8	IfcQtyDepth	LENGTH		2	1		1
@@ -68,6 +67,7 @@ PARAM	cec026c1-b978-4d3c-b657-a67fb34be612	Pset_SiteCommon.SiteCoverageRatio	NUM
 #
 # Parameters for Zone and Pset_ZoneCommon to be applied to Spaces
 PARAM	8654f7d0-4046-4658-8f4c-f7c9fae9c48b	ZoneName	TEXT		2	1		1
+PARAM	9d26a3cd-a7e7-48f4-88bf-794ba795a0ba	ZoneGroupName	TEXT		2	1		1
 PARAM	803a2a7e-2c1b-4297-a4bb-9d7431580b75	ZoneObjectType	TEXT		2	1		1
 PARAM	9959634a-4d88-4139-a7d5-51fb25655bd3	ZoneLongName	TEXT		2	1		1
 PARAM	b898aba5-8f77-463f-9e88-56787fa0dd92	ZoneDescription	TEXT		2	1		1

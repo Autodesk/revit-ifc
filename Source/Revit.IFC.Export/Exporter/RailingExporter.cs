@@ -25,6 +25,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
+using System.Linq;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -174,7 +175,13 @@ namespace Revit.IFC.Export.Exporter
          if (geomElement == null)
             return;
 
-         string ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(exporterIFC, railing);
+         string ifcEnumType;
+         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, railing, out ifcEnumType);
+         if (exportType.IsUnKnown)
+         {
+            ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(exporterIFC, railing);
+         }
+         
          ExportRailing(exporterIFC, railing, geomElement, ifcEnumType, productWrapper);
       }
 
@@ -341,16 +348,41 @@ namespace Revit.IFC.Export.Exporter
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
 
-                  IFCAnyHandle railing = IFCInstanceExporter.CreateRailing(exporterIFC, element, instanceGUID, ownerHistory,
-                      ecData.GetLocalPlacement(), prodRep, ifcEnumType);
-                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(elementClassTypeEnum, ifcEnumType);
+                  IFCExportInfoPair exportInfo = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
+
+                  IFCAnyHandle railing = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, element, instanceGUID, ownerHistory,
+                            ecData.GetLocalPlacement(), prodRep);
+
                   bool associateToLevel = (hostId == ElementId.InvalidElementId);
 
                   productWrapper.AddElement(element, railing, setter, ecData, associateToLevel, exportInfo);
                   OpeningUtil.CreateOpeningsIfNecessary(railing, element, ecData, bodyData.OffsetTransform,
                       exporterIFC, ecData.GetLocalPlacement(), setter, productWrapper);
 
-                  CategoryUtil.CreateMaterialAssociation(exporterIFC, railing, bodyData.MaterialIds);
+                  IFCAnyHandle singleMaterialOverrideHnd = null;
+                  IList<ElementId> matIds = null;
+                  ElementId defaultMatId = ElementId.InvalidElementId;
+                  ElementId matId = CategoryUtil.GetBaseMaterialIdForElement(element);
+
+                  // Get IfcSingleMaterialOverride to work for railing
+                  singleMaterialOverrideHnd = ExporterUtil.GetSingleMaterial(exporterIFC, element, matId);
+                  if (singleMaterialOverrideHnd != null)
+                  {
+                     matIds = new List<ElementId> { matId };
+                  }
+                  else
+                  {
+                     matIds = bodyData.MaterialIds;
+                     defaultMatId = matIds[0];
+
+                     // Check if all the items are the same, then get the first material id
+                     if (matIds.All(x => x == defaultMatId))
+                     {
+                        matIds = new List<ElementId> { defaultMatId };
+                     }
+                  }
+
+                  CategoryUtil.CreateMaterialAssociationWithShapeAspect(exporterIFC, element, railing, bodyData.RepresentationItemInfo);
 
                   // Create multi-story duplicates of this railing.
                   if (stairRampInfo != null)
@@ -366,7 +398,7 @@ namespace Revit.IFC.Export.Exporter
                            IFCAnyHandle railingHndCopy = CopyRailingHandle(exporterIFC, element, catId, railingLocalPlacement, railing);
                            stairRampInfo.AddComponent(ii, railingHndCopy);
                            productWrapper.AddElement(element, railingHndCopy, (IFCLevelInfo)null, ecData, false, exportInfo);
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, railingHndCopy, bodyData.MaterialIds);
+                           CategoryUtil.CreateMaterialAssociationWithShapeAspect(exporterIFC, element, railingHndCopy, bodyData.RepresentationItemInfo);
                         }
                      }
 

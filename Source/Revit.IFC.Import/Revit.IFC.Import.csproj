@@ -57,13 +57,11 @@
       <HintPath>..\ThirdParty\ICSharpCode\ICSharpCode.SharpZipLib.DLL</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="RevitAPI, Version=20.2.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2020\RevitAPI.dll</HintPath>
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2020\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=20.2.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2020\RevitAPIIFC.dll</HintPath>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2020\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -224,6 +222,7 @@
     <Compile Include="Data\IFCProject.cs" />
     <Compile Include="Data\IFCSimpleProperty.cs" />
     <Compile Include="Data\IFCUnits.cs" />
+    <Compile Include="Geometry\IFCVirtualGridIntersection.cs" />
     <Compile Include="Geometry\IIFCBooleanOperand.cs" />
     <Compile Include="Importer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -240,7 +239,6 @@
     <Compile Include="Utility\IFCElementUtil.cs" />
     <Compile Include="Utility\IFCGUIDUtil.cs" />
     <Compile Include="Utility\IFCImportCache.cs" />
-    <Compile Include="Utility\IFCImportDataUtil.cs" />
     <Compile Include="Utility\IFCImportHandleUtil.cs" />
     <Compile Include="Utility\IFCImportLog.cs" />
     <Compile Include="Utility\IFCImportOptions.cs" />

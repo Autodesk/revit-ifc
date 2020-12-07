@@ -78,20 +78,6 @@ namespace Revit.IFC.Export.Utility
       /// <param name="elementType">The element type.</param>
       /// <param name="prodTypeHnd">The handle.</param>
       /// <param name="existingPropertySets">Any existing propertysets.</param>
-      [Obsolete("This method has been updated and it requires IFCExportInfoPair to be specified")]
-      public void RegisterHandleWithElementType(ElementType elementType, IFCAnyHandle prodTypeHnd, HashSet<IFCAnyHandle> existingPropertySets)
-      {
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         RegisterHandleWithElementType(elementType, exportType, prodTypeHnd, existingPropertySets);
-      }
-
-      /// <summary>
-      /// Register an ElementType with the ProductWrapper, to create its property sets on Dispose.
-      /// </summary>
-      /// <param name="elementType">The element type.</param>
-      /// <param name="exportType">The export info pair</param>
-      /// <param name="prodTypeHnd">The handle.</param>
-      /// <param name="existingPropertySets">Any existing propertysets.</param>
       public void RegisterHandleWithElementType(ElementType elementType, IFCExportInfoPair exportType, IFCAnyHandle prodTypeHnd, HashSet<IFCAnyHandle> existingPropertySets)
       {
          Tuple<ElementType, IFCExportInfoPair> elTypeKey = new Tuple<ElementType, IFCExportInfoPair>(elementType, exportType);
@@ -235,19 +221,6 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="element">The element.</param>
       /// <param name="handle">The handle.</param>
-      [Obsolete("This method has been updated and it requires IFCExportInfoPair to be specified")]
-      public void AddElement(Element element, IFCAnyHandle handle)
-      {
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         RegisterHandleWithElement(element, handle, exportType);
-      }
-
-      /// <summary>
-      /// Add a generic element to the wrapper, and create associated internal property sets if option is set.
-      /// </summary>
-      /// <param name="element">The element.</param>
-      /// <param name="handle">The handle.</param>
-      /// <param name="exportType">Export info pair</param>
       public void AddElement(Element element, IFCAnyHandle handle, IFCExportInfoPair exportType)
       {
          m_CreatedHandles.Add(handle);
@@ -262,22 +235,6 @@ namespace Revit.IFC.Export.Utility
       /// <param name="setter">The placement setter.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      [Obsolete("This method has been updated and it requires IFCExportInfoPair to be specified")]
-      public void AddElement(Element element, IFCAnyHandle handle, PlacementSetter setter, IFCExtrusionCreationData data, bool relateToLevel)
-      {
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         AddElement(element, handle, setter, data, relateToLevel, exportType);
-      }
-
-      /// <summary>
-      /// Add a generic element to the wrapper, with associated setter and extrusion data information, and create associated internal property sets if option is set.
-      /// </summary>
-      /// <param name="element">The element.</param>
-      /// <param name="handle">The element handle.</param>
-      /// <param name="setter">The placement setter.</param>
-      /// <param name="data">The extrusion creation data (can be null.)</param>
-      /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      /// <param name="exportType">Export info pair</param>
       public void AddElement(Element element, IFCAnyHandle handle, PlacementSetter setter, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
       {
          // There is a bug in the internal AddElement that requires us to do a levelInfo null check here.
@@ -297,22 +254,6 @@ namespace Revit.IFC.Export.Utility
       /// <param name="levelInfo">The level information.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      [Obsolete("This method has been updated and it requires IFCExportInfoPair to be specified")]
-      public void AddElement(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel)
-      {
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         AddElement(element, handle, levelInfo, data, relateToLevel, exportType);
-      }
-
-      /// <summary>
-      /// Add a generic element to the wrapper, with associated level and extrusion data information, and create associated internal property sets if option is set.
-      /// </summary>
-      /// <param name="element">The element.</param>
-      /// <param name="handle">The element handle.</param>
-      /// <param name="levelInfo">The level information.</param>
-      /// <param name="data">The extrusion creation data (can be null.)</param>
-      /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      /// <param name="exportType">Export info pair</param>
       public void AddElement(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
       {
          // There is a bug in the internal AddElement that requires us to do a levelInfo null check here.

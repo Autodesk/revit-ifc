@@ -25,6 +25,7 @@ using Revit.IFC.Common.Utility;
 using System.Linq;
 using System;
 
+
 namespace Revit.IFC.Export.Exporter
 {
    public class FamilyGeometrySummaryData
@@ -162,7 +163,7 @@ namespace Revit.IFC.Export.Exporter
       public HashSet<ElementId> MaterialIds {
          get
          {
-            return new HashSet<ElementId>(MaterialIdList);
+            return MaterialIdList.ToHashSet();
          }
          set 
          {

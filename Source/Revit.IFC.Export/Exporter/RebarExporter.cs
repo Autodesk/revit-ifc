@@ -422,10 +422,13 @@ namespace Revit.IFC.Export.Exporter
                      curves.Add(baseCurve.CreateTransformed(barTrf));
                   }
 
-                  IFCAnyHandle compositeCurve = GeometryUtil.CreateCompositeCurve(exporterIFC, curves);
+                  // For IFC4 and Structural Exchange Requirement export, Entity type not allowed for RV: IfcPolyline
+                  IFCAnyHandle compositeCurve = GeometryUtil.CreateCompositeOrIndexedCurve(exporterIFC, curves, null, null);
                   IFCAnyHandle sweptDiskSolid = IFCInstanceExporter.CreateSweptDiskSolid(file, compositeCurve, radius, null, 0, endParam);
                   HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
                   bodyItems.Add(sweptDiskSolid);
+                  RepresentationUtil.CreateStyledItemAndAssign(file, rebarElement.Document, materialId, sweptDiskSolid);
+
 
                   IFCAnyHandle shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(exporterIFC, rebarElement, categoryId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null);
                   IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();

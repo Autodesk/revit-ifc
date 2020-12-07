@@ -1022,7 +1022,7 @@ namespace Revit.IFC.Export.Exporter
                      string runName = NamingUtil.GetNameOverride(run, origRunName);
 
                      IFCAnyHandle runLocalPlacement = ecData.GetLocalPlacement();
-                     string runElementTag = NamingUtil.GetTagOverride(run, NamingUtil.CreateIFCElementId(run));
+                     string runElementTag = NamingUtil.GetTagOverride(run);
 
                      string flightPredefType = GetValidatedStairFlightType(run);
 
@@ -1715,7 +1715,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle contextOfItemsAxis = exporterIFC.Get3DContextHandle("Axis");
 
          Transform trfFromBodyData = new Transform(bodyData.OffsetTransform);
-         trfFromBodyData.Origin = UnitUtil.UnscaleLength(bodyData.OffsetTransform.Origin);
+         trfFromBodyData.Origin = bodyData.OffsetTransform.Origin;
          Transform boundaryTrf = (bodyData.OffsetTransform == null) ? trf : trf.Multiply(trfFromBodyData);
          XYZ runBoundaryProjDir = boundaryTrf.BasisZ;
 

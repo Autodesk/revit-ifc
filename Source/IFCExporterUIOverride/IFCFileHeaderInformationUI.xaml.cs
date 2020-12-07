@@ -34,8 +34,6 @@ namespace BIM.IFC.Export.UI
       private IFCFileHeader m_newFileHeader = new IFCFileHeader();
       private IFCFileHeaderItem m_newFileHeaderItem = new IFCFileHeaderItem();
       private IFCFileHeaderItem m_savedFileHeaderItem = new IFCFileHeaderItem();
-      private static string m_selectedExchangeRequirement = "";
-      private static IList<string> exchangeRequirementList = null;
 
       /// <summary>
       /// initialization of IFCAssignemt class
@@ -44,12 +42,6 @@ namespace BIM.IFC.Export.UI
       public IFCFileHeaderInformation()
       {
          InitializeComponent();
-         // Populate initial list from the known/standard exchange requirements
-         if (exchangeRequirementList == null || exchangeRequirementList.Count == 0)
-         {
-            exchangeRequirementList = IFCExchangeRequirements.ExchangeRequirements;
-         }
-         comboBoxExchangeRequirement.ItemsSource = exchangeRequirementList;
       }
 
       /// <summary>
@@ -60,7 +52,6 @@ namespace BIM.IFC.Export.UI
       private void Window_Loaded(object sender, RoutedEventArgs e)
       {
          FileHeaderTab.DataContext = m_newFileHeaderItem;
-         comboBoxExchangeRequirement.SelectedValue = m_selectedExchangeRequirement;
       }
 
       /// <summary>
@@ -70,17 +61,6 @@ namespace BIM.IFC.Export.UI
       /// <param name="args"></param>
       private void buttonOK_Click(object sender, RoutedEventArgs args)
       {
-         // Save the user selected/input Exchange Requirement
-         if (!string.IsNullOrEmpty(comboBoxExchangeRequirement.Text) && !comboBoxExchangeRequirement.Text.Equals(m_selectedExchangeRequirement))
-         {
-            m_selectedExchangeRequirement = comboBoxExchangeRequirement.Text;
-            if (!exchangeRequirementList.Contains(m_selectedExchangeRequirement))
-               exchangeRequirementList.Add(m_selectedExchangeRequirement);
-         }
-
-         string erName = IFCExchangeRequirements.GetERName(m_selectedExchangeRequirement);
-         m_newFileHeaderItem.FileDescription += "ExchangeRequirement [" + erName + "]";
-
          // Saved changes to both Address Tab items and File Header Tab items if they have changed
          if (m_newFileHeaderItem.isUnchanged(m_savedFileHeaderItem) == false)
          {
@@ -121,13 +101,6 @@ namespace BIM.IFC.Export.UI
          // Application Name and Number are fixed for the software release and will not change, therefore they are always forced set here
          m_newFileHeaderItem.ApplicationName = IFCCommandOverrideApplication.TheDocument.Application.VersionName;
          m_newFileHeaderItem.VersionNumber = IFCCommandOverrideApplication.TheDocument.Application.VersionBuild;
-
-      }
-
-      private void comboBoxExchangeRequirement_SelectionChanged(object sender, SelectionChangedEventArgs e)
-      {
-         if (comboBoxExchangeRequirement.SelectedValue != null)
-            m_selectedExchangeRequirement = comboBoxExchangeRequirement.SelectedValue.ToString();
       }
    }
 }

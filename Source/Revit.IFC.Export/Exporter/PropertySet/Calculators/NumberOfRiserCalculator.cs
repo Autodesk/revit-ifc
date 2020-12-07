@@ -24,6 +24,7 @@ using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Export.Toolkit.IFC4;
 using Revit.IFC.Export.Utility;
 
 namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
@@ -39,43 +40,25 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       private int m_NumberOfRisers = 0;
 
       /// <summary>
-      /// A static instance of this class.
-      /// </summary>
-      static NumberOfRiserCalculator s_Instance = new NumberOfRiserCalculator();
-
-      /// <summary>
       /// The NumberOfRiserCalculator instance.
       /// </summary>
-      public static NumberOfRiserCalculator Instance
-      {
-         get { return s_Instance; }
-      }
-
+      public static NumberOfRiserCalculator Instance { get; } = new NumberOfRiserCalculator();
+      
       /// <summary>
       /// Calculates number of risers for a stair.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
-      /// </param>
-      /// <param name="element">
-      /// The element to calculate the value.
-      /// </param>
-      /// <param name="elementType">
-      /// The element type.
-      /// </param>
-      /// <returns>
-      /// True if the operation succeed, false otherwise.
-      /// </returns>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <returns>True if the operation succeed, false otherwise.</returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          bool valid = true;
          if (StairsExporter.IsLegacyStairs(element))
          {
             double riserHeight, treadLength, treadLengthAtInnerSide, nosingLength, waistThickness = 0;
-            int numberOfTreads = 0;
+            int numberOfTreads;
 
             ExporterIFCUtils.GetLegacyStairsProperties(exporterIFC, element,
                   out m_NumberOfRisers, out numberOfTreads,
@@ -99,10 +82,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // Get override from parameter
-         int noRiserOverride = 0;
-         ParameterUtil.GetIntValueFromElementOrSymbol(element, "NumberOfRiser", out noRiserOverride);
-         if (noRiserOverride > 0)
-            m_NumberOfRisers = noRiserOverride;
+         int? noRiserOverride = ParameterUtil.GetIntValueFromElementOrSymbol(element, "NumberOfRiser");
+         if (noRiserOverride.HasValue)
+         {
+            m_NumberOfRisers = noRiserOverride.Value;
+            valid = true;
+         }
 
          return valid;
       }

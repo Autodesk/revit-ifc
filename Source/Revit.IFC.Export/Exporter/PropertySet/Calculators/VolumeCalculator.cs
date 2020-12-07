@@ -39,63 +39,42 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       private double m_Volume = 0;
 
       /// <summary>
-      /// A static instance of this class.
-      /// </summary>
-      static VolumeCalculator s_Instance = new VolumeCalculator();
-
-      /// <summary>
       /// The SpaceVolumeCalculator instance.
       /// </summary>
-      public static VolumeCalculator Instance
-      {
-         get { return s_Instance; }
-      }
+      public static VolumeCalculator Instance { get; } = new VolumeCalculator();
 
       /// <summary>
       /// Calculates volume for a space.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="calcValues">
-      /// The IFCExtrusionCreationData.
-      /// </param>
-      /// <param name="element">
-      /// The element to calculate the value.
-      /// </param>
-      /// <param name="elementType">
-      /// The element type.
-      /// </param>
-      /// <returns>
-      /// True if the operation succeed, false otherwise.
-      /// </returns>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="calcValues">The IFCExtrusionCreationData.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <returns>True if the operation succeed, false otherwise.</returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyVolume", out m_Volume) == null)
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "QtyVolume", out m_Volume);
-         m_Volume = UnitUtil.ScaleArea(m_Volume);
-         if (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps())
-            return true;
+         double volumeEps = MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps();
+         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyVolume", out m_Volume) != null) ||
+               (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "QtyVolume", out m_Volume) != null))
+         {
+            m_Volume = UnitUtil.ScaleArea(m_Volume);
+            if (m_Volume > volumeEps)
+               return true;
+         }
 
          if (extrusionCreationData == null)
             return false;
-         double area = extrusionCreationData.ScaledArea;
-         double height = extrusionCreationData.ScaledHeight;
-         if (area < MathUtil.Eps() * MathUtil.Eps() || height < MathUtil.Eps())
-            return false;
-         else
-         {
-               m_Volume = area * height;
-         return true;
-         }
+
+         double area = UnitUtil.UnscaleArea(extrusionCreationData.ScaledArea);
+         double height = UnitUtil.UnscaleLength(extrusionCreationData.ScaledHeight);
+         m_Volume = UnitUtil.ScaleVolume(area * height);
+         return (m_Volume > volumeEps);
       }
 
       /// <summary>
       /// Gets the calculated double value.
       /// </summary>
-      /// <returns>
-      /// The double value.
-      /// </returns>
+      /// <returns>The double value.</returns>
       public override double GetDoubleValue()
       {
          return m_Volume;

@@ -187,6 +187,15 @@ namespace Revit.IFC.Export.Utility
             return "NOTDEFINED";
 
          BoundingBoxXYZ doorBB = GetBoundingBoxFromSolids(currElem);
+
+         // Translate curtain door origin to have proper 2D arc position
+         Wall wall = HostObject as Wall;
+         if (wall != null && wall.WallType.Kind == WallKind.Curtain)
+         {
+            Transform offsetOrigTrf = Transform.CreateTranslation(-XYZ.BasisX * doorBB.Min.X);
+            doorWindowTrf = offsetOrigTrf.Multiply(doorWindowTrf);
+         }
+
          XYZ bbMin = doorWindowTrf.OfPoint(doorBB.Min);
          XYZ bbMax = doorWindowTrf.OfPoint(doorBB.Max);
 

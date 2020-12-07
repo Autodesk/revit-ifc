@@ -46,12 +46,12 @@ namespace Revit.IFC.Import.Data
          if (IFCUnit != null)
          {
             FormatValueOptions formatValueOptions = new FormatValueOptions();
-            FormatOptions specFormatOptions = IFCImportFile.TheFile.Document.GetUnits().GetFormatOptions(IFCUnit.UnitType);
+            FormatOptions specFormatOptions = IFCImportFile.TheFile.Document.GetUnits().GetFormatOptions(IFCUnit.Spec);
             specFormatOptions.Accuracy = 1e-8;
             if (specFormatOptions.CanSuppressTrailingZeros())
                specFormatOptions.SuppressTrailingZeros = true;
             formatValueOptions.SetFormatOptions(specFormatOptions);
-            return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), IFCUnit.UnitType, propertyValue.AsDouble(), true, false, formatValueOptions);
+            return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), IFCUnit.Spec, propertyValue.AsDouble(), true, false, formatValueOptions);
          }
          else
             return propertyValue.ValueAsString();
@@ -128,7 +128,7 @@ namespace Revit.IFC.Import.Data
 
          IFCData lowerBoundValue = ifcPropertyBoundedValue.GetAttribute("LowerBoundValue");
          IFCData upperBoundValue = ifcPropertyBoundedValue.GetAttribute("UpperBoundValue");
-         IFCData setPointValue = (IFCImportFile.TheFile.SchemaVersion > IFCSchemaVersion.IFC2x3) ? ifcPropertyBoundedValue.GetAttribute("SetPointValue") : null;
+         IFCData setPointValue = (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete)) ? ifcPropertyBoundedValue.GetAttribute("SetPointValue") : null;
 
          if (lowerBoundValue != null)
          {

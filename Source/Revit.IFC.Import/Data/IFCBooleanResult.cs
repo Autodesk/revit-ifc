@@ -215,7 +215,7 @@ namespace Revit.IFC.Import.Data
                Solid resultSolid = (firstSolid as Solid);
 
                int secondId = (SecondOperand == null) ? -1 : (SecondOperand as IFCRepresentationItem).Id;
-               XYZ suggestedShiftDirection = (SecondOperand == null) ? null : SecondOperand.GetSuggestedShiftDirection(lcs);
+               XYZ suggestedShiftDirection = GetSuggestedShiftDirection(lcs);
                foreach (GeometryObject secondSolid in secondSolids)
                {
                   resultSolid = IFCGeometryUtil.ExecuteSafeBooleanOperation(Id, secondId, resultSolid, secondSolid as Solid, booleanOperationsType, suggestedShiftDirection);
@@ -229,18 +229,6 @@ namespace Revit.IFC.Import.Data
          }
 
          return resultSolids;
-      }
-
-      /// <summary>
-      /// In case of a Boolean operation failure, provide a recommended direction to shift the geometry in for a second attempt.
-      /// </summary>
-      /// <param name="lcs">The local transform for this entity.</param>
-      /// <returns>An XYZ representing a unit direction vector, or null if no direction is suggested.</returns>
-      /// <remarks>If the 2nd attempt fails, a third attempt will be done with a shift in the opposite direction.</remarks>
-      public XYZ GetSuggestedShiftDirection(Transform lcs)
-      {
-         // Sub-classes may have a better guess.
-         return null;
       }
 
       /// <summary>
@@ -286,6 +274,21 @@ namespace Revit.IFC.Import.Data
          if (!IFCImportFile.TheFile.EntityMap.TryGetValue(ifcBooleanResult.StepId, out booleanResult))
             booleanResult = new IFCBooleanResult(ifcBooleanResult);
          return (booleanResult as IFCBooleanResult);
+      }
+
+      /// <summary>
+      /// In case of a Boolean operation failure, provide a recommended direction to shift the geometry in for a second attempt.
+      /// </summary>
+      /// <param name="lcs">The local transform for this entity.</param>
+      /// <returns>An XYZ representing a unit direction vector, or null if no direction is suggested.</returns>
+      /// <remarks>If the 2nd attempt fails, a third attempt will be done with a shift in the opposite direction.</remarks>
+      public XYZ GetSuggestedShiftDirection(Transform lcs)
+      {
+         XYZ suggestedXYZ = (SecondOperand == null) ? null : SecondOperand.GetSuggestedShiftDirection(lcs);
+         if (suggestedXYZ == null)
+            suggestedXYZ = (FirstOperand == null) ? null : FirstOperand.GetSuggestedShiftDirection(lcs);
+         return suggestedXYZ;
+
       }
    }
 }

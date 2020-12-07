@@ -70,7 +70,7 @@ namespace Revit.IFC.Import.Data
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(ownerHistoryHandle))
          {
-            if (IFCImportFile.TheFile.SchemaVersion < IFCSchemaVersion.IFC4)
+            if (!IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
                Importer.TheLog.LogWarning(Id, "Missing IfcOwnerHistory, ignoring.", true);
          }
          else

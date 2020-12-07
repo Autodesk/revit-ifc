@@ -842,14 +842,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   switch (parameterDefinition.ParameterType)
                   {
                      case ParameterType.Angle:
-                        propertyType = PropertyType.PlaneAngle;
+                     propertyType = PropertyType.PlaneAngle;
                         break;
                      case ParameterType.Area:
                      case ParameterType.HVACCrossSection:
                      case ParameterType.ReinforcementArea:
                      case ParameterType.SectionArea:
                      case ParameterType.SurfaceArea:
-                        propertyType = PropertyType.Area;
+                     propertyType = PropertyType.Area;
                         break;
                      case ParameterType.BarDiameter:
                      case ParameterType.CrackWidth:
@@ -870,69 +870,69 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      case ParameterType.SectionDimension:
                      case ParameterType.SectionProperty:
                      case ParameterType.WireSize:
-                        propertyType = PropertyType.Length;
+                     propertyType = PropertyType.Length;
                         break;
                      case ParameterType.ColorTemperature:
-                        propertyType = PropertyType.ColorTemperature;
+                     propertyType = PropertyType.ColorTemperature;
                         break;
                      case ParameterType.Currency:
-                        propertyType = PropertyType.Currency;
+                     propertyType = PropertyType.Currency;
                         break;
                      case ParameterType.ElectricalEfficacy:
-                        propertyType = PropertyType.ElectricalEfficacy;
+                     propertyType = PropertyType.ElectricalEfficacy;
                         break;
                      case ParameterType.ElectricalLuminousIntensity:
-                        propertyType = PropertyType.LuminousIntensity;
+                     propertyType = PropertyType.LuminousIntensity;
                         break;
                      case ParameterType.ElectricalIlluminance:
-                        propertyType = PropertyType.Illuminance;
+                     propertyType = PropertyType.Illuminance;
                         break;
                      case ParameterType.ElectricalApparentPower:
                      case ParameterType.ElectricalPower:
                      case ParameterType.ElectricalWattage:
                      case ParameterType.HVACPower:
-                        propertyType = PropertyType.Power;
+                     propertyType = PropertyType.Power;
                         break;
                      case ParameterType.ElectricalCurrent:
-                        propertyType = PropertyType.ElectricCurrent;
+                     propertyType = PropertyType.ElectricCurrent;
                         break;
                      case ParameterType.ElectricalPotential:
-                        propertyType = PropertyType.ElectricVoltage;
+                     propertyType = PropertyType.ElectricVoltage;
                         break;
                      case ParameterType.ElectricalFrequency:
-                        propertyType = PropertyType.Frequency;
+                     propertyType = PropertyType.Frequency;
                         break;
                      case ParameterType.ElectricalLuminousFlux:
-                        propertyType = PropertyType.LuminousFlux;
+                     propertyType = PropertyType.LuminousFlux;
                         break;
                      case ParameterType.ElectricalTemperature:
                      case ParameterType.HVACTemperature:
                      case ParameterType.PipingTemperature:
-                        propertyType = PropertyType.ThermodynamicTemperature;
+                     propertyType = PropertyType.ThermodynamicTemperature;
                         break;
                      case ParameterType.Force:
-                        propertyType = PropertyType.Force;
+                     propertyType = PropertyType.Force;
                         break;
                      case ParameterType.HVACAirflow:
                      case ParameterType.PipingFlow:
-                        propertyType = PropertyType.VolumetricFlowRate;
+                     propertyType = PropertyType.VolumetricFlowRate;
                         break;
                      case ParameterType.HVACPressure:
                      case ParameterType.PipingPressure:
                      case ParameterType.Stress:
-                        propertyType = PropertyType.Pressure;
+                     propertyType = PropertyType.Pressure;
                         break;
                      case ParameterType.MassDensity:
-                        propertyType = PropertyType.MassDensity;
+                     propertyType = PropertyType.MassDensity;
                         break;
                      case ParameterType.PipingVolume:
                      case ParameterType.ReinforcementVolume:
                      case ParameterType.SectionModulus:
                      case ParameterType.Volume:
-                        propertyType = PropertyType.Volume;
+                     propertyType = PropertyType.Volume;
                         break;
                      default:
-                        assigned = false;
+                     assigned = false;
                         break;
                   }
 
