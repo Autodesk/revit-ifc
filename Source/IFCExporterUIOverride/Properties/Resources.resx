@@ -801,7 +801,7 @@
     <value>{0} is a reserved Windows device name. Choose another name and try again.</value>
   </data>
   <data name="OffsetDistanceTooLarge" xml:space="preserve">
-    <value>The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coodinate basis.</value>
+    <value>The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coordinate basis.</value>
   </data>
   <data name="Eastings" xml:space="preserve">
     <value>Eastings</value>
