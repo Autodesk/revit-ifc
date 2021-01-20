@@ -35,16 +35,33 @@ namespace Revit.IFC.Import.Data
    {
       // TODO: handle SiteAddress.
 
+      /// <summary>
+      /// A helper class that checks object placement, intended to be used within a "using" scope.
+      /// </summary>
       public class ActiveSiteSetter : IDisposable
       {
+         /// <summary>
+         /// The constuctor.
+         /// </summary>
+         /// <param name="ifcSite">The current IFCSite being processed.</param>
          public ActiveSiteSetter(IFCSite ifcSite)
          {
             ActiveSite = ifcSite;
          }
 
+         /// <summary>
+         /// The active site within this scope.
+         /// </summary>
          public static IFCSite ActiveSite { get; private set; }
 
-         public static void CheckObjectPlacementIsRelativeToSite(IFCProduct productEntity, int productStepId, int objectPlacementStepId)
+         /// <summary>
+         /// Check if an object placement is relative to the site's placement, and fix it if necessary.
+         /// </summary>
+         /// <param name="productEntity">The entity being checked.</param>
+         /// <param name="productStepId">The id of the entity being checked.</param>
+         /// <param name="objectPlacement">The object placement handle.</param>
+         public static void CheckObjectPlacementIsRelativeToSite(IFCProduct productEntity, int productStepId,
+            IFCAnyHandle objectPlacement)
          {
             IFCLocation productEntityLocation = productEntity.ObjectLocation;
             if (ActiveSite != null && productEntityLocation != null && productEntityLocation.RelativeToSite == false)
@@ -54,7 +71,11 @@ namespace Revit.IFC.Import.Data
                   IFCLocation activeSiteLocation = ActiveSite.ObjectLocation;
                   if (activeSiteLocation != null)
                   {
-                     Importer.TheLog.LogWarning(productStepId, "The local placement (#" + objectPlacementStepId + ") of this entity was not relative to the IfcSite's local placement, patching.", false);
+                     if (!IFCAnyHandleUtil.IsSubTypeOf(objectPlacement, IFCEntityType.IfcGridPlacement))
+                     {
+                        Importer.TheLog.LogWarning(productStepId, "The local placement (#" + objectPlacement.StepId + ") of this entity was not relative to the IfcSite's local placement, patching.", false);
+                     }
+
                      Transform siteTransform = activeSiteLocation.TotalTransform;
                      if (siteTransform != null)
                      {
@@ -71,7 +92,7 @@ namespace Revit.IFC.Import.Data
                }
                productEntityLocation.RelativeToSite = true;
             }
-      }
+         }
 
          public void Dispose()
          {
@@ -188,18 +209,22 @@ namespace Revit.IFC.Import.Data
       /// Allow for override of IfcObjectDefinition shared parameter names.
       /// </summary>
       /// <param name="name">The enum corresponding of the shared parameter.</param>
+      /// <param name="isType">True if the shared parameter is a type parameter.</param>
       /// <returns>The name appropriate for this IfcObjectDefinition.</returns>
-      public override string GetSharedParameterName(IFCSharedParameters name)
+      public override string GetSharedParameterName(IFCSharedParameters name, bool isType)
       {
-         switch (name)
+         if (!isType)
          {
-            case IFCSharedParameters.IfcName:
-               return "IfcSite Name";
-            case IFCSharedParameters.IfcDescription:
-               return "IfcSite Description";
-            default:
-               return base.GetSharedParameterName(name);
+            switch (name)
+            {
+               case IFCSharedParameters.IfcName:
+                  return "SiteName";
+               case IFCSharedParameters.IfcDescription:
+                  return "SiteDescription";
+            }
          }
+
+         return base.GetSharedParameterName(name, isType);
       }
 
       /// <summary>
@@ -223,6 +248,9 @@ namespace Revit.IFC.Import.Data
       protected override void Create(Document doc)
       {
          // Only set the project location for the site that contains the building.
+         // NOTE: The file isn't required to have an IfcBuilding, even though it generally does.
+         // Furthermore, it generally only has one ifcSite.  As such, we may want to rethink
+         // which the "main" IfcSite is.
          bool hasBuilding = false;
 
          foreach (IFCObjectDefinition objectDefinition in ComposedObjectDefinitions)
@@ -275,13 +303,16 @@ namespace Revit.IFC.Import.Data
                      trueNorth = -trueNorth;
                   }
 
-                  ProjectPosition projectPosition = new ProjectPosition(projectLoc.X, projectLoc.Y, RefElevation, trueNorth);
+                  XYZ offset = new XYZ(projectLoc.X, projectLoc.Y, RefElevation);
+                  if (!XYZ.IsWithinLengthLimits(offset))
+                  {
+                     ProjectPosition projectPosition = new ProjectPosition(projectLoc.X, projectLoc.Y, RefElevation, trueNorth);
+                     projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
 
-                  projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
-
-                  // Now that we've set the project position, remove the site relative transform, if the file is created correctly (that is, all entities contained in the site
-                  // have the local placements relative to the site.
-                  IFCLocation.RemoveRelativeTransformForSite(this);
+                     // Now that we've set the project position, remove the site relative transform, if the file is created correctly (that is, all entities contained in the site
+                     // have the local placements relative to the site.
+                     IFCLocation.RemoveRelativeTransformForSite(this);
+                  }
                }
             }
          }
@@ -318,7 +349,10 @@ namespace Revit.IFC.Import.Data
          {
             string landTitleNumber = LandTitleNumber;
             if (!string.IsNullOrWhiteSpace(landTitleNumber))
-               IFCPropertySet.AddParameterString(doc, element, parameterName, landTitleNumber, Id);
+            {
+               Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, parameterName, landTitleNumber, Id);
+            }
          }
       }
    }

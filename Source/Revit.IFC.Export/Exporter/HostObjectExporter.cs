@@ -74,6 +74,18 @@ namespace Revit.IFC.Export.Exporter
 
             MaterialLayerSetInfo mlsInfo = new MaterialLayerSetInfo(exporterIFC, hostObject, productWrapper);
             IFCAnyHandle materialLayerSet = mlsInfo.MaterialLayerSetHandle;
+            List<ElementId> materialIds = mlsInfo.MaterialIds.Select(x => x.m_baseMatId).ToList();
+
+            // Among all the calls of this method the problem of material association absence was found only 
+            // for CeilingAndFloor host object type (see JIRA item REVIT-164913)
+            if (containsBRepGeometry && (hostObject is CeilingAndFloor)
+               && materialIds.Count > 0 && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+            {
+               foreach (IFCAnyHandle elemHnd in elemHnds)
+               {
+                  CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialIds);
+               }
+            }
 
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet))
             {

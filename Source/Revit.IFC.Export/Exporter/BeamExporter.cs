@@ -205,7 +205,7 @@ namespace Revit.IFC.Export.Exporter
 
          XYZ curveOffset = XYZ.Zero;
          if (offsetTransform != null)
-            curveOffset = -UnitUtil.UnscaleLength(offsetTransform.Origin);
+            curveOffset = -(offsetTransform.Origin);
          else
          {
          // Note that we do not have to have any scaling adjustment here, since the curve origin is in the 

@@ -40,46 +40,68 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Gets the panel operation from door style operation.
       /// </summary>
-      /// <param name="ifcDoorStyleOperationType">
-      /// The IFCDoorStyleOperation.
-      /// </param>
-      /// <returns>
-      /// The string represents the door panel operation.
-      /// </returns>
-      public static string GetPanelOperationFromDoorStyleOperation(string ifcDoorStyleOperationType)
+      /// <param name="ifcDoorStyleOperationType">The IFCDoorStyleOperation.</param>
+      /// <returns>The string represents the door panel operation.</returns>
+      private static string GetPanelOperationFromDoorStyleOperation(string ifcDoorStyleOperationType)
       {
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "SingleSwingLeft") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "SingleSwingRight") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "DoubleDoorSingleSwing") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "DoubleDoorSingleSwingOppositeLeft") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "DoubleDoorSingleSwingOppositeRight"))
+         string baseValue = "NOTDEFINED";
+         if (string.IsNullOrWhiteSpace(ifcDoorStyleOperationType))
+            return baseValue;
+
+         string allCapsDoorStyleOperationType = 
+            NamingUtil.RemoveSpacesAndUnderscores(ifcDoorStyleOperationType).ToUpper();
+         if (allCapsDoorStyleOperationType.Contains("SINGLESWING"))
             return "SWINGING";
 
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "DoubleSwingLeft") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "DoubleSwingRight") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "DoubleDoorDoubleSwing"))
+         if (allCapsDoorStyleOperationType.Contains("DOUBLESWING"))
             return "DOUBLE_ACTING";
 
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "SlidingToLeft") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "SlidingToRight") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "DoubleDoorSliding"))
+         if (allCapsDoorStyleOperationType.Contains("SLIDING"))
             return "SLIDING";
 
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "FoldingToLeft") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "FoldingToRight") ||
-             NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "DoubleDoorFolding"))
+         if (allCapsDoorStyleOperationType.Contains("FOLDING"))
             return "FOLDING";
 
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "Revolving"))
+         if (allCapsDoorStyleOperationType.Contains("REVOLVING"))
             return "REVOLVING";
 
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "RollingUp"))
+         if (allCapsDoorStyleOperationType.Contains("ROLLINGUP"))
             return "ROLLINGUP";
 
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(ifcDoorStyleOperationType, "UserDefined"))
+         if (allCapsDoorStyleOperationType.Contains("USERDEFINED"))
             return "USERDEFINED";
-         else
-            return "NOTDEFINED";
+
+         return baseValue;
+      }
+
+      private static double? GetValueFromIndexedParameter(Element element, string baseParameterName, int index)
+      {
+         string parameterName = baseParameterName + index.ToString();
+         double value = 0.0;
+         if (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(element, parameterName, out value) != null)
+            return value;
+
+         // If the index is 1, we will try again with baseParameterName.
+         if (index == 1 && ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(element, baseParameterName, out value) != null)
+            return value;
+
+         return null;
+      }
+
+      private class DoorPanelInformation
+      {
+         public double? Depth { get; private set; } = null;
+         public double? Width { get; private set; } = null;
+         public string Operation { get; private set; } = null;
+         public string Position { get; private set; } = null;
+
+         public DoorPanelInformation(double? depth, double? width, string operation, string position) 
+         {
+            Depth = depth;
+            Width = width;
+            Operation = operation;
+            Position = position;
+         }
       }
 
       /// <summary>
@@ -97,79 +119,59 @@ namespace Revit.IFC.Export.Utility
 
          IList<IFCAnyHandle> doorPanels = new List<IFCAnyHandle>();
 
-         IList<double?> panelDepthList = new List<double?>();
-         IList<double?> panelWidthList = new List<double?>();
-
-         IList<string> panelOperationList = new List<string>();
-         IList<string> panelPositionList = new List<string>();
+         IList<DoorPanelInformation> doorPanelInfoList = new List<DoorPanelInformation>();
 
          int panelNumber = 1;
          const int maxPanels = 64;  // arbitrary large number to prevent infinite loops.
+         
          for (; panelNumber < maxPanels; panelNumber++)
          {
-            string panelDepthCurrString = "PanelDepth" + panelNumber.ToString();
-            string panelWidthCurrString = "PanelWidth" + panelNumber.ToString();
+            // We will always create one default panel, but after that, we stop looking.
+            double? panelDepth = GetValueFromIndexedParameter(familyInstance, "PanelDepth", panelNumber);
+            if (panelDepth == null && panelNumber > 1)
+               break;
+
+            double? panelWidth = (panelDepth != null) ? 
+               GetValueFromIndexedParameter(familyInstance, "PanelWidth", panelNumber) : null;
+            if (panelWidth == null)
+            {
+               if (panelNumber > 1)
+                  break;
+               panelDepth = null;
+            }
+
+            bool breakAfterCreation = (panelDepth == null || panelWidth == null);
+            if (!breakAfterCreation)
+            {
+               panelDepth = UnitUtil.ScaleLength(panelDepth.Value);
+               panelWidth = (panelWidth.Value < 0.0) ? 0.0 : ((panelWidth.Value > 1.0) ? 1.0 : panelWidth);
+            }
 
             // We will always have at least one panel definition as long as the panelOperation is not
             // NotDefined.
-
-            panelOperationList.Add(GetPanelOperationFromDoorStyleOperation(doorWindowInfo.DoorOperationTypeString));
+            string panelOperaton = GetPanelOperationFromDoorStyleOperation(doorWindowInfo.DoorOperationTypeString);
 
             // If the panel operation is defined we'll allow no panel position for the 1st panel.
-            string panelPosition = GetIFCDoorPanelPosition("", familyInstance, panelNumber);
-            if (panelPosition == null)
-            {
-               if (panelNumber == 1)
-                  panelPosition = GetIFCDoorPanelPosition("", familyInstance, -1);
-               if ((panelPosition == null) && (panelNumber > 1))
-               {
-                  panelPositionList.Add("NOTDEFINED");
-                  break;
-               }
-            }
+            bool flip = doorWindowInfo.FlippedX ^ doorWindowInfo.FlippedY;
+            string panelPosition = GetIFCDoorPanelPosition(familyInstance, panelNumber, flip);
 
-            if (doorWindowInfo.FlippedX ^ doorWindowInfo.FlippedY)
-               panelPosition = ReverseDoorPanelPosition(panelPosition);
+            doorPanelInfoList.Add(new DoorPanelInformation(panelDepth, panelWidth, panelOperaton, panelPosition));
 
-            panelPositionList.Add(panelPosition != null ? panelPosition : "NOTDEFINED");
-
-            double value1 = 0.0, value2 = 0.0;
-            bool foundDepth = (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, panelDepthCurrString, out value1) != null);
-            if (!foundDepth && (panelNumber == 1))
-               foundDepth = (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "PanelDepth", out value1) != null);
-
-            bool foundWidth = (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, panelWidthCurrString, out value2) != null);
-            if (!foundWidth && (panelNumber == 1))
-               foundWidth = (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "PanelWidth", out value2) != null);
-
-            if (foundDepth && foundWidth)
-            {
-               panelDepthList.Add(UnitUtil.ScaleLength(value1));
-               // Make sure value is in [0,1] range.
-               if (value2 < 0.0) value2 = 0.0; else if (value2 > 1.0) value2 = 1.0;
-               panelWidthList.Add(value2);
-            }
-            else
-            {
-               panelDepthList.Add(null);
-               panelWidthList.Add(null);
-            }
+            if (breakAfterCreation)
+               break;
          }
 
          string baseDoorPanelName = NamingUtil.GetIFCName(familyInstance);
-         for (int panelIndex = 0; (panelIndex < panelNumber - 1); panelIndex++)
+         panelNumber = 1;
+         foreach (DoorPanelInformation doorPanelInfo in doorPanelInfoList)
          {
-            double? currentPanelWidth = null;
-            if (panelWidthList[panelIndex].HasValue)
-               currentPanelWidth = (double)panelWidthList[panelIndex];
-
-            string doorPanelName = baseDoorPanelName;
-            //string doorPanelGUID = GUIDUtil.CreateGUID();
-            string doorPanelGUID = GUIDUtil.CreateSubElementGUID(familyInstance, (int)IFCDoorSubElements.DoorPanelStart + panelIndex);
+            string doorPanelName = baseDoorPanelName + ":" + panelNumber.ToString();
+            string doorPanelGUID = GUIDUtil.CreateSubElementGUID(familyInstance, (int)IFCDoorSubElements.DoorPanelStart + panelNumber-1);
             IFCAnyHandle doorPanel = IFCInstanceExporter.CreateDoorPanelProperties(file, doorPanelGUID, ownerHistory,
-               doorPanelName, null, panelDepthList[panelIndex], panelOperationList[panelIndex],
-               currentPanelWidth, panelPositionList[panelIndex], null);
+               doorPanelName, null, doorPanelInfo.Depth, doorPanelInfo.Operation,
+               doorPanelInfo.Width, doorPanelInfo.Position, null);
             doorPanels.Add(doorPanel);
+            panelNumber++;
          }
 
          return doorPanels;
@@ -254,71 +256,41 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Gets door panel position.
       /// </summary>
-      /// <param name="typeName">
-      /// The type name of the door.
-      /// </param>
-      /// <param name="element">
-      /// The door element.
-      /// </param>
-      /// <param name="number">
-      /// The number of panel position.
-      /// </param>
-      /// <returns>
-      /// The string represents the door panel position.
-      /// </returns>
-      public static string GetIFCDoorPanelPosition(string typeName, Element element, int number)
+      /// <param name="element">The door element.</param>
+      /// <param name="number">The number of panel position.</param>
+      /// <param name="flip">True if the position value should be reversed.</param>
+      /// <returns>The string represents the door panel position.</returns>
+      private static string GetIFCDoorPanelPosition(Element element, int number, bool flip)
       {
-         string currPanelName;
-         if (number == -1)
-            currPanelName = "PanelPosition";
-         else
-            currPanelName = "PanelPosition" + number.ToString();
+         string baseValue = "NOTDEFINED";
 
-         string value = "";
+         string basePanelName = "PanelPosition";
+         string currPanelName = "PanelPosition" + number.ToString();
+
+         string value = null;
          if (ParameterUtil.GetStringValueFromElementOrSymbol(element, currPanelName, out value) == null)
-            value = typeName;
+         {
+            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, basePanelName, out value) == null)
+               return baseValue;
+         }
 
-         if (value == "")
-            return null;
-         else if (String.Compare(value, "left", true) == 0)
-            return "LEFT";
-         else if (String.Compare(value, "middle", true) == 0)
+         if (string.IsNullOrWhiteSpace(value))
+            return baseValue;
+         if (string.Compare(value, "left", true) == 0)
+            return flip ? "RIGHT" : "LEFT";
+         if (string.Compare(value, "middle", true) == 0)
             return "MIDDLE";
-         else if (String.Compare(value, "right", true) == 0)
-            return "RIGHT";
-         else
-            return "NOTDEFINED";
-      }
-
-      /// <summary>
-      /// Reverses door panel position.
-      /// </summary>
-      /// <param name="originalPosition">
-      /// The original position.
-      /// </param>
-      /// <returns>
-      /// The string represents the reversed door panel position.
-      /// </returns>
-      public static string ReverseDoorPanelPosition(string originalPosition)
-      {
-         if (originalPosition == null)
-            return "NOTDEFINED";
-         else if (String.Compare(originalPosition, "Left", true) == 0)
-            return "RIGHT";
-         else if (String.Compare(originalPosition, "Right", true) == 0)
-            return "LEFT";
-         return originalPosition;
+         if (string.Compare(value, "right", true) == 0)
+            return flip ? "LEFT" : "RIGHT";
+         
+         return baseValue;
       }
 
       /// <summary>
       /// Gets window style operation.
       /// </summary>
-      /// <param name="familySymbol">
-      /// The element type of window.
-      /// </param>
-      /// <returns>
-      /// The IFCWindowStyleOperation.
-      /// </returns>
+      /// <param name="familySymbol">The element type of window.</param>
+      /// <returns>The IFCWindowStyleOperation.</returns>
       public static Toolkit.IFCWindowStyleOperation GetIFCWindowStyleOperation(ElementType familySymbol)
       {
          string value;
@@ -892,11 +864,10 @@ namespace Revit.IFC.Export.Utility
 
          Element doorWindowElement = doc.GetElement(insertId);
 
-         Parameter wallSlant = wall.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         bool wallIsSlanted = (wallSlant != null && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && !MathUtil.IsAlmostEqual(wallSlant.AsDouble(), 0.0));
-
-         Parameter insertOrientation = doorWindowElement.get_Parameter(BuiltInParameter.INSERT_ORIENTATION);
-         bool insertIsVertical = (insertOrientation != null && insertOrientation.HasValue && insertOrientation.StorageType == StorageType.Integer && insertOrientation.AsInteger() == 0 /*vertical orientation*/);
+         //Parameter wallSlant = null;
+         //bool wallIsVertical = (wallSlant != null) && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && MathUtil.IsAlmostZero(wallSlant.AsDouble());
+         //Parameter insertOrientation = doorWindowElement.get_Parameter(BuiltInParameter.);
+         //bool insertIsVertical = (insertOrientation != null && insertOrientation.HasValue && insertOrientation.StorageType == StorageType.Integer && insertOrientation.AsInteger() == 0 /*vertical orientation*/);
 
          ElementId catId = CategoryUtil.GetSafeCategoryId(wall);
 
@@ -919,7 +890,8 @@ namespace Revit.IFC.Export.Utility
 
          if (curve is Line)
          {
-            if (wallIsSlanted != insertIsVertical) // For vertical inserts in vertical walls and slanted inserts in slanted walls
+            // TODO: Check this code for inserts in tapered walls.
+            //if (wallIsVertical == insertIsVertical) // For vertical inserts in vertical walls and slanted inserts in slanted walls
             {
                // Create a plane that goes through the center of the wall along its length
                XYZ localExtrusionDir = openingTrf.OfVector(WallExporter.GetWallExtrusionDirection(wall));
@@ -955,30 +927,32 @@ namespace Revit.IFC.Export.Utility
 
                loopLcs.BasisX = localExtrusionDir;
             }
-            else // For vertical inserts in slanted walls
-            {
-               if (!wallIsSlanted && insertIsVertical)
-                  return null; // This shouldn't be possible
+            //else // For vertical inserts in slanted walls
+            //{
+            //   //if (wallIsVertical && insertIsVertical)
+            //   //   return null; // This shouldn't be possible
 
-               double slantAngle = wallSlant.AsDouble();
-               // Handle cases where cut direction is looking away from the wall
-               // Positive Y coordinate in cutDir means it's looking away from the positive slant direction
-               if ((cutDir[1] > 0.0) != (slantAngle < 0.0))
-               {
-                  // Move the cut loop forward to make sure that the width of the opening will also be cut out
-                  XYZ moveVec = cutDir * unScaledDepth;
-                  tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
-                  // Flip the cut direction so that the cut would intersect the wall
-                  cutDir = cutDir.Negate();
-               }
+            //   // TODO: Is this right for tapered walls?
+            //   double slantAngle = (wallSlant == null) ? 0.0 : wallSlant.AsDouble();
 
-               // Calculate the distance from the top of the insert to the wall
-               double distToWall = openingHeight * Math.Tan(Math.Abs(slantAngle));
-               // Add wall's width to make sure the cut reaches its opposite side
-               unScaledDepth = distToWall + wall.Width;
+            //   // Handle cases where cut direction is looking away from the wall
+            //   // Positive Y coordinate in cutDir means it's looking away from the positive slant direction
+            //   if ((cutDir[1] > 0.0) != (slantAngle < 0.0))
+            //   {
+            //      // Move the cut loop forward to make sure that the width of the opening will also be cut out
+            //      XYZ moveVec = cutDir * unScaledDepth;
+            //      tmpCutLoop = GeometryUtil.MoveCurveLoop(tmpCutLoop, moveVec);
+            //      // Flip the cut direction so that the cut would intersect the wall
+            //      cutDir = cutDir.Negate();
+            //   }
 
-               loopLcs.BasisX = XYZ.BasisZ;
-            }
+               //// Calculate the distance from the top of the insert to the wall
+               //double distToWall = openingHeight * Math.Tan(Math.Abs(slantAngle));
+               //// Add wall's width to make sure the cut reaches its opposite side
+               //unScaledDepth = distToWall + wall.Width;
+
+            //   loopLcs.BasisX = XYZ.BasisZ;
+            //}
 
             // In IFC the local X direction should point upwards along the wall, 
             // and local Y direction should point horizontally along the wall.
@@ -1066,13 +1040,14 @@ namespace Revit.IFC.Export.Utility
 
          string openingObjectType = isRecess ? "Recess" : "Opening";
          string origOpeningName = NamingUtil.GetIFCNamePlusIndex(doorWindowElement, 1);
+         string openingDescription = NamingUtil.GetDescriptionOverride(doorWindowElement, null);
          string openingName = NamingUtil.GetNameOverride(doorWindowElement, origOpeningName);
-
-         IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, doorWindowElement, openingGUID, ownerHistory,
-             openingPlacement, openingRepHnd);
-         IFCAnyHandleUtil.OverrideNameAttribute(openingHnd, openingName);
-         IFCAnyHandleUtil.SetAttribute(openingHnd, "ObjectType", openingObjectType);
-
+         string openingTag = NamingUtil.GetTagOverride(doorWindowElement);
+         IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, 
+            openingGUID, ownerHistory, 
+            openingName, openingDescription, openingObjectType,
+            openingPlacement, openingRepHnd, openingTag);
+         
          string openingVoidsGUID = GUIDUtil.CreateSubElementGUID(doorWindowElement, (int)IFCDoorSubElements.DoorOpeningRelVoid);
          IFCInstanceExporter.CreateRelVoidsElement(file, openingVoidsGUID, ownerHistory, null, null, hostObjHnd, openingHnd);
 

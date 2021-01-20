@@ -34,27 +34,15 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCExtrudedAreaSolid : IFCSweptAreaSolid
    {
-      XYZ m_Direction = null;
-
-      double m_Depth = 0.0;
-
       /// <summary>
       /// The direction of the extrusion in the local coordinate system.
       /// </summary>
-      public XYZ Direction
-      {
-         get { return m_Direction; }
-         protected set { m_Direction = value; }
-      }
+      public XYZ Direction { get; protected set; } = null;
 
       /// <summary>
       /// The depth of the extrusion, along the extrusion direction.
       /// </summary>
-      public double Depth
-      {
-         get { return m_Depth; }
-         protected set { m_Depth = value; }
-      }
+      public double Depth { get; protected set; } = 0.0;
 
       protected IFCExtrudedAreaSolid()
       {
@@ -781,6 +769,23 @@ namespace Revit.IFC.Import.Data
          if (!IFCImportFile.TheFile.EntityMap.TryGetValue(ifcSolid.StepId, out solid))
             solid = new IFCExtrudedAreaSolid(ifcSolid);
          return (solid as IFCExtrudedAreaSolid);
+      }
+
+      /// <summary>
+      /// In case of a Boolean operation failure, provide a recommended direction to shift the geometry in for a second attempt.
+      /// </summary>
+      /// <param name="lcs">The local transform for this entity.</param>
+      /// <returns>An XYZ representing a unit direction vector, or null if no direction is suggested.</returns>
+      /// <remarks>If the 2nd attempt fails, a third attempt will be done with a shift in the opposite direction.</remarks>
+      public override XYZ GetSuggestedShiftDirection(Transform lcs)
+      {
+         if (Position == null)
+         {
+            return (lcs == null) ? Direction : lcs.OfVector(Direction);
+         }
+         
+         Transform extrusionLCS = (lcs == null) ? Position : lcs.Multiply(Position);
+         return extrusionLCS.OfVector(Direction);
       }
    }
 }

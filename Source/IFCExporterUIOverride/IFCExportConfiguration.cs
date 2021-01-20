@@ -26,6 +26,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 
 using BIM.IFC.Export.UI.Properties;
+using Revit.IFC.Common.Enums;
 
 namespace BIM.IFC.Export.UI
 {
@@ -34,6 +35,8 @@ namespace BIM.IFC.Export.UI
    /// </summary>
    public class IFCExportConfiguration
    {
+
+
       /// <summary>
       /// The name of the configuration.
       /// </summary>
@@ -43,6 +46,24 @@ namespace BIM.IFC.Export.UI
       /// The IFCVersion of the configuration.
       /// </summary>
       public IFCVersion IFCVersion { get; set; } = IFCVersion.IFC2x3CV2;
+
+      private KnownERNames exchangeRequirement = KnownERNames.NotDefined;
+
+      public KnownERNames ExchangeRequirement {
+         get
+         {
+            return exchangeRequirement;
+         }
+         set
+         {
+            if (IFCExchangeRequirements.ExchangeRequirements.ContainsKey(IFCVersion))
+            {
+               IList<KnownERNames> erList = IFCExchangeRequirements.ExchangeRequirements[IFCVersion];
+               if (erList != null && erList.Contains(value))
+                  exchangeRequirement = value;
+            }
+         }
+      }
 
       /// <summary>
       /// The IFCFileFormat of the configuration.
@@ -57,7 +78,8 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// The origin of the exported file: either shared coordinates (Site Survey Point), Project Base Point, or internal coordinates.
       /// </summary>
-      public int SitePlacement { get; set; } = 0;
+      public SiteTransformBasis SitePlacement { get; set; } = SiteTransformBasis.Shared;
+
       /// <summary>
       /// The phase of the document to export.
       /// </summary>
@@ -236,6 +258,31 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       public bool UseVisibleRevitNameAsEntityName { get; set; } = false;
 
+      /// <summary>
+      /// Projected Coordinate System Name
+      /// </summary>
+      public string GeoRefCRSName { get; set; } = "";
+
+      /// <summary>
+      /// Projected Coordinate System Desccription
+      /// </summary>
+      public string GeoRefCRSDesc { get; set; } = "";
+
+      /// <summary>
+      /// EPSG Code for the Projected CRS
+      /// </summary>
+      public string GeoRefEPSGCode { get; set; } = "";
+
+      /// <summary>
+      /// The geodetic datum of the ProjectedCRS
+      /// </summary>
+      public string GeoRefGeodeticDatum { get; set; } = "";
+
+      /// <summary>
+      /// The Map Unit of the ProjectedCRS
+      /// </summary>
+      public string GeoRefMapUnit { get; set; } = "";
+
       private bool m_isBuiltIn = false;
       private bool m_isInSession = false;
       private static IFCExportConfiguration s_inSessionConfiguration = null;
@@ -310,12 +357,14 @@ namespace BIM.IFC.Export.UI
                                  bool exportBoundingBox,
                                  bool exportLinkedFiles,
                                  string excludeFilter = "",
-                                 bool includeSteelElements = false)
+                                 bool includeSteelElements = false,
+                                 KnownERNames exchangeRequirement = KnownERNames.NotDefined)
       {
          IFCExportConfiguration configuration = new IFCExportConfiguration();
          configuration.Name = name;
          configuration.IFCVersion = ifcVersion;
          configuration.IFCFileType = IFCFileFormat.Ifc;
+         configuration.ExchangeRequirement = exchangeRequirement;
          configuration.SpaceBoundaries = spaceBoundaries;
          configuration.ExportBaseQuantities = exportBaseQuantities;
          configuration.SplitWallsAndColumns = splitWalls;
@@ -351,6 +400,11 @@ namespace BIM.IFC.Export.UI
          configuration.IncludeSteelElements = includeSteelElements;
          configuration.UseTypeNameOnlyForIfcType = false;
          configuration.UseVisibleRevitNameAsEntityName = false;
+         configuration.GeoRefCRSName = "";
+         configuration.GeoRefCRSDesc = "";
+         configuration.GeoRefEPSGCode = "";
+         configuration.GeoRefGeodeticDatum = "";
+         configuration.GeoRefMapUnit = "";
 
          return configuration;
       }
@@ -371,7 +425,10 @@ namespace BIM.IFC.Export.UI
          IFCExportConfiguration dup = Clone();
          dup.Name = newName;
          if (makeEditable)
+         {
             dup.m_isBuiltIn = false;
+            dup.m_isInSession = false;
+         }
          return dup;
       }
 
@@ -414,6 +471,7 @@ namespace BIM.IFC.Export.UI
       public void UpdateOptions(IFCExportOptions options, ElementId filterViewId)
       {
          options.FileVersion = IFCVersion;
+         options.AddOption("ExchangeRequirement", ExchangeRequirement.ToString());
          options.SpaceBoundaryLevel = SpaceBoundaries;
          options.ExportBaseQuantities = ExportBaseQuantities;
          options.WallAndColumnSplitting = SplitWallsAndColumns;
@@ -460,6 +518,13 @@ namespace BIM.IFC.Export.UI
          options.AddOption("IncludeSteelElements", IncludeSteelElements.ToString());
          options.AddOption("UseTypeNameOnlyForIfcType", UseTypeNameOnlyForIfcType.ToString());
          options.AddOption("UseVisibleRevitNameAsEntityName", UseVisibleRevitNameAsEntityName.ToString());
+
+         // Add CRS information
+         options.AddOption("GeoRefCRSName", GeoRefCRSName != null? GeoRefCRSName : "");
+         options.AddOption("GeoRefCRSDesc", GeoRefCRSDesc != null ? GeoRefCRSDesc : "");
+         options.AddOption("GeoRefEPSGCode", GeoRefEPSGCode != null ? GeoRefEPSGCode : "");
+         options.AddOption("GeoRefGeodeticDatum", GeoRefGeodeticDatum != null ? GeoRefGeodeticDatum : "");
+         options.AddOption("GeoRefMapUnit", GeoRefMapUnit != null ? GeoRefMapUnit : "");
       }
 
 

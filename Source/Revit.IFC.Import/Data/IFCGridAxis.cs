@@ -40,60 +40,43 @@ namespace Revit.IFC.Import.Data
    /// but they should be in the right place and orientation.</remarks>
    public class IFCGridAxis : IFCEntity
    {
-      private string m_AxisTag = null;
-
-      private IFCCurve m_AxisCurve = null;
-
-      private bool m_SameSense = true;
-
-      // If this value is set, then this axis is actually a duplicate of an already created axis.  
-      // Use the original axis instead.
-      private int m_DuplicateAxisId = -1;
-
-      private ElementId m_CreatedElementId = ElementId.InvalidElementId;
-
       /// <summary>
       /// The optional tag for this grid line.
       /// </summary>
-      public string AxisTag
-      {
-         get { return m_AxisTag; }
-         protected set { m_AxisTag = value; }
-      }
+      public string AxisTag { get; protected set; } = null;
 
       /// <summary>
       /// The underlying curve for the grid line.
       /// </summary>
-      public IFCCurve AxisCurve
-      {
-         get { return m_AxisCurve; }
-         protected set { m_AxisCurve = value; }
-      }
+      public IFCCurve AxisCurve { get; protected set; } = null;
 
       /// <summary>
       /// Whether or not the grid line orientation is the same as the underlying curve, or reversed.
       /// This will determine the default position of the grid head.
       /// </summary>
-      public bool SameSense
-      {
-         get { return m_SameSense; }
-         protected set { m_SameSense = value; }
-      }
+      public bool SameSense { get; protected set; } = true;
 
-      public int DuplicateAxisId
-      {
-         get { return m_DuplicateAxisId; }
-         protected set { m_DuplicateAxisId = value; }
-      }
+      /// <summary>
+      /// If this value is set, then this axis is actually a duplicate of an already created 
+      /// axis.  Use the original axis instead.
+      /// </summary>
+      public int DuplicateAxisId { get; protected set; } = -1;
 
       /// <summary>
       /// Returns the main element id associated with this object.  Only valid after the call to Create(Document).
       /// </summary>
-      public ElementId CreatedElementId
-      {
-         get { return m_CreatedElementId; }
-         protected set { m_CreatedElementId = value; }
-      }
+      public ElementId CreatedElementId { get; protected set; } = ElementId.InvalidElementId;
+
+      public IFCGrid ParentGrid { get; set; } = null;
+
+      /// <summary>
+      /// Cache the value of the curve used for IfcGridPlacement.
+      /// </summary>
+      /// <remarks>
+      /// In practice, this is likely the same as that determined in Create(), and we may
+      /// want to optimize that in the future.
+      /// </remarks>
+      public Curve CurveForGridPlacement { get; protected set; } = null;
 
       /// <summary>
       /// Default constructor.
@@ -303,18 +286,96 @@ namespace Revit.IFC.Import.Data
          gridAxes.Add(new KeyValuePair<string, IFCGridAxis>(AxisTag, this));
       }
 
+      private Grid CreateGridFromCurve(Document doc, Arc curve)
+      {
+         return Grid.Create(doc, SameSense ? curve : curve.CreateReversed() as Arc);
+      }
+
+      private Grid CreateGridFromCurve(Document doc, Line curve)
+      {
+         return Grid.Create(doc, SameSense ? curve : curve.CreateReversed() as Line);
+      }
+
       private Grid CreateArcGridAxis(Document doc, Arc curve)
       {
          if (doc == null || curve == null)
             return null;
 
-         if (curve.IsBound)
-            return Grid.Create(doc, curve);
+         Arc curveToUse = null;
+         if (!curve.IsBound)
+         {
+            // Create almost-closed grid line.
+            curveToUse = curve.Clone() as Arc;
+            curveToUse.MakeBound(0, 2 * Math.PI * (359.0 / 360.0));
+         }
+         else
+         {
+            curveToUse = curve;
+         }
 
-         // Create almost-closed grid line.
-         Arc copyCurve = curve.Clone() as Arc;
-         copyCurve.MakeBound(0, 2 * Math.PI * (359.0 / 360.0));
-         return Grid.Create(doc, copyCurve);
+         return CreateGridFromCurve(doc, curveToUse);
+      }
+
+      /// <summary>
+      /// Get the curve in world coordinates use for grid placements.
+      /// </summary>
+      /// <returns>The transformed curve, or null if there isn't one.</returns>
+      /// <remarks>This expected IfcGridAxis to have only one associated curve, but
+      /// will warn and return the first curve if there is more than one.</remarks>
+      public Curve GetAxisCurveForGridPlacement()
+      {
+         if (CurveForGridPlacement != null)
+            return CurveForGridPlacement;
+
+         if (!IsValidForCreation)
+            return null;
+
+         Curve axisCurve = GetAxisCurve();
+         if (axisCurve == null)
+            return null;
+
+         if (ParentGrid != null && ParentGrid.ObjectLocation != null)
+         {
+            Transform lcs = ParentGrid.ObjectLocation.TotalTransform;
+            axisCurve = axisCurve.CreateTransformed(lcs);
+         }
+
+         CurveForGridPlacement = axisCurve;
+         return axisCurve;
+      }
+
+      /// <summary>
+      /// Get the first curve associated to this IfcGridAxis.
+      /// </summary>
+      /// <returns>The first curve, or null if there isn't one.</returns>
+      /// <remarks>This expected IfcGridAxis to have only one associated curve, but
+      /// will warn and return the first curve if there is more than one.</remarks>
+      private Curve GetAxisCurve()
+      {
+         if (!IsValidForCreation)
+            return null;
+
+         IsValidForCreation = false;
+
+         if (AxisCurve == null)
+         {
+            Importer.TheLog.LogError(Id, "Couldn't find axis curve for grid line, ignoring.", false);
+            return null;
+         }
+
+         IList<Curve> curves = AxisCurve.GetCurves();
+         int numCurves = curves.Count;
+         if (numCurves == 0)
+         {
+            Importer.TheLog.LogError(AxisCurve.Id, "Couldn't find axis curve for grid line, ignoring.", false);
+            return null;
+         }
+
+         if (numCurves > 1)
+            Importer.TheLog.LogError(AxisCurve.Id, "Found multiple curve segments for grid line, ignoring all but first.", false);
+
+         IsValidForCreation = true;
+         return curves[0];
       }
 
       /// <summary>
@@ -348,29 +409,16 @@ namespace Revit.IFC.Import.Data
             }
             return;
          }
-
-         if (AxisCurve == null)
+         
+         Curve baseCurve = GetAxisCurve();
+         if (baseCurve == null)
          {
-            Importer.TheLog.LogError(Id, "Couldn't find axis curve for grid line, ignoring.", false);
-            IsValidForCreation = false;
             return;
          }
-
-         IList<Curve> curves = AxisCurve.GetCurves();
-         int numCurves = curves.Count;
-         if (numCurves == 0)
-         {
-            Importer.TheLog.LogError(AxisCurve.Id, "Couldn't find axis curve for grid line, ignoring.", false);
-            IsValidForCreation = false;
-            return;
-         }
-
-         if (numCurves > 1)
-            Importer.TheLog.LogError(AxisCurve.Id, "Found multiple curve segments for grid line, ignoring all but first.", false);
 
          Grid grid = null;
 
-         Curve curve = curves[0].CreateTransformed(lcs);
+         Curve curve = baseCurve.CreateTransformed(lcs);
          if (curve == null)
          {
             Importer.TheLog.LogError(AxisCurve.Id, "Couldn't create transformed axis curve for grid line, ignoring.", false);
@@ -394,7 +442,9 @@ namespace Revit.IFC.Import.Data
                grid = CreateArcGridAxis(doc, curve as Arc);
             }
             else if (curve is Line)
-               grid = Grid.Create(doc, curve as Line);
+            {
+               grid = CreateGridFromCurve(doc, curve as Line);
+            }
             else
             {
                Importer.TheLog.LogError(AxisCurve.Id, "Couldn't create grid line from curve of type " + curve.GetType().ToString() + ", expected line or arc.", false);

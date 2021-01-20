@@ -32,46 +32,20 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCPresentationLayerAssignment : IFCEntity
    {
-      string m_Name = null;
-
-      string m_Description = null;
-
-      IList<IFCEntity> m_AssignedItems = new List<IFCEntity>();
-
-      string m_Identifier = null;
-
       /// <summary>
       /// Get the name of the IFCPresentationLayerAssignment.
       /// </summary>
-      public string Name
-      {
-         get { return m_Name; }
-         protected set { m_Name = value; }
-      }
-
+      public string Name { get; protected set; } = null;
       /// <summary>
       /// Get the optional description of the IFCPresentationLayerAssignment.
       /// </summary>
-      public string Description
-      {
-         get { return m_Description; }
-         protected set { m_Description = value; }
-      }
+
+      public string Description { get; protected set; } = null;
 
       /// <summary>
       /// Get the optional identifier of the IFCPresentationLayerAssignment.
       /// </summary>
-      public string Identifier
-      {
-         get { return m_Identifier; }
-         protected set { m_Identifier = value; }
-      }
-
-      public IList<IFCEntity> AssignedItems
-      {
-         get { return m_AssignedItems; }
-         protected set { m_AssignedItems = value; }
-      }
+      public string Identifier { get; protected set; } = null;
 
       protected IFCPresentationLayerAssignment()
       {
@@ -102,24 +76,7 @@ namespace Revit.IFC.Import.Data
 
          Identifier = IFCImportHandleUtil.GetOptionalStringAttribute(item, "Identifier", null);
 
-         IList<IFCAnyHandle> assignedItems = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(item, "AssignedItems");
-         foreach (IFCAnyHandle assignedItem in assignedItems)
-         {
-            // We do NOT process items here.  We only use already created representations and representation items.
-            IFCEntity entity = null;
-            if (!IFCImportFile.TheFile.EntityMap.TryGetValue(assignedItem.StepId, out entity))
-               continue;
-
-            if (IFCAnyHandleUtil.IsSubTypeOf(assignedItem, IFCEntityType.IfcRepresentation))
-               (entity as IFCRepresentation).PostProcessLayerAssignment(this);
-            else if (IFCAnyHandleUtil.IsSubTypeOf(assignedItem, IFCEntityType.IfcRepresentationItem))
-               (entity as IFCRepresentationItem).PostProcessLayerAssignment(this);
-
-            if (entity != null)
-               AssignedItems.Add(entity);
-            else
-               Importer.TheLog.LogUnhandledSubTypeError(assignedItem, "IfcLayeredItem", false);
-         }
+         // We do NOT process AssignedItems here.  That is pre-processed to avoid INVERSE attribute calls.
       }
 
       /// <summary>
@@ -169,9 +126,6 @@ namespace Revit.IFC.Import.Data
          if (!IFCNamingUtil.SafeStringsAreEqual(Description, other.Description))
             return false;
 
-         if (!IFCEntity.AreIFCEntityListsEquivalent(AssignedItems, other.AssignedItems))
-            return false;
-
          if (!IFCNamingUtil.SafeStringsAreEqual(Identifier, other.Identifier))
             return false;
 
@@ -209,73 +163,16 @@ namespace Revit.IFC.Import.Data
       /// Get the one layer assignment associated to this handle, if it is defined.
       /// </summary>
       /// <param name="ifcLayeredItem">The handle assumed to be an IfcRepresentation or IfcRepresentationItem.</param>
-      /// <param name="isIFCRepresentation">True if the handle is an IfcRepresentation.  This determines the name of the inverse attribute.</param>
       /// <returns>The associated IfcLayerAssignment.</returns>
-      /// <remarks>This deals with the issues that:
-      /// 1. the default IFC2x3 EXP file doesn't have this inverse attribute set.
-      /// 2. The name changed in IFC4.
-      /// 3. The attribute didn't exist before IFC2x3.</remarks>
-      static public IFCPresentationLayerAssignment GetTheLayerAssignment(IFCAnyHandle ifcLayeredItem, bool isIFCRepresentation)
+      static public IFCPresentationLayerAssignment GetTheLayerAssignment(IFCAnyHandle ifcLayeredItem)
       {
-         IFCPresentationLayerAssignment theLayerAssignment = null;
-         IList<IFCAnyHandle> layerAssignments = null;
+         IFCAnyHandle layerAssignmentHnd;
+         if (!Importer.TheCache.LayerAssignment.TryGetValue(ifcLayeredItem, out layerAssignmentHnd))
+            return null;
 
-         if (IFCImportFile.TheFile.Options.AllowUseLayerAssignments)
-         {
-            // Inverse attribute changed names in IFC4 for IfcRepresentationItem only.
-            string layerAssignmentsAttributeName = (isIFCRepresentation || IFCImportFile.TheFile.SchemaVersion < IFCSchemaVersion.IFC4) ? "LayerAssignments" : "LayerAssignment";
-            try
-            {
-               layerAssignments = IFCAnyHandleUtil.GetAggregateInstanceAttribute
-                   <List<IFCAnyHandle>>(ifcLayeredItem, layerAssignmentsAttributeName);
-            }
-            catch
-            {
-               IFCImportFile.TheFile.Options.AllowUseLayerAssignments = false;
-               layerAssignments = null;
-            }
-         }
-
-         if (layerAssignments != null && layerAssignments.Count > 0)
-         {
-            // We can only handle one layer assignment, but we allow the possiblity that there are duplicates.  Do a top-level check.
-            foreach (IFCAnyHandle layerAssignment in layerAssignments)
-            {
-               if (!IFCAnyHandleUtil.IsSubTypeOf(layerAssignment, IFCEntityType.IfcPresentationLayerAssignment))
-               {
-                  Importer.TheLog.LogUnexpectedTypeError(layerAssignment, IFCEntityType.IfcStyledItem, false);
-                  theLayerAssignment = null;
-                  break;
-               }
-               else
-               {
-                  IFCPresentationLayerAssignment compLayerAssignment = IFCPresentationLayerAssignment.ProcessIFCPresentationLayerAssignment(layerAssignment);
-                  if (theLayerAssignment == null)
-                  {
-                     theLayerAssignment = compLayerAssignment;
-                     continue;
-                  }
-
-                  if (!IFCImportDataUtil.CheckLayerAssignmentConsistency(theLayerAssignment, compLayerAssignment, ifcLayeredItem.StepId))
-                     break;
-               }
-            }
-         }
-
-         return theLayerAssignment;
-      }
-
-      static public void ProcessAllLayerAssignments()
-      {
-         IList<IFCAnyHandle> layerAssignments = IFCImportFile.TheFile.GetInstances(IFCEntityType.IfcPresentationLayerAssignment, true);
-
-         if (layerAssignments != null)
-         {
-            foreach (IFCAnyHandle layerAssignment in layerAssignments)
-            {
-               IFCPresentationLayerAssignment.ProcessIFCPresentationLayerAssignment(layerAssignment);
-            }
-         }
+         IFCPresentationLayerAssignment layerAssignment = 
+            ProcessIFCPresentationLayerAssignment(layerAssignmentHnd);
+         return layerAssignment;
       }
    }
 }

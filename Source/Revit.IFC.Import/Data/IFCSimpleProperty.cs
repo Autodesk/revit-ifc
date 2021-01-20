@@ -204,9 +204,9 @@ namespace Revit.IFC.Import.Data
                    (propertyValue.Type == IFCDataPrimitiveType.Integer) || (propertyValue.Type == IFCDataPrimitiveType.Double))
                {
                   string unitTypeName;
-                  ForgeTypeId specTypeId = IFCDataUtil.GetUnitTypeFromData(propertyValue.Value, new ForgeTypeId(), out unitTypeName);
-                  if (!specTypeId.Empty())
-                     ifcUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(specTypeId);
+                  UnitType unitType = IFCDataUtil.GetUnitTypeFromData(propertyValue.Value, UnitType.UT_Number, out unitTypeName);
+                  if (unitType != UnitType.UT_Undefined)
+                     ifcUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(unitType);
                   else
                      Importer.TheLog.LogWarning(simplePropertyHandle.StepId, "Unhandled unit type: " + unitTypeName, true);
                }

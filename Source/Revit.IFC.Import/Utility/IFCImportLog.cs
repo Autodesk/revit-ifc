@@ -79,7 +79,7 @@ namespace Revit.IFC.Import.Utility
 
       private IDictionary<CreatedElementsKey, int> m_CreatedElements = new SortedDictionary<CreatedElementsKey, int>();
 
-      private ISet<KeyValuePair<int, string>> m_AlreadyLoggedErrors = new HashSet<KeyValuePair<int, string>>();
+      private ISet<Tuple<int, string>> m_AlreadyLoggedErrors = new HashSet<Tuple<int, string>>();
 
       private ISet<string> m_LogOnceWarnings = new HashSet<string>();
 
@@ -180,7 +180,7 @@ namespace Revit.IFC.Import.Utility
                errorMsg = "#" + id + ": ERROR: " + msg;
 
             // Don't bother logging an error that doesn't throw, and has already been identically filed.
-            KeyValuePair<int, string> newError = new KeyValuePair<int, string>(id, msg);
+            Tuple<int, string> newError = Tuple.Create(id, msg);
             if (!m_AlreadyLoggedErrors.Contains(newError))
             {
                WriteLine(errorMsg);

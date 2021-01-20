@@ -66,6 +66,8 @@ namespace Revit.IFC.Export.Utility
             {
                if (ExporterCacheManager.HandleToDeleteCache.Contains(handle))
                   refObjToDel.Add(handle);
+               else if (!IFCAnyHandleUtil.IsValidHandle(typeObj) || !IFCAnyHandleUtil.IsValidHandle(handle))
+                  refObjToDel.Add(handle);
             }
             foreach (IFCAnyHandle handle in refObjToDel)
                this[typeObj].Remove(handle);

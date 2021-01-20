@@ -20,6 +20,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using System.Xml.Schema;
+using System.Text;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
@@ -576,7 +578,7 @@ namespace Revit.IFC.Export.Exporter
                   if (graphicsCell != null) // Concrete elements with cell that have HasGraphics set to true, must be handled by Revit exporter.
                      hasGraphics = (bool)graphicsCell.GetValue(cell, null);
 
-                  if (!hasGraphics)
+                  if (hasGraphics)
                      return false;
                }
             }
@@ -777,13 +779,13 @@ namespace Revit.IFC.Export.Exporter
                else if (element is Ceiling)
                {
                   Ceiling ceiling = element as Ceiling;
-                  CeilingExporter.ExportCeilingElement(exporterIFC, ceiling, geomElem, productWrapper);
+                  CeilingExporter.ExportCeilingElement(exporterIFC, ceiling, ref geomElem, productWrapper);
                }
                else if (element is CeilingAndFloor || element is Floor)
                {
                   // This covers both Floors and Building Pads.
                   CeilingAndFloor hostObject = element as CeilingAndFloor;
-                  FloorExporter.ExportCeilingAndFloorElement(exporterIFC, hostObject, geomElem, productWrapper);
+                  FloorExporter.ExportCeilingAndFloorElement(exporterIFC, hostObject, ref geomElem, productWrapper);
                }
                else if (element is WallFoundation)
                {
@@ -830,12 +832,12 @@ namespace Revit.IFC.Export.Exporter
                }
                else if (element is FaceWall)
                {
-                  WallExporter.ExportWall(exporterIFC, null, element, null, geomElem, productWrapper);
+                  WallExporter.ExportWall(exporterIFC, null, element, null, ref geomElem, productWrapper);
                }
                else if (element is FamilyInstance)
                {
                   FamilyInstance familyInstanceElem = element as FamilyInstance;
-                  FamilyInstanceExporter.ExportFamilyInstanceElement(exporterIFC, familyInstanceElem, geomElem, productWrapper);
+                  FamilyInstanceExporter.ExportFamilyInstanceElement(exporterIFC, familyInstanceElem, ref geomElem, productWrapper);
                }
                else if (element is FilledRegion)
                {
@@ -896,7 +898,7 @@ namespace Revit.IFC.Export.Exporter
                else if (element is RoofBase)
                {
                   RoofBase roofElement = element as RoofBase;
-                  RoofExporter.Export(exporterIFC, roofElement, geomElem, productWrapper);
+                  RoofExporter.Export(exporterIFC, roofElement, ref geomElem, productWrapper);
                }
                else if (element is SpatialElement)
                {
@@ -930,7 +932,7 @@ namespace Revit.IFC.Export.Exporter
                else if (element is Wall)
                {
                   Wall wallElem = element as Wall;
-                  WallExporter.Export(exporterIFC, wallElem, geomElem, productWrapper);
+                  WallExporter.Export(exporterIFC, wallElem, ref geomElem, productWrapper);
                }
                else if (element is WallSweep)
                {
@@ -978,7 +980,7 @@ namespace Revit.IFC.Export.Exporter
                      // This is intended to work for any element.  However, there are some hidden elements that we likely want to ignore.
                      // As such, this is currently limited to the two types of elements that we know we want to export that aren't covered above.
                      // Note the general comment that we would like to revamp this whole routine to be cleaner and simpler.
-                     exported = FamilyInstanceExporter.ExportGenericToSpecificElement(exporterIFC, element, geomElem, exportType, ifcEnumType, productWrapper);
+                     exported = FamilyInstanceExporter.ExportGenericToSpecificElement(exporterIFC, element, ref geomElem, exportType, ifcEnumType, productWrapper);
 
                      if (!exported)
                         exported = (GenericElementExporter.ExportGenericElement(exporterIFC, element, geomElem, productWrapper, exportType) != null);
@@ -1571,7 +1573,7 @@ namespace Revit.IFC.Export.Exporter
                      if (groupEntry.Value.GroupType.ExportInstance == IFCEntityType.IfcFurniture)
                         IFCInstanceExporter.CreateRelAggregates(file, GUIDUtil.CreateGUID(), ownerHistory, null, null, groupHandle, elementHandles);
                      else
-                     IFCInstanceExporter.CreateRelAssignsToGroup(file, guid, ownerHistory, null, null, elementHandles, null, groupHandle);
+                        IFCInstanceExporter.CreateRelAssignsToGroup(file, guid, ownerHistory, null, null, elementHandles, null, groupHandle);
                   }
                }
             }
@@ -1805,40 +1807,66 @@ namespace Revit.IFC.Export.Exporter
                }
             }
 
-            // create Zones
+            // create Zones and groups of Zones.
             {
+               // Collect zone group names as we go.  We will limit a zone to be only in one group.
+               IDictionary<string, ISet<IFCAnyHandle>> zoneGroups = new Dictionary<string, ISet<IFCAnyHandle>>();
+
                string relAssignsToGroupName = "Spatial Zone Assignment";
-               foreach (string zoneName in ExporterCacheManager.ZoneInfoCache.Keys)
+               foreach (KeyValuePair<string, ZoneInfo> zone in ExporterCacheManager.ZoneInfoCache)
                {
-                  ZoneInfo zoneInfo = ExporterCacheManager.ZoneInfoCache.Find(zoneName);
-                  if (zoneInfo != null)
+                  ZoneInfo zoneInfo = zone.Value;
+                  if (zoneInfo == null)
+                     continue;
+
+                  string zoneName = zone.Key;
+                  IFCAnyHandle zoneHandle = IFCInstanceExporter.CreateZone(file, GUIDUtil.CreateGUID(), ownerHistory,
+                      zoneName, zoneInfo.Description, zoneInfo.ObjectType, zoneInfo.LongName);
+                  IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
+                      relAssignsToGroupName, null, zoneInfo.RoomHandles, null, zoneHandle);
+
+                  HashSet<IFCAnyHandle> zoneHnds = new HashSet<IFCAnyHandle>();
+                  zoneHnds.Add(zoneHandle);
+
+                  foreach (KeyValuePair<string, IFCAnyHandle> classificationReference in zoneInfo.ClassificationReferences)
                   {
-                     IFCAnyHandle zoneHandle = IFCInstanceExporter.CreateZone(file, GUIDUtil.CreateGUID(), ownerHistory,
-                         zoneName, zoneInfo.Description, zoneInfo.ObjectType, zoneInfo.LongName);
-                     IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
-                         relAssignsToGroupName, null, zoneInfo.RoomHandles, null, zoneHandle);
-
-                     HashSet<IFCAnyHandle> zoneHnds = new HashSet<IFCAnyHandle>();
-                     zoneHnds.Add(zoneHandle);
-
-                     foreach (KeyValuePair<string, IFCAnyHandle> classificationReference in zoneInfo.ClassificationReferences)
-                     {
-                        IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-                            ownerHistory, classificationReference.Key, "", zoneHnds, classificationReference.Value);
-                     }
-
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.EnergyAnalysisProperySetHandle))
-                     {
-                        ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(),
-                                                            ownerHistory, null, null, zoneHnds, zoneInfo.EnergyAnalysisProperySetHandle);
-                     }
-
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.ZoneCommonProperySetHandle))
-                     {
-                        ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(),
-                            ownerHistory, null, null, zoneHnds, zoneInfo.ZoneCommonProperySetHandle);
-                     }
+                     IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
+                         ownerHistory, classificationReference.Key, "", zoneHnds, classificationReference.Value);
                   }
+
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.EnergyAnalysisProperySetHandle))
+                  {
+                     ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(),
+                                                         ownerHistory, null, null, zoneHnds, zoneInfo.EnergyAnalysisProperySetHandle);
+                  }
+
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.ZoneCommonProperySetHandle))
+                  {
+                     ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(),
+                         ownerHistory, null, null, zoneHnds, zoneInfo.ZoneCommonProperySetHandle);
+                  }
+
+                  string groupName = zoneInfo.GroupName;
+                  if (!string.IsNullOrWhiteSpace(groupName))
+                  {
+                     ISet<IFCAnyHandle> currentGroup = null;
+                     if (!zoneGroups.TryGetValue(groupName, out currentGroup))
+                     {
+                        currentGroup = new HashSet<IFCAnyHandle>();
+                        zoneGroups.Add(groupName, currentGroup);
+                     }
+                     currentGroup.Add(zoneHandle);
+                  }
+               }
+
+               // now create any zone groups.
+               string relAssignsToZoneGroupName = "Zone Group Assignment";
+               foreach (KeyValuePair<string, ISet<IFCAnyHandle>> zoneGroup in zoneGroups)
+               {
+                  IFCAnyHandle zoneGroupHandle = IFCInstanceExporter.CreateGroup(file, GUIDUtil.CreateGUID(),
+                     ownerHistory, zoneGroup.Key, null, null);
+                  IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
+                      relAssignsToZoneGroupName, null, zoneGroup.Value, null, zoneGroupHandle);
                }
             }
 
@@ -2048,7 +2076,7 @@ namespace Revit.IFC.Export.Exporter
                coordinationView = "CoordinationView";
 
             List<string> descriptions = new List<string>();
-            if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || ExporterCacheManager.ExportOptionsCache.DoCodeChecking())
+            if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
             {
                descriptions.Add("IFC2X_PLATFORM");
             }
@@ -2101,10 +2129,7 @@ namespace Revit.IFC.Export.Exporter
             IFCInstanceExporter.CreateFileSchema(file);
 
             // Get stored File Header information from the UI and use it for export
-            IFCFileHeader fHeader = new IFCFileHeader();
-            IFCFileHeaderItem fHItem = null;
-
-            fHeader.GetSavedFileHeader(document, out fHItem);
+            IFCFileHeaderItem fHItem = ExporterCacheManager.ExportOptionsCache.FileHeaderItem;
 
             // Add information in the File Description (e.g. Exchange Requirement) that is assigned in the UI
             if (!string.IsNullOrEmpty(fHItem.FileDescription))
@@ -2144,7 +2169,6 @@ namespace Revit.IFC.Export.Exporter
             {
                writeOptions.XMLConfigFileName = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\ifcXMLconfiguration.xml");
             }
-            file.Write(writeOptions);
 
             // Reuse almost all of the information above to write out extra copies of the IFC file.
             if (exportOptionsCache.ExportingLink)
@@ -2158,7 +2182,7 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle buildingOrSitePlacement = IFCAnyHandleUtil.GetObjectPlacement(buildingOrSiteHnd);
 
                int numRevitLinkInstances = exportOptionsCache.GetNumLinkInstanceInfos();
-               for (int ii = 1; ii < numRevitLinkInstances; ii++)
+               for (int ii = 0; ii < numRevitLinkInstances; ii++)
                {
                   Transform linkTrf = ExporterCacheManager.ExportOptionsCache.GetLinkInstanceTransform(ii);
                   IFCAnyHandle relativePlacement = ExporterUtil.CreateAxis2Placement3D(file, linkTrf.Origin, linkTrf.BasisZ, linkTrf.BasisX);
@@ -2168,9 +2192,16 @@ namespace Revit.IFC.Export.Exporter
                   // explicit cleanup.
                   GeometryUtil.SetRelativePlacement(buildingOrSitePlacement, relativePlacement);
 
-                  writeOptions.FileName = exportOptionsCache.GetLinkInstanceFileName(ii);
+                  string linkInstanceFileName = exportOptionsCache.GetLinkInstanceFileName(ii);
+                  if (linkInstanceFileName != null)
+                     writeOptions.FileName = linkInstanceFileName;
+
                   file.Write(writeOptions);
                }
+            }
+            else
+            {
+               file.Write(writeOptions);
             }
 
             // Display the message to the user when the IFC File has been completely exported 
@@ -2281,28 +2312,37 @@ namespace Revit.IFC.Export.Exporter
          double precision = Math.Pow(10.0, exponent);
 
          IFCFile file = exporterIFC.GetFile();
-         IFCAnyHandle wcsOrigin = ExporterCacheManager.Global3DOriginHandle;
-
-         ExportOptionsCache.SiteTransformBasis transformBasis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
+         SiteTransformBasis transformBasis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
 
          double trueNorthAngleInRadians = 0;
          IFCAnyHandle wcs = null;
-         if (transformBasis == ExportOptionsCache.SiteTransformBasis.Shared)
+         if (transformBasis == SiteTransformBasis.Shared)
          {
-            wcs = IFCInstanceExporter.CreateAxis2Placement3D(file, wcsOrigin, null, null);
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            {
+               IFCAnyHandle wcsOrigin = ExporterCacheManager.Global3DOriginHandle;
+               wcs = IFCInstanceExporter.CreateAxis2Placement3D(file, wcsOrigin, null, null);
+            }
+            else
+            {
+               XYZ orig = new XYZ(0, 0, 0);
+               wcs = ExporterUtil.CreateAxis2Placement3D(file, orig, null, null);
+            }
          }
          else
          {
             ExporterUtil.GetSafeProjectPositionAngle(doc, out trueNorthAngleInRadians);
             ProjectLocation projLocation = doc.ActiveProjectLocation;
-            Transform siteSharedCoordinatesTrf = projLocation == null ? Transform.Identity : projLocation.GetTransform().Inverse;
+            Transform siteSharedCoordinatesTrf = Transform.Identity;
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+               siteSharedCoordinatesTrf = projLocation == null ? Transform.Identity : projLocation.GetTransform().Inverse;
             XYZ unscaledOrigin = new XYZ(0, 0, 0);
-            if (transformBasis == ExportOptionsCache.SiteTransformBasis.Project)
+            if (transformBasis == SiteTransformBasis.Project)
             {
-               BasePoint basePoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_ProjectBasePoint)).First() as BasePoint;
-               if (basePoint != null)
+               BasePoint prjBasePoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_ProjectBasePoint)).First() as BasePoint;
+               if (prjBasePoint != null)
                {
-                  BoundingBoxXYZ bbox = basePoint.get_BoundingBox(null);
+                  BoundingBoxXYZ bbox = prjBasePoint.get_BoundingBox(null);
                   unscaledOrigin = bbox.Min;
                }
             }
@@ -2342,14 +2382,16 @@ namespace Revit.IFC.Export.Exporter
          exporterIFC.Set3DContextHandle(context3D, "");
          repContexts.Add(context3D); // Only Contexts in list, not sub-contexts.
 
+         // Create IFCMapConversion information for the context
+         ExportIFCMapConversion(exporterIFC, doc, context3D, directionRatios);
+
          if (ExporterCacheManager.ExportOptionsCache.ExportAnnotations)
          {
-            string context2DType = "Annotation";
             IFCAnyHandle context2DHandle = IFCInstanceExporter.CreateGeometricRepresentationContext(file,
-                null, context2DType, dimCount, precision, wcs, trueNorth);
+                null, "Plan", dimCount, precision, wcs, trueNorth);
 
             IFCAnyHandle context2D = IFCInstanceExporter.CreateGeometricRepresentationSubContext(file,
-                null, context2DType, context2DHandle, 0.01, Toolkit.IFCGeometricProjection.Plan_View, null);
+                null, "Annotation", context2DHandle, 0.01, IFCGeometricProjection.Plan_View, null);
 
             exporterIFC.Set2DContextHandle(context2D);
             repContexts.Add(context2DHandle); // Only Contexts in list, not sub-contexts.
@@ -2585,106 +2627,6 @@ namespace Revit.IFC.Export.Exporter
                ParameterUtil.GetStringValueFromElement(projectInfo, "Project Phase", out projectPhase);
          }
 
-
-         // Get information from Project info Parameters for Project Global Position and Coordinate Reference System
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-         {
-            IFCAnyHandle mapConversionHnd = null;
-
-            IFCAnyHandle geomRepContext = null;
-            foreach (IFCAnyHandle context in repContexts)
-            {
-               if (IFCAnyHandleUtil.IsTypeOf(context, IFCEntityType.IfcGeometricRepresentationContext))
-               {
-                  geomRepContext = context;
-                  break;
-               }
-            }
-
-            XYZ basePointPosition = null;
-            BasePoint basePoint = BasePoint.GetSurveyPoint(doc);
-            if (basePoint != null)
-               basePointPosition = basePoint.Position;
-
-            double dblVal = double.MaxValue;
-
-            double? eastings = null;
-            if (ParameterUtil.GetDoubleValueFromElement(projectInfo, null, "ProjectGlobalPositioning.Eastings", out dblVal) != null)
-               eastings = dblVal;
-            else if (basePointPosition != null)
-            {
-               eastings = basePointPosition.X;
-            }
-
-            double? northings = null;
-            if (ParameterUtil.GetDoubleValueFromElement(projectInfo, null, "ProjectGlobalPositioning.Northings", out dblVal) != null)
-               northings = dblVal;
-            else if (basePointPosition != null)
-            {
-               northings = basePointPosition.Y;
-            }
-
-            double? orthogonalHeight = null;
-            if (ParameterUtil.GetDoubleValueFromElement(projectInfo, null, "ProjectGlobalPositioning.OrthogonalHeight", out dblVal) != null)
-               orthogonalHeight = dblVal;
-            else if (basePointPosition != null)
-            {
-               orthogonalHeight = basePointPosition.Z;
-            }
-
-            double? xAxisAbscissaDirRatios = null;
-            double? xAxisOrdinateDirRatios = null;
-
-            if (directionRatios != null)
-            {
-               int size = directionRatios.Count;
-               xAxisAbscissaDirRatios = size > 0 ? directionRatios[0]: 0;
-               xAxisOrdinateDirRatios = size > 1 ? directionRatios[1]: 0;
-            }
-
-            double? xAxisAbscissa = null;
-            if (ParameterUtil.GetDoubleValueFromElement(projectInfo, null, "ProjectGlobalPositioning.XAxisAbscissa", out dblVal) != null)
-               xAxisAbscissa = dblVal;
-            else
-               xAxisAbscissa = xAxisAbscissaDirRatios;
-
-            double? xAxisOrdinate = null;
-            if (ParameterUtil.GetDoubleValueFromElement(projectInfo, null, "ProjectGlobalPositioning.XAxisOrdinate", out dblVal) != null)
-               xAxisOrdinate = dblVal;
-            else
-               xAxisOrdinate = xAxisOrdinateDirRatios;
-
-            double? scale = null;
-            if (ParameterUtil.GetDoubleValueFromElement(projectInfo, null, "ProjectGlobalPositioning.Scale", out dblVal) != null)
-               scale = dblVal;
-
-            string crsName = null;
-            ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSName", out crsName);
-            string crsDescription = null;
-            ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSdescription", out crsDescription);
-            string crsGeodeticDatum = null;
-            ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSGeodeticDatum", out crsGeodeticDatum);
-            string crsVerticalDatum = null;
-            ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSVerticalDatum", out crsVerticalDatum);
-            string crsMapProjection = null;
-            ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSMapProjection", out crsMapProjection);
-            string crsMapZone = null;
-            ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSMapZone", out crsMapZone);
-            // Not yet supported (requires comversion from the text to the appropriate entity)
-            IFCAnyHandle crsMapUnit = null;
-            // string crsMapUnitStr = null;
-            //ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSMapUnit", out crsMapUnitStr);
-
-            IFCAnyHandle projectedCRS = null;
-            // Only CRSName is mandatory
-            if (!string.IsNullOrEmpty(crsName))
-               projectedCRS = IFCInstanceExporter.CreateProjectedCRS(file, crsName, crsDescription, crsGeodeticDatum, crsVerticalDatum, crsMapProjection, crsMapZone, crsMapUnit);
-
-            // Only eastings, northings, and orthogonalHeight are mandatory beside the CRSSource (GeometricRepresentationContext) and CRSTarget (ProjectedCRS)
-            if (eastings.HasValue && northings.HasValue && orthogonalHeight.HasValue && !IFCAnyHandleUtil.IsNullOrHasNoValue(projectedCRS))
-               mapConversionHnd = IFCInstanceExporter.CreateMapConversion(file, geomRepContext, projectedCRS, eastings.Value, northings.Value, orthogonalHeight.Value, xAxisAbscissa, xAxisOrdinate, scale);
-         }
-
          string projectGUID = GUIDUtil.CreateProjectLevelGUID(doc, IFCProjectLevelGUIDType.Project);
          IFCAnyHandle projectHandle = IFCInstanceExporter.CreateProject(exporterIFC, projectInfo, projectGUID, ownerHistory,
             projectName, projectDescription, projectLongName, projectPhase, repContexts, units);
@@ -2735,10 +2677,7 @@ namespace Revit.IFC.Export.Exporter
 
       private IFCAnyHandle GetTelecomAddressFromExtStorage(IFCFile file, Document document)
       {
-         IFCFileHeader fHeader = new IFCFileHeader();
-         IFCFileHeaderItem fHItem = null;
-
-         fHeader.GetSavedFileHeader(document, out fHItem);
+         IFCFileHeaderItem fHItem = ExporterCacheManager.ExportOptionsCache.FileHeaderItem;
          if (!String.IsNullOrEmpty(fHItem.AuthorEmail))
          {
             IList<string> electronicMailAddress = new List<string>();
@@ -2923,13 +2862,13 @@ namespace Revit.IFC.Export.Exporter
          return postalAddress;
       }
 
-      private IFCAnyHandle CreateSIUnit(IFCFile file, ForgeTypeId specTypeId, IFCUnit ifcUnitType, IFCSIUnitName unitName, IFCSIPrefix? prefix, ForgeTypeId unitTypeId)
+      private IFCAnyHandle CreateSIUnit(IFCFile file, UnitType? unitType, IFCUnit ifcUnitType, IFCSIUnitName unitName, IFCSIPrefix? prefix, DisplayUnitType? dut)
       {
          IFCAnyHandle siUnit = IFCInstanceExporter.CreateSIUnit(file, ifcUnitType, prefix, unitName);
-         if (specTypeId != null && unitTypeId != null)
+         if (unitType.HasValue && dut.HasValue)
          {
-            double scaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, unitTypeId);
-            ExporterCacheManager.UnitsCache.AddUnit(specTypeId, siUnit, scaleFactor, 0.0);
+            double scaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, dut.Value);
+            ExporterCacheManager.UnitsCache.AddUnit(unitType.Value, siUnit, scaleFactor, 0.0);
          }
 
          return siUnit;
@@ -2957,51 +2896,52 @@ namespace Revit.IFC.Export.Exporter
             IFCSIUnitName lenUnitName = IFCSIUnitName.Metre;
             string lenConvName = null;
 
-            FormatOptions lenFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Length);
-            ForgeTypeId lengthUnit = lenFormatOptions.GetUnitTypeId();
-            if (lengthUnit.Equals(UnitTypeId.Meters) ||
-               lengthUnit.Equals(UnitTypeId.MetersCentimeters))
+            FormatOptions lenFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Length);
+            switch (lenFormatOptions.DisplayUnits)
             {
-               // This space intentionally left blank
-            }
-            else if (lengthUnit.Equals(UnitTypeId.Centimeters))
-            {
-               lenPrefix = IFCSIPrefix.Centi;
-            }
-            else if (lengthUnit.Equals(UnitTypeId.Millimeters))
-            {
-               lenPrefix = IFCSIPrefix.Milli;
-            }
-            else if (lengthUnit.Equals(UnitTypeId.Feet) ||
-               lengthUnit.Equals(UnitTypeId.FeetFractionalInches))
-            {
-               if (exportToCOBIE)
-                  lenConvName = "foot";
-               else
-                  lenConvName = "FOOT";
-               lenConversionBased = true;
-            }
-            else if (lengthUnit.Equals(UnitTypeId.FractionalInches) ||
-               lengthUnit.Equals(UnitTypeId.Inches))
-            {
-               if (exportToCOBIE)
-                  lenConvName = "inch";
-               else
-                  lenConvName = "INCH";
-               lenConversionBased = true;
-            }
-            else
-            {
-               //Couldn't find display unit type conversion -- assuming foot
-               if (exportToCOBIE)
-                  lenConvName = "foot";
-               else
-                  lenConvName = "FOOT";
-               lenConversionBased = true;
-               lenUseDefault = true;
+               case DisplayUnitType.DUT_METERS:
+               case DisplayUnitType.DUT_METERS_CENTIMETERS:
+                  break;
+               case DisplayUnitType.DUT_CENTIMETERS:
+                  lenPrefix = IFCSIPrefix.Centi;
+                  break;
+               case DisplayUnitType.DUT_MILLIMETERS:
+                  lenPrefix = IFCSIPrefix.Milli;
+                  break;
+               case DisplayUnitType.DUT_DECIMAL_FEET:
+               case DisplayUnitType.DUT_FEET_FRACTIONAL_INCHES:
+                  {
+                     if (exportToCOBIE)
+                        lenConvName = "foot";
+                     else
+                        lenConvName = "FOOT";
+                     lenConversionBased = true;
+                  }
+                  break;
+               case DisplayUnitType.DUT_FRACTIONAL_INCHES:
+               case DisplayUnitType.DUT_DECIMAL_INCHES:
+                  {
+                     if (exportToCOBIE)
+                        lenConvName = "inch";
+                     else
+                        lenConvName = "INCH";
+                  }
+                  lenConversionBased = true;
+                  break;
+               default:
+                  {
+                     //Couldn't find display unit type conversion -- assuming foot
+                     if (exportToCOBIE)
+                        lenConvName = "foot";
+                     else
+                        lenConvName = "FOOT";
+                     lenConversionBased = true;
+                     lenUseDefault = true;
+                  }
+                  break;
             }
 
-            double lengthScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, lenUseDefault ? UnitTypeId.Feet : lenFormatOptions.GetUnitTypeId());
+            double lengthScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, lenUseDefault ? DisplayUnitType.DUT_DECIMAL_FEET : lenFormatOptions.DisplayUnits);
             IFCAnyHandle lenSIUnit = IFCInstanceExporter.CreateSIUnit(file, lenUnitType, lenPrefix, lenUnitName);
             if (lenPrefix == null)
                lenSIBaseUnit = lenSIUnit;
@@ -3010,7 +2950,7 @@ namespace Revit.IFC.Export.Exporter
 
             if (lenConversionBased)
             {
-               double lengthSIScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Meters) / lengthScaleFactor;
+               double lengthSIScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_METERS) / lengthScaleFactor;
                IFCAnyHandle lenDims = IFCInstanceExporter.CreateDimensionalExponents(file, 1, 0, 0, 0, 0, 0, 0); // length
                IFCAnyHandle lenConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(lengthSIScaleFactor),
                    lenSIUnit);
@@ -3018,7 +2958,7 @@ namespace Revit.IFC.Export.Exporter
             }
 
             unitSet.Add(lenSIUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Length, lenSIUnit, lengthScaleFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Length, lenSIUnit, lengthScaleFactor, 0.0);
          }
 
          {
@@ -3030,59 +2970,60 @@ namespace Revit.IFC.Export.Exporter
             IFCSIUnitName areaUnitName = IFCSIUnitName.Square_Metre;
             string areaConvName = null;
 
-            FormatOptions areaFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Area);
-            ForgeTypeId areaUnit = areaFormatOptions.GetUnitTypeId();
-            if (areaUnit.Equals(UnitTypeId.SquareMeters))
+            FormatOptions areaFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Area);
+            switch (areaFormatOptions.DisplayUnits)
             {
-               // This space intentionally left blank.
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareCentimeters))
-            {
-               areaPrefix = IFCSIPrefix.Centi;
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareMillimeters))
-            {
-               areaPrefix = IFCSIPrefix.Milli;
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareFeet))
-            {
-               if (exportToCOBIE)
-                  areaConvName = "foot";
-               else
-                  areaConvName = "SQUARE FOOT";
-               areaConversionBased = true;
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareInches))
-            {
-               if (exportToCOBIE)
-                  areaConvName = "inch";
-               else
-                  areaConvName = "SQUARE INCH";
-               areaConversionBased = true;
-            }
-            else
-            {
-               //Couldn't find display unit type conversion -- assuming foot
-               if (exportToCOBIE)
-                  areaConvName = "foot";
-               else
-                  areaConvName = "SQUARE FOOT";
-               areaConversionBased = true;
-               areaUseDefault = true;
+               case DisplayUnitType.DUT_SQUARE_METERS:
+                  break;
+               case DisplayUnitType.DUT_SQUARE_CENTIMETERS:
+                  areaPrefix = IFCSIPrefix.Centi;
+                  break;
+               case DisplayUnitType.DUT_SQUARE_MILLIMETERS:
+                  areaPrefix = IFCSIPrefix.Milli;
+                  break;
+               case DisplayUnitType.DUT_SQUARE_FEET:
+                  {
+                     if (exportToCOBIE)
+                        areaConvName = "foot";
+                     else
+                        areaConvName = "SQUARE FOOT";
+                     areaConversionBased = true;
+                  }
+                  break;
+               case DisplayUnitType.DUT_SQUARE_INCHES:
+                  {
+                     if (exportToCOBIE)
+                        areaConvName = "inch";
+                     else
+                        areaConvName = "SQUARE INCH";
+                  }
+                  areaConversionBased = true;
+                  break;
+               default:
+                  {
+                     //Couldn't find display unit type conversion -- assuming foot
+                     if (exportToCOBIE)
+                        areaConvName = "foot";
+                     else
+                        areaConvName = "SQUARE FOOT";
+                     areaConversionBased = true;
+                     areaUseDefault = true;
+                  }
+                  break;
             }
 
-            double areaScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, areaUseDefault ? UnitTypeId.SquareFeet : areaFormatOptions.GetUnitTypeId());
+            double areaScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, areaUseDefault ? DisplayUnitType.DUT_SQUARE_FEET : areaFormatOptions.DisplayUnits);
             IFCAnyHandle areaSiUnit = IFCInstanceExporter.CreateSIUnit(file, areaUnitType, areaPrefix, areaUnitName);
             if (areaConversionBased)
             {
-               double areaSIScaleFactor = areaScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.SquareMeters);
+               double areaSIScaleFactor = areaScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_SQUARE_METERS);
                IFCAnyHandle areaDims = IFCInstanceExporter.CreateDimensionalExponents(file, 2, 0, 0, 0, 0, 0, 0); // area
                IFCAnyHandle areaConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(areaSIScaleFactor), areaSiUnit);
                areaSiUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, areaDims, areaUnitType, areaConvName, areaConvFactor);
             }
 
             unitSet.Add(areaSiUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Area, areaSiUnit, areaScaleFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Area, areaSiUnit, areaScaleFactor, 0.0);
          }
 
          {
@@ -3094,64 +3035,64 @@ namespace Revit.IFC.Export.Exporter
             IFCSIUnitName volumeUnitName = IFCSIUnitName.Cubic_Metre;
             string volumeConvName = null;
 
-            FormatOptions volumeFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Volume);
-            ForgeTypeId volumeUnit = volumeFormatOptions.GetUnitTypeId();
-            if (volumeUnit.Equals(UnitTypeId.CubicMeters))
+            FormatOptions volumeFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Volume);
+            switch (volumeFormatOptions.DisplayUnits)
             {
-               // This space intentionally left blank.
-            }
-            else if (volumeUnit.Equals(UnitTypeId.Liters))
-            {
-               volumePrefix = IFCSIPrefix.Deci;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicCentimeters))
-            {
-               volumePrefix = IFCSIPrefix.Centi;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicMillimeters))
-            {
-               volumePrefix = IFCSIPrefix.Milli;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicFeet))
-            {
-               if (exportToCOBIE)
-                  volumeConvName = "foot";
-               else
-                  volumeConvName = "CUBIC FOOT";
-               volumeConversionBased = true;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicInches))
-            {
-               if (exportToCOBIE)
-                  volumeConvName = "inch";
-               else
-                  volumeConvName = "CUBIC INCH";
-               volumeConversionBased = true;
-            }
-            else
-            {
-               //Couldn't find display unit type conversion -- assuming foot
-               if (exportToCOBIE)
-                  volumeConvName = "foot";
-               else
-                  volumeConvName = "CUBIC FOOT";
-               volumeConversionBased = true;
-               volumeUseDefault = true;
+               case DisplayUnitType.DUT_CUBIC_METERS:
+                  break;
+               case DisplayUnitType.DUT_LITERS:
+                  volumePrefix = IFCSIPrefix.Deci;
+                  break;
+               case DisplayUnitType.DUT_CUBIC_CENTIMETERS:
+                  volumePrefix = IFCSIPrefix.Centi;
+                  break;
+               case DisplayUnitType.DUT_CUBIC_MILLIMETERS:
+                  volumePrefix = IFCSIPrefix.Milli;
+                  break;
+               case DisplayUnitType.DUT_CUBIC_FEET:
+                  {
+                     if (exportToCOBIE)
+                        volumeConvName = "foot";
+                     else
+                        volumeConvName = "CUBIC FOOT";
+                     volumeConversionBased = true;
+                  }
+                  break;
+               case DisplayUnitType.DUT_CUBIC_INCHES:
+                  {
+                     if (exportToCOBIE)
+                        volumeConvName = "inch";
+                     else
+                        volumeConvName = "CUBIC INCH";
+                  }
+                  volumeConversionBased = true;
+                  break;
+               default:
+                  {
+                     //Couldn't find display unit type conversion -- assuming foot
+                     if (exportToCOBIE)
+                        volumeConvName = "foot";
+                     else
+                        volumeConvName = "CUBIC FOOT";
+                     volumeConversionBased = true;
+                     volumeUseDefault = true;
+                  }
+                  break;
             }
 
             double volumeScaleFactor =
-                UnitUtils.ConvertFromInternalUnits(1.0, volumeUseDefault ? UnitTypeId.CubicFeet : volumeFormatOptions.GetUnitTypeId());
+                UnitUtils.ConvertFromInternalUnits(1.0, volumeUseDefault ? DisplayUnitType.DUT_CUBIC_FEET : volumeFormatOptions.DisplayUnits);
             IFCAnyHandle volumeSiUnit = IFCInstanceExporter.CreateSIUnit(file, volumeUnitType, volumePrefix, volumeUnitName);
             if (volumeConversionBased)
             {
-               double volumeSIScaleFactor = volumeScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.CubicMeters);
+               double volumeSIScaleFactor = volumeScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_CUBIC_METERS);
                IFCAnyHandle volumeDims = IFCInstanceExporter.CreateDimensionalExponents(file, 3, 0, 0, 0, 0, 0, 0); // area
                IFCAnyHandle volumeConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(volumeSIScaleFactor), volumeSiUnit);
                volumeSiUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, volumeDims, volumeUnitType, volumeConvName, volumeConvFactor);
             }
 
             unitSet.Add(volumeSiUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Volume, volumeSiUnit, volumeScaleFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Volume, volumeSiUnit, volumeScaleFactor, 0.0);
          }
 
          {
@@ -3162,44 +3103,41 @@ namespace Revit.IFC.Export.Exporter
 
             string convName = null;
 
-            FormatOptions angleFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Angle);
+            FormatOptions angleFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Angle);
             bool angleUseDefault = false;
-            ForgeTypeId angleUnit = angleFormatOptions.GetUnitTypeId();
-            if (angleUnit.Equals(UnitTypeId.Degrees) ||
-               angleUnit.Equals(UnitTypeId.DegreesMinutes))
+            switch (angleFormatOptions.DisplayUnits)
             {
-               convName = "DEGREE";
-            }
-            else if (angleUnit.Equals(UnitTypeId.Gradians))
-            {
-               convName = "GRAD";
-            }
-            else if (angleUnit.Equals(UnitTypeId.Radians))
-            {
-               // This space intentionally left blank.
-            }
-            else
-            {
-               angleUseDefault = true;
-               convName = "DEGREE";
+               case DisplayUnitType.DUT_DECIMAL_DEGREES:
+               case DisplayUnitType.DUT_DEGREES_AND_MINUTES:
+                  convName = "DEGREE";
+                  break;
+               case DisplayUnitType.DUT_GRADS:
+                  convName = "GRAD";
+                  break;
+               case DisplayUnitType.DUT_RADIANS:
+                  break;
+               default:
+                  angleUseDefault = true;
+                  convName = "DEGREE";
+                  break;
             }
 
             IFCAnyHandle dims = IFCInstanceExporter.CreateDimensionalExponents(file, 0, 0, 0, 0, 0, 0, 0);
 
-            double angleScaleFactor = UnitUtils.Convert(1.0, angleUseDefault ? UnitTypeId.Degrees : angleFormatOptions.GetUnitTypeId(), UnitTypeId.Radians);
+            double angleScaleFactor = UnitUtils.Convert(1.0, angleUseDefault ? DisplayUnitType.DUT_DECIMAL_DEGREES : angleFormatOptions.DisplayUnits, DisplayUnitType.DUT_RADIANS);
             if (convName != null)
             {
                IFCAnyHandle convFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(angleScaleFactor), planeAngleUnit);
                planeAngleUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, dims, unitType, convName, convFactor);
             }
             unitSet.Add(planeAngleUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Angle, planeAngleUnit, 1.0 / angleScaleFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Angle, planeAngleUnit, 1.0 / angleScaleFactor, 0.0);
          }
 
          // Mass
          IFCAnyHandle massSIUnit = null;
          {
-            massSIUnit = CreateSIUnit(file, SpecTypeId.Mass, IFCUnit.MassUnit, IFCSIUnitName.Gram, IFCSIPrefix.Kilo, null);
+            massSIUnit = CreateSIUnit(file, UnitType.UT_Mass, IFCUnit.MassUnit, IFCSIUnitName.Gram, IFCSIPrefix.Kilo, null);
             // If we are exporting to GSA standard, we will override kg with pound below.
             if (!exportToCOBIE)
                unitSet.Add(massSIUnit);      // created above, so unique.
@@ -3215,8 +3153,8 @@ namespace Revit.IFC.Export.Exporter
                 IFCDerivedUnitEnum.MassDensityUnit, null);
             unitSet.Add(massDensityUnit);
 
-            double massDensityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.KilogramsPerCubicMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.MassDensity, massDensityUnit, massDensityFactor, 0.0);
+            double massDensityFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_KILOGRAMS_PER_CUBIC_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_MassDensity, massDensityUnit, massDensityFactor, 0.0);
          }
 
          // Moment of inertia - support metric m^4.
@@ -3228,8 +3166,8 @@ namespace Revit.IFC.Export.Exporter
                 IFCDerivedUnitEnum.MomentOfInertiaUnit, null);
             unitSet.Add(momentOfInertiaUnit);
 
-            double momentOfInertiaFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.MetersToTheFourthPower);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.MomentOfInertia, momentOfInertiaUnit, momentOfInertiaFactor, 0.0);
+            double momentOfInertiaFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_METERS_TO_THE_FOURTH_POWER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Moment_of_Inertia, momentOfInertiaUnit, momentOfInertiaFactor, 0.0);
          }
 
          // Time -- support seconds only.
@@ -3252,19 +3190,19 @@ namespace Revit.IFC.Export.Exporter
             tempBaseSIUnit = CreateSIUnit(file, null, IFCUnit.ThermoDynamicTemperatureUnit, IFCSIUnitName.Kelvin, null, null);
 
             // We are going to have two entries: one for thermodynamic temperature (default), and one for color temperature.
-            FormatOptions tempFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.HvacTemperature);
+            FormatOptions tempFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_HVAC_Temperature);
             IFCSIUnitName thermalTempUnit;
             double offset = 0.0;
-            ForgeTypeId tempUnit = tempFormatOptions.GetUnitTypeId();
-            if (tempUnit.Equals(UnitTypeId.Celsius) ||
-               tempUnit.Equals(UnitTypeId.Fahrenheit))
+            switch (tempFormatOptions.DisplayUnits)
             {
-               thermalTempUnit = IFCSIUnitName.Degree_Celsius;
-               offset = -273.15;
-            }
-            else
-            {
-               thermalTempUnit = IFCSIUnitName.Kelvin;
+               case DisplayUnitType.DUT_CELSIUS:
+               case DisplayUnitType.DUT_FAHRENHEIT:
+                  thermalTempUnit = IFCSIUnitName.Degree_Celsius;
+                  offset = -273.15;
+                  break;
+               default:
+                  thermalTempUnit = IFCSIUnitName.Kelvin;
+                  break;
             }
 
             IFCAnyHandle temperatureSIUnit = null;
@@ -3272,7 +3210,7 @@ namespace Revit.IFC.Export.Exporter
                temperatureSIUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.ThermoDynamicTemperatureUnit, null, thermalTempUnit);
             else
                temperatureSIUnit = tempBaseSIUnit;
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacTemperature, temperatureSIUnit, 1.0, offset);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_HVAC_Temperature, temperatureSIUnit, 1.0, offset);
 
             unitSet.Add(temperatureSIUnit);      // created above, so unique.
 
@@ -3300,15 +3238,16 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle volumetricFlowRateLenUnit = null;
             double volumetricFlowRateFactor = 1.0;
 
-            FormatOptions flowFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.AirFlow);
-            if (flowFormatOptions.GetUnitTypeId().Equals(UnitTypeId.LitersPerSecond))
+            FormatOptions tempFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_HVAC_Airflow);
+            switch (tempFormatOptions.DisplayUnits)
             {
-               volumetricFlowRateLenUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.LengthUnit, IFCSIPrefix.Deci, IFCSIUnitName.Metre);
-            }
-            else
-            {
-               volumetricFlowRateLenUnit = lenSIBaseUnit;   // use m^3/s by default.
-               volumetricFlowRateFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.CubicMetersPerSecond);
+               case DisplayUnitType.DUT_LITERS_PER_SECOND:
+                  volumetricFlowRateLenUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.LengthUnit, IFCSIPrefix.Deci, IFCSIUnitName.Metre);
+                  break;
+               default:
+                  volumetricFlowRateLenUnit = lenSIBaseUnit;   // use m^3/s by default.
+                  volumetricFlowRateFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_CUBIC_METERS_PER_SECOND);
+                  break;
             }
 
             elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, 3));
@@ -3318,58 +3257,57 @@ namespace Revit.IFC.Export.Exporter
                 IFCDerivedUnitEnum.VolumetricFlowRateUnit, null);
             unitSet.Add(volumetricFlowRateUnit);
 
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.AirFlow, volumetricFlowRateUnit, volumetricFlowRateFactor, 0.0);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_HVAC_Airflow, volumetricFlowRateUnit, volumetricFlowRateFactor, 0.0);
          }
 
          // Electrical current - support metric ampere only.
          {
-            IFCAnyHandle currentSIUnit = CreateSIUnit(file, SpecTypeId.Current, IFCUnit.ElectricCurrentUnit, IFCSIUnitName.Ampere,
-                null, UnitTypeId.Amperes);
+            IFCAnyHandle currentSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Current, IFCUnit.ElectricCurrentUnit, IFCSIUnitName.Ampere,
+                null, DisplayUnitType.DUT_AMPERES);
             unitSet.Add(currentSIUnit);      // created above, so unique.
          }
 
          // Electrical voltage - support metric volt only.
          {
-            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, SpecTypeId.ElectricalPotential, IFCUnit.ElectricVoltageUnit, IFCSIUnitName.Volt,
-                null, UnitTypeId.Volts);
+            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Potential, IFCUnit.ElectricVoltageUnit, IFCSIUnitName.Volt,
+                null, DisplayUnitType.DUT_VOLTS);
             unitSet.Add(voltageSIUnit);      // created above, so unique.
          }
 
          // Power - support metric watt only.
          {
-            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, SpecTypeId.HvacPower, IFCUnit.PowerUnit, IFCSIUnitName.Watt,
-                null, UnitTypeId.Watts);
+            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, UnitType.UT_HVAC_Power, IFCUnit.PowerUnit, IFCSIUnitName.Watt,
+                null, DisplayUnitType.DUT_WATTS);
             unitSet.Add(voltageSIUnit);      // created above, so unique.
          }
 
          // Force - support newtons (N) and kN only.
          {
             IFCSIPrefix? prefix = null;
-            FormatOptions forceFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Force);
-            ForgeTypeId forceUnit = forceFormatOptions.GetUnitTypeId();
-            if (forceUnit.Equals(UnitTypeId.Newtons))
+            FormatOptions forceFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Force);
+            DisplayUnitType dut = forceFormatOptions.DisplayUnits;
+            switch (dut)
             {
-               // This space intentionally left blank.
-            }
-            else if (forceUnit.Equals(UnitTypeId.Kilonewtons))
-            {
-               prefix = IFCSIPrefix.Kilo;
-            }
-            else
-            {
-               forceUnit = UnitTypeId.Newtons;
+               case DisplayUnitType.DUT_NEWTONS:
+                  break;
+               case DisplayUnitType.DUT_KILONEWTONS:
+                  prefix = IFCSIPrefix.Kilo;
+                  break;
+               default:
+                  dut = DisplayUnitType.DUT_NEWTONS;
+                  break;
             }
 
-            IFCAnyHandle forceSIUnit = CreateSIUnit(file, SpecTypeId.Force, IFCUnit.ForceUnit, IFCSIUnitName.Newton,
-                prefix, forceUnit);
+            IFCAnyHandle forceSIUnit = CreateSIUnit(file, UnitType.UT_Force, IFCUnit.ForceUnit, IFCSIUnitName.Newton,
+                prefix, dut);
             unitSet.Add(forceSIUnit);      // created above, so unique.
          }
 
          // Illuminance
          {
             IFCSIPrefix? prefix = null;
-            IFCAnyHandle luxSIUnit = CreateSIUnit(file, SpecTypeId.Illuminance, IFCUnit.IlluminanceUnit, IFCSIUnitName.Lux,
-                prefix, UnitTypeId.Lux);
+            IFCAnyHandle luxSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Illuminance, IFCUnit.IlluminanceUnit, IFCSIUnitName.Lux,
+                prefix, DisplayUnitType.DUT_LUX);
             unitSet.Add(luxSIUnit);      // created above, so unique.
             ExporterCacheManager.UnitsCache["LUX"] = luxSIUnit;
          }
@@ -3378,16 +3316,16 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle lumenSIUnit = null;
          {
             IFCSIPrefix? prefix = null;
-            lumenSIUnit = CreateSIUnit(file, SpecTypeId.LuminousFlux, IFCUnit.LuminousFluxUnit, IFCSIUnitName.Lumen,
-                prefix, UnitTypeId.Lumens);
+            lumenSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Luminous_Flux, IFCUnit.LuminousFluxUnit, IFCSIUnitName.Lumen,
+                prefix, DisplayUnitType.DUT_LUMENS);
             unitSet.Add(lumenSIUnit);      // created above, so unique.
          }
 
          // Luminous Intensity
          {
             IFCSIPrefix? prefix = null;
-            IFCAnyHandle candelaSIUnit = CreateSIUnit(file, SpecTypeId.LuminousIntensity, IFCUnit.LuminousIntensityUnit, IFCSIUnitName.Candela,
-                prefix, UnitTypeId.Candelas);
+            IFCAnyHandle candelaSIUnit = CreateSIUnit(file, UnitType.UT_Electrical_Luminous_Intensity, IFCUnit.LuminousIntensityUnit, IFCSIUnitName.Candela,
+                prefix, DisplayUnitType.DUT_CANDELAS);
             unitSet.Add(candelaSIUnit);      // created above, so unique.
          }
 
@@ -3402,8 +3340,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle luminousEfficacyUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.UserDefined, "Luminous Efficacy");
 
-            double electricalEfficacyFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.LumensPerWatt);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Efficacy, luminousEfficacyUnit, electricalEfficacyFactor, 0.0);
+            double electricalEfficacyFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_LUMENS_PER_WATT);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_Electrical_Efficacy, luminousEfficacyUnit, electricalEfficacyFactor, 0.0);
             ExporterCacheManager.UnitsCache["LUMINOUSEFFICACY"] = luminousEfficacyUnit;
 
             unitSet.Add(luminousEfficacyUnit);
@@ -3418,8 +3356,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle linearVelocityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.LinearVelocityUnit, null);
 
-            double linearVelocityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.MetersPerSecond);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacVelocity, linearVelocityUnit, linearVelocityFactor, 0.0);
+            double linearVelocityFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_METERS_PER_SECOND);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_HVAC_Velocity, linearVelocityUnit, linearVelocityFactor, 0.0);
 
             unitSet.Add(linearVelocityUnit);
          }
@@ -3427,8 +3365,8 @@ namespace Revit.IFC.Export.Exporter
          // Currency - disallowed for IC2x3 Coordination View 2.0.  If we find a currency, export it as a real.
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs2x3CoordinationView2)
          {
-            FormatOptions currencyFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Currency);
-            ForgeTypeId currencySymbol = currencyFormatOptions.GetSymbolTypeId();
+            FormatOptions currencyFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_Currency);
+            UnitSymbolType ust = currencyFormatOptions.UnitSymbol;
 
             IFCAnyHandle currencyUnit = null;
 
@@ -3439,7 +3377,7 @@ namespace Revit.IFC.Export.Exporter
                string currencyLabel = null;
                try
                {
-                  currencyLabel = LabelUtils.GetLabelForSymbol(currencySymbol);
+                  currencyLabel = LabelUtils.GetLabelFor(ust);
                   currencyUnit = IFCInstanceExporter.CreateMonetaryUnit4(file, currencyLabel);
                }
                catch
@@ -3451,46 +3389,39 @@ namespace Revit.IFC.Export.Exporter
             {
                IFCCurrencyType? currencyType = null;
 
-               if (currencySymbol.Equals(SymbolTypeId.UsDollar))
+               switch (ust)
                {
-                  currencyType = IFCCurrencyType.USD;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.EuroPrefix) ||
-                  currencySymbol.Equals(SymbolTypeId.EuroSuffix))
-               {
-                  currencyType = IFCCurrencyType.EUR;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.UkPound))
-               {
-                  currencyType = IFCCurrencyType.GBP;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.ChineseHongKongDollar))
-               {
-                  currencyType = IFCCurrencyType.HKD;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Krone))
-               {
-                  currencyType = IFCCurrencyType.NOK;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Shekel))
-               {
-                  currencyType = IFCCurrencyType.ILS;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Yen))
-               {
-                  currencyType = IFCCurrencyType.JPY;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Won))
-               {
-                  currencyType = IFCCurrencyType.KRW;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Baht))
-               {
-                  currencyType = IFCCurrencyType.THB;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Dong))
-               {
-                  currencyType = IFCCurrencyType.VND;
+                  case UnitSymbolType.UST_DOLLAR:
+                     currencyType = IFCCurrencyType.USD;
+                     break;
+                  case UnitSymbolType.UST_EURO_PREFIX:
+                  case UnitSymbolType.UST_EURO_SUFFIX:
+                     currencyType = IFCCurrencyType.EUR;
+                     break;
+                  case UnitSymbolType.UST_POUND:
+                     currencyType = IFCCurrencyType.GBP;
+                     break;
+                  case UnitSymbolType.UST_CHINESE_HONG_KONG_SAR:
+                     currencyType = IFCCurrencyType.HKD;
+                     break;
+                  case UnitSymbolType.UST_KRONER:
+                     currencyType = IFCCurrencyType.NOK;
+                     break;
+                  case UnitSymbolType.UST_SHEQEL:
+                     currencyType = IFCCurrencyType.ILS;
+                     break;
+                  case UnitSymbolType.UST_YEN:
+                     currencyType = IFCCurrencyType.JPY;
+                     break;
+                  case UnitSymbolType.UST_WON:
+                     currencyType = IFCCurrencyType.KRW;
+                     break;
+                  case UnitSymbolType.UST_BAHT:
+                     currencyType = IFCCurrencyType.THB;
+                     break;
+                  case UnitSymbolType.UST_DONG:
+                     currencyType = IFCCurrencyType.VND;
+                     break;
                }
 
                if (currencyType.HasValue)
@@ -3508,27 +3439,25 @@ namespace Revit.IFC.Export.Exporter
          // Pressure - support Pascal, kPa and MPa.
          {
             IFCSIPrefix? prefix = null;
-            FormatOptions pressureFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.HvacPressure);
-            ForgeTypeId pressureUnit = pressureFormatOptions.GetUnitTypeId();
-            if (pressureUnit.Equals(UnitTypeId.Pascals))
+            FormatOptions pressureFormatOptions = doc.GetUnits().GetFormatOptions(UnitType.UT_HVAC_Pressure);
+            DisplayUnitType dut = pressureFormatOptions.DisplayUnits;
+            switch (dut)
             {
-               // This space intentionally left blank.
-            }
-            else if (pressureUnit.Equals(UnitTypeId.Kilopascals))
-            {
-               prefix = IFCSIPrefix.Kilo;
-            }
-            else if (pressureUnit.Equals(UnitTypeId.Megapascals))
-            {
-               prefix = IFCSIPrefix.Mega;
-            }
-            else
-            {
-               pressureUnit = UnitTypeId.Pascals;
+               case DisplayUnitType.DUT_PASCALS:
+                  break;
+               case DisplayUnitType.DUT_KILOPASCALS:
+                  prefix = IFCSIPrefix.Kilo;
+                  break;
+               case DisplayUnitType.DUT_MEGAPASCALS:
+                  prefix = IFCSIPrefix.Mega;
+                  break;
+               default:
+                  dut = DisplayUnitType.DUT_PASCALS;
+                  break;
             }
 
-            IFCAnyHandle pressureSIUnit = CreateSIUnit(file, SpecTypeId.HvacPressure, IFCUnit.PressureUnit, IFCSIUnitName.Pascal,
-                prefix, pressureUnit);
+            IFCAnyHandle pressureSIUnit = CreateSIUnit(file, UnitType.UT_HVAC_Pressure, IFCUnit.PressureUnit, IFCSIUnitName.Pascal,
+                prefix, dut);
             unitSet.Add(pressureSIUnit);      // created above, so unique.
          }
 
@@ -3542,8 +3471,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle frictionLossUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.UserDefined, "Friction Loss");
 
-            double frictionLossFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.PascalsPerMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacFriction, frictionLossUnit, frictionLossFactor, 0.0);
+            double frictionLossFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_PASCALS_PER_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_HVAC_Friction, frictionLossUnit, frictionLossFactor, 0.0);
             ExporterCacheManager.UnitsCache["FRICTIONLOSS"] = frictionLossUnit;
 
             unitSet.Add(frictionLossUnit);
@@ -3560,8 +3489,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle linearForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.LinearForceUnit, null);
 
-            double linearForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NewtonsPerMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.LinearForce, linearForceUnit, linearForceFactor, 0.0);
+            double linearForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_NEWTONS_PER_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_LinearForce, linearForceUnit, linearForceFactor, 0.0);
             unitSet.Add(linearForceUnit);
 
             elements = new HashSet<IFCAnyHandle>();
@@ -3573,8 +3502,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle planarForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
                 IFCDerivedUnitEnum.PlanarForceUnit, null);
 
-            double planarForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NewtonsPerSquareMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.AreaForce, planarForceUnit, planarForceFactor, 0.0);
+            double planarForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_NEWTONS_PER_SQUARE_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_AreaForce, planarForceUnit, planarForceFactor, 0.0);
             unitSet.Add(planarForceUnit);
          }
 
@@ -3859,32 +3788,7 @@ namespace Revit.IFC.Export.Exporter
 
       private IFCAnyHandle CreateBuildingPlacement(IFCFile file)
       {
-         // Set relative transform depending on whether it is a linked transform or not.
-         IFCAnyHandle relativePlacement = null;
-         if (ExporterCacheManager.ExportOptionsCache.ExportingLink)
-         {
-            ExportOptionsCache.SiteTransformBasis basis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
-            Transform linkTrfToUse = null;
-            if (basis == ExportOptionsCache.SiteTransformBasis.Shared &&
-               !ExporterCacheManager.ExportOptionsCache.IncludeSiteElevation)
-            {
-               Transform linkTrf = ExporterCacheManager.ExportOptionsCache.GetLinkInstanceTransform(0);
-               XYZ buildingZOffset = new XYZ(0, 0, linkTrf.Origin.Z);
-               linkTrfToUse = Transform.CreateTranslation(buildingZOffset);
-            }
-            else
-            {
-               linkTrfToUse = Transform.Identity;
-            }
-
-            relativePlacement = ExporterUtil.CreateAxis2Placement3D(file,
-               linkTrfToUse.Origin, linkTrfToUse.BasisZ, linkTrfToUse.BasisX);
-         }
-         else
-            relativePlacement = ExporterUtil.CreateAxis2Placement3D(file);
-
-         IFCAnyHandle buildingPlacement = IFCInstanceExporter.CreateLocalPlacement(file, null, relativePlacement);
-         return buildingPlacement;
+         return IFCInstanceExporter.CreateLocalPlacement(file, null, ExporterUtil.CreateAxis2Placement3D(file));
       }
 
       private IFCAnyHandle CreateBuildingFromProjectInfo(ExporterIFC exporterIFC, Document document, IFCAnyHandle buildingPlacement)
@@ -3922,7 +3826,6 @@ namespace Revit.IFC.Export.Exporter
          if (Exporter.NeedToCreateAddressForBuilding(document))
             address = Exporter.CreateIFCAddress(file, document, projectInfo);
 
-         //string buildingGUID = GUIDUtil.CreateProjectLevelGUID(document, GUIDUtil.ProjectLevelGUIDType.Building);
          string buildingGUID = GUIDUtil.CreateProjectLevelGUID(document, IFCProjectLevelGUIDType.Building);
          IFCAnyHandle buildingHandle = IFCInstanceExporter.CreateBuilding(exporterIFC,
              buildingGUID, ownerHistory, buildingName, buildingDescription, buildingObjectType, buildingPlacement, null, buildingLongName,
@@ -3945,6 +3848,157 @@ namespace Revit.IFC.Export.Exporter
          }
 
          return buildingHandle;
+      }
+
+      /// <summary>
+      /// Create IFCMapConversion that is from IFC4 onward capturing information for geo referencing
+      /// </summary>
+      /// <param name="exporterIFC">ExporterIFC</param>
+      /// <param name="doc">the Document</param>
+      /// <param name="geomRepContext">The GeometricRepresentationContex</param>
+      /// <param name="TNDirRatio">TrueNorth direction ratios</param>
+      private bool ExportIFCMapConversion(ExporterIFC exporterIFC, Document doc, IFCAnyHandle geomRepContext, IList<double> TNDirRatio)
+      {
+         // Get information from Project info Parameters for Project Global Position and Coordinate Reference System
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            return false;
+
+         ProjectInfo projectInfo = doc.ProjectInformation;
+         string epsgCode = null;
+         string defaultEPSGCode = "EPSG:3857";     // Default to EPSG:3857, which is the commonly used ProjectedCR as in GoogleMap, OpenStreetMap
+         string crsMapUnitStr = ExporterCacheManager.ExportOptionsCache.GeoRefMapUnit;
+         (string projectedCRSName, string projectedCRSDesc, string epsgCode, string geodeticDatum, string uom) crsInfo = (null, null, null, null, null);
+         if (string.IsNullOrEmpty(ExporterCacheManager.ExportOptionsCache.GeoRefEPSGCode))
+         {
+            // Only CRSName is mandatory. Paramater sets in the ProjectInfo will override any value if any
+            if (string.IsNullOrEmpty(epsgCode))
+            {
+               // Try to get the GIS Coordinate System id from SiteLocation
+               crsInfo = OptionsUtil.GetEPSGCodeFromGeoCoordDef(doc.SiteLocation);
+               if (string.IsNullOrEmpty(crsInfo.projectedCRSName))
+               {
+                  // If not set, use the default
+                  epsgCode = defaultEPSGCode;
+               }
+               else
+               {
+                  epsgCode = crsInfo.epsgCode;
+               }
+               crsMapUnitStr = crsInfo.uom;
+            }
+         }
+         else
+         {
+            epsgCode = ExporterCacheManager.ExportOptionsCache.GeoRefEPSGCode;
+         }
+
+         // IFC only "accepts" EPSG. see https://standards.buildingsmart.org/MVD/RELEASE/IFC4/ADD2_TC1/RV1_2/HTML/schema/ifcrepresentationresource/lexical/ifccoordinatereferencesystem.htm
+         if (!epsgCode.StartsWith("EPSG:", StringComparison.InvariantCultureIgnoreCase))
+         {
+            // The value may contain only number, which means it it EPSG:<the number>
+            int epsgNum = -1;
+            if (int.TryParse(epsgCode, out epsgNum))
+            {
+               epsgCode = "EPSG:" + epsgCode;
+            }
+            else
+            {
+               epsgCode = defaultEPSGCode;
+            }
+         }
+
+         double dblVal = double.MinValue;
+         IFCFile file = exporterIFC.GetFile();
+
+         // Explanation:
+         // The Survey Point will carry the Northings and Eastings of the known Survey Point usually near to the project. 
+         //    This is relative to the reference (0,0) of the Map Projection system used (EPSG: xxxx)
+         //    This usually can be accomplished by first locating the Survey Point to the geo reference (0,0) (usually -x, -y of the known coordinate of the Survey point)
+         //       It is then moved back UNCLIPPED to the original location
+         //    This essentially create the shared location at the map reference (0,0)
+
+         SiteTransformBasis wcsBasis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
+         (double eastings, double northings, double orthogonalHeight) geoRefInfo = OptionsUtil.GeoReferenceInformation(doc, wcsBasis);
+         double? xAxisAbscissa = null;
+         double? xAxisOrdinate = null;
+
+         if (TNDirRatio != null)
+         {
+            xAxisAbscissa = TNDirRatio.Count > 0 ? TNDirRatio[1] : 0;
+            xAxisOrdinate = TNDirRatio.Count > 1 ? TNDirRatio[0] : 0;
+         }
+
+         string crsDescription = ExporterCacheManager.ExportOptionsCache.GeoRefCRSDesc;
+         if (string.IsNullOrEmpty(crsDescription) && !string.IsNullOrEmpty(crsInfo.projectedCRSDesc))
+            crsDescription = crsInfo.projectedCRSDesc;
+         string crsGeodeticDatum = ExporterCacheManager.ExportOptionsCache.GeoRefGeodeticDatum;
+         if (string.IsNullOrEmpty(crsGeodeticDatum) && !string.IsNullOrEmpty(crsInfo.geodeticDatum))
+            crsGeodeticDatum = crsInfo.geodeticDatum;
+         string crsVerticalDatum = null;
+         double? scale = null;
+         if (ParameterUtil.GetDoubleValueFromElement(projectInfo, null, "ProjectGlobalPositioning.Scale", out dblVal) != null)
+            scale = dblVal;
+         ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSVerticalDatum", out crsVerticalDatum);
+         string crsMapProjection = null;
+         ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSMapProjection", out crsMapProjection);
+         string crsMapZone = null;
+         ParameterUtil.GetStringValueFromElement(projectInfo, "ProjectGlobalPositioning.CRSMapZone", out crsMapZone);
+
+         // Handle map unit
+         IFCAnyHandle crsMapUnit = null;
+         if (!string.IsNullOrEmpty(crsMapUnitStr))
+         {
+            if (crsMapUnitStr.EndsWith("Metre", StringComparison.InvariantCultureIgnoreCase))
+            {
+               IFCSIPrefix? prefix = null;
+               if (crsMapUnitStr.Length > 5)
+               {
+                  string prefixStr = crsMapUnitStr.Substring(0, crsMapUnitStr.Length - 5);
+                  if (Enum.TryParse(prefixStr, true, out IFCSIPrefix prefixEnum))
+                     prefix = prefixEnum;
+               }
+               crsMapUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.LengthUnit, prefix, IFCSIUnitName.Metre);
+            }
+            else
+            {
+               double lengthScaleFactor = 1.0;
+               if (crsMapUnitStr.Equals("inch", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  lengthScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_DECIMAL_INCHES);
+               }
+               else if (crsMapUnitStr.Equals("foot", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  lengthScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_DECIMAL_FEET);
+               }
+               else if (crsMapUnitStr.Equals("yard", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  lengthScaleFactor = 1/3;
+               }
+               else if (crsMapUnitStr.Equals("mile", StringComparison.InvariantCultureIgnoreCase))
+               {
+                  lengthScaleFactor = 1/5280;
+               }
+               
+               double lengthSIScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_METERS) / lengthScaleFactor;
+               IFCAnyHandle lenDims = IFCInstanceExporter.CreateDimensionalExponents(file, 1, 0, 0, 0, 0, 0, 0); // length
+               IFCAnyHandle lenSIUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.LengthUnit, null, IFCSIUnitName.Metre);
+               IFCAnyHandle lenConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(lengthSIScaleFactor),
+                   lenSIUnit);
+
+               crsMapUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, lenDims, IFCUnit.LengthUnit, crsMapUnitStr, lenConvFactor);
+            }
+         }
+
+         IFCAnyHandle projectedCRS = null;
+         projectedCRS = IFCInstanceExporter.CreateProjectedCRS(file, epsgCode, crsDescription, crsGeodeticDatum, crsVerticalDatum, crsMapProjection, crsMapZone, crsMapUnit);
+
+         // Only eastings, northings, and orthogonalHeight are mandatory beside the CRSSource (GeometricRepresentationContext) and CRSTarget (ProjectedCRS)
+         double eastings = UnitUtil.ScaleLength(geoRefInfo.eastings);
+         double northings = UnitUtil.ScaleLength(geoRefInfo.northings);
+         double orthogonalHeight = UnitUtil.ScaleLength(geoRefInfo.orthogonalHeight);
+         IFCAnyHandle mapConversionHnd = IFCInstanceExporter.CreateMapConversion(file, geomRepContext, projectedCRS, eastings, northings, orthogonalHeight, xAxisAbscissa, xAxisOrdinate, scale);
+
+         return true;
       }
    }
 }

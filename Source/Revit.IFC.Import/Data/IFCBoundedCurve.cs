@@ -50,7 +50,7 @@ namespace Revit.IFC.Import.Data
             Importer.TheLog.LogNullError(IFCEntityType.IfcBoundedCurve);
             return null;
          }
-         if (IFCImportFile.TheFile.SchemaVersion > IFCSchemaVersion.IFC2x && IFCAnyHandleUtil.IsValidSubTypeOf(ifcBoundedCurve, IFCEntityType.IfcBSplineCurve))
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) && IFCAnyHandleUtil.IsValidSubTypeOf(ifcBoundedCurve, IFCEntityType.IfcBSplineCurve))
             return IFCBSplineCurve.ProcessIFCBSplineCurve(ifcBoundedCurve);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBoundedCurve, IFCEntityType.IfcCompositeCurve))
             return IFCCompositeCurve.ProcessIFCCompositeCurve(ifcBoundedCurve);
@@ -58,7 +58,7 @@ namespace Revit.IFC.Import.Data
             return IFCPolyline.ProcessIFCPolyline(ifcBoundedCurve);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBoundedCurve, IFCEntityType.IfcTrimmedCurve))
             return IFCTrimmedCurve.ProcessIFCTrimmedCurve(ifcBoundedCurve);
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4 && IFCAnyHandleUtil.IsValidSubTypeOf(ifcBoundedCurve, IFCEntityType.IfcIndexedPolyCurve))
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && IFCAnyHandleUtil.IsValidSubTypeOf(ifcBoundedCurve, IFCEntityType.IfcIndexedPolyCurve))
             return IFCIndexedPolyCurve.ProcessIFCIndexedPolyCurve(ifcBoundedCurve);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcBoundedCurve, IFCEntityType.IfcBoundedCurve, true);

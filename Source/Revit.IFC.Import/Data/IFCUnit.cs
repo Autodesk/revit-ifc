@@ -40,28 +40,28 @@ namespace Revit.IFC.Import.Data
 
       double m_OffsetFactor = 0.0;
 
-      ForgeTypeId m_SpecTypeId = new ForgeTypeId();
+      UnitType m_UnitType = UnitType.UT_Undefined;
 
-      // only used if Spec = SpecTypeId.Custom.
+      // only used if Spec = UnitType.UT_Custom.
       string m_CustomSpec = null;
 
-      ForgeTypeId m_SymbolTypeId = new ForgeTypeId();
+      UnitSymbolType m_SymbolTypeId = UnitSymbolType.UST_NONE;
 
-      ForgeTypeId m_UnitTypeId = new ForgeTypeId();
+      DisplayUnitType m_UnitTypeId = DisplayUnitType.DUT_UNDEFINED;
 
       UnitSystem m_UnitSystem = UnitSystem.Metric;
 
       static IDictionary<string, double> m_sPrefixToScaleFactor = null;
 
-      static IDictionary<ForgeTypeId, IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>>> m_sSupportedMetricUnitTypes = null;
+      static IDictionary<UnitType, IDictionary<string, Tuple<DisplayUnitType, UnitSymbolType>>> m_sSupportedMetricUnitTypes = null;
 
       /// <summary>
       /// The type of unit, such as Length.
       /// </summary>
-      public ForgeTypeId Spec
+      public UnitType Spec
       {
-         get { return m_SpecTypeId; }
-         protected set { m_SpecTypeId = value; }
+         get { return m_UnitType; }
+         protected set { m_UnitType = value; }
       }
 
       /// <summary>
@@ -85,7 +85,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The unit identifier, such as Meters.
       /// </summary>
-      public ForgeTypeId Unit
+      public DisplayUnitType Unit
       {
          get { return m_UnitTypeId; }
          protected set { m_UnitTypeId = value; }
@@ -94,7 +94,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The unit symbols, such as "m" for meters.
       /// </summary>
-      public ForgeTypeId Symbol
+      public UnitSymbolType Symbol
       {
          get { return m_SymbolTypeId; }
          protected set { m_SymbolTypeId = value; }
@@ -140,7 +140,7 @@ namespace Revit.IFC.Import.Data
          if (unit == null)
             return true;
 
-         return (unit.Spec.Empty() || unit.Unit.Empty());
+         return (unit.Spec == UnitType.UT_Undefined || unit.Unit == DisplayUnitType.DUT_UNDEFINED);
       }
 
       /// <summary>
@@ -223,94 +223,99 @@ namespace Revit.IFC.Import.Data
          m_sPrefixToScaleFactor["ATTO"] = 1e-18;
       }
 
-      private IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>> GetSupportedDisplayTypes(ForgeTypeId specTypeId)
+      private IDictionary<string, Tuple<DisplayUnitType, UnitSymbolType>> GetSupportedDisplayTypes(UnitType unitType)
       {
          if (m_sSupportedMetricUnitTypes == null)
-            m_sSupportedMetricUnitTypes = new Dictionary<ForgeTypeId, IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>>>();
+            m_sSupportedMetricUnitTypes = new Dictionary<UnitType, IDictionary<string, Tuple<DisplayUnitType, UnitSymbolType>>>();
 
-         IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>> supportedTypes = null;
-         if (!m_sSupportedMetricUnitTypes.TryGetValue(specTypeId, out supportedTypes))
+         IDictionary<string, Tuple<DisplayUnitType, UnitSymbolType>> supportedTypes = null;
+         if (!m_sSupportedMetricUnitTypes.TryGetValue(unitType, out supportedTypes))
          {
-            supportedTypes = new Dictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>>();
-            if (specTypeId.Equals(SpecTypeId.Area))
+            supportedTypes = new Dictionary<string, Tuple<DisplayUnitType, UnitSymbolType>>();
+            switch (unitType)
             {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.SquareMeters, SymbolTypeId.MSup2);
-               supportedTypes["CENTI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.SquareCentimeters, SymbolTypeId.CmSup2);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.SquareMillimeters, SymbolTypeId.MmSup2);
+               case UnitType.UT_Area:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_SQUARE_METERS, UnitSymbolType.UST_M_SUP_2);
+                  supportedTypes["CENTI"] = Tuple.Create(DisplayUnitType.DUT_SQUARE_CENTIMETERS, UnitSymbolType.UST_CM_SUP_2);
+                  supportedTypes["MILLI"] = Tuple.Create(DisplayUnitType.DUT_SQUARE_MILLIMETERS, UnitSymbolType.UST_MM_SUP_2);
+                  break;
+
+               case UnitType.UT_Electrical_Current:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_AMPERES, UnitSymbolType.UST_AMPERE);
+                  supportedTypes["KILO"] = Tuple.Create(DisplayUnitType.DUT_KILOAMPERES, UnitSymbolType.UST_KILOAMPERE);
+                  supportedTypes["MILLI"] = Tuple.Create(DisplayUnitType.DUT_MILLIAMPERES, UnitSymbolType.UST_MILLIAMPERE);
+                  break;
+
+               case UnitType.UT_Electrical_Frequency:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_HERTZ, UnitSymbolType.UST_HZ);
+                  break;
+
+               case UnitType.UT_Electrical_Illuminance:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_LUX, UnitSymbolType.UST_LX);
+                  break;
+
+               case UnitType.UT_Electrical_Luminous_Flux:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_LUMENS, UnitSymbolType.UST_LM);
+                  break;
+
+               case UnitType.UT_Electrical_Luminous_Intensity:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_CANDELAS, UnitSymbolType.UST_CD);
+                  break;
+
+               case UnitType.UT_Electrical_Potential:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_VOLTS, UnitSymbolType.UST_VOLT);
+                  supportedTypes["KILO"] = Tuple.Create(DisplayUnitType.DUT_KILOVOLTS, UnitSymbolType.UST_KILOVOLT);
+                  supportedTypes["MILLI"] = Tuple.Create(DisplayUnitType.DUT_MILLIVOLTS, UnitSymbolType.UST_MILLIVOLT);
+                  break;
+
+               case UnitType.UT_Force:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_NEWTONS, UnitSymbolType.UST_N);    // Even if unit is grams, display kg.
+                  supportedTypes["KILO"] = Tuple.Create(DisplayUnitType.DUT_KILONEWTONS, UnitSymbolType.UST_K_N);
+                  break;
+
+               case UnitType.UT_HVAC_Power:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_WATTS, UnitSymbolType.UST_WATT);
+                  break;
+
+               case UnitType.UT_HVAC_Pressure:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_PASCALS, UnitSymbolType.UST_PASCAL);
+                  supportedTypes["KILO"] = Tuple.Create(DisplayUnitType.DUT_KILOPASCALS, UnitSymbolType.UST_PASCAL);
+                  supportedTypes["MEGA"] = Tuple.Create(DisplayUnitType.DUT_MEGAPASCALS, UnitSymbolType.UST_MEGAPASCAL);
+                  break;
+
+               case UnitType.UT_Length:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_METERS, UnitSymbolType.UST_M);
+                  supportedTypes["CENTI"] = Tuple.Create(DisplayUnitType.DUT_CENTIMETERS, UnitSymbolType.UST_CM);
+                  supportedTypes["MILLI"] = Tuple.Create(DisplayUnitType.DUT_MILLIMETERS, UnitSymbolType.UST_MM);
+                  break;
+
+               case UnitType.UT_Mass:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_KILOGRAMS_MASS, UnitSymbolType.UST_KGM);    // Even if unit is grams, display kg.
+                  supportedTypes["KILO"] = Tuple.Create(DisplayUnitType.DUT_KILOGRAMS_MASS, UnitSymbolType.UST_KGM);
+                  break;
+
+               case UnitType.UT_MassDensity:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_KILOGRAMS_PER_CUBIC_METER, UnitSymbolType.UST_KG_PER_CU_M);    // Even if unit is grams, display kg.
+                  supportedTypes["KILO"] = Tuple.Create(DisplayUnitType.DUT_KILOGRAMS_PER_CUBIC_METER, UnitSymbolType.UST_KG_PER_CU_M);
+                  break;
+
+               case UnitType.UT_Volume:
+                  supportedTypes[""] = Tuple.Create(DisplayUnitType.DUT_CUBIC_METERS, UnitSymbolType.UST_M_SUP_3);
+                  supportedTypes["DECI"] = Tuple.Create(DisplayUnitType.DUT_LITERS, UnitSymbolType.UST_L);
+                  supportedTypes["CENTI"] = Tuple.Create(DisplayUnitType.DUT_CUBIC_CENTIMETERS, UnitSymbolType.UST_CM_SUP_3);
+                  supportedTypes["MILLI"] = Tuple.Create(DisplayUnitType.DUT_CUBIC_MILLIMETERS, UnitSymbolType.UST_MM_SUP_3);
+                  break;
+
+               default:
+                  break;
             }
-            else if (specTypeId.Equals(SpecTypeId.Current))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Amperes, SymbolTypeId.Ampere);
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kiloamperes, SymbolTypeId.KA);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Milliamperes, SymbolTypeId.MA);
-            }
-            else if (specTypeId.Equals(SpecTypeId.ElectricalFrequency))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Hertz, SymbolTypeId.Hz);
-            }
-            else if (specTypeId.Equals(SpecTypeId.Illuminance))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Lux, SymbolTypeId.Lx);
-            }
-            else if (specTypeId.Equals(SpecTypeId.LuminousFlux))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Lumens, SymbolTypeId.Lm);
-            }
-            else if (specTypeId.Equals(SpecTypeId.LuminousIntensity))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Candelas, SymbolTypeId.Cd);
-            }
-            else if (specTypeId.Equals(SpecTypeId.ElectricalPotential))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Volts, SymbolTypeId.Volt);
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilovolts, SymbolTypeId.KV);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Millivolts, SymbolTypeId.MV);
-            }
-            else if (specTypeId.Equals(SpecTypeId.Force))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Newtons, SymbolTypeId.Newton);    // Even if unit is grams, display kg.
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilonewtons, SymbolTypeId.KN);
-            }
-            else if (specTypeId.Equals(SpecTypeId.HvacPower))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Watts, SymbolTypeId.Watt);
-            }
-            else if (specTypeId.Equals(SpecTypeId.HvacPressure))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Pascals, SymbolTypeId.Pa);
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilopascals, SymbolTypeId.KPa);
-               supportedTypes["MEGA"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Megapascals, SymbolTypeId.MPa);
-            }
-            else if (specTypeId.Equals(SpecTypeId.Length))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Meters, SymbolTypeId.Meter);
-               supportedTypes["CENTI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Centimeters, SymbolTypeId.Cm);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Millimeters, SymbolTypeId.Mm);
-            }
-            else if (specTypeId.Equals(SpecTypeId.Mass))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilograms, SymbolTypeId.Kg);    // Even if unit is grams, display kg.
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Kilograms, SymbolTypeId.Kg);
-            }
-            else if (specTypeId.Equals(SpecTypeId.MassDensity))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);    // Even if unit is grams, display kg.
-               supportedTypes["KILO"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);
-            }
-            else if (specTypeId.Equals(SpecTypeId.Volume))
-            {
-               supportedTypes[""] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.CubicMeters, SymbolTypeId.MSup3);
-               supportedTypes["DECI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.Liters, SymbolTypeId.Liter);
-               supportedTypes["CENTI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.CubicCentimeters, SymbolTypeId.CmSup3);
-               supportedTypes["MILLI"] = new KeyValuePair<ForgeTypeId, ForgeTypeId>(UnitTypeId.CubicMillimeters, SymbolTypeId.MmSup3);
-            }
-            m_sSupportedMetricUnitTypes[specTypeId] = supportedTypes;
+            m_sSupportedMetricUnitTypes[unitType] = supportedTypes;
          }
 
          return supportedTypes;
       }
 
-      private double GetScaleFactorForUnitType(string prefix, ForgeTypeId specTypeId)
+      private double GetScaleFactorForUnitType(string prefix, UnitType unitType)
       {
          double scaleFactor = m_sPrefixToScaleFactor[prefix];
 
@@ -319,34 +324,34 @@ namespace Revit.IFC.Import.Data
          const double volumeFactor = areaFactor * lengthFactor;
 
          // length ^ -2
-         if (specTypeId.Equals(SpecTypeId.Illuminance))
+         if (unitType == UnitType.UT_Electrical_Illuminance)
          {
             return (scaleFactor * scaleFactor) / areaFactor;
          }
          // length ^ -1
-         if (specTypeId.Equals(SpecTypeId.HvacPressure))
+         if (unitType == UnitType.UT_HVAC_Pressure)
          {
             return scaleFactor / lengthFactor;
          }
          // length
-         if (specTypeId.Equals(SpecTypeId.Force) ||
-            specTypeId.Equals(SpecTypeId.Length))
+         if (unitType == UnitType.UT_Force ||
+            unitType == UnitType.UT_Length)
          {
             return (scaleFactor * lengthFactor);
          }
          // length ^ 2
-         if (specTypeId.Equals(SpecTypeId.Area) ||
-            specTypeId.Equals(SpecTypeId.ElectricalPotential) ||
-            specTypeId.Equals(SpecTypeId.HvacPower))
+         if (unitType == UnitType.UT_Area ||
+            unitType == UnitType.UT_Electrical_Potential ||
+            unitType == UnitType.UT_HVAC_Power)
          {
             return (scaleFactor * scaleFactor) * areaFactor;
          }
          // length ^ 3
-         if (specTypeId.Equals(SpecTypeId.Volume))
+         if (unitType == UnitType.UT_Volume)
          {
             return (scaleFactor * scaleFactor * scaleFactor) * volumeFactor;
          }
-         if (specTypeId.Equals(SpecTypeId.Mass))
+         if (unitType == UnitType.UT_Mass)
          {
             return (scaleFactor / 1000.0);   // Standard internal scale is kg.
          }
@@ -357,14 +362,14 @@ namespace Revit.IFC.Import.Data
       /// Processes the metric prefix of a dimension.
       /// </summary>
       /// <param name="prefix">The prefix name.</param>
-      /// <param name="specTypeId">The spec identifier.</param>
+      /// <param name="UnitType.UT_">The spec identifier.</param>
       /// <returns>True if the prefix is supported, false if not.</returns>
-      private bool ProcessMetricPrefix(string prefix, ForgeTypeId specTypeId)
+      private bool ProcessMetricPrefix(string prefix, UnitType unitType)
       {
          if (prefix == null)
             prefix = "";
 
-         IDictionary<string, KeyValuePair<ForgeTypeId, ForgeTypeId>> supportedDisplayTypes = GetSupportedDisplayTypes(specTypeId);
+         IDictionary<string, Tuple<DisplayUnitType, UnitSymbolType>> supportedDisplayTypes = GetSupportedDisplayTypes(unitType);
          if (!supportedDisplayTypes.ContainsKey(prefix))
             return false;
 
@@ -374,10 +379,10 @@ namespace Revit.IFC.Import.Data
          if (!m_sPrefixToScaleFactor.ContainsKey(prefix))
             return false;
 
-         KeyValuePair<ForgeTypeId, ForgeTypeId> unitNameAndSymbol = supportedDisplayTypes[prefix];
-         Unit = unitNameAndSymbol.Key;
-         Symbol = unitNameAndSymbol.Value;
-         ScaleFactor *= GetScaleFactorForUnitType(prefix, specTypeId);
+         Tuple<DisplayUnitType, UnitSymbolType> unitNameAndSymbol = supportedDisplayTypes[prefix];
+         Unit = unitNameAndSymbol.Item1;
+         Symbol = unitNameAndSymbol.Item2;
+         ScaleFactor *= GetScaleFactorForUnitType(prefix, unitType);
          return true;
       }
 
@@ -389,16 +394,16 @@ namespace Revit.IFC.Import.Data
          /// <summary>
          /// DerivedUnitExpectedTypes constructor.
          /// </summary>
-         public DerivedUnitExpectedTypes(ForgeTypeId unitTypeId, ForgeTypeId symbolTypeId)
+         public DerivedUnitExpectedTypes(DisplayUnitType displayUnitTypeId, UnitSymbolType symbolTypeId)
          {
-            Unit = unitTypeId;
+            Unit = displayUnitTypeId;
             Symbol = symbolTypeId;
          }
 
          /// <summary>
          /// The set of expected types.
          /// </summary>
-         public ISet<Tuple<int, ForgeTypeId, string>> ExpectedTypes
+         public ISet<Tuple<int, UnitType, string>> ExpectedTypes
          {
             get { return m_ExpectedTypes; }
          }
@@ -406,17 +411,17 @@ namespace Revit.IFC.Import.Data
          /// <summary>
          /// The unit name of this set of expected types.
          /// </summary>
-         public ForgeTypeId Unit { get; protected set; }
+         public DisplayUnitType Unit { get; protected set; }
 
          /// <summary>
          /// The unit symbol type of this set of expected types.
          /// </summary>
-         public ForgeTypeId Symbol { get; protected set; }
+         public UnitSymbolType Symbol { get; protected set; }
 
-         private ISet<Tuple<int, ForgeTypeId, string>> ExpectedTypesCopy()
+         private ISet<Tuple<int, UnitType, string>> ExpectedTypesCopy()
          {
-            ISet<Tuple<int, ForgeTypeId, string>> expectedTypesCopy = new HashSet<Tuple<int, ForgeTypeId, string>>();
-            foreach (Tuple<int, ForgeTypeId, string> expectedType in ExpectedTypes)
+            ISet<Tuple<int, UnitType, string>> expectedTypesCopy = new HashSet<Tuple<int, UnitType, string>>();
+            foreach (Tuple<int, UnitType, string> expectedType in ExpectedTypes)
             {
                expectedTypesCopy.Add(expectedType);
             }
@@ -427,10 +432,10 @@ namespace Revit.IFC.Import.Data
          /// Add a standard expected type.
          /// </summary>
          /// <param name="exponent">The exponent of the type.</param>
-         /// <param name="specTypeId">The spec identifier.</param>
-         public void AddExpectedType(int exponent, ForgeTypeId specTypeId)
+         /// <param name="UnitType.UT_">The spec identifier.</param>
+         public void AddExpectedType(int exponent, UnitType unitType)
          {
-            ExpectedTypes.Add(new Tuple<int, ForgeTypeId, string>(exponent, specTypeId, null));
+            ExpectedTypes.Add(new Tuple<int, UnitType, string>(exponent, unitType, null));
          }
 
          /// <summary>
@@ -440,26 +445,26 @@ namespace Revit.IFC.Import.Data
          /// <param name="unitName">The name of the base unit.</param>
          public void AddCustomExpectedType(int exponent, string unitName)
          {
-            ExpectedTypes.Add(new Tuple<int, ForgeTypeId, string>(exponent, SpecTypeId.Custom, unitName));
+            ExpectedTypes.Add(Tuple.Create(exponent, UnitType.UT_Custom, unitName));
          }
 
-         public bool Matches(IList<KeyValuePair<IFCUnit, int>> derivedElementUnitHnds, out double scaleFactor)
+         public bool Matches(IList<Tuple<IFCUnit, int>> derivedElementUnitHnds, out double scaleFactor)
          {
             scaleFactor = 1.0;
 
             if (derivedElementUnitHnds.Count != ExpectedTypes.Count)
                return false;
 
-            ISet<Tuple<int, ForgeTypeId, string>> expectedTypes = ExpectedTypesCopy();
+            ISet<Tuple<int, UnitType, string>> expectedTypes = ExpectedTypesCopy();
 
-            foreach (KeyValuePair<IFCUnit, int> derivedElementUnitHnd in derivedElementUnitHnds)
+            foreach (Tuple<IFCUnit, int> derivedElementUnitHnd in derivedElementUnitHnds)
             {
-               int dimensionality = derivedElementUnitHnd.Value;
-               Tuple<int, ForgeTypeId, string> currKey = new Tuple<int, ForgeTypeId, string>(dimensionality, derivedElementUnitHnd.Key.Spec, derivedElementUnitHnd.Key.CustomSpec);
+               int dimensionality = derivedElementUnitHnd.Item2;
+               Tuple<int, UnitType, string> currKey = Tuple.Create(dimensionality, derivedElementUnitHnd.Item1.Spec, derivedElementUnitHnd.Item1.CustomSpec);
                if (expectedTypes.Contains(currKey))
                {
                   expectedTypes.Remove(currKey);
-                  scaleFactor *= Math.Pow(derivedElementUnitHnd.Key.ScaleFactor, dimensionality);
+                  scaleFactor *= Math.Pow(derivedElementUnitHnd.Item1.ScaleFactor, dimensionality);
                }
                else
                   break;
@@ -472,7 +477,7 @@ namespace Revit.IFC.Import.Data
             return true;
          }
 
-         private ISet<Tuple<int, ForgeTypeId, string>> m_ExpectedTypes = new HashSet<Tuple<int, ForgeTypeId, string>>();
+         private ISet<Tuple<int, UnitType, string>> m_ExpectedTypes = new HashSet<Tuple<int, UnitType, string>>();
       }
 
       /// <summary>
@@ -484,7 +489,7 @@ namespace Revit.IFC.Import.Data
          List<IFCAnyHandle> elements =
              IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(unitHnd, "Elements");
 
-         IList<KeyValuePair<IFCUnit, int>> derivedElementUnitHnds = new List<KeyValuePair<IFCUnit, int>>();
+         IList<Tuple<IFCUnit, int>> derivedElementUnitHnds = new List<Tuple<IFCUnit, int>>();
          foreach (IFCAnyHandle subElement in elements)
          {
             IFCAnyHandle derivedElementUnitHnd = IFCImportHandleUtil.GetRequiredInstanceAttribute(subElement, "Unit", false);
@@ -494,7 +499,7 @@ namespace Revit.IFC.Import.Data
                bool found;
                int exponent = IFCImportHandleUtil.GetRequiredIntegerAttribute(subElement, "Exponent", out found);
                if (found)
-                  derivedElementUnitHnds.Add(new KeyValuePair<IFCUnit, int>(subUnit, exponent));
+                  derivedElementUnitHnds.Add(Tuple.Create(subUnit, exponent));
             }
          }
 
@@ -503,141 +508,153 @@ namespace Revit.IFC.Import.Data
          IList<DerivedUnitExpectedTypes> expectedTypesList = new List<DerivedUnitExpectedTypes>();
 
          string unitType = IFCAnyHandleUtil.GetEnumerationAttribute(unitHnd, "UnitType");
-         if (string.Compare(unitType, "LINEARVELOCITYUNIT", true) == 0)
+         switch (unitType)
          {
-            Spec = SpecTypeId.HvacVelocity;
-            UnitSystem = UnitSystem.Metric;
-
-            // Support only m / s.
-            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.MetersPerSecond, SymbolTypeId.MPerS);
-            expectedTypes.AddExpectedType(1, SpecTypeId.Length);
-            expectedTypes.AddCustomExpectedType(-1, "TIMEUNIT");
-            expectedTypesList.Add(expectedTypes);
-         }
-         else if (string.Compare(unitType, "THERMALTRANSMITTANCEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.HeatTransferCoefficient;
-            UnitSystem = UnitSystem.Metric;
-
-            // Support W / (K * m^2) or kg / (K * s^3)
-            DerivedUnitExpectedTypes expectedTypesWinvKinvM2 = new DerivedUnitExpectedTypes(UnitTypeId.WattsPerSquareMeterKelvin, SymbolTypeId.WPerMSup2K);
-            expectedTypesWinvKinvM2.AddExpectedType(1, SpecTypeId.HvacPower); // UT_Electrical_Wattage is similar, but UT_HVAC_Power is the one we map to.
-            expectedTypesWinvKinvM2.AddExpectedType(-1, SpecTypeId.HvacTemperature);
-            expectedTypesWinvKinvM2.AddExpectedType(-2, SpecTypeId.Length);
-            expectedTypesList.Add(expectedTypesWinvKinvM2);
-
-            DerivedUnitExpectedTypes expectedTypesWinvKinvArea = new DerivedUnitExpectedTypes(UnitTypeId.WattsPerSquareMeterKelvin, SymbolTypeId.WPerMSup2K);
-            expectedTypesWinvKinvArea.AddExpectedType(1, SpecTypeId.HvacPower); // UT_Electrical_Wattage is similar, but UT_HVAC_Power is the one we map to.
-            expectedTypesWinvKinvArea.AddExpectedType(-1, SpecTypeId.HvacTemperature);
-            expectedTypesWinvKinvArea.AddExpectedType(-1, SpecTypeId.Area);
-            expectedTypesList.Add(expectedTypesWinvKinvArea);
-
-            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.WattsPerSquareMeterKelvin, SymbolTypeId.WPerMSup2K);
-            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
-            expectedTypes.AddExpectedType(-1, SpecTypeId.HvacTemperature);
-            expectedTypes.AddCustomExpectedType(-3, "TIMEUNIT");
-            expectedTypesList.Add(expectedTypes);
-         }
-         else if (string.Compare(unitType, "VOLUMETRICFLOWRATEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.AirFlow;
-            UnitSystem = UnitSystem.Metric;
-
-            // Support L / s or m^3 / s in the IFC file.
-
-            // L / s
-            DerivedUnitExpectedTypes expectedTypesLPerS = new DerivedUnitExpectedTypes(UnitTypeId.LitersPerSecond, SymbolTypeId.LPerS);
-            expectedTypesLPerS.AddExpectedType(1, SpecTypeId.Volume);
-            expectedTypesLPerS.AddCustomExpectedType(-1, "TIMEUNIT");
-            expectedTypesList.Add(expectedTypesLPerS);
-
-            // m^3 / s.
-            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.CubicMetersPerSecond, SymbolTypeId.MSup3PerS);
-            expectedTypes.AddExpectedType(3, SpecTypeId.Length);
-            expectedTypes.AddCustomExpectedType(-1, "TIMEUNIT");
-            expectedTypesList.Add(expectedTypes);
-         }
-         else if (string.Compare(unitType, "MASSDENSITYUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.MassDensity;
-            UnitSystem = UnitSystem.Metric;
-
-            // Support kg / m^3 in the IFC file.
-
-            // kg / m^3.
-            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);
-            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
-            expectedTypes.AddExpectedType(-3, SpecTypeId.Length);
-            expectedTypesList.Add(expectedTypes);
-         }
-         else if (string.Compare(unitType, "LINEARFORCEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.LinearForce;
-            UnitSystem = UnitSystem.Metric;
-
-            // Support N / m in the IFC file.
-            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.NewtonsPerMeter, SymbolTypeId.NPerM);
-            expectedTypes.AddExpectedType(1, SpecTypeId.LinearForce);
-            expectedTypesList.Add(expectedTypes);
-
-            // Support N / m in basic units
-            DerivedUnitExpectedTypes expectedTypes2 = new DerivedUnitExpectedTypes(UnitTypeId.NewtonsPerMeter, SymbolTypeId.NPerM);
-            expectedTypes2.AddExpectedType(1, SpecTypeId.Mass);
-            expectedTypes2.AddExpectedType(1, SpecTypeId.Length);
-            expectedTypes2.AddCustomExpectedType(-2, "TIMEUNIT");
-            expectedTypes2.AddExpectedType(-1, SpecTypeId.Length);
-            expectedTypesList.Add(expectedTypes2);
-         }
-         else if (string.Compare(unitType, "PLANARFORCEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.AreaForce;
-            UnitSystem = UnitSystem.Metric;
-
-            // Support N / m^2 in the IFC file.
-            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.NewtonsPerSquareMeter, SymbolTypeId.NPerMSup2);
-            expectedTypes.AddExpectedType(1, SpecTypeId.AreaForce);
-            expectedTypesList.Add(expectedTypes);
-
-            // Support N / m in basic units
-            DerivedUnitExpectedTypes expectedTypes2 = new DerivedUnitExpectedTypes(UnitTypeId.NewtonsPerSquareMeter, SymbolTypeId.NPerMSup2);
-            expectedTypes2.AddExpectedType(1, SpecTypeId.Mass);
-            expectedTypes2.AddExpectedType(1, SpecTypeId.Length);
-            expectedTypes2.AddCustomExpectedType(-2, "TIMEUNIT");
-            expectedTypes2.AddExpectedType(-2, SpecTypeId.Length);
-            expectedTypesList.Add(expectedTypes2);
-         }
-         else if (string.Compare(unitType, "USERDEFINED", true) == 0)
-         {
-            // Look at the sub-types to see what we support.
-            string userDefinedType = IFCImportHandleUtil.GetOptionalStringAttribute(unitHnd, "UserDefinedType", null);
-            if (!string.IsNullOrWhiteSpace(userDefinedType))
-            {
-               if (string.Compare(userDefinedType, "Luminous Efficacy", true) == 0)
+            case "LINEARVELOCITYUNIT":
                {
-                  Spec = SpecTypeId.Efficacy;
+                  Spec = UnitType.UT_HVAC_Velocity;
                   UnitSystem = UnitSystem.Metric;
 
-                  // Support only lm / W.
-                  DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.LumensPerWatt, SymbolTypeId.LmPerW);
-                  expectedTypes.AddExpectedType(-1, SpecTypeId.Mass);
-                  expectedTypes.AddExpectedType(-2, SpecTypeId.Length);
-                  expectedTypes.AddCustomExpectedType(3, "TIMEUNIT");
-                  expectedTypes.AddExpectedType(1, SpecTypeId.LuminousFlux);
+                  // Support only m / s.
+                  DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_METERS_PER_SECOND, UnitSymbolType.UST_M_PER_S);
+                  expectedTypes.AddExpectedType(1, UnitType.UT_Length);
+                  expectedTypes.AddCustomExpectedType(-1, "TIMEUNIT");
                   expectedTypesList.Add(expectedTypes);
                }
-               else if (string.Compare(userDefinedType, "Friction Loss", true) == 0)
+               break;
+            case "THERMALTRANSMITTANCEUNIT":
                {
-                  Spec = SpecTypeId.HvacFriction;
+                  Spec = UnitType.UT_HVAC_CoefficientOfHeatTransfer;
                   UnitSystem = UnitSystem.Metric;
 
-                  // Support only Pa / m.
-                  DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.PascalsPerMeter, SymbolTypeId.PaPerM);
-                  expectedTypes.AddExpectedType(-2, SpecTypeId.Length);
-                  expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
-                  expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+                  // Support W / (K * m^2) or kg / (K * s^3)
+                  DerivedUnitExpectedTypes expectedTypesWinvKinvM2 = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_WATTS_PER_SQUARE_METER_KELVIN, UnitSymbolType.UST_WATT_PER_SQ_M_K);
+                  expectedTypesWinvKinvM2.AddExpectedType(1, UnitType.UT_HVAC_Power); // UT_Electrical_Wattage is similar, but UT_HVAC_Power is the one we map to.
+                  expectedTypesWinvKinvM2.AddExpectedType(-1, UnitType.UT_HVAC_Temperature);
+                  expectedTypesWinvKinvM2.AddExpectedType(-2, UnitType.UT_Length);
+                  expectedTypesList.Add(expectedTypesWinvKinvM2);
+
+                  DerivedUnitExpectedTypes expectedTypesWinvKinvArea = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_WATTS_PER_SQUARE_METER_KELVIN, UnitSymbolType.UST_WATT_PER_SQ_M_K);
+                  expectedTypesWinvKinvArea.AddExpectedType(1, UnitType.UT_HVAC_Power); // UT_Electrical_Wattage is similar, but UT_HVAC_Power is the one we map to.
+                  expectedTypesWinvKinvArea.AddExpectedType(-1, UnitType.UT_HVAC_Temperature);
+                  expectedTypesWinvKinvArea.AddExpectedType(-1, UnitType.UT_Area);
+                  expectedTypesList.Add(expectedTypesWinvKinvArea);
+
+                  DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_WATTS_PER_SQUARE_METER_KELVIN, UnitSymbolType.UST_WATT_PER_SQ_M_K);
+                  expectedTypes.AddExpectedType(1, UnitType.UT_Mass);
+                  expectedTypes.AddExpectedType(-1, UnitType.UT_HVAC_Temperature);
+                  expectedTypes.AddCustomExpectedType(-3, "TIMEUNIT");
                   expectedTypesList.Add(expectedTypes);
                }
-            }
+               break;
+            case "VOLUMETRICFLOWRATEUNIT":
+               {
+                  Spec = UnitType.UT_HVAC_Airflow;
+                  UnitSystem = UnitSystem.Metric;
+
+                  // Support L / s or m^3 / s in the IFC file.
+
+                  // L / s
+                  DerivedUnitExpectedTypes expectedTypesLPerS = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_LITERS_PER_SECOND, UnitSymbolType.UST_LPS);
+                  expectedTypesLPerS.AddExpectedType(1, UnitType.UT_Volume);
+                  expectedTypesLPerS.AddCustomExpectedType(-1, "TIMEUNIT");
+                  expectedTypesList.Add(expectedTypesLPerS);
+
+                  // m^3 / s.
+                  DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_CUBIC_METERS_PER_SECOND, UnitSymbolType.UST_CU_M_PER_S);
+                  expectedTypes.AddExpectedType(3, UnitType.UT_Length);
+                  expectedTypes.AddCustomExpectedType(-1, "TIMEUNIT");
+                  expectedTypesList.Add(expectedTypes);
+               }
+               break;
+            case "MASSDENSITYUNIT":
+               {
+                  Spec = UnitType.UT_MassDensity;
+                  UnitSystem = UnitSystem.Metric;
+
+                  // Support kg / m^3 in the IFC file.
+
+                  // kg / m^3.
+                  DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_KILOGRAMS_PER_CUBIC_METER, UnitSymbolType.UST_KG_PER_CU_M);
+                  expectedTypes.AddExpectedType(1, UnitType.UT_Mass);
+                  expectedTypes.AddExpectedType(-3, UnitType.UT_Length);
+                  expectedTypesList.Add(expectedTypes);
+               }
+               break;
+            case "LINEARFORCEUNIT":
+               {
+                  Spec = UnitType.UT_LinearForce;
+                  UnitSystem = UnitSystem.Metric;
+
+                  // Support N / m in the IFC file.
+                  DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_NEWTONS_PER_METER, UnitSymbolType.UST_N_PER_M);
+                  expectedTypes.AddExpectedType(1, UnitType.UT_LinearForce);
+                  expectedTypesList.Add(expectedTypes);
+
+                  // Support N / m in basic units
+                  DerivedUnitExpectedTypes expectedTypes2 = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_NEWTONS_PER_METER, UnitSymbolType.UST_N_PER_M);
+                  expectedTypes2.AddExpectedType(1, UnitType.UT_Mass);
+                  expectedTypes2.AddExpectedType(1, UnitType.UT_Length);
+                  expectedTypes2.AddCustomExpectedType(-2, "TIMEUNIT");
+                  expectedTypes2.AddExpectedType(-1, UnitType.UT_Length);
+                  expectedTypesList.Add(expectedTypes2);
+               }
+               break;
+            case "PLANARFORCEUNIT":
+               {
+                  Spec = UnitType.UT_AreaForce;
+                  UnitSystem = UnitSystem.Metric;
+
+                  // Support N / m^2 in the IFC file.
+                  DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_NEWTONS_PER_SQUARE_METER, UnitSymbolType.UST_N_PER_M_SUP_2);
+                  expectedTypes.AddExpectedType(1, UnitType.UT_AreaForce);
+                  expectedTypesList.Add(expectedTypes);
+
+                  // Support N / m in basic units
+                  DerivedUnitExpectedTypes expectedTypes2 = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_NEWTONS_PER_SQUARE_METER, UnitSymbolType.UST_N_PER_M_SUP_2);
+                  expectedTypes2.AddExpectedType(1, UnitType.UT_Mass);
+                  expectedTypes2.AddExpectedType(1, UnitType.UT_Length);
+                  expectedTypes2.AddCustomExpectedType(-2, "TIMEUNIT");
+                  expectedTypes2.AddExpectedType(-2, UnitType.UT_Length);
+                  expectedTypesList.Add(expectedTypes2);
+               }
+               break;
+            case "USERDEFINED":
+               {
+                  // Look at the sub-types to see what we support.
+                  string userDefinedType = IFCImportHandleUtil.GetOptionalStringAttribute(unitHnd, "UserDefinedType", null);
+                  if (!string.IsNullOrWhiteSpace(userDefinedType))
+                  {
+                     if (string.Compare(userDefinedType, "Luminous Efficacy", true) == 0)
+                     {
+                        Spec = UnitType.UT_Electrical_Efficacy;
+                        UnitSystem = UnitSystem.Metric;
+
+                        // Support only lm / W.
+                        DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_LUMENS_PER_WATT, UnitSymbolType.UST_LM_PER_W);
+                        expectedTypes.AddExpectedType(-1, UnitType.UT_Mass);
+                        expectedTypes.AddExpectedType(-2, UnitType.UT_Length);
+                        expectedTypes.AddCustomExpectedType(3, "TIMEUNIT");
+                        expectedTypes.AddExpectedType(1, UnitType.UT_Electrical_Luminous_Flux);
+                        expectedTypesList.Add(expectedTypes);
+                     }
+                     else if (string.Compare(userDefinedType, "Friction Loss", true) == 0)
+                     {
+                        Spec = UnitType.UT_HVAC_Friction;
+                        UnitSystem = UnitSystem.Metric;
+
+                        // Support only Pa / m.
+                        DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(DisplayUnitType.DUT_PASCALS_PER_METER, UnitSymbolType.UST_PASCAL_PER_M);
+                        expectedTypes.AddExpectedType(-2, UnitType.UT_Length);
+                        expectedTypes.AddExpectedType(1, UnitType.UT_Mass);
+                        expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+                        expectedTypesList.Add(expectedTypes);
+                     }
+                  }
+               }
+               break;
+            default:
+               break;
          }
 
          foreach (DerivedUnitExpectedTypes derivedUnitExpectedTypes in expectedTypesList)
@@ -669,122 +686,143 @@ namespace Revit.IFC.Import.Data
          string prefix = IFCAnyHandleUtil.GetEnumerationAttribute(unitHnd, "Prefix");
          bool unitNameSupported = true;
 
-         if (string.Compare(unitType, "AREAUNIT", true) == 0)
+         switch (unitType)
          {
-            Spec = SpecTypeId.Area;
-            unitNameSupported = (string.Compare(unitName, "SQUARE_METRE", true) == 0) && ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "ELECTRICCURRENTUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Current;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "ELECTRICVOLTAGEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.ElectricalPotential;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "FORCEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Force;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "FREQUENCYUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.ElectricalFrequency;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "ILLUMINANCEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Illuminance;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "LENGTHUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Length;
-            unitNameSupported = (string.Compare(unitName, "METRE", true) == 0) && ProcessMetricPrefix(prefix, SpecTypeId.Length);
-         }
-         else if (string.Compare(unitType, "LUMINOUSFLUXUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.LuminousFlux;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "LUMINOUSINTENSITYUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.LuminousIntensity;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "MASSUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Mass;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "PLANEANGLEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Angle;
-            Unit = UnitTypeId.Radians;
-            unitNameSupported = (string.Compare(unitName, "RADIAN", true) == 0) && (string.IsNullOrWhiteSpace(prefix));
-         }
-         else if (string.Compare(unitType, "POWERUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.HvacPower;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "PRESSUREUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.HvacPressure;
-            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
-         }
-         else if (string.Compare(unitType, "SOLIDANGLEUNIT", true) == 0)
-         {
-            // Will warn if not steridians.
-            Spec = SpecTypeId.Custom;
-            CustomSpec = unitType;
-            unitNameSupported = (string.Compare(unitName, "STERADIAN", true) == 0) && (string.IsNullOrWhiteSpace(prefix));
-         }
-         else if (string.Compare(unitType, "THERMODYNAMICTEMPERATUREUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.HvacTemperature;
-            if (string.Compare(unitName, "DEGREE_CELSIUS", true) == 0 ||
-                string.Compare(unitName, "CELSIUS", true) == 0)
-            {
-               Unit = UnitTypeId.Celsius;
-               Symbol = SymbolTypeId.DegreeC;
-               OffsetFactor = -273.15;
-            }
-            else if (string.Compare(unitName, "KELVIN", true) == 0 ||
-                string.Compare(unitName, "DEGREE_KELVIN", true) == 0)
-            {
-               Unit = UnitTypeId.Kelvin;
-               Symbol = SymbolTypeId.Kelvin;
-            }
-            else if (string.Compare(unitName, "FAHRENHEIT", true) == 0 ||
-                string.Compare(unitName, "DEGREE_FAHRENHEIT", true) == 0)
-            {
-               UnitSystem = UnitSystem.Imperial;
-               Unit = UnitTypeId.Fahrenheit;
-               Symbol = SymbolTypeId.DegreeF;
-               ScaleFactor = 5.0 / 9.0;
-               OffsetFactor = (5.0 / 9.0) * 32 - 273.15;
-            }
-            else
-               unitNameSupported = false;
-         }
-         else if (string.Compare(unitType, "TIMEUNIT", true) == 0)
-         {
-            // Will warn if not seconds.
-            Spec = SpecTypeId.Custom;
-            CustomSpec = unitType;
-            unitNameSupported = (string.Compare(unitName, "SECOND", true) == 0) && (string.IsNullOrWhiteSpace(prefix));
-         }
-         else if (string.Compare(unitType, "VOLUMEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Volume;
-            unitNameSupported = (string.Compare(unitName, "CUBIC_METRE", true) == 0) && ProcessMetricPrefix(prefix, SpecTypeId.Volume);
-         }
-         else
-         {
-            Importer.TheLog.LogUnhandledUnitTypeError(unitHnd, unitType);
+            case "AREAUNIT" :
+               {
+                  Spec = UnitType.UT_Area;
+                  unitNameSupported = (string.Compare(unitName, "SQUARE_METRE", true) == 0) && ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "ELECTRICCURRENTUNIT" :
+               {
+                  Spec = UnitType.UT_Electrical_Current;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "ELECTRICVOLTAGEUNIT" :
+               {
+                  Spec = UnitType.UT_Electrical_Potential;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "FORCEUNIT" :
+               {
+                  Spec = UnitType.UT_Force;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "FREQUENCYUNIT" :
+               {
+                  Spec = UnitType.UT_Electrical_Frequency;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "ILLUMINANCEUNIT" :
+               {
+                  Spec = UnitType.UT_Electrical_Illuminance;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "LENGTHUNIT" :
+               {
+                  Spec = UnitType.UT_Length;
+                  unitNameSupported = (string.Compare(unitName, "METRE", true) == 0) && ProcessMetricPrefix(prefix, UnitType.UT_Length);
+               }
+               break;
+            case "LUMINOUSFLUXUNIT" :
+               {
+                  Spec = UnitType.UT_Electrical_Luminous_Flux;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "LUMINOUSINTENSITYUNIT" :
+               {
+                  Spec = UnitType.UT_Electrical_Luminous_Intensity;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "MASSUNIT" :
+               {
+                  Spec = UnitType.UT_Mass;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "PLANEANGLEUNIT" :
+               {
+                  Spec = UnitType.UT_Angle;
+                  Unit = DisplayUnitType.DUT_RADIANS;
+                  unitNameSupported = (string.Compare(unitName, "RADIAN", true) == 0) && (string.IsNullOrWhiteSpace(prefix));
+               }
+               break;
+            case "POWERUNIT" :
+               {
+                  Spec = UnitType.UT_HVAC_Power;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "PRESSUREUNIT" :
+               {
+                  Spec = UnitType.UT_HVAC_Pressure;
+                  unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+               }
+               break;
+            case "SOLIDANGLEUNIT" :
+               {
+                  // Will warn if not steridians.
+                  Spec = UnitType.UT_Custom;
+                  CustomSpec = unitType;
+                  unitNameSupported = (string.Compare(unitName, "STERADIAN", true) == 0) && (string.IsNullOrWhiteSpace(prefix));
+               }
+               break;
+            case "THERMODYNAMICTEMPERATUREUNIT" :
+               {
+                  Spec = UnitType.UT_HVAC_Temperature;
+                  if (string.Compare(unitName, "DEGREE_CELSIUS", true) == 0 ||
+                      string.Compare(unitName, "CELSIUS", true) == 0)
+                  {
+                     Unit = DisplayUnitType.DUT_CELSIUS;
+                     Symbol = UnitSymbolType.UST_DEGREE_C;
+                     OffsetFactor = -273.15;
+                  }
+                  else if (string.Compare(unitName, "KELVIN", true) == 0 ||
+                      string.Compare(unitName, "DEGREE_KELVIN", true) == 0)
+                  {
+                     Unit = DisplayUnitType.DUT_KELVIN;
+                     Symbol = UnitSymbolType.UST_KELVIN;
+                  }
+                  else if (string.Compare(unitName, "FAHRENHEIT", true) == 0 ||
+                      string.Compare(unitName, "DEGREE_FAHRENHEIT", true) == 0)
+                  {
+                     UnitSystem = UnitSystem.Imperial;
+                     Unit = DisplayUnitType.DUT_FAHRENHEIT;
+                     Symbol = UnitSymbolType.UST_DEGREE_F;
+                     ScaleFactor = 5.0 / 9.0;
+                     OffsetFactor = (5.0 / 9.0) * 32 - 273.15;
+                  }
+                  else
+                     unitNameSupported = false;
+               }
+               break;
+            case "TIMEUNIT" :
+               {
+                  // Will warn if not seconds.
+                  Spec = UnitType.UT_Custom;
+                  CustomSpec = unitType;
+                  unitNameSupported = (string.Compare(unitName, "SECOND", true) == 0) && (string.IsNullOrWhiteSpace(prefix));
+               }
+               break;
+            case "VOLUMEUNIT" :
+               {
+                  Spec = UnitType.UT_Volume;
+                  unitNameSupported = (string.Compare(unitName, "CUBIC_METRE", true) == 0) && ProcessMetricPrefix(prefix, UnitType.UT_Volume);
+               }
+               break;
+            default:
+               {
+                  Importer.TheLog.LogUnhandledUnitTypeError(unitHnd, unitType);
+               }
+               break;
          }
 
          if (unitName != null && !unitNameSupported)
@@ -840,42 +878,42 @@ namespace Revit.IFC.Import.Data
       /// <param name="monetaryUnitHnd">The monetary unit handle.</param>
       void ProcessIFCMonetaryUnit(IFCAnyHandle monetaryUnitHnd)
       {
-         string currencyType = (IFCImportFile.TheFile.SchemaVersion < IFCSchemaVersion.IFC4) ?
-            IFCAnyHandleUtil.GetEnumerationAttribute(monetaryUnitHnd, "Currency") :
-            IFCImportHandleUtil.GetOptionalStringAttribute(monetaryUnitHnd, "Currency", string.Empty);
+         string currencyType = (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete)) ?
+            IFCImportHandleUtil.GetOptionalStringAttribute(monetaryUnitHnd, "Currency", string.Empty) :
+            IFCAnyHandleUtil.GetEnumerationAttribute(monetaryUnitHnd, "Currency");
+      
+         Spec = UnitType.UT_Currency;
+         Unit = DisplayUnitType.DUT_CURRENCY;
 
-         Spec = SpecTypeId.Currency;
-         Unit = UnitTypeId.Currency;
-
-         Symbol = new ForgeTypeId();
+         Symbol = UnitSymbolType.UST_NONE;
          if ((string.Compare(currencyType, "CAD", true) == 0) ||
              (string.Compare(currencyType, "USD", true) == 0) ||
              (string.Compare(currencyType, "$", true) == 0))
-            Symbol = SymbolTypeId.UsDollar;
+            Symbol = UnitSymbolType.UST_DOLLAR;
          else if ((string.Compare(currencyType, "EUR", true) == 0) ||
             (string.Compare(currencyType, "€", true) == 0))
-            Symbol = SymbolTypeId.EuroPrefix;
+            Symbol = UnitSymbolType.UST_EURO_PREFIX;
          else if ((string.Compare(currencyType, "GBP", true) == 0) ||
             (string.Compare(currencyType, "£", true) == 0))
-            Symbol = SymbolTypeId.UkPound;
+            Symbol = UnitSymbolType.UST_POUND;
          else if (string.Compare(currencyType, "HKD", true) == 0)
-            Symbol = SymbolTypeId.ChineseHongKongDollar;
+            Symbol = UnitSymbolType.UST_CHINESE_HONG_KONG_SAR;
          else if ((string.Compare(currencyType, "ICK", true) == 0) ||
              (string.Compare(currencyType, "NOK", true) == 0) ||
              (string.Compare(currencyType, "SEK", true) == 0))
-            Symbol = SymbolTypeId.Krone;
+            Symbol = UnitSymbolType.UST_KRONER;
          else if (string.Compare(currencyType, "ILS", true) == 0)
-            Symbol = SymbolTypeId.Shekel;
+            Symbol = UnitSymbolType.UST_SHEQEL;
          else if ((string.Compare(currencyType, "JPY", true) == 0) ||
              (string.Compare(currencyType, "¥", true) == 0))
-            Symbol = SymbolTypeId.Yen;
+            Symbol = UnitSymbolType.UST_YEN;
          else if (string.Compare(currencyType, "KRW", true) == 0)
-            Symbol = SymbolTypeId.Won;
+            Symbol = UnitSymbolType.UST_WON;
          else if ((string.Compare(currencyType, "THB", true) == 0) ||
              (string.Compare(currencyType, "฿", true) == 0))
-            Symbol = SymbolTypeId.Baht;
+            Symbol = UnitSymbolType.UST_BAHT;
          else if (string.Compare(currencyType, "VND", true) == 0)
-            Symbol = SymbolTypeId.Dong;
+            Symbol = UnitSymbolType.UST_DONG;
          else
             Importer.TheLog.LogWarning(Id, "Unhandled type of currency: " + currencyType, true);
       }
@@ -898,97 +936,107 @@ namespace Revit.IFC.Import.Data
 
          // For some common cases, get the units correct.
          string unitType = IFCAnyHandleUtil.GetEnumerationAttribute(convUnitHnd, "UnitType");
-         if (string.Compare(unitType, "LENGTHUNIT", true) == 0)
+         switch(unitType)
          {
-            Spec = SpecTypeId.Length;
-            string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
+            case "LENGTHUNIT":
+               {
+                  Spec = UnitType.UT_Length;
+                  string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
 
-            if (string.Compare(name, "FOOT", true) == 0 ||
-               string.Compare(name, "FEET", true) == 0)
-            {
-               UnitSystem = UnitSystem.Imperial;
-               Unit = UnitTypeId.FeetFractionalInches;
-               Symbol = new ForgeTypeId();
-            }
-            else if (string.Compare(name, "INCH", true) == 0 ||
-               string.Compare(name, "INCHES", true) == 0)
-            {
-               UnitSystem = UnitSystem.Imperial;
-               Unit = UnitTypeId.FractionalInches;
-               Symbol = new ForgeTypeId();
-            }
-         }
-         else if (string.Compare(unitType, "PLANEANGLEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Angle;
-            string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
+                  if (string.Compare(name, "FOOT", true) == 0 ||
+                     string.Compare(name, "FEET", true) == 0)
+                  {
+                     UnitSystem = UnitSystem.Imperial;
+                     Unit = DisplayUnitType.DUT_FEET_FRACTIONAL_INCHES;
+                     Symbol = UnitSymbolType.UST_NONE;
+                  } 
+                  else if (string.Compare(name, "INCH", true) == 0 ||
+                     string.Compare(name, "INCHES", true) == 0)
+                  {
+                     UnitSystem = UnitSystem.Imperial;
+                     Unit = DisplayUnitType.DUT_FRACTIONAL_INCHES;
+                     Symbol = UnitSymbolType.UST_NONE;
+                  }
+               }
+               break;
+            case "PLANEANGLEUNIT" :
+               {
+                  Spec = UnitType.UT_Angle;
+                  string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
 
-            if (string.Compare(name, "GRAD", true) == 0 ||
-               string.Compare(name, "GRADIAN", true) == 0 ||
-                string.Compare(name, "GRADS", true) == 0 ||
-               string.Compare(name, "GRADIANS", true) == 0)
-            {
-               UnitSystem = UnitSystem.Metric;
-               Unit = UnitTypeId.Gradians;
-               Symbol = SymbolTypeId.Grad;
-            }
-            else if (string.Compare(name, "DEGREE", true) == 0 ||
-               string.Compare(name, "DEGREES", true) == 0)
-            {
-               UnitSystem = UnitSystem.Imperial;
-               Unit = UnitTypeId.Degrees;
-               Symbol = SymbolTypeId.Degree;
-            }
-         }
-         else if (string.Compare(unitType, "AREAUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Area;
-            string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
+                  if (string.Compare(name, "GRAD", true) == 0 ||
+                     string.Compare(name, "GRADIAN", true) == 0 ||
+                      string.Compare(name, "GRADS", true) == 0 ||
+                     string.Compare(name, "GRADIANS", true) == 0)
+                  {
+                     UnitSystem = UnitSystem.Metric;
+                     Unit = DisplayUnitType.DUT_GRADS;
+                     Symbol = UnitSymbolType.UST_GRAD;
+                  }
+                  else if (string.Compare(name, "DEGREE", true) == 0 ||
+                     string.Compare(name, "DEGREES", true) == 0)
+                  {
+                     UnitSystem = UnitSystem.Imperial;
+                     Unit = DisplayUnitType.DUT_DECIMAL_DEGREES;
+                     Symbol = UnitSymbolType.UST_DEGREE_SYMBOL;
+                  }
+               }
+               break;
+            case "AREAUNIT" :
+               {
+                  Spec = UnitType.UT_Area;
+                  string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
 
-            if (string.Compare(name, "SQUARE FOOT", true) == 0 ||
-               string.Compare(name, "SQUARE_FOOT", true) == 0 ||
-               string.Compare(name, "SQUARE FEET", true) == 0 ||
-               string.Compare(name, "SQUARE_FEET", true) == 0)
-            {
-               UnitSystem = UnitSystem.Imperial;
-               Unit = UnitTypeId.SquareFeet;
-               Symbol = SymbolTypeId.FtSup2;
-            }
-         }
-         else if (string.Compare(unitType, "VOLUMEUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.Volume;
-            string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
+                  if (string.Compare(name, "SQUARE FOOT", true) == 0 ||
+                     string.Compare(name, "SQUARE_FOOT", true) == 0 ||
+                     string.Compare(name, "SQUARE FEET", true) == 0 ||
+                     string.Compare(name, "SQUARE_FEET", true) == 0)
+                  {
+                     UnitSystem = UnitSystem.Imperial;
+                     Unit = DisplayUnitType.DUT_SQUARE_FEET;
+                     Symbol = UnitSymbolType.UST_SF;
+                  }
+               }
+               break;
+            case "VOLUMEUNIT" :
+               {
+                  Spec = UnitType.UT_Volume;
+                  string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
 
-            if (string.Compare(name, "CUBIC FOOT", true) == 0 ||
-               string.Compare(name, "CUBIC_FOOT", true) == 0 ||
-               string.Compare(name, "CUBIC FEET", true) == 0 ||
-               string.Compare(name, "CUBIC_FEET", true) == 0)
-            {
-               UnitSystem = UnitSystem.Imperial;
-               Unit = UnitTypeId.CubicFeet;
-               Symbol = SymbolTypeId.FtSup3;
-            }
-         }
-         else if (string.Compare(unitType, "THERMODYNAMICMEASUREUNIT", true) == 0)
-         {
-            Spec = SpecTypeId.HvacTemperature;
-            string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
+                  if (string.Compare(name, "CUBIC FOOT", true) == 0 ||
+                     string.Compare(name, "CUBIC_FOOT", true) == 0 ||
+                     string.Compare(name, "CUBIC FEET", true) == 0 ||
+                     string.Compare(name, "CUBIC_FEET", true) == 0)
+                  {
+                     UnitSystem = UnitSystem.Imperial;
+                     Unit = DisplayUnitType.DUT_CUBIC_FEET;
+                     Symbol = UnitSymbolType.UST_CF;
+                  }
+               }
+               break;
+            case "THERMODYNAMICMEASUREUNIT" :
+               {
+                  Spec = UnitType.UT_HVAC_Temperature;
+                  string name = IFCAnyHandleUtil.GetStringAttribute(convUnitHnd, "Name");
 
-            if ((string.Compare(name, "F", true) == 0) ||
-               (string.Compare(name, "FAHRENHEIT", true) == 0))
-            {
-               UnitSystem = UnitSystem.Imperial;
-               Unit = UnitTypeId.Fahrenheit;
-               Symbol = SymbolTypeId.DegreeF;
-            }
-            else if ((string.Compare(name, "R", true) == 0) ||
-               (string.Compare(name, "RANKINE", true) == 0))
-            {
-               UnitSystem = UnitSystem.Imperial;
-               Unit = UnitTypeId.Rankine;
-               Symbol = SymbolTypeId.DegreeR;
-            }
+                  if ((string.Compare(name, "F", true) == 0) ||
+                     (string.Compare(name, "FAHRENHEIT", true) == 0))
+                  {
+                     UnitSystem = UnitSystem.Imperial;
+                     Unit = DisplayUnitType.DUT_FAHRENHEIT;
+                     Symbol = UnitSymbolType.UST_DEGREE_F;
+                  }
+                  else if ((string.Compare(name, "R", true) == 0) ||
+                     (string.Compare(name, "RANKINE", true) == 0))
+                  {
+                     UnitSystem = UnitSystem.Imperial;
+                     Unit = DisplayUnitType.DUT_RANKINE;
+                     Symbol = UnitSymbolType.UST_DEGREE_R;
+                  }
+               }
+               break;
+            default:
+               break;
          }
       }
 
@@ -1028,11 +1076,11 @@ namespace Revit.IFC.Import.Data
       /// <param name="unitName">The unit name.</param>
       /// <remarks>This is only intended to create a unit container for units that are necessary for the file,
       /// but are not found in the file.  It should not be used for IfcUnit entities in the file.</remarks>
-      public static IFCUnit ProcessIFCDefaultUnit(ForgeTypeId specTypeId, UnitSystem unitSystem, ForgeTypeId unitTypeId, double? scaleFactor)
+      public static IFCUnit ProcessIFCDefaultUnit(UnitType unitType, UnitSystem unitSystem, DisplayUnitType unitTypeId, double? scaleFactor)
       {
          IFCUnit unit = new IFCUnit();
 
-         unit.Spec = specTypeId;
+         unit.Spec = unitType;
          unit.Unit = unitTypeId;
          unit.UnitSystem = unitSystem;
          if (scaleFactor.HasValue)

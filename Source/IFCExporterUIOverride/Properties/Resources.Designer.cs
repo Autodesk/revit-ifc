@@ -538,6 +538,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Eastings.
+        /// </summary>
+        public static string Eastings {
+            get {
+                return ResourceManager.GetString("Eastings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Edition.
         /// </summary>
         public static string Edition {
@@ -552,6 +561,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string EditionDate {
             get {
                 return ResourceManager.GetString("EditionDate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to EPSG Code.
+        /// </summary>
+        public static string EPSGCode {
+            get {
+                return ResourceManager.GetString("EPSGCode", resourceCulture);
             }
         }
         
@@ -862,6 +880,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Geodetic Datum.
+        /// </summary>
+        public static string GeodeticDatum {
+            get {
+                return ResourceManager.GetString("GeodeticDatum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to How do I specify an export setup?.
         /// </summary>
         public static string Help {
@@ -993,15 +1020,6 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCMVD4CV2 {
             get {
                 return ResourceManager.GetString("IFCMVD4CV2", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to IFC 2x2 Singapore BCA e-Plan Check.
-        /// </summary>
-        public static string IFCMVDBCA {
-            get {
-                return ResourceManager.GetString("IFCMVDBCA", resourceCulture);
             }
         }
         
@@ -1393,11 +1411,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Northings.
+        /// </summary>
+        public static string Northings {
+            get {
+                return ResourceManager.GetString("Northings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Office.
         /// </summary>
         public static string Office {
             get {
                 return ResourceManager.GetString("Office", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coodinate basis..
+        /// </summary>
+        public static string OffsetDistanceTooLarge {
+            get {
+                return ResourceManager.GetString("OffsetDistanceTooLarge", resourceCulture);
             }
         }
         
@@ -1479,6 +1515,33 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string ProjectDescription {
             get {
                 return ResourceManager.GetString("ProjectDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Projected Coordinate System Reference.
+        /// </summary>
+        public static string ProjectedCRS {
+            get {
+                return ResourceManager.GetString("ProjectedCRS", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Description.
+        /// </summary>
+        public static string ProjectedCRSDesc {
+            get {
+                return ResourceManager.GetString("ProjectedCRSDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Name.
+        /// </summary>
+        public static string ProjectedCRSName {
+            get {
+                return ResourceManager.GetString("ProjectedCRSName", resourceCulture);
             }
         }
         
@@ -1717,6 +1780,33 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} is a reserved Windows device name. Choose another name and try again..
+        /// </summary>
+        public static string ReservedDeviceName {
+            get {
+                return ResourceManager.GetString("ReservedDeviceName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset.
+        /// </summary>
+        public static string Reset {
+            get {
+                return ResourceManager.GetString("Reset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset.
+        /// </summary>
+        public static string ResetToOriginals {
+            get {
+                return ResourceManager.GetString("ResetToOriginals", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Save Setup &amp;amp; Close.
         /// </summary>
         public static string SaveSetupAndClose {
@@ -1884,6 +1974,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string StreetAddress {
             get {
                 return ResourceManager.GetString("StreetAddress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        public static string String1 {
+            get {
+                return ResourceManager.GetString("String1", resourceCulture);
             }
         }
         

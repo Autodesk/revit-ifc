@@ -71,21 +71,27 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// </returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyGrossSurfaceArea", out m_Area) == null)
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "GrossSurfaceArea", out m_Area);
-         m_Area = UnitUtil.ScaleArea(m_Area);
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-            return true;
+         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyGrossSurfaceArea", out m_Area) != null) ||
+               (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "GrossSurfaceArea", out m_Area) != null))
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
+            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+               return true;
+         }
 
          if (extrusionCreationData == null)
             return false;
 
          double extrudedArea = extrusionCreationData.ScaledArea;
-         double length = extrusionCreationData.ScaledLength;
-         double perimeter = extrusionCreationData.ScaledOuterPerimeter;
+
+         // The base units for length and area may be different, especially in metric.
+         // E.g., the length unit may be in mm, while the area unit may be m^2.
+         // As such, we have to unscale the length units, and then rescale to the area units.
+         double length = UnitUtil.UnscaleLength(extrusionCreationData.ScaledLength);
+         double perimeter = UnitUtil.UnscaleLength(extrusionCreationData.ScaledOuterPerimeter);
          if (length > MathUtil.Eps() && perimeter > MathUtil.Eps())
          {
-            m_Area = perimeter * length + 2 * extrudedArea;
+            m_Area = UnitUtil.ScaleArea(perimeter * length) + 2 * extrudedArea;
             return true;
          }
 

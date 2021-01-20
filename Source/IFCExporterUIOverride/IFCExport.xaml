@@ -11,41 +11,48 @@
                   Title="{x:Static p:Resources.IFCExport}" 
                   WindowStyle="SingleBorderWindow" 
                   ContentRendered="ChildWindow_ContentRendered"
-                  ResizeMode="NoResize" 
-                  SaveWindowSettings="False"
                   Closing="Window_Closing" 
-                  Height="326" 
-                  Width="731">
+                  Height="390" 
+                  Width="730" MinWidth="550" MinHeight="300">
    <Grid Margin="10,0" RenderTransformOrigin="0,0">
       <Label Content="{x:Static p:Resources.FileName}" HorizontalAlignment="Left" Margin="0,12,0,0" x:Name="label_FileName" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" RenderTransformOrigin="0.462,0.478"/>
-      <TextBox Height="23" Margin="242,12,0,0" Name="textBoxSetupFileName" VerticalAlignment="Top" IsEnabled="True"  TextWrapping="NoWrap" VerticalContentAlignment="Center" HorizontalAlignment="Left" Width="337"/>
-      <Button Content="{x:Static p:Resources.Browse}" Height="23" Margin="586,12,0,0" Name="buttonBrowse" VerticalAlignment="Top" Click="buttonBrowse_Click" HorizontalAlignment="Left" Width="107" />
-      <Label Content="{x:Static p:Resources.CurrentSelectedSetup}" HorizontalAlignment="Left" Margin="0,45,0,0" Name="label1" Height="28" VerticalAlignment="Top" Width="242" />
-      <ComboBox Height="23" HorizontalAlignment="Left" Margin="242,48,0,0" Name="currentSelectedSetup" VerticalAlignment="Top" Width="260" SelectionChanged="currentSelectedSetup_SelectionChanged" ItemsSource="{Binding}" DataContext="{Binding}" />
-      <Button Content="{x:Static p:Resources.ModifySetup}" Height="23" Margin="509,48,0,0" Name="buttonEditSetup" VerticalAlignment="Top" Click="buttonEditSetup_Click" HorizontalAlignment="Left" Width="184" />
-      <Label Content="{x:Static p:Resources.IFCVersionSelected}" HorizontalAlignment="Left" Margin="0,82,0,0" x:Name="label1_Copy1" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" />
+      <TextBox Height="23" Margin="210,12,125,0" Name="textBoxSetupFileName" VerticalAlignment="Top" IsEnabled="True"  TextWrapping="NoWrap" VerticalContentAlignment="Center"/>
+      <Button Content="{x:Static p:Resources.Browse}" Height="23" Margin="0,12,11,0" Name="buttonBrowse" VerticalAlignment="Top" Click="buttonBrowse_Click" HorizontalAlignment="Right" Width="107" />
+      <Label Content="{x:Static p:Resources.CurrentSelectedSetup}" HorizontalAlignment="Left" Margin="0,45,0,0" Name="label1" Height="28" VerticalAlignment="Top" Width="202" />
+      <ComboBox Height="23" Margin="210,48,202,0" Name="currentSelectedSetup" VerticalAlignment="Top" SelectionChanged="currentSelectedSetup_SelectionChanged" ItemsSource="{Binding}" DataContext="{Binding}" />
+      <Button Content="{x:Static p:Resources.ModifySetup}" Height="23" Margin="0,48,11,0" Name="buttonEditSetup" VerticalAlignment="Top" Click="buttonEditSetup_Click" HorizontalAlignment="Right" Width="184" />
+      <Label Content="{x:Static p:Resources.IFCVersionSelected}" HorizontalAlignment="Left" Margin="0,78,0,0" x:Name="label1_Copy1" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" />
       <TextBox Height="28" 
-               Margin="0,82,10,0" 
+               Margin="210,78,10,0" 
                Name="textBoxSetupDescription" 
                VerticalAlignment="Top" 
                IsEnabled="True" 
                IsReadOnly="True" 
                TextWrapping="WrapWithOverflow" 
-               TextChanged="textBoxSetupDescription_TextChanged" 
-               Grid.Column="1" BorderThickness="0" 
+               TextChanged="textBoxSetupDescription_TextChanged" BorderThickness="0" 
                VerticalContentAlignment="Center" 
-               HorizontalAlignment="Right" 
-               Background="Transparent"
-               Width="451"/>
-      <Label Content="{x:Static p:Resources.ProjectToExport}" HorizontalAlignment="Left" Margin="0,116,0,0" x:Name="label1_Copy" Height="28" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="666" />
-      <ListView Margin="0,142,0,58" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="listViewDocuments" HorizontalAlignment="Left" Width="693"/>
-      <TextBlock VerticalAlignment="Bottom"  Margin="0,0,189,16" Height="31" Grid.Column="1">
+               Background="Transparent"/>
+      <Label Content="{x:Static p:Resources.ProjectToExport}" HorizontalAlignment="Left" Margin="0,144,0,0" x:Name="label1_Copy" Height="28" VerticalAlignment="Top" Width="666" />
+      <ListView Margin="0,170,11,50" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="listViewDocuments"/>
+      <TextBlock VerticalAlignment="Bottom"  Margin="0,0,0,10" Height="23" HorizontalAlignment="Left" Width="515">
          <Hyperlink Click="OnHelpClick">
             <Run Text="{x:Static p:Resources.Help}" x:Uid="LearnMoreHyperlink" />
          </Hyperlink>
       </TextBlock>
-      <Button Content="{x:Static p:Resources.Export}" HorizontalAlignment="Left" Margin="523,0,0,24" Name="buttonNext" Width="77" Click="buttonNext_Click" Height="23" VerticalAlignment="Bottom" />
-      <Button Content="{x:Static p:Resources.Cancel}" Margin="616,0,0,24" Width="77" Name="buttonCancel" Click="buttonCancel_Click" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+      <Button Content="{x:Static p:Resources.Export}" Margin="0,0,93,10" Name="buttonNext" Click="buttonNext_Click" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="77" />
+      <Button Content="{x:Static p:Resources.Cancel}" Margin="0,0,11,10" Name="buttonCancel" Click="buttonCancel_Click" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="77" />
+      <Label Content="{x:Static p:Resources.ProjectOrigin}" HorizontalAlignment="Left" Margin="0,111,0,0" x:Name="label1_Copy2" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" />
+      <TextBox Height="28" 
+         Margin="210,111,10,0" 
+         x:Name="textBoxSetupCoordinateBase" 
+         VerticalAlignment="Top" 
+         IsEnabled="True" 
+         IsReadOnly="True" 
+         TextWrapping="WrapWithOverflow" 
+         TextChanged="textBoxSetupDescription_TextChanged" 
+         BorderThickness="0" 
+         VerticalContentAlignment="Center" 
+         Background="Transparent"/>
    </Grid>
 
    <auiw:ChildWindow.Resources>

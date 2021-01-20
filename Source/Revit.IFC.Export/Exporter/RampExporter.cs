@@ -379,9 +379,13 @@ namespace Revit.IFC.Export.Exporter
                   string rampGUID = GUIDUtil.CreateGUID(ramp);
                   IFCAnyHandle rampLocalPlacement = placementSetter.LocalPlacement;
 
-                  IFCAnyHandle rampContainerHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, rampGUID, ownerHistory, rampLocalPlacement, null, predefType);
                   // Create appropriate type
-                  IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcRamp, predefType);
+                  IFCExportInfoPair exportType = CreateRampExportInfoPair(IFCEntityType.IfcRamp, IFCEntityType.IfcRampType, predefType);
+
+                  // For IFC4 and Structural Exchange Requirement export, ramp container will be exported as IFCSlab type
+                  IFCAnyHandle rampContainerHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, ramp, rampGUID, ownerHistory,
+                     rampLocalPlacement, null);
+
                   IFCAnyHandle rampTypeHnd = ExporterUtil.CreateGenericTypeFromElement(ramp, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(rampTypeHnd, rampContainerHnd);
                   productWrapper.AddElement(ramp, rampContainerHnd, placementSetter.LevelInfo, null, true, exportType);
@@ -435,14 +439,18 @@ namespace Revit.IFC.Export.Exporter
                            if (string.IsNullOrEmpty(flightPredefType))
                               flightPredefType = NamingUtil.GetOverrideStringValue(ramp, "IfcRampFlight.PredefinedType", null);
 
-                           IFCAnyHandle rampFlightHnd = IFCInstanceExporter.CreateRampFlight(exporterIFC, null, flightGUID, ownerHistory, flightLocalPlacement,
-                               representation, flightPredefType);
+                           // Create appropriate type
+                           IFCExportInfoPair flightExportType = CreateRampExportInfoPair(IFCEntityType.IfcRampFlight, IFCEntityType.IfcRampFlightType, flightPredefType);
+
+                           // For IFC4 and Structural Exchange Requirement export, ramp container will be exported as IFCSlab type
+                           IFCAnyHandle rampFlightHnd = IFCInstanceExporter.CreateGenericIFCEntity(flightExportType, exporterIFC, null, flightGUID, ownerHistory,
+                              flightLocalPlacement, representation);
+
                            IFCAnyHandleUtil.OverrideNameAttribute(rampFlightHnd, flightName);
                            rampComponents.Add(rampFlightHnd);
 
                            // Create type
-                           IFCExportInfoPair flightEportType = new IFCExportInfoPair(IFCEntityType.IfcRampFlight, flightPredefType);
-                           IFCAnyHandle flightTypeHnd = IFCInstanceExporter.CreateGenericIFCType(flightEportType, null, exporterIFC.GetFile(), null, null);
+                           IFCAnyHandle flightTypeHnd = IFCInstanceExporter.CreateGenericIFCType(flightExportType, null, exporterIFC.GetFile(), null, null);
                            IFCAnyHandleUtil.OverrideNameAttribute(flightTypeHnd, flightName);
                            ExporterCacheManager.TypeRelationsCache.Add(flightTypeHnd, rampFlightHnd);
 
@@ -691,6 +699,18 @@ namespace Revit.IFC.Export.Exporter
             return false;
 
          return true;
+      }
+
+      static IFCExportInfoPair CreateRampExportInfoPair(IFCEntityType entityName, IFCEntityType entityType, string predefType)
+      {
+         // For IFC4 and Structural Exchange Requirement export, ramps will be exported as IFCSlab type
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && (ExporterCacheManager.ExportOptionsCache.GetExchangeRequirement == KnownERNames.Structural))
+         {
+            entityName = IFCEntityType.IfcSlab;
+            entityType = IFCEntityType.IfcSlabType;
+         }
+
+         return new IFCExportInfoPair(entityName, entityType, predefType);
       }
 
       private static IFCAnyHandle CreatePSetRampFlightCommon(ExporterIFC exporterIFC, IFCFile file, Element element, int flightIndex, Face topFace)

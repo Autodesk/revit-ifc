@@ -19,13 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Import.Data;
 using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Utility;
 
@@ -38,24 +35,10 @@ namespace Revit.IFC.Import.Data
    {
       HashSet<IFCObjectDefinition> m_ComposedObjectDefinitions = null; //IsDecomposedBy
 
-      IFCObjectDefinition m_Decomposes = null;
-
       ICollection<IFCGroup> m_AssignmentGroups = null; //HasAssignments
 
-      // Many sub-classes of IfcObjectDefinition have an Enum defining the type.
-      // Store that information here.  This is not a field in IfcObjectDefinition as defined by IFC,
-      // but it allows us to have fewer routines to deal with this field.
-      string m_PredefinedType = null;
-
-      protected ElementId m_CreatedElementId = ElementId.InvalidElementId;
-
-      private ElementId m_CategoryId = ElementId.InvalidElementId;
-
-      private ElementId m_GraphicsStyleId = ElementId.InvalidElementId;
-
-      private IIFCMaterialSelect m_MaterialSelect = null;
-
       private IFCMaterial m_TheMaterial = null;
+      
       private bool m_TheMaterialIsSet = false;
 
       private IList<GeometryObject> m_CreatedGeometry = null;
@@ -65,20 +48,12 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The category id corresponding to the element created for this IFCObjectDefinition.
       /// </summary>
-      public ElementId CategoryId
-      {
-         get { return m_CategoryId; }
-         protected set { m_CategoryId = value; }
-      }
+      public ElementId CategoryId { get; protected set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// The graphics style id corresponding to the element created for this IFCObjectDefinition.
       /// </summary>
-      public ElementId GraphicsStyleId
-      {
-         get { return m_GraphicsStyleId; }
-         protected set { m_GraphicsStyleId = value; }
-      }
+      public ElementId GraphicsStyleId { get; protected set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// Returns true if sub-elements should be grouped; false otherwise.
@@ -91,20 +66,12 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The IFCMaterialSelect associated with the element.
       /// </summary>
-      public IIFCMaterialSelect MaterialSelect
-      {
-         get { return m_MaterialSelect; }
-         protected set { m_MaterialSelect = value; }
-      }
+      public IIFCMaterialSelect MaterialSelect { get; protected set; } = null;
 
       /// <summary>
       /// The object that composes this object
       /// </summary>
-      public IFCObjectDefinition Decomposes
-      {
-         get { return m_Decomposes; }
-         set { m_Decomposes = value; }
-      }
+      public IFCObjectDefinition Decomposes { get; set; } = null;
 
       /// <summary>
       /// The list of materials directly associated with the element.  There may be more at the type level.
@@ -265,21 +232,18 @@ namespace Revit.IFC.Import.Data
       /// Returns the predefined type for the object, if applicable.  The name of the attribute
       /// depends on the specific sub-type of IfcObjectDefinition, the entity type, and the IFC schema version.
       /// </summary>
-      /// <remarks>If this is null, the associated IfcTypeObject may contain the information.</remarks>
-      public string PredefinedType
-      {
-         get { return m_PredefinedType; }
-         protected set { m_PredefinedType = value; }
-      }
+      /// <remarks>
+      /// If this is null, the associated IfcTypeObject may contain the information.
+      /// Many sub-classes of IfcObjectDefinition have an Enum defining the type.
+      /// Store that information here.  This is not a field in IfcObjectDefinition as 
+      /// defined by IFC, but it allows us to have fewer routines to deal with this field.
+      /// </remarks>
+      public string PredefinedType { get; protected set; } = null;
 
       /// <summary>
       /// Returns the main element id associated with this object.
       /// </summary>
-      public ElementId CreatedElementId
-      {
-         get { return m_CreatedElementId; }
-         protected set { m_CreatedElementId = value; }
-      }
+      public ElementId CreatedElementId { get; protected set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// Returns the list of geometries created in the Create() function, for DirectShape representations only.
@@ -379,10 +343,22 @@ namespace Revit.IFC.Import.Data
 
          foreach (IFCSolidInfo solid in clonedGeometry)
          {
-            geomObjs.Add(solid.GeometryObject);
+            if (CutSolidByVoids(solid))
+               geomObjs.Add(solid.GeometryObject);
          }
 
          return geomObjs;
+      }
+
+      /// <summary>
+      /// Cut a IFCSolidInfo by the voids in this IFCProduct, if any.
+      /// </summary>
+      /// <param name="solidInfo">The solid information.</param>
+      /// <returns>False if the return solid is empty; true otherwise.</returns>
+      /// <remarks>Overridden at the IFCProduct level.</remarks>
+      protected virtual bool CutSolidByVoids(IFCSolidInfo solidInfo)
+      {
+         return true;
       }
 
       /// <summary>
@@ -469,7 +445,7 @@ namespace Revit.IFC.Import.Data
 
          // Before IFC2x3, IfcTypeObject did not have IsDecomposedBy.
          HashSet<IFCAnyHandle> elemSet = null;
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x3 || !IFCAnyHandleUtil.IsSubTypeOf(ifcObjectDefinition, IFCEntityType.IfcTypeObject))
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x3) || !IFCAnyHandleUtil.IsSubTypeOf(ifcObjectDefinition, IFCEntityType.IfcTypeObject))
          {
             elemSet = IFCAnyHandleUtil.GetAggregateInstanceAttribute
                 <HashSet<IFCAnyHandle>>(ifcObjectDefinition, "IsDecomposedBy");
@@ -578,7 +554,7 @@ namespace Revit.IFC.Import.Data
             }
             classifItemName = IFCAnyHandleUtil.GetStringAttribute(relClassification, "Name");
             string idParamName = "ItemReference";
-            if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4)
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
                idParamName = "Identification";
             identification = IFCAnyHandleUtil.GetStringAttribute(relClassification, idParamName);
             if (string.IsNullOrEmpty(identification))
@@ -698,17 +674,18 @@ namespace Revit.IFC.Import.Data
       private bool CanSetRevitName(Element element)
       {
          // Grids have their name set by IFCGridAxis, which does not inherit from IfcObjectDefinition.
-         return (element != null && !(element is Grid) && !(element is ProjectInfo));
+         return !(element is Grid) && !(element is ProjectInfo);
       }
 
       /// <summary>
       /// Allow for override of IfcObjectDefinition shared parameter names.
       /// </summary>
       /// <param name="name">The enum corresponding of the shared parameter.</param>
+      /// <param name="isType">True if the shared parameter is a type parameter.</param>
       /// <returns>The name appropriate for this IfcObjectDefinition.</returns>
-      public virtual string GetSharedParameterName(IFCSharedParameters name)
+      public virtual string GetSharedParameterName(IFCSharedParameters name, bool isType)
       {
-         return name.ToString();
+         return name.ToString() + (isType ? " [Type]" : "");
       }
 
       /// <summary>
@@ -716,8 +693,12 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The created element.</param>
-      private void SetName(Document doc, Element element)
+      /// <param name="category">The element's category.</param>
+      private void SetName(Document doc, Element element, Category category)
       {
+         if (element == null)
+            return;
+
          string revitName = GetName(null);
          if (!string.IsNullOrWhiteSpace(revitName))
          {
@@ -725,6 +706,7 @@ namespace Revit.IFC.Import.Data
             {
                if (CanSetRevitName(element))
                   element.Name = revitName;
+               
             }
             catch
             {
@@ -734,7 +716,7 @@ namespace Revit.IFC.Import.Data
          string name = string.IsNullOrWhiteSpace(Name) ? "" : Name;
          // 2015: Revit links don't show the name of a selected item inside the link.
          // 2015: DirectShapes don't have a built-in "Name" parameter.
-         IFCPropertySet.AddParameterString(doc, element, this, IFCSharedParameters.IfcName, Name, Id);
+         IFCPropertySet.AddParameterString(doc, element, category, this, IFCSharedParameters.IfcName, Name, Id);
       }
 
       /// <summary>
@@ -743,7 +725,8 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The created parameter.</param>
-      private void SetDescription(Document doc, Element element)
+      /// <param name="category">The element's category.</param>
+      private void SetDescription(Document doc, Element element, Category category)
       {
          // If the element has the built-in ALL_MODEL_DESCRIPTION parameter, populate that also.
          // We will create/populate the parameter even if the description is empty or null.
@@ -751,7 +734,7 @@ namespace Revit.IFC.Import.Data
          Parameter descriptionParameter = element.get_Parameter(BuiltInParameter.ALL_MODEL_DESCRIPTION);
          if (descriptionParameter != null)
             descriptionParameter.Set(description);
-         IFCPropertySet.AddParameterString(doc, element, this, IFCSharedParameters.IfcDescription, description, Id);
+         IFCPropertySet.AddParameterString(doc, element, category, this, IFCSharedParameters.IfcDescription, description, Id);
       }
 
       /// <summary>
@@ -759,9 +742,13 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The created element.</param>
+      /// <param name="category">The element's category.</param>
       /// <remarks>Note that this field contains the names of the materials, and as such is not parametric in any way.</remarks>
-      private void SetMaterialParameter(Document doc, Element element)
+      private void SetMaterialParameter(Document doc, Element element, Category category)
       {
+         if (category == null)
+            return;
+
          string materialNames = null;
 
          IList<string> materialsAndThickness = GetMaterialsNamesAndThicknesses();
@@ -774,7 +761,7 @@ namespace Revit.IFC.Import.Data
                materialNames += ";" + val;
          }
          if (materialNames != null)
-            IFCPropertySet.AddParameterString(doc, element, this, IFCSharedParameters.IfcMaterial, materialNames, Id);
+            IFCPropertySet.AddParameterString(doc, element, category, this, IFCSharedParameters.IfcMaterial, materialNames, Id);
       }
 
       /// <summary>
@@ -782,9 +769,13 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The created element.</param>
+      /// <param name="category">The element's category.</param>
       /// <remarks>Note that this field contains the names of the systems, and as such is not parametric in any way.</remarks>
-      private void SetSystemParameter(Document doc, Element element)
+      private void SetSystemParameter(Document doc, Element element, Category category)
       {
+         if (category == null)
+            return;
+
          string systemNames = null;
 
          foreach (IFCGroup assignmentGroup in AssignmentGroups)
@@ -803,7 +794,7 @@ namespace Revit.IFC.Import.Data
          }
 
          if (systemNames != null)
-            IFCPropertySet.AddParameterString(doc, element, "IfcSystem", systemNames, Id);
+            IFCPropertySet.AddParameterString(doc, element, category, "IfcSystem", systemNames, Id);
       }
 
       /// <summary>
@@ -835,17 +826,19 @@ namespace Revit.IFC.Import.Data
       {
          if (element != null)
          {
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+
             // Set the element name.
-            SetName(doc, element);
+            SetName(doc, element, category);
 
             // Set the element description.
-            SetDescription(doc, element);
+            SetDescription(doc, element, category);
 
             // The list of materials.
-            SetMaterialParameter(doc, element);
+            SetMaterialParameter(doc, element, category);
 
             // Set the "IfcSystem" parameter.
-            SetSystemParameter(doc, element);
+            SetSystemParameter(doc, element, category);
 
             // Set the element GUID.
             bool elementIsType = (element is ElementType);
@@ -862,13 +855,15 @@ namespace Revit.IFC.Import.Data
             // Set the "IfcExportAs" parameter.
             string ifcExportAs = IFCCategoryUtil.GetCustomCategoryName(this);
             if (!string.IsNullOrWhiteSpace(ifcExportAs))
-               IFCPropertySet.AddParameterString(doc, element, "IfcExportAs", ifcExportAs, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, IFCSharedParameters.IfcExportAs, ifcExportAs, Id);
 
             // Set the IFCElementAssembly Parameter
-            if (Decomposes != null && Decomposes is IFCElementAssembly)
+            if (Decomposes != null)
             {
-               IFCPropertySet.AddParameterString(doc, element, "IfcElementAssembly", Decomposes.Name, Id);
-               IFCPropertySet.AddParameterString(doc, element, "IfcElementAssemblyGUID", Decomposes.GlobalId, Id);
+               string containerParamName = (Decomposes is IFCElementAssembly) ? "IfcElementAssembly" : "IfcDecomposes";
+               string containerParamGUIDName = (Decomposes is IFCElementAssembly) ? "IfcElementAssemblyGUID" : "IfcDecomposesGUID";
+               IFCPropertySet.AddParameterString(doc, element, category, containerParamName, Decomposes.Name, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, containerParamGUIDName, Decomposes.GlobalId, Id);
             }
 
             // Set additional parameters (if any), e.g. for Classification assignments
@@ -877,13 +872,13 @@ namespace Revit.IFC.Import.Data
                foreach (KeyValuePair<string, object> parItem in AdditionalIntParameters)
                {
                   if (parItem.Value is string)
-                     IFCPropertySet.AddParameterString(doc, element, parItem.Key, (string)parItem.Value, Id);
+                     IFCPropertySet.AddParameterString(doc, element, category, parItem.Key, (string)parItem.Value, Id);
                   else if (parItem.Value is double)
-                     IFCPropertySet.AddParameterDouble(doc, element, parItem.Key, SpecTypeId.Custom, (double)parItem.Value, Id);
+                     IFCPropertySet.AddParameterDouble(doc, element, category, parItem.Key, UnitType.UT_Custom, (double)parItem.Value, Id);
                   else if (parItem.Value is int)
-                     IFCPropertySet.AddParameterInt(doc, element, parItem.Key, (int)parItem.Value, Id);
+                     IFCPropertySet.AddParameterInt(doc, element, category, parItem.Key, (int)parItem.Value, Id);
                   else if (parItem.Value is bool)
-                     IFCPropertySet.AddParameterBoolean(doc, element, parItem.Key, (bool)parItem.Value, Id);
+                     IFCPropertySet.AddParameterBoolean(doc, element, category, parItem.Key, (bool)parItem.Value, Id);
                }
             }
          }
@@ -980,19 +975,20 @@ namespace Revit.IFC.Import.Data
             IFCParameterSetByGroup parameterGroupMap = IFCParameterSetByGroup.Create(element);
             foreach (IFCPropertySetDefinition propertySet in propertySets.Values)
             {
-               KeyValuePair<string, bool> newPropertySetCreated = propertySet.CreatePropertySet(doc, element, parameterGroupMap);
-               if (!newPropertySetCreated.Value || string.IsNullOrWhiteSpace(newPropertySetCreated.Key))
+               Tuple<string, bool> newPropertySetCreated = propertySet.CreatePropertySet(doc, element, parameterGroupMap);
+               if (newPropertySetCreated == null || !newPropertySetCreated.Item2 || string.IsNullOrWhiteSpace(newPropertySetCreated.Item1))
                   continue;
 
                if (propertySetsCreated == "")
-                  propertySetsCreated = newPropertySetCreated.Key;
+                  propertySetsCreated = newPropertySetCreated.Item1;
                else
-                  propertySetsCreated += ";" + newPropertySetCreated.Key;
+                  propertySetsCreated += ";" + newPropertySetCreated.Item1;
             }
          }
          // Add property set-based parameters.
          // We are going to create this "fake" parameter so that we can filter elements in schedules based on their property sets.
-         IFCPropertySet.AddParameterString(doc, element, propertySetListName, propertySetsCreated, Id);
+         Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+         IFCPropertySet.AddParameterString(doc, element, category, propertySetListName, propertySetsCreated, Id);
       }
    }
 }

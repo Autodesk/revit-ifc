@@ -17,10 +17,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
@@ -39,38 +35,30 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       private double m_Area = 0;
 
       /// <summary>
-      /// A static instance of this class.
-      /// </summary>
-      static NetSurfaceAreaCalculator s_Instance = new NetSurfaceAreaCalculator();
-
-      /// <summary>
       /// The NetSurfaceAreaCalculator instance.
       /// </summary>
-      public static NetSurfaceAreaCalculator Instance
-      {
-         get { return s_Instance; }
-      }
+      public static NetSurfaceAreaCalculator Instance { get; } = new NetSurfaceAreaCalculator();
 
       /// <summary>
       /// Calculates net surface area.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
-      /// </param>
-      /// <param name="element">
-      /// The element to calculate the value.
-      /// </param>
-      /// <param name="elementType">
-      /// The element type.
-      /// </param>
-      /// <returns>
-      /// True if the operation succeed, false otherwise.
-      /// </returns>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <returns>True if the operation succeeded, false otherwise.</returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
+         double areaEps = MathUtil.Eps() * MathUtil.Eps();
+
+         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyNetSurfaceArea", out m_Area) != null) ||
+            (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "NetSurfaceArea", out m_Area) != null))
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
+            if (m_Area > areaEps)
+               return true;
+         }
+
          double areaSum = 0;
          SolidMeshGeometryInfo geomInfo = GeometryUtil.GetSolidMeshGeometry(element);
          if (geomInfo.SolidsCount() > 0)
@@ -100,26 +88,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          m_Area = UnitUtil.ScaleArea(areaSum);
-         if (m_Area < MathUtil.Eps() * MathUtil.Eps() || m_Area < MathUtil.Eps())
-         {
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyNetSurfaceArea", out m_Area) == null)
-                  ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "NetSurfaceArea", out m_Area);
-            m_Area = UnitUtil.ScaleArea(m_Area);
-            if (m_Area < MathUtil.Eps() * MathUtil.Eps() || m_Area < MathUtil.Eps())
-               return false;
-            else
-               return true;
-         }
-         else
-            return true;
+         return (m_Area > areaEps);
       }
 
       /// <summary>
       /// Gets the calculated double value.
       /// </summary>
-      /// <returns>
-      /// The double value.
-      /// </returns>
+      /// <returns>The net surface area.</returns>
       public override double GetDoubleValue()
       {
          return m_Area;

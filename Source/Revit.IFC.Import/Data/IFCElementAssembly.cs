@@ -98,9 +98,9 @@ namespace Revit.IFC.Import.Data
 
          if (element != null)
          {
-            IFCPropertySet.AddParameterString(doc, element, "IfcPredefinedType", PredefinedType, Id);
-
-            IFCPropertySet.AddParameterString(doc, element, "IfcAssemblyPlace", AssemblyPlace.ToString(), Id);
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+            IFCPropertySet.AddParameterString(doc, element, category, "IfcPredefinedType", PredefinedType, Id);
+            IFCPropertySet.AddParameterString(doc, element, category, "IfcAssemblyPlace", AssemblyPlace.ToString(), Id);
          }
       }
 

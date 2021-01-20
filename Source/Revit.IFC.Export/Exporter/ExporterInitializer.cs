@@ -19,15 +19,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using Autodesk.Revit.DB;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Exporter.PropertySet.Calculators;
 using Revit.IFC.Export.Utility;
-using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using Autodesk.Revit.ApplicationServices;
 using GeometryGym.Ifc;
 
 namespace Revit.IFC.Export.Exporter
@@ -82,6 +79,10 @@ namespace Revit.IFC.Export.Exporter
          commonPropertySets.Add(propertySetProvisionForVoid);
       }
 
+      /// <summary>
+      /// Get the list of property sets that are common but not included in the base set.
+      /// </summary>
+      /// <param name="propertySets">The list of lists of property sets.</param>
       public static void InitExtraCommonPropertySets(IList<IList<PropertySetDescription>> propertySets)
       {
          IList<PropertySetDescription> commonPropertySets = new List<PropertySetDescription>();
@@ -704,30 +705,8 @@ namespace Revit.IFC.Export.Exporter
       }
       #endregion
 
-#region QuantitySets
+      #region QuantitySets
       // Quantities (including COBie QuantitySets)
-
-      /// <summary>
-      /// Initializes ceiling base quantities.
-      /// </summary>
-      /// <param name="baseQuantities">List to store quantities.</param>
-      private static void InitCeilingBaseQuantities(IList<QuantityDescription> baseQuantities)
-      {
-         // It is duplicated with InitCoveringBaseQuantities. Leaving it here for backward compatibility
-         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-         {
-            QuantityDescription ifcCeilingQuantity = new QuantityDescription();
-            QuantityEntry ifcQE;
-            ifcCeilingQuantity.Name = "BaseQuantities";
-            ifcQE = new QuantityEntry("GrossCeilingArea", BuiltInParameter.HOST_AREA_COMPUTED);
-            ifcCeilingQuantity.EntityTypes.Add(IFCEntityType.IfcCovering);
-
-            ifcQE.QuantityType = QuantityType.Area;
-            ifcCeilingQuantity.AddEntry(ifcQE);
-
-            baseQuantities.Add(ifcCeilingQuantity);
-         }
-      }
 
       /// <summary>
       /// Initializes railing base quantities.
@@ -735,21 +714,10 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities">List to store quantities.</param>
       private static void InitRailingBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcRailingQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcRailingQuantity.Name = "Qto_RailingBaseQuantities";
-         }
-         else
-         {
-            ifcRailingQuantity.Name = "BaseQuantities";
-         }
-         ifcRailingQuantity.EntityTypes.Add(IFCEntityType.IfcRailing);
-
-         QuantityEntry ifcQE = new QuantityEntry("Length", BuiltInParameter.CURVE_ELEM_LENGTH);
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcRailingQuantity.AddEntry(ifcQE);
-
+         QuantityDescription ifcRailingQuantity = new QuantityDescription("Railing", IFCEntityType.IfcRailing);
+         
+         ifcRailingQuantity.AddEntry("Length", BuiltInParameter.CURVE_ELEM_LENGTH, QuantityType.PositiveLength, null);
+         
          baseQuantities.Add(ifcRailingQuantity);
       }
 
@@ -759,57 +727,15 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities">List to store quantities.</param>
       private static void InitSlabBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcSlabQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcSlabQuantity.Name = "Qto_SlabBaseQuantities";
-         }
-         else
-         {
-            ifcSlabQuantity.Name = "BaseQuantities";
-         }
-         ifcSlabQuantity.EntityTypes.Add(IFCEntityType.IfcSlab);
+         QuantityDescription ifcSlabQuantity = new QuantityDescription("Slab", IFCEntityType.IfcSlab);
 
-         QuantityEntry ifcQE = new QuantityEntry("GrossArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = GrossAreaCalculator.Instance;
-         ifcSlabQuantity.AddEntry(ifcQE);
+         AddCommonAreaQuantities(ifcSlabQuantity);
+         AddCommonVolumeQuantities(ifcSlabQuantity);
+         AddCommonWeightQuantities(ifcSlabQuantity);
 
-         ifcQE = new QuantityEntry("NetArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = NetSurfaceAreaCalculator.Instance;
-         ifcSlabQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = GrossVolumeCalculator.Instance;
-         ifcSlabQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = NetVolumeCalculator.Instance;
-         ifcSlabQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("Perimeter");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = PerimeterCalculator.Instance;
-         ifcSlabQuantity.AddEntry(ifcQE);
-
-            ifcQE = new QuantityEntry("Width");
-            ifcQE.QuantityType = QuantityType.PositiveLength;
-            ifcQE.PropertyCalculator = WidthCalculator.Instance;
-            ifcSlabQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossWeight");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = GrossWeightCalculator.Instance;
-         ifcSlabQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetWeight");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = NetWeightCalculator.Instance;
-         ifcSlabQuantity.AddEntry(ifcQE);
-
+         ifcSlabQuantity.AddEntry("Perimeter", QuantityType.PositiveLength, PerimeterCalculator.Instance);
+         ifcSlabQuantity.AddEntry("Width", QuantityType.PositiveLength, WidthCalculator.Instance);
+         
          baseQuantities.Add(ifcSlabQuantity);
       }
 
@@ -819,20 +745,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities">List to store quantities.</param>
       private static void InitRampFlightBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcBaseQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcBaseQuantity.Name = "Qto_RampFlightBaseQuantities";
-         }
-         else
-         {
-            ifcBaseQuantity.Name = "BaseQuantities";
-         }
-         ifcBaseQuantity.EntityTypes.Add(IFCEntityType.IfcRampFlight);
+         QuantityDescription ifcBaseQuantity = new QuantityDescription("RampFlight", IFCEntityType.IfcRampFlight);
 
-         QuantityEntry ifcQE = new QuantityEntry("Width", BuiltInParameter.STAIRS_ATTR_TREAD_WIDTH);
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcBaseQuantity.AddEntry(ifcQE);
+         ifcBaseQuantity.AddEntry("Width", BuiltInParameter.STAIRS_ATTR_TREAD_WIDTH, QuantityType.PositiveLength, null);
 
          baseQuantities.Add(ifcBaseQuantity);
       }
@@ -843,31 +758,10 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities">List to store quantities.</param>
       private static void InitStairFlightBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcBaseQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcBaseQuantity.Name = "Qto_StairFlightBaseQuantities";
-         }
-         else
-         {
-            ifcBaseQuantity.Name = "BaseQuantities";
-         }
-         ifcBaseQuantity.EntityTypes.Add(IFCEntityType.IfcStairFlight);
+         QuantityDescription ifcBaseQuantity = new QuantityDescription("StairFlight", IFCEntityType.IfcStairFlight);
 
-         QuantityEntry ifcQE = new QuantityEntry("Length");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = LengthCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = GrossVolumeCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = NetVolumeCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
+         AddCommonVolumeQuantities(ifcBaseQuantity);
+         ifcBaseQuantity.AddEntry("Length", QuantityType.PositiveLength, LengthCalculator.Instance);
 
          baseQuantities.Add(ifcBaseQuantity);
       }
@@ -878,49 +772,18 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities"></param>
       private static void InitBuildingStoreyBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcBaseQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcBaseQuantity.Name = "Qto_BuildingStoreyBaseQuantities";
-         }
-         else
-         {
-            ifcBaseQuantity.Name = "BaseQuantities";
-         }
-         ifcBaseQuantity.EntityTypes.Add(IFCEntityType.IfcBuildingStorey);
+         QuantityDescription ifcBaseQuantity = new QuantityDescription("BuildingStorey", IFCEntityType.IfcBuildingStorey);
 
-         QuantityEntry ifcQE = new QuantityEntry("NetHeight", "IfcQtyNetHeight");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossHeight", "IfcQtyGrossHeight");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcBaseQuantity.AddEntry(ifcQE);
+         ifcBaseQuantity.AddEntry("NetHeight", "IfcQtyNetHeight", QuantityType.PositiveLength, null);
+         ifcBaseQuantity.AddEntry("GrossHeight", "IfcQtyGrossHeight", QuantityType.PositiveLength, null);
 
          ExportOptionsCache exportOptionsCache = ExporterCacheManager.ExportOptionsCache;
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs2x3COBIE24DesignDeliverable)   // FMHandOver view exclude NetArea, GrossArea, NetVolume and GrossVolumne
          {
-            ifcQE = new QuantityEntry("NetFloorArea");
-            ifcQE.QuantityType = QuantityType.Area;
-            ifcQE.PropertyCalculator = SpaceLevelAreaCalculator.Instance;
-            ifcBaseQuantity.AddEntry(ifcQE);
-
-            ifcQE = new QuantityEntry("GrossFloorArea");
-            ifcQE.QuantityType = QuantityType.Area;
-            ifcQE.PropertyCalculator = SpaceLevelAreaCalculator.Instance;
-            ifcBaseQuantity.AddEntry(ifcQE);
-
-            ifcQE = new QuantityEntry("GrossPerimeter", "IfcQtyGrossPerimeter");
-            ifcQE.QuantityType = QuantityType.PositiveLength;
-            ifcBaseQuantity.AddEntry(ifcQE);
-
-            ifcQE = new QuantityEntry("NetVolume", "IfcQtyNetVolume");
-            ifcQE.QuantityType = QuantityType.Volume;
-            ifcBaseQuantity.AddEntry(ifcQE);
-
-            ifcQE = new QuantityEntry("GrossVolume", "IfcQtyGrossVolume");
-            ifcQE.QuantityType = QuantityType.Volume;
-            ifcBaseQuantity.AddEntry(ifcQE);
+            AddCommonVolumeQuantities(ifcBaseQuantity);
+            ifcBaseQuantity.AddEntry("NetFloorArea", QuantityType.Area, SpaceLevelAreaCalculator.Instance);
+            ifcBaseQuantity.AddEntry("GrossFloorArea", QuantityType.Area, SpaceLevelAreaCalculator.Instance);
+            ifcBaseQuantity.AddEntry("GrossPerimeter", "IfcQtyGrossPerimeter", QuantityType.PositiveLength, null);
          }
 
          baseQuantities.Add(ifcBaseQuantity);
@@ -932,78 +795,36 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities"></param>
       private static void InitSpaceBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcBaseQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcBaseQuantity.Name = "Qto_SpaceBaseQuantities";
-         }
-         else
-         {
-            ifcBaseQuantity.Name = "BaseQuantities";
-         }
-         ifcBaseQuantity.EntityTypes.Add(IFCEntityType.IfcSpace);
+         QuantityDescription ifcBaseQuantity = new QuantityDescription("Space", IFCEntityType.IfcSpace);
 
-         QuantityEntry ifcQE = new QuantityEntry("NetFloorArea");
+         QuantityEntry ifcQE = ifcBaseQuantity.AddEntry("NetFloorArea", QuantityType.Area, AreaCalculator.Instance);
          ifcQE.MethodOfMeasurement = "area measured in geometry";
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = AreaCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
 
-         ifcQE = new QuantityEntry("FinishCeilingHeight", "IfcQtyFinishCeilingHeight");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetCeilingArea", "IfcQtyNetCeilingArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossCeilingArea", "IfcQtyGrossCeilingArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetWallArea", "IfcQtyNetWallArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossWallArea", "IfcQtyGrossWallArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("Height");
+         ifcBaseQuantity.AddEntry("FinishCeilingHeight", "IfcQtyFinishCeilingHeight", QuantityType.PositiveLength, null);
+         ifcBaseQuantity.AddEntry("NetCeilingArea", "IfcQtyNetCeilingArea", QuantityType.Area, null);
+         ifcBaseQuantity.AddEntry("GrossCeilingArea", "IfcQtyGrossCeilingArea", QuantityType.Area, null);
+         ifcBaseQuantity.AddEntry("NetWallArea", "IfcQtyNetWallArea", QuantityType.Area, null);
+         ifcBaseQuantity.AddEntry("GrossWallArea", "IfcQtyGrossWallArea", QuantityType.Area, null);
+    
+         ifcQE = ifcBaseQuantity.AddEntry("Height", QuantityType.PositiveLength, HeightCalculator.Instance);
          ifcQE.MethodOfMeasurement = "length measured in geometry";
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = HeightCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
 
-         ifcQE = new QuantityEntry("NetPerimeter", "IfcQtyNetPerimeter");
+         ifcQE = ifcBaseQuantity.AddEntry("NetPerimeter", "IfcQtyNetPerimeter", QuantityType.PositiveLength, null);
          ifcQE.MethodOfMeasurement = "length measured in geometry";
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossPerimeter");
+         
+         ifcQE = ifcBaseQuantity.AddEntry("GrossPerimeter", QuantityType.PositiveLength, PerimeterCalculator.Instance);
          ifcQE.MethodOfMeasurement = "length measured in geometry";
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = PerimeterCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossFloorArea");
+         
+         ifcQE = ifcBaseQuantity.AddEntry("GrossFloorArea", QuantityType.Area, AreaCalculator.Instance);
          ifcQE.MethodOfMeasurement = "area measured in geometry";
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = AreaCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
+         
          ExportOptionsCache exportOptionsCache = ExporterCacheManager.ExportOptionsCache;
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs2x3COBIE24DesignDeliverable)   // FMHandOver view exclude GrossVolumne, FinishFloorHeight
          {
-            ifcQE = new QuantityEntry("GrossVolume");
+            ifcQE = ifcBaseQuantity.AddEntry("GrossVolume", QuantityType.Volume, VolumeCalculator.Instance);
             ifcQE.MethodOfMeasurement = "volume measured in geometry";
-            ifcQE.QuantityType = QuantityType.Volume;
-            ifcQE.PropertyCalculator = VolumeCalculator.Instance;
-            ifcBaseQuantity.AddEntry(ifcQE);
 
-            ifcQE = new QuantityEntry("FinishFloorHeight", "IfcQtyFinishFloorHeight");
-            ifcQE.QuantityType = QuantityType.PositiveLength;
-            ifcBaseQuantity.AddEntry(ifcQE);
+            ifcBaseQuantity.AddEntry("FinishFloorHeight", "IfcQtyFinishFloorHeight", QuantityType.PositiveLength, null);
          }
 
          baseQuantities.Add(ifcBaseQuantity);
@@ -1015,31 +836,29 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities"></param>
       private static void InitCoveringBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcBaseQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         QuantityDescription ifcBaseQuantity = new QuantityDescription("Covering", IFCEntityType.IfcCovering);
+
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            ifcBaseQuantity.Name = "Qto_CoveringBaseQuantities";
+            ifcBaseQuantity.AddEntry("GrossCeilingArea", BuiltInParameter.HOST_AREA_COMPUTED, QuantityType.Area, null);
          }
          else
          {
-            ifcBaseQuantity.Name = "BaseQuantities";
+            AddCommonAreaQuantities(ifcBaseQuantity);
+            ifcBaseQuantity.AddEntry("Width", QuantityType.PositiveLength, WidthCalculator.Instance);
          }
-         ifcBaseQuantity.EntityTypes.Add(IFCEntityType.IfcCovering);
-
-         QuantityEntry ifcQE = new QuantityEntry("GrossArea", "IfcQtyGrossArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetArea", BuiltInParameter.HOST_AREA_COMPUTED);
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("Width");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = WidthCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
 
          baseQuantities.Add(ifcBaseQuantity);
+      }
+
+      private static void AddDoorWindowBaseQuantities(QuantityDescription ifcBaseQuantity,
+         BuiltInParameter heightParameter, BuiltInParameter widthParameter)
+      {
+         ifcBaseQuantity.AddEntry("Height", heightParameter, QuantityType.PositiveLength, null);
+         ifcBaseQuantity.AddEntry("Width", widthParameter, QuantityType.PositiveLength, null);
+         
+         QuantityEntry ifcQE = ifcBaseQuantity.AddEntry("Area", QuantityType.Area, AreaCalculator.Instance, true);
+         ifcQE.MethodOfMeasurement = "area measured in geometry";
       }
 
       /// <summary>
@@ -1048,31 +867,10 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities"></param>
       private static void InitWindowBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcBaseQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcBaseQuantity.Name = "Qto_WindowBaseQuantities";
-         }
-         else
-         {
-            ifcBaseQuantity.Name = "BaseQuantities";
-         }
-         ifcBaseQuantity.EntityTypes.Add(IFCEntityType.IfcWindow);
+         QuantityDescription ifcBaseQuantity = new QuantityDescription("Window", IFCEntityType.IfcWindow);
 
-         QuantityEntry ifcQE = new QuantityEntry("Height", BuiltInParameter.WINDOW_HEIGHT);
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("Width", BuiltInParameter.WINDOW_WIDTH);
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("Area");
-         ifcQE.MethodOfMeasurement = "area measured in geometry";
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = AreaCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
+         AddDoorWindowBaseQuantities(ifcBaseQuantity, BuiltInParameter.WINDOW_HEIGHT, BuiltInParameter.WINDOW_WIDTH);
+      
          baseQuantities.Add(ifcBaseQuantity);
       }
 
@@ -1082,32 +880,39 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities"></param>
       private static void InitDoorBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcBaseQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcBaseQuantity.Name = "Qto_DoorBaseQuantities";
-         }
-         else
-         {
-            ifcBaseQuantity.Name = "BaseQuantities";
-         }
-         ifcBaseQuantity.EntityTypes.Add(IFCEntityType.IfcDoor);
+         QuantityDescription ifcBaseQuantity = new QuantityDescription("Door", IFCEntityType.IfcDoor);
 
-         QuantityEntry ifcQE = new QuantityEntry("Height", BuiltInParameter.DOOR_HEIGHT);
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("Width", BuiltInParameter.DOOR_WIDTH);
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("Area");
-         ifcQE.MethodOfMeasurement = "area measured in geometry";
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = AreaCalculator.Instance;
-         ifcBaseQuantity.AddEntry(ifcQE);
-
+         AddDoorWindowBaseQuantities(ifcBaseQuantity, BuiltInParameter.DOOR_HEIGHT, BuiltInParameter.DOOR_WIDTH);
+         
          baseQuantities.Add(ifcBaseQuantity);
+      }
+
+      private static void AddCommonVolumeQuantities(QuantityDescription ifcQuantityDescription)
+      {
+         ifcQuantityDescription.AddEntry("GrossVolume", "IfcQtyGrossVolume", QuantityType.Volume, GrossVolumeCalculator.Instance);
+         ifcQuantityDescription.AddEntry("NetVolume", "IfcQtyNetVolume", QuantityType.Volume, NetVolumeCalculator.Instance);
+      }
+
+      private static void AddCommonAreaQuantities(QuantityDescription ifcQuantityDescription)
+      {
+         ifcQuantityDescription.AddEntry("GrossArea", "IfcQtyGrossArea", QuantityType.Area, GrossAreaCalculator.Instance);
+         ifcQuantityDescription.AddEntry("NetArea", BuiltInParameter.HOST_AREA_COMPUTED, QuantityType.Area, NetSurfaceAreaCalculator.Instance);
+      }
+
+      private static void AddCommonWeightQuantities(QuantityDescription ifcQuantityDescription)
+      {
+         ifcQuantityDescription.AddEntry("GrossWeight", QuantityType.Weight, GrossWeightCalculator.Instance);
+         ifcQuantityDescription.AddEntry("NetWeight", QuantityType.Weight, NetWeightCalculator.Instance);
+      }
+         
+      private static void AddCommonStructuralBaseQuantities(QuantityDescription ifcQuantityDescription)
+      {
+         ifcQuantityDescription.AddEntry("Length", QuantityType.PositiveLength, LengthCalculator.Instance);
+         ifcQuantityDescription.AddEntry("CrossSectionArea", QuantityType.Area, CrossSectionAreaCalculator.Instance);
+         ifcQuantityDescription.AddEntry("OuterSurfaceArea", QuantityType.Area, OuterSurfaceAreaCalculator.Instance);
+         ifcQuantityDescription.AddEntry("GrossSurfaceArea", QuantityType.Area, GrossSurfaceAreaCalculator.Instance);
+         AddCommonVolumeQuantities(ifcQuantityDescription);
+         AddCommonWeightQuantities(ifcQuantityDescription);
       }
 
       /// <summary>
@@ -1116,126 +921,10 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="baseQuantities"></param>
       private static void InitBeamBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcBeamQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcBeamQuantity.Name = "Qto_BeamBaseQuantities";
-         }
-         else
-         {
-            ifcBeamQuantity.Name = "BaseQuantities";
-         }
-         ifcBeamQuantity.EntityTypes.Add(IFCEntityType.IfcBeam);
+         QuantityDescription ifcBeamQuantity = new QuantityDescription("Beam", IFCEntityType.IfcBeam);
 
-         QuantityEntry ifcQE = new QuantityEntry("Length");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = LengthCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("CrossSectionArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = CrossSectionAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("OuterSurfaceArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = OuterSurfaceAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossSurfaceArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = GrossSurfaceAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetSurfaceArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = NetSurfaceAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = GrossVolumeCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = NetVolumeCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossWeight");
-         ifcQE.QuantityType = QuantityType.Weight;
-         ifcQE.PropertyCalculator = GrossWeightCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetWeight");
-         ifcQE.QuantityType = QuantityType.Weight;
-         ifcQE.PropertyCalculator = NetWeightCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         baseQuantities.Add(ifcBeamQuantity);
-      }
-
-      /// <summary>
-      /// Initialize Column Base Quantities
-      /// </summary>
-      /// <param name="baseQuantities"></param>
-      private static void InitColumnBaseQuantities(IList<QuantityDescription> baseQuantities)
-      {
-         QuantityDescription ifcBeamQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcBeamQuantity.Name = "Qto_ColumnBaseQuantities";
-         }
-         else
-         {
-            ifcBeamQuantity.Name = "BaseQuantities";
-         }
-         ifcBeamQuantity.EntityTypes.Add(IFCEntityType.IfcColumn);
-
-         QuantityEntry ifcQE = new QuantityEntry("Length");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = LengthCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("CrossSectionArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = CrossSectionAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("OuterSurfaceArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = OuterSurfaceAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossSurfaceArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = GrossSurfaceAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetSurfaceArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = NetSurfaceAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = GrossVolumeCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = NetVolumeCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("GrossWeight");
-         ifcQE.QuantityType = QuantityType.Weight;
-         ifcQE.PropertyCalculator = GrossWeightCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetWeight");
-         ifcQE.QuantityType = QuantityType.Weight;
-         ifcQE.PropertyCalculator = NetWeightCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
+         AddCommonStructuralBaseQuantities(ifcBeamQuantity);
+         ifcBeamQuantity.AddEntry("NetSurfaceArea", QuantityType.Area, NetSurfaceAreaCalculator.Instance);
 
          baseQuantities.Add(ifcBeamQuantity);
       }
@@ -1243,66 +932,41 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Initialize Member Base Quantities
       /// </summary>
-      /// <param name="baseQuantities"></param>
+      /// <param name="baseQuantities">The list of all of the quantity sets.</param>
       private static void InitMemberBaseQuantities(IList<QuantityDescription> baseQuantities)
       {
-         QuantityDescription ifcBeamQuantity = new QuantityDescription();
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-         {
-            ifcBeamQuantity.Name = "Qto_MemberBaseQuantities";
-         }
-         else
-         {
-            ifcBeamQuantity.Name = "BaseQuantities";
-         }
-         ifcBeamQuantity.EntityTypes.Add(IFCEntityType.IfcMember);
+         QuantityDescription ifcMemberQuantity = new QuantityDescription("Member", IFCEntityType.IfcMember);
 
-         QuantityEntry ifcQE = new QuantityEntry("Length");
-         ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = LengthCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
+         AddCommonStructuralBaseQuantities(ifcMemberQuantity);
+         ifcMemberQuantity.AddEntry("NetSurfaceArea", QuantityType.Area, NetSurfaceAreaCalculator.Instance);
 
-         ifcQE = new QuantityEntry("CrossSectionArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = CrossSectionAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
+         baseQuantities.Add(ifcMemberQuantity);
+      }
 
-         ifcQE = new QuantityEntry("OuterSurfaceArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = OuterSurfaceAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
+      /// <summary>
+      /// Initialize Pile Base Quantities
+      /// </summary>
+      /// <param name="baseQuantities">The list of all of the quantity sets.</param>
+      private static void InitPileBaseQuantities(IList<QuantityDescription> baseQuantities)
+      {
+         QuantityDescription ifcPileQuantity = new QuantityDescription("Pile", IFCEntityType.IfcPile);
 
-         ifcQE = new QuantityEntry("GrossSurfaceArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = GrossSurfaceAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
+         AddCommonStructuralBaseQuantities(ifcPileQuantity);
 
-         ifcQE = new QuantityEntry("NetSurfaceArea");
-         ifcQE.QuantityType = QuantityType.Area;
-         ifcQE.PropertyCalculator = NetSurfaceAreaCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
+         baseQuantities.Add(ifcPileQuantity);
+      }
 
-         ifcQE = new QuantityEntry("GrossVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = GrossVolumeCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
+      /// <summary>
+      /// Initialize Plate Base Quantities
+      /// </summary>
+      /// <param name="baseQuantities">The list of all of the quantity sets.</param>
+      private static void InitPlateBaseQuantities(IList<QuantityDescription> baseQuantities)
+      {
+         QuantityDescription ifcPlateQuantity = new QuantityDescription("Plate", IFCEntityType.IfcPlate);
 
-         ifcQE = new QuantityEntry("NetVolume");
-         ifcQE.QuantityType = QuantityType.Volume;
-         ifcQE.PropertyCalculator = NetVolumeCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
+         AddCommonVolumeQuantities(ifcPlateQuantity);
 
-         ifcQE = new QuantityEntry("GrossWeight");
-         ifcQE.QuantityType = QuantityType.Weight;
-         ifcQE.PropertyCalculator = GrossWeightCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         ifcQE = new QuantityEntry("NetWeight");
-         ifcQE.QuantityType = QuantityType.Weight;
-         ifcQE.PropertyCalculator = NetWeightCalculator.Instance;
-         ifcBeamQuantity.AddEntry(ifcQE);
-
-         baseQuantities.Add(ifcBeamQuantity);
+         baseQuantities.Add(ifcPlateQuantity);
       }
 
       /// <summary>
@@ -1313,22 +977,23 @@ namespace Revit.IFC.Export.Exporter
       private static void InitBaseQuantities(IList<IList<QuantityDescription>> quantities)
       {
          IList<QuantityDescription> baseQuantities = new List<QuantityDescription>();
-         InitCeilingBaseQuantities(baseQuantities);
-         InitRailingBaseQuantities(baseQuantities);
-         InitSlabBaseQuantities(baseQuantities);
-         InitRampFlightBaseQuantities(baseQuantities);
-         InitStairFlightBaseQuantities(baseQuantities);
-         InitBuildingStoreyBaseQuantities(baseQuantities);
-         InitSpaceBaseQuantities(baseQuantities);
-         InitCoveringBaseQuantities(baseQuantities);
-         InitWindowBaseQuantities(baseQuantities);
-         InitDoorBaseQuantities(baseQuantities);
+
+         // TODO: understand why beams seem to be handled twice - here and CreateBeamColumnBaseQuantities
          InitBeamBaseQuantities(baseQuantities);
-
-         // TODO: Make this work with split columns by wall.
-         //InitColumnBaseQuantities(baseQuantities);
+         InitBuildingStoreyBaseQuantities(baseQuantities);
+         //InitColumnBaseQuantities is handled by CreateBeamColumnBaseQuantities
+         InitCoveringBaseQuantities(baseQuantities);
+         InitDoorBaseQuantities(baseQuantities);
          InitMemberBaseQuantities(baseQuantities);
-
+         InitRailingBaseQuantities(baseQuantities);
+         InitPileBaseQuantities(baseQuantities);
+         InitPlateBaseQuantities(baseQuantities);
+         InitRampFlightBaseQuantities(baseQuantities);
+         InitSlabBaseQuantities(baseQuantities);
+         InitSpaceBaseQuantities(baseQuantities);
+         InitStairFlightBaseQuantities(baseQuantities);
+         InitWindowBaseQuantities(baseQuantities);
+         
          quantities.Add(baseQuantities);
       }
 

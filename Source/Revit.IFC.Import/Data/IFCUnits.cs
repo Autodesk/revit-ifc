@@ -36,67 +36,67 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The IFC project units.
       /// </summary>
-      Dictionary<ForgeTypeId, IFCUnit> m_ProjectUnitsDictionary = new Dictionary<ForgeTypeId, IFCUnit>();
+      Dictionary<UnitType, IFCUnit> m_ProjectUnitsDictionary = new Dictionary<UnitType, IFCUnit>();
 
       /// <summary>
       /// Gets the unit of a type.
       /// </summary>
-      /// <param name="specTypeId">Identifier of the spec.</param>
+      /// <param name="UnitType.UT_">Identifier of the spec.</param>
       /// <returns>The Unit object.</returns>
-      public IFCUnit GetIFCProjectUnit(ForgeTypeId specTypeId)
+      public IFCUnit GetIFCProjectUnit(UnitType unitType)
       {
          IFCUnit projectUnit = null;
-         if (m_ProjectUnitsDictionary.TryGetValue(specTypeId, out projectUnit))
+         if (m_ProjectUnitsDictionary.TryGetValue(unitType, out projectUnit))
          {
             return projectUnit;
          }
          else
          {
             //default units
-            if (specTypeId.Equals(SpecTypeId.Length))
+            if (unitType == UnitType.UT_Length)
             {
-               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, UnitSystem.Metric, UnitTypeId.Meters, 1.0 / 0.3048);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, UnitSystem.Metric, DisplayUnitType.DUT_METERS, 1.0 / 0.3048);
+               m_ProjectUnitsDictionary[unitType] = unit;
                return unit;
             }
-            else if (specTypeId.Equals(SpecTypeId.Area))
+            else if (unitType == UnitType.UT_Area)
             {
-               IFCUnit projectLengthUnit = GetIFCProjectUnit(SpecTypeId.Length);
+               IFCUnit projectLengthUnit = GetIFCProjectUnit(UnitType.UT_Length);
 
                UnitSystem unitSystem = projectLengthUnit.UnitSystem;
-               ForgeTypeId unitName = unitSystem == UnitSystem.Metric ?
-                   UnitTypeId.SquareMeters : UnitTypeId.SquareFeet;
+               DisplayUnitType unitName = unitSystem == UnitSystem.Metric ?
+                   DisplayUnitType.DUT_SQUARE_METERS : DisplayUnitType.DUT_SQUARE_FEET;
                double scaleFactor = unitSystem == UnitSystem.Metric ?
                    (1.0 / 0.3048) * (1.0 / 0.3048) : 1.0;
 
-               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, unitSystem, unitName, scaleFactor);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, unitSystem, unitName, scaleFactor);
+               m_ProjectUnitsDictionary[unitType] = unit;
                return unit;
             }
-            else if (specTypeId.Equals(SpecTypeId.Volume))
+            else if (unitType == UnitType.UT_Volume)
             {
-               IFCUnit projectLengthUnit = GetIFCProjectUnit(SpecTypeId.Length);
+               IFCUnit projectLengthUnit = GetIFCProjectUnit(UnitType.UT_Length);
 
                UnitSystem unitSystem = projectLengthUnit.UnitSystem;
-               ForgeTypeId unitName = unitSystem == UnitSystem.Metric ?
-                   UnitTypeId.CubicMeters : UnitTypeId.CubicFeet;
+               DisplayUnitType unitName = unitSystem == UnitSystem.Metric ?
+                   DisplayUnitType.DUT_CUBIC_METERS : DisplayUnitType.DUT_CUBIC_FEET;
                double scaleFactor = unitSystem == UnitSystem.Metric ?
                    (1.0 / 0.3048) * (1.0 / 0.3048) * (1.0 / 0.3048) : 1.0;
 
-               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, unitSystem, unitName, scaleFactor);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, unitSystem, unitName, scaleFactor);
+               m_ProjectUnitsDictionary[unitType] = unit;
                return unit;
             }
-            else if (specTypeId.Equals(SpecTypeId.Angle))
+            else if (unitType == UnitType.UT_Angle)
             {
-               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, UnitSystem.Metric, UnitTypeId.Degrees, Math.PI / 180);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, UnitSystem.Metric, DisplayUnitType.DUT_SLOPE_DEGREES, Math.PI / 180);
+               m_ProjectUnitsDictionary[unitType] = unit;
                return unit;
             }
-            else if (specTypeId.Equals(SpecTypeId.HvacTemperature))
+            else if (unitType == UnitType.UT_HVAC_Temperature)
             {
-               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, UnitSystem.Metric, UnitTypeId.Kelvin, 1.0);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(unitType, UnitSystem.Metric, DisplayUnitType.DUT_KELVIN, 1.0);
+               m_ProjectUnitsDictionary[unitType] = unit;
                return unit;
             }
          }

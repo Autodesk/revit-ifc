@@ -86,12 +86,22 @@ namespace Revit.IFC.Import.Data
 
          IList<double> revitKnots = IFCGeometryUtil.ConvertIFCKnotsToRevitKnots(KnotMultiplicities, Knots);
 
-         Curve nurbsSpline = NurbSpline.CreateCurve(Degree, revitKnots, ControlPointsList);
+         Curve nurbsSpline = null;
+         string msg = string.Empty;
+         try
+         {
+            nurbsSpline = NurbSpline.CreateCurve(Degree, revitKnots, ControlPointsList);
          SetCurve(nurbsSpline);
+         }
+         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+         {
+            nurbsSpline = null;
+            msg = ": " + ex.Message;
+         }
 
          if (nurbsSpline == null)
          {
-            Importer.TheLog.LogWarning(ifcCurve.StepId, "Cannot get the curve representation of this IfcCurve", false);
+            Importer.TheLog.LogWarning(ifcCurve.StepId, "Cannot get the curve representation of this IfcCurve" + msg, false);
          }
       }
 

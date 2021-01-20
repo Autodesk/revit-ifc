@@ -9,7 +9,6 @@
                    ResizeMode ="NoResize" 
                    Name="AddressTab" 
                    Closing="Window_Closing" 
-                   SaveWindowSettings="False"
                    mc:Ignorable="d" 
                    Initialized="AddressTab_Initialized" 
                    d:DesignWidth="560" 

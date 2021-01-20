@@ -76,11 +76,29 @@ namespace Revit.IFC.Import.Data
 
          IFCStyledItem other = otherEntity as IFCStyledItem;
 
-         if (!IFCRoot.Equals(Item, other.Item))
+         if (!Equals(Item, other.Item))
             return false;
 
-         if (!IFCRoot.Equals(Styles, other.Styles))
+         IList<IFCPresentationStyle> otherStyles = other.Styles;
+         if (Styles == null && otherStyles == null)
+            return null;
+
+         // If only one is null, they are not equal.
+         if (Styles == null || otherStyles == null)
             return false;
+
+         int thisCount = Styles.Count;
+         int otherCount = otherStyles.Count;
+         if (thisCount != otherCount)
+            return false;
+
+         // This could miss the case where the styles are the same but in different
+         // orders.  At the moment, that would just lead to a spurious warning.
+         for (int ii = 0; ii < thisCount; ii++)
+         {
+            if (!Equals(Styles[ii], otherStyles[ii]))
+               return false;
+         }
 
          return null;
       }
@@ -125,7 +143,7 @@ namespace Revit.IFC.Import.Data
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(style))
                continue;
 
-            if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4 && IFCAnyHandleUtil.IsValidSubTypeOf(style, IFCEntityType.IfcPresentationStyle))
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && IFCAnyHandleUtil.IsValidSubTypeOf(style, IFCEntityType.IfcPresentationStyle))
             {
                Styles.Add(IFCPresentationStyle.ProcessIFCPresentationStyle(style));
             }

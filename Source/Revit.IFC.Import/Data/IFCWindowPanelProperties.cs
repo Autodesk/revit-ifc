@@ -74,13 +74,13 @@ namespace Revit.IFC.Import.Data
 
          double currPropertyValue = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcWindowPanelProperties, "FrameDepth", -1e+30);
          if (!MathUtil.IsAlmostEqual(currPropertyValue, -1e+30))
-            DoubleProperties[new Tuple<string, ForgeTypeId, AllowedValues>(GeneratePropertyName("FrameDepth"),
-                SpecTypeId.Length, AllowedValues.Positive)] = currPropertyValue;
+            DoubleProperties[Tuple.Create(GeneratePropertyName("FrameDepth"),
+                UnitType.UT_Length, AllowedValues.Positive)] = currPropertyValue;
 
          currPropertyValue = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcWindowPanelProperties, "FrameThickness", -1e+30);
          if (!MathUtil.IsAlmostEqual(currPropertyValue, -1e+30))
-            DoubleProperties[new Tuple<string, ForgeTypeId, AllowedValues>(GeneratePropertyName("FrameThickness"),
-                SpecTypeId.Length, AllowedValues.Positive)] = currPropertyValue;
+            DoubleProperties[Tuple.Create(GeneratePropertyName("FrameThickness"),
+                UnitType.UT_Length, AllowedValues.Positive)] = currPropertyValue;
       }
 
       /// <summary>
