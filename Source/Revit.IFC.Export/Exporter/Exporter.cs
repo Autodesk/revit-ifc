@@ -238,10 +238,10 @@ namespace Revit.IFC.Export.Exporter
          {
             try
             {
-               Assembly assembly = Assembly.LoadFrom(AppDomain.CurrentDomain.BaseDirectory + @"\Addins\SteelConnections\Autodesk.SteelConnections.ASIFC.dll");
+               Assembly assembly = Assembly.LoadFrom(AppDomain.CurrentDomain.BaseDirectory + @"\Addins\SteelConnections\RvtAS_IFC.dll");
                if (assembly != null)
                {
-                  Type type = assembly.GetType("Autodesk.SteelConnections.ASIFC.ASExporter");
+                  Type type = assembly.GetType("RvtAS_IFC.ASExporter");
                   if (type != null)
                   {
                      MethodInfo method = type.GetMethod("ExportASElements");
@@ -578,7 +578,7 @@ namespace Revit.IFC.Export.Exporter
                   if (graphicsCell != null) // Concrete elements with cell that have HasGraphics set to true, must be handled by Revit exporter.
                      hasGraphics = (bool)graphicsCell.GetValue(cell, null);
 
-                  if (hasGraphics)
+                  if (!hasGraphics)
                      return false;
                }
             }
