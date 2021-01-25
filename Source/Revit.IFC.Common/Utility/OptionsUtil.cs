@@ -354,7 +354,7 @@ namespace Revit.IFC.Common.Utility
          double northings = 0.0;
          double orthogonalHeight = 0.0;
 
-         BasePoint surveyPoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_SitePoint)).FirstElement() as BasePoint; ;
+         BasePoint surveyPoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_SharedBasePoint)).FirstElement() as BasePoint; ;
          BasePoint projectBasePoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_ProjectBasePoint)).FirstElement() as BasePoint;
          switch (wcsBasis)
          {

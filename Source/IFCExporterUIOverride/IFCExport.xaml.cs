@@ -522,7 +522,7 @@ namespace BIM.IFC.Export.UI
             if (!OptionsUtil.ExportAsOlderThanIFC4(selectedConfig.IFCVersion))
             {
                // Check whether the resulting offset (to wcs) will be too large due to geo-reference information, raise warning
-               BasePoint surveyPoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_SitePoint)).FirstElement() as BasePoint; ;
+               BasePoint surveyPoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_SharedBasePoint)).FirstElement() as BasePoint; ;
                BasePoint projectBasePoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_ProjectBasePoint)).FirstElement() as BasePoint;
                {
                   XYZ deltaOffset = XYZ.Zero;
