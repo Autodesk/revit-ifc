@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
+using Autodesk.Revit.DB;
 
 namespace Revit.IFC.Common.Extensions
 {
@@ -37,9 +38,10 @@ namespace Revit.IFC.Common.Extensions
          get { return fileDescription; }
          set
          {
-            fileDescription = value;
-            // Call OnPropertyChanged whenever the property is updated
-            OnPropertyChanged("FileDescriptionTextBox");
+            if (fileDescription != null && value != null && !fileDescription.Equals(value, StringComparison.InvariantCultureIgnoreCase))
+               fileDescription = value;
+            else if (fileDescription == null && value != null)
+               fileDescription = value;
          }
       }
 
@@ -199,21 +201,28 @@ namespace Revit.IFC.Common.Extensions
       {
       }
 
+      public IFCFileHeaderItem(Document doc)
+      {
+         // Application Name and Number are fixed for the software release and will not change, therefore they are always forced set here
+         ApplicationName = doc.Application.VersionName;
+         VersionNumber = doc.Application.VersionBuild;
+      }
+
       /// <summary>
       /// Actual copy/clone of the Header information.
       /// </summary>
       /// <param name="other">the source File header to clone.</param>
       private IFCFileHeaderItem(IFCFileHeaderItem other)
       {
-         this.FileDescription = other.FileDescription;
-         this.SourceFileName = other.SourceFileName;
-         this.AuthorName = other.AuthorName;
-         this.AuthorEmail = other.AuthorEmail;
-         this.Organization = other.Organization;
-         this.Authorization = other.Authorization;
-         this.ApplicationName = other.ApplicationName;
-         this.VersionNumber = other.VersionNumber;
-         this.FileSchema = other.FileSchema;
+         FileDescription = other.FileDescription;
+         SourceFileName = other.SourceFileName;
+         AuthorName = other.AuthorName;
+         AuthorEmail = other.AuthorEmail;
+         Organization = other.Organization;
+         Authorization = other.Authorization;
+         ApplicationName = other.ApplicationName;
+         VersionNumber = other.VersionNumber;
+         FileSchema = other.FileSchema;
       }
 
    }

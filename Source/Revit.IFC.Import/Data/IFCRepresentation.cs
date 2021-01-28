@@ -38,6 +38,7 @@ namespace Revit.IFC.Import.Data
       Box,
       FootPrint,
       Style,
+      CoG,  // Center of gravity
       Unhandled
    }
 
@@ -144,6 +145,8 @@ namespace Revit.IFC.Import.Data
          if (string.Compare(identifier, "Style", true) == 0 ||
              IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentation, IFCEntityType.IfcStyledRepresentation))
             return IFCRepresentationIdentifier.Style;
+         if (string.Compare(identifier, "CoG", true) == 0)
+            return IFCRepresentationIdentifier.CoG;
 
          Importer.TheLog.LogWarning(ifcRepresentation.StepId, "Found unknown representation type: " + identifier, false);
 
@@ -193,7 +196,7 @@ namespace Revit.IFC.Import.Data
          HashSet<IFCAnyHandle> items =
              IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcRepresentation, "Items");
 
-         LayerAssignment = IFCPresentationLayerAssignment.GetTheLayerAssignment(ifcRepresentation, true);
+         LayerAssignment = IFCPresentationLayerAssignment.GetTheLayerAssignment(ifcRepresentation);
 
          if (items == null)
          {
@@ -241,18 +244,6 @@ namespace Revit.IFC.Import.Data
                   RepresentationItems.Add(repItem);
             }
          }
-      }
-
-      /// <summary>
-      /// Deal with missing "LayerAssignments" in IFC2x3 EXP file.
-      /// </summary>
-      /// <param name="layerAssignment">The layer assignment to add to this representation.</param>
-      public void PostProcessLayerAssignment(IFCPresentationLayerAssignment layerAssignment)
-      {
-         if (LayerAssignment == null)
-            LayerAssignment = layerAssignment;
-         else
-            IFCImportDataUtil.CheckLayerAssignmentConsistency(LayerAssignment, layerAssignment, Id);
       }
 
       /// <summary>

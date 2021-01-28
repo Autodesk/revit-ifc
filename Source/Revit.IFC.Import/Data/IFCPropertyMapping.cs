@@ -44,26 +44,26 @@ namespace Revit.IFC.Import.Data
 
       static IFCPropertyMapping()
       {
-         m_Parameters.Add(new Tuple<string, string>(m_SpacePropertySet, "CeilingCovering"), BuiltInParameter.ROOM_FINISH_CEILING);
-         m_Parameters.Add(new Tuple<string, string>(m_SpacePropertySet, "FloorCovering"), BuiltInParameter.ROOM_FINISH_FLOOR);
-         m_Parameters.Add(new Tuple<string, string>(m_SpacePropertySet, "WallCovering"), BuiltInParameter.ROOM_FINISH_WALL);
+         m_Parameters.Add(Tuple.Create(m_SpacePropertySet, "CeilingCovering"), BuiltInParameter.ROOM_FINISH_CEILING);
+         m_Parameters.Add(Tuple.Create(m_SpacePropertySet, "FloorCovering"), BuiltInParameter.ROOM_FINISH_FLOOR);
+         m_Parameters.Add(Tuple.Create(m_SpacePropertySet, "WallCovering"), BuiltInParameter.ROOM_FINISH_WALL);
 
-         m_Parameters.Add(new Tuple<string, string>(m_WallPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
+         m_Parameters.Add(Tuple.Create(m_WallPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
 
-         m_Parameters.Add(new Tuple<string, string>(m_BeamPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
-         m_Parameters.Add(new Tuple<string, string>(m_BeamPropertySet, "Roll"), BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE);
+         m_Parameters.Add(Tuple.Create(m_BeamPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
+         m_Parameters.Add(Tuple.Create(m_BeamPropertySet, "Roll"), BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE);
 
-         m_Parameters.Add(new Tuple<string, string>(m_ColumnPropertySet, "Roll"), BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE);
+         m_Parameters.Add(Tuple.Create(m_ColumnPropertySet, "Roll"), BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE);
 
-         m_Parameters.Add(new Tuple<string, string>(m_MemberPropertySet, "Roll"), BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE);
+         m_Parameters.Add(Tuple.Create(m_MemberPropertySet, "Roll"), BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE);
 
-         m_Parameters.Add(new Tuple<string, string>(m_RoofPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
+         m_Parameters.Add(Tuple.Create(m_RoofPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
 
-         m_Parameters.Add(new Tuple<string, string>(m_SlabPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
+         m_Parameters.Add(Tuple.Create(m_SlabPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
 
-         m_Parameters.Add(new Tuple<string, string>(m_RampPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
+         m_Parameters.Add(Tuple.Create(m_RampPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
 
-         m_Parameters.Add(new Tuple<string, string>(m_StairPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
+         m_Parameters.Add(Tuple.Create(m_StairPropertySet, "FireRating"), BuiltInParameter.FIRE_RATING);
       }
 
       /// <summary>
@@ -76,7 +76,7 @@ namespace Revit.IFC.Import.Data
       {
          BuiltInParameter builtInParameter = BuiltInParameter.INVALID;
 
-         m_Parameters.TryGetValue(new Tuple<string, string>(group, name), out builtInParameter);
+         m_Parameters.TryGetValue(Tuple.Create(group, name), out builtInParameter);
 
          return builtInParameter;
       }

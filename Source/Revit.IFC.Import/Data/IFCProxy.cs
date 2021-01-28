@@ -100,15 +100,21 @@ namespace Revit.IFC.Import.Data
 
          if (element != null)
          {
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+
             // Set "Tag" parameter.
             string ifcTag = Tag;
             if (!string.IsNullOrWhiteSpace(ifcTag))
-               IFCPropertySet.AddParameterString(doc, element, "IfcTag", ifcTag, Id);
+            {
+               IFCPropertySet.AddParameterString(doc, element, category, "IfcTag", ifcTag, Id);
+            }
 
             // Set "ProxyType" parameter.
             string ifcProxyType = ProxyType;
             if (!string.IsNullOrWhiteSpace(ifcProxyType))
-               IFCPropertySet.AddParameterString(doc, element, "IfcProxyType", ifcProxyType, Id);
+            {
+               IFCPropertySet.AddParameterString(doc, element, category, "IfcProxyType", ifcProxyType, Id);
+            }
          }
       }
 

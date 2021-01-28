@@ -20,11 +20,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Data;
 using Revit.IFC.Import.Utility;
 
@@ -225,17 +223,11 @@ namespace Revit.IFC.Import.Geometry
          return MathUtil.VectorsAreParallel2(firstDir, secondDir) == -1;
       }
 
-      /// <summary>
-      /// Creates an open or closed CurveLoop from a list of vertices.
-      /// </summary>
-      /// <param name="pointXYZs">The list of vertices.</param>
-      /// <param name="points">The optional list of IFCAnyHandles that generated the vertices, used solely for error reporting.</param>
-      /// <param name="id">The id of the IFCAnyHandle associated with the CurveLoop.</param>
-      /// <param name="closeCurve">True if the loop needs a segment between the last point and the first point.</param>
-      /// <returns>The new curve loop.</returns>
-      /// <remarks>If closeCurve is true, there will be pointsXyz.Count line segments.  Otherwise, there will be pointsXyz.Count-1.</remarks>
-      public static CurveLoop CreatePolyCurveLoop(IList<XYZ> pointXYZs, IList<IFCAnyHandle> points, int id, bool closeCurve)
+      private static IList<XYZ> GeneratePolyCurveLoopVertices(IList<XYZ> pointXYZs,
+         IList<IFCAnyHandle> points, int id, bool closeCurve, out int numSegments)
       {
+         numSegments = 0;
+
          int numPoints = pointXYZs.Count;
          if (numPoints < 2)
          {
@@ -247,7 +239,7 @@ namespace Revit.IFC.Import.Geometry
 
          // The input polycurve loop may or may not repeat the start/end point.
          // wasAlreadyClosed checks if the point was repeated.
-         bool wasAlreadyClosed = pointXYZs[0].IsAlmostEqualTo(pointXYZs[numPoints - 1]);
+         bool wasAlreadyClosed = MathUtil.IsAlmostEqualAbsolute(pointXYZs[0], pointXYZs[numPoints - 1]);
 
          bool wasClosed = closeCurve ? true : wasAlreadyClosed;
 
@@ -294,7 +286,7 @@ namespace Revit.IFC.Import.Geometry
             if (numNewPoints < 4)
                return null;
 
-            bool isClosed = finalPoints[numNewPoints - 1].IsAlmostEqualTo(finalPoints[0]);  // Do we have a closed loop now?
+            bool isClosed = MathUtil.IsAlmostEqualAbsolute(finalPoints[numNewPoints - 1], finalPoints[0]);  // Do we have a closed loop now?
             if (wasClosed && !isClosed)   // If we had a closed loop, and now we don't, fix it up.
             {
                // Presumably, the second-to-last point had to be very close to the last point, or we wouldn't have removed the last point.
@@ -351,11 +343,49 @@ namespace Revit.IFC.Import.Geometry
             return null;
          }
 
+         numSegments = numNewPoints - 1;
+         return finalPoints;
+      }
+
+      /// <summary>
+      /// Creates an open or closed CurveLoop from a list of vertices.
+      /// </summary>
+      /// <param name="pointXYZs">The list of vertices.</param>
+      /// <param name="points">The optional list of IFCAnyHandles that generated the vertices, used solely for error reporting.</param>
+      /// <param name="id">The id of the IFCAnyHandle associated with the CurveLoop.</param>
+      /// <param name="closeCurve">True if the loop needs a segment between the last point and the first point.</param>
+      /// <returns>The new curve loop.</returns>
+      /// <remarks>If closeCurve is true, there will be pointsXyz.Count line segments.  Otherwise, there will be pointsXyz.Count-1.</remarks>
+      public static CurveLoop CreatePolyCurveLoop(IList<XYZ> pointXYZs, IList<IFCAnyHandle> points, int id, bool closeCurve)
+      {
          CurveLoop curveLoop = new CurveLoop();
-         for (int ii = 0; ii < numNewPoints - 1; ii++)
+
+         int numSegments = 0;
+         IList<XYZ> finalPoints = GeneratePolyCurveLoopVertices(pointXYZs, points, id, closeCurve, out numSegments);
+         for (int ii = 0; ii < numSegments; ii++)
             curveLoop.Append(Line.CreateBound(finalPoints[ii], finalPoints[ii + 1]));
 
          return curveLoop;
+      }
+
+      /// <summary>
+      /// Append line segments to an existing CurveLoop from a list of vertices.
+      /// </summary>
+      /// <param name="curveLoop">The curve loop.</param>
+      /// <param name="pointXYZs">The list of vertices.</param>
+      /// <param name="points">The optional list of IFCAnyHandles that generated the vertices, used solely for error reporting.</param>
+      /// <param name="id">The id of the IFCAnyHandle associated with the CurveLoop.</param>
+      /// <param name="closeCurve">True if the loop needs a segment between the last point and the first point.</param>
+      public static void AppendPolyCurveToCurveLoop(CurveLoop curveLoop, IList<XYZ> pointXYZs, IList<IFCAnyHandle> points, int id, bool closeCurve)
+      {
+         if (curveLoop == null)
+            return;
+
+         int numSegments = 0;
+         IList<XYZ> finalPoints = GeneratePolyCurveLoopVertices(pointXYZs, points, id, closeCurve, out numSegments);
+
+         for (int ii = 0; ii < numSegments; ii++)
+            curveLoop.Append(Line.CreateBound(finalPoints[ii], finalPoints[ii + 1]));
       }
 
       /// <summary>
@@ -419,7 +449,7 @@ namespace Revit.IFC.Import.Geometry
       /// <param name="endVal">The ending trim parameter.</param>
       /// <param name="totalParamLength">The total parametric length of the curve, as defined by IFC.</param>
       /// <returns>False if the trim parameters are thought to be invalid or unnecessary, true otherwise.</returns>
-      private static bool CheckIfTrimParametersAreNeeded(int id, IFCCurve ifcCurve, 
+      private static bool CheckIfTrimParametersAreNeeded(int id, IFCCurve ifcCurve,
          double startVal, double endVal, double totalParamLength)
       {
          // This check allows for some leniency in the setting of startVal and endVal; we assume that:
@@ -431,7 +461,7 @@ namespace Revit.IFC.Import.Geometry
 
          if (MathUtil.IsAlmostZero(startVal) && totalParamLength < curveParamLength - MathUtil.Eps())
             return false;
-  
+
          if (!(ifcCurve is IFCCompositeCurve))
             return true;
 
@@ -482,6 +512,17 @@ namespace Revit.IFC.Import.Geometry
          return (origEndVal.HasValue || !MathUtil.IsAlmostZero(startVal));
       }
 
+      private static bool HasSuspiciousTrimParameters(int id, double startVal, double endVal, double totalParamLength)
+      {
+         if ((MathUtil.IsAlmostEqual(totalParamLength, 1.0)) || (!MathUtil.IsAlmostZero(startVal) || !MathUtil.IsAlmostEqual(endVal, 1.0)))
+            return false;
+
+         Importer.TheLog.LogWarning(id, "The Start Parameter for the trimming of this curve was set to 0, and the End Parameter was set to 1.  " +
+            "Most likely, this is an error in the sending application, and the trim extents are being ignored.  " +
+            "If this trim was intended, please contact Autodesk.", true);
+         return true;
+      }
+
       /// <summary>
       /// Trims the CurveLoop contained in an IFCCurve by the start and optional end parameter values.
       /// </summary>
@@ -517,13 +558,8 @@ namespace Revit.IFC.Import.Geometry
 
          double totalParamLength = 0.0;
 
-         bool allLines = true;
-
          foreach (Curve curve in origCurveLoop)
          {
-            if (!(curve is Line))
-               allLines = false;
-
             double curveLength = curve.GetEndParameter(1) - curve.GetEndParameter(0);
             double currLength = ScaleCurveLengthForSweptSolid(curve, curveLength);
             loopCurves.Add(curve);
@@ -538,22 +574,14 @@ namespace Revit.IFC.Import.Geometry
             return origCurveLoop;
 
          // Special cases: 
-         // if startval = 0 and endval = 1 and we have a polyline, then this likely means that the importing application
+         // if startval = 0 and endval = 1, then this likely means that the importing application
          // incorrectly set the extents to be the "whole" curve, when really this is just a portion of the curves
          // (the parametrization is described above).
          // As such, if the totalParamLength is not 1 but startVal = 0 and endVal = 1, we will warn but not trim.
          // This is not a hypothetical case: it occurs in several AllPlan 2017 files at least.
-         if (allLines)
-         {
-            if ((!MathUtil.IsAlmostEqual(totalParamLength, 1.0)) && (MathUtil.IsAlmostZero(startVal) && MathUtil.IsAlmostEqual(endVal, 1.0)))
-            {
-               Importer.TheLog.LogWarning(id, "The Start Parameter for the trimming of this curve was set to 0, and the End Parameter was set to 1.  " +
-                  "Most likely, this is an error in the sending application, and the trim extents are being ignored.  " +
-                  "If this trim was intended, please contact Autodesk.", true);
-               return origCurveLoop;
-            }
-         }
-
+         if (HasSuspiciousTrimParameters(id, startVal, endVal, totalParamLength))
+            return origCurveLoop;
+         
          int numCurves = loopCurves.Count;
          double currentPosition = 0.0;
          int currCurve = 0;
@@ -683,11 +711,30 @@ namespace Revit.IFC.Import.Geometry
          Solid resultSolid = null;
          bool failedAllAttempts = true;
 
-         // We will attempt to do the Boolean operation 3 times:
-         // 1st pass: With the passed-in arguments.
-         // 2nd pass: With a 1mm shift in a direction in suggestedShiftDirection, or +Z if suggestedShiftDirection is null
-         // 3rd pass: With a 1mm shift in a direction in -suggestedShiftDirection, or -Z if suggestedShiftDirection is null
-         for (int ii = 0; ii < 3; ii++)
+         // We will attempt to do the Boolean operation here.
+         // In the first pass, we will try to do the Boolean operation as-is.
+         // For subsequent passes, we will shift the second operand by a small distance in 
+         // a given direction, using the following formula:
+         // We start with a 1mm shift, and try each of (up to 4) shift directions given by
+         // the shiftDirections list below, in alternating positive and negative directions.
+         // In none of these succeed, we will increment the distance by 1mm and try again
+         // until we reach numPasses.
+         // Boolean operations are expensive, and as such we want to limit the number of
+         // attempts we make here to balance fidelity and performance.  Initial experimentation
+         // suggests that a maximum 3mm shift is a good first start for this balance.
+         IList<XYZ> shiftDirections = new List<XYZ>()
+         {
+            suggestedShiftDirection,
+            XYZ.BasisZ,
+            XYZ.BasisX,
+            XYZ.BasisY
+         };
+
+         const int numberOfNudges = 4;
+         const int numPasses = numberOfNudges * 8 + 1; // 1 base, 8 possible nudges up to 0.75mm.
+         double currentShiftFactor = 0.0;
+
+         for (int ii = 0; ii < numPasses; ii++)
          {
             try
             {
@@ -696,9 +743,16 @@ namespace Revit.IFC.Import.Geometry
                Solid secondOperand = secondSolid;
                if (ii > 0)
                {
-                  // 1 mm shift.
-                  XYZ shiftDirection = (suggestedShiftDirection == null) ? new XYZ(0, 0, 1) : suggestedShiftDirection;
-                  Transform secondSolidShift = Transform.CreateTranslation(shiftDirection * ((ii == 1) ? footToMillimeter : -footToMillimeter));
+                  int shiftDirectionIndex = (ii - 1) % 4;
+                  XYZ shiftDirectionToUse = shiftDirections[shiftDirectionIndex];
+                  if (shiftDirectionToUse == null)
+                     continue;
+
+                  // ((ii + 3) >> 3) * 0.25mm shift.  Basically, a 0.25mm shift for every 8 attempts.
+                  currentShiftFactor = ((ii + 1) >> 3) * 0.25;
+                  int posOrNegDirection = (ii % 2 == 1) ? 1 : -1;
+                  double scale = currentShiftFactor * posOrNegDirection * footToMillimeter;
+                  Transform secondSolidShift = Transform.CreateTranslation(scale * shiftDirectionToUse);
                   secondOperand = SolidUtils.CreateTransformed(secondOperand, secondSolidShift);
                }
 
@@ -707,10 +761,17 @@ namespace Revit.IFC.Import.Geometry
             }
             catch (Exception ex)
             {
-               if (ii < 2)
+               string msg = ex.Message;
+
+               // This is the only error that we are trying to catch and fix.
+               // For any other error, we will re-throw.
+               if (!msg.Contains("Failed to perform the Boolean operation for the two solids"))
+                  throw ex;
+
+               if (ii < numPasses - 1)
                   continue;
 
-               Importer.TheLog.LogError(id, ex.Message, false);
+               Importer.TheLog.LogError(id, msg, false);
                resultSolid = firstSolid;
             }
 
@@ -718,9 +779,12 @@ namespace Revit.IFC.Import.Geometry
             {
                // If we got here not on out first attempt, generate a warning, unless we got here because we gave up on our 3rd attempt.
                if (ii > 0 && !failedAllAttempts)
+               {
                   Importer.TheLog.LogWarning(id, "The second argument in the Boolean " +
                      opType.ToString() +
-                     " operation was shifted by 1mm to allow the operation to succeed.  This may result in a very small difference in appearance.", false);
+                     " operation was shifted by " + currentShiftFactor +
+                     "mm to allow the operation to succeed.  This may result in a very small difference in appearance.", false);
+               }
                return resultSolid;
             }
          }
@@ -837,12 +901,12 @@ namespace Revit.IFC.Import.Geometry
       /// <param name="inputVerticesList">Input list of the vertices</param>
       /// <param name="outputVerticesList">Output List of the valid vertices, i.e. not vertices that are too close to each other</param>
       /// <returns></returns>
-      public static void CheckAnyDistanceVerticesWithinTolerance(int entityId, 
+      public static void CheckAnyDistanceVerticesWithinTolerance(int entityId,
          IFCImportShapeEditScope shapeEditScope, IList<XYZ> inputVerticesList, out List<XYZ> outputVerticesList)
       {
          // Check triangle that is too narrow (2 vertices are within the tolerance)
          double shortSegmentTolerance = shapeEditScope.GetShortSegmentTolerance();
-         
+
          int lastVertex = 0;
          List<XYZ> vertList = new List<XYZ>();
          outputVerticesList = vertList;
@@ -865,7 +929,7 @@ namespace Revit.IFC.Import.Geometry
                string distAsString = IFCUnitUtil.FormatLengthAsString(dist);
                string shortDistAsString = IFCUnitUtil.FormatLengthAsString(shortSegmentTolerance);
                string warningString = "Distance between vertices " + lastVertex + " and " + currIdx +
-                                       " is " + distAsString + ", which is less than the minimum distance of " + 
+                                       " is " + distAsString + ", which is less than the minimum distance of " +
                                        shortDistAsString + ", removing second point.";
 
                Importer.TheLog.LogComment(entityId, warningString, false);

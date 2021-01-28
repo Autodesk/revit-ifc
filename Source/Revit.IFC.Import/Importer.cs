@@ -91,8 +91,6 @@ namespace Revit.IFC.Import
    {
       #region IIFCImporterServer Members
 
-      static Importer m_TheImporter = null;
-
       IFCImportOptions m_ImportOptions = null;
 
       IFCImportCache m_ImportCache = null;
@@ -142,19 +140,15 @@ namespace Revit.IFC.Import
       /// <summary>
       /// The one  Importer class for this import process.
       /// </summary>
-      static public Importer TheImporter
-      {
-         get { return m_TheImporter; }
-         protected set { m_TheImporter = value; }
-      }
+      static public Importer TheImporter { get; protected set; } = null;
 
       /// <summary>
       /// The Import cache used for this import process.
       /// </summary>
       static public IFCImportCache TheCache
       {
-         get { return m_TheImporter.m_ImportCache; }
-         protected set { m_TheImporter.m_ImportCache = value; }
+         get { return TheImporter.m_ImportCache; }
+         protected set { TheImporter.m_ImportCache = value; }
       }
 
       /// <summary>
@@ -162,8 +156,8 @@ namespace Revit.IFC.Import
       /// </summary>
       static public IFCImportLog TheLog
       {
-         get { return m_TheImporter.m_ImportLog; }
-         protected set { m_TheImporter.m_ImportLog = value; }
+         get { return TheImporter.m_ImportLog; }
+         protected set { TheImporter.m_ImportLog = value; }
       }
 
       static IFCImportOptions m_TheOptions = null;
@@ -239,6 +233,10 @@ namespace Revit.IFC.Import
          bool templatesDifferent = noIFCTemplate ? false : (string.Compare(defaultTemplate, defaultProjectTemplate, true) != 0);
          bool canUseDefault = templatesDifferent;
 
+         string projectFilesUsed = templatesDifferent ? defaultIFCTemplate + ", " + defaultProjectTemplate : defaultTemplate;
+         if (string.Compare(defaultTemplate, defaultProjectTemplate, true) != 0)
+            projectFilesUsed += ", " + defaultProjectTemplate;
+
          while (ifcDocument == null)
          {
             try
@@ -250,11 +248,14 @@ namespace Revit.IFC.Import
                }
                else
                   ifcDocument = application.NewProjectDocument(defaultTemplate);
+
+               if (ifcDocument == null)
+               {
+                  throw new InvalidOperationException("Can't open template file(s) " + projectFilesUsed + " to create link document");
+               }
             }
             catch
             {
-               ifcDocument = null;
-
                if (canUseDefault)
                {
                   defaultTemplate = defaultProjectTemplate;
@@ -263,12 +264,8 @@ namespace Revit.IFC.Import
                }
                else
                {
-                  string projectFilesUsed = templatesDifferent ? defaultIFCTemplate + ", " + defaultProjectTemplate : defaultTemplate;
-
-                  if (string.Compare(defaultTemplate, defaultProjectTemplate, true) != 0)
-                     projectFilesUsed += ", " + defaultProjectTemplate;
                   Importer.TheLog.LogError(-1, "Can't open template file(s) " + projectFilesUsed + " to create link document, aborting import.", false);
-                  return null;
+                  throw;
                }
             }
 
@@ -286,24 +283,22 @@ namespace Revit.IFC.Import
          {
             // Check to see if the Revit file already exists; if so, we will re-use it.
             ifcDocument = LoadLinkDocument(originalDocument, linkedFileName);
-         }
-         catch
-         {
-            ifcDocument = null;
-         }
 
-         // If it doesn't exist, create a new document.
-         if (ifcDocument == null)
-         {
-            try
+            // If it doesn't exist, create a new document.
+            if (ifcDocument == null)
             {
                ifcDocument = CreateLinkDocument(originalDocument);
             }
-            catch
+
+            if (ifcDocument == null)
             {
-               ifcDocument = null;
-               Importer.TheLog.LogError(-1, "Could not create document for cached IFC Revit file while importing: " + linkedFileName + ", aborting.", false);
+               throw new InvalidOperationException("Could not create document while importing: " + linkedFileName);
             }
+         }
+         finally
+         {
+            if(ifcDocument == null)
+               Importer.TheLog.LogError(-1, "Could not create document for cached IFC Revit file while importing: " + linkedFileName + ", aborting.", false);
          }
 
          return ifcDocument;
@@ -449,7 +444,7 @@ namespace Revit.IFC.Import
          // We need to generate a local file name for all of the intermediate files (the log file, the cache file, and the shared parameters file).
          string localFileName = ImporterIFCUtils.GetLocalFileName(document, origFullFileName);
          if (localFileName == null)
-            return;
+            throw new InvalidOperationException("Could not generate local file name for: " + origFullFileName);
 
          // An early check, based on the options set - if we are allowed to use an up-to-date existing file on disk, use it.
          // It is possible that the log file may have been created in CreateImporter above, 
@@ -465,8 +460,6 @@ namespace Revit.IFC.Import
             string linkedFileName = IFCImportFile.GetRevitFileName(localFileName);
 
             ifcDocument = LoadOrCreateLinkDocument(originalDocument, linkedFileName);
-            if (ifcDocument == null)
-               return;
          }
          else
             ifcDocument = originalDocument;
@@ -555,6 +548,11 @@ namespace Revit.IFC.Import
          {
             if (Importer.TheLog != null)
                Importer.TheLog.LogError(-1, ex.Message, false);
+            // The following message can sometimes occur when reloading some IFC files
+            // from external resources.  In this case, we should silently fail, and not
+            // throw.
+            if (!ex.Message.Contains("Starting a new transaction is not permitted"))
+               throw;
          }
          finally
          {

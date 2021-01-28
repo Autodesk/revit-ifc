@@ -131,7 +131,8 @@ namespace Revit.IFC.Import.Data
                if (element is ProjectInfo)
                   parameterName = EntityType.ToString() + " " + parameterName;
 
-               IFCPropertySet.AddParameterString(doc, element, parameterName, longName, Id);
+               Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, parameterName, longName, Id);
             }
          }
       }
@@ -157,7 +158,7 @@ namespace Revit.IFC.Import.Data
                ProcessIFCRelContainedInSpatialStructure(elem);
          }
 
-         if (IFCImportFile.TheFile.SchemaVersion > IFCSchemaVersion.IFC2x || IFCAnyHandleUtil.IsSubTypeOf(ifcSpatialStructureElement, IFCEntityType.IfcBuilding))
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) || IFCAnyHandleUtil.IsSubTypeOf(ifcSpatialStructureElement, IFCEntityType.IfcBuilding))
          {
             HashSet<IFCAnyHandle> systemSet =
              IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcSpatialStructureElement, "ServicedBySystems");

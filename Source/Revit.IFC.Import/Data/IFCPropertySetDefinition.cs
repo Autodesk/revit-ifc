@@ -124,9 +124,11 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The element being created.</param>
+      /// <param name="category">The category of the element.</param>
       /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
       /// <param name="parametersCreated">The created parameters.</param>
-      protected void CreateScheduleForPropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap, ISet<string> parametersCreated)
+      protected void CreateScheduleForPropertySet(Document doc, Element element, Category category,
+         IFCParameterSetByGroup parameterGroupMap, ISet<string> parametersCreated)
       {
          // Don't bother creating schedules if we are maximizing performance.
          if (IFCImportFile.TheFile.Options.UseStreamlinedOptions)
@@ -135,14 +137,14 @@ namespace Revit.IFC.Import.Data
          if (parametersCreated.Count == 0)
             return;
 
-         Category category = element.Category;
          if (category == null)
             return;
 
          ElementId categoryId = category.Id;
          bool elementIsType = (element is ElementType);
 
-         Tuple<ElementId, bool, string> scheduleKey = new Tuple<ElementId, bool, string>(categoryId, elementIsType, Name);
+         string cleanName = IFCNamingUtil.CleanIFCName(Name);
+         Tuple<ElementId, bool, string> scheduleKey = Tuple.Create(categoryId, elementIsType, cleanName);
 
          ISet<string> viewScheduleNames = Importer.TheCache.ViewScheduleNames;
          IDictionary<Tuple<ElementId, bool, string>, ElementId> viewSchedules = Importer.TheCache.ViewSchedules;
@@ -189,7 +191,8 @@ namespace Revit.IFC.Import.Data
                ElementId ifcGUIDId = new ElementId(elementIsType ? BuiltInParameter.IFC_TYPE_GUID : BuiltInParameter.IFC_GUID);
                string propertySetListName = elementIsType ? Resources.IFCTypeSchedule + " IfcPropertySetList" : "IfcPropertySetList";
 
-               IList<SchedulableField> schedulableFields = viewSchedule.Definition.GetSchedulableFields();
+               ScheduleDefinition viewScheduleDefinition = viewSchedule.Definition;
+               IList<SchedulableField> schedulableFields = viewScheduleDefinition.GetSchedulableFields();
 
                bool filtered = false;
                foreach (SchedulableField sf in schedulableFields)
@@ -197,15 +200,15 @@ namespace Revit.IFC.Import.Data
                   string fieldName = sf.GetName(doc);
                   if (parametersCreated.Contains(fieldName) || sf.ParameterId == ifcGUIDId)
                   {
-                     viewSchedule.Definition.AddField(sf);
+                     viewScheduleDefinition.AddField(sf);
                   }
                   else if (!filtered && fieldName == propertySetListName)
                   {
                      // We want to filter the schedule for specifically those elements that have this property set assigned.
-                     ScheduleField scheduleField = viewSchedule.Definition.AddField(sf);
+                     ScheduleField scheduleField = viewScheduleDefinition.AddField(sf);
                      scheduleField.IsHidden = true;
                      ScheduleFilter filter = new ScheduleFilter(scheduleField.FieldId, ScheduleFilterType.Contains, "\"" + Name + "\"");
-                     viewSchedule.Definition.AddFilter(filter);
+                     viewScheduleDefinition.AddFilter(filter);
                      filtered = true;
                   }
                }
@@ -222,9 +225,9 @@ namespace Revit.IFC.Import.Data
       /// <param name="element">The element being created.</param>
       /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
       /// <returns>The name of the property set created, if it was created, and a Boolean value if it should be added to the property set list.</returns>
-      public virtual KeyValuePair<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
+      public virtual Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
       {
-         return new KeyValuePair<string, bool>(null, false);
+         return new Tuple<string, bool>(null, false);
       }
    }
 }

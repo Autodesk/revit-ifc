@@ -39,11 +39,9 @@ namespace Revit.IFC.Export.Utility
       IDictionary<int, IndexFace> facesColl = new Dictionary<int, IndexFace>();
 
       // These two must be hand in hand
-      static double _tol = 1e-6;
-      static int _tolNoDecPrecision = 6;
-      // ------
+      public const double Tolerance = 1e-6;
 
-      //IDictionary<int, HashSet<int>> sortedFVert = new Dictionary<int, HashSet<int>>();
+      public const int DecimalPrecision = 6;
 
       public static bool IsMesh { get { return (_meshGeom != null && _geom == null); } }
 
@@ -156,25 +154,22 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Custom IEqualityComparer for a vector with tolerance for use with Dictionary
       /// </summary>
-      public class vectorCompare : IEqualityComparer<XYZ>
+      public class VectorCompare : IEqualityComparer<XYZ>
       {
          public bool Equals(XYZ o1, XYZ o2)
          {
-            bool xdiff = Math.Abs((o1 as XYZ).X - (o2 as XYZ).X) < _tol;
-            bool ydiff = Math.Abs((o1 as XYZ).Y - (o2 as XYZ).Y) < _tol;
-            bool zdiff = Math.Abs((o1 as XYZ).Z - (o2 as XYZ).Z) < _tol;
-            if (xdiff && ydiff && zdiff)
-               return true;
-            else
-               return false;
+            return (Math.Abs((o1 as XYZ).X - (o2 as XYZ).X) < Tolerance) &&
+            (Math.Abs((o1 as XYZ).Y - (o2 as XYZ).Y) < Tolerance) &&
+            (Math.Abs((o1 as XYZ).Z - (o2 as XYZ).Z) < Tolerance);
          }
 
          public int GetHashCode(XYZ obj)
          {
-            // Uses the precision set in MathUtils to round the values so that the HashCode will be consistent with the Equals method
-            double X = Math.Round(obj.X, _tolNoDecPrecision);
-            double Y = Math.Round(obj.Y, _tolNoDecPrecision);
-            double Z = Math.Round(obj.Z, _tolNoDecPrecision);
+            // Uses the precision set in MathUtils to round the values so that the HashCode 
+            // will be consistent with the Equals method.
+            double X = Math.Round(obj.X, DecimalPrecision);
+            double Y = Math.Round(obj.Y, DecimalPrecision);
+            double Z = Math.Round(obj.Z, DecimalPrecision);
 
             return X.GetHashCode() ^ Y.GetHashCode() ^ Z.GetHashCode();
          }
@@ -491,7 +486,7 @@ namespace Revit.IFC.Export.Utility
 
          int noTriangle = (IsMesh) ? _meshGeom.NumTriangles : _geom.TriangleCount;
          int noVertices = (IsMesh) ? _meshGeom.Vertices.Count : _geom.VertexCount;
-         IEqualityComparer<XYZ> normalComparer = new vectorCompare();
+         IEqualityComparer<XYZ> normalComparer = new VectorCompare();
          Dictionary<XYZ, List<int>> faceSortedByNormal = new Dictionary<XYZ, List<int>>(normalComparer);
 
          for (int ef = 0; ef < noTriangle; ++ef)
@@ -501,16 +496,12 @@ namespace Revit.IFC.Export.Utility
             if (IsMesh)
             {
                MeshTriangle f = _meshGeom.get_Triangle(ef);
-               vertIndex.Add((int)f.get_Index(0));
-               vertIndex.Add((int)f.get_Index(1));
-               vertIndex.Add((int)f.get_Index(2));
+               vertIndex = new List<int>(3) { (int)f.get_Index(0), (int)f.get_Index(1), (int)f.get_Index(2) };
             }
             else
             {
                TriangleInShellComponent f = _geom.GetTriangle(ef);
-               vertIndex.Add(f.VertexIndex0);
-               vertIndex.Add(f.VertexIndex1);
-               vertIndex.Add(f.VertexIndex2);
+               vertIndex = new List<int>(3) { f.VertexIndex0, f.VertexIndex1, f.VertexIndex2 };
             }
 
             IndexFace intF = new IndexFace(vertIndex);
@@ -519,16 +510,12 @@ namespace Revit.IFC.Export.Utility
 
             if (!faceSortedByNormal.TryGetValue(intF.normal, out fIDList))
             {
-               fIDList = new List<int>();
-               fIDList.Add(ef);
+               fIDList = new List<int>(1) { ef };
                faceSortedByNormal.Add(intF.normal, fIDList);
             }
-            else
+            else if (!fIDList.Contains(ef))
             {
-               if (!fIDList.Contains(ef))
-               {
-                  fIDList.Add(ef);
-               }
+               fIDList.Add(ef);
             }
          }
 

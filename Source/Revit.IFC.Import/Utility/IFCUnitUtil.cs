@@ -32,7 +32,7 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Converts a value from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="UnitType.UT_">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
       static public double ScaleValue(UnitType unitType, double inValue)
@@ -43,7 +43,7 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Converts an XYZ value from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="UnitType.UT_">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
       static public XYZ ScaleValue(UnitType unitType, XYZ inValue)
@@ -54,7 +54,7 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Converts a list of XYZ values from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="UnitType.UT_">Identifier of the spec for this value.</param>
       /// <param name="inValues">The values to convert.</param>
       static public void ScaleValues(UnitType unitType, IList<XYZ> inValues)
       {
@@ -104,7 +104,7 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Converts a value from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="UnitType.UT_">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
       static private double ProjectScale(UnitType unitType, double inValue)
@@ -119,7 +119,7 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Converts a vector from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="UnitType.UT_">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
       /// <remarks>Note that the OffsetFactor is ignored.</remarks>
@@ -135,7 +135,7 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Converts a list of vectors from the units from an IFC file to the corresponding Revit internal units.
       /// </summary>
-      /// <param name="unitType">The unit of measurement for this value.</param>
+      /// <param name="UnitType.UT_">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
       /// <returns>The result value in Revit internal units.</returns>
       /// <remarks>Note that the OffsetFactor is ignored.</remarks>

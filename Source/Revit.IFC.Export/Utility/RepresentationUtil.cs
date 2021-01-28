@@ -121,8 +121,8 @@ namespace Revit.IFC.Export.Utility
          {
             string ifcCADLayer = GetPresentationLayerOverride(element);
 
-         // We are using the DWG export layer table to correctly map category to DWG layer for the 
-         // IfcPresentationLayerAsssignment, if it is not overridden.
+            // We are using the DWG export layer table to correctly map category to DWG layer for the 
+            // IfcPresentationLayerAsssignment, if it is not overridden.
             if (string.IsNullOrWhiteSpace(ifcCADLayer))
             {
                ifcCADLayer = GetPresentationLayerOverride(element);
@@ -468,7 +468,7 @@ namespace Revit.IFC.Export.Utility
       public static IFCAnyHandle CreateBodyMappedItemRep(ExporterIFC exporterIFC, Element element, ElementId categoryId,
          IFCAnyHandle contextOfItems, ISet<IFCAnyHandle> bodyItems)
       {
-         string identifierOpt = "Body";   // this is by IFC2x2+ convention
+         string identifierOpt = IFCAnyHandleUtil.GetStringAttribute(contextOfItems, "ContextIdentifier");
          string repTypeOpt = ShapeRepresentationType.MappedRepresentation.ToString();  // this is by IFC2x2+ convention
          IFCAnyHandle bodyRepresentation = CreateShapeRepresentation(exporterIFC, element, categoryId,
             contextOfItems, identifierOpt, repTypeOpt, bodyItems);
@@ -603,7 +603,9 @@ namespace Revit.IFC.Export.Utility
          List<IFCAnyHandle> bodyReps = new List<IFCAnyHandle>();
          if (!skipBody)
          {
-            bodyData = BodyExporter.ExportBody(exporterIFC, element, categoryId, ElementId.InvalidElementId, geometryList,
+            ElementId matId = ExporterUtil.GetSingleMaterial(element);
+
+            bodyData = BodyExporter.ExportBody(exporterIFC, element, categoryId, matId, geometryList,
                 bodyExporterOptions, extrusionCreationData);
             IFCAnyHandle bodyRep = bodyData.RepresentationHnd;
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
@@ -911,6 +913,75 @@ namespace Revit.IFC.Export.Utility
          }
 
          return 0;
+      }
+
+      /// <summary>
+      /// Create Shape representation of a geometry item together with its associated IfcShapeAspect. This works only for "Body"
+      /// </summary>
+      /// <param name="exporterIFC">exporter IFC</param>
+      /// <param name="hostElement">the host element owning the geometries</param>
+      /// <param name="hostProdDefShape">product definition shape of the host</param>
+      /// <param name="repType">Representation type</param>
+      /// <param name="aspectName">aspect name: expected to be component category, if not by default should be the same as the material name</param>
+      /// <param name="itemRep">the geometry representation item</param>
+      public static void CreateRepForShapeAspect(ExporterIFC exporterIFC, Element hostElement, IFCAnyHandle hostProdDefShape, string repType, string aspectName, IFCAnyHandle itemRep)
+      {
+         CreateRepForShapeAspect(exporterIFC, hostElement, hostProdDefShape, repType, aspectName, new HashSet<IFCAnyHandle>() { itemRep });
+      }
+
+      /// <summary>
+      /// Create Shape representation of a geometry item together with its associated IfcShapeAspect. This works only for "Body"
+      /// </summary>
+      /// <param name="exporterIFC">exporter IFC</param>
+      /// <param name="hostElement">the host element owning the geometries</param>
+      /// <param name="hostProdDefShape">product definition shape of the host</param>
+      /// <param name="repType">Representation type</param>
+      /// <param name="aspectName">aspect name: expected to be component category, if not by default should be the same as the material name</param>
+      /// <param name="itemRepSet">Set of IfcRepresentationItems</param>
+      public static void CreateRepForShapeAspect(ExporterIFC exporterIFC, Element hostElement, IFCAnyHandle hostProdDefShape, string repType, string aspectName, HashSet<IFCAnyHandle> itemRepSet)
+      {
+         string shapeIdent = "Body";
+         IFCAnyHandle contextOfItems = exporterIFC.Get3DContextHandle(shapeIdent);
+         ElementId catId = CategoryUtil.GetSafeCategoryId(hostElement);
+         if (IFCAnyHandleUtil.IsSubTypeOf(hostProdDefShape, IFCEntityType.IfcProductRepresentation))
+         {
+            IFCAnyHandle representationOfItem = RepresentationUtil.CreateShapeRepresentation(exporterIFC, hostElement, catId, contextOfItems, shapeIdent, repType, itemRepSet);
+            IFCAnyHandle shapeAspect = IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
+         }
+         else if (IFCAnyHandleUtil.IsSubTypeOf(hostProdDefShape, IFCEntityType.IfcRepresentationMap))
+         {
+            IFCAnyHandle representation = IFCAnyHandleUtil.GetInstanceAttribute(hostProdDefShape, "MappedRepresentation");
+            string representationType = IFCAnyHandleUtil.GetRepresentationType(representation);
+            IFCAnyHandle representationOfItem = RepresentationUtil.CreateShapeRepresentation(exporterIFC, hostElement, catId, contextOfItems, shapeIdent,
+               representationType, itemRepSet);
+            IFCAnyHandle shapeAspect = IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
+         }
+      }
+
+      /// <summary>
+      /// Create IfcStyledItem if not yet exists for material and assign it to the bodyItem
+      /// </summary>
+      /// <param name="file">The IFC file</param>
+      /// <param name="document">The document</param>
+      /// <param name="materialId">The material id</param>
+      /// <param name="bodyItem">The body Item to assign to the StyleItem to</param>
+      public static void CreateStyledItemAndAssign(IFCFile file, Document document, ElementId materialId, IFCAnyHandle bodyItem)
+      {
+         IFCAnyHandle surfStyleHnd = CategoryUtil.GetOrCreateMaterialStyle(document, file, materialId);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(surfStyleHnd))
+         {
+            ISet<IFCAnyHandle> styles = new HashSet<IFCAnyHandle>();
+            styles.Add(surfStyleHnd);
+
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            {
+               IFCInstanceExporter.CreatePresentationStyleAssignment(file, styles);
+            }
+            else
+            {
+               IFCInstanceExporter.CreateStyledItem(file, bodyItem, styles as HashSet<IFCAnyHandle>, null);
+            }
+         }
       }
    }
 }

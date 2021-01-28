@@ -131,7 +131,7 @@ namespace Revit.IFC.Export.Toolkit
       FlightIdOffset = 4,
       LandingIdOffset = 201,
       StringerIdOffset = 401
-   }
+}
 
    enum IFCReinforcingBarSubElements
    {
@@ -158,7 +158,7 @@ namespace Revit.IFC.Export.Toolkit
       FlightIdOffset = 4,
       LandingIdOffset = 201,
       StringerIdOffset = 401,
-   }
+}
 
    enum IFCWallSubElements
    {

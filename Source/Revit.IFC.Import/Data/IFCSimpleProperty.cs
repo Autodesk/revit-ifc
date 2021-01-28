@@ -204,7 +204,7 @@ namespace Revit.IFC.Import.Data
                    (propertyValue.Type == IFCDataPrimitiveType.Integer) || (propertyValue.Type == IFCDataPrimitiveType.Double))
                {
                   string unitTypeName;
-                  UnitType unitType = IFCDataUtil.GetUnitTypeFromData(propertyValue.Value, UnitType.UT_Undefined, out unitTypeName);
+                  UnitType unitType = IFCDataUtil.GetUnitTypeFromData(propertyValue.Value, UnitType.UT_Number, out unitTypeName);
                   if (unitType != UnitType.UT_Undefined)
                      ifcUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(unitType);
                   else

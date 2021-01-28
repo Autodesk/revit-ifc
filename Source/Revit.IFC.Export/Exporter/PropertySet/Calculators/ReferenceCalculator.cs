@@ -18,9 +18,6 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
@@ -35,58 +32,48 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <summary>
       /// A string variable to keep the calculated value.
       /// </summary>
-      string m_ReferenceName = String.Empty;
-
-      /// <summary>
-      /// A static instance of this class.
-      /// </summary>
-      static ReferenceCalculator s_Instance = new ReferenceCalculator();
+      string m_ReferenceName = string.Empty;
 
       /// <summary>
       /// The ReferenceCalculator instance.
       /// </summary>
-      public static ReferenceCalculator Instance
-      {
-         get { return s_Instance; }
-      }
+      public static ReferenceCalculator Instance { get; } = new ReferenceCalculator();
 
       /// <summary>
       /// Calculates the reference.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
-      /// </param>
-      /// <param name="element">
-      /// The element to calculate the value.
-      /// </param>
-      /// <param name="elementType">
-      /// The element type.
-      /// </param>
-      /// <returns>
-      /// True if the operation succeed, false otherwise.
-      /// </returns>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <returns>True if the operation succeed, false otherwise.</returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, "Reference", out m_ReferenceName);
+         ParameterUtil.GetStringValueFromElementOrSymbol(element, "Reference", out m_ReferenceName);
          if (!string.IsNullOrEmpty(m_ReferenceName))
             return true;
 
+         // If the element is an element type, "Reference" doesn't mean much, since IFC doesn't
+         // care about the type of a type.  We'll keep the override in place in case someone wants
+         // to force it, but otherwise will not export the value.
+         if (element is ElementType)
+            return false;
+
          if (elementType == null)
-               m_ReferenceName = element.Name;
+            m_ReferenceName = element.Name;
          else
          {
-               if (ExporterCacheManager.ExportOptionsCache.NamingOptions.UseFamilyAndTypeNameForReference || String.IsNullOrEmpty(elementType.Name))
-               {
-                  if (!String.IsNullOrEmpty(elementType.Name))
-                     m_ReferenceName = String.Format("{0}:{1}", elementType.FamilyName, element.Name);
-                  else
-                     m_ReferenceName = elementType.FamilyName;
-               }
+            string elementTypeName = elementType.Name;
+            if (ExporterCacheManager.ExportOptionsCache.NamingOptions.UseFamilyAndTypeNameForReference ||
+               string.IsNullOrEmpty(elementTypeName))
+            {
+               if (!String.IsNullOrEmpty(elementTypeName))
+                  m_ReferenceName = String.Format("{0}:{1}", elementType.FamilyName, elementTypeName);
                else
-                  m_ReferenceName = elementType.Name;
+                  m_ReferenceName = elementType.FamilyName;
+            }
+            else
+               m_ReferenceName = elementTypeName;
          }
          return true;
       }

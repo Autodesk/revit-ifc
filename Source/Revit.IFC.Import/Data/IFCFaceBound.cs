@@ -79,7 +79,7 @@ namespace Revit.IFC.Import.Data
 
          Bound = IFCLoop.ProcessIFCLoop(ifcLoop);
 
-         IsOuter = (IFCAnyHandleUtil.IsValidSubTypeOf(ifcFaceBound, IFCEntityType.IfcFaceOuterBound));
+         IsOuter = IFCAnyHandleUtil.IsValidSubTypeOf(ifcFaceBound, EntityType, IFCEntityType.IfcFaceOuterBound);
       }
 
       private void CreateTessellatedShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform scaledLcs)

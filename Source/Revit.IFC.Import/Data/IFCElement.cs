@@ -137,14 +137,14 @@ namespace Revit.IFC.Import.Data
 
          m_Tag = IFCAnyHandleUtil.GetStringAttribute(ifcElement, "Tag");
 
-         if (IFCImportFile.TheFile.SchemaVersion > IFCSchemaVersion.IFC2x || IFCAnyHandleUtil.IsSubTypeOf(ifcElement, IFCEntityType.IfcBuildingElement))
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) || IFCAnyHandleUtil.IsSubTypeOf(ifcElement, IFCEntityType.IfcBuildingElement))
             ProcessOpenings(ifcElement);
 
          // "HasPorts" is new to IFC2x2.
          // For IFC4, "HasPorts" has moved to IfcDistributionElement.  We'll keep the check here, but we will only check it
          // if we are exporting before IFC4 or if we have an IfcDistributionElement handle.
-         bool checkPorts = (IFCImportFile.TheFile.SchemaVersion > IFCSchemaVersion.IFC2x2) &&
-            (IFCImportFile.TheFile.SchemaVersion < IFCSchemaVersion.IFC4 || IFCAnyHandleUtil.IsSubTypeOf(ifcElement, IFCEntityType.IfcDistributionElement));
+         bool checkPorts = (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x3)) &&
+            (!IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) || IFCAnyHandleUtil.IsSubTypeOf(ifcElement, IFCEntityType.IfcDistributionElement));
 
          if (checkPorts)
          {
@@ -176,10 +176,12 @@ namespace Revit.IFC.Import.Data
 
          if (element != null)
          {
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+
             // Set "Tag" parameter.
             string ifcTag = Tag;
             if (!string.IsNullOrWhiteSpace(ifcTag))
-               IFCPropertySet.AddParameterString(doc, element, "IfcTag", ifcTag, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, "IfcTag", ifcTag, Id);
 
             IFCFeatureElementSubtraction ifcFeatureElementSubtraction = FillsOpening;
             if (ifcFeatureElementSubtraction != null)
@@ -188,7 +190,7 @@ namespace Revit.IFC.Import.Data
                if (ifcElement != null)
                {
                   string ifcContainerName = ifcElement.Name;
-                  IFCPropertySet.AddParameterString(doc, element, "IfcContainedInHost", ifcContainerName, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, "IfcContainedInHost", ifcContainerName, Id);
                }
             }
 
@@ -203,13 +205,13 @@ namespace Revit.IFC.Import.Data
                if (!string.IsNullOrWhiteSpace(name))
                {
                   string parameterName = "IfcElement HasPorts Name " + ((numPorts == 0) ? "" : (numPorts + 1).ToString());
-                  IFCPropertySet.AddParameterString(doc, element, parameterName, name, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, parameterName, name, Id);
                }
 
                if (!string.IsNullOrWhiteSpace(guid))
                {
                   string parameterName = "IfcElement HasPorts IfcGUID " + ((numPorts == 0) ? "" : (numPorts + 1).ToString());
-                  IFCPropertySet.AddParameterString(doc, element, parameterName, guid, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, parameterName, guid, Id);
                }
 
                numPorts++;
@@ -250,7 +252,6 @@ namespace Revit.IFC.Import.Data
                   clone.MaterialSelect = parentMaterial;
             }
 
-            IList<GeometryObject> geomObjs = new List<GeometryObject>();
             CreateElement(doc, clone);
             return clone.Solids;
          }
@@ -297,19 +298,17 @@ namespace Revit.IFC.Import.Data
          if (cachedIFCElement != null)
             return (cachedIFCElement as IFCElement);
 
-         IFCElement newIFCElement = null;
          // other subclasses not handled yet.
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcBuildingElement))
-            newIFCElement = IFCBuildingElement.ProcessIFCBuildingElement(ifcElement);
-         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcFeatureElement))
-            newIFCElement = IFCFeatureElement.ProcessIFCFeatureElement(ifcElement);
-         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementAssembly))
-            newIFCElement = IFCElementAssembly.ProcessIFCElementAssembly(ifcElement);
-         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementComponent))
-            newIFCElement = IFCElementComponent.ProcessIFCElementComponent(ifcElement);
-         else
-            newIFCElement = new IFCElement(ifcElement);
-         return newIFCElement;
+            return IFCBuildingElement.ProcessIFCBuildingElement(ifcElement);
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcFeatureElement))
+            return IFCFeatureElement.ProcessIFCFeatureElement(ifcElement);
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementAssembly))
+            return IFCElementAssembly.ProcessIFCElementAssembly(ifcElement);
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementComponent))
+            return IFCElementComponent.ProcessIFCElementComponent(ifcElement);
+         
+         return new IFCElement(ifcElement);
       }
    }
 }

@@ -102,7 +102,7 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcLoop.StepId, out loop))
             return (loop as IFCLoop);
 
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x2 && IFCAnyHandleUtil.IsSubTypeOf(ifcLoop, IFCEntityType.IfcEdgeLoop))
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) && IFCAnyHandleUtil.IsSubTypeOf(ifcLoop, IFCEntityType.IfcEdgeLoop))
             return IFCEdgeLoop.ProcessIFCEdgeLoop(ifcLoop);
 
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcLoop, IFCEntityType.IfcPolyLoop))

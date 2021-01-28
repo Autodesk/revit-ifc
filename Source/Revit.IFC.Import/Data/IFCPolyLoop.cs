@@ -68,7 +68,7 @@ namespace Revit.IFC.Import.Data
          int numVertices = Polygon.Count;
          if (numVertices > 1)
          {
-            if (Polygon[0].IsAlmostEqualTo(Polygon[numVertices - 1]))
+            if (MathUtil.IsAlmostEqualAbsolute(Polygon[0], Polygon[numVertices - 1]))
             {
                // LOG: Warning: #: First and last points are almost identical, removing extra point.
                Polygon.RemoveAt(numVertices - 1);

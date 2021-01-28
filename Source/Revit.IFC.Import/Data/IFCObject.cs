@@ -42,8 +42,6 @@ namespace Revit.IFC.Import.Data
 
       private static HashSet<IFCEntityType> m_sPredefinedTypePreIFC4 = null;
 
-      private string m_ObjectType = null;
-
       private IDictionary<string, IFCPropertySetDefinition> m_IFCPropertySets = null;
 
       private HashSet<IFCTypeObject> m_IFCTypeObjects = null;
@@ -53,52 +51,49 @@ namespace Revit.IFC.Import.Data
          // These entities have no predefined type field.
          if (m_sNoPredefinedType == null)
          {
-            m_sNoPredefinedType = new HashSet<IFCEntityType>();
-            m_sNoPredefinedType.Add(IFCEntityType.IfcProject);
-            m_sNoPredefinedType.Add(IFCEntityType.IfcSite);
-            m_sNoPredefinedType.Add(IFCEntityType.IfcBuilding);
-            m_sNoPredefinedType.Add(IFCEntityType.IfcBuildingStorey);
-            m_sNoPredefinedType.Add(IFCEntityType.IfcGroup);
-            m_sNoPredefinedType.Add(IFCEntityType.IfcSystem);
+            m_sNoPredefinedType = new HashSet<IFCEntityType>()
+            {
+               IFCEntityType.IfcProject,
+               IFCEntityType.IfcSite,
+               IFCEntityType.IfcBuilding,
+               IFCEntityType.IfcBuildingStorey,
+               IFCEntityType.IfcGroup,
+               IFCEntityType.IfcSystem
+            };
          }
 
          if (m_sNoPredefinedType.Contains(type))
             return false;
 
-         if (IFCImportFile.TheFile.SchemaVersion < IFCSchemaVersion.IFC4)
-         {
-            // Before IFC4, these are the only objects that have a predefined type that we support.
-            // Note that this is just a list of entity types that are dealt with generically; other types may override the base function.
-            if (m_sPredefinedTypePreIFC4 == null)
-            {
-               m_sPredefinedTypePreIFC4 = new HashSet<IFCEntityType>();
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcCovering);
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcDistributionPort);
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcFooting);
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcPile);
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcRailing);
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcRamp);
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcRoof);
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcSlab);
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcStair);
-               m_sPredefinedTypePreIFC4.Add(IFCEntityType.IfcTendon);
-            }
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
+            return true;
 
-            if (!m_sPredefinedTypePreIFC4.Contains(type))
-               return false;
+         // Before IFC4, these are the only objects that have a predefined type that we support.
+         // Note that this is just a list of entity types that are dealt with generically; other types may override the base function.
+         if (m_sPredefinedTypePreIFC4 == null)
+         {
+            m_sPredefinedTypePreIFC4 = new HashSet<IFCEntityType>()
+            {
+               IFCEntityType.IfcCovering,
+               IFCEntityType.IfcDistributionPort,
+               IFCEntityType.IfcFooting,
+               IFCEntityType.IfcPile,
+               IFCEntityType.IfcRailing,
+               IFCEntityType.IfcRamp,
+               IFCEntityType.IfcRoof,
+               IFCEntityType.IfcSlab,
+               IFCEntityType.IfcStair,
+               IFCEntityType.IfcTendon
+            };
          }
 
-         return true;
+         return m_sPredefinedTypePreIFC4.Contains(type);
       }
 
       /// <summary>
       /// The object type.
       /// </summary>
-      public string ObjectType
-      {
-         get { return m_ObjectType; }
-         protected set { m_ObjectType = value; }
-      }
+      public string ObjectType { get; protected set; } = null;
 
       /// <summary>
       /// The property sets.
@@ -154,7 +149,7 @@ namespace Revit.IFC.Import.Data
 
          if (EntityType == IFCEntityType.IfcDistributionPort)
             predefinedTypeName = "FlowDirection";
-         else if (IFCImportFile.TheFile.SchemaVersion < IFCSchemaVersion.IFC4)
+         else if (!IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
          {
             // The following have "PredefinedType", but are out of scope for now:
             // IfcCostSchedule, IfcOccupant, IfcProjectOrder, IfcProjectOrderRecord, IfcServiceLifeFactor
@@ -195,7 +190,7 @@ namespace Revit.IFC.Import.Data
          // only difference between the two is that IfcObject supports "IsDeclaredBy" and "IsTypedBy", and that IfcContext
          // contains the attributes of IfcProject from IFC2x3.  We'll keep the attributes at the IfcProject level for now
          // and protect against reading "IsTypedBy" here.
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4 && !IFCAnyHandleUtil.IsSubTypeOf(ifcObject, IFCEntityType.IfcProject))
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && !IFCAnyHandleUtil.IsSubTypeOf(ifcObject, IFCEntityType.IfcProject))
          {
             HashSet<IFCAnyHandle> isTypedBy = IFCAnyHandleUtil.GetAggregateInstanceAttribute
              <HashSet<IFCAnyHandle>>(ifcObject, "IsTypedBy");
@@ -299,7 +294,10 @@ namespace Revit.IFC.Import.Data
             // Set "ObjectTypeOverride" parameter.
             string objectTypeOverride = ObjectType;
             if (!string.IsNullOrWhiteSpace(objectTypeOverride))
-               IFCPropertySet.AddParameterString(doc, element, "ObjectTypeOverride", objectTypeOverride, Id);
+            {
+               Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, "ObjectTypeOverride", objectTypeOverride, Id);
+            }
          }
       }
 

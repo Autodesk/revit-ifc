@@ -32,24 +32,12 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCPresentationLayerWithStyle : IFCPresentationLayerAssignment
    {
-      IList<IFCPresentationStyle> m_LayerStyles = new List<IFCPresentationStyle>();
-
-      ElementId m_CreatedMaterialElementId = ElementId.InvalidElementId;
-
       /// <summary>
       /// Get the presentation styles for this IFCPresentationLayerWithStyle.
       /// </summary>
-      public IList<IFCPresentationStyle> LayerStyles
-      {
-         get { return m_LayerStyles; }
-         protected set { m_LayerStyles = value; }
-      }
+      public IList<IFCPresentationStyle> LayerStyles { get; protected set; } = new List<IFCPresentationStyle>();
 
-      protected ElementId CreatedMaterialElementId
-      {
-         get { return m_CreatedMaterialElementId; }
-         set { m_CreatedMaterialElementId = value; }
-      }
+      protected ElementId CreatedMaterialElementId { get; set; } = ElementId.InvalidElementId;
 
       protected IFCPresentationLayerWithStyle()
       {

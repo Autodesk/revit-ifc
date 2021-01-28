@@ -60,14 +60,14 @@ namespace Revit.IFC.Import.Data
          if (m_WindowLiningPropertyDescs == null)
          {
             m_WindowLiningPropertyDescs = new List<Tuple<string, UnitType, AllowedValues>>();
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("LiningDepth", UnitType.UT_Length, AllowedValues.Positive));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("LiningThickness", UnitType.UT_Length, AllowedValues.Positive));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("TransomThickness", UnitType.UT_Length, AllowedValues.Positive));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("MullionThickness", UnitType.UT_Length, AllowedValues.Positive));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("FirstTransomOffset", UnitType.UT_Length, AllowedValues.NonNegative));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("SecondTransomOffset", UnitType.UT_Length, AllowedValues.NonNegative));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("FirstMullionOffset", UnitType.UT_Length, AllowedValues.NonNegative));
-            m_WindowLiningPropertyDescs.Add(new Tuple<string, UnitType, AllowedValues>("SecondMullionOffset", UnitType.UT_Length, AllowedValues.NonNegative));
+            m_WindowLiningPropertyDescs.Add(Tuple.Create("LiningDepth", UnitType.UT_Length, AllowedValues.Positive));
+            m_WindowLiningPropertyDescs.Add(Tuple.Create("LiningThickness", UnitType.UT_Length, AllowedValues.Positive));
+            m_WindowLiningPropertyDescs.Add(Tuple.Create("TransomThickness", UnitType.UT_Length, AllowedValues.Positive));
+            m_WindowLiningPropertyDescs.Add(Tuple.Create("MullionThickness", UnitType.UT_Length, AllowedValues.Positive));
+            m_WindowLiningPropertyDescs.Add(Tuple.Create("FirstTransomOffset", UnitType.UT_Length, AllowedValues.NonNegative));
+            m_WindowLiningPropertyDescs.Add(Tuple.Create("SecondTransomOffset", UnitType.UT_Length, AllowedValues.NonNegative));
+            m_WindowLiningPropertyDescs.Add(Tuple.Create("FirstMullionOffset", UnitType.UT_Length, AllowedValues.NonNegative));
+            m_WindowLiningPropertyDescs.Add(Tuple.Create("SecondMullionOffset", UnitType.UT_Length, AllowedValues.NonNegative));
          }
 
          for (int ii = 0; ii < 4; ii++)
