@@ -82,9 +82,17 @@ namespace Revit.IFC.Export.Exporter
       /// </param>
       public static void ExportSpatialElement(ExporterIFC exporterIFC, SpatialElement spatialElement, ProductWrapper productWrapper)
       {
+         string ifcEnumType;
+         IFCExportInfoPair exportInfo = ExporterUtil.GetExportType(exporterIFC, spatialElement, out ifcEnumType);
+
+         // Force the default export to IfcSpace for Spatial Element if it is set to UnKnown
+         if (exportInfo.IsUnKnown)
+         {
+            exportInfo.SetValueWithPair(IFCEntityType.IfcSpace, ifcEnumType);
+         }
+
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcSpace;
-         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
+         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportInfo.ExportInstance))
             return;
 
          IFCFile file = exporterIFC.GetFile();
@@ -93,7 +101,7 @@ namespace Revit.IFC.Export.Exporter
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, spatialElement, null, null))
             {
                SpatialElementGeometryResults spatialElemGeomResult = null;
-               if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, out spatialElemGeomResult))
+               if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, exportInfo, out spatialElemGeomResult))
                   return;
 
                bool isArea = (spatialElement is Area);
@@ -402,8 +410,9 @@ namespace Revit.IFC.Export.Exporter
                            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, spatialElement))
                            {
                               // We won't use the SpatialElementGeometryResults, as these are 1st level boundaries, not 2nd level.
+                              
                               SpatialElementGeometryResults results = null;
-                              if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, out results))
+                              if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, null, out results))
                                  continue;
 
                               exportedSpaceIds.Add(spatialElement.Id);
@@ -847,9 +856,12 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="setter">The PlacementSetter.</param>
       /// <returns>True if created successfully, false otherwise.</returns>
       static bool CreateIFCSpace(ExporterIFC exporterIFC, SpatialElement spatialElement, ProductWrapper productWrapper,
-          PlacementSetter setter, out SpatialElementGeometryResults results)
+          PlacementSetter setter, IFCExportInfoPair exportInfo, out SpatialElementGeometryResults results)
       {
          results = null;
+
+         if (exportInfo == null)
+            exportInfo = new IFCExportInfoPair(IFCEntityType.IfcSpace);
 
          // Avoid throwing for a spatial element with no location.
          if (spatialElement.Location == null)
@@ -896,7 +908,7 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
-         Autodesk.Revit.DB.Document document = spatialElement.Document;
+         Document document = spatialElement.Document;
          ElementType elemType = document.GetElement(spatialElement.GetTypeId()) as ElementType;
          IFCInternalOrExternal internalOrExternal = CategoryUtil.IsElementExternal(spatialElement) ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
 
@@ -928,7 +940,6 @@ namespace Revit.IFC.Export.Exporter
          }
 
          IFCAnyHandle spaceHnd = null;
-         IFCExportInfoPair exportInfo = new IFCExportInfoPair();
          using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
          {
             extraParams.SetLocalPlacement(localPlacement);
@@ -974,11 +985,19 @@ namespace Revit.IFC.Export.Exporter
                extraParams.ScaledHeight = scaledRoomHeight;
                extraParams.ScaledArea = dArea;
 
-               spaceHnd = IFCInstanceExporter.CreateSpace(exporterIFC, spatialElement, GUIDUtil.CreateGUID(spatialElement),
-                                             ExporterCacheManager.OwnerHistoryHandle,
-                                             extraParams.GetLocalPlacement(), repHnd, IFCElementComposition.Element,
-                                             internalOrExternal);
-               exportInfo.SetValueWithPair(IFCEntityType.IfcSpace);
+               if (exportInfo.ExportInstance == IFCEntityType.IfcSpace)
+               {
+                  spaceHnd = IFCInstanceExporter.CreateSpace(exporterIFC, spatialElement, GUIDUtil.CreateGUID(spatialElement),
+                                                ExporterCacheManager.OwnerHistoryHandle,
+                                                extraParams.GetLocalPlacement(), repHnd, IFCElementComposition.Element,
+                                                internalOrExternal);
+               }
+               else
+               {
+                  spaceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, spatialElement, GUIDUtil.CreateGUID(spatialElement), 
+                                                ExporterCacheManager.OwnerHistoryHandle, extraParams.GetLocalPlacement(), repHnd);
+               }
+
                if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
                {
                   IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(spatialElement, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
