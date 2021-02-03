@@ -105,6 +105,10 @@ The export alternate interface is loaded when users access the Export functional
 <li>IFC 4 Reference View - This version is buildingSMART IFC certification (IFC4 RV 1.2) certified version for Architectural and Structural export Exchange Requirements. MEP export and Import are still on-going</li>
 <li>IFC 4 Design Transfer View</li>
 </menu>
+<p><strong>Exchange Requirement</strong>: Exchange Requirements (only for IFC4 Reference View)</p>
+<menu><li>Architectural Reference Exchange</li>
+<li>Structural Reference Exchange</li>
+<li>MEP Reference Exchange</li>
 <p><strong>File Type</strong>: The file format</p>
 <menu><li>IFC</li>
 <li>IFC XML</li>
@@ -123,6 +127,16 @@ The export alternate interface is loaded when users access the Export functional
 <li>Survey Point</li>
 <li>Project Base Point</li>
 <li>Internal Origin</li>
+</menu>
+<p><strong>Projected Coordinate System Reference</strong>: Map/GIS Projected Coordinate System used:</p>
+<menu>
+		  <li>Name: the name of the Projected Coordinate System. Auto-populated based on the EPSG Code in the model or user input</li>
+		  <li>Description: description of the Projected Coordinate System. It is auto-populated</li>
+		  <li>EPSG Code: the EPSG Code. It is pre-populated if the Revit file has SiteLocation information, otherwise user input</li>
+		  <li>Geodetic Datum: the geodetic datum used. It is Auto-populated</li>
+		  <li>Eastings: the Easting. It is updated based on the Coordinate Based selected. For a proper geo-reference export, use either Project Based Point or Survey Point</li>
+		  <li>Northings: the Northing. It is updated based on the Coordinate Based selected. For a proper geo-reference export, use either Project Based Point or Survey Point</li>
+		  <li>Reset (button). It resets the Projected Coordinate System setting to the original values</li>
 </menu>
 <p><strong>Split walls and columns by Level</strong>: Whether or not to split walls and columns by building stories.</p>
 <p><strong>Include Steel Elements</strong>: Export Steel connection elements</p>
@@ -155,15 +169,17 @@ The export alternate interface is loaded when users access the Export functional
 <p><strong>Use Type name only for IFCType name</strong>: This option override the default type name using just the name of the type</p>
 <p><strong>Use visible Revit name as the IFCEntity name</strong>: Ths option override the default element name using what shown in Revit as the object name</p>
 
-<p>There are 9 built-in setups in the user interface:</p>    
+<p>There are 10 built-in setups in the user interface:</p>    
 <menu>
 <li>IFC 2x3 Coordination View 2.0</li>
 <li>IFC 2x3 Coordination View</li>
 <li>IFC 2x3 GSA Concept Design BIM 2010</li>
 <li>IFC 2x3 Basic FM Handover View</li>
-<li>IFC 2x3 Extended FM Handover View</li>
 <li>IFC 2x2 Coordination View</li>
-<li>IFC 4 Reference View</li>
+<li>IFC 2x3 COBie 2.4 Design Deliverable</li>
+<li>IFC 4 Reference View [Architecture]</li>
+<li>IFC 4 Reference View [Structural]</li>
+<li>IFC 4 Reference View [BuildingService]</li>
 <li>IFC 4 Design Transfer View</li>
 
 </menu>
@@ -185,6 +201,7 @@ The installer that ran when you downloaded this plug-in from Revit Exchange
 </p>
 <p>
 To uninstall this plug-in, exit Revit if you are currently running it, 
+  simply rerun the installer by downloading it again 
   from Exchange, and select the 'Uninstall' button, or you can uninstall it from 
   'Control Panel\Programs\Programs and Features' (Windows 7) or Add/Remove 
   Programs (Windows XP), just as you would uninstall any other application from 
@@ -220,14 +237,31 @@ working on expanding and eventually removing this limit, and we will be tracking
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
 <div class="versionset">
+   <div class="version">21.2.1.0</div><div class="versioninfo-bullet">
+      <br><p>
+         General:
+			<ul>
+            <li>This is a minor update to release 20.3.1.0 and one improvement that adds basic support to export Area object as IfcSpatialZone
+			</ul>	
+         <br>
+       <p>
+         Bugfix:
+			<ul>
+				<li>IfcGeographicElement now exports user-defined propertyset
+				<li>Fixed wrong value for Qto_WallBaseQuantities.GrossVolume
+			</ul>
+
+	</div>
+	<br>
+	
    <div class="version">21.2.0.0</div><div class="versioninfo-bullet">
       <br>
 	<div class="row">
 		<div class="column">
-			<img width=300 src="Software Certifcation Certificate Revit - Architectural export ER.png" alt=Icon>
+			<img width=300 src="Software Certification Certificate Revit - Architectural export ER.png" alt=Icon>
 		</div>
 		<div class="column">
-			<img width=300 src="Software Certifcation Certificate Revit - Structural export ER.png" alt=Icon>
+			<img width=300 src="Software Certification Certificate Revit - Structural export ER.png" alt=Icon>
 		</div>
 	</div>
 
