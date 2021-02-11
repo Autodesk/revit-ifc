@@ -458,7 +458,7 @@ namespace Revit.IFC.Export.Exporter
 
             PropertySetDescription customPSet = new PropertySetDescription();
 
-            string scheduleName = schedule.Name;
+            string scheduleName = NamingUtil.GetNameOverride(schedule, schedule.Name);
             if (string.IsNullOrWhiteSpace(scheduleName))
             {
                scheduleName = "Unnamed Schedule " + unnamedScheduleIndex;
@@ -494,6 +494,9 @@ namespace Revit.IFC.Export.Exporter
             for (int ii = 0; ii < fieldCount; ii++)
             {
                ScheduleField field = definition.GetField(ii);
+
+               if (field.IsHidden)
+                  continue;
 
                ScheduleFieldType fieldType = field.FieldType;
                if (fieldType != ScheduleFieldType.Instance && fieldType != ScheduleFieldType.ElementType)
