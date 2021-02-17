@@ -250,7 +250,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (String.IsNullOrEmpty(classificationName))
          {
             // No Classification Name specified, look for Classification Name assignment from the cache (from UI)
-            if (string.IsNullOrEmpty(classificationCodeFieldName) 
+            if (string.IsNullOrEmpty(classificationCodeFieldName)
                || !ExporterCacheManager.ClassificationCache.FieldNameToClassificationNames.TryGetValue(classificationCodeFieldName, out classificationName))
                classificationName = "Default Classification";
          }
