@@ -130,7 +130,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The GUIDs to store at the end of export.
       /// </summary>
-      static Dictionary<KeyValuePair<Element, BuiltInParameter>, string> m_GUIDsToStoreCache;
+      static Dictionary<KeyValuePair<ElementId, BuiltInParameter>, string> m_GUIDsToStoreCache;
 
       /// <summary>
       /// The HandleToElementCache cache.
@@ -485,12 +485,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The GUIDs to store in elements at the end of export, if the option to store GUIDs has been selected.
       /// </summary>
-      public static IDictionary<KeyValuePair<Element, BuiltInParameter>, string> GUIDsToStoreCache
+      public static IDictionary<KeyValuePair<ElementId, BuiltInParameter>, string> GUIDsToStoreCache
       {
          get
          {
             if (m_GUIDsToStoreCache == null)
-               m_GUIDsToStoreCache = new Dictionary<KeyValuePair<Element, BuiltInParameter>, string>();
+               m_GUIDsToStoreCache = new Dictionary<KeyValuePair<ElementId, BuiltInParameter>, string>();
             return m_GUIDsToStoreCache;
          }
       }
