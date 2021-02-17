@@ -98,7 +98,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          // For other elements with ExtrusionData. Parameter will take precedence (override)
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Slope", out slope) != null)
          {
-            m_Slope = UnitUtil.ScaleAngle(slope);
+            m_Slope = UnitUtil.ScaleAngle(Math.Atan(slope));
             return true;
          }
 

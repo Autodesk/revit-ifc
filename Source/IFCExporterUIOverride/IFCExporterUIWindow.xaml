@@ -7,111 +7,101 @@
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
                   mc:Ignorable="d" 
                   Title="{x:Static p:Resources.ModifySetupTitle}" 
-                  Height="450"
+                  Height="560"
                   Width="887" 
                   WindowStyle="SingleBorderWindow" 
                   ResizeMode="NoResize" 
                   Closing="Window_Closing">
-   <Grid HorizontalAlignment="Right" Margin="0,3,10,0" Height="403" VerticalAlignment="Top" Width="877">
-      <Grid.RowDefinitions>
-         <RowDefinition Height="394*"/>
-         <RowDefinition/>
-      </Grid.RowDefinitions>
-      <TabControl Height="314" HorizontalAlignment="Left" Name="tabControl" VerticalAlignment="Top" Width="599" Margin="278,11,0,0">
+   <Grid Margin="4,4,4,4">
+      <TabControl Name="tabControl" Margin="269,11,10,47">
          <TabItem Header="{x:Static p:Resources.General}" Name="General">
-            <Grid Width="469" Margin="0,0,-2,0">
-               <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="76*"/>
-                  <ColumnDefinition Width="114*"/>
-                  <ColumnDefinition Width="279*"/>
-               </Grid.ColumnDefinitions>
-               <Label Content="{x:Static p:Resources.IFCVersion}" Height="26" HorizontalAlignment="Left" Margin="-51,5,0,0" Name="label1" VerticalAlignment="Top" Width="275" Grid.ColumnSpan="3" />
-               <ComboBox Height="23" Margin="0,5,-51,0" Name="comboboxIfcType" VerticalAlignment="Top" Text="" HorizontalAlignment="Right" Width="290" SelectionChanged="comboboxIfcType_SelectionChanged" Grid.Column="2" />
-               <Label Content="{x:Static p:Resources.FileType}" Height="26" HorizontalAlignment="Left" Margin="-51,40,0,0" Name="label2" VerticalAlignment="Top" Width="275" Grid.ColumnSpan="3" />
-               <ComboBox Height="23" Margin="0,40,-51,0" Name="comboboxFileType" VerticalAlignment="Top" Text="" HorizontalAlignment="Right" Width="290" SelectionChanged="comboboxFileType_SelectionChanged" Grid.Column="2" />
-               <Label Content="{x:Static p:Resources.PhaseToExport}" Height="26" HorizontalAlignment="Left" Margin="-51,75,0,0" x:Name="label2_Copy" VerticalAlignment="Top" Width="275" Grid.ColumnSpan="3" RenderTransformOrigin="0.738,0.586"/>
-               <ComboBox Height="23" Margin="40,75,-51,0" x:Name="comboboxActivePhase" VerticalAlignment="Top" Text="" HorizontalAlignment="Right" Width="290" SelectionChanged="comboboxActivePhase_SelectionChanged" Grid.Column="2"/>
-               <Label Content="{x:Static p:Resources.SpaceBoundaries}" Height="26" HorizontalAlignment="Left" Margin="-51,110,0,0" Name="label3" VerticalAlignment="Top" Width="275" Grid.ColumnSpan="3" />
-               <ComboBox Height="23" Margin="0,110,-51,0" Name="comboboxSpaceBoundaries" VerticalAlignment="Top" Width="290" HorizontalAlignment="Right" ItemsSource="{Binding}" SelectionChanged="comboboxSpaceBoundaries_SelectionChanged" Grid.Column="2" />
-               <Label Content="{x:Static p:Resources.ProjectOrigin}" Height="26" HorizontalAlignment="Left" Margin="-51,145,0,0" x:Name="label_SiteOrigin" VerticalAlignment="Top" Width="275" Grid.ColumnSpan="3" RenderTransformOrigin="0.738,0.586"/>
-               <ComboBox Height="23" Margin="40,145,-51,0" Name="comboBoxSitePlacement" VerticalAlignment="Top" Width="290" HorizontalAlignment="Right" SelectionChanged="comboBoxPlacement_SelectionChanged" Grid.Column="2"/>
-               <CheckBox Content="{x:Static p:Resources.SplitWallsColumsDuctsByLevel}" Margin="-51,188,201,0" Name="checkboxSplitWalls" Checked="checkboxSplitWalls_Checked" Unchecked="checkboxSplitWalls_Checked" Height="16" VerticalAlignment="Top" Grid.ColumnSpan="3"/>
-               <CheckBox Content="{x:Static p:Resources.IncludeSteelElements}" Margin="-51,209,200.8,0" Name="checkboxIncludeSteelElements" Checked="checkboxIncludeSteelElements_Checked" Unchecked="checkboxIncludeSteelElements_Unchecked" Height="16" VerticalAlignment="Top" Grid.ColumnSpan="3"/>
-               <Button Content="{x:Static p:Resources.FileHeaderInformation}" Height="23" Margin="99,217,-51,0" Name="fileHeaderInformation" Click="buttonFileHeader_Click" VerticalAlignment="Top" RenderTransformOrigin="0.505,0.367" Grid.Column="2"/>
-               <Button Content="{x:Static p:Resources.Address}" Height="23" Margin="99,253,-51,0" Name="addressInformation" Click="buttonAddressInformation_Click" VerticalAlignment="Top"  Grid.Column="2" HorizontalAlignment="Left" Width="231"/>
+            <Grid Margin="0,0,-10,0">
+               <Label Content="{x:Static p:Resources.IFCVersion}" Margin="10,5,0,0" Name="label1" HorizontalAlignment="Left" Width="275" Height="26" VerticalAlignment="Top" />
+               <ComboBox Margin="0,5,10,0" Name="comboboxIfcType" Text="" SelectionChanged="comboboxIfcType_SelectionChanged" HorizontalAlignment="Right" Width="298" Height="23" VerticalAlignment="Top" />
+               <Label Content="{x:Static p:Resources.FileType}" Margin="10,68,0,0" Name="label2" HorizontalAlignment="Left" Width="275" Height="26" VerticalAlignment="Top" />
+               <ComboBox Margin="0,68,10,0" Name="comboboxFileType" Text="" SelectionChanged="comboboxFileType_SelectionChanged" HorizontalAlignment="Right" Width="298" Height="23" VerticalAlignment="Top" />
+               <Label Content="{x:Static p:Resources.PhaseToExport}" Margin="10,103,0,0" x:Name="label2_Copy" RenderTransformOrigin="0.738,0.586" HorizontalAlignment="Left" Width="275" Height="26" VerticalAlignment="Top"/>
+               <ComboBox Margin="0,103,10,0" x:Name="comboboxActivePhase" Text="" SelectionChanged="comboboxActivePhase_SelectionChanged" HorizontalAlignment="Right" Width="298" Height="23" VerticalAlignment="Top"/>
+               <Label Content="{x:Static p:Resources.SpaceBoundaries}" Margin="10,138,0,0" Name="label3" HorizontalAlignment="Left" Width="275" Height="26" VerticalAlignment="Top" />
+               <ComboBox Margin="0,138,10,0" Name="comboboxSpaceBoundaries" ItemsSource="{Binding}" SelectionChanged="comboboxSpaceBoundaries_SelectionChanged" HorizontalAlignment="Right" Width="298" Height="23" VerticalAlignment="Top" />
+               <Label Content="{x:Static p:Resources.ProjectOrigin}" Margin="10,173,0,0" x:Name="label_SiteOrigin" RenderTransformOrigin="0.738,0.586" HorizontalAlignment="Left" Width="275" Height="26" VerticalAlignment="Top"/>
+               <ComboBox Margin="0,173,10,0" Name="comboBoxSitePlacement" SelectionChanged="comboBoxPlacement_SelectionChanged" HorizontalAlignment="Right" Width="298" Height="23" VerticalAlignment="Top"/>
+               <CheckBox Content="{x:Static p:Resources.SplitWallsColumsDuctsByLevel}" Margin="10,0,0,31" Name="checkboxSplitWalls" Checked="checkboxSplitWalls_Checked" Unchecked="checkboxSplitWalls_Checked" HorizontalAlignment="Left" Width="373" Height="16" VerticalAlignment="Bottom"/>
+               <CheckBox Content="{x:Static p:Resources.IncludeSteelElements}" Margin="10,0,0,10" Name="checkboxIncludeSteelElements" Checked="checkboxIncludeSteelElements_Checked" Unchecked="checkboxIncludeSteelElements_Unchecked" HorizontalAlignment="Left" Width="373" Height="16" VerticalAlignment="Bottom"/>
+               <Button Content="{x:Static p:Resources.FileHeaderInformation}" Margin="0,0,10,40" Name="fileHeaderInformation" Click="buttonFileHeader_Click" RenderTransformOrigin="0.505,0.367" HorizontalAlignment="Right" Width="200" Height="23" VerticalAlignment="Bottom"/>
+               <Button Content="{x:Static p:Resources.Address}" Margin="0,0,10,9" Name="addressInformation" Click="buttonAddressInformation_Click" HorizontalAlignment="Right" Width="200" Height="23" VerticalAlignment="Bottom"/>
+               <ComboBox x:Name="comboBoxExchangeRequirement" Margin="0,36,10,0" SelectionChanged="comboBoxExchangeRequirement_SelectionChanged" HorizontalAlignment="Right" Width="298" Height="22" VerticalAlignment="Top"/>
+               <Label Content="{x:Static p:Resources.ExchangeRequirement}" Margin="10,34,0,0" Name="labelExchangeRequirement" HorizontalAlignment="Left" Width="176" Height="28" VerticalAlignment="Top" />
+               <Label Content="Projected Coordinate System Reference" Margin="10,204,0,0" x:Name="label_ProjectedCRS" RenderTransformOrigin="0.738,0.586" HorizontalAlignment="Left" Width="275" Height="26" VerticalAlignment="Top"/>
+
+               <Border BorderBrush="#FFCBCBCB" BorderThickness="1" Margin="12,228,10,70" RenderTransformOrigin="0.5,0.5">
+                  <Border.RenderTransform>
+                     <TransformGroup>
+                        <ScaleTransform/>
+                        <SkewTransform AngleX="0.45"/>
+                        <RotateTransform/>
+                        <TranslateTransform X="-0.514"/>
+                     </TransformGroup>
+                  </Border.RenderTransform>
+                  <Button Content="{x:Static p:Resources.Reset}" HorizontalAlignment="Right" Margin="0,0,9,9" Name="button_GeoRefReset" Width="75" RenderTransformOrigin="1.16,0.409" Height="23" VerticalAlignment="Bottom" Click="button_GeoRefReset_Click"/>
+               </Border>
+               <Label Content="{x:Static p:Resources.ProjectedCRSName}" Margin="20,234,0,0" HorizontalAlignment="Left" Width="120" Height="28" VerticalAlignment="Top"/>
+               <TextBox x:Name="TextBox_CRSName" Margin="140,234,0,0" TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0" HorizontalAlignment="Left" Width="183" Height="28" VerticalAlignment="Top" VerticalContentAlignment="Center"/>
+               <Label Content="{x:Static p:Resources.ProjectedCRSDesc}" Margin="20,264,0,0" HorizontalAlignment="Left" Width="120" Height="28" VerticalAlignment="Top"/>
+               <TextBox x:Name="TextBox_CRSDesc" Margin="140,264,0,0" TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0" HorizontalAlignment="Left" Width="183" Height="28" VerticalAlignment="Top" VerticalContentAlignment="Center"/>
+               <Label Content="{x:Static p:Resources.EPSGCode}" Margin="20,294,0,0" HorizontalAlignment="Left" Width="120" Height="28" VerticalAlignment="Top"/>
+               <TextBox x:Name="TextBox_EPSG" Margin="140,294,0,0" TextWrapping="Wrap" LostKeyboardFocus="TextBox_EPSG_LostKeyboardFocus" TextChanged="TextBox_EPSG_TextChanged" HorizontalAlignment="Left" Width="183" Height="28" VerticalAlignment="Top" VerticalContentAlignment="Center"/>
+               <Label Content="{x:Static p:Resources.GeodeticDatum}" Margin="20,324,0,0" HorizontalAlignment="Left" Width="120" Height="28" VerticalAlignment="Top"/>
+               <TextBox x:Name="TextBox_GeoDatum" Margin="140,324,0,0" TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0" Height="28" VerticalAlignment="Top" HorizontalAlignment="Left" Width="183" VerticalContentAlignment="Center"/>
+               <Label Content="{x:Static p:Resources.Eastings}" Margin="0,234,170,0" HorizontalAlignment="Right" Width="80" Height="28" VerticalAlignment="Top"/>
+               <TextBox x:Name="TextBox_Eastings" Margin="0,234,15,0" TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0" HorizontalAlignment="Right" Width="153" Height="28" VerticalAlignment="Top" VerticalContentAlignment="Center"/>
+               <Label Content="{x:Static p:Resources.Northings}" Margin="0,264,170,0" HorizontalAlignment="Right" Width="80" Height="28" VerticalAlignment="Top"/>
+               <TextBox x:Name="TextBox_Northings" Margin="0,264,15,0" TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0" Height="28" VerticalAlignment="Top" HorizontalAlignment="Right" Width="153" VerticalContentAlignment="Center"/>
             </Grid>
          </TabItem>
          <TabItem Header="{x:Static p:Resources.AdditionalContent}" x:Name="whatToExport">
-            <Grid Width="469" Margin="0,0,-2,0">
-               <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="0*"/>
-                  <ColumnDefinition Width="4*"/>
-                  <ColumnDefinition Width="14*"/>
-                  <ColumnDefinition Width="163*"/>
-                  <ColumnDefinition Width="288*"/>
-               </Grid.ColumnDefinitions>
-               <CheckBox Content="{x:Static p:Resources.ExportPlanViewElements}" Margin="-49,8,-52,0" x:Name="checkbox2dElements" Checked="checkbox2dElements_Checked" Unchecked="checkbox2dElements_Checked"  Height="16" VerticalAlignment="Top" Grid.ColumnSpan="5" RenderTransformOrigin="0.634,0.968" />
-               <CheckBox Content="{x:Static p:Resources.ExportLinkedFiles}" HorizontalAlignment="Left" Margin="-49,29,-52,0" x:Name="checkBoxExportLinkedFiles" VerticalAlignment="Top" Checked="checkBoxExportLinkedFiles_Checked" Unchecked="checkBoxExportLinkedFiles_Checked" Height="16" Width="570" Grid.ColumnSpan="5" />
-               <CheckBox Content="{x:Static p:Resources.ExportVisibleElementsInView}" HorizontalAlignment="Left" Margin="-49,49,-52,0" Name="checkboxVisibleElementsCurrView" VerticalAlignment="Top" Checked="checkboxVisibleElementsCurrView_Checked" Unchecked="checkboxVisibleElementsCurrView_Checked" Height="16" Width="570" Grid.ColumnSpan="5" RenderTransformOrigin="0.634,0.968" />
-               <CheckBox Content="{x:Static p:Resources.ExportRoomsInView}" HorizontalAlignment="Left" x:Name="checkBoxExportRoomsInView" VerticalAlignment="Top" Checked="checkBoxExportRoomsInView_Checked" Unchecked="checkBoxExportRoomsInView_Checked" Height="16" Width="550" IsEnabled="False" Margin="-29,71,-52,0" Grid.ColumnSpan="5" />
+            <Grid Margin="0,0,-10,0">
+               <CheckBox Content="{x:Static p:Resources.ExportPlanViewElements}" Margin="10,8,0,0" x:Name="checkbox2dElements" Checked="checkbox2dElements_Checked" Unchecked="checkbox2dElements_Checked" RenderTransformOrigin="0.634,0.968" HorizontalAlignment="Left" Width="578" Height="16" VerticalAlignment="Top" />
+               <CheckBox Content="{x:Static p:Resources.ExportLinkedFiles}" Margin="10,29,0,0" x:Name="checkBoxExportLinkedFiles" Checked="checkBoxExportLinkedFiles_Checked" Unchecked="checkBoxExportLinkedFiles_Checked" HorizontalAlignment="Left" Width="570" Height="16" VerticalAlignment="Top" />
+               <CheckBox Content="{x:Static p:Resources.ExportVisibleElementsInView}" Margin="10,50,0,0" Name="checkboxVisibleElementsCurrView" Checked="checkboxVisibleElementsCurrView_Checked" Unchecked="checkboxVisibleElementsCurrView_Checked" RenderTransformOrigin="0.634,0.968" HorizontalAlignment="Left" Width="570" Height="16" VerticalAlignment="Top" />
+               <CheckBox Content="{x:Static p:Resources.ExportRoomsInView}" x:Name="checkBoxExportRoomsInView" Checked="checkBoxExportRoomsInView_Checked" Unchecked="checkBoxExportRoomsInView_Checked" IsEnabled="False" Margin="30,71,0,0" HorizontalAlignment="Left" Width="550" Height="16" VerticalAlignment="Top" />
             </Grid>
          </TabItem>
          <TabItem Header="{x:Static p:Resources.PropertySets}"  x:Name="PropertySets">
-            <Grid Width="469" Margin="0,0,-2,0">
-               <Grid.RowDefinitions>
-                  <RowDefinition Height="131*"/>
-                  <RowDefinition Height="0*"/>
-                  <RowDefinition Height="107*"/>
-               </Grid.RowDefinitions>
-               <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="18*"/>
-                  <ColumnDefinition Width="25*"/>
-                  <ColumnDefinition Width="431*"/>
-               </Grid.ColumnDefinitions>
-               <CheckBox Content="{x:Static p:Resources.ExportRevitPropertySets}" Margin="-53,7,-52,0" x:Name="checkboxInternalPropertySets" Checked="checkboxInternalPropertySets_Checked" Unchecked="checkboxInternalPropertySets_Checked" Height="16" VerticalAlignment="Top" Grid.ColumnSpan="3" />
-               <CheckBox Content="{x:Static p:Resources.ExportIFCCommonPropertySets}" Margin="-53,28,-52,0" x:Name="checkboxIFCCommonPropertySets" Checked="checkboxIFCCommonPropertySets_Checked" Unchecked="checkboxIFCCommonPropertySets_Checked" Height="16" VerticalAlignment="Top" Grid.ColumnSpan="3"/>
-               <CheckBox Content="{x:Static p:Resources.ExportBaseQuantities}" Margin="-53,49,-52,0" x:Name="checkboxExportBaseQuantities" Checked="checkboxExportBaseQuantities_Checked" Unchecked="checkboxExportBaseQuantities_Checked" Height="16" VerticalAlignment="Top" Grid.ColumnSpan="3" />
-               <CheckBox Content="{x:Static p:Resources.ExportSchedulesAsPropertySets}" Margin="-53,71,-52,0" x:Name="checkboxExportSchedulesAsPsets" VerticalAlignment="Top"  Checked="checkboxExportSchedulesAsPsets_Checked" Unchecked="checkboxExportSchedulesAsPsets_Checked" Height="16" Grid.ColumnSpan="3" />
-               <CheckBox Content="{x:Static p:Resources.ExportSpecificSchedules}" Margin="-32,92,-52,0" x:Name="checkBoxExportSpecificSchedules" VerticalAlignment="Top"  Checked="checkBoxExportSpecificSchedules_Checked" Unchecked="checkBoxExportSpecificSchedules_Checked" Height="16" Grid.ColumnSpan="3" />
-               <CheckBox Content="{x:Static p:Resources.ExportUserDefinedPropertySets}" Margin="-53,121,-52,0" Height="16" x:Name="checkboxExportUserDefinedPset" VerticalAlignment="Top" Checked="checkboxExportUserDefinedPset_Checked" Unchecked="checkboxExportUserDefinedPset_Checked" Grid.ColumnSpan="3"/>
-               <TextBox Height="23" Margin="-32,141,60,0" x:Name="userDefinedPropertySetFileName" VerticalAlignment="Top" Grid.ColumnSpan="3" Grid.RowSpan="3" />
-               <Button Content="{x:Static p:Resources.Browse}" x:Name="buttonBrowse" Width="107" IsDefault="True" Click="buttonBrowse_Click" Height="23" VerticalAlignment="Top" Grid.Column="2" Margin="371,141,-52,0" Grid.RowSpan="3"/>
-               <CheckBox Content="{x:Static p:Resources.ExportUserDefinedParameterMappingTable}" Height="16" Margin="-53,24,-52,0" x:Name="checkBoxExportUserDefinedParameterMapping" VerticalAlignment="Top" Checked="checkBoxExportUserDefinedParameterMapping_Checked" Unchecked="checkBoxExportUserDefinedParameterMapping_Checked" Grid.ColumnSpan="3" Grid.Row="2"/>
-               <TextBox Height="23" Margin="-32,45,60,0" x:Name="userDefinedParameterMappingTable" VerticalAlignment="Top" Grid.ColumnSpan="3" Grid.Row="2"/>
-               <Button Content="{x:Static p:Resources.Browse}" Margin="371,45,-52,0" x:Name="buttonParameterMappingBrowse" Click="buttonParameterMappingBrowse_Click" Width="107" IsDefault="True" Height="23" VerticalAlignment="Top" Grid.Column="2" Grid.Row="2"/>
-               <Button Content="{x:Static p:Resources.Classification}" Height="23" Margin="-53,77,0,0" Name="classificationButton" Click="buttonClassification_Click" VerticalAlignment="Top" Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Left" Width="231"/>
+            <Grid Margin="0,0,-10,0">
+               <CheckBox Content="{x:Static p:Resources.ExportRevitPropertySets}" Margin="10,7,0,0" x:Name="checkboxInternalPropertySets" Checked="checkboxInternalPropertySets_Checked" Unchecked="checkboxInternalPropertySets_Checked" Height="16" VerticalAlignment="Top" HorizontalAlignment="Left" Width="588" />
+               <CheckBox Content="{x:Static p:Resources.ExportIFCCommonPropertySets}" Margin="10,28,0,0" x:Name="checkboxIFCCommonPropertySets" Checked="checkboxIFCCommonPropertySets_Checked" Unchecked="checkboxIFCCommonPropertySets_Checked" Height="16" VerticalAlignment="Top" HorizontalAlignment="Left" Width="588"/>
+               <CheckBox Content="{x:Static p:Resources.ExportBaseQuantities}" Margin="10,49,0,0" x:Name="checkboxExportBaseQuantities" Checked="checkboxExportBaseQuantities_Checked" Unchecked="checkboxExportBaseQuantities_Checked" Height="16" VerticalAlignment="Top" HorizontalAlignment="Left" Width="588" />
+               <CheckBox Content="{x:Static p:Resources.ExportSchedulesAsPropertySets}" Margin="10,70,0,0" x:Name="checkboxExportSchedulesAsPsets" VerticalAlignment="Top"  Checked="checkboxExportSchedulesAsPsets_Checked" Unchecked="checkboxExportSchedulesAsPsets_Checked" Height="16" HorizontalAlignment="Left" Width="588" />
+               <CheckBox Content="{x:Static p:Resources.ExportSpecificSchedules}" Margin="30,91,0,0" x:Name="checkBoxExportSpecificSchedules" VerticalAlignment="Top"  Checked="checkBoxExportSpecificSchedules_Checked" Unchecked="checkBoxExportSpecificSchedules_Checked" Height="16" HorizontalAlignment="Left" Width="568" />
+               <CheckBox Content="{x:Static p:Resources.ExportUserDefinedPropertySets}" Margin="10,120,0,0" Height="16" x:Name="checkboxExportUserDefinedPset" VerticalAlignment="Top" Checked="checkboxExportUserDefinedPset_Checked" Unchecked="checkboxExportUserDefinedPset_Checked" HorizontalAlignment="Left" Width="588"/>
+               <TextBox Height="23" Margin="30,141,0,0" x:Name="userDefinedPropertySetFileName" VerticalAlignment="Top" HorizontalAlignment="Left" Width="436" />
+               <Button Content="{x:Static p:Resources.Browse}" x:Name="buttonBrowse" Width="107" IsDefault="True" Click="buttonBrowse_Click" Height="23" VerticalAlignment="Top" Margin="0,141,20,0" HorizontalAlignment="Right"/>
+               <CheckBox Content="{x:Static p:Resources.ExportUserDefinedParameterMappingTable}" Height="16" Margin="10,180,0,0" x:Name="checkBoxExportUserDefinedParameterMapping" VerticalAlignment="Top" Checked="checkBoxExportUserDefinedParameterMapping_Checked" Unchecked="checkBoxExportUserDefinedParameterMapping_Checked" HorizontalAlignment="Left" Width="588"/>
+               <TextBox Height="23" Margin="30,201,0,0" x:Name="userDefinedParameterMappingTable" VerticalAlignment="Top" HorizontalAlignment="Left" Width="436"/>
+               <Button Content="{x:Static p:Resources.Browse}" Margin="0,201,20,0" x:Name="buttonParameterMappingBrowse" Click="buttonParameterMappingBrowse_Click" Width="107" IsDefault="True" Height="23" VerticalAlignment="Top" HorizontalAlignment="Right"/>
+               <Button Content="{x:Static p:Resources.Classification}" Margin="10,0,0,10" Name="classificationButton" Click="buttonClassification_Click" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="231"/>
             </Grid>
          </TabItem>
          <TabItem Header="{x:Static p:Resources.LevelOfDetail}" x:Name="levelOfDetail">
-            <Grid Margin="0,0,-2,0" HorizontalAlignment="Right" Width="510">
-               <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="193*"/>
-                  <ColumnDefinition Width="317*"/>
-               </Grid.ColumnDefinitions>
-               <Label Content="{x:Static p:Resources.TessellationDetails}" HorizontalAlignment="Left" Margin="-72,10,0,0" x:Name="checkBoxLevelOfDetails" Grid.ColumnSpan="2" Width="368" VerticalAlignment="Top" Height="26"/>
-               <ComboBox Name="comboBoxLOD" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="199"  Height="25"  Margin="108,10,0,0" SelectionChanged="comboBoxLOD_SelectionChanged"/>
+            <Grid Margin="0,0,-10,0">
+               <Label Content="{x:Static p:Resources.TessellationDetails}" HorizontalAlignment="Left" Margin="10,10,0,0" x:Name="checkBoxLevelOfDetails" Grid.ColumnSpan="2" Width="368" VerticalAlignment="Top" Height="26"/>
+               <ComboBox Name="comboBoxLOD" VerticalAlignment="Top"  Height="25"  Margin="0,10,20,0" SelectionChanged="comboBoxLOD_SelectionChanged" HorizontalAlignment="Right" Width="198"/>
             </Grid>
          </TabItem>
          <TabItem Header="{x:Static p:Resources.Advanced}" x:Name="Advanced">
-            <Grid Margin="0,0,-2,0" HorizontalAlignment="Right" Width="505">
-               <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="0*"/>
-                  <ColumnDefinition Width="259*"/>
-                  <ColumnDefinition Width="9*"/>
-                  <ColumnDefinition Width="98*"/>
-                  <ColumnDefinition Width="139*"/>
-               </Grid.ColumnDefinitions>
-               <CheckBox Content="{x:Static p:Resources.ExportPartsAsBuildingElements}" HorizontalAlignment="Left" Margin="-74,7,0,0" x:Name="checkBoxExportPartsAsBuildingElements" VerticalAlignment="Top" Checked="checkBoxExportPartsAsBuildingElements_Checked" Unchecked="checkBoxExportPartsAsBuildingElements_Checked" Visibility="Visible" Height="16" Width="569" Grid.ColumnSpan="5" />
-               <CheckBox Content="{x:Static p:Resources.ExportSolidModelsWhenPossible}" HorizontalAlignment="Left" Margin="-74,27,0,0" x:Name="checkboxExportSolidModelRep" VerticalAlignment="Top"  Checked="checkboxExportSolidModelRep_Checked" Unchecked="checkboxExportSolidModelRep_Checked" Width="569" Height="16" Grid.ColumnSpan="5" />
-               <CheckBox Content="{x:Static p:Resources.UseActiveViewForGeometry}"  Height="16" HorizontalAlignment="Left" Margin="-74,47,0,0" VerticalAlignment="Top" x:Name="checkBoxUseActiveViewGeometry" Checked="checkBoxUseActiveViewGeometry_Checked" Unchecked="checkBoxUseActiveViewGeometry_Checked" Width="569" Grid.ColumnSpan="5"/>
-               <CheckBox Content="{x:Static p:Resources.UseFamilyAndTypeNameForReference}" HorizontalAlignment="Left" Margin="-74,67,0,0" x:Name="checkBoxFamilyAndTypeName" Checked="checkBoxFamilyAndTypeName_Checked" Unchecked="checkBoxFamilyAndTypeName_Checked" Height="16" VerticalAlignment="Top" Width="569" Grid.ColumnSpan="5" />
-               <CheckBox Content="{x:Static p:Resources.UseRoomBoundariesForRoomVolume}" Height="16" HorizontalAlignment="Left" Margin="-74,87,0,0" x:Name="checkBoxUse2DRoomVolumes" VerticalAlignment="Top" Checked="checkBoxUse2DRoomVolumes_Checked" Unchecked="checkBoxUse2DRoomVolumes_Checked" Width="569" Grid.ColumnSpan="5" />
-               <CheckBox Content="{x:Static p:Resources.IncludeIfcSiteElevation}" Height="16" HorizontalAlignment="Left" Margin="-74,107,0,0" x:Name="checkboxIncludeIfcSiteElevation" VerticalAlignment="Top" Checked="checkboxIfcSiteElevation_Checked" Unchecked="checkboxIfcSiteElevation_Checked" Width="569" Grid.ColumnSpan="5" />
-               <CheckBox Content="{x:Static p:Resources.StoreIFCGUID}" Height="16" HorizontalAlignment="Left" Margin="-74,127,0,0" x:Name="checkboxStoreIFCGUID" VerticalAlignment="Top" Checked="checkboxStoreIFCGUID_Checked" Unchecked="checkboxStoreIFCGUID_Checked" Width="569" Grid.ColumnSpan="5"  />
-               <CheckBox Content="{x:Static p:Resources.ExportBoundingBox}" Height="16" HorizontalAlignment="Left" Margin="-74,147,0,0" Name="checkboxExportBoundingBox" VerticalAlignment="Top" Checked="checkboxExportBoundingBox_Checked" Unchecked="checkboxExportBoundingBox_Checked" Width="569" Grid.ColumnSpan="5" />
-               <CheckBox Content="{x:Static p:Resources.UseOnlyTriangulation}" Margin="-74,167,0,100" Grid.ColumnSpan="5" x:Name="checkBox_TriangulationOnly" Checked="checkBox_TriangulationOnly_Checked" Unchecked="checkBox_TriangulationOnly_Unchecked" ToolTip="Use this option if any tessellated geometry should remain as triangulated faces, or if the export performance is affected"/>
-               <CheckBox Content="{x:Static p:Resources.UseTypeNameOnlyForIfcType}" Margin="-74,187,0,80" Grid.ColumnSpan="5" x:Name="checkbox_UseTypeNameOnly" Checked="Checkbox_UseTypeNameOnly_Checked" Unchecked="Checkbox_UseTypeNameOnly_Unchecked" ToolTip="Use this option to export IfcType name to use only Revit type name without the family name"/>
-               <CheckBox Content="{x:Static p:Resources.UseVisibleRevitNameAsEntityName}" Margin="-74,207,0,60" Grid.ColumnSpan="5" x:Name="checkbox_UseVisibleRevitNameAsEntityName" Checked="Checkbox_UseVisibleRevitName_Checked" Unchecked="Checkbox_UseVisibleRevitName_Unchecked" ToolTip="Use this option to export Ifc Entity name to use visible Revit name "/>
+            <Grid Margin="0,0,-10,0">
+               <CheckBox Content="{x:Static p:Resources.ExportPartsAsBuildingElements}" HorizontalAlignment="Left" Margin="10,7,0,0" x:Name="checkBoxExportPartsAsBuildingElements" VerticalAlignment="Top" Checked="checkBoxExportPartsAsBuildingElements_Checked" Unchecked="checkBoxExportPartsAsBuildingElements_Checked" Visibility="Visible" Height="16" Width="569" Grid.ColumnSpan="2" />
+               <CheckBox Content="{x:Static p:Resources.ExportSolidModelsWhenPossible}" HorizontalAlignment="Left" Margin="10,28,0,0" x:Name="checkboxExportSolidModelRep" VerticalAlignment="Top"  Checked="checkboxExportSolidModelRep_Checked" Unchecked="checkboxExportSolidModelRep_Checked" Width="569" Height="16" Grid.ColumnSpan="2" />
+               <CheckBox Content="{x:Static p:Resources.UseActiveViewForGeometry}"  Height="16" HorizontalAlignment="Left" Margin="10,49,0,0" VerticalAlignment="Top" x:Name="checkBoxUseActiveViewGeometry" Checked="checkBoxUseActiveViewGeometry_Checked" Unchecked="checkBoxUseActiveViewGeometry_Checked" Width="569" Grid.ColumnSpan="2"/>
+               <CheckBox Content="{x:Static p:Resources.UseFamilyAndTypeNameForReference}" HorizontalAlignment="Left" Margin="10,70,0,0" x:Name="checkBoxFamilyAndTypeName" Checked="checkBoxFamilyAndTypeName_Checked" Unchecked="checkBoxFamilyAndTypeName_Checked" Height="16" VerticalAlignment="Top" Width="569" Grid.ColumnSpan="2" />
+               <CheckBox Content="{x:Static p:Resources.UseRoomBoundariesForRoomVolume}" Height="16" HorizontalAlignment="Left" Margin="10,91,0,0" x:Name="checkBoxUse2DRoomVolumes" VerticalAlignment="Top" Checked="checkBoxUse2DRoomVolumes_Checked" Unchecked="checkBoxUse2DRoomVolumes_Checked" Width="569" Grid.ColumnSpan="2" />
+               <CheckBox Content="{x:Static p:Resources.IncludeIfcSiteElevation}" Height="16" HorizontalAlignment="Left" Margin="10,112,0,0" x:Name="checkboxIncludeIfcSiteElevation" VerticalAlignment="Top" Checked="checkboxIfcSiteElevation_Checked" Unchecked="checkboxIfcSiteElevation_Checked" Width="569" Grid.ColumnSpan="2" />
+               <CheckBox Content="{x:Static p:Resources.StoreIFCGUID}" Height="16" HorizontalAlignment="Left" Margin="10,133,0,0" x:Name="checkboxStoreIFCGUID" VerticalAlignment="Top" Checked="checkboxStoreIFCGUID_Checked" Unchecked="checkboxStoreIFCGUID_Checked" Width="569" Grid.ColumnSpan="2"  />
+               <CheckBox Content="{x:Static p:Resources.ExportBoundingBox}" Height="16" HorizontalAlignment="Left" Margin="10,154,0,0" Name="checkboxExportBoundingBox" VerticalAlignment="Top" Checked="checkboxExportBoundingBox_Checked" Unchecked="checkboxExportBoundingBox_Checked" Width="569" Grid.ColumnSpan="2" />
+               <CheckBox Content="{x:Static p:Resources.UseOnlyTriangulation}" Margin="10,175,0,0" x:Name="checkBox_TriangulationOnly" Checked="checkBox_TriangulationOnly_Checked" Unchecked="checkBox_TriangulationOnly_Unchecked" ToolTip="Use this option if any tessellated geometry should remain as triangulated faces, or if the export performance is affected" HorizontalAlignment="Left" Width="588" Height="15" VerticalAlignment="Top"/>
+               <CheckBox Content="{x:Static p:Resources.UseTypeNameOnlyForIfcType}" Margin="10,196,0,0" x:Name="checkbox_UseTypeNameOnly" Checked="Checkbox_UseTypeNameOnly_Checked" Unchecked="Checkbox_UseTypeNameOnly_Unchecked" ToolTip="Use this option to export IfcType name to use only Revit type name without the family name" HorizontalAlignment="Left" Width="588" Height="15" VerticalAlignment="Top"/>
+               <CheckBox Content="{x:Static p:Resources.UseVisibleRevitNameAsEntityName}" Margin="10,217,0,0" x:Name="checkbox_UseVisibleRevitNameAsEntityName" Checked="Checkbox_UseVisibleRevitName_Checked" Unchecked="Checkbox_UseVisibleRevitName_Unchecked" ToolTip="Use this option to export Ifc Entity name to use visible Revit name " Height="19" VerticalAlignment="Top" HorizontalAlignment="Left" Width="588"/>
             </Grid>
          </TabItem>
          <!--
@@ -122,27 +112,27 @@
          </TabItem>
          -->
       </TabControl>
-      <Button Content="{x:Static p:Resources.OK}" HorizontalAlignment="Right" Margin="0,333,103,0" Name="buttonOK" Width="75" Click="buttonOK_Click" Height="23" VerticalAlignment="Top" RenderTransformOrigin="1.16,0.409">
-      </Button>
-      <Button Content="{x:Static p:Resources.Cancel}" Height="23" HorizontalAlignment="Right" Margin="0,333,0,0" Name="buttonCancel" VerticalAlignment="Top" Width="75" Click="buttonCancel_Click" />
-      <ListBox HorizontalAlignment="Right" Margin="0,8,599,0" Name="listBoxConfigurations" Width="260" SelectionChanged="listBoxConfigurations_SelectionChanged" Height="317" VerticalAlignment="Top" />
-      <Button Height="23" HorizontalAlignment="Left" Margin="13,330,0,0" Name="buttonNewSetup" VerticalAlignment="Top" Width="25" Click="buttonNewSetup_Click" ToolTip="{x:Static p:Resources.CreateNewSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+      <Button Content="{x:Static p:Resources.OK}" HorizontalAlignment="Right" Margin="0,0,90,9" Name="buttonOK" Width="75" Click="buttonOK_Click" RenderTransformOrigin="1.16,0.409" Height="23" VerticalAlignment="Bottom"/>
+      <Button Content="{x:Static p:Resources.Cancel}" HorizontalAlignment="Right" Margin="0,0,10,9" Name="buttonCancel" Width="75" Click="buttonCancel_Click" Height="23" VerticalAlignment="Bottom" />
+      <ListBox Margin="8,11,604,47" Name="listBoxConfigurations" SelectionChanged="listBoxConfigurations_SelectionChanged" />
+      <Button Height="23" HorizontalAlignment="Left" Margin="13,486,0,0" Name="buttonNewSetup" VerticalAlignment="Top" Width="25" Click="buttonNewSetup_Click" ToolTip="{x:Static p:Resources.CreateNewSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
          <Image HorizontalAlignment="Stretch" Name="image1" Stretch="Fill" VerticalAlignment="Stretch" Source="icons/create.ico" Width="16" Height="16" />
       </Button>
-      <Button Height="23" HorizontalAlignment="Left" Margin="43,330,0,0" Name="buttonDuplicateSetup" VerticalAlignment="Top" Width="25" Click="buttonDuplicateSetup_Click" ToolTip="{x:Static p:Resources.CloneSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+      <Button Height="23" HorizontalAlignment="Left" Margin="43,486,0,0" Name="buttonDuplicateSetup" VerticalAlignment="Top" Width="25" Click="buttonDuplicateSetup_Click" ToolTip="{x:Static p:Resources.CloneSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
          <Image HorizontalAlignment="Stretch" Name="image2" Stretch="Fill" VerticalAlignment="Stretch" Source="icons/duplicate_ico.ico" Width="16" Height="16" />
       </Button>
-      <Button Height="23" HorizontalAlignment="Left" Margin="73,330,0,0" Name="buttonRenameSetup" VerticalAlignment="Top" Width="25" Click="buttonRenameSetup_Click" ToolTip="{x:Static p:Resources.RenameSelectedSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+      <Button Height="23" HorizontalAlignment="Left" Margin="73,486,0,0" Name="buttonRenameSetup" VerticalAlignment="Top" Width="25" Click="buttonRenameSetup_Click" ToolTip="{x:Static p:Resources.RenameSelectedSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
          <Image HorizontalAlignment="Stretch" Name="image3" Stretch="Fill" VerticalAlignment="Stretch" Source="icons/rename.ico" Width="16" Height="16" />
       </Button>
-      <Button Height="23" HorizontalAlignment="Left" Margin="103,330,0,0" Name="buttonDeleteSetup" VerticalAlignment="Top" Width="25" Click="buttonDeleteSetup_Click" ToolTip="{x:Static p:Resources.DeleteSelectedSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+      <Button Height="23" HorizontalAlignment="Left" Margin="103,486,0,0" Name="buttonDeleteSetup" VerticalAlignment="Top" Width="25" Click="buttonDeleteSetup_Click" ToolTip="{x:Static p:Resources.DeleteSelectedSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
          <Image HorizontalAlignment="Stretch" Name="image4" Stretch="Fill" VerticalAlignment="Stretch" Source="icons/delete.ico" Width="16" Height="16" RenderTransformOrigin="0.5,0.688" />
       </Button>
-      <Button Height="23" HorizontalAlignment="Left" Margin="133,330,0,0" Name="buttonLoadSetup" VerticalAlignment="Top" Width="25" Click="buttonLoadSetup_Click" ToolTip="{x:Static p:Resources.LoadSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+      <Button Height="23" HorizontalAlignment="Left" Margin="133,486,0,0" Name="buttonLoadSetup" VerticalAlignment="Top" Width="25" Click="buttonLoadSetup_Click" ToolTip="{x:Static p:Resources.LoadSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
          <Image HorizontalAlignment="Stretch" Name="image6" Stretch="Fill" VerticalAlignment="Stretch" Source="icons/load.ico" Width="16" Height="16" RenderTransformOrigin="0.5,0.688" />
       </Button>
-      <Button Height="23" HorizontalAlignment="Left" Margin="163,330,0,0" Name="buttonSaveSetup" VerticalAlignment="Top" Width="25" Click="buttonSaveSetup_Click" ToolTip="{x:Static p:Resources.ExportSelectedSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+      <Button Height="23" HorizontalAlignment="Left" Margin="164,486,0,0" Name="buttonSaveSetup" VerticalAlignment="Top" Width="25" Click="buttonSaveSetup_Click" ToolTip="{x:Static p:Resources.ExportSelectedSetup}" BorderThickness="0" Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
          <Image HorizontalAlignment="Stretch" Name="image5" Stretch="Fill" VerticalAlignment="Stretch" Source="icons/save.ico" Width="16" Height="16" RenderTransformOrigin="0.5,0.688" />
       </Button>
+      <Button Content="{x:Static p:Resources.ResetToOriginals}" Name="button_ResetConfigurations" Margin="0,0,216,9" VerticalAlignment="Bottom" Height="23" HorizontalAlignment="Right" Width="75" Click="button_ResetConfigurations_Click"/>
    </Grid>
 </auiw:ChildWindow>

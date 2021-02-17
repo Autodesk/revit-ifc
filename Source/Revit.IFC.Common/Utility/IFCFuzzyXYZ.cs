@@ -26,6 +26,68 @@ using System.Threading.Tasks;
 namespace Revit.IFC.Common.Utility
 {
    /// <summary>
+   /// A common class that allows inexact comparisons of XYZ values.
+   /// </summary>
+   public class IFCXYZFuzzyCompare
+   {
+      /// <summary>
+      /// A comparison function for two XYZ values.
+      /// </summary>
+      /// <param name="first">The first XYZ value.</param>
+      /// <param name="second">The second xyz value.</param>
+      /// <param name="tol">The acceptable tolerance.</param>
+      /// <returns>A signed comparison between the 2 XYZ values.</returns>
+      public static int Compare(XYZ first, XYZ second, double tol)
+      {
+         if (first == null)
+            return (second == null) ? 0 : -1;
+         if (second == null)
+            return 1;
+
+         for (int ii = 0; ii < 3; ii++)
+         {
+            double diff = first[ii] - second[ii];
+            if (diff < -tol)
+               return -1;
+            if (diff > tol)
+               return 1;
+         }
+
+         return 0;
+      }
+   }
+
+   /// <summary>
+   /// A comparer class for comparing XYZ values with a tolerance.
+   /// </summary>
+   public class IFCXYZFuzzyComparer : IComparer<XYZ>
+   {
+      private double Tolerance { get; set; }
+
+      /// <summary>
+      /// The constructor.
+      /// </summary>
+      /// <param name="tol">The tolerance.</param>
+      /// <remarks>If the tolerance is less than MathUtil.Eps(), it will be set to MathUtil.Eps().</remarks>
+      public IFCXYZFuzzyComparer(double tol)
+      {
+         // Disallow setting a tolerance less than 1e-9.
+         Tolerance = Math.Max(tol, MathUtil.Eps());
+      }
+
+      /// <summary>
+      /// The Compare function.
+      /// </summary>
+      /// <param name="first">The first XYZ value.</param>
+      /// <param name="second">The second XYZ value.</param>
+      /// <returns>-1 if first < second, 1 if second < first, 0 otherwise.</returns>
+      public int Compare(XYZ first, XYZ second)
+      {
+         return IFCXYZFuzzyCompare.Compare(first, second, Tolerance);
+      }
+   }
+
+   /// <summary>
    /// A class to allow comparison of XYZ values based on a static epsilon value
    /// The static epsilon value should be set before using these values.
    /// </summary>
@@ -43,10 +105,23 @@ namespace Revit.IFC.Common.Utility
          }
       }
 
+      private double? CustomTolerance { get; set; } = null;
+
+      /// <summary>
+      /// Base constructor.
+      /// </summary>
       public IFCFuzzyXYZ() : base() { }
 
-      public IFCFuzzyXYZ(XYZ xyz) : base(xyz.X, xyz.Y, xyz.Z) { }
-
+      /// <summary>
+      /// Base constructor for converting an XYZ to an IFCFuzzyXYZ.
+      /// </summary>
+      /// <param name="xyz">The XYZ value.</param>
+      /// <param name="tol">If supplied, a custom tolerance value that overrides the global value.</param>
+      public IFCFuzzyXYZ(XYZ xyz, double? tol = null) : base(xyz.X, xyz.Y, xyz.Z) 
+      {
+         CustomTolerance = tol;
+      }
+      
       /// <summary>
       /// Compare an IFCFuzzyXYZ with an XYZ value by checking that their individual X,Y, and Z components are within an epsilon value of each other.
       /// </summary>
@@ -55,18 +130,10 @@ namespace Revit.IFC.Common.Utility
       public int CompareTo(Object obj)
       {
          if (obj == null || (!(obj is XYZ)))
-            return -1;
+            return 1;
 
-         XYZ otherXYZ = obj as XYZ;
-         for (int ii = 0; ii < 3; ii++)
-         {
-            if (this[ii] < otherXYZ[ii] - IFCFuzzyXYZEpsilon)
-               return -1;
-            if (this[ii] > otherXYZ[ii] + IFCFuzzyXYZEpsilon)
-               return 1;
-         }
-
-         return 0;
+         double tol = (CustomTolerance != null) ? CustomTolerance.Value : IFCFuzzyXYZEpsilon;
+         return IFCXYZFuzzyCompare.Compare(this, obj as XYZ, tol);
       }
    }
 }

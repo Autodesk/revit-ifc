@@ -67,7 +67,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Converts an unscaled value in Revit internal units to IFC units, given the unit type.
       /// </summary>
-      /// <param name="unitType">The unit Type.</param>
+      /// <param name="specTypeId">Identifier of the spec.</param>
       /// <param name="unscaledValue">The value in Revit internal units.</param>
       /// <returns>The value in IFC units.</returns>
       static public double ScaleDouble(UnitType unitType, double unscaledValue)

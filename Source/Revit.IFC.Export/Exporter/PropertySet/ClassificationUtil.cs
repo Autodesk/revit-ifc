@@ -123,10 +123,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                standardPass++;
             }
 
-            // Skip if the parameter is not present in the element parameters
-            if (!element.ParametersMap.Contains(classificationCodeFieldName))
-               continue;
-
             if (ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, classificationCodeFieldName,
                out paramClassificationCode) == null)
             {
@@ -254,7 +250,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (String.IsNullOrEmpty(classificationName))
          {
             // No Classification Name specified, look for Classification Name assignment from the cache (from UI)
-            if (!ExporterCacheManager.ClassificationCache.FieldNameToClassificationNames.TryGetValue(classificationCodeFieldName, out classificationName))
+            if (string.IsNullOrEmpty(classificationCodeFieldName)
+               || !ExporterCacheManager.ClassificationCache.FieldNameToClassificationNames.TryGetValue(classificationCodeFieldName, out classificationName))
                classificationName = "Default Classification";
          }
 

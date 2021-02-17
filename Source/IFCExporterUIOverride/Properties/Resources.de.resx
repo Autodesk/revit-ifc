@@ -583,13 +583,13 @@
     <value>Speichern und Schließen</value>
   </data>
   <data name="General" xml:space="preserve">
-    <value>Allgemeine IFC-Eigenschaftensätze exportieren</value>
+    <value>Allgemeine Einstellungen</value>
   </data>
   <data name="ExportRoomsInView" xml:space="preserve">
     <value>Räume in 3D-Ansichten exportieren</value>
   </data>
   <data name="UseActiveViewForGeometry" xml:space="preserve">
-    <value>Aktive Ansicht beim Erstellen von Geomatrie verwenden</value>
+    <value>Aktive Ansicht beim Erstellen von Geometrie verwenden</value>
   </data>
   <data name="MultipleFiles" xml:space="preserve">
     <value>Mehrere Dateien</value>
@@ -736,7 +736,7 @@
     <value>Interne Koordinaten</value>
   </data>
   <data name="KeepTessellatedAsTriangulation" xml:space="preserve">
-    <value>Tesselierte Geomatrie als Triangulation beibehalten</value>
+    <value>Tesselierte Geometrie als Triangulation beibehalten</value>
   </data>
   <data name="LoadSetup" xml:space="preserve">
     <value>Einstellungen importieren…</value>

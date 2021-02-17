@@ -55,6 +55,7 @@ namespace Revit.IFC.Import.Utility
          m_MeasureCache["IfcMassMeasure"] = UnitType.UT_Mass;
          m_MeasureCache["IfcMassDensityMeasure"] = UnitType.UT_MassDensity;
          m_MeasureCache["IfcMonetaryMeasure"] = UnitType.UT_Currency;
+         m_MeasureCache["IfcNormalisedRatioMeasure"] = UnitType.UT_Number;
          m_MeasureCache["IfcNumericMeasure"] = UnitType.UT_Number;
          m_MeasureCache["IfcPositiveRatioMeasure"] = UnitType.UT_Number;
          m_MeasureCache["IfcPositiveLengthMeasure"] = UnitType.UT_Length;
@@ -86,10 +87,10 @@ namespace Revit.IFC.Import.Utility
       /// Gets the unit type from an IFC data.
       /// </summary>
       /// <param name="data">The IFC data.</param>
-      /// <param name="defaultType">The default value, if no type is found.</param>
+      /// <param name="defaultSpec">The default spec, if no spec is found.</param>
       /// <param name="propertyType">The string value of the simple type, returned for logging purposes.</param>
       /// <returns>The unit type.</returns>
-      public static UnitType GetUnitTypeFromData(IFCData data, UnitType defaultType, out string propertyType)
+      public static UnitType GetUnitTypeFromData(IFCData data, UnitType defaultSpec, out string propertyType)
       {
          UnitType unitType = UnitType.UT_Undefined;
 
@@ -97,12 +98,12 @@ namespace Revit.IFC.Import.Utility
          {
             propertyType = data.GetSimpleType();
             if (!MeasureCache.TryGetValue(propertyType, out unitType))
-               unitType = defaultType;
+               unitType = defaultSpec;
          }
          else
          {
             propertyType = "";
-            unitType = defaultType;
+            unitType = defaultSpec;
          }
 
          return unitType;
@@ -112,12 +113,12 @@ namespace Revit.IFC.Import.Utility
       /// Gets the unit type from an IFC data.
       /// </summary>
       /// <param name="data">The IFC data.</param>
-      /// <param name="defaultType">The default value, if no type is found.</param>
+      /// <param name="defaultSpec">The default spec, if no spec is found.</param>
       /// <returns>The unit type.</returns>
-      public static UnitType GetUnitTypeFromData(IFCData data, UnitType defaultType)
+      public static UnitType GetUnitTypeFromData(IFCData data, UnitType defaultSpec)
       {
          string propertyType;
-         return GetUnitTypeFromData(data, defaultType, out propertyType);
+         return GetUnitTypeFromData(data, defaultSpec, out propertyType);
       }
    }
 }

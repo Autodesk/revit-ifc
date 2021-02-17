@@ -19,40 +19,27 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Enums;
+using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
    public abstract class IFCRepresentationItem : IFCEntity
    {
-      private IFCStyledItem m_StyledByItem = null;
-
-      private IFCPresentationLayerAssignment m_LayerAssignment = null;
-
       /// <summary>
       /// The associated style of the representation item, if any.
       /// </summary>
-      public IFCStyledItem StyledByItem
-      {
-         get { return m_StyledByItem; }
-         protected set { m_StyledByItem = value; }
-      }
+      public IFCStyledItem StyledByItem { get; protected set; } = null;
 
       /// <summary>
       /// The associated layer assignment of the representation item, if any.
       /// </summary>
-      public IFCPresentationLayerAssignment LayerAssignment
-      {
-         get { return m_LayerAssignment; }
-         protected set { m_LayerAssignment = value; }
-      }
+      public IFCPresentationLayerAssignment LayerAssignment { get; protected set; } = null;
 
       /// <summary>
       /// Returns the associated material id, if any.
@@ -83,12 +70,12 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(item);
 
-         LayerAssignment = IFCPresentationLayerAssignment.GetTheLayerAssignment(item, false);
+         LayerAssignment = IFCPresentationLayerAssignment.GetTheLayerAssignment(item);
 
          // IFC2x has a different representation for styled items which we don't support.
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x2)
+         ICollection<IFCAnyHandle> styledByItems = null;
+         if (Importer.TheCache.StyledByItems.TryGetValue(item, out styledByItems))
          {
-            List<IFCAnyHandle> styledByItems = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(item, "StyledByItem");
             if (styledByItems != null && styledByItems.Count > 0)
             {
                // We can only handle one styled item, but we allow the possiblity that there are duplicates.  Do a top-level check.
@@ -117,18 +104,6 @@ namespace Revit.IFC.Import.Data
                }
             }
          }
-      }
-
-      /// <summary>
-      /// Deal with missing "LayerAssignments" in IFC2x3 EXP file.
-      /// </summary>
-      /// <param name="layerAssignment">The layer assignment to add to this representation.</param>
-      public void PostProcessLayerAssignment(IFCPresentationLayerAssignment layerAssignment)
-      {
-         if (LayerAssignment == null)
-            LayerAssignment = layerAssignment;
-         else
-            IFCImportDataUtil.CheckLayerAssignmentConsistency(LayerAssignment, layerAssignment, Id);
       }
 
       /// <summary>
@@ -179,6 +154,14 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcMappedItem))
+            return IFCMappedItem.ProcessIFCMappedItem(ifcRepresentationItem);
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcStyledItem))
+            return IFCStyledItem.ProcessIFCStyledItem(ifcRepresentationItem);
+         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTopologicalRepresentationItem))
+            return IFCTopologicalRepresentationItem.ProcessIFCTopologicalRepresentationItem(ifcRepresentationItem);
+
+         // TODO: Move everything below to IFCGeometricRepresentationItem, once it is created.
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcBooleanResult))
             return IFCBooleanResult.ProcessIFCBooleanResult(ifcRepresentationItem);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcCurve))
@@ -187,32 +170,31 @@ namespace Revit.IFC.Import.Data
             return IFCFaceBasedSurfaceModel.ProcessIFCFaceBasedSurfaceModel(ifcRepresentationItem);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcGeometricSet))
             return IFCGeometricSet.ProcessIFCGeometricSet(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcMappedItem))
-            return IFCMappedItem.ProcessIFCMappedItem(ifcRepresentationItem);
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPoint))
+            return IFCPoint.ProcessIFCPoint(ifcRepresentationItem);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcShellBasedSurfaceModel))
             return IFCShellBasedSurfaceModel.ProcessIFCShellBasedSurfaceModel(ifcRepresentationItem);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcSolidModel))
             return IFCSolidModel.ProcessIFCSolidModel(ifcRepresentationItem);
-
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x2 && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcStyledItem))
-            return IFCStyledItem.ProcessIFCStyledItem(ifcRepresentationItem);
-
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4 && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTriangulatedFaceSet))
+         
+         // TODO: Move the items below to IFCGeometricRepresentationItem->IFCTessellatedItem->IfcTessellatedFaceSet.
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTriangulatedFaceSet))
             return IFCTriangulatedFaceSet.ProcessIFCTriangulatedFaceSet(ifcRepresentationItem);
-
          // There is no way to actually determine an IFC4Add2 file vs. a "vanilla" IFC4 file, which is
          // obsolete.  The try/catch here allows us to read these obsolete files without crashing.
          try
          {
-            if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC4 && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPolygonalFaceSet))
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPolygonalFaceSet))
                return IFCPolygonalFaceSet.ProcessIFCPolygonalFaceSet(ifcRepresentationItem);
          }
-         catch
+         catch (Exception ex)
          {
+            // Once we fail once, downgrade the schema so we don't try again.
+            if (IFCImportFile.HasUndefinedAttribute(ex))
+               IFCImportFile.TheFile.DowngradeIFC4SchemaTo(IFCSchemaVersion.IFC4Add1Obsolete);
+            else
+               throw ex;
          }
-
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTopologicalRepresentationItem))
-            return IFCTopologicalRepresentationItem.ProcessIFCTopologicalRepresentationItem(ifcRepresentationItem);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcRepresentationItem, IFCEntityType.IfcRepresentationItem, true);
          return null;

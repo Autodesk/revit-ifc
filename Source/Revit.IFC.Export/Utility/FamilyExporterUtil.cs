@@ -423,7 +423,7 @@ namespace Revit.IFC.Export.Exporter
                   case IFCEntityType.IfcMember:
                   case IFCEntityType.IfcPlate:
                      {
-                        elemIdToUse = NamingUtil.GetTagOverride(instance, NamingUtil.CreateIFCElementId(instance));
+                        elemIdToUse = NamingUtil.GetTagOverride(instance);
                         break;
                      }
                }
@@ -483,6 +483,14 @@ namespace Revit.IFC.Export.Exporter
                case Common.Enums.IFCEntityType.IfcWindowType:
                   exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWindowStyle, ifcEnumType);
                   break;
+               case Common.Enums.IFCEntityType.UnKnown:
+                  {
+                     if (exportType.ExportInstance == IFCEntityType.IfcFooting)
+                     {
+                        exportInfo.SetValue(IFCEntityType.IfcFooting, IFCEntityType.IfcTypeProduct, ifcEnumType);
+                     }
+                     break;
+                  }
             }
          }
          else
@@ -498,10 +506,18 @@ namespace Revit.IFC.Export.Exporter
                case Common.Enums.IFCEntityType.IfcElectricHeaterType:
                   exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcSpaceHeaterType, ifcEnumType);
                   break;
+               case Common.Enums.IFCEntityType.UnKnown:
+                  {
+                     if (exportType.ExportInstance == IFCEntityType.IfcFooting)
+                     {
+                        exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcFootingType, ifcEnumType);
+                     }
+                     break;
+                  }
             }
          }
 
-         return IFCInstanceExporter.CreateGenericIFCType(exportInfo, symbol, file, propertySets, representationMapList);
+            return IFCInstanceExporter.CreateGenericIFCType(exportInfo, symbol, file, propertySets, representationMapList);
       }
 
       /// <summary>

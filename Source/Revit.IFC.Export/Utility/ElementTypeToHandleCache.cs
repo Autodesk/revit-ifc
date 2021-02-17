@@ -85,28 +85,6 @@ namespace Revit.IFC.Export.Utility
       /// <returns>
       /// The handle.
       /// </returns>
-      [Obsolete("This method has been updated and it requires ElementType (instead of ElementId) and IFCExportInfoPair to be specified")]
-      public IFCAnyHandle Find(ElementId elementTypeId)
-      {
-         if (m_RegisteredElementType.Count == 0)
-            return null;
-
-         ElementType elementType = m_RegisteredElementType.First().Document.GetElement(elementTypeId) as ElementType;
-         if (elementType == null)
-            return null;
-
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         return Find(elementType, exportType);
-      }
-
-      /// <summary>
-      /// Finds the handle from the dictionary.
-      /// </summary>
-      /// <param name="elementType">The element Type.</param>
-      /// <param name="exportType">The export info pair</param>
-      /// <returns>
-      /// The handle.
-      /// </returns>
       public IFCAnyHandle Find(ElementType elementType, IFCExportInfoPair exportType)
       {
          IFCAnyHandle handle;

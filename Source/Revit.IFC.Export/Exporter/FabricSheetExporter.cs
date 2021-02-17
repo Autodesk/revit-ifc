@@ -174,50 +174,6 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
-      private static void GetFabricSheetParams(FabricSheet sheet, out string steelGrade, out double meshLength, out double meshWidth,
-         out double longitudinalBarNominalDiameter, out double transverseBarNominalDiameter, out double longitudinalBarCrossSectionArea,
-         out double transverseBarCrossSectionArea, out double longitudinalBarSpacing, out double transverseBarSpacing)
-      {
-         steelGrade = String.Empty;
-         meshLength = sheet.CutOverallLength;
-         meshWidth = sheet.CutOverallWidth;
-         longitudinalBarNominalDiameter = 0.0;
-         transverseBarNominalDiameter = 0.0;
-         longitudinalBarCrossSectionArea = 0.0;
-         transverseBarCrossSectionArea = 0.0;
-         longitudinalBarSpacing = 0.0;
-         transverseBarSpacing = 0.0;
-
-         if (sheet == null) 
-            return;
-
-         Document doc = sheet.Document;
-         Element fabricSheetTypeElem = doc?.GetElement(sheet.GetTypeId());
-         FabricSheetType fabricSheetType = fabricSheetTypeElem as FabricSheetType;
-         steelGrade = NamingUtil.GetOverrideStringValue(sheet, "SteelGrade", null);
-
-         Element majorFabricWireTypeElem = doc?.GetElement(fabricSheetType?.MajorDirectionWireType);
-         FabricWireType majorFabricWireType = (majorFabricWireTypeElem == null) ? null : (majorFabricWireTypeElem as FabricWireType);
-         if (majorFabricWireType != null)
-         {
-            longitudinalBarNominalDiameter = UnitUtil.ScaleLength(majorFabricWireType.WireDiameter);
-            double localRadius = longitudinalBarNominalDiameter / 2.0;
-            longitudinalBarCrossSectionArea = localRadius * localRadius * Math.PI;
-         }
-
-         Element minorFabricWireTypeElem = doc?.GetElement(fabricSheetType?.MinorDirectionWireType);
-         FabricWireType minorFabricWireType = (minorFabricWireTypeElem == null) ? null : (minorFabricWireTypeElem as FabricWireType);
-         if (minorFabricWireType != null)
-         {
-            transverseBarNominalDiameter = UnitUtil.ScaleLength(minorFabricWireType.WireDiameter);
-            double localRadius = transverseBarNominalDiameter / 2.0;
-            transverseBarCrossSectionArea = localRadius * localRadius * Math.PI;
-         }
-
-         longitudinalBarSpacing = UnitUtil.ScaleLength(fabricSheetType.MajorSpacing);
-         transverseBarSpacing = UnitUtil.ScaleLength(fabricSheetType.MinorSpacing);
-      }
-
       private static bool ExportCustomFabricSheet(FabricSheetExportConfig cfg)
       {
          if (cfg.Equals(null) || cfg.Sheet.IsBent)
@@ -226,7 +182,7 @@ namespace Revit.IFC.Export.Exporter
          string guid = GUIDUtil.CreateGUID(cfg.Sheet);
          IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
          HashSet<IFCAnyHandle> rebarHandles = new HashSet<IFCAnyHandle>();
-         string matName = (cfg.Doc.GetElement(cfg.MaterialId) as Material)?.Name;
+         string matName = NamingUtil.GetMaterialName(cfg.Doc, cfg.MaterialId);
 
          int ii = 0;
          do
@@ -242,6 +198,7 @@ namespace Revit.IFC.Export.Exporter
                   wireDiam = UnitUtil.ScaleLength(wireType.WireDiameter);
 
                IFCAnyHandle bodyItem = GeometryUtil.CreateSweptDiskSolid(cfg.ExporterIFC, cfg.File, wireCenterlines[jj], wireDiam / 2.0, null);
+               RepresentationUtil.CreateStyledItemAndAssign(cfg.File, cfg.Doc, cfg.MaterialId, bodyItem);
 
                ISet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle> { bodyItem };
                IFCAnyHandle shapeRep = null;
@@ -264,7 +221,7 @@ namespace Revit.IFC.Export.Exporter
          while (ii < 2);
 
          IFCAnyHandle assemblyInstanceHnd = IFCInstanceExporter.CreateElementAssembly(cfg.ExporterIFC, cfg.Sheet, guid,
-            ownerHistory, cfg.PlacementSetter.LocalPlacement, null, IFCAssemblyPlace.NotDefined, IFCElementAssemblyType.UserDefined);
+            ownerHistory, cfg.PlacementSetter.LocalPlacement, null, null, IFCElementAssemblyType.UserDefined);
          IFCExportInfoPair assemblyExportInfo = new IFCExportInfoPair(IFCEntityType.IfcElementAssembly);
          cfg.ProductWrapper.AddElement(cfg.Sheet, assemblyInstanceHnd, cfg.PlacementSetter.LevelInfo, null, true, assemblyExportInfo);
          ExporterCacheManager.AssemblyInstanceCache.RegisterAssemblyInstance(cfg.Sheet.Id, assemblyInstanceHnd);
@@ -298,7 +255,10 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle bodyItem = GeometryUtil.CreateSweptDiskSolid(cfg.ExporterIFC, cfg.File, wireCenterlines[jj], wireDiam / 2.0, null);
 
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyItem))
+               {
                   cfg.BodyItems?.Add(bodyItem);
+                  RepresentationUtil.CreateStyledItemAndAssign(cfg.File, cfg.Doc, cfg.MaterialId, bodyItem);
+               }
             }
             ii++;
          }
@@ -315,12 +275,18 @@ namespace Revit.IFC.Export.Exporter
 
          IFCAnyHandle prodRep = (shapeReps != null) ? IFCInstanceExporter.CreateProductDefinitionShape(cfg.File, null, null, shapeReps) : null;
 
-         GetFabricSheetParams(cfg.Sheet, out string steelGrade, out double meshLength, out double meshWidth,
-            out double longitudinalBarNominalDiameter, out double transverseBarNominalDiameter, out double longitudinalBarCrossSectionArea,
-            out double transverseBarCrossSectionArea, out double longitudinalBarSpacing, out double transverseBarSpacing);
+         FabricParams fabricParams = null;
+         if (!ExporterCacheManager.FabricParamsCache.TryGetValue(cfg.Sheet.Id, out fabricParams))
+         {
+            fabricParams = new FabricParams(cfg.Sheet);
+            ExporterCacheManager.FabricParamsCache[cfg.Sheet.Id] = fabricParams;
+         }
+
          IFCAnyHandle handle = IFCInstanceExporter.CreateReinforcingMesh(cfg.ExporterIFC, cfg.Sheet, guid, ownerHistory, cfg.EcData.GetLocalPlacement(),
-            prodRep, steelGrade, meshLength, meshWidth, longitudinalBarNominalDiameter, transverseBarNominalDiameter,
-            longitudinalBarCrossSectionArea, transverseBarCrossSectionArea, longitudinalBarSpacing, transverseBarSpacing);
+            prodRep, fabricParams.SteelGrade, fabricParams.MeshLength, fabricParams.MeshWidth,
+            fabricParams.LongitudinalBarNominalDiameter, fabricParams.TransverseBarNominalDiameter,
+            fabricParams.LongitudinalBarCrossSectionArea, fabricParams.TransverseBarCrossSectionArea,
+            fabricParams.LongitudinalBarSpacing, fabricParams.TransverseBarSpacing);
          IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingMesh);
          ElementId fabricAreaId = cfg.Sheet?.FabricAreaOwnerId;
          if (fabricAreaId != ElementId.InvalidElementId)

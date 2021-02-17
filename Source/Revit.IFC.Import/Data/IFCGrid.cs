@@ -132,8 +132,11 @@ namespace Revit.IFC.Import.Data
                IFCGridAxis gridAxis = IFCGridAxis.ProcessIFCGridAxis(axis);
                if (gridAxis != null)
                {
+                  gridAxis.ParentGrid = this;
                   if (gridAxis.DuplicateAxisId == -1)
+                  {
                      gridAxes.Add(gridAxis);
+                  }
                   else
                   {
                      IFCEntity originalEntity;
@@ -276,18 +279,22 @@ namespace Revit.IFC.Import.Data
       /// Allow for override of IfcObjectDefinition shared parameter names.
       /// </summary>
       /// <param name="name">The enum corresponding of the shared parameter.</param>
+      /// <param name="isType">True if the shared parameter is a type parameter.</param>
       /// <returns>The name appropriate for this IfcObjectDefinition.</returns>
-      public override string GetSharedParameterName(IFCSharedParameters name)
+      public override string GetSharedParameterName(IFCSharedParameters name, bool isType)
       {
-         switch (name)
+         if (!isType)
          {
-            case IFCSharedParameters.IfcName:
-               return "IfcGrid Name";
-            case IFCSharedParameters.IfcDescription:
-               return "IfcGrid Description";
-            default:
-               return base.GetSharedParameterName(name);
+            switch (name)
+            {
+               case IFCSharedParameters.IfcName:
+                  return "IfcGrid Name";
+               case IFCSharedParameters.IfcDescription:
+                  return "IfcGrid Description";
+            }
          }
+
+         return base.GetSharedParameterName(name, isType);
       }
 
       /// <summary>

@@ -33,8 +33,9 @@ namespace Revit.IFC.Import.Enums
    /// </summary>
    public enum IFCSharedParameters
    {
-      IfcName,
       IfcDescription,
-      IfcMaterial
+      IfcExportAs,
+      IfcMaterial,
+      IfcName
    }
 }

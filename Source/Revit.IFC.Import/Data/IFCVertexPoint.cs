@@ -31,16 +31,10 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCVertexPoint : IFCVertex
    {
-      XYZ m_VertexGeometry = null;
-
       /// <summary>
       /// The geometric point, which defines the position in geometric space of the vertex
       /// </summary>
-      public XYZ VertexGeometry
-      {
-         get { return m_VertexGeometry; }
-         set { m_VertexGeometry = value; }
-      }
+      public XYZ VertexGeometry { get; set; } = null;
 
       protected IFCVertexPoint()
       {
@@ -56,14 +50,14 @@ namespace Revit.IFC.Import.Data
          base.Process(ifcVertexPoint);
 
          IFCAnyHandle vertexGeometry = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcVertexPoint, "VertexGeometry", true);
-         XYZ unScaledVertexGeometry = IFCPoint.ProcessIFCPoint(vertexGeometry);
+         XYZ unScaledVertexGeometry = IFCPoint.IFCPointToXYZ(vertexGeometry);
          VertexGeometry = IFCUnitUtil.ScaleLength(unScaledVertexGeometry);
       }
 
       /// <summary>
       /// Create an IFCVertexPoint object from a handle of type IfcVertexPoint.
       /// </summary>
-      /// <param name="ifcFace">The IFC handle.</param>
+      /// <param name="ifcVertexPoint">The IFC handle.</param>
       /// <returns>The IFCVertexPoint object.</returns>
       public static IFCVertex ProcessIFCVertexPoint(IFCAnyHandle ifcVertexPoint)
       {

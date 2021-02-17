@@ -34,6 +34,11 @@ namespace Revit.IFC.Import.Enums
       IFC2x,
       IFC2x2,
       IFC2x3,
-      IFC4     // This is either IFC4 (obsolete) or IFC4Add2 (official).  IFC4Add1 isn't supported.
+      // We cannot distinguish between obsolete IFC4 pre-Add2 files and IFC4Add2 files.
+      // As such, all files are marked as IFC4 until we find some evidence that they 
+      // are older formats, in which case we can "downgrade" the version.
+      IFC4Obsolete,
+      IFC4Add1Obsolete,
+      IFC4
    }
 }

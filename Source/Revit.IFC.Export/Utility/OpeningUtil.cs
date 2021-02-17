@@ -74,7 +74,7 @@ namespace Revit.IFC.Export.Utility
             {
                Transform extrusionTrf = Transform.Identity;
                IFCAnyHandle extrusionHandle = 
-                  ExtrusionExporter.CreateExtrudedSolidFromExtrusionData(exporterIFC, element, info[curr]);
+                  ExtrusionExporter.CreateExtrudedSolidFromExtrusionData(exporterIFC, element, info[curr], out extrusionTrf);
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionHandle))
                   continue;
 
@@ -94,10 +94,11 @@ namespace Revit.IFC.Export.Utility
                string guid = GUIDUtil.CreateGUID();
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                string openingName = NamingUtil.GetIFCNamePlusIndex(element, openingNumber++);
-               IFCAnyHandle openingElement = IFCInstanceExporter.CreateOpeningElement(exporterIFC, element, guid, ownerHistory,
-                  openingPlacement, openingRep);
-               IFCAnyHandleUtil.OverrideNameAttribute(openingElement, openingName);
-               IFCAnyHandleUtil.SetAttribute(openingElement, "ObjectType", openingObjectType);
+               string openingDescription = NamingUtil.GetDescriptionOverride(element, null);
+               string openingTag = NamingUtil.GetTagOverride(element);
+               IFCAnyHandle openingElement = IFCInstanceExporter.CreateOpeningElement(exporterIFC, 
+                  guid, ownerHistory, openingName, openingDescription, openingObjectType,
+                  openingPlacement, openingRep, openingTag);
                IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement);
                wrapper.AddElement(null, openingElement, setter, extraParams, true, exportInfo);
                if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities && (extraParams != null))
@@ -406,11 +407,12 @@ namespace Revit.IFC.Export.Utility
                openingName = NamingUtil.GetNameOverride(hostElement, NamingUtil.CreateIFCObjectName(exporterIFC, hostElement));
          }
 
-         IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, hostElement, openingGUID, ownerHistory,
-            openingPlacement, prodRep);
+         string openingDescription = NamingUtil.GetDescriptionOverride(insertElement, null);
+         string openingTag = NamingUtil.GetTagOverride(insertElement);
+         IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, 
+            openingGUID, ownerHistory, openingName, openingDescription, openingObjectType,
+            openingPlacement, prodRep, openingTag);
          IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement, openingObjectType);
-         IFCAnyHandleUtil.OverrideNameAttribute(openingHnd, openingName);
-         IFCAnyHandleUtil.SetAttribute(openingHnd, "ObjectType", openingObjectType);
          if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
             PropertyUtil.CreateOpeningQuantities(exporterIFC, openingHnd, extrusionCreationData);
 
@@ -420,7 +422,7 @@ namespace Revit.IFC.Export.Utility
             if (GUIDUtil.IsGUIDFor(insertElement, openingGUID))
                elementForProperties = insertElement;
 
-            localWrapper.AddElement(insertElement, openingHnd, setter, extrusionCreationData, true, exportInfo);
+            localWrapper.AddElement(insertElement, openingHnd, setter, extrusionCreationData, false, exportInfo);
          }
 
          string voidGuid = GUIDUtil.CreateGUID();
@@ -470,11 +472,12 @@ namespace Revit.IFC.Export.Utility
          string openingName = NamingUtil.GetNameOverride(insertElement, null);
          if (string.IsNullOrEmpty(openingName))
             openingName = NamingUtil.GetNameOverride(hostElement, NamingUtil.CreateIFCObjectName(exporterIFC, hostElement));
-         IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, null, openingGUID, ownerHistory,
-             ExporterUtil.CreateLocalPlacement(file, hostPlacement, null), openingProdRepHnd);
+         string openingDescription = NamingUtil.GetDescriptionOverride(insertElement, null);
+         string openingTag = NamingUtil.GetTagOverride(insertElement);
+         IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, 
+            openingGUID, ownerHistory, openingName, openingDescription, openingObjectType,
+            ExporterUtil.CreateLocalPlacement(file, hostPlacement, null), openingProdRepHnd, openingTag);
          IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement, openingObjectType);
-         IFCAnyHandleUtil.OverrideNameAttribute(openingHnd, openingName);
-         IFCAnyHandleUtil.SetAttribute(openingHnd, "ObjectType", openingObjectType);
          IFCExtrusionCreationData ecData = null;
          if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
          {

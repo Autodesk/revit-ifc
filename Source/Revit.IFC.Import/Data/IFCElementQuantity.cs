@@ -128,18 +128,20 @@ namespace Revit.IFC.Import.Data
       /// <param name="element">The element being created.</param>
       /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
       /// <returns>The name of the property set created, if it was created, and a Boolean value if it should be added to the property set list.</returns>
-      public override KeyValuePair<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
+      public override Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
       {
+         Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+
          string quotedName = "\"" + Name + "\"";
 
          ISet<string> parametersCreated = new HashSet<string>();
          foreach (IFCPhysicalQuantity quantity in IFCQuantities.Values)
          {
-            quantity.Create(doc, element, parameterGroupMap, Name, parametersCreated);
+            quantity.Create(doc, element, category, parameterGroupMap, Name, parametersCreated);
          }
 
-         CreateScheduleForPropertySet(doc, element, parameterGroupMap, parametersCreated);
-         return new KeyValuePair<string, bool>(quotedName, true);
+         CreateScheduleForPropertySet(doc, element, category, parameterGroupMap, parametersCreated);
+         return Tuple.Create(quotedName, true);
       }
    }
 }

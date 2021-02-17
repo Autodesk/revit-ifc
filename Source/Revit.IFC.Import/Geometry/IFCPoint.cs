@@ -17,10 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
@@ -35,8 +32,13 @@ namespace Revit.IFC.Import.Geometry
    /// IfcPoint can be of type IfcCartesianPoint, IfcPointOnCurve or IfcPointOnSurface.
    /// Only IfcCartesianPoint and IfcDirection is supported currently.
    /// </summary>
-   public class IFCPoint
+   public class IFCPoint : IFCRepresentationItem
    {
+      /// <summary>
+      /// The XYZ value of the point.
+      /// </summary>
+      public XYZ XYZPoint { get; protected set; } = null;
+
       private enum IFCPointType
       {
          DontCare,
@@ -206,12 +208,13 @@ namespace Revit.IFC.Import.Geometry
       }
 
       /// <summary>
-      /// Converts an IfcPoint into a UV or XYZ value.
+      /// Converts an IfcPoint into an XYZ value.
       /// </summary>
       /// <param name="point">The handle to the IfcPoint.</param>
-      /// <returns>An XYZ value corresponding to the value in the file.  If the IfcPoint is 2D, the Z value will be 0.
+      /// <returns>An XYZ value corresponding to the value in the file.  If the IfcPoint is 2D,
+      /// the Z value will be 0.
       /// There are no transformations done in this routine.</returns>
-      public static XYZ ProcessIFCPoint(IFCAnyHandle point)
+      public static XYZ IFCPointToXYZ(IFCAnyHandle point)
       {
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(point))
          {
@@ -230,52 +233,39 @@ namespace Revit.IFC.Import.Geometry
       }
 
       /// <summary>
-      /// Converts an IfcPoint into an UV value.
+      /// Create an IFCPoint object from a handle of type IfcPoint.
       /// </summary>
-      /// <param name="point">The handle to the IfcPoint.</param>
-      /// <returns>A UV value corresponding to the value in the file.  There are no transformations done in this routine.</returns>
-      public static UV ProcessIFCPoint2D(IFCAnyHandle point)
+      /// <param name="ifcPoint">The IFC handle.</param>
+      /// <returns>The IFCPoint object.</returns>
+      public static IFCPoint ProcessIFCPoint(IFCAnyHandle ifcPoint)
       {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(point))
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcPoint))
          {
-            Importer.TheLog.LogNullError(IFCEntityType.IfcCartesianPoint);
+            Importer.TheLog.LogNullError(IFCEntityType.IfcPoint);
             return null;
          }
 
-         XYZ xyz;
-         int stepId = point.StepId;
-         if (IFCImportFile.TheFile.XYZMap.TryGetValue(stepId, out xyz))
-            return new UV(xyz.X, xyz.Y);
-
-         xyz = ProcessIFCPointInternal(point, IFCPointType.UVPoint);
-         if (xyz == null)
-            return null;
-
-         AddToCaches(stepId, IFCEntityType.IfcCartesianPoint, xyz);
-         return new UV(xyz.X, xyz.Y);
+         IFCEntity point;
+         if (!IFCImportFile.TheFile.EntityMap.TryGetValue(ifcPoint.StepId, out point))
+            point = new IFCPoint(ifcPoint);
+         return (point as IFCPoint);
       }
 
-      /// <summary>
-      /// Converts an IfcPoint into an XYZ value.
-      /// </summary>
-      /// <param name="point">The handle to the IfcPoint.</param>
-      /// <returns>An XYZ value corresponding to the value in the file.  There are no transformations done in this routine.</returns>
-      public static XYZ ProcessIFCPoint3D(IFCAnyHandle point)
+      protected IFCPoint()
       {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(point))
-         {
-            Importer.TheLog.LogNullError(IFCEntityType.IfcCartesianPoint);
-            return null;
-         }
+      }
 
-         XYZ xyz;
-         int stepId = point.StepId;
-         if (IFCImportFile.TheFile.XYZMap.TryGetValue(stepId, out xyz))
-            return xyz;
+      protected IFCPoint(IFCAnyHandle item)
+      {
+         Process(item);
+      }
 
-         xyz = ProcessIFCPointInternal(point, IFCPointType.XYZPoint);
-         AddToCaches(stepId, IFCEntityType.IfcCartesianPoint, xyz);
-         return xyz;
+      protected override void Process(IFCAnyHandle ifcPoint)
+      {
+         base.Process(ifcPoint);
+
+         XYZ unScaledPoint = IFCPoint.IFCPointToXYZ(ifcPoint);
+         XYZPoint = IFCUnitUtil.ScaleLength(unScaledPoint);
       }
 
       private static XYZ ProcessIFCDirectionBase(IFCAnyHandle direction, bool normalize, bool reportAndThrowOnError)
@@ -392,6 +382,38 @@ namespace Revit.IFC.Import.Geometry
          xyz = directionXYZ * magnitude;
          AddToCaches(stepId, IFCEntityType.IfcVector, xyz);
          return xyz;
+      }
+
+      /// <summary>
+      /// Create geometry for a particular representation item.
+      /// </summary>
+      /// <param name="shapeEditScope">The geometry creation scope.</param>
+      /// <param name="lcs">Local coordinate system for the geometry.</param>
+      /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
+      /// <param name="guid">The guid of an element for which represntation is being created.</param>
+      override protected void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      {
+         if (XYZPoint == null)
+            return;
+
+         XYZ transformedPoint = scaledLcs.OfPoint(XYZPoint);
+         if (transformedPoint == null)
+            return;
+         
+         ElementId gstyleId = shapeEditScope.GraphicsStyleId;
+         Category pointCategory = IFCCategoryUtil.GetSubCategoryForRepresentation(shapeEditScope.Document, Id, shapeEditScope.ContainingRepresentation.Identifier);
+         if (pointCategory != null)
+         {
+            GraphicsStyle graphicsStyle = pointCategory.GetGraphicsStyle(GraphicsStyleType.Projection);
+            if (graphicsStyle != null)
+               gstyleId = graphicsStyle.Id;
+         }
+         
+         Point point = Point.Create(transformedPoint, gstyleId);
+         if (point == null)
+            return;
+
+         shapeEditScope.AddGeometry(IFCSolidInfo.Create(Id, point));
       }
    }
 }

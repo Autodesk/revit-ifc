@@ -84,7 +84,7 @@ namespace Revit.IFC.Import.Data
          Name = IFCImportHandleUtil.GetRequiredStringAttribute(ifcMaterial, "Name", true);
 
          List<IFCAnyHandle> hasRepresentation = null;
-         if (IFCImportFile.TheFile.SchemaVersion >= IFCSchemaVersion.IFC2x3)
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x3))
             hasRepresentation = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcMaterial, "HasRepresentation");
 
          if (hasRepresentation != null && hasRepresentation.Count == 1)

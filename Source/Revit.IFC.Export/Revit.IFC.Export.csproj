@@ -61,16 +61,8 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Antlr4.Runtime, Version=4.6.0.0, Culture=neutral, PublicKeyToken=09abb75b9ed49849, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Antlr4.Runtime.4.6.6\lib\net45\Antlr4.Runtime.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="GeometryGymIFC, Version=0.0.22.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\GeometryGymIFC.0.0.22\lib\net45\GeometryGymIFC.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="RevitAPI, Version=19.2.0.0, Culture=neutral, processorArchitecture=AMD64">
@@ -92,8 +84,6 @@
     <Compile Include="Exporter\BeamExporter.cs" />
     <Compile Include="Exporter\BodyData.cs" />
     <Compile Include="Exporter\BodyExporterOptions.cs" />
-    <Compile Include="Exporter\BodyGroupData.cs" />
-    <Compile Include="Exporter\BodyGroupKey.cs" />
     <Compile Include="Exporter\BoundingBoxExporter.cs" />
     <Compile Include="Exporter\CeilingExporter.cs" />
     <Compile Include="Exporter\ConnectorExporter.cs" />
@@ -143,7 +133,6 @@
     <Compile Include="Exporter\PropertySet\Calculators\RollCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FinishCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766BendingEndHookCalculator.cs" />
-    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766BendingRadiusCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766BendingStartHookCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeCode.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterACalculator.cs" />
@@ -260,12 +249,12 @@
     <Compile Include="Utility\ExporterStateManager.cs" />
     <Compile Include="Utility\ExporterUtil.cs" />
     <Compile Include="Utility\ExportOptionsCache.cs" />
+    <Compile Include="Utility\FabricParams.cs" />
     <Compile Include="Utility\FamilyExporterUtil.cs" />
     <Compile Include="Utility\FamilyTypeInfo.cs" />
     <Compile Include="Utility\FootPrintInfo.cs" />
     <Compile Include="Utility\GeometryUtil.cs" />
     <Compile Include="Utility\GroupCache.cs" />
-    <Compile Include="Utility\GroupElementGeometryCache.cs" />
     <Compile Include="Utility\GUIDOptions.cs" />
     <Compile Include="Utility\GUIDUtil.cs" />
     <Compile Include="Utility\HandleToElementCache.cs" />
@@ -276,6 +265,7 @@
     <Compile Include="Utility\LevelUtil.cs" />
     <Compile Include="Utility\LogicalPropertyInfoCache.cs" />
     <Compile Include="Utility\MaterialAndProfile.cs" />
+    <Compile Include="Utility\MaterialConstituentCache.cs" />
     <Compile Include="Utility\MaterialConstituentSetCache.cs" />
     <Compile Include="Utility\MaterialLayerSetInfo.cs" />
     <Compile Include="Utility\MEPCache.cs" />
@@ -364,7 +354,20 @@
     </Antlr4>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <PackageReference Include="Antlr4.CodeGenerator">
+      <Version>4.6.6</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Antlr4.Runtime">
+      <Version>4.6.6</Version>
+    </PackageReference>
+    <PackageReference Include="GeometryGymIFC">
+      <Version>0.0.20</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>10.0.3</Version>
+    </PackageReference>
   </ItemGroup>
   <!--
     Always Import the appropriate *.OutputPath.targets file BEFORE the

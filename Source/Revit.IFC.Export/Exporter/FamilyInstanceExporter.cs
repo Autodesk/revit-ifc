@@ -62,7 +62,7 @@ namespace Revit.IFC.Export.Exporter
       /// The ProductWrapper.
       /// </param>
       public static void ExportFamilyInstanceElement(ExporterIFC exporterIFC,
-         FamilyInstance familyInstance, GeometryElement geometryElement, ProductWrapper productWrapper)
+         FamilyInstance familyInstance, ref GeometryElement geometryElement, ProductWrapper productWrapper)
       {
          // Don't export family if it is invisible, or has a null geometry.
          if (familyInstance.Invisible || geometryElement == null)
@@ -89,7 +89,7 @@ namespace Revit.IFC.Export.Exporter
                return;
 
             // TODO: This step now appears to be redundant with the rest of the steps, but to change it is too much of risk of regression. Reserve it for future refactoring
-            if (ExportGenericToSpecificElement(exporterIFC, familyInstance, geometryElement, exportType, ifcEnumType, productWrapper))
+            if (ExportGenericToSpecificElement(exporterIFC, familyInstance, ref geometryElement, exportType, ifcEnumType, productWrapper))
             {
                tr.Commit();
                return;
@@ -427,7 +427,9 @@ namespace Revit.IFC.Export.Exporter
 
          XYZ orig = XYZ.Zero;
          XYZ extrudeDirection = null;
-         
+
+         BodyData bodyData = null;
+
          using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
          {
             // Extra information if we are exporting a door or a window.
@@ -631,7 +633,6 @@ namespace Revit.IFC.Export.Exporter
                         extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXYZ;
                      }
 
-                     BodyData bodyData = null;
                      if (representations3D.Count == 0)
                      {
                         string profileName = null;
@@ -650,7 +651,7 @@ namespace Revit.IFC.Export.Exporter
                            bodyExporterOptions.CollectFootprintHandle = ExporterCacheManager.ExportOptionsCache.ExportAs4;
 
                         GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
-                        bodyData = BodyExporter.ExportBody(exporterIFC, familyInstance, categoryId, ElementId.InvalidElementId,
+                        bodyData = BodyExporter.ExportBody(exporterIFC, familyInstance, categoryId, ExporterUtil.GetSingleMaterial(familyInstance),
                             geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName);
                         typeInfo.MaterialIdList = bodyData.MaterialIds;
                         //if (!bodyData.OffsetTransform.IsIdentity)
@@ -679,17 +680,8 @@ namespace Revit.IFC.Export.Exporter
                               else
                               {
                                  IFCAnyHandle lcsHnd = extraParams.GetLocalPlacement();
-                                 if (bodyData.ShapeRepresentationType == ShapeRepresentationType.Tessellation)
-                                 {
-                                    // For Tessellation, it appears that the local placement is already scaled. Unscale it here because axisInfo is based on unscaled information
-                                    newLCS = ExporterUtil.UnscaleTransformOrigin(ExporterUtil.GetTransformFromLocalPlacementHnd(lcsHnd));
-                                 }
-                                 else
-                                 {
-                                    // This is when a structural member is identified to use its instance geometry and it has an extrusion geometry, but it failed the first attempt to create extrusion. 
-                                    // The new LCS for the structural member needs to be set to the base object LCS consistent with the body created by BodyExporter.ExportBody()
-                                    newLCS = ExporterUtil.GetTransformFromLocalPlacementHnd(lcsHnd);
-                                 }
+                                 // It appears that the local placement is already scaled. Unscale it here because axisInfo is based on unscaled information
+                                 newLCS = ExporterUtil.UnscaleTransformOrigin(ExporterUtil.GetTransformFromLocalPlacementHnd(lcsHnd));
                               }
 
                               ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);
@@ -730,7 +722,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      XYZ curveOffset = new XYZ(0, 0, 0);
                      if (offsetTransform != null)
-                        curveOffset = -UnitUtil.UnscaleLength(offsetTransform.Origin);
+                        curveOffset = -(offsetTransform.Origin);
 
                      HashSet<IFCAnyHandle> curveSet = new HashSet<IFCAnyHandle>();
                      {
@@ -861,9 +853,6 @@ namespace Revit.IFC.Export.Exporter
                   }
                   else if (exportType.ExportInstance == IFCEntityType.IfcPlate || exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcWall)
                   {
-                     //List<ElementId> matIds;
-                     //IFCAnyHandle primaryMaterialHnd;
-                     //                     materialLayerSet = ExporterUtil.CollectMaterialLayerSet(exporterIFC, familyInstance, wrapper, out matIds, out primaryMaterialHnd);
                      MaterialLayerSetInfo mlsInfo = new MaterialLayerSetInfo(exporterIFC, familyInstance, wrapper);
                      materialLayerSet = mlsInfo.MaterialLayerSetHandle;
                      if (materialLayerSet != null)
@@ -874,24 +863,33 @@ namespace Revit.IFC.Export.Exporter
                   }
                   else
                   {
-                     Element elementType = familyInstance.Document.GetElement(familyInstance.GetTypeId());
-                     ElementId bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, elementType);
-                     if (bestMatId == ElementId.InvalidElementId)
-                        bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, familyInstance);
-
-                     // Also get the materials from Parameters
-                     IList<ElementId> matIds = ParameterUtil.FindMaterialParameters(elementType);
-                     if (matIds.Count == 0)
-                        matIds = ParameterUtil.FindMaterialParameters(familyInstance);
-
-                     // Combine the material ids
-                     if (bestMatId != ElementId.InvalidElementId && !matIds.Contains(bestMatId))
-                        matIds.Add(bestMatId);
-
-                     if (matIds.Count > 0)
+                     if (bodyData != null && bodyData.RepresentationItemInfo != null && bodyData.RepresentationItemInfo.Count > 0)
                      {
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, matIds);
+                        Element elementType = familyInstance.Document.GetElement(familyInstance.GetTypeId());
+                        CategoryUtil.CreateMaterialAssociationWithShapeAspect(exporterIFC, elementType, typeStyle, bodyData.RepresentationItemInfo);
                         addedMaterialAssociation = true;
+                     }
+                     else
+                     {
+                        Element elementType = familyInstance.Document.GetElement(familyInstance.GetTypeId());
+                        ElementId bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, elementType);
+                        if (bestMatId == ElementId.InvalidElementId)
+                           bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, familyInstance);
+
+                        // Also get the materials from Parameters
+                        IList<ElementId> matIds = ParameterUtil.FindMaterialParameters(elementType);
+                        if (matIds.Count == 0)
+                           matIds = ParameterUtil.FindMaterialParameters(familyInstance);
+
+                        // Combine the material ids
+                        if (bestMatId != ElementId.InvalidElementId && !matIds.Contains(bestMatId))
+                           matIds.Add(bestMatId);
+
+                        if (matIds.Count > 0)
+                        {
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, matIds);
+                           addedMaterialAssociation = true;
+                        }
                      }
                   }
 
@@ -1002,7 +1000,9 @@ namespace Revit.IFC.Export.Exporter
                   {
                      case 3:
                         {
-                           shapeRep = RepresentationUtil.CreateBodyMappedItemRep(exporterIFC, familyInstance, categoryId, contextOfItems3d,
+                           IFCAnyHandle mapRep = IFCAnyHandleUtil.GetInstanceAttribute(repMap, "MappedRepresentation");
+                           IFCAnyHandle context = IFCAnyHandleUtil.GetInstanceAttribute(mapRep, "ContextOfItems");
+                           shapeRep = RepresentationUtil.CreateBodyMappedItemRep(exporterIFC, familyInstance, categoryId, context,
                                representations);
                            break;
                         }
@@ -1411,7 +1411,21 @@ namespace Revit.IFC.Export.Exporter
                      ExporterCacheManager.HandleToElementCache.Register(instanceHandle, familyInstance.Id);
 
                      if (!exportParts && !materialAlreadyAssociated)
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, typeInfo.MaterialIdList);
+                     {
+                        // Create material association for the instance only if the the istance geometry is different from the type
+                        // or the type does not have any material association
+                        IFCAnyHandle constituentSetHnd = ExporterCacheManager.MaterialSetCache.FindConstituentSetHnd(familyInstance.GetTypeId());
+                        if ((useInstanceGeometry || IFCAnyHandleUtil.IsNullOrHasNoValue(constituentSetHnd))
+                           && bodyData != null && bodyData.RepresentationItemInfo != null && bodyData.RepresentationItemInfo.Count > 0)
+                        {
+                           CategoryUtil.CreateMaterialAssociationWithShapeAspect(exporterIFC, familyInstance, instanceHandle, bodyData.RepresentationItemInfo);
+                        }
+                        else
+                        {
+                           // Create material association in case if bodyData is null
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, typeInfo.MaterialIdList);
+                        }
+                     }
 
                      if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Style))
                         ExporterCacheManager.TypeRelationsCache.Add(typeInfo.Style, instanceHandle);
@@ -1438,7 +1452,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="ifcEnumTypeString">The string value represents the IFC type.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
       /// <returns>True if the elements was exported, false otherwise.</returns>
-      static public bool ExportGenericToSpecificElement(ExporterIFC exporterIFC, Element element, GeometryElement geometryElement, IFCExportInfoPair exportType,
+      static public bool ExportGenericToSpecificElement(ExporterIFC exporterIFC, Element element, ref GeometryElement geometryElement, IFCExportInfoPair exportType,
           string ifcEnumTypeString, ProductWrapper productWrapper)
       {
          // This function is here because it was originally used exclusive by FamilyInstances.  Moving forward, this will be combined with some other
@@ -1467,7 +1481,7 @@ namespace Revit.IFC.Export.Exporter
                      return false;
                }
             case IFCEntityType.IfcCovering:
-               CeilingExporter.ExportCovering(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
+               CeilingExporter.ExportCovering(exporterIFC, element, ref geometryElement, ifcEnumTypeString, productWrapper);
                return true;
             case IFCEntityType.IfcRamp:
                RampExporter.ExportRamp(exporterIFC, ifcEnumTypeString, element, geometryElement, 1, productWrapper);
@@ -1489,7 +1503,7 @@ namespace Revit.IFC.Export.Exporter
                }
                return true;
             case IFCEntityType.IfcRoof:
-               RoofExporter.ExportRoof(exporterIFC, element, geometryElement, productWrapper);
+               RoofExporter.ExportRoof(exporterIFC, element, ref geometryElement, productWrapper);
                return true;
             case IFCEntityType.IfcSlab:
                FloorExporter.ExportGenericSlab(exporterIFC, element, geometryElement, ifcEnumTypeString, productWrapper);
@@ -1499,7 +1513,7 @@ namespace Revit.IFC.Export.Exporter
                StairsExporter.ExportStairAsSingleGeometry(exporterIFC, ifcEnumTypeString, element, geometryElement, new List<double>() { 0 }, productWrapper);
                return true;
             case IFCEntityType.IfcWall:
-               WallExporter.ExportWall(exporterIFC, ifcEnumTypeString, element, null, geometryElement, productWrapper);
+               WallExporter.ExportWall(exporterIFC, ifcEnumTypeString, element, null, ref geometryElement, productWrapper);
                return true;
          }
          return false;
