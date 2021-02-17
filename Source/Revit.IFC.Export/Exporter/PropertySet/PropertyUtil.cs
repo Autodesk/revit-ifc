@@ -2808,7 +2808,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          if (scaledDepth > MathUtil.Eps() && !MathUtil.IsAlmostZero(scaledWidth) && !MathUtil.IsAlmostZero(grossArea))
          {
-            double grossVolume = scaledWidth * grossArea;
+            double grossVolume = UnitUtil.ScaleVolume(UnitUtil.UnscaleLength(scaledWidth) * UnitUtil.UnscaleArea(grossArea));
             IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "GrossVolume", null, null, grossVolume);
             quantityHnds.Add(quantityHnd);
          }
