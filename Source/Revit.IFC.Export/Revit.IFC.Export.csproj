@@ -114,6 +114,7 @@
     <Compile Include="Exporter\PropertySet\AttributeSetDescription.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FireRatingCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\IsExternalCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterRCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NosingLengthCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfRiserCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfTreadsCalculator.cs" />
