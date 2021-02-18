@@ -241,14 +241,16 @@ working on expanding and eventually removing this limit, and we will be tracking
       <br><p>
          General:
 			<ul>
-            <li>This is a minor update to release 20.3.1.0 and one improvement that adds basic support to export Area object as IfcSpatialZone
+            <li>This is a minor update to release 21.2.0.0 and one improvement that adds basic support to export Area object as IfcSpatialZone
 			</ul>	
          <br>
        <p>
          Bugfix:
 			<ul>
-				<li>IfcGeographicElement now exports user-defined propertyset
-				<li>Fixed wrong value for Qto_WallBaseQuantities.GrossVolume
+				<li>Fixed error during export for a specific object that became invalid in the export process with "Store the IFC GUID in an element after export" option
+				<li>User defined property set can now be exported for IfcGeographiCElement
+				<li>Fixed export failure when ZoneClassificationName is set to Room for exporting IfcZone
+				<li>Corrected GrossVolume quantity information with the correct unit
 			</ul>
 
 	</div>
