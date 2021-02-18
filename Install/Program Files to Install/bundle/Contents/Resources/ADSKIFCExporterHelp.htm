@@ -247,7 +247,10 @@ working on expanding and eventually removing this limit, and we will be tracking
        <p>
          Bugfix:
 			<ul>
-				<li>IfcGeographicElement now exports user-defined propertyset
+				<li>Fixed error during export for a specific object that became invalid in the export process with "Store the IFC GUID in an element after export" option
+				<li>User defined property set can now be exported for IfcGeographiElement
+				<li>Fixed export failure when ZoneClassificationName is set to Room for exporting IfcZone
+				<li>Corrected GrossVolume quantity information with the correct unit
 			</ul>
 
 	</div>
