@@ -4,7 +4,7 @@
   <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2020" SeriesMax="R2020" />
   <Components Description="2021">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2021" SeriesMax="R2021" />
-    <ComponentEntry AppName="IFC For Revit 2021" Version="21.2.0" ModuleName="./Contents/2021/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2021" />
-    <ComponentEntry AppName="IFC For Revit 2021" Version="21.2.0" ModuleName="./Contents/2021/Revit.IFC.addin" AppDescription="IFC For Revit 2021" />
+    <ComponentEntry AppName="IFC For Revit 2021" Version="21.2.1" ModuleName="./Contents/2021/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2021" />
+    <ComponentEntry AppName="IFC For Revit 2021" Version="21.2.1" ModuleName="./Contents/2021/Revit.IFC.addin" AppDescription="IFC For Revit 2021" />
   </Components>
 </ApplicationPackage>
