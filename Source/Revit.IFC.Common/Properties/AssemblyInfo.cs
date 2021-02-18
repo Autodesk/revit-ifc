@@ -12,8 +12,8 @@ using System.Reflection;
 [assembly: AssemblyCopyright("© 2012-2021 Autodesk, Inc.All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("20.3.1.0")]
-[assembly: AssemblyFileVersion("20.3.1.0")]
+[assembly: AssemblyVersion("20.3.2.0")]
+[assembly: AssemblyFileVersion("20.3.2.0")]
 #endif
 
 
