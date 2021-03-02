@@ -601,6 +601,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Export all elements regardless of phase.
+        /// </summary>
+        public static string ExportAllPhases {
+            get {
+                return ResourceManager.GetString("ExportAllPhases", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export base quantities.
         /// </summary>
         public static string ExportBaseQuantities {

@@ -54,6 +54,7 @@
                <CheckBox Content="{x:Static p:Resources.ExportLinkedFiles}" HorizontalAlignment="Left" Margin="-49,29,-52,0" x:Name="checkBoxExportLinkedFiles" VerticalAlignment="Top" Checked="checkBoxExportLinkedFiles_Checked" Unchecked="checkBoxExportLinkedFiles_Checked" Height="16" Width="570" Grid.ColumnSpan="5" />
                <CheckBox Content="{x:Static p:Resources.ExportVisibleElementsInView}" HorizontalAlignment="Left" Margin="-49,49,-52,0" Name="checkboxVisibleElementsCurrView" VerticalAlignment="Top" Checked="checkboxVisibleElementsCurrView_Checked" Unchecked="checkboxVisibleElementsCurrView_Checked" Height="16" Width="570" Grid.ColumnSpan="5" RenderTransformOrigin="0.634,0.968" />
                <CheckBox Content="{x:Static p:Resources.ExportRoomsInView}" HorizontalAlignment="Left" x:Name="checkBoxExportRoomsInView" VerticalAlignment="Top" Checked="checkBoxExportRoomsInView_Checked" Unchecked="checkBoxExportRoomsInView_Checked" Height="16" Width="550" IsEnabled="False" Margin="-29,71,-52,0" Grid.ColumnSpan="5" />
+               <CheckBox Content="{x:Static p:Resources.ExportAllPhases}" HorizontalAlignment="Left" x:Name="checkBoxExportAllPhases" VerticalAlignment="Top" Checked="checkBoxExportAllPhases_Checked" Unchecked="checkBoxExportAllPhases_Checked" Height="16" Width="567" Margin="-49,90,-52,0" Grid.ColumnSpan="5" />
             </Grid>
          </TabItem>
          <TabItem Header="{x:Static p:Resources.PropertySets}"  x:Name="PropertySets">
