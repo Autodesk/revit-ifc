@@ -48,10 +48,10 @@
         <Label Content="{x:Static p:Resources.InternalLocation}" Height="28" HorizontalAlignment="Left" Margin="21,367,0,0" x:Name="labelInternalLocation" VerticalAlignment="Top" Width="147" Grid.ColumnSpan="2" />
         <TextBox Text="{Binding InternalLocation, UpdateSourceTrigger=PropertyChanged}" Height="23" Margin="15,372,10,0" x:Name="InternalLocationTextBox" VerticalAlignment="Top" Grid.Column="1"/>
         <ComboBox  ItemsSource="{Binding}" Height="23" HorizontalAlignment="Stretch" Margin="15,10,10,0" x:Name="PurposeComboBox" VerticalAlignment="Top" SelectionChanged="PurposeComboBox_SelectionChanged" Initialized="PurposeComboBox_Initialized" Grid.Column="1" />
-        <CheckBox Content="{x:Static p:Resources.UpdateProjectInformation}" Height="16" x:Name="UpdateProjInfocheckBox" Margin="21,427,0,0" Checked="UpdateProjInfocheckBox_Checked" Unchecked="UpdateProjInfocheckBox_Unchecked" VerticalAlignment="Top" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="299"/>
+        <CheckBox Content="{x:Static p:Resources.UpdateProjectInformation}" IsChecked="{Binding UpdateProjectInformation}" Height="16" x:Name="UpdateProjInfocheckBox" Margin="21,427,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="299"/>
         <Button Content="{x:Static p:Resources.OK}" x:Name="buttonOK" Click="buttonOK_Click" Margin="238,10,85,8" Grid.Column="1" Grid.Row="1"/>
         <Button Content="{x:Static p:Resources.Cancel}" x:Name="buttonCancel" Click="bottonCancel_Click" Margin="313,10,10,8" Grid.Column="1" Grid.Row="1" />
-        <CheckBox Content="{x:Static p:Resources.AssignAddressToBuilding}" Height="16" x:Name="Checkbox_AssignToBuilding" Margin="0,427,10,0" VerticalAlignment="Top" Grid.Column="1" HorizontalAlignment="Right" Width="250" IsChecked="True" Checked="Checkbox_AssignToBuilding_Checked" Unchecked="Checkbox_AssignToBuilding_Unchecked"/>
-        <CheckBox Content="{x:Static p:Resources.AssignAddressToSite}" Height="16" x:Name="Checkbox_AssignToSite" Margin="0,448,10,0" VerticalAlignment="Top" Grid.Column="1" HorizontalAlignment="Right" Width="250" Checked="Checkbox_AssignToSite_Checked" Unchecked="Checkbox_AssignToSite_Unchecked"/>
+        <CheckBox Content="{x:Static p:Resources.AssignAddressToBuilding}" IsChecked="{Binding AssignAddressToBuilding}" Height="16" x:Name="Checkbox_AssignToBuilding" Margin="0,427,10,0" VerticalAlignment="Top" Grid.Column="1" HorizontalAlignment="Right" Width="250"/>
+        <CheckBox Content="{x:Static p:Resources.AssignAddressToSite}" IsChecked="{Binding AssignAddressToSite}" Height="16" x:Name="Checkbox_AssignToSite" Margin="0,448,10,0" VerticalAlignment="Top" Grid.Column="1" HorizontalAlignment="Right" Width="250" />
     </Grid>
 </auiw:ChildWindow>
