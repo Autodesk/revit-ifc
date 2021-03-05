@@ -17,23 +17,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Common.Utility;
-using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Data;
-using UnitSystem = Autodesk.Revit.DB.DisplayUnit;
 
 namespace Revit.IFC.Import.Utility
 {
    /// <summary>
    /// A class that contains the GeometryObject, Id, and material information for created Revit geometry.
    /// </summary>
-   /// <remarks>TODO: Rename to IFCGeometryObjectInfo, as it can contain Solids, Meshes, and Curves.</remarks>
+   /// <remarks>TODO: Rename to IFCGeometryObjectInfo, as it can contain Solids, Meshes, 
+   /// Curves and Points.</remarks>
    public class IFCSolidInfo
    {
       /// <summary>

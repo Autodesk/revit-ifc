@@ -252,34 +252,6 @@ namespace Revit.IFC.Import.Data
          return new IFCPropertySet(ifcPropertySet);
       }
 
-      // This function should only be necessary while using ExperimentalAddParameter.
-      private static Parameter GetAddedParameter(Element element, string parameterName, StorageType type)
-      {
-         IList<Parameter> parameterList = element.GetParameters(parameterName);
-
-         if (parameterList == null)
-            return null;
-
-         foreach (Parameter parameter in parameterList)
-         {
-            if (parameter.StorageType != type)
-               continue;
-
-            if (parameter.IsReadOnly)
-               continue;
-
-            Definition paramDefinition = parameter.Definition;
-            if (paramDefinition == null)
-               continue;
-
-            if (paramDefinition.ParameterGroup == BuiltInParameterGroup.PG_IFC)
-               return parameter;
-         }
-
-         // Shouldn't get here.
-         return null;
-      }
-
       private static bool IsDisallowedCategory(Category category)
       {
          if (category == null || category.Parent != null)
@@ -291,85 +263,64 @@ namespace Revit.IFC.Import.Data
          return false;
       }
 
-      private static Parameter AddParameterBase(Document doc, Element element, string parameterName, int parameterSetId, ParameterType parameterType)
+      private static Parameter AddParameterBase(Document doc, Element element, Category category, string parameterName, int parameterSetId, ParameterType parameterType)
       {
-         Category category = element.Category;
-         if (category == null)
-         {
-            Importer.TheLog.LogWarning(parameterSetId, "Can't add parameters for element with no category.", true);
-            return null;
-         }
-         else if (IsDisallowedCategory(category))
-         {
-            Importer.TheLog.LogWarning(parameterSetId, "Can't add parameters for category: " + category.Name, true);
-            return null;
-         }
-
-         Guid guid;
          bool isElementType = (element is ElementType);
-         DefinitionGroup definitionGroup = isElementType ? Importer.TheCache.DefinitionTypeGroup : Importer.TheCache.DefinitionInstanceGroup;
-
-         KeyValuePair<string, bool> parameterKey = new KeyValuePair<string, bool>(parameterName, isElementType);
+         Definitions definitions = isElementType ? Importer.TheCache.TypeGroupDefinitions : Importer.TheCache.InstanceGroupDefinitions;
 
          bool newlyCreated = false;
-         Definition definition = definitionGroup.Definitions.get_Item(parameterName);
+         Definition definition = definitions.get_Item(parameterName);
          if (definition == null)
          {
             ExternalDefinitionCreationOptions option = new ExternalDefinitionCreationOptions(parameterName, parameterType);
-            definition = definitionGroup.Definitions.Create(option);
+            definition = definitions.Create(option);
+            if (definition == null)
+            {
+               Importer.TheLog.LogError(parameterSetId, "Couldn't create parameter: " + parameterName, false);
+               return null;
+            }
             newlyCreated = true;
          }
-         guid = (definition as ExternalDefinition).GUID;
+
+         Guid guid = (definition as ExternalDefinition).GUID;
 
          Parameter parameter = null;
-         if (definition != null)
+         ElementBinding binding = null;
+         bool reinsert = false;
+         
+         if (!newlyCreated)
          {
-            ElementBinding binding = null;
-            bool reinsert = false;
-            bool changed = false;
+            BindingMap bindingMap = Importer.TheCache.GetParameterBinding(doc);
+            binding = bindingMap.get_Item(definition) as ElementBinding;
+            reinsert = (binding != null);
+         }
 
-            if (!newlyCreated)
-            {
-               binding = doc.ParameterBindings.get_Item(definition) as ElementBinding;
-               reinsert = (binding != null);
-            }
+         if (binding == null)
+         {
+            if (isElementType)
+               binding = new TypeBinding();
+            else
+               binding = new InstanceBinding();
+         }
 
-            if (binding == null)
+         // The binding can fail if we haven't identified a "bad" category above.  Use try/catch as a safety net.
+         try
+         {
+            if (!reinsert || !binding.Categories.Contains(category))
             {
-               if (isElementType)
-                  binding = new TypeBinding();
+               binding.Categories.Insert(category);
+      
+               BindingMap bindingMap = Importer.TheCache.GetParameterBinding(doc);
+               if (reinsert)
+                  bindingMap.ReInsert(definition, binding, BuiltInParameterGroup.PG_IFC);
                else
-                  binding = new InstanceBinding();
+                  bindingMap.Insert(definition, binding, BuiltInParameterGroup.PG_IFC);
             }
 
-            if (category != null)
-            {
-               if (category.Parent != null)
-                  category = category.Parent;
-
-               if (!reinsert || !binding.Categories.Contains(category))
-               {
-                  changed = true;
-                  binding.Categories.Insert(category);
-               }
-
-               // The binding can fail if we haven't identified a "bad" category above.  Use try/catch as a safety net.
-               try
-               {
-                  if (changed)
-                  {
-                     if (reinsert)
-                        doc.ParameterBindings.ReInsert(definition, binding, BuiltInParameterGroup.PG_IFC);
-                     else
-                        doc.ParameterBindings.Insert(definition, binding, BuiltInParameterGroup.PG_IFC);
-                  }
-
-                  parameter = element.get_Parameter(guid);
-               }
-               catch
-               {
-               }
-            }
+            parameter = element.get_Parameter(guid);
+         }
+         catch
+         {
          }
 
          if (parameter == null)
@@ -383,12 +334,16 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The element.</param>
+      /// <param name="category">The category of the element.</param>
       /// <param name="parameterName">The parameter name.</param>
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterElementId(Document doc, Element element, string parameterName, ElementId parameterValue, int parameterSetId)
+      public static bool AddParameterElementId(Document doc, Element element, Category category, string parameterName, ElementId parameterValue, int parameterSetId)
       {
+         if (doc == null || element == null || category == null)
+            return false;
+
          Element parameterElement = doc.GetElement(parameterValue);
          if (parameterElement == null)
             return false;
@@ -397,7 +352,7 @@ namespace Revit.IFC.Import.Data
          if (string.IsNullOrEmpty(name))
             return false;
 
-         Parameter parameter = AddParameterBase(doc, element, parameterName, parameterSetId, ParameterType.Text);
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Text);
          if (parameter == null)
             return false;
 
@@ -410,13 +365,17 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The element.</param>
+      /// <param name="category">The category of the element.</param>
       /// <param name="parameterName">The parameter name.</param>
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterBoolean(Document doc, Element element, string parameterName, bool parameterValue, int parameterSetId)
+      public static bool AddParameterBoolean(Document doc, Element element, Category category, string parameterName, bool parameterValue, int parameterSetId)
       {
-         Parameter parameter = AddParameterBase(doc, element, parameterName, parameterSetId, ParameterType.YesNo);
+         if (doc == null || element == null || category == null)
+            return false;
+
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.YesNo);
          if (parameter == null)
             return false;
 
@@ -429,13 +388,17 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The element.</param>
+      /// <param name="category">The category of the element.</param>
       /// <param name="parameterName">The parameter name.</param>
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterInt(Document doc, Element element, string parameterName, int parameterValue, int parameterSetId)
+      public static bool AddParameterInt(Document doc, Element element, Category category, string parameterName, int parameterValue, int parameterSetId)
       {
-         Parameter parameter = AddParameterBase(doc, element, parameterName, parameterSetId, ParameterType.Integer);
+         if (doc == null || element == null || category == null)
+            return false;
+
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Integer);
          if (parameter == null)
             return false;
 
@@ -448,19 +411,23 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The element.</param>
+      /// <param name="category">The category of the element.</param>
       /// <param name="parameterName">The parameter name.</param>
       /// <param name="specTypeId">Identifier of the parameter spec (e.g. length)</param>
       /// <param name="allowedValues">The allowed values for the parameter (e.g. Nonnegative)</param>
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterDouble(Document doc, Element element, string parameterName, ForgeTypeId specTypeId, double parameterValue, int parameterSetId)
+      public static bool AddParameterDouble(Document doc, Element element, Category category, string parameterName, ForgeTypeId specTypeId, double parameterValue, int parameterSetId)
       {
+         if (doc == null || element == null || category == null)
+            return false;
+
          ParameterType parameterType;
          if (!UnitToParameterType.TryGetValue(specTypeId, out parameterType))
             return false;
 
-         Parameter parameter = AddParameterBase(doc, element, parameterName, parameterSetId, parameterType);
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, parameterType);
          if (parameter == null)
             return false;
 
@@ -473,13 +440,17 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The element.</param>
+      /// <param name="category">The category of the element.</param>
       /// <param name="parameterName">The parameter name.</param>
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterString(Document doc, Element element, string parameterName, string parameterValue, int parameterSetId)
+      public static bool AddParameterString(Document doc, Element element, Category category, string parameterName, string parameterValue, int parameterSetId)
       {
-         Parameter parameter = AddParameterBase(doc, element, parameterName, parameterSetId, ParameterType.Text);
+         if (doc == null || element == null || category == null)
+            return false;
+
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Text);
          if (parameter == null)
             return false;
 
@@ -492,24 +463,45 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The element.</param>
+      /// <param name="category">The category of the element.</param>
       /// <param name="objDef">The IFCObjectDefinition that created the element.</param>
       /// <param name="name">The enum corresponding to the parameter name.</param>
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterString(Document doc, Element element, IFCObjectDefinition objDef, IFCSharedParameters name, string parameterValue, int parameterSetId)
+      public static bool AddParameterString(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCSharedParameters name, string parameterValue, int parameterSetId)
       {
-         if (objDef == null)
+         if (doc == null || element == null || category == null || objDef == null)
             return false;
 
-         string parameterName = objDef.GetSharedParameterName(name);
+         string parameterName = objDef.GetSharedParameterName(name, element is ElementType);
 
-         Parameter parameter = AddParameterBase(doc, element, parameterName, parameterSetId, ParameterType.Text);
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Text);
          if (parameter == null)
             return false;
 
          parameter.Set(parameterValue);
          return true;
+      }
+
+      public static Category GetCategoryForParameterIfValid(Element element, int id)
+      {
+         Category category = element.Category;
+         if (category != null && category.Parent != null)
+            category = category.Parent;
+
+         if (category == null)
+         {
+            Importer.TheLog.LogWarning(id, "Can't add parameters for element with no category.", true);
+            return null;
+         }
+         else if (IsDisallowedCategory(category))
+         {
+            Importer.TheLog.LogWarning(id, "Can't add parameters for category: " + category.Name, true);
+            return null;
+         }
+
+         return category;
       }
 
       /// <summary>
@@ -519,18 +511,22 @@ namespace Revit.IFC.Import.Data
       /// <param name="element">The element being created.</param>
       /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
       /// <returns>The name of the property set created, if it was created, and a Boolean value if it should be added to the property set list.</returns>
-      public override KeyValuePair<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
+      public override Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
       {
+         Category category = GetCategoryForParameterIfValid(element, Id);
+         if (category == null)
+            return null;
+
          string quotedName = "\"" + Name + "\"";
 
          ISet<string> parametersCreated = new HashSet<string>();
          foreach (IFCProperty property in IFCProperties.Values)
          {
-            property.Create(doc, element, parameterGroupMap, Name, parametersCreated);
+            property.Create(doc, element, category, parameterGroupMap, Name, parametersCreated);
          }
 
-         CreateScheduleForPropertySet(doc, element, parameterGroupMap, parametersCreated);
-         return new KeyValuePair<string, bool>(quotedName, true);
+         CreateScheduleForPropertySet(doc, element, category, parameterGroupMap, parametersCreated);
+         return Tuple.Create(quotedName, true);
       }
    }
 }

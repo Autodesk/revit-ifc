@@ -26,6 +26,8 @@ using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.DB.ExtensibleStorage;
+using BIM.IFC.Export.UI.Properties;
+using Revit.IFC.Common.Enums;
 
 namespace BIM.IFC.Export.UI
 {
@@ -72,9 +74,13 @@ namespace BIM.IFC.Export.UI
          Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 GSA Concept Design BIM 2010", IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, true, true, false, includeSteelElements: true));
          Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Basic FM Handover View", IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, true, false, false, includeSteelElements: true));
          Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x2 Coordination View", IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x2 Singapore BCA e-Plan Check", IFCVersion.IFCBCA, 1, false, true, true, false, false, false, false, false, false));
          Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 COBie 2.4 Design Deliverable", IFCVersion.IFC2x3FM, 1, true, false, false, true, true, false, true, true, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View [Architecture]", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+            exchangeRequirement:KnownERNames.Architecture));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View [Structural]", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+            exchangeRequirement:KnownERNames.Structural));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View [BuildingService]", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+            exchangeRequirement:KnownERNames.BuildingService));
          Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Design Transfer View", IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true));
       }
 
@@ -105,6 +111,8 @@ namespace BIM.IFC.Export.UI
                      configuration.Name = configMap[s_setupName];
                   if (configMap.ContainsKey(s_setupVersion))
                      configuration.IFCVersion = (IFCVersion)Enum.Parse(typeof(IFCVersion), configMap[s_setupVersion]);
+                  if (configMap.ContainsKey(s_exchangeRequirement))
+                     configuration.ExchangeRequirement = IFCExchangeRequirements.ParseEREnum(configMap[s_exchangeRequirement]);
                   if (configMap.ContainsKey(s_setupFileFormat))
                      configuration.IFCFileType = (IFCFileFormat)Enum.Parse(typeof(IFCFileFormat), configMap[s_setupFileFormat]);
                   if (configMap.ContainsKey(s_setupSpaceBoundaries))
@@ -167,6 +175,23 @@ namespace BIM.IFC.Export.UI
                      configuration.UseOnlyTriangulation = bool.Parse(configMap[s_useOnlyTriangulation]);
                   if (configMap.ContainsKey(s_setupTessellationLevelOfDetail))
                      configuration.TessellationLevelOfDetail = double.Parse(configMap[s_setupTessellationLevelOfDetail]);
+                  if (configMap.ContainsKey(s_setupSitePlacement))
+                  {
+                     SiteTransformBasis siteTrfBasis = SiteTransformBasis.Shared;
+                     if (Enum.TryParse(configMap[s_setupSitePlacement], out siteTrfBasis))
+                        configuration.SitePlacement = siteTrfBasis;
+                  }
+                  // Geo Reference info
+                  if (configMap.ContainsKey(s_geoRefCRSName))
+                     configuration.GeoRefCRSName = configMap[s_geoRefCRSName];
+                  if (configMap.ContainsKey(s_geoRefCRSDesc))
+                     configuration.GeoRefCRSDesc = configMap[s_geoRefCRSDesc];
+                  if (configMap.ContainsKey(s_geoRefEPSGCode))
+                     configuration.GeoRefEPSGCode = configMap[s_geoRefEPSGCode];
+                  if (configMap.ContainsKey(s_geoRefGeodeticDatum))
+                     configuration.GeoRefGeodeticDatum = configMap[s_geoRefGeodeticDatum];
+                  if (configMap.ContainsKey(s_geoRefMapUnit))
+                     configuration.GeoRefMapUnit = configMap[s_geoRefMapUnit];
 
                   Add(configuration);
                }
@@ -182,6 +207,7 @@ namespace BIM.IFC.Export.UI
                   IFCExportConfiguration configuration = IFCExportConfiguration.CreateDefaultConfiguration();
                   configuration.Name = configEntity.Get<String>(s_setupName);
                   configuration.IFCVersion = (IFCVersion)configEntity.Get<int>(s_setupVersion);
+                  configuration.ExchangeRequirement = IFCExchangeRequirements.ParseEREnum(configEntity.Get<String>(s_exchangeRequirement));
                   configuration.IFCFileType = (IFCFileFormat)configEntity.Get<int>(s_setupFileFormat);
                   configuration.SpaceBoundaries = configEntity.Get<int>(s_setupSpaceBoundaries);
                   configuration.ExportBaseQuantities = configEntity.Get<bool>(s_setupQTO);
@@ -270,6 +296,7 @@ namespace BIM.IFC.Export.UI
       // The following are the keys in the MapField in new schema. For old schema, they are simple fields.
       private const string s_setupName = "Name";
       private const string s_setupVersion = "Version";
+      private const string s_exchangeRequirement = "ExchangeRequirement";
       private const string s_setupFileFormat = "FileFormat";
       private const string s_setupSpaceBoundaries = "SpaceBoundaryLevel";
       private const string s_setupQTO = "ExportBaseQuantities";
@@ -306,6 +333,12 @@ namespace BIM.IFC.Export.UI
       private const string s_cobieCompanyInfo = "COBieCompanyInfo";
       private const string s_cobieProjectInfo = "COBieProjectInfo";
       private const string s_includeSteelElements = "IncludeSteelElements";
+      // Geo Reference info
+      private const string s_geoRefCRSName = "GeoRefCRSName";
+      private const string s_geoRefCRSDesc = "GeoRefCRSDesc";
+      private const string s_geoRefEPSGCode = "GeoRefEPSGCode";
+      private const string s_geoRefGeodeticDatum = "GeoRefGeodeticDatum";
+      private const string s_geoRefMapUnit = "GeoRefMapUnit";
 
       /// <summary>
       /// Updates the setups to save into the document.
@@ -404,6 +437,7 @@ namespace BIM.IFC.Export.UI
                IDictionary<string, string> mapData = new Dictionary<string, string>();
                mapData.Add(s_setupName, configuration.Name);
                mapData.Add(s_setupVersion, configuration.IFCVersion.ToString());
+               mapData.Add(s_exchangeRequirement, configuration.ExchangeRequirement.ToString());
                mapData.Add(s_setupFileFormat, configuration.IFCFileType.ToString());
                mapData.Add(s_setupSpaceBoundaries, configuration.SpaceBoundaries.ToString());
                mapData.Add(s_setupQTO, configuration.ExportBaseQuantities.ToString());
@@ -440,6 +474,12 @@ namespace BIM.IFC.Export.UI
                mapData.Add(s_cobieCompanyInfo, configuration.COBieCompanyInfo);
                mapData.Add(s_cobieProjectInfo, configuration.COBieProjectInfo);
                mapData.Add(s_includeSteelElements, configuration.IncludeSteelElements.ToString());
+               // Geo Reference info
+               mapData.Add(s_geoRefCRSName, configuration.GeoRefCRSName);
+               mapData.Add(s_geoRefCRSDesc, configuration.GeoRefCRSDesc);
+               mapData.Add(s_geoRefEPSGCode, configuration.GeoRefEPSGCode);
+               mapData.Add(s_geoRefGeodeticDatum, configuration.GeoRefGeodeticDatum);
+               mapData.Add(s_geoRefMapUnit, configuration.GeoRefMapUnit);
 
                mapEntity.Set<IDictionary<string, String>>(s_configMapField, mapData);
                configStorage.SetEntity(mapEntity);

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>IFC override</Name>
+    <Assembly>Autodesk.IFC.Export.UI.dll</Assembly>
+    <AddInId>e78da2e3-7e89-464c-97cd-2212c8be3fa8</AddInId>
+    <FullClassName>BIM.IFC.Export.UI.IFCCommandOverrideApplication</FullClassName>
+    <VendorId>ADSK</VendorId>
+	<VendorDescription>Autodesk, www.autodesk.com</VendorDescription>
+  </AddIn>
+</RevitAddIns>

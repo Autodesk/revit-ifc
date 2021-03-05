@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="DF385412-AB15-4DED-A046-FE32CE0BCC5E" Name="Revit IFC 2021" Language="1033" Version="21.1.0.0" Manufacturer="Autodesk" UpgradeCode="D8344D14-F520-44DA-9583-9AF4BD489CF8">
+   <Product Id="15EEA25D-DB4B-462C-B3F1-2C6CB7565F01" Name="Revit IFC 2021" Language="1033" Version="21.2.1.0" Manufacturer="Autodesk" UpgradeCode="D8344D14-F520-44DA-9583-9AF4BD489CF8">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -201,6 +201,12 @@
          </Component>
          <Component Id = "COMP_IFC_16_PNG" Guid="E6CF83A5-A19C-4190-9A88-D54C390A6971">
             <File Id ="FILE_IFC_16_PNG" Name="IFCExporter_16.png" Source="$(var.ProjectDir)..\Program Files to Install\bundle\Contents\Resources\IFCExporter_16.png" KeyPath="yes" />
+         </Component>
+         <Component Id = "COMP_IFC4RV_A_CERT" Guid="EDC0912A-5AA0-44D6-8272-E8BBB4A99B3B">
+            <File Id ="FILE_IFC4RV_A_CERT" Name="Software Certification Certificate Revit - Architectural export ER.png" Source="$(var.ProjectDir)..\Program Files to Install\bundle\Contents\Resources\Software Certification Certificate Revit - Architectural export ER.png" KeyPath="yes" />
+         </Component>
+         <Component Id = "COMP_IFC4RV_S_CERT" Guid="0D2A0278-2D37-4C20-89C0-5D68AD4A06B3">
+            <File Id ="FILE_IFC4RV_S_CERT" Name="Software Certification Certificate Revit - Structural export ER.png" Source="$(var.ProjectDir)..\Program Files to Install\bundle\Contents\Resources\Software Certification Certificate Revit - Structural export ER.png" KeyPath="yes" />
          </Component>
       </ComponentGroup>
 

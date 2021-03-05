@@ -38,44 +38,17 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The base unit type, if not defined in the IFC file, based on the type of quantity.
       /// </summary>
-      ForgeTypeId m_BaseUnitType = new ForgeTypeId();
-
-      /// <summary>
-      /// The optional unit for the quantity.
-      /// </summary>
-      IFCUnit m_Unit = null;
-
-      /// <summary>
-      /// The value.
-      /// </summary>
-      IFCData m_Value;
-
-      /// <summary>
-      /// The base unit type, if not defined in the IFC file, based on the type of quantity.
-      /// </summary>
-      protected ForgeTypeId BaseUnitType
-      {
-         get { return m_BaseUnitType; }
-         set { m_BaseUnitType = value; }
-      }
+      protected ForgeTypeId BaseUnitType { get; set; }
 
       /// <summary>
       /// The associated unit.
       /// </summary>
-      protected IFCUnit IFCUnit
-      {
-         get { return m_Unit; }
-         set { m_Unit = value; }
-      }
+      protected IFCUnit IFCUnit { get; set; }
 
       /// <summary>
       /// The value, in IFCUnit unit.
       /// </summary>
-      protected IFCData Value
-      {
-         get { return m_Value; }
-         set { m_Value = value; }
-      }
+      protected IFCData Value { get; set; }
 
       protected IFCPhysicalSimpleQuantity()
       {
@@ -164,12 +137,30 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The element being created.</param>
+      /// <param name="category">The element's category.</param>
       /// <param name="parameterMap">The parameters of the element.  Cached for performance.</param>
       /// <param name="propertySetName">The name of the containing property set.</param>
       /// <param name="createdParameters">The names of the created parameters.</param>
-      public override void Create(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
+      public override void Create(Document doc, Element element, Category category, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
       {
-         double doubleValueToUse = IFCUnit != null ? IFCUnit.Convert(Value.AsDouble()) : Value.AsDouble();
+         double baseValue = 0.0;
+         IFCDataPrimitiveType type = Value.PrimitiveType;
+         switch (type)
+         {
+            case IFCDataPrimitiveType.Double:
+               baseValue = Value.AsDouble();
+               break;
+            case IFCDataPrimitiveType.Integer:
+               // This case isn't valid, but could happen when repairing a file
+               Importer.TheLog.LogWarning(Id, "Unexpected integer parameter type, repairing.", false);
+               baseValue = Value.AsInteger();
+               break;
+            default:
+               Importer.TheLog.LogError(Id, "Invalid parameter type: " + type.ToString() + " for IfcPhysicalSimpleQuantity", false);
+               return;
+         }
+
+         double doubleValueToUse = IFCUnit != null ? IFCUnit.Convert(baseValue) : baseValue;
 
          Parameter existingParameter = null;
          string originalParameterName = Name + "(" + propertySetName + ")";
@@ -194,7 +185,7 @@ namespace Revit.IFC.Import.Data
                else
                   specTypeId = IFCDataUtil.GetUnitTypeFromData(Value, SpecTypeId.Number);
 
-               bool created = IFCPropertySet.AddParameterDouble(doc, element, parameterName, specTypeId, doubleValueToUse, Id);
+               bool created = IFCPropertySet.AddParameterDouble(doc, element, category, parameterName, specTypeId, doubleValueToUse, Id);
                if (created)
                   createdParameters.Add(parameterName);
 

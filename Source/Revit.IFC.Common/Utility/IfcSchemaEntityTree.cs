@@ -102,7 +102,6 @@ namespace Revit.IFC.Common.Utility
          switch (ifcFileVersion)
          {
             case IFCVersion.IFC2x2:
-            case IFCVersion.IFCBCA:
                schemaFile = "IFC2X2_ADD1.xsd";
                break;
             case IFCVersion.IFC2x3:

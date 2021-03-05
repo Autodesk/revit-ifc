@@ -48,6 +48,37 @@ namespace Revit.IFC.Import.Data
       {
       }
 
+      private Tuple<IList<GeometryObject>, bool> CollectFaces(IFCImportShapeEditScope shapeEditScope, 
+         Transform lcs, Transform scaledLcs, string guid)
+      {
+         using (BuilderScope bs = shapeEditScope.InitializeBuilder(IFCShapeBuilderType.TessellatedShapeBuilder))
+         {
+            TessellatedShapeBuilderScope tsBuilderScope = bs as TessellatedShapeBuilderScope;
+
+            tsBuilderScope.StartCollectingFaceSet();
+            Outer.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+
+            IList<GeometryObject> geomObjs = null;
+            bool canRevertToMesh = tsBuilderScope.CanRevertToMesh();
+
+            int numCreatedFaces = tsBuilderScope.CreatedFacesCount;
+            int numExpectedFaces = Outer.Faces.Count;
+
+            if (numCreatedFaces == numExpectedFaces || (!canRevertToMesh && numCreatedFaces > 0))
+            {
+               geomObjs = tsBuilderScope.CreateGeometry(guid);
+
+               if (numCreatedFaces < numExpectedFaces)
+               {
+                  Importer.TheLog.LogWarning(Outer.Id,
+                     "Processing " + numCreatedFaces + " valid faces out of " + numExpectedFaces + " total.", false);
+               }
+            }
+
+            return Tuple.Create(geomObjs, canRevertToMesh);
+         }
+      }
+
       /// <summary>
       /// Return geometry for a particular representation item.
       /// </summary>
@@ -62,51 +93,18 @@ namespace Revit.IFC.Import.Data
          if (Outer == null || Outer.Faces.Count == 0)
             return null;
 
-         IList<GeometryObject> geomObjs = null;
-         bool canRevertToMesh = false;
+         Tuple<IList<GeometryObject>, bool> faceInfo = CollectFaces(shapeEditScope, lcs, scaledLcs, guid);
 
-         using (BuilderScope bs = shapeEditScope.InitializeBuilder(IFCShapeBuilderType.TessellatedShapeBuilder))
-         {
-            TessellatedShapeBuilderScope tsBuilderScope = bs as TessellatedShapeBuilderScope;
-
-            tsBuilderScope.StartCollectingFaceSet();
-            Outer.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
-
-            if (tsBuilderScope.CreatedFacesCount == Outer.Faces.Count)
-            {
-               geomObjs = tsBuilderScope.CreateGeometry(guid);
-            }
-
-            canRevertToMesh = tsBuilderScope.CanRevertToMesh();
-         }
-
-
+         IList<GeometryObject> geomObjs = faceInfo.Item1;
          if (geomObjs == null || geomObjs.Count == 0)
          {
-            if (canRevertToMesh)
+            if (faceInfo.Item2) // canRevertToMesh
             {
                using (IFCImportShapeEditScope.BuildPreferenceSetter setter =
                    new IFCImportShapeEditScope.BuildPreferenceSetter(shapeEditScope, IFCImportShapeEditScope.BuildPreferenceType.AnyMesh))
                {
-                  using (BuilderScope newBuilderScope = shapeEditScope.InitializeBuilder(IFCShapeBuilderType.TessellatedShapeBuilder))
-                  {
-                     TessellatedShapeBuilderScope newTsBuilderScope = newBuilderScope as TessellatedShapeBuilderScope;
-                     // Let's see if we can loosen the requirements a bit, and try again.
-                     newTsBuilderScope.StartCollectingFaceSet();
-
-                     Outer.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
-
-                     // This needs to be in scope so that we keep the mesh tolerance for vertices.
-                     if (newTsBuilderScope.CreatedFacesCount != 0)
-                     {
-                        if (newTsBuilderScope.CreatedFacesCount != Outer.Faces.Count)
-                           Importer.TheLog.LogWarning
-                               (Outer.Id, "Processing " + newTsBuilderScope.CreatedFacesCount + " valid faces out of " + Outer.Faces.Count + " total.", false);
-
-                        geomObjs = newTsBuilderScope.CreateGeometry(guid);
-                     }
-
-                  }
+                  faceInfo = CollectFaces(shapeEditScope, lcs, scaledLcs, guid);
+                  geomObjs = faceInfo.Item1;
                }
             }
          }
@@ -186,7 +184,7 @@ namespace Revit.IFC.Import.Data
 
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcManifoldSolidBrep, IFCEntityType.IfcFacetedBrep))
             return IFCFacetedBrep.ProcessIFCFacetedBrep(ifcManifoldSolidBrep);
-         if (IFCImportFile.TheFile.SchemaVersion > IFCSchemaVersion.IFC2x3 && IFCAnyHandleUtil.IsSubTypeOf(ifcManifoldSolidBrep, IFCEntityType.IfcAdvancedBrep))
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && IFCAnyHandleUtil.IsSubTypeOf(ifcManifoldSolidBrep, IFCEntityType.IfcAdvancedBrep))
             return IFCAdvancedBrep.ProcessIFCAdvancedBrep(ifcManifoldSolidBrep);
 
          IFCEntity manifoldSolidBrep;

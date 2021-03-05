@@ -39,36 +39,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       private int m_NumberOfTreads = 0;
 
       /// <summary>
-      /// A static instance of this class.
-      /// </summary>
-      static NumberOfTreadsCalculator s_Instance = new NumberOfTreadsCalculator();
-
-      /// <summary>
       /// The NumberOfTreadsCalculator instance.
       /// </summary>
-      public static NumberOfTreadsCalculator Instance
-      {
-         get { return s_Instance; }
-      }
+      public static NumberOfTreadsCalculator Instance { get; } = new NumberOfTreadsCalculator();
 
       /// <summary>
       /// Calculates number of risers for a stair.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
-      /// </param>
-      /// <param name="element">
-      /// The element to calculate the value.
-      /// </param>
-      /// <param name="elementType">
-      /// The element type.
-      /// </param>
-      /// <returns>
-      /// True if the operation succeed, false otherwise.
-      /// </returns>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <returns>True if the operation succeed, false otherwise.</returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          bool valid = true;
@@ -99,10 +81,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // Get override from parameter
-         int noOfTreadsOverride = 0;
-         ParameterUtil.GetIntValueFromElementOrSymbol(element, "NumberOfTreads", out noOfTreadsOverride);
+         int? noOfTreadsOverride = ParameterUtil.GetIntValueFromElementOrSymbol(element, "NumberOfTreads");
          if (noOfTreadsOverride > 0)
-            m_NumberOfTreads = noOfTreadsOverride;
+         {
+            m_NumberOfTreads = noOfTreadsOverride.Value;
+            valid = true;
+         }
 
          return valid;
       }

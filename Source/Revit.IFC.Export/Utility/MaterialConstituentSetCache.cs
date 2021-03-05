@@ -19,11 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -57,7 +53,7 @@ namespace Revit.IFC.Export.Utility
 
          foreach (IFCAnyHandle setMember in theSet)
          {
-            // Compute hash for the set using the member Ids and a prime number 13
+            // Compute hash for the set using the member Ids and a prime number 251
             result += result * 251 + setMember.Id;
          }
          return result;
@@ -76,14 +72,10 @@ namespace Revit.IFC.Export.Utility
       private IDictionary<HashSet<IFCAnyHandle>, IFCAnyHandle> m_MatConstituentSetDictionary = new Dictionary<HashSet<IFCAnyHandle>, IFCAnyHandle>(new ConstituentSetComparer());
 
       /// <summary>
-      /// Finds the appriate Handle for the IfcMaterialConstituentSet from the dictionary.
+      /// Finds the appopriate Handle for the IfcMaterialConstituentSet from the dictionary.
       /// </summary>
-      /// <param name="id">
-      /// The element id.
-      /// </param>
-      /// <returns>
-      /// The HashSet of the IfcMaterialConstituentSet.
-      /// </returns>
+      /// <param name="id">The element id.</param>
+      /// <returns>The HashSet of the IfcMaterialConstituentSet.</returns>
       public IFCAnyHandle Find(HashSet<IFCAnyHandle> constituentSet)
       {
          IFCAnyHandle constituentSetHandle;
@@ -97,12 +89,8 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Adds the IfcMaterialConstituentSet and its handle to the dictionary.
       /// </summary>
-      /// <param name="elementId">
-      /// The element elementId.
-      /// </param>
-      /// <param name="handle">
-      /// The IfcMaterialConstituentSet.
-      /// </param>
+      /// <param name="elementId">The element elementId.</param>
+      /// <param name="handle">The IfcMaterialConstituentSet.</param>
       public void Register(HashSet<IFCAnyHandle> constituentSet, IFCAnyHandle constituentSetHnd)
       {
          if (m_MatConstituentSetDictionary.ContainsKey(constituentSet))

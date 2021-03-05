@@ -17,16 +17,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
@@ -36,36 +32,22 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCBuildingStorey : IFCSpatialStructureElement
    {
-      double m_Elevation;
-
-      ElementId m_CreatedViewId = ElementId.InvalidElementId;
-
-      static ElementId m_ViewPlanTypeId = ElementId.InvalidElementId;
-
-      static ElementId m_ExistingLevelIdToReuse = ElementId.InvalidElementId;
+      static ElementId ViewPlanTypeId { get; set; } = ElementId.InvalidElementId;
 
       /// <summary>
-      /// Returns true if we have tried to set m_ViewPlanTypeId.  m_ViewPlanTypeId may or may not have a valid value.
+      /// Returns true if we have tried to set ViewPlanTypeId.  ViewPlanTypeId may or may not have a valid value.
       /// </summary>
-      static bool m_ViewPlanTypeIdInitialized = false;
+      static bool ViewPlanTypeIdInitialized { get; set; } = false;
 
       /// <summary>
       /// Returns the associated Plan View for the level.
       /// </summary>
-      public ElementId CreatedViewId
-      {
-         get { return m_CreatedViewId; }
-         protected set { m_CreatedViewId = value; }
-      }
+      public ElementId CreatedViewId { get; protected set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// If the ActiveView is level-based, we can't delete it.  Instead, use it for the first level "created".
       /// </summary>
-      public static ElementId ExistingLevelIdToReuse
-      {
-         get { return m_ExistingLevelIdToReuse; }
-         set { m_ExistingLevelIdToReuse = value; }
-      }
+      public static ElementId ExistingLevelIdToReuse { get; set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// Get the default family type for creating ViewPlans.
@@ -74,11 +56,11 @@ namespace Revit.IFC.Import.Data
       /// <returns></returns>
       public static ElementId GetViewPlanTypeId(Document doc)
       {
-         if (m_ViewPlanTypeIdInitialized == false)
+         if (ViewPlanTypeIdInitialized == false)
          {
             ViewFamily viewFamilyToUse = (doc.Application.Product == ProductType.Structure) ? ViewFamily.StructuralPlan : ViewFamily.FloorPlan;
 
-            m_ViewPlanTypeIdInitialized = true;
+            ViewPlanTypeIdInitialized = true;
             FilteredElementCollector collector = new FilteredElementCollector(doc);
             ICollection<Element> viewFamilyTypes = collector.OfClass(typeof(ViewFamilyType)).ToElements();
             foreach (Element element in viewFamilyTypes)
@@ -86,12 +68,12 @@ namespace Revit.IFC.Import.Data
                ViewFamilyType viewFamilyType = element as ViewFamilyType;
                if (viewFamilyType.ViewFamily == viewFamilyToUse)
                {
-                  m_ViewPlanTypeId = viewFamilyType.Id;
+                  ViewPlanTypeId = viewFamilyType.Id;
                   break;
                }
             }
          }
-         return m_ViewPlanTypeId;
+         return ViewPlanTypeId;
       }
 
       /// <summary>
@@ -115,7 +97,8 @@ namespace Revit.IFC.Import.Data
          if (element != null)
          {
             // Set "IfcElevation" parameter.
-            IFCPropertySet.AddParameterDouble(doc, element, "IfcElevation", SpecTypeId.Length, m_Elevation, Id);
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+            IFCPropertySet.AddParameterDouble(doc, element, category, "IfcElevation", SpecTypeId.Length, Elevation, Id);
          }
       }
 
@@ -146,9 +129,9 @@ namespace Revit.IFC.Import.Data
             foundLevel = true;
 
          if (level == null)
-            level = Level.Create(doc, m_Elevation);
+            level = Level.Create(doc, Elevation);
          else
-            level.Elevation = m_Elevation;
+            level.Elevation = Elevation;
 
          if (level != null)
             CreatedElementId = level.Id;
@@ -209,11 +192,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The elevation.
       /// </summary>
-      public double Elevation
-      {
-         get { return m_Elevation; }
-         protected set { m_Elevation = value; }
-      }
+      public double Elevation { get; protected set; } = 0.0;
 
       /// <summary>
       /// Processes an IfcBuildingStorey object.

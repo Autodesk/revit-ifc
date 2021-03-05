@@ -19,12 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Export.Utility;
-using Revit.IFC.Export.Toolkit;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
@@ -60,16 +56,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
    /// </summary>
    public class QuantityEntry : Entry<QuantityEntryMap>
    {
-      /// <summary>
-      /// Defines the building code used to calculate the element quantity.
-      /// </summary>
-      string m_MethodOfMeasurement = String.Empty;
-
-      /// <summary>
-      /// The type of the quantity.
-      /// </summary>
-      QuantityType m_QuantityType = QuantityType.Real;
-
       /// <summary>
       /// Constructs a QuantityEntry object.
       /// </summary>
@@ -107,60 +93,38 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// The type of the quantity.
       /// </summary>
-      public QuantityType QuantityType
-      {
-         get
-         {
-            return m_QuantityType;
-         }
-         set
-         {
-            m_QuantityType = value;
-         }
-      }
+      public QuantityType QuantityType { get; set; } = QuantityType.Real;
 
       /// <summary>
       /// Defines the building code used to calculate the element quantity.
       /// </summary>
-      public string MethodOfMeasurement
-      {
-         get
-         {
-            return m_MethodOfMeasurement;
-         }
-         set
-         {
-            m_MethodOfMeasurement = value;
-         }
-      }
+      public string MethodOfMeasurement { get; set; } = String.Empty;
+
+      /// <summary>
+      /// If true, don't use the internal Revit parameter of the same name.
+      /// </summary>
+      /// <remarks>
+      /// This is intended to be used when the internal Revit parameter of the same name 
+      /// (depending on localization) has a different calculation than the IFC parameter.
+      /// </remarks>
+      public bool IgnoreInternalValue { get; set; } = false;
 
       /// <summary>
       /// Process to create element quantity.
       /// </summary>
-      /// <param name="file">
-      /// The IFC file.
-      /// </param>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
-      /// </param>
-      /// <param name="element">
-      /// The element of which this property is created for.
-      /// </param>
-      /// <param name="elementType">
-      /// The element type of which this quantity is created for.
-      /// </param>
-      /// <returns>
-      /// Then created quantity handle.
-      /// </returns>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="element">The element of which this property is created for.</param>
+      /// <param name="elementType">The element type of which this quantity is created for.</param>
+      /// <returns>The created quantity handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC,
          IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
          foreach (QuantityEntryMap entry in m_Entries)
          {
-            IFCAnyHandle result = entry.ProcessEntry(file, exporterIFC, extrusionCreationData, element, elementType, QuantityType, MethodOfMeasurement, PropertyName);
+            IFCAnyHandle result = entry.ProcessEntry(file, exporterIFC, extrusionCreationData, element, 
+               elementType, this);
             if (result != null)
                return result;
          }

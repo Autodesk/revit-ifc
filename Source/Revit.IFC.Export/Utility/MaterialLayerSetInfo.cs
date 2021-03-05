@@ -12,9 +12,24 @@ namespace Revit.IFC.Export.Utility
 {
    public class MaterialLayerSetInfo
    {
+      public  class MaterialInfo
+      {
+         public MaterialInfo(ElementId baseMatId, string layerName, double matWidth, MaterialFunctionAssignment function)
+         {
+            m_baseMatId = baseMatId;
+            m_layerName = layerName;
+            m_matWidth = matWidth;
+            m_function = function;
+         }
+         public ElementId m_baseMatId;
+         public string m_layerName;
+         public double m_matWidth;
+         public MaterialFunctionAssignment m_function;
+      }
       ExporterIFC m_ExporterIFC;
       Element m_Element;
       ProductWrapper m_ProductWrapper;
+      bool m_needToGenerateIFCObjects = false;
 
       /// <summary>
       /// Initialize MaterialLayerSetInfo for element
@@ -32,18 +47,20 @@ namespace Revit.IFC.Export.Utility
 
       public void SingleMaterialOverride (ElementId materialId, double materialWidth)
       {
+         GenerateIFCObjectsIfNeeded();
+
          Material material = m_Element.Document.GetElement(materialId) as Material;
          string layerName = "Layer";
          if (material != null)
          {
-            layerName = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Name", material.Name);
+            layerName = NamingUtil.GetMaterialLayerName(material);
          }
-         Tuple<ElementId, string, double> matInfo = new Tuple<ElementId, string, double>(materialId, layerName, materialWidth);
+         MaterialInfo matInfo = new MaterialInfo(materialId, layerName, materialWidth, MaterialFunctionAssignment.None);
          MaterialIds.Add(matInfo);
 
          IFCAnyHandle singleMaterialOverrideHnd = IFCInstanceExporter.CreateMaterial(m_ExporterIFC.GetFile(), layerName, null, null);
-         ExporterCacheManager.MaterialHandleCache.Register(MaterialIds[0].Item1, singleMaterialOverrideHnd);
-         MaterialLayerSetHandle = singleMaterialOverrideHnd;
+         ExporterCacheManager.MaterialHandleCache.Register(MaterialIds[0].m_baseMatId, singleMaterialOverrideHnd);
+         m_MaterialLayerSetHandle = singleMaterialOverrideHnd;
       }
 
       /// <summary>
@@ -53,30 +70,62 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return (MaterialLayerSetHandle == null && MaterialIds.Count == 0);
+            return (m_MaterialLayerSetHandle == null && MaterialIds.Count == 0);
          }
       }
 
       /// <summary>
-      /// MaterialLayerSet Collected or MaterialConstituentSet (for IFC4RV)
-      /// </summary>
-      public IFCAnyHandle MaterialLayerSetHandle { get; private set; } = null;
-
-      /// <summary>
       /// List of Material Ids and their associated layer names of the material layer set
       /// </summary>
-      public List<Tuple<ElementId, string, double>> MaterialIds { get; private set; } = new List<Tuple<ElementId, string, double>>();
+      public List<MaterialInfo> MaterialIds { get; private set; } = new List<MaterialInfo>();
+
+      /// <summary>
+      /// MaterialLayerSet Collected or MaterialConstituentSet (for IFC4RV)
+      /// Warning: Do not call Properties inside class because this can break lazy generation of IFC objects.
+      ///          Use private members instead.
+      /// </summary>
+      private IFCAnyHandle m_MaterialLayerSetHandle = null;
+      public IFCAnyHandle MaterialLayerSetHandle
+      {
+         get
+         {
+            GenerateIFCObjectsIfNeeded();
+
+            return m_MaterialLayerSetHandle;
+         }
+      }
 
       /// <summary>
       /// Primary Material handle
+      /// Warning: Do not call Properties inside class because this can break lazy generation of IFC objects.
+      ///          Use private members instead.
       /// </summary>
-      public IFCAnyHandle PrimaryMaterialHandle { get; private set; } = null;
+      private IFCAnyHandle m_PrimaryMaterialHandle = null;
+      public IFCAnyHandle PrimaryMaterialHandle
+      {
+         get
+         {
+            GenerateIFCObjectsIfNeeded();
+
+            return m_PrimaryMaterialHandle;
+         }
+      }
 
       /// <summary>
       /// Material layer quantity properties
+      /// Warning: Do not call Properties inside class because this can break lazy generation of IFC objects.
+      ///          Use private members instead.
       /// </summary>
-      public HashSet<IFCAnyHandle> LayerQuantityWidthHnd { get; private set; } = new HashSet<IFCAnyHandle>();
+      private HashSet<IFCAnyHandle> m_LayerQuantityWidthHnd = new HashSet<IFCAnyHandle>();
+      public HashSet<IFCAnyHandle> LayerQuantityWidthHnd
+      {
+         get
+         {
+            GenerateIFCObjectsIfNeeded();
 
+            return m_LayerQuantityWidthHnd;
+         }
+      }
       /// <summary>
       /// Collect information about material layer.
       ///   For IFC4RV Architectural exchange, it will generate IfcMatrialConstituentSet along with the relevant IfcShapeAspect and the width in the quantityset
@@ -86,12 +135,19 @@ namespace Revit.IFC.Export.Utility
       private void CollectMaterialLayerSet()
       {
          ElementId typeElemId = m_Element.GetTypeId();
-         MaterialIds = new List<Tuple<ElementId, string, double>>();
          IFCAnyHandle materialLayerSet = ExporterCacheManager.MaterialSetCache.FindLayerSet(typeElemId);
          // Roofs with no components are only allowed one material.  We will arbitrarily choose the thickest material.
-         PrimaryMaterialHandle = ExporterCacheManager.MaterialSetCache.FindPrimaryMaterialHnd(typeElemId);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet))
+         m_PrimaryMaterialHandle = ExporterCacheManager.MaterialSetCache.FindPrimaryMaterialHnd(typeElemId);
+
+         bool materialHandleIsNotValid = !IFCAnyHandleUtil.IsValidHandle(materialLayerSet);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet) || materialHandleIsNotValid)
          {
+            if (materialHandleIsNotValid)
+            {
+               UnregisterIFCHandles();
+            }
+            m_needToGenerateIFCObjects = true;
+
             List<double> widths = new List<double>();
             List<MaterialFunctionAssignment> functions = new List<MaterialFunctionAssignment>();
 
@@ -114,7 +170,7 @@ namespace Revit.IFC.Export.Utility
                   if (material == null)
                      return;
 
-                  string layerName = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Name", material.Name);
+                  string layerName = NamingUtil.GetMaterialLayerName(material);
                   double matWidth = 0.0;
                   Parameter thicknessPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_THICKNESS);
                   if (thicknessPar != null)
@@ -122,7 +178,7 @@ namespace Revit.IFC.Export.Utility
                   widths.Add(matWidth);
 
                   if (baseMatId != ElementId.InvalidElementId)
-                     MaterialIds.Add(new Tuple<ElementId,string,double>(baseMatId, layerName, matWidth));
+                     MaterialIds.Add(new MaterialInfo(baseMatId, layerName, matWidth, MaterialFunctionAssignment.None));
                   // How to get the thickness? For CurtainWall Panel (PanelType), there is a builtin parameter CURTAINWALL_SYSPANEL_THICKNESS
 
                   functions.Add(MaterialFunctionAssignment.None);
@@ -151,13 +207,13 @@ namespace Revit.IFC.Export.Utility
                         Material material = m_Element.Document.GetElement(matid) as Material;
                         if (material != null)
                         {
-                           string layerName = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Name", material.Name);
-                           MaterialIds.Add(new Tuple<ElementId, string, double>(matid, layerName, matWidth));
+                           string layerName = NamingUtil.GetMaterialLayerName(material);
+                           MaterialIds.Add(new MaterialInfo(matid, layerName, matWidth, MaterialFunctionAssignment.None));
                         }
                      }
                      else
                      {
-                        MaterialIds.Add(new Tuple<ElementId, string, double>(baseMatId, null, matWidth));
+                        MaterialIds.Add(new MaterialInfo(baseMatId, null, matWidth, MaterialFunctionAssignment.None));
                      }
 
                      functions.Add(MaterialFunctionAssignment.None);
@@ -193,23 +249,24 @@ namespace Revit.IFC.Export.Utility
                      //   continue;
 
                      ElementId matId = cs.GetMaterialId(ii);
+                     widths.Add(matWidth);
+                     // save layer function into ProductWrapper, 
+                     // it's used while exporting "Function" of Pset_CoveringCommon
+                     functions.Add(cs.GetLayerFunction(ii));
+
                      if (matId != ElementId.InvalidElementId)
                      {
                         Material material = m_Element.Document.GetElement(matId) as Material;
                         if (material != null)
                         {
-                           string layerName = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Name", material.Name);
-                           MaterialIds.Add(new Tuple<ElementId, string, double>(matId, layerName, matWidth));
+                           string layerName = NamingUtil.GetMaterialLayerName(material);
+                           MaterialIds.Add(new MaterialInfo(matId, layerName, matWidth, functions.Last()));
                         }
                      }
                      else
                      {
-                        MaterialIds.Add(new Tuple<ElementId, string,double>(baseMatId, null, matWidth));
+                        MaterialIds.Add(new MaterialInfo(baseMatId, null, matWidth, functions.Last()));
                      }
-                     widths.Add(matWidth);
-                     // save layer function into ProductWrapper, 
-                     // it's used while exporting "Function" of Pset_CoveringCommon
-                     functions.Add(cs.GetLayerFunction(ii));
                   }
                }
 
@@ -222,187 +279,219 @@ namespace Revit.IFC.Export.Utility
                      Material material = m_Element.Document.GetElement(baseMatId) as Material;
                      if (material != null)
                      {
-                        string layerName = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Name", material.Name);
-                        MaterialIds.Add(new Tuple<ElementId, string, double>(baseMatId, layerName, matWidth));
+                        string layerName = NamingUtil.GetMaterialLayerName(material);
+                        MaterialIds.Add(new MaterialInfo(baseMatId, layerName, matWidth, MaterialFunctionAssignment.None));
                      }
                   }
                   functions.Add(MaterialFunctionAssignment.None);
                }
             }
-
-            if (m_ProductWrapper != null)
-               m_ProductWrapper.ClearFinishMaterials();
-
-            // We can't create IfcMaterialLayers without creating an IfcMaterialLayerSet.  So we will simply collate here.
-            IList<IFCAnyHandle> materialHnds = new List<IFCAnyHandle>();
-            IList<int> widthIndices = new List<int>();
-            double thickestLayer = 0.0;
-            for (int ii = 0; ii < MaterialIds.Count; ++ii)
-            {
-               // Require positive width for IFC2x3 and before, and non-negative width for IFC4.
-               if (widths[ii] < -MathUtil.Eps())
-                  continue;
-
-               bool almostZeroWidth = MathUtil.IsAlmostZero(widths[ii]);
-               if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 && almostZeroWidth)
-                  continue;
-
-               if (almostZeroWidth)
-                  widths[ii] = 0.0;
-
-               IFCAnyHandle materialHnd = CategoryUtil.GetOrCreateMaterialHandle(m_ExporterIFC, MaterialIds[ii].Item1);
-               if (PrimaryMaterialHandle == null || (widths[ii] > thickestLayer))
-               {
-                  PrimaryMaterialHandle = materialHnd;
-                  thickestLayer = widths[ii];
-               }
-
-               widthIndices.Add(ii);
-               materialHnds.Add(materialHnd);
-
-               if ((m_ProductWrapper != null) && (functions[ii] == MaterialFunctionAssignment.Finish1 || functions[ii] == MaterialFunctionAssignment.Finish2))
-               {
-                  m_ProductWrapper.AddFinishMaterial(materialHnd);
-               }
-            }
-
-            int numLayersToCreate = widthIndices.Count;
-            if (numLayersToCreate == 0)
-            {
-               MaterialLayerSetHandle = materialLayerSet;
-               return;
-            }
-
-            // If it is a single material, check single material override (only IfcMaterial without IfcMaterialLayerSet with only 1 member)
-            if (numLayersToCreate == 1 && ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-            {
-               string paramValue;
-               ParameterUtil.GetStringValueFromElementOrSymbol(m_Element, "IfcSingleMaterialOverride", out paramValue);
-               if (!string.IsNullOrEmpty(paramValue))
-               {
-                  IFCAnyHandle singleMaterialOverrideHnd = IFCInstanceExporter.CreateMaterial(m_ExporterIFC.GetFile(), paramValue, null, null);
-                  ExporterCacheManager.MaterialHandleCache.Register(MaterialIds[0].Item1, singleMaterialOverrideHnd);
-                  MaterialLayerSetHandle = singleMaterialOverrideHnd;
-                  return;
-               }
-            }
-
-            IFCFile file = m_ExporterIFC.GetFile();
-            Document document = ExporterCacheManager.Document;
-
-            IList<IFCAnyHandle> layers = new List<IFCAnyHandle>(numLayersToCreate);
-            IList<Tuple<string,IFCAnyHandle>> layerWidthQuantities = new List<Tuple<string,IFCAnyHandle>>();
-            HashSet<string> layerNameUsed = new HashSet<string>();
-            double totalWidth = 0.0;
-
-            for (int ii = 0; ii < numLayersToCreate; ii++)
-            {
-               int widthIndex = widthIndices[ii];
-               double scaledWidth = UnitUtil.ScaleLength(widths[widthIndex]);
-
-               string layerName = "Layer";
-               string description = null;
-               string category = null;
-               int? priority = null;
-
-               IFCLogical? isVentilated = null;
-               int isVentilatedValue;
-
-               Material material = document.GetElement(MaterialIds[ii].Item1) as Material;
-               if (material != null)
-               {
-                  if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.IsVentilated", out isVentilatedValue) != null)
-                  {
-                     if (isVentilatedValue == 0)
-                        isVentilated = IFCLogical.False;
-                     else if (isVentilatedValue == 1)
-                        isVentilated = IFCLogical.True;
-                  }
-
-                  if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                  {
-                     layerName = MaterialIds[ii].Item2;
-                     if (string.IsNullOrEmpty(layerName))
-                        layerName = "Layer";
-
-                     // Ensure layer name is unique
-                     layerName = NamingUtil.GetUniqueNameWithinSet(layerName, ref layerNameUsed);
-
-                     description = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Description",
-                        IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Description"));
-                     category = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Category",
-                        IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Category"));
-                     int priorityValue;
-                     if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.Priority", out priorityValue) != null)
-                        priority = priorityValue;
-                  }
-               }
-
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-               {
-                  // Skip component that has zero width (the will be no geometry associated to it
-                  if (MathUtil.IsAlmostZero(scaledWidth))
-                     continue;
-
-                  IFCAnyHandle materialConstituent = IFCInstanceExporter.CreateMaterialConstituent(file, materialHnds[ii],
-                     name: layerName, description: description, category: category);
-                  layers.Add(materialConstituent);
-
-                  IFCAnyHandle layerQtyHnd = IFCInstanceExporter.CreateQuantityLength(file, "Width", description, null, scaledWidth);
-                  totalWidth += scaledWidth;
-                  layerWidthQuantities.Add(new Tuple<string,IFCAnyHandle>(layerName,layerQtyHnd));
-               }
-               else
-               {
-                  IFCAnyHandle materialLayer = IFCInstanceExporter.CreateMaterialLayer(file, materialHnds[ii], scaledWidth, isVentilated,
-                     name: layerName, description: description, category: category, priority: priority);
-                  layers.Add(materialLayer);
-               }
-            }
-
-            if (layers.Count > 0)
-            {
-               Element type = document.GetElement(typeElemId);
-               string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", m_ExporterIFC.GetFamilyName());
-               string layerSetDesc = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Description", null);
-
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-               {
-                  HashSet<IFCAnyHandle> constituents = new HashSet<IFCAnyHandle>(layers);
-                  MaterialLayerSetHandle = IFCInstanceExporter.CreateMaterialConstituentSet(file, constituents, name: layerSetName, description: layerSetDesc);
-                  foreach (Tuple<string, IFCAnyHandle> layerWidthQty in layerWidthQuantities)
-                  {
-                     LayerQuantityWidthHnd.Add(IFCInstanceExporter.CreatePhysicalComplexQuantity(file, layerWidthQty.Item1, null, 
-                        new HashSet<IFCAnyHandle>() { layerWidthQty.Item2 }, "Layer", null, null));
-                  }
-                  // Finally create the total width as a quantity
-                  LayerQuantityWidthHnd.Add(IFCInstanceExporter.CreateQuantityLength(file, "Width", null, null, totalWidth));
-               }
-               else
-               {
-                  MaterialLayerSetHandle = IFCInstanceExporter.CreateMaterialLayerSet(file, layers, layerSetName, layerSetDesc);
-               }
-
-               ExporterCacheManager.MaterialSetCache.RegisterLayerSet(typeElemId, MaterialLayerSetHandle, this);
-            }
-
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(PrimaryMaterialHandle))
-               ExporterCacheManager.MaterialSetCache.RegisterPrimaryMaterialHnd(typeElemId, PrimaryMaterialHandle);
          }
          else
          {
-            MaterialLayerSetHandle = materialLayerSet;
+            m_needToGenerateIFCObjects = false;
+
+            m_MaterialLayerSetHandle = materialLayerSet;
 
             MaterialLayerSetInfo mlsInfo = ExporterCacheManager.MaterialSetCache.FindMaterialLayerSetInfo(typeElemId);
             if (mlsInfo != null)
             {
                MaterialIds = mlsInfo.MaterialIds;
-               PrimaryMaterialHandle = mlsInfo.PrimaryMaterialHandle;
-               LayerQuantityWidthHnd = mlsInfo.LayerQuantityWidthHnd;
+               m_PrimaryMaterialHandle = mlsInfo.PrimaryMaterialHandle;
+               m_LayerQuantityWidthHnd = mlsInfo.LayerQuantityWidthHnd;
             }
          }
 
          return;
+      }
+
+      private void GenerateIFCObjectsIfNeeded()
+      {
+         if (m_needToGenerateIFCObjects)
+            m_needToGenerateIFCObjects = false;
+         else
+            return;
+
+         IFCAnyHandle materialLayerSet = null;
+
+         if (m_ProductWrapper != null && !m_ProductWrapper.ToNative().IsValidObject)
+            m_ProductWrapper = null;
+
+         if(m_ProductWrapper != null)
+            m_ProductWrapper.ClearFinishMaterials();
+
+         // We can't create IfcMaterialLayers without creating an IfcMaterialLayerSet.  So we will simply collate here.
+         IList<IFCAnyHandle> materialHnds = new List<IFCAnyHandle>();
+         IList<int> widthIndices = new List<int>();
+         double thickestLayer = 0.0;
+         for (int ii = 0; ii < MaterialIds.Count; ++ii)
+         {
+            // Require positive width for IFC2x3 and before, and non-negative width for IFC4.
+            double matWidth = MaterialIds[ii].m_matWidth;
+            if (MaterialIds[ii].m_matWidth < -MathUtil.Eps())
+               continue;
+
+            bool almostZeroWidth = MathUtil.IsAlmostZero(MaterialIds[ii].m_matWidth);
+            if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 && almostZeroWidth)
+               continue;
+
+            if (almostZeroWidth)
+               MaterialIds[ii].m_matWidth = 0.0;
+
+            IFCAnyHandle materialHnd = CategoryUtil.GetOrCreateMaterialHandle(m_ExporterIFC, MaterialIds[ii].m_baseMatId);
+            if (m_PrimaryMaterialHandle == null || (MaterialIds[ii].m_matWidth > thickestLayer))
+            {
+               m_PrimaryMaterialHandle = materialHnd;
+               thickestLayer = MaterialIds[ii].m_matWidth;
+            }
+
+            widthIndices.Add(ii);
+            materialHnds.Add(materialHnd);
+
+            if ((m_ProductWrapper != null) && (MaterialIds[ii].m_function == MaterialFunctionAssignment.Finish1 || MaterialIds[ii].m_function == MaterialFunctionAssignment.Finish2))
+            {
+               m_ProductWrapper.AddFinishMaterial(materialHnd);
+            }
+         }
+
+         int numLayersToCreate = widthIndices.Count;
+         if (numLayersToCreate == 0)
+         {
+            m_MaterialLayerSetHandle = materialLayerSet;
+            return;
+         }
+
+         // If it is a single material, check single material override (only IfcMaterial without IfcMaterialLayerSet with only 1 member)
+         if (numLayersToCreate == 1 && ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+         {
+            IFCAnyHandle singleMaterialOverrideHnd = ExporterUtil.GetSingleMaterial(m_ExporterIFC, m_Element, MaterialIds[0].m_baseMatId);
+            if (singleMaterialOverrideHnd != null)
+            {
+               m_MaterialLayerSetHandle = singleMaterialOverrideHnd;
+            }
+            else
+            {
+               m_MaterialLayerSetHandle = materialHnds[0];
+            }
+            return;
+         }
+
+         IFCFile file = m_ExporterIFC.GetFile();
+         Document document = ExporterCacheManager.Document;
+
+         IList<IFCAnyHandle> layers = new List<IFCAnyHandle>(numLayersToCreate);
+         IList<Tuple<string, IFCAnyHandle>> layerWidthQuantities = new List<Tuple<string, IFCAnyHandle>>();
+         HashSet<string> layerNameUsed = new HashSet<string>();
+         double totalWidth = 0.0;
+
+         for (int ii = 0; ii < numLayersToCreate; ii++)
+         {
+            int widthIndex = widthIndices[ii];
+            double scaledWidth = UnitUtil.ScaleLength(MaterialIds[widthIndex].m_matWidth);
+
+            string layerName = "Layer";
+            string description = null;
+            string category = null;
+            int? priority = null;
+
+            IFCLogical? isVentilated = null;
+            int isVentilatedValue;
+
+            Material material = document.GetElement(MaterialIds[ii].m_baseMatId) as Material;
+            if (material != null)
+            {
+               if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.IsVentilated", out isVentilatedValue) != null)
+               {
+                  if (isVentilatedValue == 0)
+                     isVentilated = IFCLogical.False;
+                  else if (isVentilatedValue == 1)
+                     isVentilated = IFCLogical.True;
+               }
+
+               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+               {
+                  layerName = MaterialIds[ii].m_layerName;
+                  if (string.IsNullOrEmpty(layerName))
+                     layerName = "Layer";
+
+                  // Ensure layer name is unique
+                  layerName = NamingUtil.GetUniqueNameWithinSet(layerName, ref layerNameUsed);
+
+                  description = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Description",
+                     IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Description"));
+                  category = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Category",
+                     IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Category"));
+                  int priorityValue;
+                  if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.Priority", out priorityValue) != null)
+                     priority = priorityValue;
+               }
+            }
+
+            if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+            {
+               // Skip component that has zero width (the will be no geometry associated to it
+               if (MathUtil.IsAlmostZero(scaledWidth))
+                  continue;
+
+               IFCAnyHandle materialConstituent = IFCInstanceExporter.CreateMaterialConstituent(file, materialHnds[ii],
+                  name: layerName, description: description, category: category);
+               layers.Add(materialConstituent);
+
+               IFCAnyHandle layerQtyHnd = IFCInstanceExporter.CreateQuantityLength(file, "Width", description, null, scaledWidth);
+               totalWidth += scaledWidth;
+               layerWidthQuantities.Add(new Tuple<string, IFCAnyHandle>(layerName, layerQtyHnd));
+            }
+            else
+            {
+               IFCAnyHandle materialLayer = IFCInstanceExporter.CreateMaterialLayer(file, materialHnds[ii], scaledWidth, isVentilated,
+                  name: layerName, description: description, category: category, priority: priority);
+               layers.Add(materialLayer);
+            }
+         }
+
+         ElementId typeElemId = m_Element.GetTypeId();
+         if (layers.Count > 0)
+         {
+            Element type = document.GetElement(typeElemId);
+            string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", m_ExporterIFC.GetFamilyName());
+            string layerSetDesc = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Description", null);
+
+            if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+            {
+               HashSet<IFCAnyHandle> constituents = new HashSet<IFCAnyHandle>(layers);
+               m_MaterialLayerSetHandle = IFCInstanceExporter.CreateMaterialConstituentSet(file, constituents, name: layerSetName, description: layerSetDesc);
+               foreach (Tuple<string, IFCAnyHandle> layerWidthQty in layerWidthQuantities)
+               {
+                  m_LayerQuantityWidthHnd.Add(IFCInstanceExporter.CreatePhysicalComplexQuantity(file, layerWidthQty.Item1, null,
+                     new HashSet<IFCAnyHandle>() { layerWidthQty.Item2 }, "Layer", null, null));
+               }
+               // Finally create the total width as a quantity
+               m_LayerQuantityWidthHnd.Add(IFCInstanceExporter.CreateQuantityLength(file, "Width", null, null, totalWidth));
+            }
+            else
+            {
+               m_MaterialLayerSetHandle = IFCInstanceExporter.CreateMaterialLayerSet(file, layers, layerSetName, layerSetDesc);
+            }
+
+            ExporterCacheManager.MaterialSetCache.RegisterLayerSet(typeElemId, m_MaterialLayerSetHandle, this);
+         }
+
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(m_PrimaryMaterialHandle))
+            ExporterCacheManager.MaterialSetCache.RegisterPrimaryMaterialHnd(typeElemId, m_PrimaryMaterialHandle);
+      }
+
+      private void UnregisterIFCHandles()
+      {
+         ElementId typeElemId = m_Element.GetTypeId();
+
+         ExporterCacheManager.MaterialSetCache.UnregisterLayerSet(typeElemId);
+         ExporterCacheManager.MaterialSetCache.UnregisterPrimaryMaterialHnd(typeElemId);
+         if (m_ProductWrapper != null)
+            m_ProductWrapper.ClearFinishMaterials();
+
+         m_MaterialLayerSetHandle = null;
+         m_PrimaryMaterialHandle = null;
+         m_LayerQuantityWidthHnd.Clear();
       }
 
       public enum CompareTwoLists

@@ -135,10 +135,6 @@
   <data name="IFCMVD2x3CV2" xml:space="preserve">
     <value>IFC 2x3 Coordination View 2.0</value>
   </data>
-  <data name="IFCMVDBCA" xml:space="preserve">
-    <value>IFC 2x2 Singapore BCA e-Plan Check</value>
-    <comment>Used in Singapore for model checking by the Building Code Authority</comment>
-  </data>
   <data name="IFCMVDGSA" xml:space="preserve">
     <value>IFC 2x3 GSA Concept Design BIM 2010</value>
     <comment>Used by the United States General Services Administration</comment>
@@ -803,5 +799,38 @@
   </data>
   <data name="ClassificationAltLocation" xml:space="preserve">
     <value>Location of the documentation (usually URL)</value>
+  </data>
+  <data name="ReservedDeviceName" xml:space="preserve">
+    <value>{0} is a reserved Windows device name. Choose another name and try again.</value>
+  </data>
+  <data name="OffsetDistanceTooLarge" xml:space="preserve">
+    <value>The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coordinate basis.</value>
+  </data>
+  <data name="Eastings" xml:space="preserve">
+    <value>Eastings</value>
+  </data>
+  <data name="EPSGCode" xml:space="preserve">
+    <value>EPSG Code</value>
+  </data>
+  <data name="GeodeticDatum" xml:space="preserve">
+    <value>Geodetic Datum</value>
+  </data>
+  <data name="Northings" xml:space="preserve">
+    <value>Northings</value>
+  </data>
+  <data name="ProjectedCRS" xml:space="preserve">
+    <value>Projected Coordinate System Reference</value>
+  </data>
+  <data name="ProjectedCRSDesc" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="ProjectedCRSName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="ResetToOriginals" xml:space="preserve">
+    <value>Reset</value>
   </data>
 </root>

@@ -113,6 +113,8 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static ElementTypeToHandleCache m_ElementTypeToHandleCache;
 
+      static IDictionary<ElementId, FabricParams> m_FabricParamsCache;
+
       ///<summary>
       /// The ExportOptions cache.
       /// </summary>
@@ -128,7 +130,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The GUIDs to store at the end of export.
       /// </summary>
-      static Dictionary<KeyValuePair<Element, BuiltInParameter>, string> m_GUIDsToStoreCache;
+      static Dictionary<KeyValuePair<ElementId, BuiltInParameter>, string> m_GUIDsToStoreCache;
 
       /// <summary>
       /// The HandleToElementCache cache.
@@ -139,9 +141,11 @@ namespace Revit.IFC.Export.Utility
 
       /// <summary>
       /// The IsExternal parameter value cache.
-      /// This stores the IsExternal value from the shared parameters, if any, for elements that may be used by hosted elements later.
-      /// We use this because we clear the ParametersCache after we export an element, and do not want to create just for IsExternal.
-      static Dictionary<ElementId, bool?> m_IsExternalParameterValueCache;
+      /// This stores the IsExternal value from the shared parameters, if any, 
+      /// for elements that may be used by hosted elements later.
+      /// We use this because we clear the ParametersCache after we export an element,
+      /// and do not want to create just for IsExternal.
+      static Dictionary<ElementId, bool> m_IsExternalParameterValueCache;
 
       /// <summary>
       /// The LevelInfoCache object.  This contains extra information on top of
@@ -157,7 +161,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The MaterialConsituent object cache (starting IFC4)
       /// </summary>
-      //static MaterialHandleCache m_MaterialConstituentCache;
+      static MaterialConstituentCache m_MaterialConstituentCache;
 
       /// <summary>
       /// The MaterialConstituentSet cache (starting IFC4)
@@ -183,11 +187,6 @@ namespace Revit.IFC.Export.Utility
       /// The MaterialRelationsCache object.
       /// </summary>
       static MaterialRelationsCache m_MaterialRelationsCache;
-
-      /// <summary>
-      /// The top level IfcOwnerHistory handle.
-      /// </summary>
-      static IFCAnyHandle m_OwnerHistoryHandle;
 
       static AttributeCache m_AttributeCache;
 
@@ -324,12 +323,6 @@ namespace Revit.IFC.Export.Utility
       /// The common property sets to be exported for an entity type, regardless of Object Type.
       /// </summary>
       static IDictionary<IFCEntityType, IList<PropertySetDescription>> m_PropertySetsForTypeCache;
-
-      /// <summary>
-      /// The common property sets to be exported for an entity type, conditional on the Object Type of the
-      /// entity matching that of the PropertySetDescription.
-      /// </summary>
-      //static IDictionary<IFCEntityType, IList<PropertySetDescription>> m_ConditionalPropertySetsForTypeCache;
 
       /// <summary>
       /// The material id to style handle cache.
@@ -492,12 +485,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The GUIDs to store in elements at the end of export, if the option to store GUIDs has been selected.
       /// </summary>
-      public static IDictionary<KeyValuePair<Element, BuiltInParameter>, string> GUIDsToStoreCache
+      public static IDictionary<KeyValuePair<ElementId, BuiltInParameter>, string> GUIDsToStoreCache
       {
          get
          {
             if (m_GUIDsToStoreCache == null)
-               m_GUIDsToStoreCache = new Dictionary<KeyValuePair<Element, BuiltInParameter>, string>();
+               m_GUIDsToStoreCache = new Dictionary<KeyValuePair<ElementId, BuiltInParameter>, string>();
             return m_GUIDsToStoreCache;
          }
       }
@@ -518,12 +511,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The IsExternalParameterValueCache object.
       /// </summary>
-      public static IDictionary<ElementId, bool?> IsExternalParameterValueCache
+      public static IDictionary<ElementId, bool> IsExternalParameterValueCache
       {
          get
          {
             if (m_IsExternalParameterValueCache == null)
-               m_IsExternalParameterValueCache = new Dictionary<ElementId, bool?>();
+               m_IsExternalParameterValueCache = new Dictionary<ElementId, bool>();
             return m_IsExternalParameterValueCache;
          }
       }
@@ -616,11 +609,7 @@ public static ParameterCache ParameterCache
       /// <summary>
       /// The top level IfcOwnerHistory handle.
       /// </summary>
-      public static IFCAnyHandle OwnerHistoryHandle
-      {
-         get { return m_OwnerHistoryHandle; }
-         set { m_OwnerHistoryHandle = value; }
-      }
+      public static IFCAnyHandle OwnerHistoryHandle { get; set; } = null;
 
       /// <summary>
       /// The top level IfcProject handle.
@@ -761,16 +750,19 @@ public static ParameterCache ParameterCache
       /// <summary>
       /// The MaterialConstituent to IfcMaterial cache
       /// </summary>
-      //public static MaterialHandleCache MaterialConstituentCache
-      //{
-      //   get
-      //   {
-      //      if (m_MaterialConstituentCache == null)
-      //         m_MaterialConstituentCache = new MaterialHandleCache();
-      //      return m_MaterialConstituentCache;
-      //   }
-      //}
+      public static MaterialConstituentCache MaterialConstituentCache
+      {
+         get
+         {
+            if (m_MaterialConstituentCache == null)
+               m_MaterialConstituentCache = new MaterialConstituentCache();
+            return m_MaterialConstituentCache;
+         }
+      }
 
+      /// <summary>
+      /// The MaterialConstituentSet cache
+      /// </summary>
       public static MaterialConstituentSetCache MaterialConstituentSetCache
       {
          get
@@ -976,6 +968,9 @@ public static ParameterCache ParameterCache
          }
       }
 
+      // Only for 2022
+      //public static WallCrossSectionCache WallCrossSectionCache { get; set; } = new WallCrossSectionCache();
+
       /// <summary>
       /// The ElementToHandleCache object, used to cache Revit element ids to IFC entity handles.
       /// </summary>
@@ -999,6 +994,19 @@ public static ParameterCache ParameterCache
             if (m_ElementTypeToHandleCache == null)
                m_ElementTypeToHandleCache = new ElementTypeToHandleCache();
             return m_ElementTypeToHandleCache;
+         }
+      }
+
+      /// <summary>
+      /// The FabricParamsCache object, used to cache FabricSheet parameters.
+      /// </summary>
+      public static IDictionary<ElementId, FabricParams> FabricParamsCache
+      {
+         get
+         {
+            if (m_FabricParamsCache == null)
+               m_FabricParamsCache = new Dictionary<ElementId, FabricParams>();
+            return m_FabricParamsCache;
          }
       }
 
@@ -1102,6 +1110,12 @@ public static ParameterCache ParameterCache
       }
 
       /// <summary>
+      /// Contains transformation which defines World Coordinate System of Host Revit file.
+      /// HostRvtFileWCS.Origin must store unscaled values.
+      /// </summary>
+      public static Transform HostRvtFileWCS { get; set; } = Transform.Identity;
+
+      /// <summary>
       /// The LevelInfoCache object.
       /// </summary>
       public static LevelInfoCache LevelInfoCache
@@ -1152,20 +1166,6 @@ public static ParameterCache ParameterCache
             return m_PropertySetsForTypeCache;
          }
       }
-
-      /// <summary>
-      /// The common property sets to be exported for an entity type, conditional on the Object Type of the
-      /// entity matching that of the PropertySetDescription.
-      /// </summary>
-      //public static IDictionary<IFCEntityType, IList<PropertySetDescription>> ConditionalPropertySetsForTypeCache
-      //{
-      //   get
-      //   {
-      //      if (m_ConditionalPropertySetsForTypeCache == null)
-      //         m_ConditionalPropertySetsForTypeCache = new Dictionary<IFCEntityType, IList<PropertySetDescription>>();
-      //      return m_ConditionalPropertySetsForTypeCache;
-      //   }
-      //}
 
       /// <summary>
       /// The material id to style handle cache.
@@ -1349,15 +1349,17 @@ public static ParameterCache ParameterCache
          m_AreaSchemeCache = null;
          m_AssemblyInstanceCache = null;
          m_BeamSystemCache = null;
+         BuildingHandle = null;
          m_CanExportBeamGeometryAsExtrusionCache = null;
          m_CategoryClassNameCache = null;
          m_CategoryTypeCache = null;
          m_CeilingSpaceRelCache = null;
+         m_CertifiedEntitiesAndPsetCache = null;
          m_ClassificationCache = null;
          m_ClassificationLocationCache = null;
          m_ClassificationReferenceCache = null;
-         //m_ConditionalPropertySetsForTypeCache = null;
          m_ContainmentCache = null;
+         ComplexPropertyCache.Clear();
          m_CurveAnnotationCache = null;
          m_DBViewsToExport = null;
          m_DefaultCartesianTransformationOperator3D = null;
@@ -1368,12 +1370,14 @@ public static ParameterCache ParameterCache
          m_ElementTypeToHandleCache = null;
          m_ExportOptionsCache = null;
          m_FabricAreaHandleCache = null;
+         m_FabricParamsCache = null;
          m_FamilySymbolToTypeInfoCache = null;
          m_Global3DOriginHandle = null;
          m_GridCache = null;
          m_GroupCache = null;
          m_GUIDCache = null;
          m_GUIDsToStoreCache = null;
+         m_HandleToDelete = null;
          m_HandleToElementCache = null;
          m_HostObjectsLevelIndex = null;
          m_HostPartsCache = null;
@@ -1382,12 +1386,13 @@ public static ParameterCache ParameterCache
          m_MaterialIdToStyleHandleCache = null;
          m_MaterialSetUsageCache = null;
          m_MaterialSetCache = null;
-         //m_MaterialConstituentCache = null;
+         m_MaterialConstituentCache = null;
          m_MaterialConstituentSetCache = null;
          m_MaterialHandleCache = null;
          m_MaterialRelationsCache = null;
          m_MEPCache = null;
-         m_OwnerHistoryHandle = null;
+         m_Object2DCurves = null;
+         OwnerHistoryHandle = null;
          m_ParameterCache = null;
          m_PartExportedCache = null;
          m_PresentationLayerSetCache = null;
@@ -1409,14 +1414,11 @@ public static ParameterCache ParameterCache
          m_TypeRelationsCache = null;
          m_ViewScheduleElementCache = null;
          m_WallConnectionDataCache = null;
+         // Only for 2022
+         //WallCrossSectionCache.Clear();
          m_UnitsCache = null;
          m_ZoneCache = null;
          m_ZoneInfoCache = null;
-         BuildingHandle = null;
-         m_CertifiedEntitiesAndPsetCache = null;
-         m_HandleToDelete = null;
-         m_Object2DCurves = null;
-         ComplexPropertyCache.Clear();
       }
    }
 }

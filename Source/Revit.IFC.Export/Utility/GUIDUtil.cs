@@ -160,7 +160,7 @@ namespace Revit.IFC.Export.Utility
          {
 
             if (parameterId != BuiltInParameter.INVALID)
-               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<Element, BuiltInParameter>(projectInfo, parameterId)] = ifcGUID;
+               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(projectInfo.Id, parameterId)] = ifcGUID;
          }
          return ifcGUID;
       }
@@ -201,7 +201,7 @@ namespace Revit.IFC.Export.Utility
          {
             string ifcGUID = ExporterIFCUtils.CreateAlternateGUID(level);
             if (ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID)
-               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<Element, BuiltInParameter>(level, BuiltInParameter.IFC_GUID)] = ifcGUID;
+               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(level.Id, BuiltInParameter.IFC_GUID)] = ifcGUID;
             return ifcGUID;
          }
          else
@@ -262,7 +262,7 @@ namespace Revit.IFC.Export.Utility
          string ifcGUID = CreateGUIDBase(element, parameterName, out shouldStore);
          if (shouldStore && ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID ||
              (ExporterCacheManager.ExportOptionsCache.GUIDOptions.Use2009BuildingStoreyGUIDs && element is Level))
-            ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<Element, BuiltInParameter>(element, parameterName)] = ifcGUID;
+            ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(element.Id, parameterName)] = ifcGUID;
 
          return ifcGUID;
       }
