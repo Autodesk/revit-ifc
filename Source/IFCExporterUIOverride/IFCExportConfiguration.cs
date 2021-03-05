@@ -259,6 +259,10 @@ namespace BIM.IFC.Export.UI
       public bool UseVisibleRevitNameAsEntityName { get; set; } = false;
 
       /// <summary>
+      /// Value indicating whether to export all phases in the view or not
+      /// </summary>
+      public bool ExportAllPhases { get; set; } = false;
+
       /// Projected Coordinate System Name
       /// </summary>
       public string GeoRefCRSName { get; set; } = "";
@@ -400,6 +404,7 @@ namespace BIM.IFC.Export.UI
          configuration.IncludeSteelElements = includeSteelElements;
          configuration.UseTypeNameOnlyForIfcType = false;
          configuration.UseVisibleRevitNameAsEntityName = false;
+         configuration.ExportAllPhases = false;
          configuration.GeoRefCRSName = "";
          configuration.GeoRefCRSDesc = "";
          configuration.GeoRefEPSGCode = "";
@@ -481,6 +486,7 @@ namespace BIM.IFC.Export.UI
          options.AddOption("ExportAnnotations", Export2DElements.ToString());
          options.AddOption("Use2DRoomBoundaryForVolume", Use2DRoomBoundaryForVolume.ToString());
          options.AddOption("UseFamilyAndTypeNameForReference", UseFamilyAndTypeNameForReference.ToString());
+         options.AddOption("ExportAllPhases", ExportAllPhases.ToString());
          options.AddOption("ExportVisibleElementsInView", VisibleElementsOfCurrentView.ToString());
          options.AddOption("ExportPartsAsBuildingElements", ExportPartsAsBuildingElements.ToString());
          options.AddOption("UseActiveViewGeometry", UseActiveViewGeometry.ToString());
@@ -518,6 +524,7 @@ namespace BIM.IFC.Export.UI
          options.AddOption("IncludeSteelElements", IncludeSteelElements.ToString());
          options.AddOption("UseTypeNameOnlyForIfcType", UseTypeNameOnlyForIfcType.ToString());
          options.AddOption("UseVisibleRevitNameAsEntityName", UseVisibleRevitNameAsEntityName.ToString());
+         options.AddOption("ExportAllPhases", ExportAllPhases.ToString());
 
          // Add CRS information
          options.AddOption("GeoRefCRSName", GeoRefCRSName != null? GeoRefCRSName : "");

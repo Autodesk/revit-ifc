@@ -372,6 +372,9 @@ namespace Revit.IFC.Export.Utility
             cache.ActiveView = activeView;
          }
 
+         bool? exportAllPhases = OptionsUtil.GetNamedBooleanOption(options, "ExportAllPhases");
+         cache.ExportAllPhases = exportAllPhases.HasValue ? exportAllPhases.Value : false;
+
          // "FileType" - note - setting is not respected yet
          ParseFileType(options, cache);
 
@@ -724,6 +727,16 @@ namespace Revit.IFC.Export.Utility
       /// False to use default export options.
       /// </summary>
       public bool UseActiveViewGeometry
+      {
+         get;
+         set;
+      }
+
+      /// <summary>
+      /// True to export all elements regardless of phase
+      /// False to use default export options.
+      /// </summary>
+      public bool ExportAllPhases
       {
          get;
          set;
