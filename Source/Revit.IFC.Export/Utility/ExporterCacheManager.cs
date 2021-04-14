@@ -322,7 +322,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The common property sets to be exported for an entity type, regardless of Object Type.
       /// </summary>
-      static IDictionary<IFCEntityType, IList<PropertySetDescription>> m_PropertySetsForTypeCache;
+      static IDictionary<PropertySetKey, IList<PropertySetDescription>> m_PropertySetsForTypeCache;
 
       /// <summary>
       /// The material id to style handle cache.
@@ -968,8 +968,7 @@ public static ParameterCache ParameterCache
          }
       }
 
-      // Only for 2022
-      //public static WallCrossSectionCache WallCrossSectionCache { get; set; } = new WallCrossSectionCache();
+      public static WallCrossSectionCache WallCrossSectionCache { get; set; } = new WallCrossSectionCache();
 
       /// <summary>
       /// The ElementToHandleCache object, used to cache Revit element ids to IFC entity handles.
@@ -1155,14 +1154,94 @@ public static ParameterCache ParameterCache
       }
 
       /// <summary>
+      /// This class is used to identify property set in cache.
+      /// Current logic uses a combination of instance type and predefined type
+      /// to uniquely identify relation of ifc object and property set.
+      /// </summary>
+      public class PropertySetKey : IComparable<PropertySetKey>
+      {
+         public PropertySetKey(IFCEntityType entityType, string predefinedType)
+         {
+            EntityType = entityType;
+            PredefinedType = predefinedType;
+         }
+
+         public IFCEntityType EntityType { get; protected set; } = IFCEntityType.UnKnown;
+
+         public string PredefinedType { get; protected set; } = null;
+
+         public int CompareTo(PropertySetKey other)
+         {
+            if (other == null) 
+               return 1;
+
+            if (EntityType < other.EntityType)
+               return -1;
+
+            if (EntityType > other.EntityType)
+               return 1;
+
+            if (PredefinedType == null)
+               return (other.PredefinedType == null ? 0 : -1);
+            
+            if (other.PredefinedType == null)
+               return 1;
+
+            return PredefinedType.CompareTo(other.PredefinedType);
+         }
+
+         static public bool operator ==(PropertySetKey first, PropertySetKey second)
+         {
+            Object lhsObject = first;
+            Object rhsObject = second;
+            if (null == lhsObject)
+            {
+               if (null == rhsObject)
+                  return true;
+               return false;
+            }
+            if (null == rhsObject)
+               return false;
+
+            if (first.EntityType != second.EntityType)
+               return false;
+
+            if (first.PredefinedType != second.PredefinedType)
+               return false;
+
+            return true;
+         }
+
+         static public bool operator !=(PropertySetKey first, PropertySetKey second)
+         {
+            return !(first == second);
+         }
+
+         public override bool Equals(object obj)
+         {
+            if (obj == null)
+               return false;
+
+            PropertySetKey second = obj as PropertySetKey;
+            return (this == second);
+         }
+
+         public override int GetHashCode()
+         {
+            return EntityType.GetHashCode() + 
+               (PredefinedType != null ? PredefinedType.GetHashCode() : 0);
+         }
+      }
+
+      /// <summary>
       /// The common property sets to be exported for an entity type, regardless of Object Type.
       /// </summary>
-      public static IDictionary<IFCEntityType, IList<PropertySetDescription>> PropertySetsForTypeCache
+      public static IDictionary<PropertySetKey, IList<PropertySetDescription>> PropertySetsForTypeCache
       {
          get
          {
             if (m_PropertySetsForTypeCache == null)
-               m_PropertySetsForTypeCache = new Dictionary<IFCEntityType, IList<PropertySetDescription>>();
+               m_PropertySetsForTypeCache = new Dictionary<PropertySetKey, IList<PropertySetDescription>>();
             return m_PropertySetsForTypeCache;
          }
       }
@@ -1414,8 +1493,7 @@ public static ParameterCache ParameterCache
          m_TypeRelationsCache = null;
          m_ViewScheduleElementCache = null;
          m_WallConnectionDataCache = null;
-         // Only for 2022
-         //WallCrossSectionCache.Clear();
+         WallCrossSectionCache.Clear();
          m_UnitsCache = null;
          m_ZoneCache = null;
          m_ZoneInfoCache = null;

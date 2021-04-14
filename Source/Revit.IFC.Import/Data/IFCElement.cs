@@ -189,8 +189,8 @@ namespace Revit.IFC.Import.Data
                IFCElement ifcElement = ifcFeatureElementSubtraction.VoidsElement;
                if (ifcElement != null)
                {
-                  string ifcContainerName = ifcElement.Name;
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcContainedInHost", ifcContainerName, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, "IfcContainedInHost", ifcElement.Name, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, "IfcContainedInHostGUID", ifcElement.GlobalId, Id);
                }
             }
 

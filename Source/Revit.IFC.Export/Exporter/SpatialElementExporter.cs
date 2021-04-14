@@ -83,8 +83,7 @@ namespace Revit.IFC.Export.Exporter
       public static void ExportSpatialElement(ExporterIFC exporterIFC, SpatialElement spatialElement, ProductWrapper productWrapper)
       {
          string ifcEnumType;
-         //IFCEntityType elementClassTypeEnum = IFCEntityType.UnKnown;
-         IFCExportInfoPair exportInfo = ExporterUtil.GetExportType(exporterIFC, spatialElement, out ifcEnumType);
+         IFCExportInfoPair exportInfo = ExporterUtil.GetProductExportType(exporterIFC, spatialElement, out ifcEnumType);
 
          // Force the default export to IfcSpace for Spatial Element if it is set to UnKnown
          if (exportInfo.IsUnKnown)
@@ -967,8 +966,8 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, XYZ.BasisZ, scaledRoomHeight, true);
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
                      return false;
-                  BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, shapeRep, ElementId.InvalidElementId);
-
+                  
+                  // Spaces shouldn't have styled items.
                   HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
                   bodyItems.Add(shapeRep);
                   shapeRep = RepresentationUtil.CreateSweptSolidRep(exporterIFC, spatialElement, catId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null);
@@ -998,8 +997,7 @@ namespace Revit.IFC.Export.Exporter
                                                 ExporterCacheManager.OwnerHistoryHandle, extraParams.GetLocalPlacement(), repHnd);
                }
 
-               //exportInfo.SetValueWithPair(IFCEntityType.IfcSpace);
-               if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
+               if (exportInfo.ExportType != IFCEntityType.UnKnown)
                {
                   IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(spatialElement, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(type, spaceHnd);

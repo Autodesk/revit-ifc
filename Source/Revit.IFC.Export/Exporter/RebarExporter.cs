@@ -277,7 +277,7 @@ namespace Revit.IFC.Export.Exporter
             // The only options handled here is IfcBuildingElementProxy.
             // Not Exported is handled previously, and ReinforcingBar vs Mesh will be handled later.
             string ifcEnumType;
-            IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, rebarElement, out ifcEnumType);
+            IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, rebarElement, out ifcEnumType);
 
             if (exportType.ExportInstance == IFCEntityType.IfcBuildingElementProxy ||
                 exportType.ExportType == IFCEntityType.IfcBuildingElementProxyType)
@@ -319,17 +319,19 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
+            // Exporting rebar as a proxy element means that they will be independent
+            // and local placement is handled in ProxyElementExporter.ExportBuildingElementProxy()
+            bool cannotExportRebar = false;
+            IFCAnyHandle rebarHandle = ExportRebarAsProxyElementInView(exporterIFC, rebarElement, productWrapper, out cannotExportRebar);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(rebarHandle) || cannotExportRebar)
+            {
+               if (!cannotExportRebar)
+                  transaction.Commit();
+               return null;   // Rebar doesn't create a group.
+            }
+
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, rebarElement))
             {
-               bool cannotExportRebar = false;
-               IFCAnyHandle rebarHandle = ExportRebarAsProxyElementInView(exporterIFC, rebarElement, productWrapper, out cannotExportRebar);
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(rebarHandle) || cannotExportRebar)
-               {
-                  if (!cannotExportRebar)
-                     transaction.Commit();
-                  return null;   // Rebar doesn't create a group.
-               }
-
                IFCAnyHandle prodRep = null;
 
                double totalBarLengthUnscale = GetRebarTotalLength(rebarItem);
@@ -342,9 +344,8 @@ namespace Revit.IFC.Export.Exporter
                ElementId materialId = ElementId.InvalidElementId;
                ParameterUtil.GetElementIdValueFromElementOrSymbol(rebarElement, BuiltInParameter.MATERIAL_ID_PARAM, out materialId);
 
-               double diameter = GetBarDiameter(rebarItem);
-               double radius = diameter / 2.0;
-               double longitudinalBarNominalDiameter = diameter;
+               double longitudinalBarNominalDiameter = 0.0, modelDiameter = 0.0;
+               GetBarDiameters(rebarItem, out longitudinalBarNominalDiameter, out modelDiameter);
                double longitudinalBarCrossSectionArea = UnitUtil.ScaleArea(volumeUnscale / totalBarLengthUnscale);
 
                int numberOfBarPositions = GetNumberOfBarPositions(rebarItem);
@@ -424,7 +425,7 @@ namespace Revit.IFC.Export.Exporter
 
                   // For IFC4 and Structural Exchange Requirement export, Entity type not allowed for RV: IfcPolyline
                   IFCAnyHandle compositeCurve = GeometryUtil.CreateCompositeOrIndexedCurve(exporterIFC, curves, null, null);
-                  IFCAnyHandle sweptDiskSolid = IFCInstanceExporter.CreateSweptDiskSolid(file, compositeCurve, radius, null, 0, endParam);
+                  IFCAnyHandle sweptDiskSolid = IFCInstanceExporter.CreateSweptDiskSolid(file, compositeCurve, modelDiameter / 2, null, 0, endParam);
                   HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
                   bodyItems.Add(sweptDiskSolid);
                   RepresentationUtil.CreateStyledItemAndAssign(file, rebarElement.Document, materialId, sweptDiskSolid);
@@ -628,29 +629,26 @@ namespace Revit.IFC.Export.Exporter
          if (element is Rebar)
          {
             Rebar rebar = element as Rebar;
+            Transform movedBarTransform = rebar.GetMovedBarTransform(barPositionIndex);
             if (rebar.IsRebarFreeForm())
             {
-               return Transform.Identity;
+               return movedBarTransform;
             }
-            return (element as Rebar).GetShapeDrivenAccessor().GetBarPositionTransform(barPositionIndex);
-
-            // Only in 2022
-            //Transform movedBarTransform = rebar.GetMovedBarTransform(barPositionIndex);
-            //if (rebar.IsRebarFreeForm())
-            //{
-            //   return movedBarTransform;
-            //}
-            //else
-            //{
-            //   // shape driven
-            //   Transform barPosTrf = rebar.GetShapeDrivenAccessor().GetBarPositionTransform(barPositionIndex);
-            //   Transform entireTrf = movedBarTransform.Multiply(barPosTrf);
-            //   return entireTrf;
-            //}
+            else
+            {
+               // shape driven
+               Transform barPosTrf = rebar.GetShapeDrivenAccessor().GetBarPositionTransform(barPositionIndex);
+               Transform entireTrf = movedBarTransform.Multiply(barPosTrf);
+               return entireTrf;
+            }
          }
          else if (element is RebarInSystem)
          {
-            return (element as RebarInSystem).GetBarPositionTransform(barPositionIndex);
+            RebarInSystem rebarInSystem = element as RebarInSystem;
+            Transform barPosTrf = rebarInSystem.GetBarPositionTransform(barPositionIndex);
+            Transform movedBarTrf = rebarInSystem.GetMovedBarTransform(barPositionIndex);
+            Transform entireTrf = movedBarTrf.Multiply(barPosTrf);
+            return entireTrf;
          }
          else if (element is RebarContainerItem)
          {
@@ -661,19 +659,24 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Get the bar diameter from the rebar object.
+      /// Get the bar diameters (model and nominal) from the rebar object.
       /// </summary>
       /// <param name="element">The rebar object.</param>
-      /// <returns>The returned bar diameter from the rebar, or a default value.</returns>
-      static double GetBarDiameter(object element)
+      /// <out param name="nominalDiameter">The nominal diameter.</param>
+      /// <out param name="modelDiameter">The model diameter</param>
+      static void GetBarDiameters(object element, out double nominalDiameter, out double modelDiameter)
       {
-         double bendDiameter = 0.0;
+         nominalDiameter = 0.0;
+         modelDiameter = 0.0;
 
          if (element is RebarContainerItem)
          {
             RebarBendData bendData = (element as RebarContainerItem).GetBendData();
             if (bendData != null)
-               bendDiameter = UnitUtil.ScaleLength(bendData.BarDiameter);
+            {
+               nominalDiameter = UnitUtil.ScaleLength(bendData.BarNominalDiameter);
+               modelDiameter = UnitUtil.ScaleLength(bendData.BarModelDiameter);
+            }
          }
          else if (element is Element)
          {
@@ -682,13 +685,17 @@ namespace Revit.IFC.Export.Exporter
             ElementId typeId = rebarElement.GetTypeId();
             RebarBarType elementType = doc.GetElement(rebarElement.GetTypeId()) as RebarBarType;
             if (elementType != null)
-               bendDiameter = UnitUtil.ScaleLength(elementType.BarDiameter);
+            {
+               nominalDiameter = UnitUtil.ScaleLength(elementType.BarNominalDiameter);
+               modelDiameter = UnitUtil.ScaleLength(elementType.BarModelDiameter);
+            }
          }
 
-         if (bendDiameter < MathUtil.Eps())
-            return UnitUtil.ScaleLength(1.0 / 12.0);
+         if (nominalDiameter < MathUtil.Eps())
+            nominalDiameter = UnitUtil.ScaleLength(1.0 / 12.0);
 
-         return bendDiameter;
+         if (modelDiameter < MathUtil.Eps())
+            modelDiameter = UnitUtil.ScaleLength(1.0 / 12.0);
       }
 
       /// <summary>

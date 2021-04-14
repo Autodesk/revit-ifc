@@ -27,11 +27,135 @@ using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Common.Utility
 {
+   public class IFCLimits
+   {
+      /// <summary>
+      /// Maximum length of STRING data type allowed by IFC spec.
+      /// This is the length of properly escaped or recoded string eligible for writing to IFC file.
+      /// All symbols beyond this limit must be truncated.
+      /// </summary>
+      public const int MAX_RECODED_STR_LEN = 32767;
+
+      public const int MAX_IFCLABEL_STR_LEN = 255;
+      public const int MAX_IFCIDENTIFIER_STR_LEN = 255;
+
+      /// <summary>
+      /// Calculates max length of given string which can be exported to IFC file.
+      /// Length is limited by IFC spec. Algorithm consequently transforms each char of input string to recoded form eligible for writing to IFC file and calculates resulting length.
+      /// Once recoded length limit is reached algorithm stops calculation and return index of current symbol. It is the maximum length of original string which can be exported.
+      /// </summary>
+      /// <param name="str">String for determining how much chars can be exported to IFC.</param>
+      /// <returns>The name.</returns>
+      public static int CalculateMaxAllowedSize(string str)
+      {
+         if (str == null)
+            return 0;
+
+         //1. Check if recoded form of input string can theoretically exceed MAX_RECODED_STR_LEN.
+
+         //Recoded form of string with original length <= 3854 will never be greater than MAX_RECODED_STR_LEN.
+         //So it is safe.
+         const int maxSafeLenOfInputStr = 3854;
+         int inputStrLen = str.Length;
+
+         if (inputStrLen <= maxSafeLenOfInputStr)
+            return inputStrLen;
+
+         //2. It was identified that there is a chance that recoded string can exceed limit MAX_RECODED_STR_LEN.
+         //   To find that out for sure the code below calculates exact recoded length.
+
+         // check if encoding is required
+         Char[] charsThatMustBeEscaped = { '\\', '\'', '\r', '\n', '\t' };
+         bool needRecoding = str.Any(ch => (ch & 0xFF80) != 0 || charsThatMustBeEscaped.Contains(ch));
+
+         if (!needRecoding)
+            return Math.Min(IFCLimits.MAX_RECODED_STR_LEN, inputStrLen);
+
+         int recodedStrLen = 0;
+         bool unicode = false; // flag for indicating whether to store as unicode
+
+         for (int i = 0; i < inputStrLen; i++)
+         {
+            Char ch = str[i];
+
+            // handle unicode
+            if (ch > 255)
+            {
+               // extended encoding
+               if (!unicode)
+               {
+                  //8 - total size of "\X2\" and "\X0\"
+                  recodedStrLen += 8;
+                  unicode = true;
+               }
+
+               // unicode symbol is encoded as 4 digit HEX number
+               recodedStrLen += 4;
+            }
+            else if (unicode)
+            {
+               // end of unicode; terminate
+               unicode = false;
+            }
+
+            // then all other modes
+            if (ch == '\\')
+            {
+               // back-slash is escaped as "\\"
+               recodedStrLen += 2;
+            }
+            else if (ch == '\'')
+            {
+               // single-quote is escaped as "''"
+               recodedStrLen += 2;
+            }
+            else if (ch >= 32 && ch < 126)
+            {
+               // direct encoding
+               recodedStrLen += 1;
+            }
+            else if (ch >= 128 + 32 && ch <= 128 + 126)
+            {
+               // shifted encoding. Symbol is encoded as "\S\" plus (ch & 0x007F)
+               recodedStrLen += 4;
+            }
+            else if (ch < 255)
+            {
+               // other character encoded as "\X\" plus 2 hex digits
+               recodedStrLen += 5;
+            }
+
+            if (recodedStrLen > IFCLimits.MAX_RECODED_STR_LEN)
+            {
+               return i;
+            }
+         }
+
+         return inputStrLen;
+      }
+   }
    public class IFCAnyHandleUtil
    {
       static Dictionary<IFCEntityType, string> m_sIFCEntityTypeToNames = new Dictionary<IFCEntityType, string>();
 
       static Dictionary<string, IFCEntityType> m_sIFCEntityNameToTypes = new Dictionary<string, IFCEntityType>();
+
+      /// <summary>
+      /// Event is fired when code reduces length of string to maximal allowed size.
+      /// It sends information string which can be logged or shown to user.
+      /// </summary>
+      /// /// <param name="warnText">Information string with diangostic info about truncation happened.</param>
+      public delegate void Notify(string warnText);
+      public static event Notify IFCStringTooLongWarn;
+      private static void OnIFCStringTooLongWarn(int stepID, string attrName, string val, int reducedToSize)
+      {
+         string warnMsg = String.Format("IFC warning: Size of string \"{0}\" was reduced to {1} and assigned to attribute \"{2}\" of IFC entity {3}", val, reducedToSize, attrName, stepID);
+         IFCStringTooLongWarn?.Invoke(warnMsg);
+      }
+      public static void EventClear()
+      {
+         IFCStringTooLongWarn = null;
+      }
 
       /// <summary>
       /// Gets an IFC entity name.
@@ -222,7 +346,16 @@ namespace Revit.IFC.Common.Utility
 
          // This allows you to set empty strings, which may not always be intended, but should be allowed.
          if (value != null)
+         {
+            int maxStrLen = IFCLimits.CalculateMaxAllowedSize(value);
+            if (value.Length > maxStrLen)
+            {
+               OnIFCStringTooLongWarn(handle.StepId, name, value, maxStrLen);
+               value = value.Remove(maxStrLen);
+            }
+
             handle.SetAttribute(name, IFCData.CreateString(value));
+         }
       }
 
       /// <summary>
@@ -1726,14 +1859,14 @@ namespace Revit.IFC.Common.Utility
             return true;
          return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
       }
-      
+
       /// <summary>
-       /// Updates the project information.
-       /// </summary>
-       /// <param name="project">The project.</param>
-       /// <param name="projectName">The project name.</param>
-       /// <param name="projectLongName">The project long name.</param>
-       /// <param name="projectStatus">The project status.</param>
+      /// Updates the project information.
+      /// </summary>
+      /// <param name="project">The project.</param>
+      /// <param name="projectName">The project name.</param>
+      /// <param name="projectLongName">The project long name.</param>
+      /// <param name="projectStatus">The project status.</param>
       public static void UpdateProject(IFCAnyHandle project, string projectName, string projectLongName,
           string projectStatus)
       {

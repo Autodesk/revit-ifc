@@ -36,115 +36,55 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCRepresentationContext : IFCEntity
    {
-      string m_ContextIdentifier = null;
-
-      string m_ContextType = null;
-
-      int m_CoordinateSpaceDimension = 0;
-
-      double? m_Precision = null;
-
-      Transform m_WorldCoordinateSystem = null;
-
-      XYZ m_TrueNorth = null;
-
-      IFCRepresentationContext m_ParentContext = null;
-
-      double? m_TargetScale = null;
-
-      IFCGeometricProjection m_TargetView = IFCGeometricProjection.NotDefined;
-
-      string m_UserDefinedTargetView = null;
-
       /// <summary>
       /// The context identifier for the IfcRepresentationContext
       /// </summary>
-      public string Identifier
-      {
-         get { return m_ContextIdentifier; }
-         protected set { m_ContextIdentifier = value; }
-      }
+      public string Identifier { get; protected set; } = null;
 
       /// <summary>
       /// The context type for the IfcRepresentationContext
       /// </summary>
-      public string Type
-      {
-         get { return m_ContextType; }
-         protected set { m_ContextType = value; }
-      }
+      public string Type { get; protected set; } = null;
 
       /// <summary>
       /// The coordinate space dimension for the IfcRepresentationContext, usually 2 or 3.
       /// </summary>
-      public int CoordinateSpaceDimension
-      {
-         get { return m_CoordinateSpaceDimension; }
-         protected set { m_CoordinateSpaceDimension = value; }
-      }
+      public int CoordinateSpaceDimension { get; protected set; } = 0;
 
       /// <summary>
       /// The optional geometric precision for the IfcRepresentationContext
       /// </summary>
-      public double? Precision
-      {
-         get { return m_Precision; }
-         protected set { m_Precision = value; }
-      }
+      public double? Precision { get; protected set; } = null;
 
       /// <summary>
       /// The world coordinate system for the IfcRepresentationContext
       /// </summary>
-      public Transform WorldCoordinateSystem
-      {
-         get { return m_WorldCoordinateSystem; }
-         protected set { m_WorldCoordinateSystem = value; }
-      }
+      public Transform WorldCoordinateSystem { get; protected set; } = null;
 
       /// <summary>
       /// The TrueNorth for the IfcRepresentationContext
       /// </summary>
-      public XYZ TrueNorth
-      {
-         get { return m_TrueNorth; }
-         protected set { m_TrueNorth = value; }
-      }
+      public XYZ TrueNorth { get; protected set; } = null;
 
       /// <summary>
       /// The optional parent IfcRepresentationContext, for sub-contexts.
       /// </summary>
-      public IFCRepresentationContext ParentContext
-      {
-         get { return m_ParentContext; }
-         protected set { m_ParentContext = value; }
-      }
+      public IFCRepresentationContext ParentContext { get; protected set; } = null;
 
       /// <summary>
       /// The optional target scale for a sub-context.
       /// </summary>
-      public double? TargetScale
-      {
-         get { return m_TargetScale; }
-         protected set { m_TargetScale = value; }
-      }
+      public double? TargetScale { get; protected set; } = null;
 
       /// <summary>
       /// The geometric projection (i.e., view type) for a sub-context.
       /// </summary>
-      public IFCGeometricProjection TargetView
-      {
-         get { return m_TargetView; }
-         protected set { m_TargetView = value; }
-      }
+      public IFCGeometricProjection TargetView { get; protected set; } = IFCGeometricProjection.NotDefined;
 
       /// <summary>
       /// The user defined target view name, if TargetView = IFCGeometricProjection.UserDefined.
       /// </summary>
-      public string UserDefinedTargetView
-      {
-         get { return m_UserDefinedTargetView; }
-         protected set { m_UserDefinedTargetView = value; }
-      }
+      public string UserDefinedTargetView { get; protected set; } = null;
 
       /// <summary>
       /// Default constructor.
@@ -168,19 +108,6 @@ namespace Revit.IFC.Import.Data
 
          if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationContext, IFCEntityType.IfcGeometricRepresentationContext))
          {
-            bool found = false;
-            CoordinateSpaceDimension = IFCImportHandleUtil.GetRequiredIntegerAttribute(ifcRepresentationContext, "CoordinateSpaceDimension", out found);
-            if (!found)
-               CoordinateSpaceDimension = 3;   // Don't throw, just set to default 3D.
-
-            Precision = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcRepresentationContext, "Precision", IFCImportFile.TheFile.Document.Application.VertexTolerance);
-
-            IFCAnyHandle worldCoordinateSystem = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcRepresentationContext, "WorldCoordinateSystem", false);
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(worldCoordinateSystem))
-               WorldCoordinateSystem = IFCLocation.ProcessIFCAxis2Placement(worldCoordinateSystem);
-            else
-               WorldCoordinateSystem = Transform.Identity;
-
             bool isSubContext = IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) &&
                IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationContext, IFCEntityType.IfcGeometricRepresentationSubContext);
 
@@ -219,6 +146,30 @@ namespace Revit.IFC.Import.Data
                    IFCGeometricProjection.NotDefined);
 
                UserDefinedTargetView = IFCImportHandleUtil.GetOptionalStringAttribute(ifcRepresentationContext, "UserDefinedTargetView", null);
+            }
+
+            // ODA toolkit doesn't yet support derived attributes, so we will explicitly deal with
+            // them here.
+            if (ParentContext != null)
+            {
+               CoordinateSpaceDimension = ParentContext.CoordinateSpaceDimension;
+               Precision = ParentContext.Precision;
+               WorldCoordinateSystem = ParentContext.WorldCoordinateSystem;
+            }
+            else
+            {
+               bool found = false;
+               CoordinateSpaceDimension = IFCImportHandleUtil.GetRequiredIntegerAttribute(ifcRepresentationContext, "CoordinateSpaceDimension", out found);
+               if (!found)
+                  CoordinateSpaceDimension = 3;   // Don't throw, just set to default 3D.
+
+               Precision = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcRepresentationContext, "Precision", IFCImportFile.TheFile.Document.Application.VertexTolerance);
+
+               IFCAnyHandle worldCoordinateSystem = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcRepresentationContext, "WorldCoordinateSystem", false);
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(worldCoordinateSystem))
+                  WorldCoordinateSystem = IFCLocation.ProcessIFCAxis2Placement(worldCoordinateSystem);
+               else
+                  WorldCoordinateSystem = Transform.Identity;
             }
          }
       }

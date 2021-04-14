@@ -371,6 +371,11 @@ namespace Revit.IFC.Export.Exporter
          if (originalBoundaryLoops == null || originalBoundaryLoops.Count == 0)
             return null;
 
+         // If the wall is connected to a non-vertical wall, in which case the shape of the wall may have extensions or cuts 
+         // that do not allow to export it correctly as an extrusion. In this case, export it as BRep.
+         if (IsConnectedWithNonVerticalWall(connectedWalls, wallElement))
+            return null;
+
          double fullUnscaledLength = baseCurve.Length;
          double unscaledFootprintArea = ExporterIFCUtils.ComputeAreaOfCurveLoops(originalBoundaryLoops);
          scaledFootprintArea = UnitUtil.ScaleArea(unscaledFootprintArea);
@@ -447,7 +452,7 @@ namespace Revit.IFC.Export.Exporter
          }
 
          ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(wallElement);
-         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, wallElement.Document, baseBodyItemHnd, matId);
+         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, wallElement.Document, false, baseBodyItemHnd, matId);
 
          HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
          bodyItems.Add(bodyItemHnd);
@@ -643,6 +648,25 @@ namespace Revit.IFC.Export.Exporter
             return false;
 
          return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
+      }
+
+      private static bool HasUnsupportedStackWallOpenings(Wall wallElement)
+      {
+         if (wallElement == null)
+            return false;
+
+         ElementId stackedWallId = wallElement.StackedWallOwnerId;
+         if (stackedWallId == ElementId.InvalidElementId)
+            return false;
+
+         Document document = wallElement.Document;
+         Wall stackedWall = document.GetElement(stackedWallId) as Wall;
+         if (stackedWall == null)
+            return false;
+
+         ElementFilter openingFilter = new ElementClassFilter(typeof(Opening));
+         IList<ElementId> openingElements = stackedWall.GetDependentElements(openingFilter);
+         return (openingElements != null && openingElements.Count > 0);
       }
 
       /// <summary>
@@ -842,7 +866,9 @@ namespace Revit.IFC.Export.Exporter
                      double zDiff = localOrig[2] - oldOrig[2];
                      if (!MathUtil.IsAlmostZero(zDiff))
                      {
-                        double wallSlantAngle = GetWallSlantAngle(wallElement);
+                        // TODO: Determine what to do for tapered walls.
+                        double? optWallSlantAngle = ExporterCacheManager.WallCrossSectionCache.GetUniformSlantAngle(wallElement);
+                        double wallSlantAngle = optWallSlantAngle.GetValueOrDefault(0.0);
                         if (!MathUtil.IsAlmostZero(wallSlantAngle))
                         {
                            // If the wall is slanted and localOrig does not lie on the base curve (zDiff != 0), move 
@@ -979,8 +1005,15 @@ namespace Revit.IFC.Export.Exporter
                      }
 
                      IList<IFCExtrusionData> cutPairOpenings = new List<IFCExtrusionData>();
-
-                     if (!exportParts && exportingWallElement && exportingAxis && trimmedCurve != null && !exportByComponents)
+                     // We only try to export by extrusion using this function if:
+                     // 1. We aren't trying to create parts or components.
+                     // 2. We have a native Revit wall whose non-trimmed axis we are exporting.
+                     // 3. We don't have a wall that's part of a stacked wall, if the stacked wall has openings.
+                     // Any of the cases above could mean that the internal API function would return
+                     // incorrect results (generally, missing openings or clippings).
+                     if (!exportParts && !exportByComponents && exportingWallElement && exportingAxis && 
+                        trimmedCurve != null &&
+                        !HasUnsupportedStackWallOpenings(wallElement))
                      {
                         bool isCompletelyClipped;
                         bodyRep = TryToCreateAsExtrusion(exporterIFC, wallElement, connectedWalls, solids, meshes, baseWallElevation,
@@ -1088,7 +1121,10 @@ namespace Revit.IFC.Export.Exporter
 
                         //string ifcType = IFCValidateEntry.GetValidIFCPredefinedType(/*element,*/ null);
 
-                        exportType = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
+                        exportType = ExporterUtil.GetProductExportType(exporterIFC, element, out ifcEnumType);
+                        IFCExportInfoPair genericExportType = new IFCExportInfoPair(exportType.ExportInstance, exportType.ExportType, ifcEnumType);
+
+                        genericExportType.SetValueWithPair(exportType.ExportInstance, ifcEnumType);
 
                         if (exportingWallElement && ExporterUtil.IsNotDefined(ifcEnumType)
                            && (exportType.ExportInstance == IFCEntityType.IfcWall || exportType.ExportInstance == IFCEntityType.IfcWallStandardCase))
@@ -1496,7 +1532,7 @@ namespace Revit.IFC.Export.Exporter
          if (elementType == null)
             return;
 
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, element, out _);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, element, out _);
          exportType.ValidatedPredefinedType = ifcTypeEnum;
 
          IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
@@ -1680,11 +1716,11 @@ namespace Revit.IFC.Export.Exporter
       /// </remarks>
       public static XYZ GetWallExtrusionDirection(Wall wallElement)
       {
-         Parameter angleParam = wallElement.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         if (angleParam == null || !angleParam.HasValue || angleParam.StorageType != StorageType.Double)
-            return new XYZ(0, 0, 1);
+         double? optWallSlantedAngle = ExporterCacheManager.WallCrossSectionCache.GetUniformSlantAngle(wallElement);
+         if (optWallSlantedAngle == null)
+            return null;
 
-         double slantAngle = angleParam.AsDouble();
+         double slantAngle = optWallSlantedAngle.Value;
          if (MathUtil.IsAlmostZero(slantAngle))
             return XYZ.BasisZ;
 
@@ -1711,20 +1747,6 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Returns the slant angle for a wall if it is slanted, zero otherwise
-      /// </summary>
-      /// <param name="wallElement">The wall.</param>
-      /// <returns>The slant angle of the wall, or zero if it is not slanted.</returns>
-      public static double GetWallSlantAngle(Wall wallElement)
-      {
-         Parameter wallSlant = wallElement.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         if (wallSlant != null && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && !MathUtil.IsAlmostEqual(wallSlant.AsDouble(), 0.0))
-            return wallSlant.AsDouble();
-         else
-            return 0.0;
-      }
-
-      /// <summary>
       /// Identifies if the wall's base can be represented by a direct thickening of the wall's base curve.
       /// </summary>
       /// <param name="wallElement">
@@ -1741,6 +1763,36 @@ namespace Revit.IFC.Export.Exporter
       static bool IsWallBaseRectangular(Wall wallElement, Curve curve)
       {
          return ExporterIFCUtils.IsWallBaseRectangular(wallElement, curve);
+      }
+
+      /// <summary>
+      /// Identifies if the wall is connected to another non-vertical wall.
+      /// </summary>
+      /// <param name="connectedWalls">Information about walls joined to this wall.</param>
+      /// <param name="wallElement">The wall.</param>
+      /// <returns>True if there is at least one non-vertical wall among the <paramref name="connectedWalls"/> 
+      /// that are connected to <paramref name="wallElement"/>. Otherwise return false.</returns>
+      static bool IsConnectedWithNonVerticalWall(IList<IList<IFCConnectedWallData>> connectedWalls, Wall wallElement)
+      {
+         Wall connectedWall;
+
+         if (connectedWalls == null)
+            return false;
+
+         foreach (var connectedWallsList in connectedWalls)
+         {
+            foreach (var wall in connectedWallsList)
+            {
+               if (wall.ElementId == wallElement.Id)
+                  continue;
+
+               connectedWall = ExporterCacheManager.Document.GetElement(wall.ElementId) as Wall;
+               if (connectedWall.CrossSection != WallCrossSection.Vertical)
+                  return true;
+            }
+         }
+
+         return false;
       }
 
       /// <summary>

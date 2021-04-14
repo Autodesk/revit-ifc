@@ -176,7 +176,7 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, railing, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, railing, out ifcEnumType);
          if (exportType.IsUnKnown)
          {
             ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(exporterIFC, railing);
@@ -348,7 +348,7 @@ namespace Revit.IFC.Export.Exporter
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
 
-                  IFCExportInfoPair exportInfo = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
+                  IFCExportInfoPair exportInfo = ExporterUtil.GetProductExportType(exporterIFC, element, out ifcEnumType);
 
                   IFCAnyHandle railing = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, element, instanceGUID, ownerHistory,
                             ecData.GetLocalPlacement(), prodRep);

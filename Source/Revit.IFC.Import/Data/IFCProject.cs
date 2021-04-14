@@ -156,6 +156,36 @@ namespace Revit.IFC.Import.Data
                   }
                }
             }
+
+            ProjectLocation projectLocation = IFCImportFile.TheFile.Document.ActiveProjectLocation;
+            if (projectLocation != null)
+            {
+               // Set initial project location based on the information above.
+               // This may be further modified by the site.
+               double trueNorth = 0.0;
+               if (TrueNorthDirection != null)
+               {
+                  double geometricAngle = Math.Atan2(TrueNorthDirection.V, TrueNorthDirection.U);
+                  // Convert from geometric angle to compass direction.
+                  // This involves two steps: (1) subtract PI/2 from the angle, staying in (-PI, PI], then (2) reversing the result.
+                  trueNorth = (geometricAngle > -Math.PI / 2.0) ? geometricAngle - Math.PI / 2.0 : geometricAngle + Math.PI * 1.5;
+                  trueNorth = -trueNorth;
+               }
+
+               // TODO: Extend this to work properly if the world coordinate system
+               // isn't a simple translation.
+               XYZ origin = XYZ.Zero;
+               if (WorldCoordinateSystem != null &&
+                  WorldCoordinateSystem.IsTranslation &&
+                  !XYZ.IsWithinLengthLimits(WorldCoordinateSystem.Origin))
+               {
+                  origin = WorldCoordinateSystem.Origin;
+                  WorldCoordinateSystem = null;
+               }
+
+               ProjectPosition projectPosition = new ProjectPosition(origin.X, origin.Y, origin.Z, trueNorth);
+               projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
+            }
          }
       }
 
@@ -214,25 +244,29 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
-         Units documentUnits = new Units(doc.DisplayUnitSystem == DisplayUnit.METRIC ?
-             UnitSystem.Metric : UnitSystem.Imperial);
-         foreach (IFCUnit unit in UnitsInContext)
+         if (UnitsInContext != null)
          {
-            if (!IFCUnit.IsNullOrInvalid(unit))
+            Units documentUnits = new Units(doc.DisplayUnitSystem == DisplayUnit.METRIC ?
+                UnitSystem.Metric : UnitSystem.Imperial);
+
+            foreach (IFCUnit unit in UnitsInContext)
             {
-               try
+               if (!IFCUnit.IsNullOrInvalid(unit))
                {
-                  FormatOptions formatOptions = new FormatOptions(unit.Unit);
-                  formatOptions.SetSymbolTypeId(unit.Symbol);
-                  documentUnits.SetFormatOptions(unit.Spec, formatOptions);
-               }
-               catch (Exception ex)
-               {
-                  Importer.TheLog.LogError(unit.Id, ex.Message, false);
+                  try
+                  {
+                     FormatOptions formatOptions = new FormatOptions(unit.Unit);
+                     formatOptions.SetSymbolTypeId(unit.Symbol);
+                     documentUnits.SetFormatOptions(unit.Spec, formatOptions);
+                  }
+                  catch (Exception ex)
+                  {
+                     Importer.TheLog.LogError(unit.Id, ex.Message, false);
+                  }
                }
             }
+            doc.SetUnits(documentUnits);
          }
-         doc.SetUnits(documentUnits);
 
          // We will randomize unused grid names so that they don't conflict with new entries with the same name.
          // This is only for relink.

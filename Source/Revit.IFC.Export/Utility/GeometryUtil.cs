@@ -691,6 +691,18 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Sets the IfcAxis2Placement handle stored as the placement relative to for an IfcLocalPlacement.
+      /// </summary>
+      /// <param name="localPlacement">The IfcLocalPlacement handle.</param>
+      /// <param name="newRelativePlacement">The IfcAxis2Placement handle to use as the relative placement.</param>
+      /// <param name="newPlacementRelTo">The IfcObjectPlacement handle to use as the placement relative to.</param>
+      public static void UpdateLocalPlacement(IFCAnyHandle localPlacement, IFCAnyHandle newPlacementRelTo, IFCAnyHandle newRelativePlacement)
+      {
+         SetPlacementRelTo(localPlacement, newPlacementRelTo);
+         SetRelativePlacement(localPlacement, newRelativePlacement);
+      }
+      
+      /// <summary>
       /// Get geometry of one level of a potentially multi-story stair, ramp, or railing.
       /// </summary>
       /// <param name="geomElement">The original geometry.</param>

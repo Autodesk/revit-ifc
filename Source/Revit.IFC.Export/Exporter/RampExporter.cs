@@ -366,7 +366,7 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
                string predefType = ifcEnumType;
-               IFCExportInfoPair exportTypePair = ExporterUtil.GetExportType(exporterIFC, ramp, out ifcEnumType);
+               IFCExportInfoPair exportTypePair = ExporterUtil.GetProductExportType(exporterIFC, ramp, out ifcEnumType);
                if (!string.IsNullOrEmpty(exportTypePair.ValidatedPredefinedType))
                {
                   predefType = exportTypePair.ValidatedPredefinedType;

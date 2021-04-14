@@ -158,6 +158,9 @@ namespace Revit.IFC.Export.Exporter
 
          try
          {
+            IFCAnyHandleUtil.IFCStringTooLongWarn += (_1) => { document.Application.WriteJournalComment(_1, true); };
+            IFCDataUtil.IFCStringTooLongWarn += (_1) => { document.Application.WriteJournalComment(_1, true); };
+
             BeginExport(exporterIFC, document, filterView);
 
             ParamExprListener.ResetParamExprInternalDicts();
@@ -186,6 +189,8 @@ namespace Revit.IFC.Export.Exporter
             ExporterStateManager.Clear();
 
             DelegateClear();
+            IFCAnyHandleUtil.EventClear();
+            IFCDataUtil.EventClear();
 
             if (m_Writer != null)
                m_Writer.Close();
@@ -578,7 +583,7 @@ namespace Revit.IFC.Export.Exporter
                   if (graphicsCell != null) // Concrete elements with cell that have HasGraphics set to true, must be handled by Revit exporter.
                      hasGraphics = (bool)graphicsCell.GetValue(cell, null);
 
-                  if (!hasGraphics)
+                  if (hasGraphics)
                      return false;
                }
             }
@@ -952,12 +957,12 @@ namespace Revit.IFC.Export.Exporter
                else
                {
                   string ifcEnumType;
-                  IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
+                  IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, element, out ifcEnumType);
 
                   // Check the intended IFC entity or type name is in the exclude list specified in the UI
-                  Common.Enums.IFCEntityType elementClassTypeEnum;
-                  if (Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
-                        || Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportType.ToString(), out elementClassTypeEnum))
+                  IFCEntityType elementClassTypeEnum;
+                  if (Enum.TryParse(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
+                        || Enum.TryParse(exportType.ExportType.ToString(), out elementClassTypeEnum))
                      if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
                         return;
 
@@ -1014,20 +1019,17 @@ namespace Revit.IFC.Export.Exporter
          IFCFileModelOptions modelOptions = new IFCFileModelOptions();
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
          {
-            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X2_ADD1.exp");
             modelOptions.SchemaFile = LocateSchemaFile("IFC2X2_ADD1.exp");
             modelOptions.SchemaName = "IFC2x2_FINAL";
          }
          else if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
-            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4.exp");
             modelOptions.SchemaFile = LocateSchemaFile("IFC4.exp");
             modelOptions.SchemaName = "IFC4";
          }
          else
          {
             // We leave IFC2x3 as default until IFC4 is finalized and generally supported across platforms.
-            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X3_TC1.exp");
             modelOptions.SchemaFile = LocateSchemaFile("IFC2X3_TC1.exp");
             modelOptions.SchemaName = "IFC2x3";
          }
@@ -1350,32 +1352,31 @@ namespace Revit.IFC.Export.Exporter
             combinedPresentationLayerSet[presentationLayerSet.Key] = validHandles;
          }
 
-         // Only for 2022
-         //// Now handle the internal cases.
-         //IDictionary<string, IList<IFCAnyHandle>> presentationLayerAssignments = exporterIFC.GetPresentationLayerAssignments();
-         //foreach (KeyValuePair<string, IList<IFCAnyHandle>> presentationLayerAssignment in presentationLayerAssignments)
-         //{
-         //   // Some of the items may have been deleted, remove them from set.
-         //   ICollection<IFCAnyHandle> newLayeredItemSet = new HashSet<IFCAnyHandle>();
-         //   IList<IFCAnyHandle> initialSet = presentationLayerAssignment.Value;
-         //   foreach (IFCAnyHandle currItem in initialSet)
-         //   {
-         //      if (IFCAnyHandleUtil.IsValidHandle(currItem) && !assignedRepresentations.Contains(currItem))
-         //         newLayeredItemSet.Add(currItem);
-         //   }
+         // Now handle the internal cases.
+         IDictionary<string, IList<IFCAnyHandle>> presentationLayerAssignments = exporterIFC.GetPresentationLayerAssignments();
+         foreach (KeyValuePair<string, IList<IFCAnyHandle>> presentationLayerAssignment in presentationLayerAssignments)
+         {
+            // Some of the items may have been deleted, remove them from set.
+            ICollection<IFCAnyHandle> newLayeredItemSet = new HashSet<IFCAnyHandle>();
+            IList<IFCAnyHandle> initialSet = presentationLayerAssignment.Value;
+            foreach (IFCAnyHandle currItem in initialSet)
+            {
+               if (IFCAnyHandleUtil.IsValidHandle(currItem) && !assignedRepresentations.Contains(currItem))
+                  newLayeredItemSet.Add(currItem);
+            }
 
-         //   if (newLayeredItemSet.Count == 0)
-         //      continue;
+            if (newLayeredItemSet.Count == 0)
+               continue;
 
-         //   string layerName = presentationLayerAssignment.Key;
-         //   ISet<IFCAnyHandle> layeredItemSet;
-         //   if (!combinedPresentationLayerSet.TryGetValue(layerName, out layeredItemSet))
-         //   {
-         //      layeredItemSet = new HashSet<IFCAnyHandle>();
-         //      combinedPresentationLayerSet[layerName] = layeredItemSet;
-         //   }
-         //   layeredItemSet.UnionWith(newLayeredItemSet);
-         //}
+            string layerName = presentationLayerAssignment.Key;
+            ISet<IFCAnyHandle> layeredItemSet;
+            if (!combinedPresentationLayerSet.TryGetValue(layerName, out layeredItemSet))
+            {
+               layeredItemSet = new HashSet<IFCAnyHandle>();
+               combinedPresentationLayerSet[layerName] = layeredItemSet;
+            }
+            layeredItemSet.UnionWith(newLayeredItemSet);
+         }
 
          foreach (KeyValuePair<string, ISet<IFCAnyHandle>> presentationLayerSet in combinedPresentationLayerSet)
          {
@@ -1722,8 +1723,12 @@ namespace Revit.IFC.Export.Exporter
             // create material layer associations
             foreach (IFCAnyHandle materialSetLayerUsageHnd in ExporterCacheManager.MaterialLayerRelationsCache.Keys)
             {
+               HashSet<IFCAnyHandle> materialLayerRelCache = null;
+               if (!ExporterCacheManager.MaterialLayerRelationsCache.TryGetValue(materialSetLayerUsageHnd, out materialLayerRelCache))
+                  continue;
+
                IFCInstanceExporter.CreateRelAssociatesMaterial(file, GUIDUtil.CreateGUID(), ownerHistory,
-                   null, null, ExporterCacheManager.MaterialLayerRelationsCache[materialSetLayerUsageHnd],
+                   null, null, materialLayerRelCache,
                    materialSetLayerUsageHnd);
             }
 
@@ -1733,8 +1738,12 @@ namespace Revit.IFC.Export.Exporter
                // In some specific cased the reference object might have been deleted. Clear those from the Type cache first here
                ExporterCacheManager.MaterialRelationsCache.CleanRefObjects(materialHnd);
 
+               HashSet<IFCAnyHandle> materialRelationsHandles = null;
+               if (!ExporterCacheManager.MaterialRelationsCache.TryGetValue(materialHnd, out materialRelationsHandles))
+                  continue;
+
                IFCInstanceExporter.CreateRelAssociatesMaterial(file, GUIDUtil.CreateGUID(), ownerHistory,
-                   null, null, ExporterCacheManager.MaterialRelationsCache[materialHnd], materialHnd);
+                   null, null, materialRelationsHandles, materialHnd);
             }
 
             // create type relations
@@ -1743,8 +1752,12 @@ namespace Revit.IFC.Export.Exporter
                // In some specific cased the reference object might have been deleted. Clear those from the Type cache first here
                ExporterCacheManager.TypeRelationsCache.CleanRefObjects(typeObj);
 
+               HashSet<IFCAnyHandle> typeRelCache = null;
+               if (!ExporterCacheManager.TypeRelationsCache.TryGetValue(typeObj, out typeRelCache))
+                  continue;
+
                IFCInstanceExporter.CreateRelDefinesByType(file, GUIDUtil.CreateGUID(), ownerHistory,
-                   null, null, ExporterCacheManager.TypeRelationsCache[typeObj], typeObj);
+                   null, null, typeRelCache, typeObj);
             }
 
             // create type property relations
@@ -2168,7 +2181,7 @@ namespace Revit.IFC.Export.Exporter
             writeOptions.FileFormat = exportOptionsCache.IFCFileFormat;
             if (writeOptions.FileFormat == IFCFileFormat.IfcXML || writeOptions.FileFormat == IFCFileFormat.IfcXMLZIP)
             {
-               writeOptions.XMLConfigFileName = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\ifcXMLconfiguration.xml");
+               writeOptions.XMLConfigFileName = Path.Combine(DirectoryUtil.IFCSchemaLocation, "ifcXMLconfiguration.xml");
             }
 
             // Reuse almost all of the information above to write out extra copies of the IFC file.
@@ -2317,39 +2330,48 @@ namespace Revit.IFC.Export.Exporter
 
          double trueNorthAngleInRadians = 0;
          IFCAnyHandle wcs = null;
-         if (transformBasis == SiteTransformBasis.Shared)
+
+         switch (transformBasis)
          {
-            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-            {
-               IFCAnyHandle wcsOrigin = ExporterCacheManager.Global3DOriginHandle;
-               wcs = IFCInstanceExporter.CreateAxis2Placement3D(file, wcsOrigin, null, null);
-            }
-            else
-            {
-               XYZ orig = new XYZ(0, 0, 0);
-               wcs = ExporterUtil.CreateAxis2Placement3D(file, orig, null, null);
-            }
-         }
-         else
-         {
-            ExporterUtil.GetSafeProjectPositionAngle(doc, out trueNorthAngleInRadians);
-            ProjectLocation projLocation = doc.ActiveProjectLocation;
-            Transform siteSharedCoordinatesTrf = Transform.Identity;
-            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-               siteSharedCoordinatesTrf = projLocation == null ? Transform.Identity : projLocation.GetTransform().Inverse;
-            XYZ unscaledOrigin = new XYZ(0, 0, 0);
-            if (transformBasis == SiteTransformBasis.Project)
-            {
-               BasePoint prjBasePoint = BasePoint.GetProjectBasePoint(doc);
-               if (prjBasePoint != null)
+            case SiteTransformBasis.Shared:
                {
-                  BoundingBoxXYZ bbox = prjBasePoint.get_BoundingBox(null);
-                  unscaledOrigin = bbox.Min;
+                  if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                  {
+                     IFCAnyHandle wcsOrigin = ExporterCacheManager.Global3DOriginHandle;
+                     wcs = IFCInstanceExporter.CreateAxis2Placement3D(file, wcsOrigin, null, null);
+                  }
+                  break;
                }
-            }
-            unscaledOrigin = siteSharedCoordinatesTrf.OfPoint(unscaledOrigin);
-            XYZ orig = UnitUtil.ScaleLength(unscaledOrigin);
-            wcs = ExporterUtil.CreateAxis2Placement3D(file, orig, siteSharedCoordinatesTrf.BasisZ, siteSharedCoordinatesTrf.BasisX);
+            case SiteTransformBasis.Project:
+            case SiteTransformBasis.Site:
+               {
+                  ExporterUtil.GetSafeProjectPositionAngle(doc, out trueNorthAngleInRadians);
+                  ProjectLocation projLocation = doc.ActiveProjectLocation;
+                  Transform siteSharedCoordinatesTrf =
+                     (projLocation == null || !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4) ?
+                        Transform.Identity : projLocation.GetTransform().Inverse;
+                  XYZ unscaledOrigin = XYZ.Zero;
+                  if (transformBasis == SiteTransformBasis.Project)
+                  {
+                     BasePoint prjBasePoint = BasePoint.GetProjectBasePoint(doc);
+                     if (prjBasePoint != null)
+                     {
+                        BoundingBoxXYZ bbox = prjBasePoint.get_BoundingBox(null);
+                        unscaledOrigin = bbox.Min;
+                     }
+                  }
+                  unscaledOrigin = siteSharedCoordinatesTrf.OfPoint(unscaledOrigin);
+                  XYZ orig = UnitUtil.ScaleLength(unscaledOrigin);
+                  wcs = ExporterUtil.CreateAxis2Placement3D(file, orig, siteSharedCoordinatesTrf.BasisZ, siteSharedCoordinatesTrf.BasisX);
+                  break;
+               }
+         }
+
+         // This covers Internal case, and Shared case for IFC4+.  
+         // NOTE: If new cases appear, they should be covered above.
+         if (wcs == null)
+         {
+            wcs = ExporterUtil.CreateAxis2Placement3D(file, XYZ.Zero, null, null);
          }
 
          // CoordinationView2.0 requires that we always export true north, even if it is the same as project north.
@@ -2628,7 +2650,7 @@ namespace Revit.IFC.Export.Exporter
                ParameterUtil.GetStringValueFromElement(projectInfo, "Project Phase", out projectPhase);
          }
 
-         string projectGUID = GUIDUtil.CreateProjectLevelGUID(doc, IFCProjectLevelGUIDType.Project);
+         string projectGUID = GUIDUtil.CreateProjectLevelGUID(doc, GUIDUtil.ProjectLevelGUIDType.Project);
          IFCAnyHandle projectHandle = IFCInstanceExporter.CreateProject(exporterIFC, projectInfo, projectGUID, ownerHistory,
             projectName, projectDescription, projectLongName, projectPhase, repContexts, units);
          ExporterCacheManager.ProjectHandle = projectHandle;
@@ -3838,7 +3860,7 @@ namespace Revit.IFC.Export.Exporter
          if (Exporter.NeedToCreateAddressForBuilding(document))
             address = Exporter.CreateIFCAddress(file, document, projectInfo);
 
-         string buildingGUID = GUIDUtil.CreateProjectLevelGUID(document, IFCProjectLevelGUIDType.Building);
+         string buildingGUID = GUIDUtil.CreateProjectLevelGUID(document, GUIDUtil.ProjectLevelGUIDType.Building);
          IFCAnyHandle buildingHandle = IFCInstanceExporter.CreateBuilding(exporterIFC,
              buildingGUID, ownerHistory, buildingName, buildingDescription, buildingObjectType, buildingPlacement, null, buildingLongName,
              Toolkit.IFCElementComposition.Element, null, null, address);

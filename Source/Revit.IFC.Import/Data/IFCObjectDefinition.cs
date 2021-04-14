@@ -74,6 +74,23 @@ namespace Revit.IFC.Import.Data
       public IFCObjectDefinition Decomposes { get; set; } = null;
 
       /// <summary>
+      /// Get the reference elevation of this object, located in the containing IFCBuilding.
+      /// </summary>
+      /// <returns>The value of the reference elevation.</returns>
+      /// <remarks>This is intended for use for IFCBuildingStoreys.</remarks>
+      protected double GetReferenceElevation()
+      {
+         if (Decomposes == null)
+            return 0.0;
+
+         IFCBuilding building = Decomposes as IFCBuilding;
+         if (building != null)
+            return building.ElevationOfRefHeight;
+
+         return Decomposes.GetReferenceElevation();
+      }
+
+      /// <summary>
       /// The list of materials directly associated with the element.  There may be more at the type level.
       /// </summary>
       /// <returns>A list, possibly empty, of materials directly associated with the element.</returns>
@@ -392,6 +409,18 @@ namespace Revit.IFC.Import.Data
                      if (objectDefinition is IFCProduct)
                         groupedSubElementFootprintCurves.AddRange((objectDefinition as IFCProduct).FootprintCurves);
                   }
+               }
+            }
+
+            if (groupedSubElementGeometries.Count > 0)
+            {
+               // Add main element geometry to include it in direct shape 
+               // and be able to assign parameters to the whole geometry and not just to subelements
+               IList<GeometryObject> elementGeometry = GetOrCloneGeometry(doc, this);
+               if (elementGeometry != null && elementGeometry.Count > 0)
+               {
+                  groupedSubElementGeometries.AddRange(elementGeometry);
+                  Importer.TheLog.LogWarning(Id, "Entity contains both geometry and sub-entities with geometry. This may result in duplicate geometry.", false);
                }
             }
          }
@@ -841,16 +870,19 @@ namespace Revit.IFC.Import.Data
             SetSystemParameter(doc, element, category);
 
             // Set the element GUID.
-            bool elementIsType = (element is ElementType);
-            BuiltInParameter ifcGUIDId = GetGUIDParameter(element, elementIsType);
-            Parameter guidParam = element.get_Parameter(ifcGUIDId);
-            if (guidParam != null)
+            if (!string.IsNullOrWhiteSpace(GlobalId))
             {
-               if (!guidParam.IsReadOnly)
-                  guidParam.Set(GlobalId);
+               bool elementIsType = (element is ElementType);
+               BuiltInParameter ifcGUIDId = GetGUIDParameter(element, elementIsType);
+               Parameter guidParam = element.get_Parameter(ifcGUIDId);
+               if (guidParam != null)
+               {
+                  if (!guidParam.IsReadOnly)
+                     guidParam.Set(GlobalId);
+               }
+               else
+                  ExporterIFCUtils.AddValueString(element, new ElementId(ifcGUIDId), GlobalId);
             }
-            else
-               ExporterIFCUtils.AddValueString(element, new ElementId(ifcGUIDId), GlobalId);
 
             // Set the "IfcExportAs" parameter.
             string ifcExportAs = IFCCategoryUtil.GetCustomCategoryName(this);

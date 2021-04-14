@@ -7,6 +7,7 @@ using System.IO;
 using System.Xml;
 using System.Xml.Schema;
 using Autodesk.Revit.DB;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Common.Utility
 {
@@ -155,7 +156,7 @@ namespace Revit.IFC.Common.Utility
             if (!schemaFileInfo.Exists)
 #endif
             {
-               schemaFilePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\" + schemaFile);
+               schemaFilePath = Path.Combine(DirectoryUtil.IFCSchemaLocation, schemaFile);
                schemaFileInfo = new FileInfo(schemaFilePath);
             }
 
@@ -372,6 +373,17 @@ namespace Revit.IFC.Common.Utility
          return res;
       }
 
+      /// <summary>
+      /// Check whether an entity is a subtype of another entity
+      /// </summary>
+      /// <param name="subTypeName">candidate of the subtype entity</param>
+      /// <param name="superTypeName">candidate of the supertype entity</param>
+      /// <returns>true: if the the subTypeName is the subtype of supertTypeName</returns>
+      static public bool IsSubTypeOf(IFCEntityType subType, IFCEntityType superType, bool strict = true)
+      {
+         return IsSubTypeOf(subType.ToString(), superType.ToString(), strict);
+      }
+      
       /// <summary>
       /// Check whether an entity is a subtype of another entity
       /// </summary>

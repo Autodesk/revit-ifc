@@ -221,24 +221,27 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="instanceObjectType">The object type.</param>
       /// <param name="productRepresentation">The representation handle.</param>
       /// <param name="instanceTag">The tag for the entity, usually based on the element id.</param>
-      /// <param name="ifcEnumType">The predefined type/shape type, if any, for the object.</param>
       /// <param name="overrideLocalPlacement">The local placement to use instead of the one in the placement setter, if appropriate.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle ExportGenericInstance(IFCExportInfoPair type,
          ExporterIFC exporterIFC, Element familyInstance,
          ProductWrapper wrapper, PlacementSetter setter, IFCExtrusionCreationData extraParams,
          string instanceGUID, IFCAnyHandle ownerHistory, IFCAnyHandle productRepresentation,
-         string ifcEnumType, IFCAnyHandle overrideLocalPlacement)
+         IFCAnyHandle overrideLocalPlacement)
       {
-         IFCFile file = exporterIFC.GetFile();
-         Document doc = familyInstance.Document;
+         // NOTE: if overrideLocalPlacement is passed in, it is assumed that the entity to be
+         // created is a child in a container.  This currently only happens when exporting curtain
+         // walls, which is definitely the case.  If overrideLocalPlacement is used in other cases,
+         // then this assumption will have to be reconsidered.
+         bool useOverridePlacement = !IFCAnyHandleUtil.IsNullOrHasNoValue(overrideLocalPlacement);
+         IFCAnyHandle localPlacementToUse =
+            useOverridePlacement ? overrideLocalPlacement : setter.LocalPlacement;
 
-         bool isRoomRelated = IsRoomRelated(type);
-         bool isChildInContainer = familyInstance.AssemblyInstanceId != ElementId.InvalidElementId;
+         bool isChildInContainer = 
+            (familyInstance.AssemblyInstanceId != ElementId.InvalidElementId) || useOverridePlacement;
 
-         IFCAnyHandle localPlacementToUse = setter.LocalPlacement;
          ElementId roomId = ElementId.InvalidElementId;
-         if (isRoomRelated)
+         if (IsRoomRelated(type))
          {
             roomId = setter.UpdateRoomRelativeCoordinates(familyInstance, out localPlacementToUse);
          }
@@ -280,16 +283,9 @@ namespace Revit.IFC.Export.Exporter
                }
             case IFCEntityType.IfcPlate:
                {
-                  IFCAnyHandle localPlacement = localPlacementToUse;
-                  if (overrideLocalPlacement != null)
-                  {
-                     isChildInContainer = true;
-                     localPlacement = overrideLocalPlacement;
-                  }
-
                   string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "NOTDEFINED" : type.ValidatedPredefinedType;
                   instanceHandle = IFCInstanceExporter.CreatePlate(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                      localPlacement, productRepresentation, preDefinedType);
+                      localPlacementToUse, productRepresentation, preDefinedType);
                   break;
                }
             case IFCEntityType.IfcMechanicalFastener:
@@ -311,18 +307,6 @@ namespace Revit.IFC.Export.Exporter
                }
             case IFCEntityType.IfcRailing:
                {
-                  //string strEnumType;
-                  //IFCExportInfoPair exportAs = ExporterUtil.GetExportType(exporterIFC, familyInstance, out strEnumType);
-                  //if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                  //{
-                  //   instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                  //       localPlacementToUse, productRepresentation, GetPreDefinedType<Toolkit.IFC4.IFCRailingType>(familyInstance, strEnumType).ToString());
-                  //}
-                  //else
-                  //{
-                  //   instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                  //       localPlacementToUse, productRepresentation, GetPreDefinedType<Toolkit.IFCRailingType>(familyInstance, strEnumType).ToString());
-                  //}
                   string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "NOTDEFINED" : type.ValidatedPredefinedType;
                      instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                       localPlacementToUse, productRepresentation, preDefinedType);
@@ -428,7 +412,7 @@ namespace Revit.IFC.Export.Exporter
                      }
                }
 
-               typeHandle = ExportGenericTypeBase(file, type, ifcEnumType, propertySets, representationMapList, instance, symbol);
+               typeHandle = ExportGenericTypeBase(file, type, ifcEnumType, propertySets, representationMapList, symbol);
                if (!string.IsNullOrEmpty(elemIdToUse))
                   IFCAnyHandleUtil.SetAttribute(typeHandle, "Tag", elemIdToUse);
             }
@@ -455,7 +439,6 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="representationMapList">List of representations.</param>
       /// <param name="elementTag">The element tag.</param>
       /// <param name="typeName">The type name.</param>
-      /// <param name="instance">The family instance.</param>
       /// <param name="symbol">The element type.</param>
       /// <returns>The handle.</returns>
       private static IFCAnyHandle ExportGenericTypeBase(IFCFile file,
@@ -463,7 +446,6 @@ namespace Revit.IFC.Export.Exporter
          string ifcEnumType,
          HashSet<IFCAnyHandle> propertySets,
          IList<IFCAnyHandle> representationMapList,
-         Element instance,
          ElementType symbol)
       {
          IFCExportInfoPair exportInfo = exportType;
@@ -474,16 +456,16 @@ namespace Revit.IFC.Export.Exporter
             // Handle special cases for upward compatibility
             switch (exportType.ExportType)
             {
-               case Common.Enums.IFCEntityType.IfcBurnerType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcGasTerminalType, ifcEnumType);
+               case IFCEntityType.IfcBurnerType:
+                  exportInfo.SetValueWithPair(IFCEntityType.IfcGasTerminalType, ifcEnumType);
                   break;
-               case Common.Enums.IFCEntityType.IfcDoorType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcDoorStyle, ifcEnumType);
+               case IFCEntityType.IfcDoorType:
+                  exportInfo.SetValueWithPair(IFCEntityType.IfcDoorStyle, ifcEnumType);
                   break;
-               case Common.Enums.IFCEntityType.IfcWindowType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcWindowStyle, ifcEnumType);
+               case IFCEntityType.IfcWindowType:
+                  exportInfo.SetValueWithPair(IFCEntityType.IfcWindowStyle, ifcEnumType);
                   break;
-               case Common.Enums.IFCEntityType.UnKnown:
+               case IFCEntityType.UnKnown:
                   {
                      if (exportType.ExportInstance == IFCEntityType.IfcFooting)
                      {
@@ -499,18 +481,18 @@ namespace Revit.IFC.Export.Exporter
             switch (exportType.ExportType)
             {
                // For compatibility with IFC2x3 and before. IfcGasTerminalType has been removed and IfcBurnerType replaces it in IFC4
-               case Common.Enums.IFCEntityType.IfcGasTerminalType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcBurnerType, ifcEnumType);
+               case IFCEntityType.IfcGasTerminalType:
+                  exportInfo.SetValueWithPair(IFCEntityType.IfcBurnerType, ifcEnumType);
                   break;
                // For compatibility with IFC2x3 and before. IfcElectricHeaterType has been removed and IfcSpaceHeaterType replaces it in IFC4
-               case Common.Enums.IFCEntityType.IfcElectricHeaterType:
-                  exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcSpaceHeaterType, ifcEnumType);
+               case IFCEntityType.IfcElectricHeaterType:
+                  exportInfo.SetValueWithPair(IFCEntityType.IfcSpaceHeaterType, ifcEnumType);
                   break;
-               case Common.Enums.IFCEntityType.UnKnown:
+               case IFCEntityType.UnKnown:
                   {
                      if (exportType.ExportInstance == IFCEntityType.IfcFooting)
                      {
-                        exportInfo.SetValueWithPair(Common.Enums.IFCEntityType.IfcFootingType, ifcEnumType);
+                        exportInfo.SetValueWithPair(IFCEntityType.IfcFootingType, ifcEnumType);
                      }
                      break;
                   }

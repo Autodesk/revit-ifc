@@ -67,7 +67,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle styleHandle = null;
 
                   instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, element, productWrapper, placementSetter, ecData, guid, ownerHistory,
-                     representation, exportType.ValidatedPredefinedType, null);
+                     representation, null);
 
                   if (exportType.ExportType != IFCEntityType.UnKnown)
                   {

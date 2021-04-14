@@ -241,11 +241,11 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Get validated IfcStairTypeEnum of Revit stairs based on the information obtained from its components
+      /// Get validated IfcStairTypeEnum of Revit stairs based on the information obtained from its components.
       /// </summary>
-      /// <param name="stairs">the Revit stair object</param>
-      /// <param name="ifcExportType">potential override value from IfcExportAs or IfcExportType</param>
-      /// <returns>string value of the validated IfcStairTypeEnum</returns>
+      /// <param name="stairs">The Revit stair object.</param>
+      /// <param name="ifcExportType">The potential shared parameter override value.</param>
+      /// <returns>The string value of the validated IfcStairTypeEnum.</returns>
       public static string GetValidatedStairType(Stairs stairs, string ifcExportType)
       {
          string stairType = "NOTDEFINED";

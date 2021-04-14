@@ -163,27 +163,20 @@ namespace Revit.IFC.Common.Extensions
          Schema schema = GetSchema();
          if (schema != null)
          {
+            Transaction transaction = new Transaction(document, "Update saved IFC classification");
+            transaction.Start();
+
             IList<DataStorage> oldSavedClassification = GetClassificationInStorage(document, schema);
             if (oldSavedClassification.Count > 0)
             {
-               Transaction deleteTransaction = new Transaction(document, "Delete old IFC Classification");
-               deleteTransaction.Start();
                List<ElementId> dataStorageToDelete = new List<ElementId>();
                foreach (DataStorage dataStorage in oldSavedClassification)
                {
                   dataStorageToDelete.Add(dataStorage.Id);
                }
                document.Delete(dataStorageToDelete);
-               deleteTransaction.Commit();
             }
-         }
-
-         // Update the address using the new information
-         if (schema != null)
-         {
-            Transaction transaction = new Transaction(document, "Update saved IFC classification");
-            transaction.Start();
-
+         
             DataStorage classificationStorage = DataStorage.Create(document);
 
             Entity entIFCClassification = new Entity(schema);

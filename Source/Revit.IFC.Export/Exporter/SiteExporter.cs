@@ -50,7 +50,7 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, topoSurface, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, topoSurface, out ifcEnumType);
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
          Common.Enums.IFCEntityType elementClassTypeEnum;
@@ -248,7 +248,7 @@ namespace Revit.IFC.Export.Exporter
                exportSite = true;
 
                // We will use the Project Information site name as the primary name, if it exists.
-               siteGUID = (element != null) ? GUIDUtil.CreateSiteGUID(doc, element) : GUIDUtil.CreateProjectLevelGUID(doc, IFCProjectLevelGUIDType.Site); ;
+               siteGUID = (element != null) ? GUIDUtil.CreateSiteGUID(doc, element) : GUIDUtil.CreateProjectLevelGUID(doc, GUIDUtil.ProjectLevelGUIDType.Site); ;
 
                if (element != null)
                {

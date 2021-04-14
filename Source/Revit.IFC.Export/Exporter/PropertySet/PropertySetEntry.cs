@@ -828,9 +828,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             case StorageType.Integer:
                {
                   // YesNo or actual integer?
-                  if (parameterDefinition.ParameterType == ParameterType.YesNo)
+                  if (parameterDefinition.GetDataType() == SpecTypeId.Boolean.YesNo)
                      propertyType = PropertyType.Boolean;
-                  else if (parameterDefinition.ParameterType == ParameterType.Invalid)
+                  else if (parameterDefinition.GetDataType().Empty())
                      propertyType = PropertyType.Identifier;
                   else
                      propertyType = PropertyType.Count;
@@ -839,101 +839,119 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             case StorageType.Double:
                {
                   bool assigned = true;
-                  switch (parameterDefinition.ParameterType)
+                  ForgeTypeId type = parameterDefinition.GetDataType();
+                  if (type == SpecTypeId.Angle)
                   {
-                     case ParameterType.Angle:
                      propertyType = PropertyType.PlaneAngle;
-                        break;
-                     case ParameterType.Area:
-                     case ParameterType.HVACCrossSection:
-                     case ParameterType.ReinforcementArea:
-                     case ParameterType.SectionArea:
-                     case ParameterType.SurfaceArea:
+                  }
+                  else if (type == SpecTypeId.Area ||
+                     type == SpecTypeId.CrossSection ||
+                     type == SpecTypeId.ReinforcementArea ||
+                     type == SpecTypeId.SectionArea)
+                  {
                      propertyType = PropertyType.Area;
-                        break;
-                     case ParameterType.BarDiameter:
-                     case ParameterType.CrackWidth:
-                     case ParameterType.DisplacementDeflection:
-                     case ParameterType.ElectricalCableTraySize:
-                     case ParameterType.ElectricalConduitSize:
-                     case ParameterType.Length:
-                     case ParameterType.HVACDuctInsulationThickness:
-                     case ParameterType.HVACDuctLiningThickness:
-                     case ParameterType.HVACDuctSize:
-                     case ParameterType.HVACRoughness:
-                     case ParameterType.PipeInsulationThickness:
-                     case ParameterType.PipeSize:
-                     case ParameterType.PipingRoughness:
-                     case ParameterType.ReinforcementCover:
-                     case ParameterType.ReinforcementLength:
-                     case ParameterType.ReinforcementSpacing:
-                     case ParameterType.SectionDimension:
-                     case ParameterType.SectionProperty:
-                     case ParameterType.WireSize:
+                  }
+                  else if (type == SpecTypeId.BarDiameter ||
+                     type == SpecTypeId.CrackWidth ||
+                     type == SpecTypeId.Displacement ||
+                     type == SpecTypeId.CableTraySize ||
+                     type == SpecTypeId.ConduitSize ||
+                     type == SpecTypeId.Length ||
+                     type == SpecTypeId.DuctInsulationThickness ||
+                     type == SpecTypeId.DuctLiningThickness ||
+                     type == SpecTypeId.DuctSize ||
+                     type == SpecTypeId.HvacRoughness ||
+                     type == SpecTypeId.PipeInsulationThickness ||
+                     type == SpecTypeId.PipeSize ||
+                     type == SpecTypeId.PipingRoughness ||
+                     type == SpecTypeId.ReinforcementCover ||
+                     type == SpecTypeId.ReinforcementLength ||
+                     type == SpecTypeId.ReinforcementSpacing ||
+                     type == SpecTypeId.SectionDimension ||
+                     type == SpecTypeId.SectionProperty ||
+                     type == SpecTypeId.WireDiameter ||
+                     type == SpecTypeId.SurfaceAreaPerUnitLength)
+                  {
                      propertyType = PropertyType.Length;
-                        break;
-                     case ParameterType.ColorTemperature:
+                  }
+                  else if (type == SpecTypeId.ColorTemperature)
+                  {
                      propertyType = PropertyType.ColorTemperature;
-                        break;
-                     case ParameterType.Currency:
+                  }
+                  else if (type == SpecTypeId.Currency)
+                  {
                      propertyType = PropertyType.Currency;
-                        break;
-                     case ParameterType.ElectricalEfficacy:
+                  }
+                  else if (type == SpecTypeId.Efficacy)
+                  {
                      propertyType = PropertyType.ElectricalEfficacy;
-                        break;
-                     case ParameterType.ElectricalLuminousIntensity:
+                  }
+                  else if (type == SpecTypeId.LuminousIntensity)
+                  {
                      propertyType = PropertyType.LuminousIntensity;
-                        break;
-                     case ParameterType.ElectricalIlluminance:
+                  }
+                  else if (type == SpecTypeId.Illuminance)
+                  {
                      propertyType = PropertyType.Illuminance;
-                        break;
-                     case ParameterType.ElectricalApparentPower:
-                     case ParameterType.ElectricalPower:
-                     case ParameterType.ElectricalWattage:
-                     case ParameterType.HVACPower:
+                  }
+                  else if (type == SpecTypeId.ApparentPower ||
+                     type == SpecTypeId.ElectricalPower ||
+                     type == SpecTypeId.Wattage ||
+                     type == SpecTypeId.HvacPower)
+                  {
                      propertyType = PropertyType.Power;
-                        break;
-                     case ParameterType.ElectricalCurrent:
+                  }
+                  else if (type == SpecTypeId.Current)
+                  {
                      propertyType = PropertyType.ElectricCurrent;
-                        break;
-                     case ParameterType.ElectricalPotential:
+                  }
+                  else if (type == SpecTypeId.ElectricalPotential)
+                  {
                      propertyType = PropertyType.ElectricVoltage;
-                        break;
-                     case ParameterType.ElectricalFrequency:
+                  }
+                  else if (type == SpecTypeId.ElectricalFrequency)
+                  {
                      propertyType = PropertyType.Frequency;
-                        break;
-                     case ParameterType.ElectricalLuminousFlux:
+                  }
+                  else if (type == SpecTypeId.LuminousFlux)
+                  {
                      propertyType = PropertyType.LuminousFlux;
-                        break;
-                     case ParameterType.ElectricalTemperature:
-                     case ParameterType.HVACTemperature:
-                     case ParameterType.PipingTemperature:
+                  }
+                  else if (type == SpecTypeId.ElectricalTemperature ||
+                     type == SpecTypeId.HvacTemperature ||
+                     type == SpecTypeId.PipingTemperature)
+                  {
                      propertyType = PropertyType.ThermodynamicTemperature;
-                        break;
-                     case ParameterType.Force:
+                  }
+                  else if (type == SpecTypeId.Force)
+                  {
                      propertyType = PropertyType.Force;
-                        break;
-                     case ParameterType.HVACAirflow:
-                     case ParameterType.PipingFlow:
+                  }
+                  else if (type == SpecTypeId.AirFlow ||
+                     type == SpecTypeId.Flow)
+                  {
                      propertyType = PropertyType.VolumetricFlowRate;
-                        break;
-                     case ParameterType.HVACPressure:
-                     case ParameterType.PipingPressure:
-                     case ParameterType.Stress:
+                  }
+                  else if (type == SpecTypeId.HvacPressure ||
+                     type == SpecTypeId.PipingPressure ||
+                     type == SpecTypeId.Stress)
+                  {
                      propertyType = PropertyType.Pressure;
-                        break;
-                     case ParameterType.MassDensity:
+                  }
+                  else if (type == SpecTypeId.MassDensity)
+                  {
                      propertyType = PropertyType.MassDensity;
-                        break;
-                     case ParameterType.PipingVolume:
-                     case ParameterType.ReinforcementVolume:
-                     case ParameterType.SectionModulus:
-                     case ParameterType.Volume:
+                  }
+                  else if (type == SpecTypeId.PipingVolume ||
+                     type == SpecTypeId.ReinforcementVolume ||
+                     type == SpecTypeId.SectionModulus ||
+                     type == SpecTypeId.Volume)
+                  {
                      propertyType = PropertyType.Volume;
-                        break;
-                     default:
+                  }
+                  else
+                  {
                      assigned = false;
-                        break;
                   }
 
                   if (!assigned)

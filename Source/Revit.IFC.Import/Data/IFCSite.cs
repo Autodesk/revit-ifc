@@ -46,13 +46,29 @@ namespace Revit.IFC.Import.Data
          /// <param name="ifcSite">The current IFCSite being processed.</param>
          public ActiveSiteSetter(IFCSite ifcSite)
          {
-            ActiveSite = ifcSite;
+            IFCLocation siteLocation = ifcSite?.ObjectLocation;
+            Transform siteTransform = siteLocation?.TotalTransform;
+
+            Tuple<IFCLocation, Transform> newSiteInfo = null;
+
+            if (siteTransform != null)
+            {
+               // We intend to get rid of ActiveSiteSetter entirely.  This is the first step -
+               // only use the site transform if it is far from the origin.
+               if (!XYZ.IsWithinLengthLimits(siteTransform.Origin))
+               {
+                  newSiteInfo = Tuple.Create(siteLocation, siteTransform);
+               }
+            }
+
+            ActiveSiteInfo.Push(newSiteInfo);
          }
 
          /// <summary>
          /// The active site within this scope.
          /// </summary>
-         public static IFCSite ActiveSite { get; private set; }
+         private static Stack<Tuple<IFCLocation, Transform>> ActiveSiteInfo { get; set; } =
+            new Stack<Tuple<IFCLocation, Transform>>();
 
          /// <summary>
          /// Check if an object placement is relative to the site's placement, and fix it if necessary.
@@ -63,12 +79,19 @@ namespace Revit.IFC.Import.Data
          public static void CheckObjectPlacementIsRelativeToSite(IFCProduct productEntity, int productStepId,
             IFCAnyHandle objectPlacement)
          {
+            if (ActiveSiteInfo.Count == 0)
+               return;
+
+            Tuple<IFCLocation, Transform> currentSiteInfo = ActiveSiteInfo.Peek();
+            if (currentSiteInfo == null || currentSiteInfo.Item1 == null)
+               return;
+
             IFCLocation productEntityLocation = productEntity.ObjectLocation;
-            if (ActiveSite != null && productEntityLocation != null && productEntityLocation.RelativeToSite == false)
+            if (productEntityLocation != null && productEntityLocation.RelativeToSite == false)
             {
                if (!(productEntity is IFCSite))
                {
-                  IFCLocation activeSiteLocation = ActiveSite.ObjectLocation;
+                  IFCLocation activeSiteLocation = currentSiteInfo.Item1;
                   if (activeSiteLocation != null)
                   {
                      if (!IFCAnyHandleUtil.IsSubTypeOf(objectPlacement, IFCEntityType.IfcGridPlacement))
@@ -76,7 +99,7 @@ namespace Revit.IFC.Import.Data
                         Importer.TheLog.LogWarning(productStepId, "The local placement (#" + objectPlacement.StepId + ") of this entity was not relative to the IfcSite's local placement, patching.", false);
                      }
 
-                     Transform siteTransform = activeSiteLocation.TotalTransform;
+                     Transform siteTransform = currentSiteInfo.Item2;
                      if (siteTransform != null)
                      {
                         Transform siteTransformInverse = siteTransform.Inverse;
@@ -87,16 +110,16 @@ namespace Revit.IFC.Import.Data
                            productEntityLocation.RelativeTransform = originalTotalTransform.Multiply(siteTransformInverse);
                      }
 
-                     productEntityLocation.RelativeTo = activeSiteLocation;
+                     productEntityLocation.RelativeTo = currentSiteInfo.Item1;
                   }
                }
-               productEntityLocation.RelativeToSite = true;
             }
+            productEntityLocation.RelativeToSite = true;
          }
 
          public void Dispose()
          {
-            ActiveSite = null;
+            ActiveSiteInfo.Pop();
          }
       }
 
@@ -285,33 +308,30 @@ namespace Revit.IFC.Import.Data
                   }
                }
 
-               if (ObjectLocation != null)
+               if (ObjectLocation != null && ObjectLocation.RelativeTransform != null)
                {
-                  XYZ projectLoc = (ObjectLocation.RelativeTransform != null) ? ObjectLocation.RelativeTransform.Origin : XYZ.Zero;
+                  XYZ projectLoc = ObjectLocation.RelativeTransform.Origin;
                   if (!MathUtil.IsAlmostZero(projectLoc.Z))
                      Importer.TheLog.LogError(Id, "The Z-value of the IfcSite object placement relative transform should be 0.  This will be ignored in favor of the RefElevation value.", false);
 
-                  // Get true north from IFCProject.
-                  double trueNorth = 0.0;
-                  UV trueNorthUV = IFCImportFile.TheFile.IFCProject.TrueNorthDirection;
-                  if (trueNorthUV != null)
+                  // TODO: Extend this to work properly if the site relative transform
+                  // isn't a simple translation.
+                  if (ObjectLocation.RelativeTransform.IsTranslation)
                   {
-                     double geometricAngle = Math.Atan2(trueNorthUV.V, trueNorthUV.U);
-                     // Convert from geometric angle to compass direction.
-                     // This involves two steps: (1) subtract PI/2 from the angle, staying in (-PI, PI], then (2) reversing the result.
-                     trueNorth = (geometricAngle > -Math.PI / 2.0) ? geometricAngle - Math.PI / 2.0 : geometricAngle + Math.PI * 1.5;
-                     trueNorth = -trueNorth;
-                  }
+                     XYZ offset = new XYZ(projectLoc.X, projectLoc.Y, RefElevation);
+                     if (!XYZ.IsWithinLengthLimits(offset))
+                     {
+                        ProjectPosition projectPosition = projectLocation.GetProjectPosition(XYZ.Zero);
+                        projectPosition.EastWest += projectLoc.X;
+                        projectPosition.NorthSouth += projectLoc.Y;
+                        projectPosition.Elevation += RefElevation;
 
-                  XYZ offset = new XYZ(projectLoc.X, projectLoc.Y, RefElevation);
-                  if (!XYZ.IsWithinLengthLimits(offset))
-                  {
-                     ProjectPosition projectPosition = new ProjectPosition(projectLoc.X, projectLoc.Y, RefElevation, trueNorth);
-                     projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
+                        projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
 
-                     // Now that we've set the project position, remove the site relative transform, if the file is created correctly (that is, all entities contained in the site
-                     // have the local placements relative to the site.
-                     IFCLocation.RemoveRelativeTransformForSite(this);
+                        // Now that we've set the project position, remove the site relative transform, if the file is created correctly (that is, all entities contained in the site
+                        // have the local placements relative to the site.
+                        IFCLocation.RemoveRelativeTransformForSite(this);
+                     }
                   }
                }
             }

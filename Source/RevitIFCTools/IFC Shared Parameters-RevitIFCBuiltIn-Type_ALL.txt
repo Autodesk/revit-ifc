@@ -71,7 +71,7 @@ PARAM	1778bc42-afde-4b76-9222-af1a38b05b7c	MullionThickness[Type]	LENGTH		2	1		1
 PARAM	93ade552-8d24-473c-a7f0-48b2ddaf1588	FirstMullionOffset[Type]	LENGTH		2	1		1
 PARAM	1ea5ba6d-0447-43a5-8f5c-8a905c42ffb0	SecondMullionOffset[Type]	LENGTH		2	1		1
 PARAM	4a37833e-59c1-4532-8fe0-2a0f5214c2ad	FrameDepth[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
-PARAM	b552f0e3-1bc1-496b-a001-08b1f4a9a251	FrameThickness[Type]	LENGTH		2	1	IfcLengthMeasure	1
+PARAM	b552f0e3-1bc1-496b-a001-08b1f4a9a251	FrameThickness[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	158072f2-668a-4f50-ad27-f74384061856	IfcExportAs[Type]	TEXT		2	1	Parameter to instruct export to assign a specific entity	1
 PARAM	0511d859-633b-4326-a8ea-5ab75dc311c0	IfcExportType[Type]	TEXT		2	1	Parameter to assign PredefinedType	1
 PARAM	b5696f65-8fbb-45af-9014-746ebb0150ef	IfcSingleMaterialOverride[Type]	TEXT		2	1	Parameter to force a single material assignment when there is only a single material	1
@@ -91,15 +91,15 @@ PARAM	a7ad780a-3347-4e67-9c88-c831c41eb915	ManualOverride[Type]	YESNO		2	1	IfcBo
 PARAM	34e41524-a5dd-428b-887a-ddecabf27648	Reference[Type]	TEXT		2	1	IfcIdentifier	1
 PARAM	5d3994bf-069e-4404-9d2f-7eb257e075e8	Application[Type]	TEXT		2	1	PEnum_UnitaryControlElementApplication	1
 PARAM	2b07d35f-4d49-4ea4-a663-951fd8d0ae91	ActuatorInputPower[Type]	NUMBER		2	1	IfcPowerMeasure	1
-PARAM	22388cf9-c34f-4d89-b497-f44edd8a96a0	ElectricActuatorType[Type]	TEXT		2	1	Pset_ElectricActuatorTypeEnum	1
+PARAM	22388cf9-c34f-4d89-b497-f44edd8a96a0	ElectricActuatorType[Type]	TEXT		2	1	PEnum_ElectricActuatorType	1
 PARAM	a94162ba-4020-4971-935c-94cb37d30e87	InputPressure[Type]	NUMBER		2	1	IfcPressureMeasure	1
 PARAM	47953f13-b5c9-4d10-bbe8-33a25eaaaca1	InputFlowrate[Type]	NUMBER		2	1	IfcVolumetricFlowRateMeasure	1
 PARAM	fc735268-cf1e-44f5-a049-bd380bdf8ad0	Force[Type]	NUMBER		2	1	IfcForceMeasure	1
 PARAM	2e7ccfbb-98fb-4195-b82b-05d1c69a95d5	Stroke[Type]	LENGTH		2	1	IfcLengthMeasure	1
 PARAM	984d6a05-eddd-455a-aa32-46bf4fe2f425	Torque[Type]	NUMBER		2	1	IfcTorqueMeasure	1
 PARAM	806edc86-01d3-4b73-ae7e-319ec27ec7a2	RangeAngle[Type]	NUMBER		2	1	IfcPlaneAngleMeasure	1
-PARAM	6314c414-eacd-467c-bd37-e91e38d987b8	Name[Type]	TEXT		2	1	IfcString	1
-PARAM	d781966c-090c-4749-a601-358407b82648	Description[Type]	TEXT		2	1	IfcString	1
+PARAM	6314c414-eacd-467c-bd37-e91e38d987b8	Name[Type]	TEXT		2	1	IfcLabel	1
+PARAM	d781966c-090c-4749-a601-358407b82648	Description[Type]	TEXT		2	1	IfcText	1
 PARAM	a2a85697-e185-4c55-b127-028291ea06b0	AirSideSystemType[Type]	TEXT		2	1	PEnum_AirSideSystemType	1
 PARAM	847e6b6b-e3d9-4fe8-b7a8-7a120dd3ec73	AirSideSystemDistributionType[Type]	TEXT		2	1	PEnum_AirSideSystemDistributionType	1
 PARAM	c32f6d46-f637-4fbd-8296-fb4638b0b432	TotalAirflow[Type]	NUMBER		2	1	IfcVolumetricFlowRateMeasure	1
@@ -306,7 +306,7 @@ PARAM	94eefed5-ead7-4452-8d2b-8c0ece21d37e	ConstructionMethod[Type]	TEXT		2	1	If
 PARAM	9a4313fc-39c3-4f74-a2d7-ccb22bfbd45a	FireProtectionClass[Type]	TEXT		2	1	IfcLabel	1
 PARAM	97aee40d-1cb0-4013-bbc8-586a52229c37	NetPlannedArea[Type]	AREA		2	1	IfcAreaMeasure	1
 PARAM	2f7e36f8-4dc8-4df4-8766-e84511b95614	YearOfLastRefurbishment[Type]	TEXT		2	1	IfcLabel	1
-PARAM	71745cb1-df9e-4606-89ed-a31159332b94	Width[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
+PARAM	71745cb1-df9e-4606-89ed-a31159332b94	Width[Type]	LENGTH		2	1	IfcLengthMeasure	1
 PARAM	79071735-8660-40af-ab43-bb5eb36ebf8d	Height[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	dbb6cd0b-b299-494f-9c0b-e077e249d5cf	Diameter[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	420b231a-7852-4336-a312-f306387ecede	Depth[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
@@ -380,7 +380,7 @@ PARAM	3ff12fdf-b657-4e10-8cb8-b2f64d04867a	PhaseReference[Type]	TEXT		2	1	IfcIde
 PARAM	8b3503a8-bec7-47f3-83e3-ceea3fdf5415	ConductorMaterial[Type]	MULTILINETEXT		2	1	IfcMaterial	1
 PARAM	5cb79b6e-0d00-4ace-ae00-cf37b2154fce	ConductorSheathMaterial[Type]	MULTILINETEXT		2	1	IfcMaterial	1
 PARAM	7fb591f8-f79d-4458-b692-e711e73f5ef0	IsFireResistant[Type]	YESNO		2	1	IfcBoolean	1
-PARAM	e39614f5-be8f-4bf5-bef4-c86a9064dcb0	Function[Type]	TEXT		2	1	IfcString	1
+PARAM	e39614f5-be8f-4bf5-bef4-c86a9064dcb0	Function[Type]	TEXT		2	1	PEnum_FunctionEnum	1
 PARAM	318aa4a4-291b-4231-bd8d-6fec3450321e	CoreIdentifier[Type]	TEXT		2	1	IfcIdentifier	1
 PARAM	9b88fca4-1b47-49b8-bb0f-c54e4223b4cd	SheathColors[Type]	TEXT		2	1	PEnum_CoreColorsEnum	1
 PARAM	b67c8c4c-6f01-41e4-a734-7dec088a2fd2	Capacity[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
@@ -424,7 +424,7 @@ PARAM	96bb7310-01f6-42d0-b196-82f8efd9d55c	MechanicalEfficiency[Type]	MULTILINET
 PARAM	ad1bfcaf-4a83-4844-bc6d-aafd2a535aec	IsentropicEfficiency[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	81948bd8-939d-4f6d-9e13-fa962b9e9949	CompressorTotalEfficiency[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	a70c623b-7035-46c7-ae25-f01ae259dd17	ShaftPower[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
-PARAM	9d899c1d-e1fc-40a6-91ff-d05b31fc869a	InputPower[Type]	NUMBER		2	1	IfcPowerMeasure	1
+PARAM	9d899c1d-e1fc-40a6-91ff-d05b31fc869a	InputPower[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	b316fb4a-b86a-4d8e-bb90-a0675ad5a243	LubricantPumpHeatGain[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	7987978a-5b36-41e6-87ec-e3eba21272b9	FrictionHeatGain[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	04e44a0e-04b6-4a87-818b-3218d775514a	CompressorTotalHeatGain[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
@@ -503,7 +503,7 @@ PARAM	42b5bc6b-24eb-44ea-81ee-620626c58e9d	RemainingCost[Type]	MULTILINETEXT		2	
 PARAM	2d03f3b0-c5cb-4d56-b0d2-d8adc7461794	ScheduleCompletion[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	e62e50f9-c197-4919-a8df-23fa0926bcab	ActualCompletion[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	b2ed1e65-13e2-46c0-90ba-3a52443a14f4	Value[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
-PARAM	d9553253-52a6-451e-8a15-d272a1d3d039	ControlType[Type]	TEXT		2	1	IfcString	1
+PARAM	d9553253-52a6-451e-8a15-d272a1d3d039	ControlType[Type]	TEXT		2	1	IfcLabel	1
 PARAM	23858310-13cc-4486-b480-f648c210f6d0	SignalOffset[Type]	NUMBER		2	1	IfcReal	1
 PARAM	fe586320-9077-4c0d-bddd-d67c246fdd39	SignalFactor[Type]	NUMBER		2	1	IfcReal	1
 PARAM	3fcb3420-950f-443d-9341-396651524612	SignalTime[Type]	NUMBER		2	1	IfcTimeMeasure	1
@@ -593,9 +593,9 @@ PARAM	f9f97a90-ce72-43db-8e3a-073afe319f74	Leakage[Type]	MULTILINETEXT		2	1	IfcT
 PARAM	91cb4a46-ce01-4ad1-8219-d0a64f3d2de7	BladePositionAngle[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	7e04c467-900d-4f83-8d91-89d5856e9fd5	PressureLossCoefficient[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	acf17543-1095-44ea-b9a3-9f00fe7eff0a	Operation[Type]	TEXT		2	1	PEnum_DamperOperation	1
-PARAM	10a9858d-a5ca-43d7-8bf1-a8ddbb478a95	Orientation[Type]	NUMBER		2	1	IfcPlaneAngleMeasure	1
+PARAM	10a9858d-a5ca-43d7-8bf1-a8ddbb478a95	Orientation[Type]	TEXT		2	1	PEnum_DamperOrientation	1
 PARAM	f438b137-306e-42a0-bdaa-bc2357236b28	BladeMaterial[Type]	MULTILINETEXT		2	1	IfcMaterial	1
-PARAM	4447f1f4-6d3e-4317-af53-f4ec897f9969	BladeThickness[Type]	LENGTH		2	1	IfcLengthMeasure	1
+PARAM	4447f1f4-6d3e-4317-af53-f4ec897f9969	BladeThickness[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	cb3b9bf8-802f-4c8a-b204-e84c62d0057a	SealMaterial[Type]	MULTILINETEXT		2	1	IfcMaterial	1
 PARAM	b08bb366-fc27-493d-beb5-2d059bb2863c	BladeAction[Type]	TEXT		2	1	PEnum_DamperBladeAction	1
 PARAM	b2fbc1ca-31eb-4d40-a588-a4e80cbc2c93	BladeShape[Type]	TEXT		2	1	PEnum_DamperBladeShape	1
@@ -611,13 +611,13 @@ PARAM	acd87d1e-73ae-4755-a74e-e1147bb753f5	LeakageFullyClosed[Type]	NUMBER		2	1	
 PARAM	e0151379-5b6d-4f98-9e18-c970f91d9455	LossCoefficentCurve[Type]	MULTILINETEXT		2	1	PropertyTableValue	1
 PARAM	d2ffe1b1-fb59-4a24-b0be-1114451cf7b0	LeakageCurve[Type]	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	601529dd-9701-4d70-8d13-e18af265eddb	RegeneratedSoundCurve[Type]	MULTILINETEXT		2	1	PropertyTableValue	1
-PARAM	fa61f456-c81d-4ce0-881b-55e674fcbc7d	FrameType[Type]	TEXT		2	1	IfcString	1
+PARAM	fa61f456-c81d-4ce0-881b-55e674fcbc7d	FrameType[Type]	TEXT		2	1	IfcLabel	1
 PARAM	74599a95-f793-48da-bb38-9c0bc17336ec	FrameMaterial[Type]	MULTILINETEXT		2	1	IfcMaterial	1
 PARAM	951147f2-e2da-4513-b3cf-7642ca2f0633	CloseOffRating[Type]	NUMBER		2	1	IfcPressureMeasure	1
 PARAM	9ac95407-7c06-4c0a-ada6-1a858cae7b7c	ControlDamperOperation[Type]	TEXT		2	1	PEnum_ControlDamperOperation	1
 PARAM	78e6235a-b584-4605-b22a-23407bdb3b29	ActuationType[Type]	TEXT		2	1	PEnum_FireDamperActuationType	1
-PARAM	f6f5ac26-b84d-4551-8bb4-11825184b2bd	ClosureRatingEnum[Type]	TEXT		2	1	Pset_FireDamperClosureRatingEnum	1
-PARAM	484cde38-f4b5-4d0a-b55d-cb23dcd1635e	FireResistanceRating[Type]	NUMBER		2	1	IfcReal	1
+PARAM	f6f5ac26-b84d-4551-8bb4-11825184b2bd	ClosureRatingEnum[Type]	TEXT		2	1	PEnum_FireDamperClosureRating	1
+PARAM	484cde38-f4b5-4d0a-b55d-cb23dcd1635e	FireResistanceRating[Type]	TEXT		2	1	IfcLabel	1
 PARAM	e97e578f-6efc-487e-9c17-770a002ff07b	FusibleLinkTemperature[Type]	NUMBER		2	1	IfcThermodynamicTemperatureMeasure	1
 PARAM	109dc287-1870-4ed4-9bd7-68a7412e6552	IsDesignPoint[Type]	YESNO		2	1	IfcBoolean	1
 PARAM	310ab51e-caec-4d17-8063-d82f3b4becc5	AnchorBoltLength[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
@@ -719,7 +719,7 @@ PARAM	9bd86909-8d48-4b51-ab31-c0b4ecc4da4b	Diversity[Type]	NUMBER		2	1	IfcPositi
 PARAM	22b011d8-25e7-4642-b7b4-ffeae7950397	NumberOfLiveConductors[Type]	INTEGER		2	1	IfcInteger	1
 PARAM	1801425c-1947-431b-b720-a4290bce4858	MaximumAllowedVoltageDrop[Type]	NUMBER		2	1	IfcElectricVoltageMeasure	1
 PARAM	b3e51b1e-36ec-4fcc-81c5-6eb99c2a4c68	NetImpedance[Type]	NUMBER		2	1	IfcElectricResistanceMeasure	1
-PARAM	7f18468c-9859-45cb-be21-5849342f4b8c	DesignName[Type]	TEXT		2	1	IfcString	1
+PARAM	7f18468c-9859-45cb-be21-5849342f4b8c	DesignName[Type]	TEXT		2	1	IfcText	1
 PARAM	d99014da-4406-41e4-9bb6-ffb507a77cfa	DuctSizingMethod[Type]	TEXT		2	1	PEnum_DuctSizingMethod	1
 PARAM	713f9374-def8-45f5-80dd-01ef4b2af04c	PressureClass[Type]	NUMBER		2	1	IfcPressureMeasure	1
 PARAM	32cbf1eb-2845-4e60-b216-2aa5f94c98be	LeakageClass[Type]	NUMBER		2	1	IfcPressureMeasure	1
@@ -747,15 +747,15 @@ PARAM	5071d1d4-6646-41e0-8359-08f84ec852f1	GlassLayers[Type]	INTEGER		2	1	IfcCou
 PARAM	1a8d8298-7210-47fb-9102-aa4ec9f39384	GlassThickness1[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	b0fb596c-b252-49a7-8173-73ec792a8407	GlassThickness2[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	c018bcad-a45b-47a1-a4ed-a115e236df84	GlassThickness3[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
-PARAM	4b315174-b860-4512-9056-83b4aea8f392	FillGas[Type]	TEXT		2	1	IfcString	1
+PARAM	4b315174-b860-4512-9056-83b4aea8f392	FillGas[Type]	TEXT		2	1	IfcLabel	1
 PARAM	7bd676ed-17f5-4ed8-a9cc-6d245c555850	GlassColor[Type]	TEXT		2	1	IfcLabel	1
 PARAM	e83a659c-fa67-4559-938e-22439e8b3ef7	IsTempered[Type]	YESNO		2	1	IfcBoolean	1
 PARAM	f101cbe6-0be8-41ea-8bf2-c88f26b5313e	IsLaminated[Type]	YESNO		2	1	IfcBoolean	1
 PARAM	b644e159-a3a5-4d6e-93a0-292459f95174	IsCoated[Type]	YESNO		2	1	IfcBoolean	1
 PARAM	abbcb477-c15e-4288-82b0-4036f20b6f65	IsWired[Type]	YESNO		2	1	IfcBoolean	1
-PARAM	ce7ba7ad-3f13-47f6-849d-3c2c25e1bbc2	Translucency[Type]	NUMBER		2	1	IfcPositiveRatioMeasure	1
-PARAM	fa9b5276-ba3e-4560-bd91-8bf7bed4129a	Reflectivity[Type]	NUMBER		2	1	IfcPositiveRatioMeasure	1
-PARAM	baaeaba5-273f-4def-9c30-ffbd028e898a	BeamRadiationTransmittance[Type]	NUMBER		2	1	IfcPositiveRatioMeasure	1
+PARAM	ce7ba7ad-3f13-47f6-849d-3c2c25e1bbc2	Translucency[Type]	NUMBER		2	1	IfcPositiveRatioMeasure 	1
+PARAM	fa9b5276-ba3e-4560-bd91-8bf7bed4129a	Reflectivity[Type]	NUMBER		2	1	IfcPositiveRatioMeasure 	1
+PARAM	baaeaba5-273f-4def-9c30-ffbd028e898a	BeamRadiationTransmittance[Type]	NUMBER		2	1	IfcPositiveRatioMeasure 	1
 PARAM	c441d9a2-56c4-4909-9faf-5832639da175	SolarHeatGainTransmittance[Type]	NUMBER		2	1	IfcNormalisedRatioMeasure	1
 PARAM	d603518b-9fd6-473f-b046-413456f3abde	ThermalTransmittanceSummer[Type]	NUMBER		2	1	IfcThermalTransmittanceMeasure	1
 PARAM	6f95aca8-56ed-4107-98a8-abc12f33ba54	ThermalTransmittanceWinter[Type]	NUMBER		2	1	IfcThermalTransmittanceMeasure	1
@@ -765,9 +765,9 @@ PARAM	63641b31-8d9e-4447-b2ee-b2539a72dc1b	SolarAbsorption[Type]	NUMBER		2	1	Ifc
 PARAM	222be6eb-cbcd-46ae-bc43-58981e426a90	SolarReflectance[Type]	NUMBER		2	1	IfcPositiveRatioMeasure	1
 PARAM	670d0733-b07f-4085-a25c-407c15e8f7cc	SolarTransmittance[Type]	NUMBER		2	1	IfcPositiveRatioMeasure	1
 PARAM	1cdde28f-a5b2-40ce-bf73-57a3d507da34	ShadingCoefficient[Type]	NUMBER		2	1	IfcNormalisedRatioMeasure	1
-PARAM	d144bc50-28c9-49d0-b6bf-e6860ecc0d4a	ExternalShadingCoefficient[Type]	NUMBER		2	1	IfcPositiveRatioMeasure	1
-PARAM	74b8216e-36b4-4935-93c8-0f29e55fa512	InternalShadingCoefficient[Type]	NUMBER		2	1	IfcPositiveRatioMeasure	1
-PARAM	32191bde-dea3-455e-a7b0-c03d950d7083	InsetShadingCoefficient[Type]	NUMBER		2	1	IfcPositiveRatioMeasure	1
+PARAM	d144bc50-28c9-49d0-b6bf-e6860ecc0d4a	ExternalShadingCoefficient[Type]	NUMBER		2	1	IfcPositiveRatioMeasure 	1
+PARAM	74b8216e-36b4-4935-93c8-0f29e55fa512	InternalShadingCoefficient[Type]	NUMBER		2	1	IfcPositiveRatioMeasure 	1
+PARAM	32191bde-dea3-455e-a7b0-c03d950d7083	InsetShadingCoefficient[Type]	NUMBER		2	1	IfcPositiveRatioMeasure 	1
 PARAM	7b0b2309-7460-4c67-a503-aada8e4141b8	AreaDrained[Type]	AREA		2	1	IfcAreaMeasure	1
 PARAM	df0c8c29-9e18-43d7-8c7b-63ce0e8bc0b5	InternalWidth[Type]	LENGTH		2	1	IfcLengthMeasure	1
 PARAM	36522deb-be5c-4849-bee2-c59c98e07b58	LayerName[Type]	TEXT		2	1	IfcIdentifier	1
@@ -1229,7 +1229,7 @@ PARAM	acbf20c2-d9f4-4050-a9a7-5362ddb016fe	StartDate[Type]	TEXT		2	1	IfcDateTime
 PARAM	485bd478-71c1-4fb8-811f-7c31017cec85	PermitDuration[Type]	MULTILINETEXT		2	1	IfcDateAndTime	1
 PARAM	aa170dc0-8407-4bae-ab6e-172518741d05	StartTime[Type]	MULTILINETEXT		2	1	IfcLocalTime	1
 PARAM	37294ac6-5d10-4b52-81c4-bfce9908e5e4	EndTime[Type]	MULTILINETEXT		2	1	IfcLocalTime	1
-PARAM	de9382bc-3052-4b8b-bbe1-aa602c22c17a	SpecialRequirements[Type]	TEXT		2	1	IfcString	1
+PARAM	de9382bc-3052-4b8b-bbe1-aa602c22c17a	SpecialRequirements[Type]	TEXT		2	1	IfcText	1
 PARAM	252366bd-a73f-4c29-8b21-4a136cccff0a	EndDate[Type]	TEXT		2	1	IfcDateTime	1
 PARAM	0702904c-2190-449d-b99a-80ce8d377ac5	FlangeTable[Type]	TEXT		2	1	IfcLabel	1
 PARAM	70e32f3d-170d-46e5-8b2d-1cbc08c55b40	FlangeStandard[Type]	TEXT		2	1	IfcLabel	1
@@ -1766,7 +1766,7 @@ PARAM	4fefd093-bd3a-49d1-8286-175a5e59fd58	SecurityRequirement[Type]	TEXT		2	1	I
 PARAM	dd9426ef-d15d-469d-b5c9-b160f50bd4e7	PrivacyRequirement[Type]	TEXT		2	1	IfcLabel	1
 PARAM	bb28be7b-8d81-4ec1-867c-fb8a69eb5a3a	LightingRequirement[Type]	TEXT		2	1	IfcLabel	1
 PARAM	5a449a06-48d4-4770-880b-4cecbe96b74b	FFETypeRequirement[Type]	TEXT		2	1	IfcLabel	1
-PARAM	3ddafa3e-91f3-4bfb-bd04-b0b41876c8f7	EmployeeType[Type]	TEXT		2	1	IfcString	1
+PARAM	3ddafa3e-91f3-4bfb-bd04-b0b41876c8f7	EmployeeType[Type]	TEXT		2	1	IfcLabel	1
 PARAM	df44f333-b497-4846-b12f-a7f6954e9368	CoolingDesignAirflow[Type]	NUMBER		2	1	IfcVolumetricFlowRateMeasure	1
 PARAM	f64d38b8-25db-4d10-a671-875ecba556ce	HeatingDesignAirflow[Type]	NUMBER		2	1	IfcVolumetricFlowRateMeasure	1
 PARAM	5c80600c-ecda-4a24-a039-a13b818bc1d9	TotalSensibleHeatGain[Type]	NUMBER		2	1	IfcPowerMeasure	1
@@ -1854,10 +1854,10 @@ PARAM	57a14b0c-940b-4236-a9fa-1b185523a57a	GroupCode[Type]	TEXT		2	1	IfcIdentifi
 PARAM	35660f73-b9b4-4a0c-9ae4-5d437011ed9c	Finishing[Type]	TEXT		2	1	IfcLabel	1
 PARAM	8c64e3cb-ba71-4a95-a753-38a5978cb177	HasOpening[Type]	YESNO		2	1	IfcBoolean	1
 PARAM	e9a85476-be7c-4043-9973-02c797fb7742	FurniturePanelType[Type]	TEXT		2	1	PEnum_FurniturePanelType	1
-PARAM	1df41d34-59d0-4242-abfb-b2220a7e6b9d	UsePurpose[Type]	TEXT		2	1	IfcString	1
-PARAM	a8882abf-81a9-4553-96ca-d355a32787cc	SupportType[Type]	TEXT		2	1	IfcString	1
+PARAM	1df41d34-59d0-4242-abfb-b2220a7e6b9d	UsePurpose[Type]	TEXT		2	1	IfcLabel	1
+PARAM	a8882abf-81a9-4553-96ca-d355a32787cc	SupportType[Type]	TEXT		2	1	PEnum_FurniturePanelType	1
 PARAM	f5ec020d-b4bb-4c23-a51c-74dc65237e43	HangingHeight[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
-PARAM	b672818e-60e4-4c0c-8666-0fec3ca79a3e	ShapeDescription[Type]	TEXT		2	1	IfcString	1
+PARAM	b672818e-60e4-4c0c-8666-0fec3ca79a3e	ShapeDescription[Type]	TEXT		2	1	IfcLabel	1
 PARAM	9bb0a61e-ba51-4749-a5aa-0154e0e97720	AccessType[Type]	TEXT		2	1	PEnum_TankAccessType	1
 PARAM	1ff94649-f535-4d84-b440-85de0a8d78c2	NominalLengthOrDiameter[Type]	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	f39314fe-b6e6-497f-971d-d4f5166d6dfd	EffectiveCapacity[Type]	VOLUME		2	1	IfcVolumeMeasure	1

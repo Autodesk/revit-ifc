@@ -196,7 +196,7 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
 
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, floorElement, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, floorElement, out ifcEnumType);
          IFCAnyHandle type = null;
 
          if (!ElementFilteringUtil.IsElementVisible(floorElement))
@@ -287,7 +287,6 @@ namespace Revit.IFC.Export.Exporter
 
                            if (solids.Count == 1 && meshes.Count == 0)
                            {
-                              bool completelyClipped;
                               // floorExtrusionDirection is set to (0, 0, -1) because extrusionAnalyzerFloorPlane is computed from the top face of the floor
                               XYZ floorExtrusionDirection = new XYZ(0, 0, -1);
                               XYZ modelOrigin = XYZ.Zero;
@@ -315,11 +314,13 @@ namespace Revit.IFC.Export.Exporter
                                  if (exportByComponents)
                                     additionalInfo &= ~GenerateAdditionalInfo.GenerateBody;
 
+                                 ExtrusionExporter.ExtraClippingData extraClippingData = null;
                                  HandleAndData floorAndProperties =
-                                     ExtrusionExporter.CreateExtrusionWithClippingAndProperties(exporterIFC, floorElement,
-                                     catId, solids[0], extrusionAnalyzerFloorBasePlane, floorOrigin, floorExtrusionDirection, null, out completelyClipped,
+                                     ExtrusionExporter.CreateExtrusionWithClippingAndProperties(exporterIFC, floorElement, false,
+                                     catId, solids[0], extrusionAnalyzerFloorBasePlane, floorOrigin, floorExtrusionDirection, null, 
+                                     out extraClippingData,
                                      addInfo: additionalInfo);
-                                 if (completelyClipped)
+                                 if (extraClippingData.CompletelyClipped)
                                     return;
 
                                  IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();

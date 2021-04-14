@@ -34,37 +34,35 @@ namespace Revit.IFC.Export.Utility
    public class ElementToHandleCache
    {
       /// <summary>
-      /// The dictionary mapping from an ElementId to an  handle. 
+      /// The dictionary mapping from an ElementId to a handle and its export information. 
       /// </summary>
-      private Dictionary<ElementId, IFCAnyHandle> m_ElementIdToHandleDictionary = new Dictionary<ElementId, IFCAnyHandle>();
-      private Dictionary<ElementId, IFCExportInfoPair> m_ELementIdAndExportType = new Dictionary<ElementId, IFCExportInfoPair>();
+      private Dictionary<ElementId, Tuple<IFCAnyHandle, IFCExportInfoPair>> ElementIdToHandleAndInfo
+      { get; set; } = new Dictionary<ElementId, Tuple<IFCAnyHandle, IFCExportInfoPair>>();
 
       /// <summary>
       /// Finds the handle from the dictionary.
       /// </summary>
-      /// <param name="elementId">
-      /// The element elementId.
-      /// </param>
-      /// <returns>
-      /// The handle.
-      /// </returns>
+      /// <param name="elementId">The element elementId.</param>
+      /// <returns>The handle.</returns>
       public IFCAnyHandle Find(ElementId elementId)
       {
          IFCAnyHandle handle = null;
-         if (m_ElementIdToHandleDictionary.TryGetValue(elementId, out handle))
+         Tuple<IFCAnyHandle, IFCExportInfoPair> handleAndInfo = null;
+         if (ElementIdToHandleAndInfo.TryGetValue(elementId, out handleAndInfo))
          {
             // We need to make sure the handle isn't stale.  If it is, remove it. 
             try
             {
-            if (!IFCAnyHandleUtil.IsValidHandle(handle))
+               handle = handleAndInfo.Item1;
+               if (!IFCAnyHandleUtil.IsValidHandle(handle))
                {
-                  m_ElementIdToHandleDictionary.Remove(elementId);
+                  ElementIdToHandleAndInfo.Remove(elementId);
                   handle = null;
                }
             }
             catch
             {
-               m_ElementIdToHandleDictionary.Remove(elementId);
+               ElementIdToHandleAndInfo.Remove(elementId);
                handle = null;
             }
          }
@@ -74,15 +72,23 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Find IFCExportInforPair of the Element with the ElementId. Used for applicable Pset
       /// </summary>
+      /// <param name="matchingHandle">The handle associated with the elementId.</param>
       /// <param name="elementId">The ElementId</param>
-      /// <returns>return PredefinedType string or null</returns>
-      public IFCExportInfoPair FindPredefinedType(ElementId elementId)
+      /// <returns>PredefinedType string or null if not found, or the handle doesn't match.</returns>
+      public IFCExportInfoPair FindPredefinedType(IFCAnyHandle matchingHandle, ElementId elementId)
       {
-         IFCExportInfoPair exportType;
-         if (m_ELementIdAndExportType.TryGetValue(elementId, out exportType))
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(matchingHandle))
+            return null;
+
+         Tuple<IFCAnyHandle, IFCExportInfoPair> handleAndInfo = null;
+         if (ElementIdToHandleAndInfo.TryGetValue(elementId, out handleAndInfo))
          {
-            return exportType;
+            // It is possible that the handle associated to the element id is not the same as
+            // the handle for which we are looking for information.  As such, do a match first.
+            if (matchingHandle.Id == handleAndInfo.Item1.Id)
+               return handleAndInfo.Item2;
          }
+
          return null;
       }
 
@@ -95,22 +101,19 @@ namespace Revit.IFC.Export.Utility
       {
          foreach (ElementId elementId in elementIds)
          {
-            IFCAnyHandle handle;
-            if (m_ElementIdToHandleDictionary.TryGetValue(elementId, out handle))
+            Tuple<IFCAnyHandle, IFCExportInfoPair> handleAndInfo = null;
+            if (ElementIdToHandleAndInfo.TryGetValue(elementId, out handleAndInfo))
             {
                try
                {
-                  bool isType = IFCAnyHandleUtil.IsSubTypeOf(handle, expectedType);
-                  if (!isType)
+                  if (!IFCAnyHandleUtil.IsSubTypeOf(handleAndInfo.Item1, expectedType))
                   {
-                     m_ElementIdToHandleDictionary.Remove(elementId);
-                     m_ELementIdAndExportType.Remove(elementId);
+                     ElementIdToHandleAndInfo.Remove(elementId);
                   }
                }
                catch
                {
-                  m_ElementIdToHandleDictionary.Remove(elementId);
-                  m_ELementIdAndExportType.Remove(elementId);
+                  ElementIdToHandleAndInfo.Remove(elementId);
                }
             }
          }
@@ -119,36 +122,28 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Adds the handle to the dictionary.
       /// </summary>
-      /// <param name="elementId">
-      /// The element elementId.
-      /// </param>
-      /// <param name="handle">
-      /// The handle.
-      /// </param>
+      /// <param name="elementId">The element elementId.</param>
+      /// <param name="handle">The handle.</param>
       public void Register(ElementId elementId, IFCAnyHandle handle, IFCExportInfoPair exportType = null)
       {
-         if (m_ElementIdToHandleDictionary.ContainsKey(elementId))
+         if (ElementIdToHandleAndInfo.ContainsKey(elementId))
             return;
 
-         m_ElementIdToHandleDictionary[elementId] = handle;
+         ElementIdToHandleAndInfo[elementId] = Tuple.Create(handle, exportType);
          // Register also handle to elementid cache at the same time in order to make the two caches consistent
          ExporterCacheManager.HandleToElementCache.Register(handle, elementId);
-
-         if (exportType != null)
-            if (!m_ELementIdAndExportType.ContainsKey(elementId))
-               m_ELementIdAndExportType.Add(elementId, exportType);
       }
 
       /// <summary>
       /// Delete an element from the cache
       /// </summary>
       /// <param name="element">the element</param>
-      public void Delete(ElementId element)
+      public void Delete(ElementId elementId)
       {
-         if (m_ElementIdToHandleDictionary.ContainsKey(element))
+         if (ElementIdToHandleAndInfo.ContainsKey(elementId))
          {
-            IFCAnyHandle handle = m_ElementIdToHandleDictionary[element];
-            m_ElementIdToHandleDictionary.Remove(element);
+            IFCAnyHandle handle = ElementIdToHandleAndInfo[elementId].Item1;
+            ElementIdToHandleAndInfo.Remove(elementId);
             ExporterCacheManager.HandleToElementCache.Delete(handle);
          }
       }

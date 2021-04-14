@@ -121,6 +121,16 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Check if the double variable is almost equal to the closest (floor) integer.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>True if the value is almost equal to the closest (floor) integer, false otherwise.</returns>
+      public static bool IsAlmostInteger(double value)
+      {
+         return (MathUtil.IsAlmostEqual(value, Math.Floor(value)));
+      }
+
+      /// <summary>
       /// Check if the area value is almost equal to zero.
       /// </summary>
       /// <param name="area">The area.</param>

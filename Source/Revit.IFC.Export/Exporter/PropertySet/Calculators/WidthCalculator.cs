@@ -24,6 +24,7 @@ using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
+using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Toolkit;
 
@@ -99,8 +100,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (extrusionCreationData == null)
             return false;
 
-         // Currently used for Slab Width
-         m_Width = extrusionCreationData.ScaledLength;
+         // For Slab width is "thickness" so get it from extrusion ScaledLength
+         IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
+         if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcSlab))
+         {
+            m_Width = extrusionCreationData.ScaledLength;
+         }
+         else
+         {
+            m_Width = extrusionCreationData.ScaledWidth;
+         }
+
          return m_Width > MathUtil.Eps();
       }
 

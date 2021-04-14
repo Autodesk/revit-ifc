@@ -450,7 +450,7 @@ namespace Revit.IFC.Export.Exporter
          foreach (ViewSchedule schedule in filteredSchedules)
          {
             // Since 2018, schedules can have shared parameters.  Allow schedules to be skipped if IfcExportAs is set to DontExport.
-            if (ElementFilteringUtil.IsIFCExportAsSetToDontExport(schedule))
+            if (ElementFilteringUtil.IsIFCExportAsSetToDontExport(schedule, out _))
                continue;
 
             // ViewSchedule may be a template view and it will not have the associated view and elements. Skip this type of schedule

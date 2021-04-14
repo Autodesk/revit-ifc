@@ -526,8 +526,17 @@ namespace Revit.IFC.Import.Data
                SolidOptions solidOptions = new SolidOptions(layerMaterialId, shapeEditScope.GraphicsStyleId);
 
                // Create the extrusion for the material layer.
-               GeometryObject extrusionSolid = GeometryCreationUtilities.CreateExtrusionGeometry(
-                   currLoops, materialExtrusionDirection, extrusionDistance, solidOptions);
+               GeometryObject extrusionSolid = null;
+               try
+               {
+                  extrusionSolid = GeometryCreationUtilities.CreateExtrusionGeometry(
+                      currLoops, materialExtrusionDirection, extrusionDistance, solidOptions);
+               }
+               catch
+               {
+                  extrusionSolid = null;
+               }
+               
                if (extrusionSolid == null)
                   return null;
 
@@ -656,11 +665,45 @@ namespace Revit.IFC.Import.Data
 
          IList<GeometryObject> extrusions = new List<GeometryObject>();
 
-         foreach (IList<CurveLoop> loops in disjointLoops)
+         foreach (IList<CurveLoop> originalLoops in disjointLoops)
          {
             SolidOptions solidOptions = new SolidOptions(GetMaterialElementId(shapeEditScope), shapeEditScope.GraphicsStyleId);
             XYZ scaledDirection = scaledExtrusionPosition.OfVector(Direction);
             double currDepth = Depth * scaledDirection.GetLength();
+
+            IList<CurveLoop> loops = new List<CurveLoop>();
+            foreach (CurveLoop originalLoop in originalLoops)
+            {
+               if (!originalLoop.IsOpen())
+               {
+                  loops.Add(originalLoop);
+                  continue;
+               }
+
+               if (originalLoop.Count() > 0)
+               {
+                  try
+                  {
+                     // We will attempt to close the loop to make it usable.
+                     XYZ startPoint = originalLoop.First().GetEndPoint(0);
+                     XYZ endPoint = originalLoop.Last().GetEndPoint(1);
+                     Line closingLine = Line.CreateBound(endPoint, startPoint);
+                     CurveLoop healedCurveLoop = CurveLoop.CreateViaCopy(originalLoop);
+                     healedCurveLoop.Append(closingLine);
+                     loops.Add(healedCurveLoop);
+                     Importer.TheLog.LogWarning(Id, "Extrusion has an open profile loop, fixing.", false);
+                     continue;
+                  }
+                  catch
+                  {
+                  }
+               }
+
+               Importer.TheLog.LogError(Id, "Extrusion has an open profile loop, ignoring.", false);
+            }
+
+            if (loops.Count == 0)
+               continue;
 
             GeometryObject extrusionObject = null;
             try

@@ -470,6 +470,9 @@ namespace Revit.IFC.Import.Data
 
             if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcProxy))
                return IFCProxy.ProcessIFCProxy(ifcProduct);
+
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcDistributionPort))
+               return IFCDistributionPort.ProcessIFCDistributionPort(ifcProduct);
          }
          catch (Exception ex)
          {

@@ -2549,12 +2549,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          IFCFile file = exporterIFC.GetFile();
          HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
-         double scaledLength = typeInfo.ScaledDepth;
+         double scaledLength = typeInfo.extraParams.ScaledLength;
          //According to investigation of current code the passed in typeInfo contains grossArea
-         double scaledGrossArea = typeInfo.ScaledArea;
+         double scaledGrossArea = typeInfo.extraParams.ScaledArea;
          double crossSectionArea = scaledGrossArea;
-         double scaledOuterPerimeter = typeInfo.ScaledOuterPerimeter;
-         double scaledInnerPerimeter = typeInfo.ScaledInnerPerimeter;
+         double scaledOuterPerimeter = typeInfo.extraParams.ScaledOuterPerimeter;
+         double scaledInnerPerimeter = typeInfo.extraParams.ScaledInnerPerimeter;
          double outSurfaceArea = 0.0;
 
          if (scaledLength > MathUtil.Eps())
@@ -2872,10 +2872,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public static void CreateBeamColumnMemberBaseQuantities(ExporterIFC exporterIFC, IFCAnyHandle elemHandle, Element element, IFCExtrusionCreationData ecData)
       {
          FamilyTypeInfo ifcTypeInfo = new FamilyTypeInfo();
-         ifcTypeInfo.ScaledDepth = ecData.ScaledLength;
-         ifcTypeInfo.ScaledArea = ecData.ScaledArea;
-         ifcTypeInfo.ScaledInnerPerimeter = ecData.ScaledInnerPerimeter;
-         ifcTypeInfo.ScaledOuterPerimeter = ecData.ScaledOuterPerimeter;
+         ifcTypeInfo.extraParams = ecData;
          CreateBeamColumnBaseQuantities(exporterIFC, elemHandle, element, ifcTypeInfo, null);
       }
 
@@ -3021,11 +3018,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                            string valueAsString = parameter.AsValueString();
 
                            // YesNo or actual integer?
-                           if (parameterDefinition.ParameterType == ParameterType.YesNo)
+                           if (parameterDefinition.GetDataType() == SpecTypeId.Boolean.YesNo)
                            {
                               currPropertiesForGroup.Add(CreateBooleanPropertyFromCache(file, parameterCaption, value != 0, PropertyValueType.SingleValue));
                            }
-                           else if (parameterDefinition.ParameterType == ParameterType.Invalid && (valueAsString != null))
+                           else if (parameterDefinition.GetDataType().Empty() && (valueAsString != null))
                            {
                               // This is probably an internal enumerated type that should be exported as a string.
                               currPropertiesForGroup.Add(CreateIdentifierPropertyFromCache(file, parameterCaption, valueAsString, PropertyValueType.SingleValue));
@@ -3046,229 +3043,203 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                            // default length parameter is in meters.)  For now, we will only support one unit type.  At a later
                            // point, we could decide to have different caches for each parameter type, and export a different
                            // IFCUnit for each one.
-                           switch (parameterDefinition.ParameterType)
-                           {
-                              case ParameterType.Angle:
+                           ForgeTypeId type = parameterDefinition.GetDataType();
+                           if (type == SpecTypeId.Angle)
                            {
                               propertyHandle = CreatePlaneAngleMeasurePropertyFromCache(file, parameterCaption,
                                  UnitUtil.ScaleAngle(value), PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.Area:
-                              case ParameterType.HVACCrossSection:
-                              case ParameterType.ReinforcementArea:
-                              case ParameterType.SectionArea:
+                           else if (type == SpecTypeId.Area ||
+                              type == SpecTypeId.CrossSection ||
+                              type == SpecTypeId.ReinforcementArea ||
+                              type == SpecTypeId.SectionArea)
                            {
                               double scaledValue = UnitUtil.ScaleArea(value);
                               propertyHandle = CreateAreaMeasureProperty(file, parameterCaption,
                                   scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.BarDiameter:
-                              case ParameterType.CrackWidth:
-                              case ParameterType.DisplacementDeflection:
-                              case ParameterType.ElectricalCableTraySize:
-                              case ParameterType.ElectricalConduitSize:
-                              case ParameterType.Length:
-                              case ParameterType.HVACDuctInsulationThickness:
-                              case ParameterType.HVACDuctLiningThickness:
-                              case ParameterType.HVACDuctSize:
-                              case ParameterType.HVACRoughness:
-                              case ParameterType.PipeInsulationThickness:
-                              case ParameterType.PipeSize:
-                              case ParameterType.PipingRoughness:
-                              case ParameterType.ReinforcementCover:
-                              case ParameterType.ReinforcementLength:
-                              case ParameterType.ReinforcementSpacing:
-                              case ParameterType.SectionDimension:
-                              case ParameterType.SectionProperty:
-                              case ParameterType.WireSize:
-                              case ParameterType.SurfaceArea:           // This is actually SurfaceAreaPerUnitLength (SpecTypeId.SurfaceAreaPerUnitLength)
+                           else if (type == SpecTypeId.BarDiameter ||
+                              type == SpecTypeId.CrackWidth ||
+                              type == SpecTypeId.Displacement ||
+                              type == SpecTypeId.CableTraySize ||
+                              type == SpecTypeId.ConduitSize ||
+                              type == SpecTypeId.Length ||
+                              type == SpecTypeId.DuctInsulationThickness ||
+                              type == SpecTypeId.DuctLiningThickness ||
+                              type == SpecTypeId.DuctSize ||
+                              type == SpecTypeId.HvacRoughness ||
+                              type == SpecTypeId.PipeInsulationThickness ||
+                              type == SpecTypeId.PipeSize ||
+                              type == SpecTypeId.PipingRoughness ||
+                              type == SpecTypeId.ReinforcementCover ||
+                              type == SpecTypeId.ReinforcementLength ||
+                              type == SpecTypeId.ReinforcementSpacing ||
+                              type == SpecTypeId.SectionDimension ||
+                              type == SpecTypeId.SectionProperty ||
+                              type == SpecTypeId.WireDiameter ||
+                              type == SpecTypeId.SurfaceAreaPerUnitLength)
                            {
                               propertyHandle = CreateLengthMeasurePropertyFromCache(file, parameterCaption,
                                     UnitUtil.ScaleLength(value), PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.ColorTemperature:
+                           else if (type == SpecTypeId.ColorTemperature)
                            {
                               double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.ColorTemperature, value);
                               IFCData colorTemperatureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, colorTemperatureData,
                                     PropertyValueType.SingleValue, "COLORTEMPERATURE");
-                                    break;
                            }
-                              case ParameterType.Currency:
+                           else if (type == SpecTypeId.Currency)
                            {
                               IFCData currencyData = ExporterCacheManager.UnitsCache.ContainsKey("CURRENCY") ?
                                     IFCDataUtil.CreateAsMeasure(value, "IfcMonetaryMeasure") :
                                     IFCDataUtil.CreateAsMeasure(value, "IfcReal");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, currencyData,
                                     PropertyValueType.SingleValue, null);
-                                    break;
                            }
-                              case ParameterType.ElectricalApparentPower:
-                              case ParameterType.ElectricalPower:
-                              case ParameterType.ElectricalWattage:
-                              case ParameterType.HVACCoolingLoad:
-                              case ParameterType.HVACHeatGain:
-                              case ParameterType.HVACHeatingLoad:
-                              case ParameterType.HVACPower:
+                           else if (type == SpecTypeId.ApparentPower ||
+                              type == SpecTypeId.ElectricalPower ||
+                              type == SpecTypeId.Wattage ||
+                              type == SpecTypeId.CoolingLoad ||
+                              type == SpecTypeId.HeatGain ||
+                              type == SpecTypeId.HeatingLoad ||
+                              type == SpecTypeId.HvacPower)
                            {
                               double scaledValue = UnitUtil.ScalePower(value);
                               propertyHandle = CreatePowerProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.ElectricalCurrent:
+                           else if (type == SpecTypeId.Current)
                            {
                               double scaledValue = UnitUtil.ScaleElectricCurrent(value);
                               propertyHandle = ElectricalCurrentPropertyUtil.CreateElectricalCurrentMeasureProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.ElectricalEfficacy:
+                           else if (type == SpecTypeId.Efficacy)
                            {
                               double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Efficacy, value);
                               IFCData electricalEfficacyData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, electricalEfficacyData,
                                     PropertyValueType.SingleValue, "LUMINOUSEFFICACY");
-                                    break;
                            }
-                              case ParameterType.ElectricalFrequency:
+                           else if (type == SpecTypeId.ElectricalFrequency)
                            {
                               propertyHandle = FrequencyPropertyUtil.CreateFrequencyProperty(file, parameterCaption,
                                     value, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.ElectricalIlluminance:
+                           else if (type == SpecTypeId.Illuminance)
                            {
                               double scaledValue = UnitUtil.ScaleIlluminance(value);
                               propertyHandle = CreateIlluminanceProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.ElectricalLuminousFlux:
+                           else if (type == SpecTypeId.LuminousFlux)
                            {
                               double scaledValue = UnitUtil.ScaleLuminousFlux(value);
                               propertyHandle = CreateLuminousFluxMeasureProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.ElectricalLuminousIntensity:
+                           else if (type == SpecTypeId.LuminousIntensity)
                            {
                               double scaledValue = UnitUtil.ScaleLuminousIntensity(value);
                               propertyHandle = CreateLuminousIntensityProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.ElectricalPotential:
+                           else if (type == SpecTypeId.ElectricalPotential)
                            {
                               double scaledValue = UnitUtil.ScaleElectricVoltage(value);
                               propertyHandle = ElectricVoltagePropertyUtil.CreateElectricVoltageMeasureProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.ElectricalTemperature:
-                              case ParameterType.HVACTemperature:
-                              case ParameterType.PipingTemperature:
+                           else if (type == SpecTypeId.ElectricalTemperature ||
+                              type == SpecTypeId.HvacTemperature ||
+                              type == SpecTypeId.PipingTemperature)
                            {
                               double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacTemperature, value);
                               IFCData temperatureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcThermalTransmittanceMeasure");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, temperatureData,
                                     PropertyValueType.SingleValue, null);
-                                    break;
                            }
-                              case ParameterType.Force:
+                           else if (type == SpecTypeId.Force)
                            {
                               double scaledValue = UnitUtil.ScaleForce(value);
                               propertyHandle = CreateForceProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.AreaForce:
+                           else if (type == SpecTypeId.AreaForce)
                            {
                               double scaledValue = UnitUtil.ScalePlanarForce(value);
                               propertyHandle = CreatePlanarForceProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.LinearForce:
+                           else if (type == SpecTypeId.LinearForce)
                            {
                               double scaledValue = UnitUtil.ScaleLinearForce(value);
                               propertyHandle = CreateLinearForceProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.HVACAirflow:
-                              case ParameterType.PipingFlow:
+                           else if (type == SpecTypeId.AirFlow ||
+                              type == SpecTypeId.Flow)
                            {
                               double scaledValue = UnitUtil.ScaleVolumetricFlowRate(value);
                               propertyHandle = CreateVolumetricFlowRateMeasureProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              case ParameterType.HVACFriction:
+                           else if (type == SpecTypeId.HvacFriction)
                            {
                               double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacFriction, value);
                               IFCData frictionData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, frictionData,
                                     PropertyValueType.SingleValue, "FRICTIONLOSS");
-                                    break;
                            }
-                              case ParameterType.HVACPressure:
-                              case ParameterType.PipingPressure:
-                              case ParameterType.Stress:
+                           else if (type == SpecTypeId.HvacPressure ||
+                              type == SpecTypeId.PipingPressure ||
+                              type == SpecTypeId.Stress)
                            {
                               double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacPressure, value);
                               IFCData pressureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcPressureMeasure");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, pressureData,
                                     PropertyValueType.SingleValue, null);
-                                    break;
                            }
-                              case ParameterType.HVACVelocity:
-                              case ParameterType.PipingVelocity:
+                           else if (type == SpecTypeId.HvacVelocity ||
+                              type == SpecTypeId.PipingVelocity)
                            {
                               double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacVelocity, value);
                               IFCData linearVelocityData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcLinearVelocityMeasure");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, linearVelocityData,
                                     PropertyValueType.SingleValue, null);
-                                    break;
                            }
-                              case ParameterType.Mass:
+                           else if (type == SpecTypeId.Mass)
                            {
                               double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Mass, value);
                               IFCData massData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMassMeasure");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, massData,
                                     PropertyValueType.SingleValue, null);
-                                    break;
                            }
-                              case ParameterType.MassDensity:
+                           else if (type == SpecTypeId.MassDensity)
                            {
                               double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.MassDensity, value);
                               IFCData massDensityData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMassDensityMeasure");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, massDensityData,
                                     PropertyValueType.SingleValue, null);
-                                    break;
                            }
-                              case ParameterType.MomentOfInertia:
+                           else if (type == SpecTypeId.MomentOfInertia)
                            {
                               double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.MomentOfInertia, value);
                               IFCData momentOfInertiaData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMomentofInertiaMeasure");
                               propertyHandle = CreateCommonProperty(file, parameterCaption, momentOfInertiaData,
                                     PropertyValueType.SingleValue, null);
-                                    break;
                            }
-                              case ParameterType.PipingVolume:
-                              case ParameterType.ReinforcementVolume:
-                              case ParameterType.SectionModulus:
-                              case ParameterType.Volume:
+                           else if (type == SpecTypeId.PipingVolume ||
+                              type == SpecTypeId.ReinforcementVolume ||
+                              type == SpecTypeId.SectionModulus ||
+                              type == SpecTypeId.Volume)
                            {
                               double scaledValue = UnitUtil.ScaleVolume(value);
                               propertyHandle = CreateVolumeMeasureProperty(file, parameterCaption,
                                     scaledValue, PropertyValueType.SingleValue);
-                                    break;
                            }
-                              default:
+                           else
                            {
                               double scaledValue = value;
                               try
@@ -3281,8 +3252,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                                  // advance, so we won't convert in these cases.
                               }
                               propertyHandle = CreateRealPropertyFromCache(file, parameterCaption, scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                                 }
                            }
 
                            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propertyHandle))

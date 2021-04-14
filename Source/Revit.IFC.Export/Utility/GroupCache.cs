@@ -59,7 +59,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="groupId">The elementId of the Group.</param>
       /// <param name="type">The export type of the Group.</param>
-      public void RegisterGroupType(ElementId groupId, IFCExportInfoPair type)
+      public void RegisterOrUpdateGroupType(ElementId groupId, IFCExportInfoPair type)
       {
          GroupInfo groupInfo;
          if (!TryGetValue(groupId, out groupInfo))

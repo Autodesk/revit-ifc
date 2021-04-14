@@ -85,7 +85,8 @@ namespace Revit.IFC.Import.Data
             // Create the face set from IFCIndexedPolygonalFace
             foreach (IFCIndexedPolygonalFace face in Faces)
             {
-               tsBuilderScope.StartCollectingFace(GetMaterialElementId(shapeEditScope));
+               // TODO: Consider adding ability to triangulate here.
+               tsBuilderScope.StartCollectingFace(GetMaterialElementId(shapeEditScope), false);
 
                IList<XYZ> loopVertices = new List<XYZ>();
                foreach (int vertInd in face.CoordIndex)
@@ -126,10 +127,7 @@ namespace Revit.IFC.Import.Data
                   }
                }
 
-               if (bPotentiallyAbortFace)
-                  tsBuilderScope.AbortCurrentFace();
-               else
-                  tsBuilderScope.StopCollectingFace();
+               tsBuilderScope.StopCollectingFace(!bPotentiallyAbortFace, false);
             }
 
             IList<GeometryObject> createdGeometries = tsBuilderScope.CreateGeometry(guid);

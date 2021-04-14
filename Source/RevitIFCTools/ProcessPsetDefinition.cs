@@ -322,6 +322,15 @@ namespace RevitIFCTools
 
                outF.WriteLine("            ifcPSE.PropertyValueType = PropertyValueType.TableValue;");
             }
+            else if (prop.PropertyType is PropertyBoundedValue)
+            {
+               PropertyBoundedValue propBound = prop.PropertyType as PropertyBoundedValue;
+               outF.WriteLine("            ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;");
+               if (propBound.DataType != null && !propBound.DataType.Equals("IfcValue", StringComparison.InvariantCultureIgnoreCase))
+                  outF.WriteLine("            ifcPSE.PropertyType = PropertyType.{0};", propBound.DataType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
+               else
+                  outF.WriteLine("            ifcPSE.PropertyType = PropertyType.Label;");    // default to Label if not defined
+            }
             else
             {
                string propType = prop.PropertyType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim();
@@ -857,7 +866,8 @@ namespace RevitIFCTools
             else if (propDatType.Name.LocalName.Equals("TypeComplexProperty"))
             {
                ComplexProperty compProp = new ComplexProperty();
-               compProp.Name = propDatType.Attribute("name").Value;
+               if (propDatType.Attribute("name") != null)
+                  compProp.Name = propDatType.Attribute("name").Value;
                compProp.Properties = new List<PsetProperty>();
                foreach (XElement cpPropDef in propDatType.Elements(ns + "PropertyDef"))
                {

@@ -107,15 +107,34 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       private IFCFuzzyXYZSet TessellatedFaceVertices { get; set; } = null;
 
-      // stores the current face being input. After the face will be
+      // Stores the current face being input. After the face will be
       // completely set, it will be inserted into the resident shape builder.
       private IList<IList<XYZ>> TessellatedFaceBoundary { get; set; } = null;
 
       /// <summary>
-      /// The number of successfully created faces so far.
+      /// Stores the one outer boundary for a facet that has issues that may be
+      /// healed by splitting into triangles.  This is currently limited to one
+      /// quadrilateral.
+      /// </summary>
+      public IList<XYZ> DelayedFaceBoundary { get; set; } = null;
+
+      /// <summary>
+      /// If this is true, then it is possible to triangulate bad boundary data later. 
+      /// </summary>
+      public bool CanProcessDelayedFaceBoundary { get; set; } = false;
+
+
+      /// <summary>
+      /// The number of successfully created faces so far, not including extra faces from
+      /// potential triangulation.
       /// </summary>
       public int CreatedFacesCount { get; protected set; } = 0;
 
+      /// <summary>
+      /// The number of extra faces created, generally as a result of triangulation.
+      /// </summary>
+      public int ExtraCreatedFacesCount { get; protected set; } = 0;
+      
       // The target geometry being created.  This may affect tolerances used to include or exclude vertices that are very 
       // close to one another, or potentially degenerate faces.
       public TessellatedShapeBuilderTarget TargetGeometry { get; private set; } = TessellatedShapeBuilderTarget.AnyGeometry;
@@ -148,6 +167,7 @@ namespace Revit.IFC.Import.Utility
       public void ResetCreatedFacesCount()
       {
          CreatedFacesCount = 0;
+         ExtraCreatedFacesCount = 0;
       }
 
       /// <summary>
@@ -213,7 +233,9 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Start collecting edges for a face to create a BRep solid.
       /// </summary>
-      public void StartCollectingFace(ElementId materialId)
+      /// <param name="materialId">The material id of the face.</param>
+      /// <param name="canTriangulate">Whether we can delay processing bad boundary data.</param>
+      public void StartCollectingFace(ElementId materialId, bool canTriangulate)
       {
          if (TessellatedShapeBuilder == null)
             throw new InvalidOperationException("StartCollectingFaceSet has not been called.");
@@ -228,27 +250,40 @@ namespace Revit.IFC.Import.Utility
             TessellatedFaceVertices = new IFCFuzzyXYZSet(GetVertexTolerance());
          }
 
+         DelayedFaceBoundary = null;
+         CanProcessDelayedFaceBoundary = canTriangulate;
          FaceMaterialId = materialId;
       }
 
-      private void AddFaceToTessellatedShapeBuilder(TessellatedFace theFace)
+      private void AddFaceToTessellatedShapeBuilder(TessellatedFace theFace, bool extraFace)
       {
          TessellatedShapeBuilder.AddFace(theFace);
          TessellatedFaceBoundary.Clear();
          FaceMaterialId = ElementId.InvalidElementId;
-         CreatedFacesCount++;
+         if (extraFace)
+            ExtraCreatedFacesCount++;
+         else
+            CreatedFacesCount++;
       }
 
       /// <summary>
       /// Stop collecting edges for a face to create a BRep solid.
       /// </summary>
-      public void StopCollectingFace()
+      /// <param name="addFace">If true, adds the face, otherwise aborts.</param>
+      public void StopCollectingFace(bool addFace, bool isExtraFace)
       {
          if (TessellatedShapeBuilder == null || TessellatedFaceBoundary == null)
             throw new InvalidOperationException("StartCollectingFace has not been called.");
 
-         TessellatedFace theFace = new TessellatedFace(TessellatedFaceBoundary, FaceMaterialId);
-         AddFaceToTessellatedShapeBuilder(theFace);
+         if (addFace)
+         {
+            TessellatedFace theFace = new TessellatedFace(TessellatedFaceBoundary, FaceMaterialId);
+            AddFaceToTessellatedShapeBuilder(theFace, isExtraFace);
+         }
+         else
+         {
+            AbortCurrentFace();
+         }
       }
 
       /// <summary>

@@ -41,7 +41,7 @@ namespace BIM.IFC.Export.UI
    {
       // The list of available configurations
       IFCExportConfigurationsMap m_configMap;
-      
+
       /// <summary>
       /// Keep the cache for the last selected configuration regardless whether it is built-in or not
       /// </summary>
@@ -99,7 +99,7 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// Identification whether the IFCExporterUIWindow (Modify setup) is visited
       /// </summary>
-      private bool EditConfigVisited = false;
+      private bool m_EditConfigVisited { get; set; } = false;
 
       /// <summary>
       /// The default Extension of the file
@@ -208,7 +208,7 @@ namespace BIM.IFC.Export.UI
             if (LastSelectedConfig.ContainsKey(config.Name))
                textBoxSetupCoordinateBase.Text = (new IFCSitePlacementAttributes(LastSelectedConfig[config.Name].SitePlacement)).ToString();
             else
-               textBoxSetupCoordinateBase.Text = (new IFCSitePlacementAttributes(config.SitePlacement)).ToString();
+            textBoxSetupCoordinateBase.Text = (new IFCSitePlacementAttributes(config.SitePlacement)).ToString();
          }
       }
 
@@ -452,7 +452,7 @@ namespace BIM.IFC.Export.UI
          editorWindow.Owner = this;
          bool? ret = editorWindow.ShowDialog();
          if (ret.HasValue)
-            EditConfigVisited = ret.Value;
+            m_EditConfigVisited = ret.Value;
 
          if (editorWindow.DialogResult.HasValue && editorWindow.DialogResult.Value)
          {
@@ -513,7 +513,7 @@ namespace BIM.IFC.Export.UI
             }
 
             IFCExportConfiguration selectedConfig = GetSelectedConfiguration();
-            if (!EditConfigVisited && LastSelectedConfig.ContainsKey(selectedConfig.Name))
+            if (!m_EditConfigVisited && LastSelectedConfig.ContainsKey(selectedConfig.Name))
                selectedConfig = LastSelectedConfig[selectedConfig.Name];
 
             // This check will be done only for IFC4 and above as this only affects IfcMapConversion use that starts in IFC4 onward
@@ -562,15 +562,22 @@ namespace BIM.IFC.Export.UI
             {
                IFCFileHeader ifcFileHeader = new IFCFileHeader();
                IFCFileHeaderItem fileHeaderItem;
+               bool newFileHeader = false;
+
                if (!ifcFileHeader.GetSavedFileHeader(IFCCommandOverrideApplication.TheDocument, out fileHeaderItem))
                {
                   // Do minimum initialization if the header item is not initialized
                   fileHeaderItem = new IFCFileHeaderItem(IFCCommandOverrideApplication.TheDocument);
+                  newFileHeader = true;
                }
 
                string erName = selectedConfig.ExchangeRequirement.ToString();
-               fileHeaderItem.FileDescription = "ExchangeRequirement [" + erName + "]";
-               ifcFileHeader.UpdateFileHeader(IFCCommandOverrideApplication.TheDocument, fileHeaderItem);
+               string newExchangeRequirement = "ExchangeRequirement [" + erName + "]";
+               if (newFileHeader || fileHeaderItem.FileDescription == null || !fileHeaderItem.FileDescription.Equals(newExchangeRequirement))
+               {
+                  fileHeaderItem.FileDescription = newExchangeRequirement;
+                  ifcFileHeader.UpdateFileHeader(IFCCommandOverrideApplication.TheDocument, fileHeaderItem);
+               }
             }
 
             LastSelectedConfig[selectedConfig.Name] = selectedConfig;

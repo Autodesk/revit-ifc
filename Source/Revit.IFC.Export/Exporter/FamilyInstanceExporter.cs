@@ -83,7 +83,7 @@ namespace Revit.IFC.Export.Exporter
          using (IFCTransaction tr = new IFCTransaction(file))
          {
             string ifcEnumType;
-            IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, familyInstance, out ifcEnumType);
+            IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, familyInstance, out ifcEnumType);
 
             if (exportType.IsUnKnown)
                return;
@@ -298,17 +298,15 @@ namespace Revit.IFC.Export.Exporter
                         DoorWindowUtil.CreateWindowPanelProperties(exporterIFC, familyInstance, null);
                      propertySets.UnionWith(windowPanels);
 
-                     guid = GUIDUtil.CreateSubElementGUID(originalFamilySymbol, (int)IFCWindowSubElements.WindowStyle);
-
                      if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                      {
-                        typeStyle = IFCInstanceExporter.CreateWindowStyle(file, originalFamilySymbol,
+                        typeStyle = IFCInstanceExporter.CreateWindowStyle(file, familySymbol,
                            propertySets, repMapList, constructionType, operationType,
                            paramTakesPrecedence, sizeable);
                      }
                      else
                      {
-                        typeStyle = IFCInstanceExporter.CreateWindowType(file, originalFamilySymbol,
+                        typeStyle = IFCInstanceExporter.CreateWindowType(file, familySymbol,
                            propertySets, repMapList, doorWindowInfo.PreDefinedType, 
                            DoorWindowUtil.GetIFCWindowPartitioningType(originalFamilySymbol),
                            paramTakesPrecedence, doorWindowInfo.UserDefinedOperationType);
@@ -412,7 +410,6 @@ namespace Revit.IFC.Export.Exporter
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(familySymbol);
 
          string familyName = familySymbol.Name;
-
          // A Family Instance can have its own copy of geometry, or use the symbol's copy with a transform.
          // The routine below tells us whether to use the Instance's copy or the Symbol's copy.
          bool useInstanceGeometry = GeometryUtil.UsesInstanceGeometry(familyInstance);
@@ -430,1014 +427,1027 @@ namespace Revit.IFC.Export.Exporter
 
          BodyData bodyData = null;
 
-         using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
+         // Extra information if we are exporting a door or a window.
+         DoorWindowInfo doorWindowInfo = null;
+         if (exportType.ExportType == IFCEntityType.IfcDoorType || exportType.ExportInstance == IFCEntityType.IfcDoor)
+            doorWindowInfo = DoorWindowExporter.CreateDoor(exporterIFC, familyInstance, hostElement, overrideLevelId, trf, exportType);
+         else if (exportType.ExportType == IFCEntityType.IfcWindowType || exportType.ExportInstance == IFCEntityType.IfcWindow)
+            doorWindowInfo = DoorWindowExporter.CreateWindow(exporterIFC, familyInstance, hostElement, overrideLevelId, trf, exportType);
+
+         FamilyTypeInfo typeInfo = new FamilyTypeInfo();
+         IFCExtrusionCreationData extraParams = typeInfo.extraParams;
+
+         bool flipped = doorWindowInfo != null ? doorWindowInfo.FlippedSymbol : false;
+         FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(originalFamilySymbol.Id, flipped, exportType);
+         bool found = currentTypeInfo.IsValid();
+
+         IList<GeometryObject> geomObjects = new List<GeometryObject>();
+         Transform offsetTransform = Transform.Identity;
+
+         Transform doorWindowTrf = Transform.Identity;
+
+         // We will create a new mapped type if:
+         // 1.  We are exporting part of a column or in-place wall (range != null), OR
+         // 2.  We are using the instance's copy of the geometry (that it, it has unique geometry), OR
+         // 3.  We haven't already created the type.
+         bool creatingType = ((range != null) || useInstanceGeometry || !found);
+         if (creatingType)
          {
-            // Extra information if we are exporting a door or a window.
-            DoorWindowInfo doorWindowInfo = null;
-            if (exportType.ExportType == IFCEntityType.IfcDoorType || exportType.ExportInstance == IFCEntityType.IfcDoor)
-               doorWindowInfo = DoorWindowExporter.CreateDoor(exporterIFC, familyInstance, hostElement, overrideLevelId, trf, exportType);
-            else if (exportType.ExportType == IFCEntityType.IfcWindowType || exportType.ExportInstance == IFCEntityType.IfcWindow)
-               doorWindowInfo = DoorWindowExporter.CreateWindow(exporterIFC, familyInstance, hostElement, overrideLevelId, trf, exportType);
+            IList<IFCAnyHandle> representations3D = new List<IFCAnyHandle>();
+            IList<IFCAnyHandle> representations2D = new List<IFCAnyHandle>();
 
-            FamilyTypeInfo typeInfo = new FamilyTypeInfo();
-
-            bool flipped = doorWindowInfo != null ? doorWindowInfo.FlippedSymbol : false;
-            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(originalFamilySymbol.Id, flipped, exportType);
-            bool found = currentTypeInfo.IsValid();
-
-            Family family = familySymbol.Family;
-
-            IList<GeometryObject> geomObjects = new List<GeometryObject>();
-            Transform offsetTransform = Transform.Identity;
-
-            Transform doorWindowTrf = Transform.Identity;
-
-            // We will create a new mapped type if:
-            // 1.  We are exporting part of a column or in-place wall (range != null), OR
-            // 2.  We are using the instance's copy of the geometry (that it, it has unique geometry), OR
-            // 3.  We haven't already created the type.
-            bool creatingType = ((range != null) || useInstanceGeometry || !found);
-            if (creatingType)
+            IFCAnyHandle dummyPlacement = null;
+            if (doorWindowInfo != null)
             {
-               IList<IFCAnyHandle> representations3D = new List<IFCAnyHandle>();
-               IList<IFCAnyHandle> representations2D = new List<IFCAnyHandle>();
-
-               IFCAnyHandle dummyPlacement = null;
-               if (doorWindowInfo != null)
-               {
-                  doorWindowTrf = ExporterIFCUtils.GetTransformForDoorOrWindow(familyInstance, originalFamilySymbol,
-                      doorWindowInfo.FlippedX, doorWindowInfo.FlippedY);
-               }
-               else
-               {
-                  dummyPlacement = ExporterUtil.CreateLocalPlacement(file, null, null);
-                  extraParams.SetLocalPlacement(dummyPlacement);
-               }
-
-               Element exportGeometryElement = useInstanceGeometry ? (Element)familyInstance : (Element)originalFamilySymbol;
-               GeometryElement exportGeometry = exportGeometryElement.get_Geometry(options);
-
-               // There are 2 possible paths for a Family Instance to be exported as a Swept Solid.
-               // 1. Below here through ExtrusionExporter.CreateExtrusionWithClipping
-               // 2. Through BodyExporter.ExportBody
-               if (!exportParts)
-               {
-                  using (TransformSetter trfSetter = TransformSetter.Create())
-                  {
-                     if (doorWindowInfo != null)
-                     {
-                        trfSetter.Initialize(exporterIFC, doorWindowTrf);
-                     }
-
-                     if (exportGeometry == null)
-                        return;
-
-                     SolidMeshGeometryInfo solidMeshCapsule = null;
-
-                     if (range == null)
-                     {
-                        solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(exportGeometry);
-                     }
-                     else
-                     {
-                        solidMeshCapsule = GeometryUtil.GetSplitClippedSolidMeshGeometry(exportGeometry, range);
-                     }
-
-                     IList<Solid> solids = solidMeshCapsule.GetSolids();
-                     IList<Mesh> polyMeshes = solidMeshCapsule.GetMeshes();
-
-                     // If we are exporting parts, it is OK to have no geometry here - it will be added by the host Part.
-                     bool hasSolidsOrMeshesInSymbol = (solids.Count > 0 || polyMeshes.Count > 0);
-
-                     if (range != null && !hasSolidsOrMeshesInSymbol)
-                        return; // no proper split geometry to export.
-
-                     if (hasSolidsOrMeshesInSymbol)
-                     {
-                        geomObjects = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, ref solids, ref polyMeshes);
-                        if ((geomObjects.Count == 0))
-                           return; // no proper visible split geometry to export.
-                     }
-                     else
-                        geomObjects.Add(exportGeometry);
-
-                     bool tryToExportAsExtrusion = (!ExporterCacheManager.ExportOptionsCache.ExportAs2x2
-                                                     || IsExtrusionFriendlyType(exportType.ExportInstance));
-
-                     if (IsExtrusionFriendlyType(exportType.ExportInstance))
-                     {
-                        // Get a profile name. 
-                        string profileName = NamingUtil.GetProfileName(familySymbol);
-
-                        StructuralMemberAxisInfo axisInfo = StructuralMemberExporter.GetStructuralMemberAxisTransform(familyInstance);
-                        if (axisInfo != null)
-                        {
-                           orig = axisInfo.LCSAsTransform.Origin;
-                           extrudeDirection = axisInfo.AxisDirection;
-
-                           extraParams.CustomAxis = extrudeDirection;
-                           extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXY;
-                        }
-                        else
-                        {
-                           extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;
-                           LocationPoint point = familyInstance.Location as LocationPoint;
-
-                           if (point != null)
-                              orig = point.Point;
-
-                           // TODO: Is this a useful default?  Should it be based
-                           // on the instance transform in some way?
-                           extrudeDirection = XYZ.BasisZ;
-                        }
-
-                        if (solids.Count > 0)
-                        {
-                           bool completelyClipped = false;
-                           IList<ElementId> materialIds = null;
-                           FootPrintInfo footprintInfo = null;
-                           // The "extrudeDirection" passed in is in global coordinates if it represents
-                           // a custom axis, while the geometry is in either the FamilyInstance or 
-                           // FamilySymbol coordinate system, depending on the useInstanceGeometry
-                           // flag.  If we aren't using instance geometry, convert the extrusion direction
-                           // and base plane to be in the symbol/geometry space.
-                           XYZ extrusionDirectionToUse = (useInstanceGeometry || !extraParams.HasCustomAxis) ? 
-                              extrudeDirection : trf.Inverse.OfVector(extrudeDirection);
-                           Plane basePlaneToUse = GeometryUtil.CreatePlaneByNormalAtOrigin(extrusionDirectionToUse);
-
-                           GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
-                           IFCAnyHandle bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
-                               categoryId, solids, basePlaneToUse, orig, extrusionDirectionToUse, null, out completelyClipped, out materialIds,
-                               out footprintInfo, out materialAndProfile, out extrusionData, addInfo, profileName: profileName);
-                           if (extrusionData != null)
-                           {
-                              extraParams.Slope = extrusionData.Slope;
-                              extraParams.ScaledLength = extrusionData.ScaledLength;
-                              extraParams.ExtrusionDirection = extrusionData.ExtrusionDirection;
-                              extraParams.ScaledHeight = extrusionData.ScaledHeight;
-                              extraParams.ScaledWidth = extrusionData.ScaledWidth;
-
-                              extraParams.ScaledArea = extrusionData.ScaledArea;
-                              extraParams.ScaledInnerPerimeter = extrusionData.ScaledInnerPerimeter;
-                              extraParams.ScaledOuterPerimeter = extrusionData.ScaledOuterPerimeter;
-                           }
-
-                           typeInfo.MaterialIdList = materialIds;
-                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepresentation))
-                           {
-                              representations3D.Add(bodyRepresentation);
-                              repMapTrfList.Add(null);
-                              if (materialAndProfile != null)
-                                 typeInfo.MaterialAndProfile = materialAndProfile;   // Keep material and profile information in the type info for later creation
-
-                              if (IsExtrusionFriendlyType(exportType.ExportInstance))
-                              {
-                                 if (axisInfo != null)
-                                 {
-                                    Transform newLCS = Transform.Identity;
-                                    Transform offset = Transform.Identity;
-                                    if (materialAndProfile != null)
-                                    {
-                                       if (materialAndProfile.LCSTransformUsed != null)
-                                       {
-                                          // If the Solid creation uses a different LCS, we will use the same LCS for the Axis and transform the Axis to this new LCS
-                                          newLCS = new Transform(materialAndProfile.LCSTransformUsed);
-                                          // The Axis will be offset later to compensate the shift
-                                          offset = newLCS;
-                                       }
-                                    }
-
-                                    if (!useInstanceGeometry)
-                                    {
-                                       // If the extrusion is created from the FamilySymbol, the new LCS will be the FamilyIntance transform
-                                       newLCS = trf;
-                                       offset = Transform.Identity;
-                                    }
-
-                                    ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);
-                                    IFCAnyHandle axisRep = StructuralMemberExporter.CreateStructuralMemberAxis(exporterIFC, familyInstance, catId, axisInfo, newLCS);
-                                    if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
-                                    {
-                                       representations3D.Add(axisRep);
-                                       // This offset is going to be applied later. Need to scale the coordinate into the correct unit scale
-                                       offset.Origin = UnitUtil.ScaleLength(offset.Origin);
-                                       repMapTrfList.Add(offset);
-                                    }
-                                 }
-                              }
-                           }
-                        }
-                     }
-                     else
-                     {
-                        extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXYZ;
-                     }
-
-                     if (representations3D.Count == 0)
-                     {
-                        string profileName = null;
-                        BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(tryToExportAsExtrusion, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-                        if (IsExtrusionFriendlyType(exportType.ExportInstance))
-                        {
-                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                              bodyExporterOptions.CollectMaterialAndProfile = false;
-                           else
-                           bodyExporterOptions.CollectMaterialAndProfile = true;
-                           // Get a profile name. 
-                           profileName = NamingUtil.GetProfileName(familySymbol);
-                        }
-
-                        if (exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcPlate)
-                           bodyExporterOptions.CollectFootprintHandle = ExporterCacheManager.ExportOptionsCache.ExportAs4;
-
-                        GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
-                        bodyData = BodyExporter.ExportBody(exporterIFC, familyInstance, categoryId, ExporterUtil.GetSingleMaterial(familyInstance),
-                            geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName);
-                        typeInfo.MaterialIdList = bodyData.MaterialIds;
-                        //if (!bodyData.OffsetTransform.IsIdentity)
-                        offsetTransform = bodyData.OffsetTransform;
-
-                        IFCAnyHandle bodyRepHnd = bodyData.RepresentationHnd;
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
-                        {
-                           representations3D.Add(bodyRepHnd);
-                           repMapTrfList.Add(null);
-                        }
-
-                        if (IsExtrusionFriendlyType(exportType.ExportInstance))
-                        {
-                           StructuralMemberAxisInfo axisInfo = StructuralMemberExporter.GetStructuralMemberAxisTransform(familyInstance);
-                           if (axisInfo != null)
-                           {
-                              Transform newLCS = Transform.Identity;
-                              Transform offset = Transform.Identity;
-                              if (!useInstanceGeometry)
-                              {
-                                 // When it is the case of NOT using instance geometry (i.e. using the original family symbol), use the transform of the familyInstance as the new LCS
-                                 // This transform will be set as the Object LCS later on
-                                 newLCS = new Transform(trf);
-                              }
-                              else
-                              {
-                                 IFCAnyHandle lcsHnd = extraParams.GetLocalPlacement();
-                                 // It appears that the local placement is already scaled. Unscale it here because axisInfo is based on unscaled information
-                                 newLCS = ExporterUtil.UnscaleTransformOrigin(ExporterUtil.GetTransformFromLocalPlacementHnd(lcsHnd));
-                              }
-
-                              ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);
-                              IFCAnyHandle axisRep = StructuralMemberExporter.CreateStructuralMemberAxis(exporterIFC, familyInstance, catId, axisInfo, newLCS);
-                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
-                              {
-                                 representations3D.Add(axisRep);
-                                 repMapTrfList.Add(null);
-                              }
-                           }
-                        }
-
-                        if (bodyData.FootprintInfo != null)
-                        {
-                           IFCAnyHandle footprintShapeRep = bodyData.FootprintInfo.CreateFootprintShapeRepresentation(exporterIFC);
-                           representations3D.Add(footprintShapeRep);
-                           repMapTrfList.Add(bodyData.FootprintInfo.ExtrusionBaseLCS);
-                        }
-
-                        // Keep Material and Profile informartion in the typeinfo for creation of MaterialSet later on
-                        if (bodyExporterOptions.CollectMaterialAndProfile && bodyData.MaterialAndProfile != null)
-                           typeInfo.MaterialAndProfile = bodyData.MaterialAndProfile;
-                     }
-
-                     // We will allow a door or window to be exported without any geometry, or an element with parts.
-                     // Anything else doesn't really make sense.
-                     if (representations3D.Count == 0 && (doorWindowInfo == null))
-                     {
-                        extraParams.ClearOpenings();
-                        return;
-                     }
-                  }
-
-                  // By default: if exporting IFC2x3 or later, export 2D plan rep of family, if it exists, unless we are exporting Coordination View V2.
-                  // This default can be overridden in the export options.
-                  bool needToCreate2d = ExporterCacheManager.ExportOptionsCache.ExportAnnotations;
-                  if (needToCreate2d)
-                  {
-                     XYZ curveOffset = new XYZ(0, 0, 0);
-                     if (offsetTransform != null)
-                        curveOffset = -(offsetTransform.Origin);
-
-                     HashSet<IFCAnyHandle> curveSet = new HashSet<IFCAnyHandle>();
-                     {
-                        Transform planeTrf = doorWindowTrf.Inverse;
-                        XYZ projDir = XYZ.BasisZ;
-
-                        if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                        {
-                           // TODO: Check that this isn't overkill here.
-                           IList<Curve> export2DGeometry = GeometryUtil.Get2DArcOrLineFromSymbol(familyInstance, allCurveType: true);
-
-                           foreach (Curve curveGeom in export2DGeometry)
-                           {
-                              Curve curve = curveGeom;
-
-                              if (doorWindowTrf != null)
-                              {
-                                 Transform flipTrf = Transform.Identity;
-                                 double yTrf = 0.0;
-
-                                 if (familyInstance.FacingFlipped ^ familyInstance.HandFlipped)
-                                 {
-                                    flipTrf.BasisY = flipTrf.BasisY.Negate();
-                                 }
-
-                                 // We will move the curve into Z=0
-                                 if (curve is Arc)
-                                    flipTrf.Origin = new XYZ(0, yTrf, -(curve as Arc).Center.Z);
-                                 else if (curve is Ellipse)
-                                    flipTrf.Origin = new XYZ(0, yTrf, -(curve as Ellipse).Center.Z);
-                                 else
-                                 {
-                                    if (curve.IsBound)
-                                       flipTrf.Origin = new XYZ(0, yTrf, -curve.GetEndPoint(0).Z);
-                                 }
-
-                                 curve = curve.CreateTransformed(doorWindowTrf.Multiply(flipTrf));
-                              }
-
-                              IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
-                              if (curveSet == null)
-                                 curveSet = new HashSet<IFCAnyHandle>();
-                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveHnd))
-                                 curveSet.Add(curveHnd);
-                           }
-                        }
-                        else
-                        {
-                           IFCGeometryInfo IFCGeometryInfo = IFCGeometryInfo.CreateCurveGeometryInfo(exporterIFC, planeTrf, projDir, true);
-                           ExporterIFCUtils.CollectGeometryInfo(exporterIFC, IFCGeometryInfo, exportGeometry, curveOffset, false);
-
-                           IList<IFCAnyHandle> curves = IFCGeometryInfo.GetCurves();
-                           foreach (IFCAnyHandle curve in curves)
-                              curveSet.Add(curve);
-                        }
-
-                        if (curveSet.Count > 0)
-                        {
-                           IFCAnyHandle contextOfItems2d = exporterIFC.Get2DContextHandle();
-                           IFCAnyHandle curveRepresentationItem = IFCInstanceExporter.CreateGeometricSet(file, curveSet);
-                           HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
-                           bodyItems.Add(curveRepresentationItem);
-                           IFCAnyHandle planRepresentation = RepresentationUtil.CreateGeometricSetRep(exporterIFC, familyInstance, categoryId, "FootPrint",
-                              contextOfItems2d, bodyItems);
-                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(planRepresentation))
-                              representations2D.Add(planRepresentation);
-                        }
-                     }
-                  }
-               }
-
-               if (doorWindowInfo != null)
-                  typeInfo.StyleTransform = doorWindowTrf.Inverse;
-               else
-                  typeInfo.StyleTransform = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, extraParams.GetLocalPlacement());
-
-               if (typeInfo.MaterialAndProfile != null)
-               {
-                  typeInfo.ScaledArea = typeInfo.MaterialAndProfile.CrossSectionArea.HasValue ? typeInfo.MaterialAndProfile.CrossSectionArea.Value : 0.0;
-                  typeInfo.ScaledDepth = typeInfo.MaterialAndProfile.ExtrusionDepth.HasValue ? typeInfo.MaterialAndProfile.ExtrusionDepth.Value : 0.0;
-                  typeInfo.ScaledInnerPerimeter = typeInfo.MaterialAndProfile.InnerPerimeter.HasValue ? typeInfo.MaterialAndProfile.InnerPerimeter.Value : 0.0;
-                  typeInfo.ScaledOuterPerimeter = typeInfo.MaterialAndProfile.OuterPerimeter.HasValue ? typeInfo.MaterialAndProfile.OuterPerimeter.Value : 0.0;
-               }
-
-               HashSet<IFCAnyHandle> propertySets = null;
-               IFCAnyHandle typeStyle = CreateFamilyTypeHandle(exporterIFC, ref typeInfo, doorWindowInfo, representations3D, repMapTrfList, representations2D,
-                   familyInstance, familySymbol, originalFamilySymbol, useInstanceGeometry, exportParts,
-                   exportType, out propertySets);
-
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeStyle))
-               {
-                  wrapper.RegisterHandleWithElementType(familySymbol as ElementType, exportType, typeStyle, propertySets);
-
-                  typeInfo.Style = typeStyle;
-
-                  bool addedMaterialAssociation = false;
-                  if (IsExtrusionFriendlyType(exportType.ExportInstance)
-                     && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4
-                     && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                  {
-                     if (typeInfo.MaterialAndProfile != null)
-                     {
-                        materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, typeInfo.MaterialAndProfile);
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
-                        {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, typeInfo.MaterialAndProfile);
-                           addedMaterialAssociation = true;
-                        }
-                     }
-                     else if (extrudeDirection != null && orig != null)
-                     {
-                        if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                        {
-                           // If Material Profile information is somehow missing (e.g. the geometry is exported as Tessellation or BRep. In IFC4 where geometry is restricted
-                           //   the materialprofile information may still be needed), it will try to get the information here:
-                           MaterialAndProfile matNProf = GeometryUtil.GetProfileAndMaterial(exporterIFC, familyInstance, extrudeDirection, orig);
-                           if (matNProf.GetKeyValuePairs().Count > 0)
-                           {
-                              materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, matNProf);
-                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
-                              {
-                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, matNProf);
-                                 addedMaterialAssociation = true;
-                              }
-                           }
-                        }
-                     }
-                  }
-                  else if (exportType.ExportInstance == IFCEntityType.IfcPlate || exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcWall)
-                  {
-                     MaterialLayerSetInfo mlsInfo = new MaterialLayerSetInfo(exporterIFC, familyInstance, wrapper);
-                     materialLayerSet = mlsInfo.MaterialLayerSetHandle;
-                     if (materialLayerSet != null)
-                     {
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, materialLayerSet);
-                        addedMaterialAssociation = true;
-                     }
-                  }
-                  else
-                  {
-                     if (bodyData != null && bodyData.RepresentationItemInfo != null && bodyData.RepresentationItemInfo.Count > 0)
-                     {
-                        Element elementType = familyInstance.Document.GetElement(familyInstance.GetTypeId());
-                        CategoryUtil.CreateMaterialAssociationWithShapeAspect(exporterIFC, elementType, typeStyle, bodyData.RepresentationItemInfo);
-                        addedMaterialAssociation = true;
-                     }
-                     else
-                     {
-                        Element elementType = familyInstance.Document.GetElement(familyInstance.GetTypeId());
-                        ElementId bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, elementType);
-                        if (bestMatId == ElementId.InvalidElementId)
-                           bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, familyInstance);
-
-                        // Also get the materials from Parameters
-                        IList<ElementId> matIds = ParameterUtil.FindMaterialParameters(elementType);
-                        if (matIds.Count == 0)
-                           matIds = ParameterUtil.FindMaterialParameters(familyInstance);
-
-                        // Combine the material ids
-                        if (bestMatId != ElementId.InvalidElementId && !matIds.Contains(bestMatId))
-                           matIds.Add(bestMatId);
-
-                        if (matIds.Count > 0)
-                        {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, matIds);
-                           addedMaterialAssociation = true;
-                        }
-                     }
-                  }
-
-                  if (!addedMaterialAssociation)
-                     CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, typeInfo.MaterialIdList);
-
-                  ClassificationUtil.CreateClassification(exporterIFC, file, familySymbol, typeStyle);        // Create other generic classification from ClassificationCode(s)
-                  ClassificationUtil.CreateUniformatClassification(exporterIFC, file, originalFamilySymbol, typeStyle);
-               }
-            }
-
-            if (found && !typeInfo.IsValid())
-               typeInfo = currentTypeInfo;
-
-            // we'll pretend we succeeded, but we'll do nothing.
-            if (!typeInfo.IsValid())
-               return;
-
-            if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-            {
-            // If the type is obtained from the cache (not the first instance), materialProfileSet will be null and needs to be obtained from the cache
-               if (IsExtrusionFriendlyType(exportType.ExportInstance)
-                 && materialProfileSet == null)
-               {
-                  materialProfileSet = ExporterCacheManager.MaterialSetCache.FindProfileSet(familySymbol.Id);
-                  if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView 
-                     && materialProfileSet == null && extrudeDirection != null && orig != null)
-                  {
-                     // If Material Profile information is somehow missing (e.g. the geometry is exported as Tessellation or BRep. In IFC4 where geometry is restricted
-                     //   the materialprofile information may still be needed), it will try to get the information here:
-                     MaterialAndProfile matNProf = GeometryUtil.GetProfileAndMaterial(exporterIFC, familyInstance, extrudeDirection, orig);
-                     if (matNProf.GetKeyValuePairs().Count > 0)
-                     {
-                        materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, matNProf);
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeInfo.Style, matNProf);
-                     }
-                  }
-               }
-            }
-
-            if ((exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcPlate || exportType.ExportInstance == IFCEntityType.IfcWall)
-                && materialLayerSet == null)
-            {
-               materialLayerSet = ExporterCacheManager.MaterialSetCache.FindLayerSet(familySymbol.Id);
-            }
-
-            // add to the map, as long as we are not using range, not using instance geometry, and don't have extra openings.
-            if ((range == null) && !useInstanceGeometry && (extraParams.GetOpenings().Count == 0))
-               ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(originalFamilySymbol.Id, flipped, exportType, typeInfo);
-
-            // If we are using the instance geometry, ignore the transformation.
-            if (useInstanceGeometry)
-               trf = Transform.Identity;
-
-            if ((range != null) && exportParts)
-            {
-               XYZ rangeOffset = trf.Origin;
-               rangeOffset += new XYZ(0, 0, range.Start);
-               trf.Origin = rangeOffset;
-            }
-
-            Transform originalTrf = new Transform(trf);
-            XYZ scaledMapOrigin = XYZ.Zero;
-
-            trf = trf.Multiply(typeInfo.StyleTransform);
-
-            // create instance.  
-            IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
-            {
-               IFCAnyHandle contextOfItems2d = exporterIFC.Get2DContextHandle();
-               IFCAnyHandle contextOfItems3d = exporterIFC.Get3DContextHandle("Body");
-               IFCAnyHandle contextOfItems1d = exporterIFC.Get3DContextHandle("Axis");
-
-               // for proxies, we store the IfcRepresentationMap directly since there is no style.
-               IFCAnyHandle style = typeInfo.Style;
-               IList<IFCAnyHandle> repMapList = !IFCAnyHandleUtil.IsNullOrHasNoValue(style) ?
-                   GeometryUtil.GetRepresentationMaps(style) : null;
-               if (repMapList == null)
-               {
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Map3DHandle))
-                  {
-                     repMapList = new List<IFCAnyHandle>();
-                     repMapList.Add(typeInfo.Map3DHandle);
-                  }
-
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Map2DHandle))
-                  {
-                     if (repMapList == null)
-                        repMapList = new List<IFCAnyHandle>();
-                     repMapList.Add(typeInfo.Map2DHandle);
-                  }
-               }
-
-               int numReps = repMapList != null ? repMapList.Count : 0;
-
-               // Note that repMapList may be null here, so we use numReps instead.
-               for (int ii = 0; ii < numReps; ii++)
-               {
-                  IFCAnyHandle repMap = repMapList[ii];
-                  int dimRepMap = RepresentationUtil.DimOfRepresentationContext(repMap);
-                  if (dimRepMap < 1 || dimRepMap > 3)
-                     return;
-
-                  HashSet<IFCAnyHandle> representations = new HashSet<IFCAnyHandle>();
-                  representations.Add(ExporterUtil.CreateDefaultMappedItem(file, repMap, scaledMapOrigin));
-                  IFCAnyHandle shapeRep = null;
-                  switch (dimRepMap)
-                  {
-                     case 3:
-                        {
-                           IFCAnyHandle mapRep = IFCAnyHandleUtil.GetInstanceAttribute(repMap, "MappedRepresentation");
-                           IFCAnyHandle context = IFCAnyHandleUtil.GetInstanceAttribute(mapRep, "ContextOfItems");
-                           shapeRep = RepresentationUtil.CreateBodyMappedItemRep(exporterIFC, familyInstance, categoryId, context,
-                               representations);
-                           break;
-                        }
-                     case 2:
-                        {
-                           shapeRep = RepresentationUtil.CreatePlanMappedItemRep(exporterIFC, familyInstance, categoryId, contextOfItems2d,
-                         representations);
-                           break;
-                        }
-                     case 1:
-                        {
-                           shapeRep = RepresentationUtil.CreateGraphMappedItemRep(exporterIFC, familyInstance, categoryId, contextOfItems1d,
-                         representations);
-                           break;
-                        }
-                  }
-
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
-                     return;
-                  shapeReps.Add(shapeRep);
-               }
-            }
-
-            IFCAnyHandle boundingBoxRep = null;
-            Transform boundingBoxTrf = (offsetTransform != null) ? offsetTransform.Inverse : Transform.Identity;
-            if (geomObjects.Count > 0)
-            {
-               boundingBoxTrf = boundingBoxTrf.Multiply(doorWindowTrf);
-               boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geomObjects, boundingBoxTrf);
+               doorWindowTrf = ExporterIFCUtils.GetTransformForDoorOrWindow(familyInstance, originalFamilySymbol,
+                     doorWindowInfo.FlippedX, doorWindowInfo.FlippedY);
             }
             else
             {
-               boundingBoxTrf = boundingBoxTrf.Multiply(trf.Inverse);
-               boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, familyInstance.get_Geometry(options), boundingBoxTrf);
+               dummyPlacement = ExporterUtil.CreateLocalPlacement(file, null, null);
+               extraParams.SetLocalPlacement(dummyPlacement);
             }
 
-            if (boundingBoxRep != null)
-               shapeReps.Add(boundingBoxRep);
+            Element exportGeometryElement = useInstanceGeometry ? (Element)familyInstance : (Element)originalFamilySymbol;
+            GeometryElement exportGeometry = exportGeometryElement.get_Geometry(options);
 
-            IFCAnyHandle repHnd = (shapeReps.Count > 0) ? IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps) : null;
-
-            // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, familyInstance, out overrideContainerHnd);
-            if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
-               overrideLevelId = overrideContainerId;
-
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, familyInstance, trf, null, overrideLevelId, overrideContainerHnd))
+            // There are 2 possible paths for a Family Instance to be exported as a Swept Solid.
+            // 1. Below here through ExtrusionExporter.CreateExtrusionWithClipping
+            // 2. Through BodyExporter.ExportBody
+            if (!exportParts)
             {
-               IFCAnyHandle instanceHandle = null;
-               IFCAnyHandle localPlacement = setter.LocalPlacement;
-               bool materialAlreadyAssociated = false;
-
-               // We won't create the instance if: 
-               // (1) we are exporting to CV2.0/RV, (2) we have no 2D, 3D, or bounding box geometry, and (3) we aren't exporting parts.
-               if (!(repHnd == null && !exportParts
-                     && (ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2
-                     || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)))
+               using (TransformSetter trfSetter = TransformSetter.Create())
                {
-                  string instanceGUID = null;
+                  if (doorWindowInfo != null)
+                  {
+                     trfSetter.Initialize(exporterIFC, doorWindowTrf);
+                  }
 
-                  int subElementIndex = ExporterStateManager.GetCurrentRangeIndex();
-                  if (subElementIndex == 0)
-                     instanceGUID = GUIDUtil.CreateGUID(familyInstance);
-                  else if (subElementIndex <= ExporterStateManager.RangeIndexSetter.GetMaxStableGUIDs())
-                     instanceGUID = GUIDUtil.CreateSubElementGUID(familyInstance, subElementIndex + (int)IFCGenericSubElements.SplitInstanceStart - 1);
+                  if (exportGeometry == null)
+                     return;
+
+                  SolidMeshGeometryInfo solidMeshCapsule = null;
+
+                  if (range == null)
+                  {
+                     solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(exportGeometry);
+                  }
                   else
-                     instanceGUID = GUIDUtil.CreateGUID();
-
-                  IFCAnyHandle overrideLocalPlacement = null;
-                  bool isChildInContainer = familyInstance.AssemblyInstanceId != ElementId.InvalidElementId;
-
-                  if (parentLocalPlacement != null)
                   {
-                     Transform relTrf = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(parentLocalPlacement, localPlacement);
-                     Transform inverseTrf = relTrf.Inverse;
-
-                     IFCAnyHandle plateLocalPlacement = ExporterUtil.CreateLocalPlacement(file, parentLocalPlacement,
-                         inverseTrf.Origin, inverseTrf.BasisZ, inverseTrf.BasisX);
-                     overrideLocalPlacement = plateLocalPlacement;
+                     solidMeshCapsule = GeometryUtil.GetSplitClippedSolidMeshGeometry(exportGeometry, range);
                   }
 
-                  switch (exportType.ExportInstance)
+                  IList<Solid> solids = solidMeshCapsule.GetSolids();
+                  IList<Mesh> polyMeshes = solidMeshCapsule.GetMeshes();
+
+                  // If we are exporting parts, it is OK to have no geometry here - it will be added by the host Part.
+                  bool hasSolidsOrMeshesInSymbol = (solids.Count > 0 || polyMeshes.Count > 0);
+
+                  if (range != null && !hasSolidsOrMeshesInSymbol)
+                     return; // no proper split geometry to export.
+
+                  if (hasSolidsOrMeshesInSymbol)
                   {
-                     case IFCEntityType.IfcBeam:
-                        {
-                           if (exportType.HasUndefinedPredefinedType())
-                              exportType.ValidatedPredefinedType = "BEAM";
-                           instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
-                              wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, ifcEnumType, overrideLocalPlacement);
-                           IFCAnyHandle placementToUse = localPlacement;
-
-                           // NOTE: We do not expect openings here, as they are created as part of creating an extrusion in ExportBody above.
-                           // However, if this were the case, we would have exported this beam in ExportBeamAsStandardElement above.
-
-                           OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
-                               exporterIFC, placementToUse, setter, wrapper);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
-
-                           // Register the beam's IFC handle for later use by truss and beam system export.
-                           ExporterCacheManager.ElementToHandleCache.Register(familyInstance.Id, instanceHandle, exportType);
-
-                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet) && RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
-                           {
-                              int? cardinalPoint = BeamCardinalPoint(familyInstance);
-
-                              if (materialProfileSet != null)
-                              {
-                                 // RV does not support IfcMaterialProfileSetUsage, material assignment should be directly to the MaterialProfileSet
-                                 if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                                 {
-                                    CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, materialProfileSet);
-                                 }
-                                 else
-                                 {
-                                    IFCAnyHandle matSetUsage = IFCInstanceExporter.CreateMaterialProfileSetUsage(file, materialProfileSet, cardinalPoint, null);
-                                    CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matSetUsage);
-                                 }
-
-                                 materialAlreadyAssociated = true;
-                              }
-                           }
-                           break;
-                        }
-                     case IFCEntityType.IfcColumn:
-                        {
-                           if (exportType.HasUndefinedPredefinedType())
-                              exportType.ValidatedPredefinedType = "COLUMN";
-                           instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
-                              wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, ifcEnumType, overrideLocalPlacement);
-
-                           IFCAnyHandle placementToUse = localPlacement;
-                           if (!useInstanceGeometry)
-                           {
-                              bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
-                              if (needToCreateOpenings)
-                              {
-                                 Transform openingTrf = new Transform(originalTrf);
-                                 Transform extraRot = new Transform(originalTrf);
-                                 extraRot.Origin = XYZ.Zero;
-                                 openingTrf = openingTrf.Multiply(extraRot);
-                                 openingTrf = openingTrf.Multiply(typeInfo.StyleTransform);
-
-                                 XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
-                                 IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
-                                    openingTrf.get_Basis(2), openingTrf.get_Basis(0));
-                                 IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
-                                 GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
-                                 placementToUse = openingPlacement;
-                              }
-                           }
-
-                           OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
-                               exporterIFC, placementToUse, setter, wrapper);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
-
-                           // Not all columns are space bounding, but it doesn't really hurt to have "extra" handles here, other
-                           // than a little extra memory usage.
-                           SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, instanceHandle, familyInstance.Id,
-                              setter.LevelId);
-
-                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet) && RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
-                           {
-                              // RV does not support IfcMaterialProfileSetUsage, material assignment should be directly to the MaterialProfileSet
-                              if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                              {
-                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, materialProfileSet);
-                              }
-                              else
-                              {
-                                 IFCAnyHandle matSetUsage = IFCInstanceExporter.CreateMaterialProfileSetUsage(file, materialProfileSet, null, null);
-                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matSetUsage);
-                              }
-                              materialAlreadyAssociated = true;
-                           }
-
-                           //export Base Quantities.
-                           // This is necessary for now as it deals properly with split columns by level.
-                           PropertyUtil.CreateBeamColumnBaseQuantities(exporterIFC, instanceHandle, familyInstance, typeInfo, geomObjects);
-                           break;
-                        }
-                     case IFCEntityType.IfcDoor:
-                     case IFCEntityType.IfcWindow:
-                        {
-                           double doorHeight = GetMinSymbolHeight(originalFamilySymbol);
-                           double doorWidth = GetMinSymbolWidth(originalFamilySymbol);
-
-                           double height = UnitUtil.ScaleLength(doorHeight);
-                           double width = UnitUtil.ScaleLength(doorWidth);
-
-                           IFCAnyHandle doorWindowLocalPlacement = !IFCAnyHandleUtil.IsNullOrHasNoValue(overrideLocalPlacement) ?
-                               overrideLocalPlacement : localPlacement;
-                           if (exportType.ExportType == IFCEntityType.IfcDoorType || exportType.ExportInstance == IFCEntityType.IfcDoor)
-                              instanceHandle = IFCInstanceExporter.CreateDoor(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                                 doorWindowLocalPlacement, repHnd, height, width, doorWindowInfo.PreDefinedType,
-                                 doorWindowInfo.DoorOperationTypeString, doorWindowInfo.UserDefinedOperationType);
-                           else
-                              instanceHandle = IFCInstanceExporter.CreateWindow(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                                 doorWindowLocalPlacement, repHnd, height, width, doorWindowInfo.PreDefinedType, DoorWindowUtil.GetIFCWindowPartitioningType(originalFamilySymbol),
-                                 doorWindowInfo.UserDefinedPartitioningType);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
-
-                           SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, instanceHandle, familyInstance.Id,
-                               setter.LevelId);
-
-                           IFCAnyHandle placementToUse = doorWindowLocalPlacement;
-                           if (!useInstanceGeometry)
-                           {
-                              // correct the placement to the symbol space
-                              bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
-                              if (needToCreateOpenings)
-                              {
-                                 Transform openingTrf = Transform.Identity;
-                                 openingTrf.Origin = new XYZ(0, 0, setter.Offset);
-                                 openingTrf = openingTrf.Multiply(doorWindowTrf);
-                                 XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
-                                 IFCAnyHandle openingLocalPlacement = ExporterUtil.CreateLocalPlacement(file, doorWindowLocalPlacement,
-                                     scaledOrigin, openingTrf.BasisZ, openingTrf.BasisX);
-                                 placementToUse = openingLocalPlacement;
-                              }
-                           }
-
-                           OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
-                               exporterIFC, placementToUse, setter, wrapper);
-                           break;
-                        }
-                     case IFCEntityType.IfcMember:
-                        {
-                           if (exportType.HasUndefinedPredefinedType())
-                              exportType.ValidatedPredefinedType = "BRACE";
-
-                           instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
-                              wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, ifcEnumType, overrideLocalPlacement);
-
-                           OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
-                               exporterIFC, localPlacement, setter, wrapper);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
-
-                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet) && RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
-                           {
-                              // RV does not support IfcMaterialProfileSetUsage, material assignment should be directly to the MaterialProfileSet
-                              if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                              {
-                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, materialProfileSet);
-                              }
-                              else
-                              {
-                                 IFCAnyHandle matSetUsage = IFCInstanceExporter.CreateMaterialProfileSetUsage(file, materialProfileSet, null, null);
-                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matSetUsage);
-                              }
-                              materialAlreadyAssociated = true;
-                           }
-
-                           break;
-                        }
-                     case IFCEntityType.IfcPlate:
-                        {
-                           instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
-                              wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, ifcEnumType, overrideLocalPlacement);
-
-                           OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
-                               exporterIFC, localPlacement, setter, wrapper);
-
-                           if (RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
-                           {
-                              double maxOffset = 0.0;
-                              Parameter offsetPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_OFFSET);
-                              if (offsetPar == null)
-                              {
-                                 maxOffset = ParameterUtil.GetSpecialOffsetParameter(familySymbol);
-                              }
-                              else
-                                 maxOffset = offsetPar.AsDouble();
-                              wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
-
-                              if (materialLayerSet != null)
-                              {
-                                 if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-                                 {
-                                    CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, materialLayerSet);
-                                 }
-                                 else
-                                 {
-                                    IFCAnyHandle matSetUsage = IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet, IFCLayerSetDirection.Axis3, IFCDirectionSense.Positive, maxOffset);
-                                    CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matSetUsage);
-                                 }
-                                 materialAlreadyAssociated = true;
-                              }
-                           }
-                           break;
-                        }
-                     case IFCEntityType.IfcTransportElement:
-                        {
-                           IFCAnyHandle localPlacementToUse;
-                           ElementId roomId = setter.UpdateRoomRelativeCoordinates(familyInstance, out localPlacementToUse);
-
-                           string operationTypeStr;
-                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                           {
-                              // It is PreDefinedType attribute in IFC4
-                              Toolkit.IFC4.IFCTransportElementType operationType = FamilyExporterUtil.GetPreDefinedType<Toolkit.IFC4.IFCTransportElementType>(familyInstance, ifcEnumType);
-                              operationTypeStr = operationType.ToString();
-                           }
-                           else
-                           {
-                              Toolkit.IFCTransportElementType operationType = FamilyExporterUtil.GetPreDefinedType<Toolkit.IFCTransportElementType>(familyInstance, ifcEnumType);
-                              operationTypeStr = operationType.ToString();
-                           }
-
-                           double capacityByWeight = 0.0;
-                           ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcCapacityByWeight", out capacityByWeight);
-                           double capacityByNumber = 0.0;
-                           ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcCapacityByNumber", out capacityByNumber);
-
-                           instanceHandle = IFCInstanceExporter.CreateTransportElement(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                              localPlacementToUse, repHnd, operationTypeStr, capacityByWeight, capacityByNumber);
-
-                           bool containedInSpace = (roomId != ElementId.InvalidElementId);
-                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, !containedInSpace, exportType);
-                           if (containedInSpace)
-                              ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
-
-                           break;
-                        }
-                     default:
-                        {
-                           if (IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
-                           {
-                              bool isBuildingElementProxy =
-                                  ((exportType.ExportInstance == IFCEntityType.IfcBuildingElementProxy) ||
-                                  (exportType.ExportType == IFCEntityType.IfcBuildingElementProxyType));
-
-                              IFCAnyHandle localPlacementToUse = null;
-                              ElementId roomId = setter.UpdateRoomRelativeCoordinates(familyInstance, out localPlacementToUse);
-                              bool containedInSpace = (roomId != ElementId.InvalidElementId) && (exportType.ExportInstance != IFCEntityType.IfcSystemFurnitureElement);
-
-                              if (!isBuildingElementProxy)
-                              {
-                                 instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, familyInstance, instanceGUID,
-                                    ownerHistory, localPlacementToUse, repHnd);
-                              }
-                              else
-                              {
-                                 instanceHandle = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, familyInstance, instanceGUID,
-                                    ownerHistory, localPlacementToUse, repHnd, exportType.ValidatedPredefinedType);
-                              }
-
-                              bool associateToLevel = containedInSpace ? false : !isChildInContainer;
-                              wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, associateToLevel, exportType);
-                              if (containedInSpace)
-                                 ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
-                           }
-
-                           IFCAnyHandle placementToUse = localPlacement;
-                           if (!useInstanceGeometry)
-                           {
-                              bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
-                              if (needToCreateOpenings)
-                              {
-                                 Transform openingTrf = new Transform(originalTrf);
-                                 Transform extraRot = new Transform(originalTrf);
-                                 extraRot.Origin = XYZ.Zero;
-                                 openingTrf = openingTrf.Multiply(extraRot);
-                                 openingTrf = openingTrf.Multiply(typeInfo.StyleTransform);
-
-                                 XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
-                                 IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
-                                    openingTrf.get_Basis(2), openingTrf.get_Basis(0));
-                                 IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
-                                 GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
-                                 placementToUse = openingPlacement;
-                              }
-                           }
-
-                           Transform offsetTransformToUse = null;
-                           if (useInstanceGeometry && !MathUtil.IsAlmostZero(setter.Offset))
-                           {
-                              XYZ offsetOrig = -XYZ.BasisZ * setter.Offset;
-                              Transform setterOffset = Transform.CreateTranslation(offsetOrig);
-                              offsetTransformToUse = offsetTransform.Multiply(setterOffset);
-                           }
-                           else
-                           {
-                              offsetTransformToUse = offsetTransform;
-                           }
-                           OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransformToUse,
-                              exporterIFC, placementToUse, setter, wrapper);
-                           break;
-                        }
+                     geomObjects = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, ref solids, ref polyMeshes);
+                     if ((geomObjects.Count == 0))
+                        return; // no proper visible split geometry to export.
                   }
+                  else
+                     geomObjects.Add(exportGeometry);
 
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
+                  bool tryToExportAsExtrusion = (!ExporterCacheManager.ExportOptionsCache.ExportAs2x2
+                                                   || IsExtrusionFriendlyType(exportType.ExportInstance));
+
+                  if (IsExtrusionFriendlyType(exportType.ExportInstance))
                   {
-                     if (exportParts)
-                        PartExporter.ExportHostPart(exporterIFC, familyInstance, instanceHandle, familyProductWrapper, setter, null, overrideLevelId);
-                        //PartExporter.ExportHostPart(exporterIFC, familyInstance, instanceHandle, familyProductWrapper, setter, setter.LocalPlacement, overrideLevelId);
+                     // Get a profile name. 
+                     string profileName = NamingUtil.GetProfileName(familySymbol);
 
-                     if (ElementFilteringUtil.IsMEPType(exportType) || ElementFilteringUtil.ProxyForMEPType(familyInstance, exportType))
+                     StructuralMemberAxisInfo axisInfo = StructuralMemberExporter.GetStructuralMemberAxisTransform(familyInstance);
+                     if (axisInfo != null)
                      {
-                        ExporterCacheManager.MEPCache.Register(familyInstance, instanceHandle);
-                        // For ducts and pipes, check later if there is an associated duct or pipe.
-                        if (CanHaveInsulationOrLining(exportType, categoryId))
-                           ExporterCacheManager.MEPCache.CoveredElementsCache.Add(familyInstance.Id);
+                        orig = axisInfo.LCSAsTransform.Origin;
+                        extrudeDirection = axisInfo.AxisDirection;
+
+                        extraParams.CustomAxis = extrudeDirection;
+                        extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXY;
+                     }
+                     else
+                     {
+                        extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;
+                        LocationPoint point = familyInstance.Location as LocationPoint;
+
+                        if (point != null)
+                           orig = point.Point;
+
+                        // TODO: Is this a useful default?  Should it be based
+                        // on the instance transform in some way?
+                        extrudeDirection = XYZ.BasisZ;
                      }
 
-                     ExporterCacheManager.HandleToElementCache.Register(instanceHandle, familyInstance.Id);
-
-                     if (!exportParts && !materialAlreadyAssociated)
+                     if (solids.Count > 0)
                      {
-                        // Create material association for the instance only if the the istance geometry is different from the type
-                        // or the type does not have any material association
-                        IFCAnyHandle constituentSetHnd = ExporterCacheManager.MaterialSetCache.FindConstituentSetHnd(familyInstance.GetTypeId());
-                        if ((useInstanceGeometry || IFCAnyHandleUtil.IsNullOrHasNoValue(constituentSetHnd))
-                           && bodyData != null && bodyData.RepresentationItemInfo != null && bodyData.RepresentationItemInfo.Count > 0)
+                        FootPrintInfo footprintInfo = null;
+                        // The "extrudeDirection" passed in is in global coordinates if it represents
+                        // a custom axis, while the geometry is in either the FamilyInstance or 
+                        // FamilySymbol coordinate system, depending on the useInstanceGeometry
+                        // flag.  If we aren't using instance geometry, convert the extrusion direction
+                        // and base plane to be in the symbol/geometry space.
+                        XYZ extrusionDirectionToUse = (useInstanceGeometry || !extraParams.HasCustomAxis) ? 
+                           extrudeDirection : trf.Inverse.OfVector(extrudeDirection);
+                        Plane basePlaneToUse = GeometryUtil.CreatePlaneByNormalAtOrigin(extrusionDirectionToUse);
+
+                        GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
+                        ExtrusionExporter.ExtraClippingData extraClippingData = null;
+                        IFCAnyHandle bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
+                              categoryId, false, solids, basePlaneToUse, orig, extrusionDirectionToUse, null, out extraClippingData,
+                              out footprintInfo, out materialAndProfile, out extrusionData, addInfo, profileName: profileName);
+                        if (extrusionData != null)
                         {
-                           CategoryUtil.CreateMaterialAssociationWithShapeAspect(exporterIFC, familyInstance, instanceHandle, bodyData.RepresentationItemInfo);
+                           extraParams.Slope = extrusionData.Slope;
+                           extraParams.ScaledLength = extrusionData.ScaledLength;
+                           extraParams.ExtrusionDirection = extrusionData.ExtrusionDirection;
+                           extraParams.ScaledHeight = extrusionData.ScaledHeight;
+                           extraParams.ScaledWidth = extrusionData.ScaledWidth;
+
+                           extraParams.ScaledArea = extrusionData.ScaledArea;
+                           extraParams.ScaledInnerPerimeter = extrusionData.ScaledInnerPerimeter;
+                           extraParams.ScaledOuterPerimeter = extrusionData.ScaledOuterPerimeter;
+                        }
+
+                        typeInfo.MaterialIdList = extraClippingData.MaterialIds;
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepresentation))
+                        {
+                           representations3D.Add(bodyRepresentation);
+                           repMapTrfList.Add(null);
+                           if (materialAndProfile != null)
+                              typeInfo.MaterialAndProfile = materialAndProfile;   // Keep material and profile information in the type info for later creation
+
+                           if (IsExtrusionFriendlyType(exportType.ExportInstance))
+                           {
+                              if (axisInfo != null)
+                              {
+                                 Transform newLCS = Transform.Identity;
+                                 Transform offset = Transform.Identity;
+                                 if (materialAndProfile != null)
+                                 {
+                                    if (materialAndProfile.LCSTransformUsed != null)
+                                    {
+                                       // If the Solid creation uses a different LCS, we will use the same LCS for the Axis and transform the Axis to this new LCS
+                                       newLCS = new Transform(materialAndProfile.LCSTransformUsed);
+                                       // The Axis will be offset later to compensate the shift
+                                       offset = newLCS;
+                                    }
+                                 }
+
+                                 if (!useInstanceGeometry)
+                                 {
+                                    // If the extrusion is created from the FamilySymbol, the new LCS will be the FamilyIntance transform
+                                    newLCS = trf;
+                                    offset = Transform.Identity;
+                                 }
+
+                                 ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);
+                                 IFCAnyHandle axisRep = StructuralMemberExporter.CreateStructuralMemberAxis(exporterIFC, familyInstance, catId, axisInfo, newLCS);
+                                 if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
+                                 {
+                                    representations3D.Add(axisRep);
+                                    // This offset is going to be applied later. Need to scale the coordinate into the correct unit scale
+                                    offset.Origin = UnitUtil.ScaleLength(offset.Origin);
+                                    repMapTrfList.Add(offset);
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+                  else
+                  {
+                     extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXYZ;
+                  }
+
+                  if (representations3D.Count == 0)
+                  {
+                     string profileName = null;
+                     BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(tryToExportAsExtrusion, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+                     if (IsExtrusionFriendlyType(exportType.ExportInstance))
+                     {
+                        if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                           bodyExporterOptions.CollectMaterialAndProfile = false;
+                        else
+                        bodyExporterOptions.CollectMaterialAndProfile = true;
+                        // Get a profile name. 
+                        profileName = NamingUtil.GetProfileName(familySymbol);
+                     }
+
+                     if (exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcPlate)
+                        bodyExporterOptions.CollectFootprintHandle = ExporterCacheManager.ExportOptionsCache.ExportAs4;
+
+                     GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
+                     bodyData = BodyExporter.ExportBody(exporterIFC, familyInstance, categoryId, ExporterUtil.GetSingleMaterial(familyInstance),
+                           geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName);
+                     typeInfo.MaterialIdList = bodyData.MaterialIds;
+                     //if (!bodyData.OffsetTransform.IsIdentity)
+                     offsetTransform = bodyData.OffsetTransform;
+
+                     IFCAnyHandle bodyRepHnd = bodyData.RepresentationHnd;
+                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
+                     {
+                        representations3D.Add(bodyRepHnd);
+                        repMapTrfList.Add(null);
+                     }
+
+                     if (IsExtrusionFriendlyType(exportType.ExportInstance))
+                     {
+                        StructuralMemberAxisInfo axisInfo = StructuralMemberExporter.GetStructuralMemberAxisTransform(familyInstance);
+                        if (axisInfo != null)
+                        {
+                           Transform newLCS = Transform.Identity;
+                           Transform offset = Transform.Identity;
+                           if (!useInstanceGeometry)
+                           {
+                              // When it is the case of NOT using instance geometry (i.e. using the original family symbol), use the transform of the familyInstance as the new LCS
+                              // This transform will be set as the Object LCS later on
+                              newLCS = new Transform(trf);
+                           }
+                           else
+                           {
+                              IFCAnyHandle lcsHnd = extraParams.GetLocalPlacement();
+                              // It appears that the local placement is already scaled. Unscale it here because axisInfo is based on unscaled information
+                              newLCS = ExporterUtil.UnscaleTransformOrigin(ExporterUtil.GetTransformFromLocalPlacementHnd(lcsHnd));
+                           }
+
+                           ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);
+                           IFCAnyHandle axisRep = StructuralMemberExporter.CreateStructuralMemberAxis(exporterIFC, familyInstance, catId, axisInfo, newLCS);
+                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
+                           {
+                              representations3D.Add(axisRep);
+                              repMapTrfList.Add(null);
+                           }
+                        }
+                     }
+
+                     if (bodyData.FootprintInfo != null)
+                     {
+                        IFCAnyHandle footprintShapeRep = bodyData.FootprintInfo.CreateFootprintShapeRepresentation(exporterIFC);
+                        representations3D.Add(footprintShapeRep);
+                        repMapTrfList.Add(bodyData.FootprintInfo.ExtrusionBaseLCS);
+                     }
+
+                     // Keep Material and Profile informartion in the typeinfo for creation of MaterialSet later on
+                     if (bodyExporterOptions.CollectMaterialAndProfile && bodyData.MaterialAndProfile != null)
+                        typeInfo.MaterialAndProfile = bodyData.MaterialAndProfile;
+                  }
+
+                  // We will allow a door or window to be exported without any geometry, or an element with parts.
+                  // Anything else doesn't really make sense.
+                  if (representations3D.Count == 0 && (doorWindowInfo == null))
+                  {
+                     extraParams.ClearOpenings();
+                     return;
+                  }
+               }
+
+               // By default: if exporting IFC2x3 or later, export 2D plan rep of family, if it exists, unless we are exporting Coordination View V2.
+               // This default can be overridden in the export options.
+               bool needToCreate2d = ExporterCacheManager.ExportOptionsCache.ExportAnnotations;
+               if (needToCreate2d)
+               {
+                  XYZ curveOffset = new XYZ(0, 0, 0);
+                  if (offsetTransform != null)
+                     curveOffset = -(offsetTransform.Origin);
+
+                  HashSet<IFCAnyHandle> curveSet = new HashSet<IFCAnyHandle>();
+                  {
+                     Transform planeTrf = doorWindowTrf.Inverse;
+                     XYZ projDir = XYZ.BasisZ;
+
+                     if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                     {
+                        // TODO: Check that this isn't overkill here.
+                        IList<Curve> export2DGeometry = GeometryUtil.Get2DArcOrLineFromSymbol(familyInstance, allCurveType: true);
+
+                        foreach (Curve curveGeom in export2DGeometry)
+                        {
+                           Curve curve = curveGeom;
+
+                           if (doorWindowTrf != null)
+                           {
+                              Transform flipTrf = Transform.Identity;
+                              double yTrf = 0.0;
+
+                              if (familyInstance.FacingFlipped ^ familyInstance.HandFlipped)
+                              {
+                                 flipTrf.BasisY = flipTrf.BasisY.Negate();
+                              }
+
+                              // We will move the curve into Z=0
+                              if (curve is Arc)
+                                 flipTrf.Origin = new XYZ(0, yTrf, -(curve as Arc).Center.Z);
+                              else if (curve is Ellipse)
+                                 flipTrf.Origin = new XYZ(0, yTrf, -(curve as Ellipse).Center.Z);
+                              else
+                              {
+                                 if (curve.IsBound)
+                                    flipTrf.Origin = new XYZ(0, yTrf, -curve.GetEndPoint(0).Z);
+                              }
+
+                              curve = curve.CreateTransformed(doorWindowTrf.Multiply(flipTrf));
+                           }
+
+                           IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
+                           if (curveSet == null)
+                              curveSet = new HashSet<IFCAnyHandle>();
+                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveHnd))
+                              curveSet.Add(curveHnd);
+                        }
+                     }
+                     else
+                     {
+                        IFCGeometryInfo IFCGeometryInfo = IFCGeometryInfo.CreateCurveGeometryInfo(exporterIFC, planeTrf, projDir, true);
+                        ExporterIFCUtils.CollectGeometryInfo(exporterIFC, IFCGeometryInfo, exportGeometry, curveOffset, false);
+
+                        IList<IFCAnyHandle> curves = IFCGeometryInfo.GetCurves();
+                        foreach (IFCAnyHandle curve in curves)
+                           curveSet.Add(curve);
+                     }
+
+                     if (curveSet.Count > 0)
+                     {
+                        IFCAnyHandle contextOfItems2d = exporterIFC.Get2DContextHandle();
+                        IFCAnyHandle curveRepresentationItem = IFCInstanceExporter.CreateGeometricSet(file, curveSet);
+                        HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
+                        bodyItems.Add(curveRepresentationItem);
+                        IFCAnyHandle planRepresentation = RepresentationUtil.CreateGeometricSetRep(exporterIFC, familyInstance, categoryId, "FootPrint",
+                           contextOfItems2d, bodyItems);
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(planRepresentation))
+                           representations2D.Add(planRepresentation);
+                     }
+                  }
+               }
+            }
+
+            if (doorWindowInfo != null)
+               typeInfo.StyleTransform = doorWindowTrf.Inverse;
+            else
+               typeInfo.StyleTransform = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, extraParams.GetLocalPlacement());
+
+            if (typeInfo.MaterialAndProfile != null)
+            {
+               //TODO: Need to find out if ScaledArea and CrossSectionArea and others have same values and meaning.
+               //      If yes then need to refactor code and eliminate duplication.
+               if (typeInfo.MaterialAndProfile.CrossSectionArea.HasValue)
+                  typeInfo.extraParams.ScaledArea = typeInfo.MaterialAndProfile.CrossSectionArea.Value;
+               if(typeInfo.MaterialAndProfile.ExtrusionDepth.HasValue)
+                  typeInfo.extraParams.ScaledLength = typeInfo.MaterialAndProfile.ExtrusionDepth.Value;
+               if(typeInfo.MaterialAndProfile.InnerPerimeter.HasValue)
+                  typeInfo.extraParams.ScaledInnerPerimeter = typeInfo.MaterialAndProfile.InnerPerimeter.Value;
+               if(typeInfo.MaterialAndProfile.OuterPerimeter.HasValue)
+                  typeInfo.extraParams.ScaledOuterPerimeter = typeInfo.MaterialAndProfile.OuterPerimeter.Value;
+            }
+
+            HashSet<IFCAnyHandle> propertySets = null;
+            IFCAnyHandle typeStyle = CreateFamilyTypeHandle(exporterIFC, ref typeInfo, doorWindowInfo, representations3D, repMapTrfList, representations2D,
+                  familyInstance, familySymbol, originalFamilySymbol, useInstanceGeometry, exportParts,
+                  exportType, out propertySets);
+
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeStyle))
+            {
+               wrapper.RegisterHandleWithElementType(familySymbol as ElementType, exportType, typeStyle, propertySets);
+
+               typeInfo.Style = typeStyle;
+
+               bool addedMaterialAssociation = false;
+               if (IsExtrusionFriendlyType(exportType.ExportInstance)
+                  && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4
+                  && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+               {
+                  if (typeInfo.MaterialAndProfile != null)
+                  {
+                     materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, typeInfo.MaterialAndProfile);
+                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
+                     {
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, typeInfo.MaterialAndProfile);
+                        addedMaterialAssociation = true;
+                     }
+                  }
+                  else if (extrudeDirection != null && orig != null)
+                  {
+                     if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                     {
+                        // If Material Profile information is somehow missing (e.g. the geometry is exported as Tessellation or BRep. In IFC4 where geometry is restricted
+                        //   the materialprofile information may still be needed), it will try to get the information here:
+                        MaterialAndProfile matNProf = GeometryUtil.GetProfileAndMaterial(exporterIFC, familyInstance, extrudeDirection, orig);
+                        if (matNProf.GetKeyValuePairs().Count > 0)
+                        {
+                           materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, matNProf);
+                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet))
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeStyle, matNProf);
+                              addedMaterialAssociation = true;
+                           }
+                        }
+                     }
+                  }
+               }
+               else if (exportType.ExportInstance == IFCEntityType.IfcPlate || exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcWall)
+               {
+                  MaterialLayerSetInfo mlsInfo = new MaterialLayerSetInfo(exporterIFC, familyInstance, wrapper);
+                  materialLayerSet = mlsInfo.MaterialLayerSetHandle;
+                  if (materialLayerSet != null)
+                  {
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, materialLayerSet);
+                     addedMaterialAssociation = true;
+                  }
+               }
+               else
+               {
+                  if (bodyData != null && bodyData.RepresentationItemInfo != null && bodyData.RepresentationItemInfo.Count > 0)
+                  {
+                     Element elementType = familyInstance.Document.GetElement(familyInstance.GetTypeId());
+                     CategoryUtil.CreateMaterialAssociationWithShapeAspect(exporterIFC, elementType, typeStyle, bodyData.RepresentationItemInfo);
+                     addedMaterialAssociation = true;
+                  }
+                  else
+                  {
+                     Element elementType = familyInstance.Document.GetElement(familyInstance.GetTypeId());
+                     ElementId bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, elementType);
+                     if (bestMatId == ElementId.InvalidElementId)
+                        bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, familyInstance);
+
+                     // Also get the materials from Parameters
+                     IList<ElementId> matIds = ParameterUtil.FindMaterialParameters(elementType);
+                     if (matIds.Count == 0)
+                        matIds = ParameterUtil.FindMaterialParameters(familyInstance);
+
+                     // Combine the material ids
+                     if (bestMatId != ElementId.InvalidElementId && !matIds.Contains(bestMatId))
+                        matIds.Add(bestMatId);
+
+                     if (matIds.Count > 0)
+                     {
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, matIds);
+                        addedMaterialAssociation = true;
+
+                        if (typeInfo.MaterialIdList.Count == 0)
+                        {
+                           typeInfo.MaterialIdList = matIds;
+                        }
+                     }
+                  }
+               }
+
+               if (!addedMaterialAssociation)
+                  CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, typeInfo.MaterialIdList);
+
+               ClassificationUtil.CreateClassification(exporterIFC, file, familySymbol, typeStyle);        // Create other generic classification from ClassificationCode(s)
+               ClassificationUtil.CreateUniformatClassification(exporterIFC, file, originalFamilySymbol, typeStyle);
+            }
+         }
+
+         if (found && !typeInfo.IsValid())
+            typeInfo = currentTypeInfo;
+
+         // we'll pretend we succeeded, but we'll do nothing.
+         if (!typeInfo.IsValid())
+            return;
+
+         extraParams = typeInfo.extraParams;
+
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+         {
+         // If the type is obtained from the cache (not the first instance), materialProfileSet will be null and needs to be obtained from the cache
+            if (IsExtrusionFriendlyType(exportType.ExportInstance)
+               && materialProfileSet == null)
+            {
+               materialProfileSet = ExporterCacheManager.MaterialSetCache.FindProfileSet(familySymbol.Id);
+               if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView 
+                  && materialProfileSet == null && extrudeDirection != null && orig != null)
+               {
+                  // If Material Profile information is somehow missing (e.g. the geometry is exported as Tessellation or BRep. In IFC4 where geometry is restricted
+                  //   the materialprofile information may still be needed), it will try to get the information here:
+                  MaterialAndProfile matNProf = GeometryUtil.GetProfileAndMaterial(exporterIFC, familyInstance, extrudeDirection, orig);
+                  if (matNProf.GetKeyValuePairs().Count > 0)
+                  {
+                     materialProfileSet = CategoryUtil.GetOrCreateMaterialSet(exporterIFC, familySymbol, matNProf);
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, familySymbol, typeInfo.Style, matNProf);
+                  }
+               }
+            }
+         }
+
+         if ((exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcPlate || exportType.ExportInstance == IFCEntityType.IfcWall)
+               && materialLayerSet == null)
+         {
+            materialLayerSet = ExporterCacheManager.MaterialSetCache.FindLayerSet(familySymbol.Id);
+         }
+
+         // add to the map, as long as we are not using range, not using instance geometry, and don't have extra openings.
+         if ((range == null) && !useInstanceGeometry && (extraParams.GetOpenings().Count == 0))
+            ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(originalFamilySymbol.Id, flipped, exportType, typeInfo);
+
+         // If we are using the instance geometry, ignore the transformation.
+         if (useInstanceGeometry)
+            trf = Transform.Identity;
+
+         if ((range != null) && exportParts)
+         {
+            XYZ rangeOffset = trf.Origin;
+            rangeOffset += new XYZ(0, 0, range.Start);
+            trf.Origin = rangeOffset;
+         }
+
+         Transform originalTrf = new Transform(trf);
+         XYZ scaledMapOrigin = XYZ.Zero;
+
+         trf = trf.Multiply(typeInfo.StyleTransform);
+
+         // create instance.  
+         IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
+         {
+            IFCAnyHandle contextOfItems2d = exporterIFC.Get2DContextHandle();
+            IFCAnyHandle contextOfItems1d = exporterIFC.Get3DContextHandle("Axis");
+
+            // for proxies, we store the IfcRepresentationMap directly since there is no style.
+            IFCAnyHandle style = typeInfo.Style;
+            IList<IFCAnyHandle> repMapList = !IFCAnyHandleUtil.IsNullOrHasNoValue(style) ?
+                  GeometryUtil.GetRepresentationMaps(style) : null;
+            if (repMapList == null)
+            {
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Map3DHandle))
+               {
+                  repMapList = new List<IFCAnyHandle>();
+                  repMapList.Add(typeInfo.Map3DHandle);
+               }
+
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Map2DHandle))
+               {
+                  if (repMapList == null)
+                     repMapList = new List<IFCAnyHandle>();
+                  repMapList.Add(typeInfo.Map2DHandle);
+               }
+            }
+
+            int numReps = repMapList != null ? repMapList.Count : 0;
+
+            // Note that repMapList may be null here, so we use numReps instead.
+            for (int ii = 0; ii < numReps; ii++)
+            {
+               IFCAnyHandle repMap = repMapList[ii];
+               int dimRepMap = RepresentationUtil.DimOfRepresentationContext(repMap);
+               if (dimRepMap < 1 || dimRepMap > 3)
+                  return;
+
+               HashSet<IFCAnyHandle> representations = new HashSet<IFCAnyHandle>();
+               representations.Add(ExporterUtil.CreateDefaultMappedItem(file, repMap, scaledMapOrigin));
+               IFCAnyHandle shapeRep = null;
+               switch (dimRepMap)
+               {
+                  case 3:
+                     {
+                        IFCAnyHandle mapRep = IFCAnyHandleUtil.GetInstanceAttribute(repMap, "MappedRepresentation");
+                        IFCAnyHandle context = IFCAnyHandleUtil.GetInstanceAttribute(mapRep, "ContextOfItems");
+                        shapeRep = RepresentationUtil.CreateBodyMappedItemRep(exporterIFC, familyInstance, categoryId, context,
+                              representations);
+                        break;
+                     }
+                  case 2:
+                     {
+                        shapeRep = RepresentationUtil.CreatePlanMappedItemRep(exporterIFC, familyInstance, categoryId, contextOfItems2d,
+                        representations);
+                        break;
+                     }
+                  case 1:
+                     {
+                        shapeRep = RepresentationUtil.CreateGraphMappedItemRep(exporterIFC, familyInstance, categoryId, contextOfItems1d,
+                        representations);
+                        break;
+                     }
+               }
+
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
+                  return;
+               shapeReps.Add(shapeRep);
+            }
+         }
+
+         IFCAnyHandle boundingBoxRep = null;
+         Transform boundingBoxTrf = (offsetTransform != null) ? offsetTransform.Inverse : Transform.Identity;
+         if (geomObjects.Count > 0)
+         {
+            boundingBoxTrf = boundingBoxTrf.Multiply(doorWindowTrf);
+            boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geomObjects, boundingBoxTrf);
+         }
+         else
+         {
+            boundingBoxTrf = boundingBoxTrf.Multiply(trf.Inverse);
+            boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, familyInstance.get_Geometry(options), boundingBoxTrf);
+         }
+
+         if (boundingBoxRep != null)
+            shapeReps.Add(boundingBoxRep);
+
+         IFCAnyHandle repHnd = (shapeReps.Count > 0) ? IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps) : null;
+
+         // Check for containment override
+         IFCAnyHandle overrideContainerHnd = null;
+         ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, familyInstance, out overrideContainerHnd);
+         if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && overrideContainerId != ElementId.InvalidElementId)
+            overrideLevelId = overrideContainerId;
+
+         using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, familyInstance, trf, null, overrideLevelId, overrideContainerHnd))
+         {
+            IFCAnyHandle instanceHandle = null;
+            IFCAnyHandle localPlacement = setter.LocalPlacement;
+            bool materialAlreadyAssociated = false;
+
+            // We won't create the instance if: 
+            // (1) we are exporting to CV2.0/RV, (2) we have no 2D, 3D, or bounding box geometry, and (3) we aren't exporting parts.
+            if (!(repHnd == null && !exportParts
+                  && (ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2
+                  || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)))
+            {
+               string instanceGUID = null;
+
+               int subElementIndex = ExporterStateManager.GetCurrentRangeIndex();
+               if (subElementIndex == 0)
+                  instanceGUID = GUIDUtil.CreateGUID(familyInstance);
+               else if (subElementIndex <= ExporterStateManager.RangeIndexSetter.GetMaxStableGUIDs())
+                  instanceGUID = GUIDUtil.CreateSubElementGUID(familyInstance, subElementIndex + (int)IFCGenericSubElements.SplitInstanceStart - 1);
+               else
+                  instanceGUID = GUIDUtil.CreateGUID();
+
+               IFCAnyHandle overrideLocalPlacement = null;
+               bool isChildInContainer = familyInstance.AssemblyInstanceId != ElementId.InvalidElementId;
+
+               if (parentLocalPlacement != null)
+               {
+                  Transform relTrf = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(parentLocalPlacement, localPlacement);
+                  Transform inverseTrf = relTrf.Inverse;
+
+                  IFCAnyHandle childLocalPlacement = ExporterUtil.CreateLocalPlacement(file, parentLocalPlacement,
+                        inverseTrf.Origin, inverseTrf.BasisZ, inverseTrf.BasisX);
+                  overrideLocalPlacement = childLocalPlacement;
+               }
+
+               switch (exportType.ExportInstance)
+               {
+                  case IFCEntityType.IfcBeam:
+                     {
+                        if (exportType.HasUndefinedPredefinedType())
+                           exportType.ValidatedPredefinedType = "BEAM";
+                        instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
+                           wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
+                        IFCAnyHandle placementToUse = localPlacement;
+
+                        // NOTE: We do not expect openings here, as they are created as part of creating an extrusion in ExportBody above.
+                        // However, if this were the case, we would have exported this beam in ExportBeamAsStandardElement above.
+
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
+                              exporterIFC, placementToUse, setter, wrapper);
+                        wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
+
+                        // Register the beam's IFC handle for later use by truss and beam system export.
+                        ExporterCacheManager.ElementToHandleCache.Register(familyInstance.Id, instanceHandle, exportType);
+
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet) && RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
+                        {
+                           int? cardinalPoint = BeamCardinalPoint(familyInstance);
+
+                           if (materialProfileSet != null)
+                           {
+                              // RV does not support IfcMaterialProfileSetUsage, material assignment should be directly to the MaterialProfileSet
+                              if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                              {
+                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, materialProfileSet);
+                              }
+                              else
+                              {
+                                 IFCAnyHandle matSetUsage = IFCInstanceExporter.CreateMaterialProfileSetUsage(file, materialProfileSet, cardinalPoint, null);
+                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matSetUsage);
+                              }
+
+                              materialAlreadyAssociated = true;
+                           }
+                        }
+                        break;
+                     }
+                  case IFCEntityType.IfcColumn:
+                     {
+                        if (exportType.HasUndefinedPredefinedType())
+                           exportType.ValidatedPredefinedType = "COLUMN";
+                        instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
+                           wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
+
+                        IFCAnyHandle placementToUse = localPlacement;
+                        if (!useInstanceGeometry)
+                        {
+                           bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
+                           if (needToCreateOpenings)
+                           {
+                              Transform openingTrf = new Transform(originalTrf);
+                              Transform extraRot = new Transform(originalTrf);
+                              extraRot.Origin = XYZ.Zero;
+                              openingTrf = openingTrf.Multiply(extraRot);
+                              openingTrf = openingTrf.Multiply(typeInfo.StyleTransform);
+
+                              XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
+                              IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
+                                 openingTrf.get_Basis(2), openingTrf.get_Basis(0));
+                              IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
+                              GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
+                              placementToUse = openingPlacement;
+                           }
+                        }
+
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
+                              exporterIFC, placementToUse, setter, wrapper);
+                        wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
+
+                        // Not all columns are space bounding, but it doesn't really hurt to have "extra" handles here, other
+                        // than a little extra memory usage.
+                        SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, instanceHandle, familyInstance.Id,
+                           setter.LevelId);
+
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet) && RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
+                        {
+                           // RV does not support IfcMaterialProfileSetUsage, material assignment should be directly to the MaterialProfileSet
+                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, materialProfileSet);
+                           }
+                           else
+                           {
+                              IFCAnyHandle matSetUsage = IFCInstanceExporter.CreateMaterialProfileSetUsage(file, materialProfileSet, null, null);
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matSetUsage);
+                           }
+                           materialAlreadyAssociated = true;
+                        }
+
+                        //export Base Quantities.
+                        // This is necessary for now as it deals properly with split columns by level.
+                        PropertyUtil.CreateBeamColumnBaseQuantities(exporterIFC, instanceHandle, familyInstance, typeInfo, geomObjects);
+                        break;
+                     }
+                  case IFCEntityType.IfcDoor:
+                  case IFCEntityType.IfcWindow:
+                     {
+                        double doorHeight = GetMinSymbolHeight(originalFamilySymbol);
+                        double doorWidth = GetMinSymbolWidth(originalFamilySymbol);
+
+                        double height = UnitUtil.ScaleLength(doorHeight);
+                        double width = UnitUtil.ScaleLength(doorWidth);
+
+                        IFCAnyHandle doorWindowLocalPlacement = !IFCAnyHandleUtil.IsNullOrHasNoValue(overrideLocalPlacement) ?
+                              overrideLocalPlacement : localPlacement;
+                        if (exportType.ExportType == IFCEntityType.IfcDoorType || exportType.ExportInstance == IFCEntityType.IfcDoor)
+                           instanceHandle = IFCInstanceExporter.CreateDoor(exporterIFC, familyInstance, instanceGUID, ownerHistory,
+                              doorWindowLocalPlacement, repHnd, height, width, doorWindowInfo.PreDefinedType,
+                              doorWindowInfo.DoorOperationTypeString, doorWindowInfo.UserDefinedOperationType);
+                        else
+                           instanceHandle = IFCInstanceExporter.CreateWindow(exporterIFC, familyInstance, instanceGUID, ownerHistory,
+                              doorWindowLocalPlacement, repHnd, height, width, doorWindowInfo.PreDefinedType, DoorWindowUtil.GetIFCWindowPartitioningType(originalFamilySymbol),
+                              doorWindowInfo.UserDefinedPartitioningType);
+                        wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
+
+                        SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, instanceHandle, familyInstance.Id,
+                              setter.LevelId);
+
+                        IFCAnyHandle placementToUse = doorWindowLocalPlacement;
+                        if (!useInstanceGeometry)
+                        {
+                           // correct the placement to the symbol space
+                           bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
+                           if (needToCreateOpenings)
+                           {
+                              Transform openingTrf = trf;
+                              openingTrf.Origin = new XYZ(0, 0, setter.Offset);
+                              openingTrf = doorWindowTrf.Multiply(openingTrf);
+                              XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
+
+                              // This copy is used for new IFCLocalPlacement with new RelativePlacement and original objectplacement attribute.
+                              IFCAnyHandle copiedLocalPlacement = ExporterUtil.CopyLocalPlacement(file, doorWindowLocalPlacement);
+
+                              // This placement will be used for further logic (openings etc).
+                              // If there is an opening, doorWindow's ObjectPlacement will be deleted and opening's ObjectPlacement will be used instead.
+                              IFCAnyHandle openingLocalPlacement = ExporterUtil.CreateLocalPlacement(file, copiedLocalPlacement,
+                                    scaledOrigin, openingTrf.BasisZ, openingTrf.BasisX);
+                              placementToUse = openingLocalPlacement;
+                           }
+                        }
+
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
+                              exporterIFC, placementToUse, setter, wrapper);
+                        break;
+                     }
+                  case IFCEntityType.IfcMember:
+                     {
+                        if (exportType.HasUndefinedPredefinedType())
+                           exportType.ValidatedPredefinedType = "BRACE";
+
+                        instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
+                           wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
+
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
+                              exporterIFC, localPlacement, setter, wrapper);
+                        wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
+
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialProfileSet) && RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
+                        {
+                           // RV does not support IfcMaterialProfileSetUsage, material assignment should be directly to the MaterialProfileSet
+                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                           {
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, materialProfileSet);
+                           }
+                           else
+                           {
+                              IFCAnyHandle matSetUsage = IFCInstanceExporter.CreateMaterialProfileSetUsage(file, materialProfileSet, null, null);
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matSetUsage);
+                           }
+                           materialAlreadyAssociated = true;
+                        }
+
+                        break;
+                     }
+                  case IFCEntityType.IfcPlate:
+                     {
+                        instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
+                           wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
+
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
+                              exporterIFC, localPlacement, setter, wrapper);
+
+                        if (RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
+                        {
+                           double maxOffset = 0.0;
+                           Parameter offsetPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_OFFSET);
+                           if (offsetPar == null)
+                           {
+                              maxOffset = ParameterUtil.GetSpecialOffsetParameter(familySymbol);
+                           }
+                           else
+                              maxOffset = offsetPar.AsDouble();
+                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
+
+                           if (materialLayerSet != null)
+                           {
+                              if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                              {
+                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, materialLayerSet);
+                              }
+                              else
+                              {
+                                 IFCAnyHandle matSetUsage = IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet, IFCLayerSetDirection.Axis3, IFCDirectionSense.Positive, maxOffset);
+                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matSetUsage);
+                              }
+                              materialAlreadyAssociated = true;
+                           }
+                        }
+                        break;
+                     }
+                  case IFCEntityType.IfcTransportElement:
+                     {
+                        IFCAnyHandle localPlacementToUse;
+                        ElementId roomId = setter.UpdateRoomRelativeCoordinates(familyInstance, out localPlacementToUse);
+
+                        string operationTypeStr;
+                        if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+                        {
+                           // It is PreDefinedType attribute in IFC4
+                           Toolkit.IFC4.IFCTransportElementType operationType = FamilyExporterUtil.GetPreDefinedType<Toolkit.IFC4.IFCTransportElementType>(familyInstance, ifcEnumType);
+                           operationTypeStr = operationType.ToString();
                         }
                         else
                         {
-                           // Create material association in case if bodyData is null
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, typeInfo.MaterialIdList);
+                           Toolkit.IFCTransportElementType operationType = FamilyExporterUtil.GetPreDefinedType<Toolkit.IFCTransportElementType>(familyInstance, ifcEnumType);
+                           operationTypeStr = operationType.ToString();
                         }
+
+                        double capacityByWeight = 0.0;
+                        ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcCapacityByWeight", out capacityByWeight);
+                        double capacityByNumber = 0.0;
+                        ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcCapacityByNumber", out capacityByNumber);
+
+                        instanceHandle = IFCInstanceExporter.CreateTransportElement(exporterIFC, familyInstance, instanceGUID, ownerHistory,
+                           localPlacementToUse, repHnd, operationTypeStr, capacityByWeight, capacityByNumber);
+
+                        bool containedInSpace = (roomId != ElementId.InvalidElementId);
+                        wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, !containedInSpace, exportType);
+                        if (containedInSpace)
+                           ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
+
+                        break;
                      }
+                  default:
+                     {
+                        if (IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
+                        {
+                           bool isBuildingElementProxy =
+                                 ((exportType.ExportInstance == IFCEntityType.IfcBuildingElementProxy) ||
+                                 (exportType.ExportType == IFCEntityType.IfcBuildingElementProxyType));
 
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Style))
-                        ExporterCacheManager.TypeRelationsCache.Add(typeInfo.Style, instanceHandle);
-                  }
+                           IFCAnyHandle localPlacementToUse = null;
+                           ElementId roomId = setter.UpdateRoomRelativeCoordinates(familyInstance, out localPlacementToUse);
+                           bool containedInSpace = (roomId != ElementId.InvalidElementId) && (exportType.ExportInstance != IFCEntityType.IfcSystemFurnitureElement);
+
+                           if (!isBuildingElementProxy)
+                           {
+                              instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, familyInstance, instanceGUID,
+                                 ownerHistory, localPlacementToUse, repHnd);
+                           }
+                           else
+                           {
+                              instanceHandle = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, familyInstance, instanceGUID,
+                                 ownerHistory, localPlacementToUse, repHnd, exportType.ValidatedPredefinedType);
+                           }
+
+                           bool associateToLevel = containedInSpace ? false : !isChildInContainer;
+                           wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, associateToLevel, exportType);
+                           if (containedInSpace)
+                              ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
+                        }
+
+                        IFCAnyHandle placementToUse = localPlacement;
+                        if (!useInstanceGeometry)
+                        {
+                           bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
+                           if (needToCreateOpenings)
+                           {
+                              Transform openingTrf = new Transform(originalTrf);
+                              Transform extraRot = new Transform(originalTrf);
+                              extraRot.Origin = XYZ.Zero;
+                              openingTrf = openingTrf.Multiply(extraRot);
+                              openingTrf = openingTrf.Multiply(typeInfo.StyleTransform);
+
+                              XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
+                              IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
+                                 openingTrf.get_Basis(2), openingTrf.get_Basis(0));
+                              IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
+                              GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
+                              placementToUse = openingPlacement;
+                           }
+                        }
+
+                        Transform offsetTransformToUse = null;
+                        if (useInstanceGeometry && !MathUtil.IsAlmostZero(setter.Offset))
+                        {
+                           XYZ offsetOrig = -XYZ.BasisZ * setter.Offset;
+                           Transform setterOffset = Transform.CreateTranslation(offsetOrig);
+                           offsetTransformToUse = offsetTransform.Multiply(setterOffset);
+                        }
+                        else
+                        {
+                           offsetTransformToUse = offsetTransform;
+                        }
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransformToUse,
+                           exporterIFC, placementToUse, setter, wrapper);
+                        break;
+                     }
                }
 
-               if (doorWindowInfo != null)
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
                {
-                  DoorWindowDelayedOpeningCreator delayedCreator = DoorWindowDelayedOpeningCreator.Create(exporterIFC, doorWindowInfo, instanceHandle, setter.LevelId);
-                  if (delayedCreator != null)
-                     ExporterCacheManager.DoorWindowDelayedOpeningCreatorCache.Add(delayedCreator);
+                  if (exportParts)
+                     PartExporter.ExportHostPart(exporterIFC, familyInstance, instanceHandle, familyProductWrapper, setter, null, overrideLevelId);
+                     //PartExporter.ExportHostPart(exporterIFC, familyInstance, instanceHandle, familyProductWrapper, setter, setter.LocalPlacement, overrideLevelId);
+
+                  if (ElementFilteringUtil.IsMEPType(exportType) || ElementFilteringUtil.ProxyForMEPType(familyInstance, exportType))
+                  {
+                     ExporterCacheManager.MEPCache.Register(familyInstance, instanceHandle);
+                     // For ducts and pipes, check later if there is an associated duct or pipe.
+                     if (CanHaveInsulationOrLining(exportType, categoryId))
+                        ExporterCacheManager.MEPCache.CoveredElementsCache.Add(familyInstance.Id);
+                  }
+
+                  ExporterCacheManager.HandleToElementCache.Register(instanceHandle, familyInstance.Id);
+
+                  if (!exportParts && !materialAlreadyAssociated)
+                  {
+                     // Create material association for the instance only if the the istance geometry is different from the type
+                     // or the type does not have any material association
+                     IFCAnyHandle constituentSetHnd = ExporterCacheManager.MaterialSetCache.FindConstituentSetHnd(familyInstance.GetTypeId());
+                     if ((useInstanceGeometry || IFCAnyHandleUtil.IsNullOrHasNoValue(constituentSetHnd))
+                        && bodyData != null && bodyData.RepresentationItemInfo != null && bodyData.RepresentationItemInfo.Count > 0)
+                     {
+                        CategoryUtil.CreateMaterialAssociationWithShapeAspect(exporterIFC, familyInstance, instanceHandle, bodyData.RepresentationItemInfo);
+                     }
+                     else
+                     {
+                        // Create material association in case if bodyData is null
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, typeInfo.MaterialIdList);
+                     }
+                  }
+
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Style))
+                     ExporterCacheManager.TypeRelationsCache.Add(typeInfo.Style, instanceHandle);
                }
+            }
+
+            if (doorWindowInfo != null)
+            {
+               DoorWindowDelayedOpeningCreator delayedCreator = DoorWindowDelayedOpeningCreator.Create(exporterIFC, doorWindowInfo, instanceHandle, setter.LevelId);
+               if (delayedCreator != null)
+                  ExporterCacheManager.DoorWindowDelayedOpeningCreatorCache.Add(delayedCreator);
             }
          }
       }

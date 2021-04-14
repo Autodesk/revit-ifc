@@ -1797,44 +1797,6 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
-      /// Creates a handle representing an IfcFootingType and assigns it to the file.
-      /// </summary>
-      /// <param name="file">The file.</param>
-      /// <param name="guid">The GUID to use to label the wall.</param>
-      /// <param name="ownerHistory">The IfcOwnerHistory.</param>
-      /// <param name="name">The name.</param>
-      /// <param name="description">The description.</param>
-      /// <param name="applicableOccurrence">The attribute optionally defines the data type of the occurrence object.</param>
-      /// <param name="propertySets">The property set(s) associated with the type.</param>
-      /// <param name="representationMaps">The mapped geometries associated with the type.</param>
-      /// <param name="elementTag">The tag that represents the entity.</param>
-      /// <param name="elementType">The type name.</param>
-      /// <param name="predefinedType">The predefined types.</param>
-      /// <returns>The handle.</returns>
-      /// <remarks>IfcFootingType is an IFC4 entity.  For previous versions, IfcTypeObject is used, which does not
-      /// support representationMaps, elementTag, elementType, or predefinedType.</remarks>
-      public static IFCAnyHandle CreateFootingType(IFCFile file, Element revitType, HashSet<IFCAnyHandle> propertySets, List<IFCAnyHandle> representationMaps, string predefinedType)
-      {
-
-         IFCAnyHandle footingType = null;
-
-         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-         {
-            // TODO: warn if representationMaps, elementTag, elementType, or predefinedType are non-null.
-            footingType = CreateInstance(file, IFCEntityType.IfcTypeObject, revitType);
-            SetElementType(footingType, revitType, propertySets, null);
-         }
-         else
-         {
-            footingType = CreateInstance(file, IFCEntityType.IfcFootingType, revitType);
-            SetSpecificEnumAttr(footingType, "PredefinedType", predefinedType, "IfcFootingType");
-            SetElementType(footingType, revitType, propertySets, representationMaps);
-         }
-
-         return footingType;
-      }
-
-      /// <summary>
       /// Creates a handle representing an IfcCurtainWallType and assigns it to the file.
       /// </summary>
       /// <param name="file">The file.</param>
@@ -6371,7 +6333,6 @@ namespace Revit.IFC.Export.Toolkit
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             IFCAnyHandleUtil.SetAttribute(windowStyle, "ParameterTakesPrecedence", paramTakesPrecedence);
          IFCAnyHandleUtil.SetAttribute(windowStyle, "Sizeable", sizeable);
-         //SetTypeProduct(windowStyle, revitType, propertySets, representationMaps);
 
          (string guid, IFCAnyHandle ownerHistory, string name, string description) rootData = DefaultRootData(revitType);
          SetTypeProduct(windowStyle, revitType, rootData.guid, rootData.ownerHistory, rootData.name, rootData.description, null, propertySets, representationMaps, null);

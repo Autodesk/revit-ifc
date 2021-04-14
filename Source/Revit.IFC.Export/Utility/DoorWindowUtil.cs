@@ -864,8 +864,8 @@ namespace Revit.IFC.Export.Utility
 
          Element doorWindowElement = doc.GetElement(insertId);
 
-         Parameter wallSlant = wall.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         bool wallIsVertical = (wallSlant != null) && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && MathUtil.IsAlmostZero(wallSlant.AsDouble());
+         double? optWallSlantAngle = ExporterCacheManager.WallCrossSectionCache.GetUniformSlantAngle(wall);
+         bool wallIsVertical = (optWallSlantAngle != null) && MathUtil.IsAlmostZero(optWallSlantAngle.Value);
          Parameter insertOrientation = doorWindowElement.get_Parameter(BuiltInParameter.INSERT_ORIENTATION);
          bool insertIsVertical = (insertOrientation != null && insertOrientation.HasValue && insertOrientation.StorageType == StorageType.Integer && insertOrientation.AsInteger() == 0 /*vertical orientation*/);
 
@@ -933,7 +933,7 @@ namespace Revit.IFC.Export.Utility
                   return null; // This shouldn't be possible
 
                // TODO: Is this right for tapered walls?
-               double slantAngle = (wallSlant == null) ? 0.0 : wallSlant.AsDouble();
+               double slantAngle = optWallSlantAngle.GetValueOrDefault(0.0);
 
                // Handle cases where cut direction is looking away from the wall
                // Positive Y coordinate in cutDir means it's looking away from the positive slant direction

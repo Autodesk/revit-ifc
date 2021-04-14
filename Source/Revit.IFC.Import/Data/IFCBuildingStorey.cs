@@ -128,10 +128,12 @@ namespace Revit.IFC.Import.Data
          else
             foundLevel = true;
 
+         double referenceElevation = GetReferenceElevation();
+         double totalElevation = Elevation + referenceElevation;
          if (level == null)
-            level = Level.Create(doc, Elevation);
+            level = Level.Create(doc, totalElevation);
          else
-            level.Elevation = Elevation;
+            level.Elevation = totalElevation;
 
          if (level != null)
             CreatedElementId = level.Id;

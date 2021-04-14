@@ -183,9 +183,9 @@ namespace Revit.IFC.Export.Utility
             return false;
 
          // Check whether the intended Entity type is inside the export exclusion set
-         Common.Enums.IFCEntityType elementClassTypeEnum;
-         if (Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
-            || Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportType.ToString(), out elementClassTypeEnum))
+         IFCEntityType elementClassTypeEnum;
+         if (Enum.TryParse(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
+            || Enum.TryParse(exportType.ExportType.ToString(), out elementClassTypeEnum))
             if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
                return false;
 
@@ -197,10 +197,9 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="element">The element.</param>
       /// <returns>True if the element has the IfcExportAs variable set to "DontExport".</returns>
-      public static bool IsIFCExportAsSetToDontExport(Element element)
+      public static bool IsIFCExportAsSetToDontExport(Element element, out string elementClassName)
       {
-         string exportAsEntity = "IFCExportAs";
-         string elementClassName;
+         const string exportAsEntity = "IFCExportAs";
          if (ParameterUtil.GetStringValueFromElementOrSymbol(element, exportAsEntity, out elementClassName) != null)
          {
             if (CompareAlphaOnly(elementClassName, "DONTEXPORT"))
@@ -227,23 +226,15 @@ namespace Revit.IFC.Export.Utility
          if (!ShouldCategoryBeExported(exporterIFC, element, allowSeparateOpeningExport))
             return false;
 
-         string exportAsEntity = "IFCExportAs";
          string elementClassName;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, exportAsEntity, out elementClassName) != null)
-         {
-            string enumTypeValue = string.Empty;
-            ExporterUtil.ExportEntityAndPredefinedType(elementClassName, out elementClassName, out enumTypeValue);
+         if (IsIFCExportAsSetToDontExport(element, out elementClassName))
+            return false;
 
-            if (CompareAlphaOnly(elementClassName, "DONTEXPORT"))
-               return false;
-
-            // Check whether the intended Entity type is inside the export exclusion set
-            Common.Enums.IFCEntityType elementClassTypeEnum;
-            if (Enum.TryParse<Common.Enums.IFCEntityType>(elementClassName, out elementClassTypeEnum))
-               if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
-                  return false;
-         }
-         return true;
+         // Check whether the intended Entity type is inside the export exclusion set
+         IFCEntityType elementClassTypeEnum;
+         return
+            !Enum.TryParse(elementClassName, out elementClassTypeEnum) ||
+            !ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum);
       }
 
       /// <summary>
@@ -373,60 +364,44 @@ namespace Revit.IFC.Export.Utility
          return exportInfoPair;
       }
 
+      static IDictionary<BuiltInCategory, IFCExportInfoPair> s_CategoryToExportType = null;
+
+      static void InitializeCategoryToExportType()
+      {
+         if (s_CategoryToExportType != null)
+            return;
+
+         s_CategoryToExportType = new Dictionary<BuiltInCategory, IFCExportInfoPair>() {
+            { BuiltInCategory.OST_Cornices, new IFCExportInfoPair(IFCEntityType.IfcBeam, "NOTDEFINED") },
+            { BuiltInCategory.OST_Ceilings, new IFCExportInfoPair(IFCEntityType.IfcCovering, "NOTDEFINED") },
+            { BuiltInCategory.OST_CurtainWallPanels, new IFCExportInfoPair(IFCEntityType.IfcPlate, "CURTAIN_PANEL") },
+            { BuiltInCategory.OST_Furniture, new IFCExportInfoPair(IFCEntityType.IfcFurniture, "NOTDEFINED") },
+            { BuiltInCategory.OST_Floors, new IFCExportInfoPair(IFCEntityType.IfcSlab, "FLOOR") },
+            { BuiltInCategory.OST_IOSModelGroups, new IFCExportInfoPair(IFCEntityType.IfcGroup, "NOTDEFINED") },
+            { BuiltInCategory.OST_Mass, new IFCExportInfoPair(IFCEntityType.IfcBuildingElementProxy, "NOTDEFINED") },
+            { BuiltInCategory.OST_CurtainWallMullions, new IFCExportInfoPair(IFCEntityType.IfcMember, "MULLION") },
+            { BuiltInCategory.OST_Railings, new IFCExportInfoPair(IFCEntityType.IfcRailing, "NOTDEFINED") },
+            { BuiltInCategory.OST_Ramps, new IFCExportInfoPair(IFCEntityType.IfcRamp, "NOTDEFINED") },
+            { BuiltInCategory.OST_Roofs, new IFCExportInfoPair(IFCEntityType.IfcRoof, "NOTDEFINED") },
+            { BuiltInCategory.OST_Site, new IFCExportInfoPair(IFCEntityType.IfcSite, "NOTDEFINED") },
+            { BuiltInCategory.OST_Stairs, new IFCExportInfoPair(IFCEntityType.IfcStair, "NOTDEFINED") },
+            { BuiltInCategory.OST_Walls, new IFCExportInfoPair(IFCEntityType.IfcWall, "NOTDEFINED") },
+            { BuiltInCategory.OST_Windows, new IFCExportInfoPair(IFCEntityType.IfcWindow, "NOTDEFINED") }
+         };
+      }
+
       /// <summary>
       /// Gets export type from category id.
       /// </summary>
       /// <param name="categoryId">The category id.</param>
-      /// <param name="ifcEnumType">The string value represents the IFC type.</param>
       /// <returns>The export type.</returns>
-      public static IFCExportInfoPair GetExportTypeFromCategoryId(ElementId categoryId, out string ifcEnumType)
+      public static IFCExportInfoPair GetExportTypeFromCategoryId(ElementId categoryId)
       {
-         IFCExportInfoPair exportInfoPair = new IFCExportInfoPair();
-         ifcEnumType = "NOTDEFINED";
-
-         if (categoryId == new ElementId(BuiltInCategory.OST_Cornices))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcBeam, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Ceilings))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcCovering, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_CurtainWallPanels))
-         {
-            ifcEnumType = "CURTAIN_PANEL";
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcPlate, ifcEnumType);
-         }
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Doors))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcDoor, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Furniture))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcFurniture, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Floors))
-         {
-            ifcEnumType = "FLOOR";
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcSlab, ifcEnumType);
-         }
-         else if (categoryId == new ElementId(BuiltInCategory.OST_IOSModelGroups))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcGroup, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Mass))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcBuildingElementProxy, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_CurtainWallMullions))
-         {
-            ifcEnumType = "MULLION";
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcMember, ifcEnumType);
-         }
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Railings))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcRailing, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Ramps))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcRamp, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Roofs))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcRoof, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Site))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcSite, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Stairs))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcStair, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Walls))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcWall, ifcEnumType);
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Windows))
-            exportInfoPair.SetValueWithPair(IFCEntityType.IfcWindow, ifcEnumType);
-
-         return exportInfoPair;
+         InitializeCategoryToExportType();
+         IFCExportInfoPair exportInfoPair;
+         if (s_CategoryToExportType.TryGetValue((BuiltInCategory)categoryId.IntegerValue, out exportInfoPair))
+            return exportInfoPair;
+         return new IFCExportInfoPair();
       }
 
       /// <summary>

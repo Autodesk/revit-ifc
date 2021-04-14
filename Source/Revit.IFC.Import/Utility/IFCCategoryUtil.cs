@@ -154,18 +154,18 @@ namespace Revit.IFC.Import.Utility
             if (optionalTypeValue != null)
             {
                if (StringEquals(optionalTypeValue, "SourceAndSink"))
-                  return Tuple.Create(new Color(0, 255, 0), 127);
+                  return Tuple.Create(new Color(0, 255, 0), 50);
                if (StringEquals(optionalTypeValue, "Source"))
-                  return Tuple.Create(new Color(0, 0, 255), 127);
+                  return Tuple.Create(new Color(0, 0, 255), 50);
                if (StringEquals(optionalTypeValue, "Sink"))
-                  return Tuple.Create(new Color(255, 0, 0), 127);
+                  return Tuple.Create(new Color(255, 0, 0), 50);
             }
-            return Tuple.Create(new Color(0, 0, 0), 127);
+            return Tuple.Create(new Color(0, 0, 0), 50);
          }
 
          if (StringStartsWith(categoryName, "IfcOpening"))
          {
-            return Tuple.Create(new Color(255, 165, 0), 64);
+            return Tuple.Create(new Color(255, 165, 0), 75);
          }
          
          // There are other entities that start with IfcSpace, such as IfcSpaceHeater.  But
@@ -177,23 +177,23 @@ namespace Revit.IFC.Import.Utility
             if (optionalTypeValue != null && StringEquals(optionalTypeValue, "External"))
             {
                // A nice shade of green.
-               return Tuple.Create(new Color(141, 184, 78), 64);
+               return Tuple.Create(new Color(141, 184, 78), 75);
             }
             // Default is internal.
             // Similar to "Light Sky Blue"
-            return Tuple.Create(new Color(164, 232, 232), 64); 
+            return Tuple.Create(new Color(164, 232, 232), 75); 
          }
 
          if (StringStartsWith(categoryName, "IfcZone"))
          {
             // (Teal Blue (Crayola)), according to Wikipedia.
-            return Tuple.Create(new Color(24, 167, 181), 64);
+            return Tuple.Create(new Color(24, 167, 181), 75);
          }
 
          if (StringEquals(categoryName, "Box"))
          {
             // Lemon chiffon, a lovely color for a bounding box.                             
-            return Tuple.Create(new Color(255, 250, 205), 64);
+            return Tuple.Create(new Color(255, 250, 205), 75);
          }
 
          return null;

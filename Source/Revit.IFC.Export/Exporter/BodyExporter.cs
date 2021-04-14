@@ -327,12 +327,13 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="document">The document.</param>
+      /// <param name="isVoid">True if the representation item represents a void (a space or an opening).</param>
       /// <param name="repItemHnd">The representation item.</param>
       /// <param name="overrideMatId">The material id to use instead of the one in the exporter, if provided.</param>
-      public static void CreateSurfaceStyleForRepItem(ExporterIFC exporterIFC, Document document, IFCAnyHandle repItemHnd,
-          ElementId overrideMatId)
+      public static void CreateSurfaceStyleForRepItem(ExporterIFC exporterIFC, Document document,
+         bool isVoid, IFCAnyHandle repItemHnd, ElementId overrideMatId)
       {
-         if (repItemHnd == null || ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+         if (isVoid || repItemHnd == null || ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
             return;
 
          // Restrict material to proper subtypes.
@@ -2017,7 +2018,7 @@ namespace Revit.IFC.Export.Exporter
                         }
 
                         TriangleMergeUtil triMerge = new TriangleMergeUtil(component);
-                        IList<IFCAnyHandle> ifcFaces = MergeAndCreateIfcFaces(file, triMerge, false /*CalculateIsClosed*/, out _);
+                        IList<IFCAnyHandle> ifcFaces = MergeAndCreateIfcFaces(file, triMerge);
                         polygonalFaceSet = ExportIfcFacesAsPolygonalFaceSet(file, ifcFaces, coordList, component.IsClosed, ifcColourRgbList, opacity);
                         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(polygonalFaceSet))
                            polygonalFaceSetList.Add(polygonalFaceSet);
@@ -2041,8 +2042,8 @@ namespace Revit.IFC.Export.Exporter
                   }
 
                   TriangleMergeUtil triMerge = new TriangleMergeUtil(mesh);
-                  IList<IFCAnyHandle> ifcFaces = MergeAndCreateIfcFaces(file, triMerge, true /*CalculateIsClosed*/, out bool isClosed);
-                  IFCAnyHandle polygonalFaceSet = ExportIfcFacesAsPolygonalFaceSet(file, ifcFaces, coordList, isClosed, ifcColourRgbList, opacity);
+                  IList<IFCAnyHandle> ifcFaces = MergeAndCreateIfcFaces(file, triMerge);
+                  IFCAnyHandle polygonalFaceSet = ExportIfcFacesAsPolygonalFaceSet(file, ifcFaces, coordList, mesh.IsClosed, ifcColourRgbList, opacity);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(polygonalFaceSet))
                      polygonalFaceSetList.Add(polygonalFaceSet);
                }
@@ -2091,7 +2092,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="file">the File</param>
       /// <param name="triMerge">TriangleMergeUtil instance with initialized geometry</param>
       /// <returns>List of IFC face handles</returns>
-      private static IList<IFCAnyHandle> MergeAndCreateIfcFaces(IFCFile file, TriangleMergeUtil triMerge, bool calculateIsClosed, out bool isClosed)
+      private static IList<IFCAnyHandle> MergeAndCreateIfcFaces(IFCFile file, TriangleMergeUtil triMerge)
       {
          IList<IFCAnyHandle> faces = new List<IFCAnyHandle>();
          triMerge.SimplifyAndMergeFaces();
@@ -2116,11 +2117,6 @@ namespace Revit.IFC.Export.Exporter
 
             faces.Add(faceHandle);
          }
-
-         if (calculateIsClosed)
-            isClosed = triMerge.IsClosed();
-         else
-            isClosed = false;  // to be discarded
 
          return faces;
       }
@@ -2355,7 +2351,7 @@ namespace Revit.IFC.Export.Exporter
          }
          else 
          {
-            exportColor = CategoryUtil.GetElementColorAndTransparency(element, out opacity);
+            exportColor = CategoryUtil.GetElementColorAndOpacityFromCategory(element, out opacity);
          }
 
          if (exportColor == null)
@@ -2658,7 +2654,7 @@ namespace Revit.IFC.Export.Exporter
                   bodyItems.Add(advancedBrepBodyItem);
                   alreadyExported = true;
                   hasAdvancedBrepGeometry = true;
-                  BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, advancedBrepBodyItem, materialId);
+                  CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, advancedBrepBodyItem, materialId);
                   bodyData.AddRepresentationItemInfo(document, geomObject, materialId, advancedBrepBodyItem);
                }
             }
@@ -2675,7 +2671,7 @@ namespace Revit.IFC.Export.Exporter
                   foreach (IFCAnyHandle triangulatedBodyItem in triangulatedBodyItems)
                   {
                      bodyItems.Add(triangulatedBodyItem);
-                     BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, triangulatedBodyItem, materialId);
+                     CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, triangulatedBodyItem, materialId);
                      bodyData.AddRepresentationItemInfo(document, geomObject, materialId, triangulatedBodyItem);
                   }
                   alreadyExported = true;
@@ -2799,7 +2795,8 @@ namespace Revit.IFC.Export.Exporter
                   ElementId currMatId = materialIds[matToUse];
 
                   IFCAnyHandle faceOuter = IFCInstanceExporter.CreateClosedShell(file, currentFaceHashSet);
-                  IFCAnyHandle brepHnd = RepresentationUtil.CreateFacetedBRep(exporterIFC, document, faceOuter, currMatId);
+                  IFCAnyHandle brepHnd = RepresentationUtil.CreateFacetedBRep(exporterIFC, document, 
+                     options.CreatingVoid, faceOuter, currMatId);
 
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(brepHnd))
                   {
@@ -2836,7 +2833,7 @@ namespace Revit.IFC.Export.Exporter
                   foreach (KeyValuePair<ElementId, HashSet<IFCAnyHandle>> faceSet in faceSets)
                   {
                      IFCAnyHandle surfaceModel = IFCInstanceExporter.CreateFaceBasedSurfaceModel(file, faceSet.Value);
-                     BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, surfaceModel, faceSet.Key);
+                     CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, surfaceModel, faceSet.Key);
 
                      bodyItems.Add(surfaceModel);
                   }
@@ -3073,11 +3070,11 @@ namespace Revit.IFC.Export.Exporter
                         if (options.CollectMaterialAndProfile)
                            footprintOrProfile |= GenerateAdditionalInfo.GenerateProfileDef;
 
-                        bool completelyClipped;
+                        ExtrusionExporter.ExtraClippingData extraClippingData = null;
                         HandleAndData extrusionData = ExtrusionExporter.CreateExtrusionWithClippingAndProperties(exporterIFC, element,
-                            CategoryUtil.GetSafeCategoryId(element), geometryList[0] as Solid, extrusionBasePlane, options.ExtrusionLocalCoordinateSystem.Origin,
-                            extrusionDirection, null, out completelyClipped, addInfo: footprintOrProfile, profileName: profileName);
-                        if (!completelyClipped && !IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionData.Handle))
+                            options.CreatingVoid, CategoryUtil.GetSafeCategoryId(element), geometryList[0] as Solid, extrusionBasePlane, options.ExtrusionLocalCoordinateSystem.Origin,
+                            extrusionDirection, null, out extraClippingData, addInfo: footprintOrProfile, profileName: profileName);
+                        if (!extraClippingData.CompletelyClipped && !IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionData.Handle))
                         {
                            // There are two valid cases here:
                            // 1. We actually created an extrusion.
@@ -3377,7 +3374,7 @@ namespace Revit.IFC.Export.Exporter
                {
                   int sz = bodyItems.Count();
                   for (int ii = 0; ii < sz; ii++)
-                     BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, bodyItems[ii], materialIdsForExtrusions[ii]);
+                     CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, bodyItems[ii], materialIdsForExtrusions[ii]);
 
                   if (exportSucceeded)
                   {

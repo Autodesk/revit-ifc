@@ -460,24 +460,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Check if the merged mesh is closed by verifying that all its edges have a corresponding reversed edge.
-      /// </summary>
-      /// <returns>Boolean value that indicates whether the merged mesh is closed or not</returns>
-      public bool IsClosed()
-      {
-         // All edges should have at least one corresponding reversed edge for the mesh to be closed
-         if (_mergedFaceList.Count == 0)
-            throw new InvalidOperationException("IsClosed called before coplanar triangle merge");
-
-         // This isn't the most optimized approach, but it's intended to be used only after merging 
-         // Meshes as those don't have any API data that indicates whether they are closed or not.
-         // Ideally we'd want to have an appropriate API method in the future, or use a better mesh 
-         // structure for analysis, like a proper half-edge representation.
-         IEnumerable<IndexSegment> edges = _mergedFaceList.SelectMany(x => facesColl[x].outerAndInnerBoundaries);
-         return edges.Select(x => x.reverse()).All(x => edges.Any(y => x.coincide(y, false)));
-      }
-
-      /// <summary>
       /// Combine coplanar triangles from the faceted body if they share the edge. From this process, polygonal faces (with or without holes) will be created
       /// </summary>
       public void SimplifyAndMergeFaces()

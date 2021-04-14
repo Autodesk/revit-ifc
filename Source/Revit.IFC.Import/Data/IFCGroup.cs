@@ -25,6 +25,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Utility;
+using Revit.IFC.Import.Enums;
 
 namespace Revit.IFC.Import.Data
 {

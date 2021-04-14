@@ -54,13 +54,11 @@
     <DefineConstants>TRACE;IFC_OPENSOURCE;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="RevitAPI, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
+    <Reference Include="RevitAPI">
+      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIIFC.dll</HintPath>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Web.Extensions" />
@@ -287,6 +285,7 @@
     <Compile Include="Utility\UnitsCache.cs" />
     <Compile Include="Utility\UnitUtil.cs" />
     <Compile Include="Utility\WallConnectionDataCache.cs" />
+    <Compile Include="Utility\WallCrossSectionCache.cs" />
     <Compile Include="Utility\ZoneInfoCache.cs" />
     <Compile Include="Utility\MaterialLayerRelationsCache.cs" />
     <Compile Include="Utility\MaterialLayerSetCache.cs" />
@@ -365,8 +364,8 @@
     -->
   <Import Project=".\Revit.IFC.Export.props" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I 
-xcopy "$(TargetDir)GeometryGymIFC.dll" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2022.bundle\Contents\2022\" /F /R /Y /I 
+xcopy "$(TargetDir)GeometryGymIFC.dll" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2022.bundle\Contents\2022\" /F /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

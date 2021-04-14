@@ -107,6 +107,12 @@ namespace Revit.IFC.Import.Data
 
       protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
       {
+         if (CoordIndex == null)
+         {
+            Importer.TheLog.LogError(Id, "Invalid coordinates for this triangulation, ignoring.", false);
+            return;
+         }
+
          using (BuilderScope bs = shapeEditScope.InitializeBuilder(IFCShapeBuilderType.TessellatedShapeBuilder))
          {
             base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
@@ -124,7 +130,8 @@ namespace Revit.IFC.Import.Data
                   continue;
                }
 
-               tsBuilderScope.StartCollectingFace(GetMaterialElementId(shapeEditScope));
+               // This is already triangulated, so no need to attempt triangulation here.
+               tsBuilderScope.StartCollectingFace(GetMaterialElementId(shapeEditScope), false);
 
                IList<XYZ> loopVertices = new List<XYZ>();
 
@@ -163,10 +170,7 @@ namespace Revit.IFC.Import.Data
                      bPotentiallyAbortFace = true;
                }
 
-               if (bPotentiallyAbortFace)
-                  tsBuilderScope.AbortCurrentFace();
-               else
-                  tsBuilderScope.StopCollectingFace();
+               tsBuilderScope.StopCollectingFace(!bPotentiallyAbortFace, false);
             }
 
             IList<GeometryObject> createdGeometries = tsBuilderScope.CreateGeometry(guid);

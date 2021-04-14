@@ -88,9 +88,9 @@ namespace BIM.IFC.Export.UI
          }
          else
          {
-            UpdateActiveConfigurationOptions(originalConfiguration);
-            GetGeoReferenceInfo(originalConfiguration);
-         }
+         UpdateActiveConfigurationOptions(originalConfiguration);
+         GetGeoReferenceInfo(originalConfiguration);
+      }
       }
 
       private void GetGeoReferenceInfo(IFCExportConfiguration configuration, string newEPSGCode = "")
@@ -168,65 +168,65 @@ namespace BIM.IFC.Export.UI
       {
          if (!comboboxIfcType.HasItems)
          {
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3));
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3CV2));
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCCOBIE));
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3BFM));
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3CV2));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCCOBIE));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3BFM));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
+         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
 
-            // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
-            string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
-            if (!string.IsNullOrEmpty(nonMVDOption) && nonMVDOption.Equals("true", StringComparison.InvariantCultureIgnoreCase))
-               comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4));
+         // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
+         string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
+         if (!string.IsNullOrEmpty(nonMVDOption) && nonMVDOption.Equals("true", StringComparison.InvariantCultureIgnoreCase))
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4));
          }
 
          if (!comboboxFileType.HasItems)
          {
-            foreach (IFCFileFormat fileType in Enum.GetValues(typeof(IFCFileFormat)))
-            {
-               IFCFileFormatAttributes item = new IFCFileFormatAttributes(fileType);
-               comboboxFileType.Items.Add(item);
-            }
+         foreach (IFCFileFormat fileType in Enum.GetValues(typeof(IFCFileFormat)))
+         {
+            IFCFileFormatAttributes item = new IFCFileFormatAttributes(fileType);
+            comboboxFileType.Items.Add(item);
+         }
          }
 
          if (!comboboxSpaceBoundaries.HasItems)
          {
-            for (int level = 0; level <= 2; level++)
-            {
-               IFCSpaceBoundariesAttributes item = new IFCSpaceBoundariesAttributes(level);
-               comboboxSpaceBoundaries.Items.Add(item);
-            }
+         for (int level = 0; level <= 2; level++)
+         {
+            IFCSpaceBoundariesAttributes item = new IFCSpaceBoundariesAttributes(level);
+            comboboxSpaceBoundaries.Items.Add(item);
+         }
          }
 
          if (!comboboxActivePhase.HasItems)
          {
-            PhaseArray phaseArray = IFCCommandOverrideApplication.TheDocument.Phases;
-            comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId));  // Default.
-            foreach (Phase phase in phaseArray)
-            {
-               comboboxActivePhase.Items.Add(new IFCPhaseAttributes(phase.Id));
-            }
+         PhaseArray phaseArray = IFCCommandOverrideApplication.TheDocument.Phases;
+         comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId));  // Default.
+         foreach (Phase phase in phaseArray)
+         {
+            comboboxActivePhase.Items.Add(new IFCPhaseAttributes(phase.Id));
+         }
          }
 
          // Initialize level of detail combo box
          if (!comboBoxLOD.HasItems)
          {
-            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelExtraLow);
-            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelLow);
-            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelMedium);
-            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelHigh);
+         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelExtraLow);
+         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelLow);
+         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelMedium);
+         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelHigh);
          }
 
          if (!comboBoxSitePlacement.HasItems)
          {
-            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Shared));
-            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Site));
-            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Project));
-            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Internal));
-         }
+         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Shared));
+         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Site));
+         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Project));
+         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Internal));
+      }
       }
 
       private void UpdatePhaseAttributes(IFCExportConfiguration configuration)
@@ -418,23 +418,11 @@ namespace BIM.IFC.Export.UI
             checkboxIncludeSteelElements.IsEnabled = false;
          }
 
-         //if ((configuration.IFCVersion == IFCVersion.IFC4RV)
-         //   || (configuration.IFCVersion == IFCVersion.IFC4DTV))
-         //{
-            checkbox_UseTypeNameOnly.IsChecked = configuration.UseTypeNameOnlyForIfcType;
-            checkbox_UseTypeNameOnly.IsEnabled = true;
+         checkbox_UseTypeNameOnly.IsChecked = configuration.UseTypeNameOnlyForIfcType;
+         checkbox_UseTypeNameOnly.IsEnabled = true;
 
-            checkbox_UseVisibleRevitNameAsEntityName.IsChecked = configuration.UseVisibleRevitNameAsEntityName;
-            checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
-         //}
-         //else
-         //{
-         //   checkbox_UseTypeNameOnly.IsChecked = false;
-         //   checkbox_UseTypeNameOnly.IsEnabled = true;
-
-         //   checkbox_UseVisibleRevitNameAsEntityName.IsChecked = false;
-         //   checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
-         //}
+         checkbox_UseVisibleRevitNameAsEntityName.IsChecked = configuration.UseVisibleRevitNameAsEntityName;
+         checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
 
          LoadTreeviewFilterElement(treeView_FilterElement);
 

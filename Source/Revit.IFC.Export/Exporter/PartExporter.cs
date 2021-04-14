@@ -293,7 +293,7 @@ namespace Revit.IFC.Export.Exporter
             case PartExportMode.ShapeRepresentationOnly:
             {
                string ifcEnumType = null;
-               IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, hostElement, out ifcEnumType);
+               IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, hostElement, out ifcEnumType);
 
                // Check the intended IFC entity or type name is in the exclude list specified in the UI
                IFCEntityType elementClassTypeEnum;
@@ -432,7 +432,7 @@ namespace Revit.IFC.Export.Exporter
 	
 	                  string partGUID = GUIDUtil.CreateGUID(partElement);
 	                  string ifcEnumType = null;
-	                  IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, (hostElement!=null)? hostElement : partElement, out ifcEnumType);
+	                  IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, (hostElement!=null)? hostElement : partElement, out ifcEnumType);
 	                  IFCAnyHandle ifcPart = null;
 	                  if (exportMode != PartExportMode.AsBuildingElement)
 	                  {
@@ -529,18 +529,18 @@ namespace Revit.IFC.Export.Exporter
          return shapeRepresentation;
       }
 
-      //private static int? GetLayerIndex(Element part)
-      //{
-      //   string layerIndexStr;
-      //   if (ParameterUtil.GetStringValueFromElement(part, BuiltInParameter.DPART_LAYER_INDEX, out layerIndexStr) != null)
-      //   {
-      //      int layerIndex = int.Parse(layerIndexStr) - 1; //The index starts at 1
-      //      if (layerIndex >= 0)
-      //         return layerIndex;
-      //   }
+      private static int? GetLayerIndex(Element part)
+      {
+         string layerIndexStr;
+         if (ParameterUtil.GetStringValueFromElement(part, BuiltInParameter.DPART_LAYER_INDEX, out layerIndexStr) != null)
+         {
+            int layerIndex = int.Parse(layerIndexStr) - 1; //The index starts at 1
+            if (layerIndex >= 0)
+               return layerIndex;
+         }
 
-      //   return null;
-      //}
+         return null;
+      }
 
       private static void AddGeometries(ExporterIFC exporterIFC, Element part, IFCRange range,
          ref List<GeometryObject> geometryObjects, IList<Solid> solidsToExclude)
@@ -615,9 +615,9 @@ namespace Revit.IFC.Export.Exporter
                      if (validRange)
                      {
                         Part part = partRange.Key;
-                        //int? layerIndex = GetLayerIndex(part);
-                        //if (layerIndex.HasValue)
-                        //   partMaterialLayerIndexList.Add(layerIndex.Value);
+                        int? layerIndex = GetLayerIndex(part);
+                        if (layerIndex.HasValue)
+                           partMaterialLayerIndexList.Add(layerIndex.Value);
 
                         AddGeometries(exporterIFC, part, range, ref geometryObjects, solidsToExclude);
                      }
@@ -630,9 +630,9 @@ namespace Revit.IFC.Export.Exporter
                   foreach (ElementId partId in associatedPartsList)
                   {
                      Part part = hostElement.Document.GetElement(partId) as Part;
-                     //int? layerIndex = GetLayerIndex(part);
-                     //if (layerIndex.HasValue)
-                     //   partMaterialLayerIndexList.Add(layerIndex.Value);
+                     int? layerIndex = GetLayerIndex(part);
+                     if (layerIndex.HasValue)
+                        partMaterialLayerIndexList.Add(layerIndex.Value);
                      AddGeometries(exporterIFC, part, null, ref geometryObjects, solidsToExclude);
                   }
                }
@@ -1031,7 +1031,7 @@ namespace Revit.IFC.Export.Exporter
       private static bool IsHostWallOrColumn(ExporterIFC exporterIFC, Element hostElement)
       {
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, hostElement, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, hostElement, out ifcEnumType);
          return (exportType.ExportInstance == IFCEntityType.IfcWall) || (exportType.ExportInstance == IFCEntityType.IfcColumn);
       }
 
@@ -1078,7 +1078,7 @@ namespace Revit.IFC.Export.Exporter
       private static IFCExtrusionAxes GetDefaultExtrusionAxesForHost(ExporterIFC exporterIFC, Element hostElement)
       {
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, hostElement, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, hostElement, out ifcEnumType);
 
          switch (exportType.ExportInstance)
          {
@@ -1101,7 +1101,7 @@ namespace Revit.IFC.Export.Exporter
       private static void SplitParts(ExporterIFC exporterIFC, Element hostElement, List<ElementId> associatedPartsList)
       {
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, hostElement, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, hostElement, out ifcEnumType);
 
          // Split the host to find the orphan parts.
          IList<ElementId> orphanLevels = new List<ElementId>();

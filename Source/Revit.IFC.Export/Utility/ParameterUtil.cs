@@ -83,7 +83,15 @@ namespace Revit.IFC.Export.Utility
          if (parameter != null)
          {
             StorageType storageType = parameter.StorageType;
-            if (storageType != StorageType.String && storageType != StorageType.ElementId)
+            if (storageType == StorageType.Double || (storageType == StorageType.Integer && parameter.GetTypeId() != SpecTypeId.Boolean.YesNo))
+            {
+               if (parameter.HasValue)
+               {
+                  propertyValue = parameter.AsValueString();
+                  return parameter;
+               }
+            }
+            else if (storageType != StorageType.String && storageType != StorageType.ElementId)
                return null;
 
             if (parameter.HasValue)
@@ -604,7 +612,7 @@ namespace Revit.IFC.Export.Utility
                continue;
 
             // Limit to the parameter(s) within builtin parameter group PG_MATERIALS
-            if (param.Definition.ParameterType == ParameterType.Material && param.Definition.ParameterGroup == BuiltInParameterGroup.PG_MATERIALS)
+            if (param.Definition.GetDataType() == SpecTypeId.Reference.Material && param.Definition.ParameterGroup == BuiltInParameterGroup.PG_MATERIALS)
             {
                materialIds.Add(param.AsElementId());
             }

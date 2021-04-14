@@ -117,7 +117,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The IFC GUID value.</returns>
       /// <remarks>For Sites, the user should only use this routine if there is no Site element in the file.  Otherwise, they
       /// should use CreateSiteGUID below, which takes an Element pointer.</remarks>
-      static public string CreateProjectLevelGUID(Document document, IFCProjectLevelGUIDType guidType)
+      static public string CreateProjectLevelGUID(Document document, ProjectLevelGUIDType guidType)
       {
          string parameterName = "Ifc" + guidType.ToString() + " GUID";
          ProjectInfo projectInfo = document.ProjectInformation;
@@ -125,13 +125,13 @@ namespace Revit.IFC.Export.Utility
          BuiltInParameter parameterId = BuiltInParameter.INVALID;
          switch (guidType)
          {
-            case IFCProjectLevelGUIDType.Building:
+            case ProjectLevelGUIDType.Building:
                parameterId = BuiltInParameter.IFC_BUILDING_GUID;
                break;
-            case IFCProjectLevelGUIDType.Project:
+            case ProjectLevelGUIDType.Project:
                parameterId = BuiltInParameter.IFC_PROJECT_GUID;
                break;
-            case IFCProjectLevelGUIDType.Site:
+            case ProjectLevelGUIDType.Site:
                parameterId = BuiltInParameter.IFC_SITE_GUID;
                break;
             default:
@@ -150,11 +150,9 @@ namespace Revit.IFC.Export.Utility
                return paramValue;
          }
 
-         // Only for 2022
-         //ElementId projectLevelElementId = new ElementId((int)guidType);
-         //System.Guid guid = ExportUtils.GetExportId(document, projectLevelElementId);
-         //string ifcGUID = ConvertToIFCGuid(guid);
-         string ifcGUID = ExporterIFCUtils.CreateProjectLevelGUID(document, guidType);
+         ElementId projectLevelElementId = new ElementId((int)guidType);
+         System.Guid guid = ExportUtils.GetExportId(document, projectLevelElementId);
+         string ifcGUID = ConvertToIFCGuid(guid);
 
          if ((projectInfo != null) && ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID)
          {
@@ -182,8 +180,7 @@ namespace Revit.IFC.Export.Utility
                return paramValue;
          }
 
-         //return CreateProjectLevelGUID(document, GUIDUtil.ProjectLevelGUIDType.Site);
-         return CreateProjectLevelGUID(document, IFCProjectLevelGUIDType.Site);
+         return CreateProjectLevelGUID(document, GUIDUtil.ProjectLevelGUIDType.Site);
       }
 
       /// <summary>
@@ -234,19 +231,34 @@ namespace Revit.IFC.Export.Utility
 
       static private string CreateGUIDBase(Element element, BuiltInParameter parameterName, out bool shouldStore)
       {
-         shouldStore = false;
          string ifcGUID = null;
+         shouldStore = CanStoreGUID(element);
 
-         if (ExporterCacheManager.ExportOptionsCache.GUIDOptions.AllowGUIDParameterOverride)
-            ParameterUtil.GetStringValueFromElement(element, parameterName, out ifcGUID);
+         // Avoid getting into an object if the object is part of the Group. It may cause regrenerate that invalidate other ElementIds
+         if (shouldStore && ExporterCacheManager.ExportOptionsCache.GUIDOptions.AllowGUIDParameterOverride)
+               ParameterUtil.GetStringValueFromElement(element, parameterName, out ifcGUID);
+
          if (!IsValidIFCGUID(ifcGUID))
          {
             System.Guid guid = ExportUtils.GetExportId(element.Document, element.Id);
             ifcGUID = ConvertToIFCGuid(guid);
-            shouldStore = true;
          }
 
          return ifcGUID;
+      }
+
+      static private bool CanStoreGUID(Element element)
+      {
+         bool partOfModelGroup = element.GroupId != ElementId.InvalidElementId;
+         bool isCurtainElement = false;
+
+         // Cannot set IfcGUID to curtain wall because doing so will potentially invalidate other element/delete the insert (even in interactive mode)
+         if (element is Wall)
+         {
+            Wall wallElem = element as Wall;
+            isCurtainElement = wallElem.CurtainGrid != null;
+         }
+         return !partOfModelGroup && !isCurtainElement;
       }
 
       /// <summary>

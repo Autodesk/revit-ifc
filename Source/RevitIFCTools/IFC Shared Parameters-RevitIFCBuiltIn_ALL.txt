@@ -6,7 +6,6 @@ META	2	1
 GROUP	2	IFC Properties
 *PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE
 #
-# Parameters for creating classifications 
 PARAM	f440bb0c-7518-406c-9b84-1de93ecb2d67	ClassificationCode	TEXT		2	1		1
 PARAM	3e35c8f6-18a2-4678-92a7-29f9a2f790bf	ClassificationCode(2)	TEXT		2	1		1
 PARAM	9c810054-8b25-4c82-a8f6-a19d4bde001f	ClassificationCode(3)	TEXT		2	1		1
@@ -19,8 +18,6 @@ PARAM	88125f36-db46-4998-a16d-605bf75cb83f	ClassificationCode(9)	TEXT		2	1		1
 PARAM	0a531080-2060-4bc6-802b-9230d35ac14d	ClassificationCode(10)	TEXT		2	1		1
 PARAM	26f1bba3-a3cb-4fbc-ba29-d7650f1bcb4b	Assembly Code	TEXT		2	1	Uniformat Classification	1
 PARAM	b623d495-dc76-46cb-ac7b-bfe126728bf2	Assembly Description	TEXT		2	1	Uniformat Classification	1
-#
-# Parameters to support Project Global Positioning
 PARAM	33c16c61-6659-4117-9de9-61841142aa81	ProjectGlobalPositioning.Scale	NUMBER		2	1		1
 PARAM	9ed03820-7425-4d90-868e-2ab0f5319495	ProjectGlobalPositioning.CRSName	TEXT		2	1		1
 PARAM	e4090d66-012c-45fe-9ac9-4cfe51c0dd29	ProjectGlobalPositioning.CRSDescription	TEXT		2	1		1
@@ -28,8 +25,6 @@ PARAM	e66c0e06-0383-480f-854e-950bb0d435f8	ProjectGlobalPositioning.CRSGeodeticD
 PARAM	bc47059f-e418-41f2-85b9-8b556dacae5e	ProjectGlobalPositioning.CRSVerticalDatum	TEXT		2	1		1
 PARAM	b1d60aea-e267-4ca1-b899-cb06d5eaa9c8	ProjectGlobalPositioning.CRSMapProjection	TEXT		2	1		1
 PARAM	91150f20-dc6c-4691-be1e-fe0ed0dfae6f	ProjectGlobalPositioning.CRSMapZone	TEXT		2	1		1
-#
-# Parameters to override quantity information
 PARAM	9c5ad3aa-75d4-448a-a75c-db72ae2139f8	IfcQtyDepth	LENGTH		2	1		1
 PARAM	90d03a57-2f8c-4c2f-b478-4c43c164e8d2	IfcQtyLength	LENGTH		2	1		1
 PARAM	7da39469-0a4a-4e77-8ddd-f4204f1a4001	IfcQtyWidth	LENGTH		2	1		1
@@ -56,16 +51,12 @@ PARAM	e9ce1eaf-b637-4f79-9bdd-8028abc942aa	IfcQtyNetVolume	VOLUME		2	1		1
 PARAM	3d3650c9-ffaf-4df6-bf27-71ce745e7f52	IfcQtyVolume	VOLUME		2	1		1
 PARAM	4cb8562d-51fd-425f-b51f-66ea7b212a7c	IfcQtyGrossWeight	NUMBER		2	1		1
 PARAM	343189da-1fca-411a-ad0d-ba735f79c476	IfcQtyNetWeight	NUMBER		2	1		1
-#
-# Parameters for Pset_SiteCommon to be applied to the Project information
 PARAM	dc32ed2d-58f7-4638-88fc-8a0dcc1ebc54	Pset_SiteCommon.BuildableArea	AREA		2	1		1
 PARAM	2db3713c-6ec4-4f96-82d4-95f0ca8c184b	Pset_SiteCommon.Reference	TEXT		2	1		1
 PARAM	41ff7c55-cd01-4e78-972c-c7ec49853817	Pset_SiteCommon.BuildingHeightLimit	LENGTH		2	1		1
 PARAM	004297b7-015a-4993-9a20-81ae39fc5df2	Pset_SiteCommon.TotalArea	AREA		2	1		1
 PARAM	6e4bc3ba-6026-4923-9256-fdc3b7dcad0b	Pset_SiteCommon.FloorAreaRatio	NUMBER		2	1		1
 PARAM	cec026c1-b978-4d3c-b657-a67fb34be612	Pset_SiteCommon.SiteCoverageRatio	NUMBER		2	1		1
-#
-# Parameters for Zone and Pset_ZoneCommon to be applied to Spaces
 PARAM	8654f7d0-4046-4658-8f4c-f7c9fae9c48b	ZoneName	TEXT		2	1		1
 PARAM	9d26a3cd-a7e7-48f4-88bf-794ba795a0ba	ZoneGroupName	TEXT		2	1		1
 PARAM	803a2a7e-2c1b-4297-a4bb-9d7431580b75	ZoneObjectType	TEXT		2	1		1
@@ -78,9 +69,6 @@ PARAM	cd616a7a-8e64-4bde-8454-989699ddf1b8	Pset_ZoneCommon.IsExternal	YESNO		2	1
 PARAM	4655738f-d56e-4f09-ae04-0d3e3a45cbaa	Pset_ZoneCommon.NetPlannedArea	AREA		2	1		1
 PARAM	6704bcc6-c483-45c3-9d90-e4e5dbb87748	Pset_ZoneCommon.HandicapAccessible	YESNO		2	1		1
 PARAM	f612feec-72a2-4a43-9621-a0c271d08886	Pset_ZoneCommon.GrossPlannedArea	AREA		2	1		1
-#
-# Parameters for Pset_RampFlightCommon required for a custom Ramp. These parameters can be appended with (#) to represent the individual components
-#  of the RampFlight, which are sorted bottom up
 PARAM	2421781d-cac5-4915-9d0c-f0a84a471b1a	Pset_RampFlightCommon.Reference	TEXT		2	1		1
 PARAM	3794b219-95ee-448f-b16f-e878ae037933	Pset_RampFlightCommon.HeadRoom	LENGTH		2	1		1
 PARAM	4894c521-4bf4-4a8f-b343-7a46abf60dce	Pset_RampFlightCommon.Slope	NUMBER		2	1		1
@@ -91,9 +79,6 @@ PARAM	84db17c9-9e1e-44d1-8cbe-69ea634f0eb1	IfcRampFlight.IfcQtyLength	LENGTH		2	
 PARAM	a325a639-582a-4bd3-a249-002ac2676be2	IfcRampFlight.IfcQtyWidth	LENGTH		2	1		1
 PARAM	c6bf3693-2edb-4839-ba96-aa2c6ad33cfa	IfcRampFlight.IfcQtyGrossArea	AREA		2	1		1
 PARAM	4e23e39d-0809-42ea-8bf0-9b3d19d39875	IfcRampFlight.IfcQtyGrossVolume	VOLUME		2	1		1
-#
-# Parameters for Pset_SlabCommon required for Landing for a custom Ramp. These parameters can be appended with (#) to represent the individual components
-#  of the Ramp Landing, which are sorted bottom up
 PARAM	fd7bdaba-bb4e-43de-a6c5-20478d9825e0	Pset_SlabCommon.Reference	TEXT		2	1		1
 PARAM	a3c71da3-c4bd-40aa-bf35-5cf18aeeeec0	Pset_SlabCommon.AcousticRating	TEXT		2	1		1
 PARAM	c93f5556-48c4-433a-9eab-b6e2e1bec9a9	Pset_SlabCommon.FireRating	TEXT		2	1		1
@@ -111,8 +96,6 @@ PARAM	4a40afcb-1979-43ef-a4bf-9df8993161f2	IfcRampLanding.IfcQtyGrossArea	AREA		
 PARAM	c3a0ed1e-419f-43a4-a0d3-b88bbb1ce593	IfcRampLanding.IfcQtyGrossVolume	VOLUME		2	1		1
 PARAM	785453d0-915c-47a2-a024-fed0cdaf39bf	IfcRampLanding.IfcQtyGrossWeight	NUMBER		2	1		1
 PARAM	925f5c62-001f-4777-87e2-862c97393149	IfcRampLanding.IfcQtyNetWeight	NUMBER		2	1		1
-#
-#	COBie related parameters
 PARAM	8635020d-0c0e-4f3a-ab32-a0ad3b6bfff2	BIM Standards URL	URL		2	1		1
 PARAM	5267e00f-cf59-45eb-8317-bcd7028fa748	OmniClass Number	TEXT		2	1		1
 PARAM	90847638-6cac-41fa-9db4-2e151700858f	OmniClass Title	TEXT		2	1		1
@@ -122,8 +105,6 @@ PARAM	ec9e9682-f7a2-4a5a-aefc-c77c16401e23	Space Category (Owner) Reference	TEXT
 PARAM	34713fdf-e119-49e9-92ed-5d11f708920f	Space Category (Owner) Name	TEXT		2	1		1
 PARAM	60ef59f7-f0e7-4d07-bb6e-41fc18510a31	Space Category (BOMA) Reference	TEXT		2	1		1
 PARAM	12bd9755-8e4f-4d4e-9240-2301d2cd7617	Space Category (BOMA) Name	TEXT		2	1		1
-#
-# Parameters for Spatial Zone Energy Analysis export
 PARAM	a20a1633-3a20-4337-9a5f-b8fcfa09a428	Spatial Zone Conditioning Requirement	TEXT		2	1		1
 PARAM	9d838298-00ac-4fec-820b-0d527f887cb7	HVAC System Type	TEXT		2	1		1
 PARAM	c7c65649-0abc-476d-8693-10779207dd50	User Defined HVAC System Type	TEXT		2	1		1
@@ -131,8 +112,6 @@ PARAM	36e76e83-a3c8-41c1-9fe8-a3abef236c3c	Is Daylit Zone	YESNO		2	1		1
 PARAM	7ee7d7b5-8c02-4055-8c24-09d8f913cca2	Number of Daylight Sensors	INTEGER		2	1		1
 PARAM	8253a0dd-4285-4210-869e-2a0f7c2d8ee4	Design Illuminance	NUMBER		2	1		1
 PARAM	7d669cb2-e5ba-445e-b291-87a5b64f61eb	Lighting Controls Type URL	TEXT		2	1		1
-#
-# Parameters used in GSA export
 PARAM	e8d94391-3331-4c7f-9e63-e91c17998c64	Space Occupant Organization Abbreviation	TEXT		2	1		1
 PARAM	739849a8-5ca6-494b-bac4-4afcc1eb1505	Space Occupant Organization Name	TEXT		2	1		1
 PARAM	52b8cea7-4ca9-4172-9501-d3527cf54a59	Occupant	TEXT		2	1		1
@@ -147,8 +126,6 @@ PARAM	5824fd9f-930e-41db-b20e-9c00aa9a8ab3	Spatial Zone Type (Owner) Name	TEXT		
 PARAM	0f1bae35-e82d-4a6c-a7db-572245ff29d6	Spatial Zone Security Level (Owner) Reference	TEXT		2	1		1
 PARAM	4320b6e8-9b0a-4632-b465-e95dc3df493c	Spatial Zone Security Level (Owner) Name	TEXT		2	1		1
 PARAM	8c7a547a-6f7f-4eef-a24c-b974efc717e5	ASHRAE Zone Type	TEXT		2	1		1
-#
-# Parameters to add information on IfcMaterialLayer and IfcMaterialLayerSet
 PARAM	d05b5436-5063-46e9-97e3-af659b69828e	IfcMaterialLayer.IsVentilated	YESNO		2	1		1
 PARAM	a458f550-164e-4e95-b816-3b28e8014197	IfcMaterialLayer.Name	TEXT		2	1		1
 PARAM	f69e625c-6005-48bd-80c7-f6e02c122788	IfcMaterialLayer.Priority	INTEGER		2	1		1
@@ -156,8 +133,6 @@ PARAM	36617d8d-1abb-41c4-b4e8-da1fd62aaad6	IfcMaterialLayer.Description	TEXT		2	
 PARAM	55cfe7d7-0b60-4214-97da-d2c5555641cb	IfcMaterialLayer.Category	TEXT		2	1		1
 PARAM	004d4a7b-b77e-479a-a6c3-56ca61babccb	IfcMaterialLayerSet.Name	TEXT		2	1		1
 PARAM	ab39f525-6de4-49ef-844e-95c5e11f1ff6	IfcMaterialLayerSet.Description	TEXT		2	1		1
-#
-# Parameters to provide value or override Ifc entity attributes
 PARAM	cf633970-73fe-49cd-b03e-af60d49d4deb	IfcName	TEXT		2	1		1
 PARAM	8df7e965-feaf-403f-8290-d4c289c99840	IfcDescription	TEXT		2	1		1
 PARAM	5d167d01-84fc-47cf-b6af-d4ad81f45868	IfcLongName	TEXT		2	1		1
@@ -183,8 +158,6 @@ PARAM	298bfb8d-7c66-4d69-a493-14beb1bbfd4b	IfcSpatialContainer	TEXT		2	1	Paramet
 PARAM	8f0306fa-4df3-479d-bc44-e55210e0d0e4	ConcealedCovering	YESNO		2	1		1
 PARAM	8083a04d-d537-4089-acef-03c7d96ec873	UserDefinedOperationType	TEXT		2	1		1
 PARAM	abad1d39-6965-468f-8861-370e6b726678	IfcSiteGUID	TEXT		2	1		1
-#
-# Parameters for IfcDoor and IfcWindow Panel and Lining properties
 PARAM	07dce341-b4e9-4507-8778-0e44321f516f	PanelDepth	LENGTH		2	1		1
 PARAM	e766bd67-5383-4174-8e98-303739b9e623	PanelWidth	LENGTH		2	1		1
 PARAM	2f4e182a-b7d4-491c-ad28-488029ec2ad6	LiningDepth	LENGTH		2	1		1
@@ -204,15 +177,9 @@ PARAM	9fa581b0-bab3-4926-9dce-f01cd8326b95	SecondTransomOffset	LENGTH		2	1		1
 PARAM	5d4d24aa-2147-40fb-b5f8-cae80691dfec	MullionThickness	LENGTH		2	1		1
 PARAM	97385d06-1f09-43f4-8d0d-d41809c2df9c	FirstMullionOffset	LENGTH		2	1		1
 PARAM	a766f4c3-f32f-4c85-b750-0cd593d23ad7	SecondMullionOffset	LENGTH		2	1		1
-#
-# Special parameters used to influence IFC export
 PARAM	a3e2f9a7-f184-4d16-80e7-349181e17d3d	IfcExportAs	TEXT		2	1	Parameter to instruct export to assign a specific entity	1
 PARAM	9a17f9c0-c41b-4ceb-8279-b20e789fa3a8	IfcExportType	TEXT		2	1	Parameter to assign PredefinedType	1
 PARAM	29f7ff2f-94b7-4d49-b7d3-ce900c19706b	IfcType	TEXT		2	1	Parameter to assign PredefinedType (Deprecated)	1
-#
-#***
-# The parameters below are all Propeties from IFC Propertset definitions for IFC2x2 to IFC4
-#***
 PARAM	f72ce06c-a2d9-448f-a1a7-7ac90aa2dfe7	RequestSourceType	TEXT		2	1	PEnum_RequestSourceType	1
 PARAM	e098e980-d1bc-11e1-8000-00215ad4efdf	RequestSourceLabel	TEXT		2	1	IfcLabel	1
 PARAM	eabae800-d1bc-11e1-8000-00215ad4efdf	RequestSourceName	MULTILINETEXT		2	1	IfcPerson	1
@@ -229,15 +196,15 @@ PARAM	4dac7f00-d1bd-11e1-8000-00215ad4efdf	ManualOverride	YESNO		2	1	IfcBoolean	
 PARAM	31d6c680-d219-11e1-8000-00215ad4efdf	Reference	TEXT		2	1	IfcIdentifier	1
 PARAM	a214298b-c8bc-4c2d-91e0-2d20124d29f8	Application	TEXT		2	1	PEnum_UnitaryControlElementApplication	1
 PARAM	58ffaa80-d1bd-11e1-8000-00215ad4efdf	ActuatorInputPower	NUMBER		2	1	IfcPowerMeasure	1
-PARAM	5ef58b80-d1bd-11e1-8000-00215ad4efdf	ElectricActuatorType	TEXT		2	1	Pset_ElectricActuatorTypeEnum	1
+PARAM	5ef58b80-d1bd-11e1-8000-00215ad4efdf	ElectricActuatorType	TEXT		2	1	PEnum_ElectricActuatorType	1
 PARAM	9c5a1900-d1bd-11e1-8000-00215ad4efdf	InputPressure	NUMBER		2	1	IfcPressureMeasure	1
 PARAM	a24ffa00-d1bd-11e1-8000-00215ad4efdf	InputFlowrate	NUMBER		2	1	IfcVolumetricFlowRateMeasure	1
 PARAM	877d8580-d1bd-11e1-8000-00215ad4efdf	Force	NUMBER		2	1	IfcForceMeasure	1
 PARAM	8cdad000-d1bd-11e1-8000-00215ad4efdf	Stroke	LENGTH		2	1	IfcLengthMeasure	1
 PARAM	b1cf4300-d1bd-11e1-8000-00215ad4efdf	Torque	NUMBER		2	1	IfcTorqueMeasure	1
 PARAM	b8f65100-d1bd-11e1-8000-00215ad4efdf	RangeAngle	NUMBER		2	1	IfcPlaneAngleMeasure	1
-PARAM	c9a6c700-d1bd-11e1-8000-00215ad4efdf	Name	TEXT		2	1	IfcString	1
-PARAM	bbc66580-d200-11e1-8000-00215ad4efdf	Description	TEXT		2	1	IfcString	1
+PARAM	c9a6c700-d1bd-11e1-8000-00215ad4efdf	Name	TEXT		2	1	IfcLabel	1
+PARAM	bbc66580-d200-11e1-8000-00215ad4efdf	Description	TEXT		2	1	IfcText	1
 PARAM	d62b1f80-d1bd-11e1-8000-00215ad4efdf	AirSideSystemType	TEXT		2	1	PEnum_AirSideSystemType	1
 PARAM	f3f88480-d1bd-11e1-8000-00215ad4efdf	AirSideSystemDistributionType	TEXT		2	1	PEnum_AirSideSystemDistributionType	1
 PARAM	0377cd80-d1be-11e1-8000-00215ad4efdf	TotalAirflow	NUMBER		2	1	IfcVolumetricFlowRateMeasure	1
@@ -444,7 +411,7 @@ PARAM	64af56b3-0b45-40c2-b43d-74b49a28b9db	ConstructionMethod	TEXT		2	1	IfcLabel
 PARAM	032f0080-d1c5-11e1-8000-00215ad4efdf	FireProtectionClass	TEXT		2	1	IfcLabel	1
 PARAM	c0ec9d3b-f8f6-49b9-be1a-1a3ea965d058	NetPlannedArea	AREA		2	1	IfcAreaMeasure	1
 PARAM	2659b000-d1c5-11e1-8000-00215ad4efdf	YearOfLastRefurbishment	TEXT		2	1	IfcLabel	1
-PARAM	7d1ab600-d1d4-11e1-8000-00215ad4efdf	Width	LENGTH		2	1	IfcPositiveLengthMeasure	1
+PARAM	7d1ab600-d1d4-11e1-8000-00215ad4efdf	Width	LENGTH		2	1	IfcLengthMeasure	1
 PARAM	e9b4a580-d212-11e1-8000-00215ad4efdf	Height	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	f33e0d80-d212-11e1-8000-00215ad4efdf	Diameter	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	83a92d80-d1d4-11e1-8000-00215ad4efdf	Depth	LENGTH		2	1	IfcPositiveLengthMeasure	1
@@ -517,7 +484,7 @@ PARAM	2bd56890-8fed-47d4-97b6-221eae126111	PhaseReference	TEXT		2	1	IfcIdentifie
 PARAM	6d0b5135-6311-456e-93cb-7de854db43ab	ConductorMaterial	MULTILINETEXT		2	1	IfcMaterial	1
 PARAM	22e1c4ed-17f2-45f9-811a-9eb2ce726e23	ConductorSheathMaterial	MULTILINETEXT		2	1	IfcMaterial	1
 PARAM	fce25116-b73d-4a3f-ab7d-35324abfe2ad	IsFireResistant	YESNO		2	1	IfcBoolean	1
-PARAM	30c97900-d1c8-11e1-8000-00215ad4efdf	Function	TEXT		2	1	IfcString	1
+PARAM	30c97900-d1c8-11e1-8000-00215ad4efdf	Function	TEXT		2	1	PEnum_FunctionEnum	1
 PARAM	8c940200-d1c8-11e1-8000-00215ad4efdf	CoreIdentifier	TEXT		2	1	IfcIdentifier	1
 PARAM	9289e300-d1c8-11e1-8000-00215ad4efdf	SheathColors	TEXT		2	1	PEnum_CoreColorsEnum	1
 PARAM	4aba8a00-d1cf-11e1-8000-00215ad4efdf	Capacity	MULTILINETEXT		2	1	IfcTimeSeries	1
@@ -561,7 +528,7 @@ PARAM	a6503c00-d1fe-11e1-8000-00215ad4efdf	MechanicalEfficiency	MULTILINETEXT		2
 PARAM	ed243e80-d1ca-11e1-8000-00215ad4efdf	IsentropicEfficiency	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	f0b7c580-d1ca-11e1-8000-00215ad4efdf	CompressorTotalEfficiency	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	f4e3e300-d1ca-11e1-8000-00215ad4efdf	ShaftPower	MULTILINETEXT		2	1	IfcTimeSeries	1
-PARAM	f8776a00-d1ca-11e1-8000-00215ad4efdf	InputPower	NUMBER		2	1	IfcPowerMeasure	1
+PARAM	f8776a00-d1ca-11e1-8000-00215ad4efdf	InputPower	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	fc0af100-d1ca-11e1-8000-00215ad4efdf	LubricantPumpHeatGain	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	ff05e180-d1ca-11e1-8000-00215ad4efdf	FrictionHeatGain	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	0200d200-d1cb-11e1-8000-00215ad4efdf	CompressorTotalHeatGain	MULTILINETEXT		2	1	IfcTimeSeries	1
@@ -640,7 +607,7 @@ PARAM	fb735a00-d1cc-11e1-8000-00215ad4efdf	RemainingCost	MULTILINETEXT		2	1	IfcT
 PARAM	fe6e4a80-d1cc-11e1-8000-00215ad4efdf	ScheduleCompletion	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	00d0a480-d1cd-11e1-8000-00215ad4efdf	ActualCompletion	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	d569ac00-d204-11e1-8000-00215ad4efdf	Value	MULTILINETEXT		2	1	IfcTimeSeries	1
-PARAM	172d2f00-d1d2-11e1-8000-00215ad4efdf	ControlType	TEXT		2	1	IfcString	1
+PARAM	172d2f00-d1d2-11e1-8000-00215ad4efdf	ControlType	TEXT		2	1	IfcLabel	1
 PARAM	69b81c80-d1cd-11e1-8000-00215ad4efdf	SignalOffset	NUMBER		2	1	IfcReal	1
 PARAM	6de43a00-d1cd-11e1-8000-00215ad4efdf	SignalFactor	NUMBER		2	1	IfcReal	1
 PARAM	72a8ee00-d1cd-11e1-8000-00215ad4efdf	SignalTime	NUMBER		2	1	IfcTimeMeasure	1
@@ -730,9 +697,9 @@ PARAM	c7019d00-d1d0-11e1-8000-00215ad4efdf	Leakage	MULTILINETEXT		2	1	IfcTimeSer
 PARAM	cc5ee780-d1d0-11e1-8000-00215ad4efdf	BladePositionAngle	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	d2ed5f00-d1d0-11e1-8000-00215ad4efdf	PressureLossCoefficient	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	f0222d80-d1d0-11e1-8000-00215ad4efdf	Operation	TEXT		2	1	PEnum_DamperOperation	1
-PARAM	fca68600-d1d0-11e1-8000-00215ad4efdf	Orientation	NUMBER		2	1	IfcPlaneAngleMeasure	1
+PARAM	fca68600-d1d0-11e1-8000-00215ad4efdf	Orientation	TEXT		2	1	PEnum_DamperOrientation	1
 PARAM	181b618b-ceaf-4a47-8b22-3104f2bbfb3f	BladeMaterial	MULTILINETEXT		2	1	IfcMaterial	1
-PARAM	0def9280-d1d1-11e1-8000-00215ad4efdf	BladeThickness	LENGTH		2	1	IfcLengthMeasure	1
+PARAM	0def9280-d1d1-11e1-8000-00215ad4efdf	BladeThickness	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	4b55ff05-1956-47cb-8c0b-9bcbf4b3f67f	SealMaterial	MULTILINETEXT		2	1	IfcMaterial	1
 PARAM	16e06400-d1d1-11e1-8000-00215ad4efdf	BladeAction	TEXT		2	1	PEnum_DamperBladeAction	1
 PARAM	252e8000-d1d1-11e1-8000-00215ad4efdf	BladeShape	TEXT		2	1	PEnum_DamperBladeShape	1
@@ -748,13 +715,13 @@ PARAM	67f05800-d1d1-11e1-8000-00215ad4efdf	LeakageFullyClosed	NUMBER		2	1	IfcVol
 PARAM	6cb50c00-d1d1-11e1-8000-00215ad4efdf	LossCoefficentCurve	MULTILINETEXT		2	1	PropertyTableValue	1
 PARAM	849d8780-d1f3-11e1-8000-00215ad4efdf	LeakageCurve	MULTILINETEXT		2	1	IfcTimeSeries	1
 PARAM	7d658200-d1d1-11e1-8000-00215ad4efdf	RegeneratedSoundCurve	MULTILINETEXT		2	1	PropertyTableValue	1
-PARAM	85252680-d1d1-11e1-8000-00215ad4efdf	FrameType	TEXT		2	1	IfcString	1
+PARAM	85252680-d1d1-11e1-8000-00215ad4efdf	FrameType	TEXT		2	1	IfcLabel	1
 PARAM	63359f00-d1e5-11e1-8000-00215ad4efdf	FrameMaterial	MULTILINETEXT		2	1	IfcMaterial	1
 PARAM	8a579500-d214-11e1-8000-00215ad4efdf	CloseOffRating	NUMBER		2	1	IfcPressureMeasure	1
 PARAM	aa199980-d1d1-11e1-8000-00215ad4efdf	ControlDamperOperation	TEXT		2	1	PEnum_ControlDamperOperation	1
 PARAM	ed740800-d1d1-11e1-8000-00215ad4efdf	ActuationType	TEXT		2	1	PEnum_FireDamperActuationType	1
-PARAM	fa90f700-d1d1-11e1-8000-00215ad4efdf	ClosureRatingEnum	TEXT		2	1	Pset_FireDamperClosureRatingEnum	1
-PARAM	07154f80-d1d2-11e1-8000-00215ad4efdf	FireResistanceRating	NUMBER		2	1	IfcReal	1
+PARAM	fa90f700-d1d1-11e1-8000-00215ad4efdf	ClosureRatingEnum	TEXT		2	1	PEnum_FireDamperClosureRating	1
+PARAM	07154f80-d1d2-11e1-8000-00215ad4efdf	FireResistanceRating	TEXT		2	1	IfcLabel	1
 PARAM	0bda0380-d1d2-11e1-8000-00215ad4efdf	FusibleLinkTemperature	NUMBER		2	1	IfcThermodynamicTemperatureMeasure	1
 PARAM	ca62ee35-084a-426d-8143-a5bef7621638	IsDesignPoint	YESNO		2	1	IfcBoolean	1
 PARAM	c37e0e00-d1f0-11e1-8000-00215ad4efdf	AnchorBoltLength	LENGTH		2	1	IfcPositiveLengthMeasure	1
@@ -855,7 +822,7 @@ PARAM	9f173700-d1da-11e1-8000-00215ad4efdf	Diversity	NUMBER		2	1	IfcPositiveRati
 PARAM	048b4300-4767-4386-b8ba-5b688c837bda	NumberOfLiveConductors	INTEGER		2	1	IfcInteger	1
 PARAM	a9393580-d1da-11e1-8000-00215ad4efdf	MaximumAllowedVoltageDrop	NUMBER		2	1	IfcElectricVoltageMeasure	1
 PARAM	adfde980-d1da-11e1-8000-00215ad4efdf	NetImpedance	NUMBER		2	1	IfcElectricResistanceMeasure	1
-PARAM	b9511500-d1da-11e1-8000-00215ad4efdf	DesignName	TEXT		2	1	IfcString	1
+PARAM	b9511500-d1da-11e1-8000-00215ad4efdf	DesignName	TEXT		2	1	IfcText	1
 PARAM	bfdf8c80-d1da-11e1-8000-00215ad4efdf	DuctSizingMethod	TEXT		2	1	PEnum_DuctSizingMethod	1
 PARAM	16f15b80-d1f3-11e1-8000-00215ad4efdf	PressureClass	NUMBER		2	1	IfcPressureMeasure	1
 PARAM	d38af300-d1da-11e1-8000-00215ad4efdf	LeakageClass	NUMBER		2	1	IfcPressureMeasure	1
@@ -883,15 +850,15 @@ PARAM	0df58f80-d1dd-11e1-8000-00215ad4efdf	GlassLayers	INTEGER		2	1	IfcCountMeas
 PARAM	1a79e800-d1dd-11e1-8000-00215ad4efdf	GlassThickness1	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	2796d700-d1dd-11e1-8000-00215ad4efdf	GlassThickness2	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	32516c00-d1dd-11e1-8000-00215ad4efdf	GlassThickness3	LENGTH		2	1	IfcPositiveLengthMeasure	1
-PARAM	3da49780-d1dd-11e1-8000-00215ad4efdf	FillGas	TEXT		2	1	IfcString	1
+PARAM	3da49780-d1dd-11e1-8000-00215ad4efdf	FillGas	TEXT		2	1	IfcLabel	1
 PARAM	48f7c300-d1dd-11e1-8000-00215ad4efdf	GlassColor	TEXT		2	1	IfcLabel	1
 PARAM	51e89480-d1dd-11e1-8000-00215ad4efdf	IsTempered	YESNO		2	1	IfcBoolean	1
 PARAM	5dd45680-d1dd-11e1-8000-00215ad4efdf	IsLaminated	YESNO		2	1	IfcBoolean	1
 PARAM	69278200-d1dd-11e1-8000-00215ad4efdf	IsCoated	YESNO		2	1	IfcBoolean	1
 PARAM	72185380-d1dd-11e1-8000-00215ad4efdf	IsWired	YESNO		2	1	IfcBoolean	1
-PARAM	07bda62b-7c1c-4c01-9cda-2ae77792e944	Translucency	NUMBER		2	1	IfcPositiveRatioMeasure	1
-PARAM	e06b7a3e-7ee3-483a-ae9b-4010d86c82ae	Reflectivity	NUMBER		2	1	IfcPositiveRatioMeasure	1
-PARAM	aec4cafd-e222-49f8-b3a5-60ffdab39e9c	BeamRadiationTransmittance	NUMBER		2	1	IfcPositiveRatioMeasure	1
+PARAM	07bda62b-7c1c-4c01-9cda-2ae77792e944	Translucency	NUMBER		2	1	IfcPositiveRatioMeasure 	1
+PARAM	e06b7a3e-7ee3-483a-ae9b-4010d86c82ae	Reflectivity	NUMBER		2	1	IfcPositiveRatioMeasure 	1
+PARAM	aec4cafd-e222-49f8-b3a5-60ffdab39e9c	BeamRadiationTransmittance	NUMBER		2	1	IfcPositiveRatioMeasure 	1
 PARAM	91af7c00-d1dd-11e1-8000-00215ad4efdf	SolarHeatGainTransmittance	NUMBER		2	1	IfcNormalisedRatioMeasure	1
 PARAM	9a07b700-d1dd-11e1-8000-00215ad4efdf	ThermalTransmittanceSummer	NUMBER		2	1	IfcThermalTransmittanceMeasure	1
 PARAM	9e33d480-d1dd-11e1-8000-00215ad4efdf	ThermalTransmittanceWinter	NUMBER		2	1	IfcThermalTransmittanceMeasure	1
@@ -901,9 +868,9 @@ PARAM	84928d00-d1dd-11e1-8000-00215ad4efdf	SolarAbsorption	NUMBER		2	1	IfcNormal
 PARAM	85401900-d207-11e1-8000-00215ad4efdf	SolarReflectance	NUMBER		2	1	IfcPositiveRatioMeasure	1
 PARAM	79eced80-d207-11e1-8000-00215ad4efdf	SolarTransmittance	NUMBER		2	1	IfcPositiveRatioMeasure	1
 PARAM	95db9980-d1dd-11e1-8000-00215ad4efdf	ShadingCoefficient	NUMBER		2	1	IfcNormalisedRatioMeasure	1
-PARAM	aa2a06f0-10aa-494f-b65a-3ce3c7978539	ExternalShadingCoefficient	NUMBER		2	1	IfcPositiveRatioMeasure	1
-PARAM	b1d3ebc5-df3c-475c-b00c-692b2b5e1a2e	InternalShadingCoefficient	NUMBER		2	1	IfcPositiveRatioMeasure	1
-PARAM	a16c8acf-bb13-424d-8ea4-a79d8b63a6a9	InsetShadingCoefficient	NUMBER		2	1	IfcPositiveRatioMeasure	1
+PARAM	aa2a06f0-10aa-494f-b65a-3ce3c7978539	ExternalShadingCoefficient	NUMBER		2	1	IfcPositiveRatioMeasure 	1
+PARAM	b1d3ebc5-df3c-475c-b00c-692b2b5e1a2e	InternalShadingCoefficient	NUMBER		2	1	IfcPositiveRatioMeasure 	1
+PARAM	a16c8acf-bb13-424d-8ea4-a79d8b63a6a9	InsetShadingCoefficient	NUMBER		2	1	IfcPositiveRatioMeasure 	1
 PARAM	c7d1c6d7-8c6c-441b-931a-0f6d9055affb	AreaDrained	AREA		2	1	IfcAreaMeasure	1
 PARAM	dba35c80-d1f3-11e1-8000-00215ad4efdf	InternalWidth	LENGTH		2	1	IfcLengthMeasure	1
 PARAM	837d120f-577e-42a4-a28b-8f73dffb509a	LayerName	TEXT		2	1	IfcIdentifier	1
@@ -1365,7 +1332,7 @@ PARAM	63886700-d1f2-11e1-8000-00215ad4efdf	StartDate	TEXT		2	1	IfcDateTime	1
 PARAM	5a7d1e12-f723-414a-9c98-fcce5a1ba2a5	PermitDuration	MULTILINETEXT		2	1	IfcDateAndTime	1
 PARAM	0cf36704-3b54-4379-8502-9816dcf817a4	StartTime	MULTILINETEXT		2	1	IfcLocalTime	1
 PARAM	2a7e08a2-2545-4688-a11a-1fcf931c4b6a	EndTime	MULTILINETEXT		2	1	IfcLocalTime	1
-PARAM	6e42fc00-d1f2-11e1-8000-00215ad4efdf	SpecialRequirements	TEXT		2	1	IfcString	1
+PARAM	6e42fc00-d1f2-11e1-8000-00215ad4efdf	SpecialRequirements	TEXT		2	1	IfcText	1
 PARAM	697e4800-d1f2-11e1-8000-00215ad4efdf	EndDate	TEXT		2	1	IfcDateTime	1
 PARAM	8c106100-d1f2-11e1-8000-00215ad4efdf	FlangeTable	TEXT		2	1	IfcLabel	1
 PARAM	93d00580-d1f2-11e1-8000-00215ad4efdf	FlangeStandard	TEXT		2	1	IfcLabel	1
@@ -1900,7 +1867,7 @@ PARAM	23235868-0ec5-468c-a34f-bc044b4733db	SecurityRequirement	TEXT		2	1	IfcLabe
 PARAM	350c5e60-2833-41bb-9677-6077148e19eb	PrivacyRequirement	TEXT		2	1	IfcLabel	1
 PARAM	3c556f55-057a-4fc8-b8f1-d5c716dc47f9	LightingRequirement	TEXT		2	1	IfcLabel	1
 PARAM	343b368a-f103-4308-8e6d-b0d1b561e048	FFETypeRequirement	TEXT		2	1	IfcLabel	1
-PARAM	e5a031d6-4987-47ce-8e7b-a111acda721d	EmployeeType	TEXT		2	1	IfcString	1
+PARAM	e5a031d6-4987-47ce-8e7b-a111acda721d	EmployeeType	TEXT		2	1	IfcLabel	1
 PARAM	19f84600-d20b-11e1-8000-00215ad4efdf	CoolingDesignAirflow	NUMBER		2	1	IfcVolumetricFlowRateMeasure	1
 PARAM	1fee2700-d20b-11e1-8000-00215ad4efdf	HeatingDesignAirflow	NUMBER		2	1	IfcVolumetricFlowRateMeasure	1
 PARAM	25e40800-d20b-11e1-8000-00215ad4efdf	TotalSensibleHeatGain	NUMBER		2	1	IfcPowerMeasure	1
@@ -1988,10 +1955,10 @@ PARAM	1d8dcc00-d20f-11e1-8000-00215ad4efdf	GroupCode	TEXT		2	1	IfcIdentifier	1
 PARAM	35655000-d20f-11e1-8000-00215ad4efdf	Finishing	TEXT		2	1	IfcLabel	1
 PARAM	43b36c00-d20f-11e1-8000-00215ad4efdf	HasOpening	YESNO		2	1	IfcBoolean	1
 PARAM	4a41e380-d20f-11e1-8000-00215ad4efdf	FurniturePanelType	TEXT		2	1	PEnum_FurniturePanelType	1
-PARAM	6cd3fc80-d20f-11e1-8000-00215ad4efdf	UsePurpose	TEXT		2	1	IfcString	1
-PARAM	73fb0a80-d20f-11e1-8000-00215ad4efdf	SupportType	TEXT		2	1	IfcString	1
+PARAM	6cd3fc80-d20f-11e1-8000-00215ad4efdf	UsePurpose	TEXT		2	1	IfcLabel	1
+PARAM	73fb0a80-d20f-11e1-8000-00215ad4efdf	SupportType	TEXT		2	1	PEnum_FurniturePanelType	1
 PARAM	807f6300-d20f-11e1-8000-00215ad4efdf	HangingHeight	LENGTH		2	1	IfcPositiveLengthMeasure	1
-PARAM	92610600-d20f-11e1-8000-00215ad4efdf	ShapeDescription	TEXT		2	1	IfcString	1
+PARAM	92610600-d20f-11e1-8000-00215ad4efdf	ShapeDescription	TEXT		2	1	IfcLabel	1
 PARAM	d2c08400-d20f-11e1-8000-00215ad4efdf	AccessType	TEXT		2	1	PEnum_TankAccessType	1
 PARAM	eff55280-d20f-11e1-8000-00215ad4efdf	NominalLengthOrDiameter	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	0ac7c700-d210-11e1-8000-00215ad4efdf	EffectiveCapacity	VOLUME		2	1	IfcVolumeMeasure	1
@@ -2135,7 +2102,7 @@ PARAM	27b4c800-d219-11e1-8000-00215ad4efdf	WorkMonthDuration	TEXT		2	1	IfcDurati
 PARAM	36bde0df-4e7b-4ff4-a9b7-b5191c5e82f7	NominalLength	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	4ccd1a80-d1c8-11e1-8000-00215ad4efdf	Construction	TEXT		2	1	PEnum_ConstructionEnum	1
 PARAM	8b1b0780-d1d1-11e1-8000-00215ad4efdf	FrameDepth	LENGTH		2	1	IfcPositiveLengthMeasure	1
-PARAM	93734280-d1d1-11e1-8000-00215ad4efdf	FrameThickness	LENGTH		2	1	IfcLengthMeasure	1
+PARAM	93734280-d1d1-11e1-8000-00215ad4efdf	FrameThickness	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	8e82b300-d212-11e1-8000-00215ad4efdf	NominalDiameter	LENGTH		2	1	IfcPositiveLengthMeasure	1
 PARAM	666b42dc-25c7-4bdf-9c7e-8bffdb06751f	Concealed	YESNO		2	1	IfcBoolean	1
 PARAM	8650a689-ba06-4df6-9f05-2a87ab070f02	ConcealedFlooring	YESNO		2	1	IfcBoolean	1

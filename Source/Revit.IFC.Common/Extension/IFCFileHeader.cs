@@ -88,32 +88,22 @@ namespace Revit.IFC.Common.Extensions
          {
             m_schema = Schema.Lookup(s_schemaId);
          }
+
          if (m_schema != null)
          {
+            Transaction transaction = new Transaction(document, "Update saved IFC File Header");
+            transaction.Start();
+
             IList<DataStorage> oldSavedFileHeader = GetFileHeaderInStorage(document, m_schema);
             if (oldSavedFileHeader.Count > 0)
             {
-               Transaction deleteTransaction = new Transaction(document, "Delete old IFC File Header");
-               deleteTransaction.Start();
                List<ElementId> dataStorageToDelete = new List<ElementId>();
                foreach (DataStorage dataStorage in oldSavedFileHeader)
                {
                   dataStorageToDelete.Add(dataStorage.Id);
                }
                document.Delete(dataStorageToDelete);
-               deleteTransaction.Commit();
             }
-         }
-
-         // Update the address using the new information
-         if (m_schema == null)
-         {
-            m_schema = Schema.Lookup(s_schemaId);
-         }
-         if (m_schema != null)
-         {
-            Transaction transaction = new Transaction(document, "Update saved IFC File Header");
-            transaction.Start();
 
             DataStorage fileHeaderStorage = DataStorage.Create(document);
 
@@ -144,48 +134,46 @@ namespace Revit.IFC.Common.Extensions
       /// <returns>Status whether there is existing saved File Header.</returns>
       public bool GetSavedFileHeader(Document document, out IFCFileHeaderItem fileHeader)
       {
-         IFCFileHeaderItem fileHeaderItemSaved = new IFCFileHeaderItem();
+         fileHeader = new IFCFileHeaderItem();
 
          if (m_schema == null)
          {
             m_schema = Schema.Lookup(s_schemaId);
          }
-         if (m_schema != null)
+
+         if (m_schema == null)
          {
-            IList<DataStorage> fileHeaderStorage = GetFileHeaderInStorage(document, m_schema);
-
-            if (fileHeaderStorage.Count > 0)
-            {
-
-               // expected only one File Header information in the storage
-               Entity savedFileHeader = fileHeaderStorage[0].GetEntity(m_schema);
-               IDictionary<string, string> savedFileHeaderMap = savedFileHeader.Get<IDictionary<string, string>>(s_FileHeaderMapField);
-               if (savedFileHeaderMap.ContainsKey(s_FileDescription))
-                  fileHeaderItemSaved.FileDescription = savedFileHeaderMap[s_FileDescription];
-               if (savedFileHeaderMap.ContainsKey(s_SourceFileName))
-                  fileHeaderItemSaved.SourceFileName = savedFileHeaderMap[s_SourceFileName];
-               if (savedFileHeaderMap.ContainsKey(s_AuthorName))
-                  fileHeaderItemSaved.AuthorName = savedFileHeaderMap[s_AuthorName];
-               if (savedFileHeaderMap.ContainsKey(s_AuthorEmail))
-                  fileHeaderItemSaved.AuthorEmail = savedFileHeaderMap[s_AuthorEmail];
-               if (savedFileHeaderMap.ContainsKey(s_Organization))
-                  fileHeaderItemSaved.Organization = savedFileHeaderMap[s_Organization];
-               if (savedFileHeaderMap.ContainsKey(s_Authorization))
-                  fileHeaderItemSaved.Authorization = savedFileHeaderMap[s_Authorization];
-               if (savedFileHeaderMap.ContainsKey(s_ApplicationName))
-                  fileHeaderItemSaved.ApplicationName = savedFileHeaderMap[s_ApplicationName];
-               if (savedFileHeaderMap.ContainsKey(s_VersionNumber))
-                  fileHeaderItemSaved.VersionNumber = savedFileHeaderMap[s_VersionNumber];
-               if (savedFileHeaderMap.ContainsKey(s_FileSchema))
-                  fileHeaderItemSaved.FileSchema = savedFileHeaderMap[s_FileSchema];
-
-               fileHeader = fileHeaderItemSaved;
-               return true;
-            }
+            return false;
          }
 
-         fileHeader = fileHeaderItemSaved;
-         return false;
-      }
-   }
+         IList<DataStorage> fileHeaderStorage = GetFileHeaderInStorage(document, m_schema);
+
+         if (fileHeaderStorage.Count == 0)
+            return false;
+
+         // expected only one File Header information in the storage
+         Entity savedFileHeader = fileHeaderStorage[0].GetEntity(m_schema);
+         IDictionary<string, string> savedFileHeaderMap = savedFileHeader.Get<IDictionary<string, string>>(s_FileHeaderMapField);
+         if (savedFileHeaderMap.ContainsKey(s_FileDescription))
+            fileHeader.FileDescription = savedFileHeaderMap[s_FileDescription];
+         if (savedFileHeaderMap.ContainsKey(s_SourceFileName))
+            fileHeader.SourceFileName = savedFileHeaderMap[s_SourceFileName];
+         if (savedFileHeaderMap.ContainsKey(s_AuthorName))
+            fileHeader.AuthorName = savedFileHeaderMap[s_AuthorName];
+         if (savedFileHeaderMap.ContainsKey(s_AuthorEmail))
+            fileHeader.AuthorEmail = savedFileHeaderMap[s_AuthorEmail];
+         if (savedFileHeaderMap.ContainsKey(s_Organization))
+            fileHeader.Organization = savedFileHeaderMap[s_Organization];
+         if (savedFileHeaderMap.ContainsKey(s_Authorization))
+            fileHeader.Authorization = savedFileHeaderMap[s_Authorization];
+         if (savedFileHeaderMap.ContainsKey(s_ApplicationName))
+            fileHeader.ApplicationName = savedFileHeaderMap[s_ApplicationName];
+         if (savedFileHeaderMap.ContainsKey(s_VersionNumber))
+            fileHeader.VersionNumber = savedFileHeaderMap[s_VersionNumber];
+         if (savedFileHeaderMap.ContainsKey(s_FileSchema))
+            fileHeader.FileSchema = savedFileHeaderMap[s_FileSchema];
+
+         return true;
+      } 
+   }   
 }

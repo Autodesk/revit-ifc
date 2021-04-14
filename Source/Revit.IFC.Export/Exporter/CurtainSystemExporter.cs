@@ -86,7 +86,7 @@ namespace Revit.IFC.Export.Exporter
                         if (subElem is FamilyInstance)
                         {
                            string ifcEnumType;
-                           IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, subElem, out ifcEnumType);
+                           IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, subElem, out ifcEnumType);
 
                            if (subElem is Mullion)
                            {
@@ -100,8 +100,7 @@ namespace Revit.IFC.Export.Exporter
                                  {
                                     // By default, panels and mullions are set to the same category as their parent.  In this case,
                                     // ask to get the exportType from the category id, since we don't want to inherit the parent class.
-                                    ifcEnumType = "MULLION";
-                                    exportType.SetValueWithPair(IFCEntityType.IfcMemberType, ifcEnumType);
+                                    exportType.SetValueWithPair(IFCEntityType.IfcMemberType, "MULLION");
                                  }
 
                                  FamilyInstanceExporter.ExportFamilyInstanceAsMappedItem(exporterIFC, subElem as Mullion, exportType, exportType.ValidatedPredefinedType, productWrapper,
@@ -117,7 +116,7 @@ namespace Revit.IFC.Export.Exporter
                                  // By default, panels and mullions are set to the same category as their parent.  In this case,
                                  // ask to get the exportType from the category id, since we don't want to inherit the parent class.
                                  ElementId catId = CategoryUtil.GetSafeCategoryId(subElem);
-                                 exportType = ElementFilteringUtil.GetExportTypeFromCategoryId(catId, out ifcEnumType);
+                                 exportType = ElementFilteringUtil.GetExportTypeFromCategoryId(catId);
                               }
 
 
@@ -132,8 +131,7 @@ namespace Revit.IFC.Export.Exporter
                               {
                                  if (exportType.ExportInstance == IFCEntityType.UnKnown)
                                  {
-                                    ifcEnumType = "CURTAIN_PANEL";
-                                    exportType.SetValueWithPair(IFCEntityType.IfcPlateType, ifcEnumType);
+                                    exportType.SetValueWithPair(IFCEntityType.IfcPlateType, "CURTAIN_PANEL");
                                  }
                               }
 
@@ -249,7 +247,8 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle outer = IFCInstanceExporter.CreateClosedShell(file, faces);
 
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(outer))
-                  bodyItems.Add(RepresentationUtil.CreateFacetedBRep(exporterIFC, document, outer, ElementId.InvalidElementId));
+                  bodyItems.Add(RepresentationUtil.CreateFacetedBRep(exporterIFC, document, 
+                     false, outer, ElementId.InvalidElementId));
             }
          }
 

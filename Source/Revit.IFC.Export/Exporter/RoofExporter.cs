@@ -51,7 +51,7 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          string ifcEnumType;
-         IFCExportInfoPair roofExportType = ExporterUtil.GetExportType(exporterIFC, roof, out ifcEnumType);
+         IFCExportInfoPair roofExportType = ExporterUtil.GetProductExportType(exporterIFC, roof, out ifcEnumType);
          if (roofExportType.IsUnKnown)
          {
             roofExportType = new IFCExportInfoPair(IFCEntityType.IfcRoof, "");
@@ -148,7 +148,7 @@ namespace Revit.IFC.Export.Exporter
                         IFCAnyHandle slabHnd = IFCInstanceExporter.CreateSlab(exporterIFC, roof, slabGUID, ownerHistory,
                            slabLocalPlacementHnd, prodRep, slabRoofPredefinedType);
                         IFCAnyHandleUtil.OverrideNameAttribute(slabHnd, slabName);
-                       
+
                         OpeningUtil.CreateOpeningsIfNecessary(slabHnd, roof, ecData, offsetTransform,
                             exporterIFC, slabLocalPlacementHnd, placementSetter, productWrapper);
 
@@ -176,7 +176,7 @@ namespace Revit.IFC.Export.Exporter
                            }
                         }
                      }
-                     else /*if (exportRoofAsSingleGeometry)*/
+                     else
                      {
                         OpeningUtil.CreateOpeningsIfNecessary(roofHnd, roof, ecData, offsetTransform,
                            exporterIFC, localPlacement, placementSetter, productWrapper);
@@ -237,7 +237,7 @@ namespace Revit.IFC.Export.Exporter
             else
             {
                string ifcEnumType;
-               IFCExportInfoPair roofExportType = ExporterUtil.GetExportType(exporterIFC, roof, out ifcEnumType);
+               IFCExportInfoPair roofExportType = ExporterUtil.GetProductExportType(exporterIFC, roof, out ifcEnumType);
 
                if (roofExportType.ExportInstance != IFCEntityType.IfcRoof)
                {
@@ -245,12 +245,12 @@ namespace Revit.IFC.Export.Exporter
                }
                else
                {
-               IFCAnyHandle roofHnd = ExportRoofOrFloorAsContainer(exporterIFC, roof,
-                   geometryElement, productWrapper);
-               if (IFCAnyHandleUtil.IsNullOrHasNoValue(roofHnd))
-               {
-                  ExportRoof(exporterIFC, roof, ref geometryElement, productWrapper, exportAsSingleGeometry);
-               }
+                  IFCAnyHandle roofHnd = ExportRoofOrFloorAsContainer(exporterIFC, roof,
+                      geometryElement, productWrapper);
+                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(roofHnd))
+                  {
+                     ExportRoof(exporterIFC, roof, ref geometryElement, productWrapper, exportAsSingleGeometry);
+                  }
                }
 
                // call for host objects; curtain roofs excused from call (no material information)
@@ -283,7 +283,7 @@ namespace Revit.IFC.Export.Exporter
             return null;
 
          string subSlabType = null;
-         IFCExportInfoPair roofExportType = ExporterUtil.GetExportType(exporterIFC, element, out _);
+         IFCExportInfoPair roofExportType = ExporterUtil.GetProductExportType(exporterIFC, element, out _);
          if (roofExportType.IsUnKnown)
          {
             IFCEntityType elementClassTypeEnum = 
@@ -423,7 +423,7 @@ namespace Revit.IFC.Export.Exporter
                                        return null;
                                     }
                                     ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
-                                    BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, itemShapeRep, matId);
+                                    BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, false, itemShapeRep, matId);
                                     bodyItems.Add(itemShapeRep);
                                  }
                                  else
@@ -439,8 +439,7 @@ namespace Revit.IFC.Export.Exporter
                                           return null;
                                        }
 
-                                       //ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
-                                       BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, itemShapeRep, matLayerInfo.m_baseMatId);
+                                       BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, false, itemShapeRep, matLayerInfo.m_baseMatId);
 
                                        bodyItems.Add(itemShapeRep);
                                        RepresentationUtil.CreateRepForShapeAspect(exporterIFC, element, prodDefShape, representationType, matLayerInfo.m_layerName, itemShapeRep);
@@ -530,7 +529,7 @@ namespace Revit.IFC.Export.Exporter
       public static void ExportRoofAsParts(ExporterIFC exporterIFC, Element element, GeometryElement geometryElement, ProductWrapper productWrapper)
       {
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, element, out ifcEnumType);
          if (exportType.IsUnKnown)
             exportType = new IFCExportInfoPair(IFCEntityType.IfcRoof);
 

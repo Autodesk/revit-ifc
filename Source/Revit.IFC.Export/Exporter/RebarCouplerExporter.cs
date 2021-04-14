@@ -63,7 +63,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
          Options options = GeometryUtil.GetIFCExportGeometryOptions(); ;
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, coupler, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, coupler, out ifcEnumType);
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {

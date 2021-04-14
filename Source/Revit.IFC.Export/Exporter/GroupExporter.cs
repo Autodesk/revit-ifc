@@ -69,7 +69,7 @@ namespace Revit.IFC.Export.Exporter
             string longName = NamingUtil.GetLongNameOverride(element, null);
 
             string ifcEnumType;
-            IFCExportInfoPair exportAs = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
+            IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(exporterIFC, element, out ifcEnumType);
 
             if (exportAs.ExportInstance == IFCEntityType.IfcGroup)
             {
@@ -110,7 +110,7 @@ namespace Revit.IFC.Export.Exporter
 
             // Check or set the cached Group's export type
             if (groupInfo.GroupType.ExportInstance == IFCEntityType.UnKnown)
-               ExporterCacheManager.GroupCache.RegisterGroupType(element.Id, exportAs);
+               ExporterCacheManager.GroupCache.RegisterOrUpdateGroupType(element.Id, exportAs);
             else if (groupInfo.GroupType.ExportInstance != exportAs.ExportInstance)
                throw new InvalidOperationException("Inconsistent Group export entity type");
 

@@ -1429,7 +1429,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coordinate basis..
+        ///   Looks up a localized string similar to The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coodinate basis..
         /// </summary>
         public static string OffsetDistanceTooLarge {
             get {

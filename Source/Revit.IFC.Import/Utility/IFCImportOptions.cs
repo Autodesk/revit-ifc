@@ -138,7 +138,7 @@ namespace Revit.IFC.Import.Utility
       /// If true, process the HasAssignments INVERSE attribute.  If false, ignore.
       /// This is necessary because the default IFC2x3_TC1 EXPRESS schema file is (incorrectly) missing this inverse attribute.
       /// </summary>
-      public bool AllowUseHasAssignments { get; set; } = true;
+      public bool AllowUseHasAssignments { get; set; } = false;
 
       /// <summary>
       /// If this value is false, then, if we find an already created Revit file corresponding to the IFC file,

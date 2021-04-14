@@ -117,10 +117,17 @@ namespace Revit.IFC.Import.Data
          // We will delay processing the containment information to the PostProcess stp.  For complicated systems, creating all of these
          // during the standard Process step may result in a stack overflow.
 
-         HashSet<IFCAnyHandle> containedIn = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcPort, "ContainedIn");
-         if (containedIn != null && containedIn.Count != 0)
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4))
          {
-            m_ContainedInHandle = containedIn.First();
+            HashSet<IFCAnyHandle> containedIn = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcPort, "ContainedIn");
+            if (containedIn != null && containedIn.Count != 0)
+            {
+               m_ContainedInHandle = containedIn.First();
+            }
+         }
+         else
+         {
+            m_ContainedInHandle = IFCAnyHandleUtil.GetInstanceAttribute(ifcPort, "ContainedIn");
          }
 
          HashSet<IFCAnyHandle> connectedFrom = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcPort, "ConnectedFrom");
