@@ -67,9 +67,9 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 <body>
 <div id="heading">
 	<div id="plugin-icon"><img width=85 height=85 id="Rectangle 3" src="IFCExporter.png"></div>
-	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2021</h1></div>
+	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2022</h1></div>
 	<p id="plugin-description">
-	This application seamlessly replaces the built-in IFC capabilities of Revit 2021.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
+	This application seamlessly replaces the built-in IFC capabilities of Revit 2022.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
     </p>
 </div>
 
@@ -81,7 +81,7 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 	<div class="command name">Revit IFC</div>
 	<div class="command description">
     <p> 
-    Revit IFC 2021 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
+    Revit IFC 2022 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
     Source contributors.  While this app is not necessary for IFC support, it is recommended that users that depend on the quality of their IFC 
     download this app and keep it up-to-date, as new enhancements and defect fixes are added,  For more information on IFC, 
     please visit the <a href="http://buildingsmart.com/standards/ifc" target=_blank>buildingSMART website</a> or the Revit wiki.
@@ -237,6 +237,48 @@ working on expanding and eventually removing this limit, and we will be tracking
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
 <div class="versionset">
+   <div class="version">22.1.0.0</div><div class="versioninfo-bullet">
+
+      <br><p>
+         General:
+			<ul>
+            <li>This version contains multiple updates and improvements over the default Revit IFC for Revit 2022 out-of-the-box. The list below describes various improvements and bugfixes since the latest release of 21.2.1.0.
+			</ul>	
+			<br>
+     <p>
+         Bug Fixes:
+			<p>
+			Export bug fixes:
+			<ul>
+				<li>Known issue from 21.1.0.0 "Combination of a section box in the current view and the use of option <strong>Use active view when creating geometry</strong> may cause certain walls that are cut by the section box to fail during export resulting of missing some geometries." has been fixed.
+				<li>Fixed issue with failing to export IFC when install path includes special characters
+				<li>Fixed issue when changing the class output to "IfcBuildingElementProxy" results in the rebars being in the wrong location.
+				<li>Fixed issue of failing to export when option to export links as separate IFC for model stored in the cloud.
+				<li>Fixed issue of wrong geometry exported when there are cuts on a slanted wall.
+				<li>Fixed issue that export may fail due to certain object becomes invalid when exporting IFC with StoreGUID option is selected when Group or Curtain Wall objects present.
+				<li>Fixed issue that Linked RVT files export to wrong location if link has been moved.
+				<li>Fixed issue that in a special condition a Door is always exported to IFC with a new GUID (when the Door is hosted in a FamilyInstance Wall)
+				<li>Improved the positioning of nested openings inside of door and window families when exporting to IFC.
+				<li>Fixed an issue where floors with split faces didn't include material information when exporting to IFC.
+				<li>Fixed issue that causes export IFC to fails when attaching ZoneClassificationCode to a Room to export to IfcZone.
+				<li>Fixed issue when exporting slanted walls to IFC results in an incorrect geometry.
+				<li>IFC Export now supports attaching user defined property sets to a Revit topography object exported to IfcGeographicElement.
+			</ul>
+			</p>
+			<p>
+			Import bug fixes:
+			<ul>
+				<li>Significantly improved performance linking in IFC files containing many type entities with duplicate names.
+				<li>Fixed issue of incorrect geometries importing IFC file from Rhinoceros3D
+				<li>Improved handling linking of IFC file that contains improperly closed profile curves for extruded data.
+				<li>Improved linking of IFC files containing faceted geometric data that is slightly non-planar according to Revit.
+				<li>Fixed issue that opening IFC may give unexpected results.
+				<li>Fixed issue when importing "bad" IFC file may cause import to crash.
+			</ul></p>
+			<br>
+	</div>
+	<br>
+
    <div class="version">21.2.1.0</div><div class="versioninfo-bullet">
       <br><p>
          General:
