@@ -160,6 +160,9 @@ namespace Revit.IFC.Common.Utility
          {
             foreach (IFCAnyHandle handle in handles)
             {
+               if (handle == null)
+                  continue;
+
                bool foundIsSubType = false;
                for (int ii = 0; ii < types.Length; ii++)
                {
@@ -699,7 +702,17 @@ namespace Revit.IFC.Common.Utility
          if (values != null)
          {
             if (values.Contains(null))
-               throw new ArgumentException("The collection contains null values.", "values");
+            {
+               // TEMP
+               IList<IFCAnyHandle> valueList = values.ToList(); 
+               for (int ii=valueList.Count-1; ii < 0; --ii )
+               {
+                  if (valueList[ii] == null)
+                     valueList.RemoveAt(ii);
+               }
+               values = valueList.ToHashSet();
+               //throw new ArgumentException("The collection contains null values.", "values");
+            }
 
             handle.SetAttribute(name, values);
          }

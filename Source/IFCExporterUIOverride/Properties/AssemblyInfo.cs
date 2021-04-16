@@ -32,7 +32,7 @@ using System.Windows;
 #if IFC_OPENSOURCE
 [assembly: AssemblyCompany("Autodesk, Inc.")]
 [assembly: AssemblyProduct("Autodesk.IFC.Export.UI")]
-[assembly: AssemblyCopyright("© 2012-2020 Autodesk, Inc. All rights reserved.")]
+[assembly: AssemblyCopyright("© 2012-2021 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 #endif
@@ -67,5 +67,5 @@ using System.Windows;
 // The number will show up in the Title bar of the export dialog as well as at the IFC header file
 // This number must be manually updated prior to releasing the new version
 [assembly: AssemblyVersion("21.2.1.0")]
-[assembly: AssemblyFileVersion("21.2.1.0")]
+[assembly: AssemblyFileVersion("21.3.0.0")]
 #endif
