@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="1A9C2C21-78B8-42D2-BAA4-992E73C11B3F" Name="Revit IFC 2022" Language="1033" Version="22.1.0.0" Manufacturer="Autodesk" UpgradeCode="254F4C8A-9ECA-4690-A718-21ACD3849485">
+   <Product Id="19C86D72-210B-4B01-A524-0CCD99C97CAA" Name="Revit IFC 2022" Language="1033" Version="22.1.1.0" Manufacturer="Autodesk" UpgradeCode="254F4C8A-9ECA-4690-A718-21ACD3849485">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -128,7 +128,13 @@
                <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.dll" KeyPath="yes" />
             </Component>
          <?endif?>
-        
+
+         <Component Id = "SteelCon_ASIFC_DLL" Guid="951F4BE6-CCA7-45B3-B687-3A82248B2F70">
+            <File Id ="FILE_SteelCon_ASIFC_DLL" Name="Autodesk.SteelConnections.ASIFC.dll" Source="$(var.ProjectDir)..\Program Files to Install\Autodesk.SteelConnections.ASIFC.dll" KeyPath="yes" />
+         </Component>
+         <Component Id = "SteelCon_ASIFC_Sig" Guid="E1C5CF5E-BA4B-4BE3-ABCD-83AABA86F7CC">
+            <File Id ="FILE_SteelCon_ASIFC_Sig" Name="Autodesk.SteelConnections.ASIFC.sig" Source="$(var.ProjectDir)..\Program Files to Install\Autodesk.SteelConnections.ASIFC.sig" KeyPath="yes" />
+         </Component>
          <Component Id = "COMP_LICENSE_RTF" Guid="9F0851DD-3A43-4D49-AC8C-8B8D2F394A91">
             <File Id ="FILE_LICENSE_RTF" Name="LICENSE.rtf" Source="$(var.ProjectDir)..\Program Files to Install\LICENSE.rtf" KeyPath="yes" />
          </Component>
