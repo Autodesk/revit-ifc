@@ -181,6 +181,8 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public IFCImportAction Action { get; protected set; } = IFCImportAction.Open;
 
+      public IIFCFileProcessor Processor { get; protected set; }
+
       protected IFCImportOptions()
       {
       }
@@ -269,6 +271,28 @@ namespace Revit.IFC.Import.Utility
          Int64? timestamp = OptionsUtil.GetNamedInt64Option(options, "FileModifiedTime", true);
          if (timestamp.HasValue)
             OriginalTimeStamp = OriginalTimeStamp.AddSeconds(timestamp.Value);
+
+         // NAVIS_TODO: Move the processor out of options.
+         string alternativeProcessor = OptionsUtil.GetNamedStringOption(options, "AlternativeProcessor");
+         if (!string.IsNullOrWhiteSpace(alternativeProcessor))
+         {
+            try
+            {
+               Type processorType = Type.GetType(alternativeProcessor);
+
+               object processor = Activator.CreateInstance(processorType);
+               if (typeof(IIFCFileProcessor).IsInstanceOfType(processor))
+               {
+                  Processor = processor as IIFCFileProcessor;
+               }
+            }
+            catch (Exception)
+            {
+            }
+         }
+
+         if (Processor == null)
+            Processor = new IFCDefaultProcessor();
       }
 
       /// <summary>

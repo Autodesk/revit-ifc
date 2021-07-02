@@ -181,7 +181,7 @@ namespace Revit.IFC.Import.Data
             // Set "Tag" parameter.
             string ifcTag = Tag;
             if (!string.IsNullOrWhiteSpace(ifcTag))
-               IFCPropertySet.AddParameterString(doc, element, category, "IfcTag", ifcTag, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcTag", ifcTag, Id);
 
             IFCFeatureElementSubtraction ifcFeatureElementSubtraction = FillsOpening;
             if (ifcFeatureElementSubtraction != null)
@@ -189,8 +189,8 @@ namespace Revit.IFC.Import.Data
                IFCElement ifcElement = ifcFeatureElementSubtraction.VoidsElement;
                if (ifcElement != null)
                {
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcContainedInHost", ifcElement.Name, Id);
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcContainedInHostGUID", ifcElement.GlobalId, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcContainedInHost", ifcElement.Name, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcContainedInHostGUID", ifcElement.GlobalId, Id);
                }
             }
 
@@ -205,13 +205,13 @@ namespace Revit.IFC.Import.Data
                if (!string.IsNullOrWhiteSpace(name))
                {
                   string parameterName = "IfcElement HasPorts Name " + ((numPorts == 0) ? "" : (numPorts + 1).ToString());
-                  IFCPropertySet.AddParameterString(doc, element, category, parameterName, name, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, name, Id);
                }
 
                if (!string.IsNullOrWhiteSpace(guid))
                {
                   string parameterName = "IfcElement HasPorts IfcGUID " + ((numPorts == 0) ? "" : (numPorts + 1).ToString());
-                  IFCPropertySet.AddParameterString(doc, element, category, parameterName, guid, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, guid, Id);
                }
 
                numPorts++;

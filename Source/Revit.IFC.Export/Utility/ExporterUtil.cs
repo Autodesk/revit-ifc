@@ -1158,25 +1158,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Some elements may not have the right structure to support stable GUIDs for some property sets.  Ignore the index for these cases.
-      /// </summary>
-      private static int CheckElementTypeValidityForSubIndex(PropertySetDescription currDesc, IFCAnyHandle handle, Element element)
-      {
-         int originalIndex = currDesc.SubElementIndex;
-         if (originalIndex > 0)
-         {
-            if (IFCAnyHandleUtil.IsSubTypeOf(handle, IFCEntityType.IfcSlab) || IFCAnyHandleUtil.IsSubTypeOf(handle, IFCEntityType.IfcStairFlight))
-            {
-               if (StairsExporter.IsLegacyStairs(element))
-               {
-                  return 0;
-               }
-            }
-         }
-         return originalIndex;
-      }
-
-      /// <summary>
       /// Exports Pset_Draughting for IFC 2x2 standard.
       /// </summary>
       /// <param name="exporterIFC">The IFC exporter object.</param>
@@ -1243,7 +1224,6 @@ namespace Revit.IFC.Export.Utility
 
             // In some cases, like multi-story stairs and ramps, we may have the same Pset used for multiple levels.
             // If ifcParams is null, re-use the property set.
-            ISet<string> locallyUsedGUIDs = new HashSet<string>();
             IDictionary<Tuple<Element, Element, string>, IFCAnyHandle> createdPropertySets =
                 new Dictionary<Tuple<Element, Element, string>, IFCAnyHandle>();
             IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> relDefinesByPropertiesMap =
@@ -1252,7 +1232,7 @@ namespace Revit.IFC.Export.Utility
             foreach (IFCAnyHandle prodHnd in productSet)
             {
                // Need to check whether the handle is valid. In some cases object that has parts may not be complete and may have orphaned handles that are not valid
-               if (!IFCAnyHandleUtil.IsValidHandle(prodHnd))
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodHnd))
                   continue;
 
                IList<PropertySetDescription> currPsetsToCreate = GetCurrPSetsToCreate(prodHnd, psetsToCreate);
@@ -1278,18 +1258,13 @@ namespace Revit.IFC.Export.Utility
                   IFCAnyHandle propertySet = null;
                   if ((ifcParams != null) || (!createdPropertySets.TryGetValue(propertySetKey, out propertySet)))
                   {
-                     ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, ifcParams, elementToUse, elemTypeToUse, prodHnd);
+                     ElementOrConnector elementOrConnector = new ElementOrConnector(elementToUse);
+                     ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, ifcParams, elementOrConnector, elemTypeToUse, prodHnd);
                      if (props.Count > 0)
                      {
-                        int subElementIndex = CheckElementTypeValidityForSubIndex(currDesc, prodHnd, element);
-
-                        string guid = GUIDUtil.CreateSubElementGUID(elementToUse, subElementIndex);
-                        if (locallyUsedGUIDs.Contains(guid))
-                           guid = GUIDUtil.CreateGUID();
-                        else
-                           locallyUsedGUIDs.Add(guid);
-
                         string paramSetName = currDesc.Name;
+                        string guid = GUIDUtil.GenerateIFCGuidFrom(elementToUse.Id.ToString() + paramSetName);
+
                         propertySet = IFCInstanceExporter.CreatePropertySet(file, guid, ownerHistory, paramSetName, currDesc.DescriptionOfSet, props);
                         if (ifcParams == null)
                            createdPropertySets[propertySetKey] = propertySet;
@@ -1344,7 +1319,6 @@ namespace Revit.IFC.Export.Utility
 
             IList<IList<PropertySetDescription>> psetsToCreate = ExporterCacheManager.ParameterCache.PropertySets;
 
-            ISet<string> locallyUsedGUIDs = new HashSet<string>();
             IDictionary<Tuple<ElementType, string>, IFCAnyHandle> createdPropertySets =
                 new Dictionary<Tuple<ElementType, string>, IFCAnyHandle>();
             IList<PropertySetDescription> currPsetsToCreate = GetCurrPSetsToCreate(typeHnd, psetsToCreate);
@@ -1362,18 +1336,13 @@ namespace Revit.IFC.Export.Utility
                IFCAnyHandle propertySet = null;
                if (!createdPropertySets.TryGetValue(propertySetKey, out propertySet))
                {
-                  ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementType, null, typeHnd);
+                  ElementOrConnector elementOrConnector = new ElementOrConnector(elementType);
+                  ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementOrConnector, null, typeHnd);
                   if (props.Count > 0)
                   {
-                     int subElementIndex = CheckElementTypeValidityForSubIndex(currDesc, typeHnd, elementType);
-
-                     string guid = GUIDUtil.CreateSubElementGUID(elementType, subElementIndex);
-                     if (locallyUsedGUIDs.Contains(guid))
-                        guid = GUIDUtil.CreateGUID();
-                     else
-                        locallyUsedGUIDs.Add(guid);
-
                      string paramSetName = currDesc.Name;
+                     string guid = GUIDUtil.GenerateIFCGuidFrom(elementType.Id.ToString() + paramSetName);
+
                      propertySet = IFCInstanceExporter.CreatePropertySet(file, guid, ownerHistory, paramSetName, currDesc.DescriptionOfSet, props);
                      createdPropertySets[propertySetKey] = propertySet;
                   }
@@ -1448,7 +1417,7 @@ namespace Revit.IFC.Export.Utility
                         HashSet<IFCAnyHandle> qtyFromInit = currDesc.ProcessEntries(file, exporterIFC, ifcParams, elementToUse, elemTypeToUse);
                         foreach (IFCAnyHandle qty in qtyFromInit)
                         {
-                           if (IFCAnyHandleUtil.IsNullOrHasNoValue(qty) || !IFCAnyHandleUtil.IsValidHandle(qty))
+                           if (IFCAnyHandleUtil.IsNullOrHasNoValue(qty) || IFCAnyHandleUtil.IsNullOrHasNoValue(qty))
                               continue;
 
                            string qtyName = IFCAnyHandleUtil.GetStringAttribute(qty, "Name");
@@ -2071,7 +2040,7 @@ namespace Revit.IFC.Export.Utility
             Family family = symbol.Family;
             if (family != null)
             {
-               Parameter para = family.LookupParameter("Part Type");
+               Parameter para = family.GetParameter(ParameterTypeId.FamilyContentPartType);
                if (para != null)
                {
                   if (element as DuctInsulation != null)

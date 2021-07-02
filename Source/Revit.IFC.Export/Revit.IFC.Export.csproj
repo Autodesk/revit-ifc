@@ -230,6 +230,7 @@
     <Compile Include="Utility\DoublePropertyInfoCache.cs" />
     <Compile Include="Utility\DummyHostCache.cs" />
     <Compile Include="Utility\ElementFilteringUtil.cs" />
+    <Compile Include="Utility\ElementOrConnector.cs" />
     <Compile Include="Utility\ElementToHandleCache.cs" />
     <Compile Include="Utility\ElementTypeToHandleCache.cs" />
     <Compile Include="Utility\ExporterCacheManager.cs" />

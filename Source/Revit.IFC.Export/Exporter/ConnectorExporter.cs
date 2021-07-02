@@ -45,6 +45,8 @@ namespace Revit.IFC.Export.Exporter
    {
       private static IDictionary<IFCAnyHandle, IList<IFCAnyHandle>> m_NestedMembershipDict = new Dictionary<IFCAnyHandle, IList<IFCAnyHandle>>();
 
+      private static IDictionary<string, IList<Toolkit.IFC4.IFCDistributionSystem>> m_SystemClassificationToIFC;
+
       /// <summary>
       /// Exports a connector instance. Almost verbatim exmaple from Revit 2012 API for Connector Class
       /// Works only for HVAC and Piping for now
@@ -56,6 +58,13 @@ namespace Revit.IFC.Export.Exporter
          {
             Export(exporterIFC, connectorSet);
          }
+
+         foreach (KeyValuePair<Connector, IFCAnyHandle> connector in ExporterCacheManager.MEPCache.ConnectorCache)
+         {
+            ExportConnectorProperties(exporterIFC, connector.Key, connector.Value);
+         }
+
+
          // Create all the IfcRelNests relationships from the Dictionary for Port connection in IFC4
          CreateRelNestsFromCache(exporterIFC.GetFile());
 
@@ -116,7 +125,7 @@ namespace Revit.IFC.Export.Exporter
             else
             {
                string guid = GUIDUtil.CreateGUID();
-               IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : (flowDirection == FlowDirectionType.Out ? IFCFlowDirection.Sink : IFCFlowDirection.Source);
+               IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : (flowDirection == FlowDirectionType.Out ? IFCFlowDirection.Source : IFCFlowDirection.Sink);
                Element hostElement = connector.Owner;
                IFCAnyHandle hostElementIFCHandle = ExporterCacheManager.MEPCache.Find(hostElement.Id);
 
@@ -128,9 +137,9 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                IFCAnyHandle port = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir);
                string portName = "Port_" + hostElement.Id;
-               IFCAnyHandleUtil.OverrideNameAttribute(port, portName);
                string portType = "Flow";   // Assigned as Port.Description
-               IFCAnyHandleUtil.SetAttribute(port, "Description", portType);
+               ExporterCacheManager.MEPCache.CacheConnectorHandle(connector, port);
+               SetDistributionPortAttributes(port, connector, portName, portType);
 
                // Attach the port to the element
                guid = GUIDUtil.CreateGUID();
@@ -154,7 +163,6 @@ namespace Revit.IFC.Export.Exporter
                catch
                {
                }
-
 
                if (isElectricalDomain)
                {
@@ -312,12 +320,13 @@ namespace Revit.IFC.Export.Exporter
             string guid = GUIDUtil.CreateGUID();
             IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : IFCFlowDirection.Sink;
 
-            IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, inElementIFCHandle, flowDir);
+            IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, inElementIFCHandle, flowDir);            
+
+            portIn = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir);
             string portName = "InPort_" + inElement.Id;
             string portType = "Flow";   // Assigned as Port.Description
-            portIn = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir);
-            IFCAnyHandleUtil.OverrideNameAttribute(portIn, portName);
-            IFCAnyHandleUtil.SetAttribute(portIn, "Description", portType);
+            ExporterCacheManager.MEPCache.CacheConnectorHandle(connector, portIn);            
+            SetDistributionPortAttributes(portIn, connector, portName, portType);
 
             // Attach the port to the element
             guid = GUIDUtil.CreateGUID();
@@ -337,12 +346,12 @@ namespace Revit.IFC.Export.Exporter
             IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : IFCFlowDirection.Source;
 
             IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connected, outElementIFCHandle, flowDir);
-            string portName = "OutPort_" + outElement.Id;
-            string portType = "Flow";   // Assigned as Port.Description
 
             portOut = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid, ownerHistory, localPlacement, null, flowDir);
-            IFCAnyHandleUtil.OverrideNameAttribute(portOut, portName);
-            IFCAnyHandleUtil.SetAttribute(portOut, "Description", portType);
+            string portName = "OutPort_" + outElement.Id;
+            string portType = "Flow";   // Assigned as Port.Description
+            ExporterCacheManager.MEPCache.CacheConnectorHandle(connected, portOut);
+            SetDistributionPortAttributes(portOut, connected, portName, portType);
 
             // Attach the port to the element
             guid = GUIDUtil.CreateGUID();
@@ -469,11 +478,400 @@ namespace Revit.IFC.Export.Exporter
          string name = "NestedPorts";
          string description = "Flow";
 
-         foreach (KeyValuePair<IFCAnyHandle,IList<IFCAnyHandle>> relNests in m_NestedMembershipDict)
+         foreach (KeyValuePair<IFCAnyHandle, IList<IFCAnyHandle>> relNests in m_NestedMembershipDict)
          {
             string guid = GUIDUtil.CreateGUID();
             IFCAnyHandle ifcRelNests = IFCInstanceExporter.CreateRelNests(file, guid, ownerHistory, name, description, relNests.Key, relNests.Value);
          }
       }
-   }
+
+      /// <summary>
+      /// Reads the parameter by parsing connector's description string
+      /// </summary>
+      /// <param name="connector">The Connector object.</param>
+      /// <param name="parameterName">The name of parameter to search.</param>
+      /// <returns>String assigned to parameterName.</returns>
+      public static string GetConnectorParameterFromDescription(Connector connector, string parameterName)
+      {
+         string parameterValue = String.Empty;
+         if (String.IsNullOrEmpty(parameterName) || connector == null)
+            return parameterValue;
+
+         string parsedValue = String.Empty;
+
+         // For the connectors of pipes or fittings we extract the parameters from the connector's owner
+         // for others - from the connector itself
+         Element owner = connector.Owner;
+         bool isPipeConnector = owner is Pipe;
+         bool isFittingConnector = owner is FamilyInstance && (owner as FamilyInstance).MEPModel is MechanicalFitting;
+         if (isPipeConnector || isFittingConnector)
+         {
+            // Read description from the parameter with the name based on connector ID
+            int connectorId = connector.Id;
+            // ID's if pipe connectors are zero-based
+            if (isPipeConnector)
+               connectorId++;
+
+            string descriptionParameter = "PortDescription " + connectorId.ToString();
+            ParameterUtil.GetStringValueFromElementOrSymbol(owner, descriptionParameter, out parsedValue);
+         }
+         else
+         {
+            parsedValue = connector.Description;
+         }
+        
+         if (String.IsNullOrEmpty(parsedValue))
+            return parameterValue;
+
+         int ind = parsedValue.IndexOf(parameterName + '=');
+         if (ind > -1)
+         {
+            parsedValue = parsedValue.Substring(ind + parameterName.Length + 1);
+            if (!String.IsNullOrEmpty(parsedValue))
+            {
+               int delimiterInd = parsedValue.IndexOf(',');
+               if (delimiterInd > -1)
+                  parameterValue = parsedValue.Substring(0, delimiterInd);
+               else
+                  parameterValue = parsedValue;
+            }
+         }
+
+         return parameterValue;
+      }
+
+
+      /// <summary>
+      /// Export porterty sets for the connector
+      /// </summary>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="connector">The connector to export properties for.</param>
+      /// <param name="handle">The ifc handle of exported connector.</param>
+      private static void ExportConnectorProperties(ExporterIFC exporterIFC, Connector connector, IFCAnyHandle handle)
+      {
+         IFCFile file = exporterIFC.GetFile();
+         using (IFCTransaction transaction = new IFCTransaction(file))
+         {
+            IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+            IList<IList<PropertySetDescription>> psetsToCreate = ExporterCacheManager.ParameterCache.PropertySets;
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
+               return;
+
+            IList<PropertySetDescription> currPsetsToCreate = ExporterUtil.GetCurrPSetsToCreate(handle, psetsToCreate);
+            if (currPsetsToCreate.Count == 0)
+               return;
+
+            foreach (PropertySetDescription currDesc in currPsetsToCreate)
+            {
+               ElementOrConnector elementOrConnector = new ElementOrConnector(connector);
+               ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementOrConnector, null, handle);
+               if (props.Count < 1)
+                  continue;
+
+               IFCAnyHandle propertySet = IFCInstanceExporter.CreatePropertySet(file, GUIDUtil.CreateGUID(), ownerHistory, currDesc.Name, currDesc.DescriptionOfSet, props);
+               if (propertySet == null)
+                  continue;
+
+               HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>() { handle };
+               ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(), ownerHistory, null, null, relatedObjects, propertySet);
+            }
+            transaction.Commit();
+         }
+      }
+
+      /// <summary>
+      /// Set few attributes for already created distribution port
+      /// </summary>
+      /// <param name="port">The handle of exported connector.</param>
+      /// <param name="connector">The Connector object.</param>
+      /// <param name="portAutoName">The auto gerated name with id.</param>
+      /// <param name="portDescription">The description string to set.</param>
+      private static void SetDistributionPortAttributes(IFCAnyHandle port, Connector connector, string portAutoName, string portDescription)
+      {
+         // "Description"
+         IFCAnyHandleUtil.SetAttribute(port, "Description", portDescription);
+
+         // "Name" 
+         string portName = ConnectorExporter.GetConnectorParameterFromDescription(connector, "PortName");
+         if (String.IsNullOrEmpty(portName))
+            portName = portAutoName;
+         IFCAnyHandleUtil.OverrideNameAttribute(port, portName);
+
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         {
+            // "PredefinedType"
+            Toolkit.IFC4.IFCDistributionPortType portType = GetMappedIFCDistributionPortType(connector.Domain);
+            string validatedPredefinedType = IFCValidateEntry.ValidateStrEnum<Toolkit.IFC4.IFCDistributionPortType>(portType.ToString());
+            IFCAnyHandleUtil.SetAttribute(port, "PredefinedType", validatedPredefinedType, true);
+
+            // "SystemType" from description
+            string systemTypeFromDescription = ConnectorExporter.GetConnectorParameterFromDescription(connector, "SystemType");
+            string validatedSystemType = IFCValidateEntry.ValidateStrEnum<Toolkit.IFC4.IFCDistributionSystem>(systemTypeFromDescription);
+            if (String.IsNullOrEmpty(validatedSystemType))
+            {
+               // "SystemType" from revit system classification
+               Toolkit.IFC4.IFCDistributionSystem systemType = GetMappedIFCDistributionSystem(connector);
+               validatedSystemType = IFCValidateEntry.ValidateStrEnum<Toolkit.IFC4.IFCDistributionSystem>(systemType.ToString());
+            }
+            if (!String.IsNullOrEmpty(validatedSystemType))
+               IFCAnyHandleUtil.SetAttribute(port, "SystemType", validatedSystemType, true);
+         }
+      }
+
+      /// <summary>
+      /// Get ifc distribution port type from connector type domain
+      /// </summary>
+      /// <param name="connectorDomain">The type of connector domain.</param>
+      /// <returns>ifc distribution port type.</returns>
+      private static Toolkit.IFC4.IFCDistributionPortType GetMappedIFCDistributionPortType(Domain connectorDomain)
+      {
+         Toolkit.IFC4.IFCDistributionPortType portType = Toolkit.IFC4.IFCDistributionPortType.NOTDEFINED;
+         switch (connectorDomain)
+         {
+            case Domain.DomainHvac:
+               portType = Toolkit.IFC4.IFCDistributionPortType.DUCT;
+               break;
+            case Domain.DomainElectrical:
+               portType = Toolkit.IFC4.IFCDistributionPortType.CABLE;
+               break;
+            case Domain.DomainPiping:
+               portType = Toolkit.IFC4.IFCDistributionPortType.PIPE;
+               break;
+            case Domain.DomainCableTrayConduit:
+               portType = Toolkit.IFC4.IFCDistributionPortType.CABLECARRIER;
+               break;
+         }
+         return portType;
+      }
+
+      /// <summary>
+      /// Get ifc distribution system type from connector
+      /// </summary>
+      /// <param name="connector">The connector.</param>
+      /// <returns>ifc distribution system type.</returns>
+      private static Toolkit.IFC4.IFCDistributionSystem GetMappedIFCDistributionSystem(Connector connector)
+      {
+         Toolkit.IFC4.IFCDistributionSystem systemType = Toolkit.IFC4.IFCDistributionSystem.NOTDEFINED;
+
+         string systemClassificationString = "UndefinedSystemClassification";
+         try
+         {
+            switch (connector.Domain)
+            {
+               case Domain.DomainHvac:
+                  systemClassificationString = connector.DuctSystemType.ToString();
+                  break;
+               case Domain.DomainElectrical:
+                  systemClassificationString = connector.ElectricalSystemType.ToString();
+                  break;
+               case Domain.DomainPiping:
+                  systemClassificationString = connector.PipeSystemType.ToString();
+                  break;
+               case Domain.DomainCableTrayConduit:
+                  systemClassificationString = "CableTrayConduit";
+                  break;
+            }
+
+            systemType = GetSystemTypeFromDictionary(systemClassificationString);
+         }
+         catch
+         {
+         }
+         return systemType;
+      }
+
+      /// <summary>
+      /// Get ifc distribution system type from system
+      /// </summary>
+      /// <param name="systemElement">The system element.</param>
+      /// <returns>ifc distribution system type.</returns>
+      public static Toolkit.IFC4.IFCDistributionSystem GetMappedIFCDistributionSystemFromElement(MEPSystem systemElement)
+      {
+         string systemClassificationString = "UndefinedSystemClassification";
+
+         if (systemElement is MechanicalSystem)
+            systemClassificationString = (systemElement as MechanicalSystem).SystemType.ToString();
+         else if (systemElement is ElectricalSystem)
+            systemClassificationString = (systemElement as ElectricalSystem).SystemType.ToString();
+         else if (systemElement is PipingSystem)
+            systemClassificationString = (systemElement as PipingSystem).SystemType.ToString();
+
+         return GetSystemTypeFromDictionary(systemClassificationString);
+      }
+
+      /// <summary>
+      /// Get ifc distribution system type from connector's system classification string
+      /// </summary>
+      /// <param name="revitSystemString">The connector's system classification string.</param>
+      /// <returns>ifc distribution system type.</returns>
+      private static Toolkit.IFC4.IFCDistributionSystem GetSystemTypeFromDictionary(string revitSystemString)
+      {
+         Toolkit.IFC4.IFCDistributionSystem systemType = Toolkit.IFC4.IFCDistributionSystem.NOTDEFINED;
+
+         if (m_SystemClassificationToIFC == null)
+            InitializeSystemClassifications();
+
+         if (m_SystemClassificationToIFC.ContainsKey(revitSystemString))
+         {
+            systemType = m_SystemClassificationToIFC[revitSystemString].First();
+         }
+
+         return systemType;
+      }
+
+      /// <summary>
+      /// Initializes the mapping between revit system classification and ifc distribution system
+      /// </summary>
+      private static void InitializeSystemClassifications()
+      {
+         m_SystemClassificationToIFC = new Dictionary<string, IList<Toolkit.IFC4.IFCDistributionSystem>>()
+         {
+            { "UndefinedSystemClassification", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.NOTDEFINED,
+               Toolkit.IFC4.IFCDistributionSystem.CHEMICAL,
+               Toolkit.IFC4.IFCDistributionSystem.CHILLEDWATER,
+               Toolkit.IFC4.IFCDistributionSystem.DISPOSAL,
+               Toolkit.IFC4.IFCDistributionSystem.EARTHING,
+               Toolkit.IFC4.IFCDistributionSystem.FUEL,
+               Toolkit.IFC4.IFCDistributionSystem.GAS,
+               Toolkit.IFC4.IFCDistributionSystem.HAZARDOUS,
+               Toolkit.IFC4.IFCDistributionSystem.LIGHTNINGPROTECTION,
+               Toolkit.IFC4.IFCDistributionSystem.VACUUM }
+            } ,
+            { "SupplyAir", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.VENTILATION }
+            } ,
+            { "ReturnAir", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.VENTILATION }
+            } ,
+            { "ExhaustAir", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.EXHAUST }
+            } ,
+            { "OtherAir", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.USERDEFINED,
+               Toolkit.IFC4.IFCDistributionSystem.AIRCONDITIONING,
+               Toolkit.IFC4.IFCDistributionSystem.COMPRESSEDAIR }
+            } ,
+            { "Data", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.DATA,
+               Toolkit.IFC4.IFCDistributionSystem.SIGNAL }
+            } ,
+            { "PowerCircuit", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.ELECTRICAL,
+               Toolkit.IFC4.IFCDistributionSystem.LIGHTING }
+            } ,
+            { "SupplyHydronic", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.HEATING }
+            } ,
+            { "ReturnHydronic", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.HEATING }
+            } ,
+            { "Telephone", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.COMMUNICATION,
+               Toolkit.IFC4.IFCDistributionSystem.ELECTROACOUSTIC }
+            } ,
+            { "Security", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.SECURITY }
+            } ,
+            { "FireAlarm", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.ELECTROACOUSTIC }
+            } ,
+            { "NurseCall", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.COMMUNICATION }
+            } ,
+            { "Controls", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.CONTROL }
+            } ,
+            { "Communication", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.VENTILATION,
+               Toolkit.IFC4.IFCDistributionSystem.AUDIOVISUAL,
+               Toolkit.IFC4.IFCDistributionSystem.TV }
+            } ,
+            { "CondensateDrain", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.CONDENSERWATER }
+            } ,
+            { "Sanitary", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.SEWAGE,
+               Toolkit.IFC4.IFCDistributionSystem.WASTEWATER }
+            } ,
+            { "Vent", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.VENT }
+            } ,
+            { "Storm", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.STORMWATER,
+               Toolkit.IFC4.IFCDistributionSystem.RAINWATER,
+               Toolkit.IFC4.IFCDistributionSystem.DRAINAGE }
+            } ,
+            { "DomesticHotWater", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.DOMESTICHOTWATER }
+            } ,
+            { "DomesticColdWater", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.DOMESTICCOLDWATER,
+               Toolkit.IFC4.IFCDistributionSystem.WATERSUPPLY }
+            } ,
+            { "Recirculation", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.NOTDEFINED }
+            } ,
+            { "OtherPipe", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.USERDEFINED }
+            } ,
+            { "FireProtectWet", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.FIREPROTECTION }
+            } ,
+            { "FireProtectDry", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.FIREPROTECTION }
+            } ,
+            { "FireProtectPreaction", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.FIREPROTECTION }
+            } ,
+            { "FireProtectOther", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.USERDEFINED }
+            } ,
+            { "SwitchTopology", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.CONTROL}
+            } ,
+            { "PowerBalanced", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.ELECTRICAL }
+            } ,
+            { "PowerUnBalanced", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.ELECTRICAL }
+            } ,
+            { "CableTrayConduit", new List<Toolkit.IFC4.IFCDistributionSystem>
+               {
+               Toolkit.IFC4.IFCDistributionSystem.CONVEYING }
+            }
+         };
+      }
+
+   }   
 }

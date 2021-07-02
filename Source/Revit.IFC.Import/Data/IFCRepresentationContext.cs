@@ -163,7 +163,7 @@ namespace Revit.IFC.Import.Data
                if (!found)
                   CoordinateSpaceDimension = 3;   // Don't throw, just set to default 3D.
 
-               Precision = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcRepresentationContext, "Precision", IFCImportFile.TheFile.Document.Application.VertexTolerance);
+               Precision = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcRepresentationContext, "Precision", Importer.TheProcessor.VertexTolerance);
 
                IFCAnyHandle worldCoordinateSystem = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcRepresentationContext, "WorldCoordinateSystem", false);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(worldCoordinateSystem))

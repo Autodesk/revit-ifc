@@ -129,7 +129,9 @@ namespace Revit.IFC.Import.Data
       private IFCRepresentationIdentifier GetRepresentationIdentifier(string identifier, IFCAnyHandle ifcRepresentation)
       {
          // Sorted by order of expected occurences.
+         // NOTE: This list includes invalid or obsolete identifiers found in real IFC files. 
          if ((string.Compare(identifier, "Body", true) == 0) ||
+             (string.Compare(identifier, "Facetation", true) == 0) ||
              string.IsNullOrWhiteSpace(identifier))
             return IFCRepresentationIdentifier.Body;
          if (string.Compare(identifier, "Axis", true) == 0)

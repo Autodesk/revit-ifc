@@ -83,7 +83,7 @@ namespace Revit.IFC.Import.Data
          if (element != null)
          {
             Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-            IFCPropertySet.AddParameterString(doc, element, category, "Flow Direction", FlowDirection.ToString(), Id);
+            IFCPropertySet.AddParameterString(doc, element, category, this, "Flow Direction", FlowDirection.ToString(), Id);
          }
       }
 
@@ -100,8 +100,8 @@ namespace Revit.IFC.Import.Data
 
          // 2015+: create cone(s) for the direction of flow.
          CurveLoop rightTrangle = new CurveLoop();
-         const double radius = 0.5 / 12.0;
-         const double height = 1.5 / 12.0;
+         double radius = IFCImportFile.TheFile.OneHundrethOfAFoot * 4.0;
+         double height = IFCImportFile.TheFile.OneHundrethOfAFoot * 12.0;
 
          SolidOptions solidOptions = new SolidOptions(ElementId.InvalidElementId, GraphicsStyleId);
 
@@ -147,7 +147,7 @@ namespace Revit.IFC.Import.Data
             if (oppositePortArrow != null)
                geomObjs.Add(oppositePortArrow);
 
-            DirectShape directShape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, geomObjs, Id);
+            DirectShape directShape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, geomObjs, Id, EntityType);
             if (directShape != null)
             {
                CreatedGeometry = geomObjs;

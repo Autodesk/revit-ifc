@@ -133,7 +133,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterMap">The parameters of the element.  Cached for performance.</param>
       /// <param name="propertySetName">The name of the containing property set.</param>
       /// <param name="createdParameters">The names of the created parameters.</param>
-      public void Create(Document doc, Element element, Category category, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
+      public void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
       {
          // Try to get the single value from the property.  If we can't get a single value, get it as a string.
          IFCPropertyValue propertyValueToUse = null;
@@ -153,6 +153,7 @@ namespace Revit.IFC.Import.Data
 
          IFCDataPrimitiveType dataType = IFCDataPrimitiveType.Unknown;
          ForgeTypeId specTypeId = new ForgeTypeId();
+         ForgeTypeId unitsTypeId = null;
 
          bool? boolValueToUse = null;
          IFCLogical? logicalValueToUse = null;
@@ -210,11 +211,18 @@ namespace Revit.IFC.Import.Data
                      break;
                   case IFCDataPrimitiveType.Double:
                      if (propertyValueToUse.IFCUnit != null)
+                     {
                         specTypeId = propertyValueToUse.IFCUnit.Spec;
+                        unitsTypeId = propertyValueToUse.IFCUnit.Unit;
+                     }
                      else
+                     {
                         specTypeId = IFCDataUtil.GetUnitTypeFromData(propertyValueToUse.Value, SpecTypeId.Number);
+                     }
 
-                     doubleValueToUse = propertyValueToUse.AsScaledDouble();
+                     doubleValueToUse = Importer.TheProcessor.ScaleValues ?
+                        propertyValueToUse.AsScaledDouble() :
+                        propertyValueToUse.AsUnscaledDouble();
                      break;
                   default:
                      Importer.TheLog.LogError(Id, "Unknown value type for parameter: " + Name, false);
@@ -222,6 +230,9 @@ namespace Revit.IFC.Import.Data
                }
             }
          }
+
+         if (stringValueToUse != null && stringValueToUse.Length == 0)
+            return;
 
          Parameter existingParameter = null;
          bool elementIsType = (element is ElementType);
@@ -252,23 +263,23 @@ namespace Revit.IFC.Import.Data
                case IFCDataPrimitiveType.String:
                case IFCDataPrimitiveType.Enumeration:
                case IFCDataPrimitiveType.Binary:
-                  created = IFCPropertySet.AddParameterString(doc, element, category, parameterName, stringValueToUse, Id);
+                  created = IFCPropertySet.AddParameterString(doc, element, category, objDef, parameterName, stringValueToUse, Id);
                   break;
                case IFCDataPrimitiveType.Integer:
-                  created = IFCPropertySet.AddParameterInt(doc, element, category, parameterName, intValueToUse.Value, Id);
+                  created = IFCPropertySet.AddParameterInt(doc, element, category, objDef, parameterName, intValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Boolean:
-                  created = IFCPropertySet.AddParameterBoolean(doc, element, category, parameterName, boolValueToUse.Value, Id);
+                  created = IFCPropertySet.AddParameterBoolean(doc, element, category, objDef, parameterName, boolValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Logical:
                   if (logicalValueToUse != IFCLogical.Unknown)
-                     created = IFCPropertySet.AddParameterBoolean(doc, element, category, parameterName, (logicalValueToUse == IFCLogical.True), Id);
+                     created = IFCPropertySet.AddParameterBoolean(doc, element, category, objDef, parameterName, (logicalValueToUse == IFCLogical.True), Id);
                   break;
                case IFCDataPrimitiveType.Double:
-                  created = IFCPropertySet.AddParameterDouble(doc, element, category, parameterName, specTypeId, doubleValueToUse.Value, Id);
+                  created = IFCPropertySet.AddParameterDouble(doc, element, category, objDef, parameterName, specTypeId, unitsTypeId, doubleValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Instance:
-                  created = IFCPropertySet.AddParameterElementId(doc, element, category, parameterName, elementIdValueToUse, Id);
+                  created = IFCPropertySet.AddParameterElementId(doc, element, category, objDef, parameterName, elementIdValueToUse, Id);
                   break;
             }
 

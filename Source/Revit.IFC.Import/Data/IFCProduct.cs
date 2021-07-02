@@ -28,6 +28,21 @@ using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
+   public class IFCVoidInfo : IFCSolidInfo
+   {
+      public Transform TotalTransform
+      {
+         get; set;
+      }
+
+      public IFCVoidInfo(IFCSolidInfo solid)
+         : base(solid.Id, solid.GeometryObject)
+      {
+         this.RepresentationType = solid.RepresentationType;
+      }
+   }
+
+
    /// <summary>
    /// Represents an IfcProduct.
    /// </summary>
@@ -41,7 +56,7 @@ namespace Revit.IFC.Import.Data
 
       private IList<IFCSolidInfo> m_Solids = null;
 
-      private IList<IFCSolidInfo> m_Voids = null;
+      private IList<IFCVoidInfo> m_Voids = null;
 
       private IList<Curve> m_FootprintCurves = null;
 
@@ -68,12 +83,12 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The list of voids created for the associated element.
       /// </summary>
-      public IList<IFCSolidInfo> Voids
+      public IList<IFCVoidInfo> Voids
       {
          get
          {
             if (m_Voids == null)
-               m_Voids = new List<IFCSolidInfo>();
+               m_Voids = new List<IFCVoidInfo>();
             return m_Voids;
          }
       }
@@ -181,12 +196,12 @@ namespace Revit.IFC.Import.Data
             }
 
             if (ifcPresentationLayer != null)
-               IFCPropertySet.AddParameterString(doc, element, category, "IfcPresentationLayer", ifcPresentationLayer, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcPresentationLayer", ifcPresentationLayer, Id);
 
             // Set the container name of the element.
             string containerName = (ContainingStructure != null) ? ContainingStructure.Name : null;
             if (containerName != null)
-               IFCPropertySet.AddParameterString(doc, element, category, "IfcSpatialContainer", containerName, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcSpatialContainer", containerName, Id);
          }
       }
 
@@ -261,8 +276,18 @@ namespace Revit.IFC.Import.Data
                return true;
             }
 
+            var voidTransform = Voids[voidIdx].TotalTransform;
+
+            if (voidTransform != null && voidTransform.IsIdentity == false)
+            {
+               // Transform the void into the space of the solid.
+               var t = ObjectLocation.TotalTransform.Inverse.Multiply(voidTransform);
+               voidObject = SolidUtils.CreateTransformed(voidObject, t);
+            }
+
             solidInfo.GeometryObject = IFCGeometryUtil.ExecuteSafeBooleanOperation(solidInfo.Id, Voids[voidIdx].Id,
                (solidInfo.GeometryObject as Solid), voidObject, BooleanOperationsType.Difference, null);
+
             if (solidInfo.GeometryObject == null || (solidInfo.GeometryObject as Solid).Faces.IsEmpty)
                return false;
          }
@@ -299,7 +324,16 @@ namespace Revit.IFC.Import.Data
                   {
                      foreach (IFCSolidInfo voidGeom in voids)
                      {
-                        Voids.Add(voidGeom);
+                        IFCVoidInfo voidInfo = new IFCVoidInfo(voidGeom);
+                        if (!Importer.TheProcessor.ApplyTransforms)
+                        {
+                           // If we aren't applying transforms, then the Voids and Solids will be
+                           // in different coordinate spaces, so we need the transform of the 
+                           // void, so we can transform it into the Solid coordinate space
+                           voidInfo.TotalTransform = opening?.ObjectLocation?.TotalTransform;
+                        }
+
+                        Voids.Add(voidInfo);
                      }
                   }
                }
@@ -325,7 +359,11 @@ namespace Revit.IFC.Import.Data
                else if (ObjectLocation != null)
                   lcs = lcs.Multiply(ObjectLocation.TotalTransform);
 
-               ProductRepresentation.CreateProductRepresentation(shapeEditScope, lcs, lcs, myId);
+               // If we are not applying transforms to the geometry, then pass in the identity matrix.
+               // Lower down this method we then pass lcs to the consumer element, so that it can apply
+               // the transform as required.
+               Transform transformToUse = Importer.TheProcessor.ApplyTransforms ? lcs : Transform.Identity;
+               ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, transformToUse, myId);
 
                int numSolids = Solids.Count;
                int numVoids = Voids.Count;
@@ -357,7 +395,7 @@ namespace Revit.IFC.Import.Data
                      DirectShape shape = Importer.TheCache.UseElementByGUID<DirectShape>(doc, GlobalId);
 
                      if (shape == null)
-                        shape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, null, Id);
+                        shape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, null, Id, EntityType);
 
                      List<GeometryObject> directShapeGeometries = new List<GeometryObject>();
                      foreach (IFCSolidInfo geometryObject in Solids)
@@ -380,21 +418,17 @@ namespace Revit.IFC.Import.Data
                      }
 
                      // We will use the first IfcTypeObject id, if it exists.  In general, there should be 0 or 1.
-                     ElementId typeId = ElementId.InvalidElementId;
+                     IFCTypeObject typeObjectToUse = null;
                      foreach (IFCTypeObject typeObject in TypeObjects)
                      {
                         if (typeObject.IsValidForCreation && typeObject.CreatedElementId != ElementId.InvalidElementId)
                         {
-                           typeId = typeObject.CreatedElementId;
+                           typeObjectToUse = typeObject;
                            break;
                         }
                      }
 
-                     shape.SetShape(directShapeGeometries);
-                     shapeEditScope.SetPlanViewRep(shape);
-
-                     if (typeId != ElementId.InvalidElementId)
-                        shape.SetTypeId(typeId);
+                     Importer.TheProcessor.PostProcessProduct(Id, typeObjectToUse, shapeEditScope, shape, lcs, directShapeGeometries);
 
                      PresentationLayerNames.UnionWith(shapeEditScope.PresentationLayerNames);
 
@@ -436,7 +470,7 @@ namespace Revit.IFC.Import.Data
                ObjectLocation = IFCLocation.ProcessIFCObjectPlacement(objectPlacement);
             }
 
-            IFCSite.ActiveSiteSetter.CheckObjectPlacementIsRelativeToSite(this, ifcProduct.StepId, objectPlacement);
+            IFCSite.CheckObjectPlacementIsRelativeToSite(this, ifcProduct.StepId, objectPlacement);
          }
       }
 

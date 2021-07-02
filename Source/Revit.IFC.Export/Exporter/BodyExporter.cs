@@ -250,28 +250,98 @@ namespace Revit.IFC.Export.Exporter
          return mostPopularId;
       }
 
+      private static bool isDuctCategory(BuiltInCategory categoryId)
+      {
+         return categoryId == BuiltInCategory.OST_DuctAccessory ||
+            categoryId == BuiltInCategory.OST_DuctCurves ||
+            categoryId == BuiltInCategory.OST_DuctFitting ||
+            categoryId == BuiltInCategory.OST_DuctInsulations ||
+            categoryId == BuiltInCategory.OST_DuctLinings ||
+            categoryId == BuiltInCategory.OST_DuctTerminal ||
+            categoryId == BuiltInCategory.OST_FlexDuctCurves ||
+            categoryId == BuiltInCategory.OST_PlaceHolderDucts;      
+      }
+
+      private static bool isPipeCategory(BuiltInCategory categoryId)
+      {
+         return categoryId == BuiltInCategory.OST_AnalyticalPipeConnections ||
+            categoryId == BuiltInCategory.OST_FlexPipeCurves ||
+            categoryId == BuiltInCategory.OST_PipeCurves ||
+            categoryId == BuiltInCategory.OST_PlaceHolderPipes ||
+            categoryId == BuiltInCategory.OST_PlumbingFixtures ||
+            categoryId == BuiltInCategory.OST_PipeAccessory ||
+            categoryId == BuiltInCategory.OST_PipeFitting ||
+            categoryId == BuiltInCategory.OST_PipeInsulations ||
+            categoryId == BuiltInCategory.OST_Sprinklers;
+      }
+
+      private static bool categoryHasMaterialIdParam(BuiltInCategory categoryId)
+      {
+         // OST_Cornices also has a MaterialId parameter, but Revit doesn't want us
+         // to ask for it.
+         return categoryId == BuiltInCategory.OST_Rebar ||
+            categoryId == BuiltInCategory.OST_FabricReinforcement ||
+            categoryId == BuiltInCategory.OST_Fascia ||
+            categoryId == BuiltInCategory.OST_Gutter ||
+            categoryId == BuiltInCategory.OST_EdgeSlab ||
+            categoryId == BuiltInCategory.OST_Parts ||
+            categoryId == BuiltInCategory.OST_PipeInsulations ||
+            categoryId == BuiltInCategory.OST_DuctInsulations ||
+            categoryId == BuiltInCategory.OST_DuctLinings;
+      }
+
+      private static bool categoryHasStructuralMaterialParam(BuiltInCategory categoryId)
+      {
+         return categoryId == BuiltInCategory.OST_AnalyticalMember ||
+            categoryId == BuiltInCategory.OST_BuildingPad ||
+            categoryId == BuiltInCategory.OST_Ceilings ||
+            categoryId == BuiltInCategory.OST_Floors ||
+            categoryId == BuiltInCategory.OST_Roofs ||
+            categoryId == BuiltInCategory.OST_StructConnectionAnchors ||
+            categoryId == BuiltInCategory.OST_StructConnectionBolts ||
+            categoryId == BuiltInCategory.OST_StructConnectionPlates ||
+            categoryId == BuiltInCategory.OST_StructConnectionProfiles ||
+            categoryId == BuiltInCategory.OST_StructConnectionShearStuds ||
+            categoryId == BuiltInCategory.OST_StructuralColumns ||
+            categoryId == BuiltInCategory.OST_StructuralFoundation ||
+            categoryId == BuiltInCategory.OST_StructuralFraming ||
+            categoryId == BuiltInCategory.OST_Walls;
+      }
+
       private static ElementId GetBestMaterialIdFromParameter(Element element)
       {
          ElementId matId = ExporterUtil.GetSingleMaterial(element);
-         if (matId == ElementId.InvalidElementId)
-         {
-            ElementId systemTypeId = ElementId.InvalidElementId;
-            if (element is Duct)
-               ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM, out systemTypeId);
-            else if (element is Pipe)
-               ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM, out systemTypeId);
+         if (matId != ElementId.InvalidElementId)
+            return matId;
 
-            if (systemTypeId != ElementId.InvalidElementId)
-            {
-               Element systemType = element.Document.GetElement(systemTypeId);
-               if (systemType != null)
-                  return GetBestMaterialIdFromParameter(systemType);
-            }
-            else if (element is DuctLining || element is MEPSystemType)
-               ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.MATERIAL_ID_PARAM, out matId);
-            else
-               ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.STRUCTURAL_MATERIAL_PARAM, out matId);
+         // Try to get it from the category of the element first.
+         BuiltInCategory categoryId = (BuiltInCategory)element.Category.Id.IntegerValue;
+         if (categoryHasMaterialIdParam(categoryId) || element is MEPSystemType)
+         {
+            ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.MATERIAL_ID_PARAM, out matId);
          }
+         else if (categoryHasStructuralMaterialParam(categoryId))
+         {
+            ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.STRUCTURAL_MATERIAL_PARAM, out matId);
+         }
+
+         if (matId != ElementId.InvalidElementId)
+            return matId;
+
+         // If not, try to get it from the system.
+         ElementId systemTypeId = ElementId.InvalidElementId;
+         if (isDuctCategory(categoryId))
+            ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM, out systemTypeId);
+         else if (isPipeCategory(categoryId))
+            ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM, out systemTypeId);
+
+         if (systemTypeId != ElementId.InvalidElementId)
+         {
+            Element systemType = element.Document.GetElement(systemTypeId);
+            if (systemType != null)
+               return GetBestMaterialIdFromParameter(systemType);
+         }
+          
          return matId;
       }
 
@@ -3628,6 +3698,7 @@ namespace Revit.IFC.Export.Exporter
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Solid geomSolid = geomObject as Solid;
          FaceArray faces = geomSolid.Faces;
+         double scale = UnitUtil.ScaleLengthForRevitAPI();
 
          // The default tessellationLevel is -1, which is illegal for Triangulate.  Get a value in range. 
          double tessellationLevel = options.TessellationControls.LevelOfDetail;
@@ -3645,7 +3716,7 @@ namespace Revit.IFC.Export.Exporter
                   MeshTriangle triangle = faceTriangulation.get_Triangle(ii);
                   for (int tri = 0; tri < 3; ++tri)
                   {
-                     XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
+                     XYZ vert = scale * triangle.get_Vertex(tri);
                      if (trfToUse != null)
                         vert = trfToUse.OfPoint(vert);
 
@@ -3666,13 +3737,14 @@ namespace Revit.IFC.Export.Exporter
       {
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Mesh geomMesh = geomObject as Mesh;
+         double scale = UnitUtil.ScaleLengthForRevitAPI();
          for (int ii = 0; ii < geomMesh.NumTriangles; ++ii)
          {
             List<XYZ> triangleVertices = new List<XYZ>();
             MeshTriangle triangle = geomMesh.get_Triangle(ii);
             for (int tri = 0; tri < 3; ++tri)
             {
-               XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
+               XYZ vert = scale * triangle.get_Vertex(tri);
                if (trfToUse != null)
                   vert = trfToUse.OfPoint(vert);
 

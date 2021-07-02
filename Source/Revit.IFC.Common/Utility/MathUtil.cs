@@ -28,6 +28,22 @@ using Autodesk.Revit.DB.IFC;
 namespace Revit.IFC.Common.Utility
 {
    /// <summary>
+   /// Simple wrapper for UV and XYZ.
+   /// The only purpose of it is to introduce common base class for them in order to have possibility to write generic code for UV and XYZ.
+   /// </summary>
+   public abstract class PointBase
+   { }
+   public class Point2D : PointBase
+   {
+      public Point2D(UV uv) { coords = uv; }
+      public UV coords { get; protected set; }
+   }
+   public class Point3D : PointBase
+   {
+      public Point3D(XYZ xyz) { coords = xyz; }
+      public XYZ coords { get; protected set; }
+   }
+   /// <summary>
    /// Provides static methods for mathematical functions.
    /// </summary>
    public class MathUtil

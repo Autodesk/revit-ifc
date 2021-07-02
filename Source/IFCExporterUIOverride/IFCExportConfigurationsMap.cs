@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Web.Script.Serialization;
 
 using Autodesk.Revit;
 using Autodesk.Revit.DB;
@@ -41,6 +42,10 @@ namespace BIM.IFC.Export.UI
       private Schema m_mapSchema = null;
       private static Guid s_schemaId = new Guid("A1E672E5-AC88-4933-A019-F9068402CFA7");
       private static Guid s_mapSchemaId = new Guid("DCB88B13-594F-44F6-8F5D-AE9477305AC3");
+
+      // New schema based on json for the entire configuration instead of individual item
+      private Schema m_jsonSchema = null;
+      private static Guid s_jsonSchemaId = new Guid("C2A3E6FE-CE51-4F35-8FF1-20C34567B687");
 
       /// <summary>
       /// Constructs a default map.
@@ -99,7 +104,27 @@ namespace BIM.IFC.Export.UI
             {
                m_mapSchema = Schema.Lookup(s_mapSchemaId);
             }
+            if (m_jsonSchema == null)
+            {
+               m_jsonSchema = Schema.Lookup(s_jsonSchemaId);
+            }
 
+            // In this latest schema, the entire configuration for one config is stored as a json string in the entirety
+            if (m_jsonSchema != null)
+            {
+               foreach (DataStorage storedSetup in GetSavedConfigurations(m_jsonSchema))
+               {
+                  Entity configEntity = storedSetup.GetEntity(m_jsonSchema);
+                  string configData = configEntity.Get<string>(s_configMapField);
+                  JavaScriptSerializer ser = new JavaScriptSerializer();
+                  IFCExportConfiguration configuration = ser.Deserialize<IFCExportConfiguration>(configData);
+
+                  Add(configuration);
+               }
+               return; // if finds the config in map schema, return and skip finding the old schema.
+            }
+
+            // This is the older schema
             if (m_mapSchema != null)
             {
                foreach (DataStorage storedSetup in GetSavedConfigurations(m_mapSchema))
@@ -118,7 +143,7 @@ namespace BIM.IFC.Export.UI
                   if (configMap.ContainsKey(s_setupSpaceBoundaries))
                      configuration.SpaceBoundaries = int.Parse(configMap[s_setupSpaceBoundaries]);
                   if (configMap.ContainsKey(s_setupActivePhase))
-                     configuration.ActivePhaseId = new ElementId(int.Parse(configMap[s_setupActivePhase]));
+                     configuration.ActivePhaseId = int.Parse(configMap[s_setupActivePhase]);
                   if (configMap.ContainsKey(s_setupQTO))
                      configuration.ExportBaseQuantities = bool.Parse(configMap[s_setupQTO]);
                   if (configMap.ContainsKey(s_setupCurrentView))
@@ -255,7 +280,7 @@ namespace BIM.IFC.Export.UI
                      configuration.StoreIFCGUID = configEntity.Get<bool>(s_setupStoreIFCGUID);
                   Field fieldActivePhase = m_schema.GetField(s_setupActivePhase);
                   if (fieldActivePhase != null)
-                     configuration.ActivePhaseId = new ElementId(int.Parse(configEntity.Get<string>(s_setupActivePhase)));
+                     configuration.ActivePhaseId = int.Parse(configEntity.Get<string>(s_setupActivePhase));
                   Field fieldExportRoomsInView = m_schema.GetField(s_setupExportRoomsInView);
                   if (fieldExportRoomsInView != null)
                      configuration.ExportRoomsInView = configEntity.Get<bool>(s_setupExportRoomsInView);
@@ -288,7 +313,8 @@ namespace BIM.IFC.Export.UI
       // The MapField is to defined the map<string,string> in schema. 
       // Please don't change the name values, it affects the schema.
       private const string s_configMapField = "MapField";
-      // The following are the keys in the MapField in new schema. For old schema, they are simple fields.
+      // The following are the keys in the MapField in older schema. For oldest schema, they are simple fields.
+      // In the latest schema (json based schema), there is no need for individual fields. The entire configuration is stored in one json string
       private const string s_setupName = "Name";
       private const string s_setupVersion = "Version";
       private const string s_exchangeRequirement = "ExchangeRequirement";
@@ -370,10 +396,41 @@ namespace BIM.IFC.Export.UI
             }
          }
 
-         // update the configurations to new map schema.
+         // delete the old schema and the DataStorage.
          if (m_mapSchema == null)
          {
             m_mapSchema = Schema.Lookup(s_mapSchemaId);
+         }
+         if (m_mapSchema != null)
+         {
+            IList<DataStorage> oldSavedConfigurations = GetSavedConfigurations(m_mapSchema);
+            if (oldSavedConfigurations.Count > 0)
+            {
+               Transaction deleteTransaction = new Transaction(IFCCommandOverrideApplication.TheDocument,
+                   Properties.Resources.DeleteOldSetups);
+               try
+               {
+                  deleteTransaction.Start();
+                  List<ElementId> dataStorageToDelete = new List<ElementId>();
+                  foreach (DataStorage dataStorage in oldSavedConfigurations)
+                  {
+                     dataStorageToDelete.Add(dataStorage.Id);
+                  }
+                  IFCCommandOverrideApplication.TheDocument.Delete(dataStorageToDelete);
+                  deleteTransaction.Commit();
+               }
+               catch (System.Exception)
+               {
+                  if (deleteTransaction.HasStarted())
+                     deleteTransaction.RollBack();
+               }
+            }
+         }
+
+         // update the configurations to new map schema.
+         if (m_jsonSchema == null)
+         {
+            m_jsonSchema = Schema.Lookup(s_jsonSchemaId);
          }
 
          // Are there any setups to save or resave?
@@ -395,15 +452,15 @@ namespace BIM.IFC.Export.UI
 
          // If there are no setups to save, and if the schema is not present (which means there are no
          // previously existing setups which might have been deleted) we can skip the rest of this method.
-         if (setupsToSave.Count <= 0 && m_mapSchema == null)
+         if (setupsToSave.Count <= 0 && m_jsonSchema == null)
             return;
 
-         if (m_mapSchema == null)
+         if (m_jsonSchema == null)
          {
-            SchemaBuilder builder = new SchemaBuilder(s_mapSchemaId);
+            SchemaBuilder builder = new SchemaBuilder(s_jsonSchemaId);
             builder.SetSchemaName("IFCExportConfigurationMap");
-            builder.AddMapField(s_configMapField, typeof(String), typeof(String));
-            m_mapSchema = builder.Finish();
+            builder.AddSimpleField(s_configMapField, typeof(String));
+            m_jsonSchema = builder.Finish();
          }
 
          // Overwrite all saved configs with the new list
@@ -411,7 +468,7 @@ namespace BIM.IFC.Export.UI
          try
          {
             transaction.Start();
-            IList<DataStorage> savedConfigurations = GetSavedConfigurations(m_mapSchema);
+            IList<DataStorage> savedConfigurations = GetSavedConfigurations(m_jsonSchema);
             int savedConfigurationCount = savedConfigurations.Count<DataStorage>();
             int savedConfigurationIndex = 0;
             foreach (IFCExportConfiguration configuration in setupsToSave)
@@ -427,54 +484,11 @@ namespace BIM.IFC.Export.UI
                   savedConfigurationIndex++;
                }
 
-               Entity mapEntity = new Entity(m_mapSchema);
-               IDictionary<string, string> mapData = new Dictionary<string, string>();
-               mapData.Add(s_setupName, configuration.Name);
-               mapData.Add(s_setupVersion, configuration.IFCVersion.ToString());
-               mapData.Add(s_exchangeRequirement, configuration.ExchangeRequirement.ToString());
-               mapData.Add(s_setupFileFormat, configuration.IFCFileType.ToString());
-               mapData.Add(s_setupSpaceBoundaries, configuration.SpaceBoundaries.ToString());
-               mapData.Add(s_setupQTO, configuration.ExportBaseQuantities.ToString());
-               mapData.Add(s_setupCurrentView, configuration.VisibleElementsOfCurrentView.ToString());
-               mapData.Add(s_splitWallsAndColumns, configuration.SplitWallsAndColumns.ToString());
-               mapData.Add(s_setupExport2D, configuration.Export2DElements.ToString());
-               mapData.Add(s_setupExportRevitProps, configuration.ExportInternalRevitPropertySets.ToString());
-               mapData.Add(s_setupExportIFCCommonProperty, configuration.ExportIFCCommonPropertySets.ToString());
-               mapData.Add(s_setupUse2DForRoomVolume, configuration.Use2DRoomBoundaryForVolume.ToString());
-               mapData.Add(s_setupUseFamilyAndTypeName, configuration.UseFamilyAndTypeNameForReference.ToString());
-               mapData.Add(s_setupExportPartsAsBuildingElements, configuration.ExportPartsAsBuildingElements.ToString());
-               mapData.Add(s_useActiveViewGeometry, configuration.UseActiveViewGeometry.ToString());
-               mapData.Add(s_setupExportSpecificSchedules, configuration.ExportSpecificSchedules.ToString());
-               mapData.Add(s_setupExportBoundingBox, configuration.ExportBoundingBox.ToString());
-               mapData.Add(s_setupExportSolidModelRep, configuration.ExportSolidModelRep.ToString());
-               mapData.Add(s_setupExportSchedulesAsPsets, configuration.ExportSchedulesAsPsets.ToString());
-               mapData.Add(s_setupExportUserDefinedPsets, configuration.ExportUserDefinedPsets.ToString());
-               mapData.Add(s_setupExportUserDefinedPsetsFileName, configuration.ExportUserDefinedPsetsFileName);
-               mapData.Add(s_setupExportUserDefinedParameterMapping, configuration.ExportUserDefinedParameterMapping.ToString());
-               mapData.Add(s_setupExportUserDefinedParameterMappingFileName, configuration.ExportUserDefinedParameterMappingFileName);
-               mapData.Add(s_setupExportLinkedFiles, configuration.ExportLinkedFiles.ToString());
-               mapData.Add(s_setupIncludeSiteElevation, configuration.IncludeSiteElevation.ToString());
-               mapData.Add(s_setupStoreIFCGUID, configuration.StoreIFCGUID.ToString());
-               mapData.Add(s_setupActivePhase, configuration.ActivePhaseId.ToString());
-               mapData.Add(s_setupExportRoomsInView, configuration.ExportRoomsInView.ToString());
-               mapData.Add(s_useOnlyTriangulation, configuration.UseOnlyTriangulation.ToString());
-               mapData.Add(s_excludeFilter, configuration.ExcludeFilter.ToString());
-               mapData.Add(s_setupSitePlacement, configuration.SitePlacement.ToString());
-               mapData.Add(s_useTypeNameOnlyForIfcType, configuration.UseTypeNameOnlyForIfcType.ToString());
-               mapData.Add(s_useVisibleRevitNameAsEntityName, configuration.UseVisibleRevitNameAsEntityName.ToString());
-               mapData.Add(s_setupTessellationLevelOfDetail, configuration.TessellationLevelOfDetail.ToString());
-               // For COBie v2.4
-               mapData.Add(s_cobieCompanyInfo, configuration.COBieCompanyInfo);
-               mapData.Add(s_cobieProjectInfo, configuration.COBieProjectInfo);
-               mapData.Add(s_includeSteelElements, configuration.IncludeSteelElements.ToString());
-               // Geo Reference info
-               mapData.Add(s_geoRefCRSName, configuration.GeoRefCRSName);
-               mapData.Add(s_geoRefCRSDesc, configuration.GeoRefCRSDesc);
-               mapData.Add(s_geoRefEPSGCode, configuration.GeoRefEPSGCode);
-               mapData.Add(s_geoRefGeodeticDatum, configuration.GeoRefGeodeticDatum);
-               mapData.Add(s_geoRefMapUnit, configuration.GeoRefMapUnit);
+               Entity mapEntity = new Entity(m_jsonSchema);
+               JavaScriptSerializer ser = new JavaScriptSerializer();
+               string configData = ser.Serialize(configuration);
+               mapEntity.Set<string>(s_configMapField, configData);
 
-               mapEntity.Set<IDictionary<string, String>>(s_configMapField, mapData);
                configStorage.SetEntity(mapEntity);
             }
 

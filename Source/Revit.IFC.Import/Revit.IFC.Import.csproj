@@ -224,6 +224,9 @@
     <Compile Include="Data\IFCUnits.cs" />
     <Compile Include="Geometry\IFCVirtualGridIntersection.cs" />
     <Compile Include="Geometry\IIFCBooleanOperand.cs" />
+    <Compile Include="Processors\IFCDefaultProcessor.cs" />
+    <Compile Include="Processors\IFCNavisProcessor.cs" />
+    <Compile Include="Processors\IIFCFileProcessor.cs" />
     <Compile Include="Importer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <AppDesigner Include="Properties\" />

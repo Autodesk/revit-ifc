@@ -204,7 +204,7 @@ namespace Revit.IFC.Import.Data
             Curve copyCurve = baseCurve.Clone();
 
             double length = param2 - param1;
-            if (length <= IFCImportFile.TheFile.Document.Application.ShortCurveTolerance)
+            if (length <= Importer.TheProcessor.ShortCurveTolerance)
             {
                string lengthAsString = IFCUnitUtil.FormatLengthAsString(length);
                Importer.TheLog.LogError(Id, "curve length of " + lengthAsString + " is invalid, ignoring.", false);
@@ -283,7 +283,7 @@ namespace Revit.IFC.Import.Data
          bool preferParam = !(trimPreference == IFCTrimmingPreference.Cartesian);
          if (secondAttempt)
             preferParam = !preferParam;
-         double vertexEps = IFCImportFile.TheFile.Document.Application.VertexTolerance;
+         double vertexEps = Importer.TheProcessor.VertexTolerance;
 
          IFCAggregate trimAggregate = trim.AsAggregate();
          foreach (IFCData trimParam in trimAggregate)

@@ -176,33 +176,33 @@ namespace Revit.IFC.Import.Data
             {
                string guid = ContainedIn.GlobalId;
                if (!string.IsNullOrWhiteSpace(guid))
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcElement ContainedIn IfcGUID", guid, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcElement ContainedIn IfcGUID", guid, Id);
 
                string name = ContainedIn.Name;
                if (!string.IsNullOrWhiteSpace(name))
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcElement ContainedIn Name", name, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcElement ContainedIn Name", name, Id);
             }
 
             if (ConnectedFrom != null)
             {
                string guid = ConnectedFrom.GlobalId;
                if (!string.IsNullOrWhiteSpace(guid))
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcPort ConnectedFrom IfcGUID", guid, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcPort ConnectedFrom IfcGUID", guid, Id);
 
                string name = ConnectedFrom.Name;
                if (!string.IsNullOrWhiteSpace(name))
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcPort ConnectedFrom Name", name, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcPort ConnectedFrom Name", name, Id);
             }
 
             if (ConnectedTo != null)
             {
                string guid = ConnectedTo.GlobalId;
                if (!string.IsNullOrWhiteSpace(guid))
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcPort ConnectedTo IfcGUID", guid, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcPort ConnectedTo IfcGUID", guid, Id);
 
                string name = ConnectedTo.Name;
                if (!string.IsNullOrWhiteSpace(name))
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcPort ConnectedTo Name", name, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcPort ConnectedTo Name", name, Id);
             }
          }
       }

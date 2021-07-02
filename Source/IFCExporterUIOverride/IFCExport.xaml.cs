@@ -734,7 +734,7 @@ namespace BIM.IFC.Export.UI
          if (selectedConfig != null)
          {
             if (!IFCPhaseAttributes.Validate(selectedConfig.ActivePhaseId))
-               selectedConfig.ActivePhaseId = ElementId.InvalidElementId;
+               selectedConfig.ActivePhaseId = ElementId.InvalidElementId.IntegerValue;
 
             UpdateTextBoxesContent(selectedConfig);
 

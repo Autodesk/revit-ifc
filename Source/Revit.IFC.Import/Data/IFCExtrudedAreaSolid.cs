@@ -526,17 +526,9 @@ namespace Revit.IFC.Import.Data
                SolidOptions solidOptions = new SolidOptions(layerMaterialId, shapeEditScope.GraphicsStyleId);
 
                // Create the extrusion for the material layer.
-               GeometryObject extrusionSolid = null;
-               try
-               {
-                  extrusionSolid = GeometryCreationUtilities.CreateExtrusionGeometry(
+               GeometryObject extrusionSolid = GeometryCreationUtilities.CreateExtrusionGeometry(
                       currLoops, materialExtrusionDirection, extrusionDistance, solidOptions);
-               }
-               catch
-               {
-                  extrusionSolid = null;
-               }
-               
+
                if (extrusionSolid == null)
                   return null;
 

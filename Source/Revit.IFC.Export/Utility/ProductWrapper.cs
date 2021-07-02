@@ -208,7 +208,7 @@ namespace Revit.IFC.Export.Utility
          // of disposal of entities, and in general a move to .NET only created entities.
          foreach (IFCAnyHandle internalObject in internalObjects)
          {
-            if (IFCAnyHandleUtil.IsValidHandle(internalObject))
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(internalObject))
                allObjects.Add(internalObject);
          }
 
@@ -312,6 +312,7 @@ namespace Revit.IFC.Export.Utility
       public void AddSystem(Element element, IFCAnyHandle handle)
       {
          RegisterHandleWithElement(element, handle);
+         m_CreatedHandles.Add(handle);
       }
 
       /// <summary>

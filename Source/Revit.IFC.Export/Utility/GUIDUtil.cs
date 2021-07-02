@@ -47,6 +47,8 @@ namespace Revit.IFC.Export.Utility
 
       static string s_ConversionTable_2X = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$";
 
+      private static System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
+
       static private string ConvertToIFCGuid(System.Guid guid)
       {
          byte[] byteArray = guid.ToByteArray();
@@ -218,6 +220,17 @@ namespace Revit.IFC.Export.Utility
          if (element == null || subIndex <= 0)
             return CreateGUID();
          return ExporterIFCUtils.CreateSubElementGUID(element, subIndex);
+      }
+
+      /// <summary>
+      /// Generates IFC GUID from not empty string.
+      /// </summary>
+      /// <param name="uniqueString">String which should uniquely identify IFC entity.</param>
+      /// <returns>String in IFC GUID format. Uniqueness is highly likely, but not guaranteed even if input string is unique.</returns>
+      public static string GenerateIFCGuidFrom(string uniqueString)
+      {
+         byte[] hash = md5.ComputeHash(Encoding.Default.GetBytes(uniqueString));
+         return ConvertToIFCGuid(new Guid(hash));
       }
 
       /// <summary>

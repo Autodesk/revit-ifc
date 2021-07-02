@@ -225,7 +225,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="element">The element being created.</param>
       /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
       /// <returns>The name of the property set created, if it was created, and a Boolean value if it should be added to the property set list.</returns>
-      public virtual Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
+      public virtual Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap)
       {
          return new Tuple<string, bool>(null, false);
       }

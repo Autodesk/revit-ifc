@@ -1018,18 +1018,27 @@ namespace Revit.IFC.Export.Utility
       public static double GetSpecialOffsetParameter(FamilySymbol familySymbol)
       {
          // This method is isolated here so that it can adopt localized parameter name as necessary
-
-         string offsetParameterName = "Offset";
          double maxOffset = 0.0;
 
-         // In case there are more than one parameter of the same name, we will get one value that is the largest
-         IList<Parameter> offsetParams = familySymbol.GetParameters(offsetParameterName);
-         foreach (Parameter offsetP in offsetParams)
+         Parameter paramOffset = familySymbol.GetParameter(ParameterTypeId.FamilyTopLevelOffsetParam);
+         if (paramOffset != null)
          {
-            double offset = offsetP.AsDouble();
-            if (offset > maxOffset)
-               maxOffset = offset;
+            maxOffset = paramOffset.AsDouble();
          }
+         else
+         {
+            string offsetParameterName = "Offset";
+
+            // In case there are more than one parameter of the same name, we will get one value that is the largest
+            IList<Parameter> offsetParams = familySymbol.GetParameters(offsetParameterName);
+            foreach (Parameter offsetP in offsetParams)
+            {
+               double offset = offsetP.AsDouble();
+               if (offset > maxOffset)
+                  maxOffset = offset;
+            }
+         }
+
          return maxOffset;
       }
 
@@ -1042,19 +1051,28 @@ namespace Revit.IFC.Export.Utility
       {
          // This method is isolated here so that it can adopt localized parameter name as necessary
 
-         string thicknessParameterName = "Thickness";
-         double thickestValue = 0.0;
+         double thicknessValue = 0.0;
 
-         IList<Parameter> thicknessParams = familySymbol.GetParameters(thicknessParameterName);
-
-         foreach (Parameter thicknessP in thicknessParams)
+         Parameter paramThickness = familySymbol.GetParameter(ParameterTypeId.FamilyThicknessParam);
+         if (paramThickness != null)
          {
-            // If happens there are more than 1 param with the same name, we will arbitrary choose the thickest value
-            double thickness = thicknessP.AsDouble();
-            if (thickness > thickestValue)
-               thickestValue = thickness;
+            thicknessValue = paramThickness.AsDouble();
          }
-         return thickestValue;
+         else
+         {
+            string thicknessParameterName = "Thickness";
+            IList<Parameter> thicknessParams = familySymbol.GetParameters(thicknessParameterName);
+
+            foreach (Parameter thicknessP in thicknessParams)
+            {
+               // If happens there are more than 1 param with the same name, we will arbitrary choose the thickest value
+               double thickness = thicknessP.AsDouble();
+               if (thickness > thicknessValue)
+                  thicknessValue = thickness;
+            }
+         }
+
+         return thicknessValue;
       }
 
       /// <summary>

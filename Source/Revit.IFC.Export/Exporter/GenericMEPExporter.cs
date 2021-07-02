@@ -205,8 +205,7 @@ namespace Revit.IFC.Export.Exporter
                styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, ifcEnumType, propertySetsOpt, repMapListOpt, element, type);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                {
-                  propertySetsOpt = ExporterUtil.ExtractElementTypeProperties(exporterIFC, type, styleHandle);
-                  productWrapper.RegisterHandleWithElementType(type, exportType, styleHandle, propertySetsOpt);
+                  productWrapper.RegisterHandleWithElementType(type, exportType, styleHandle, null);
                   currentTypeInfo.Style = styleHandle;
                   ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeId, false, exportType, currentTypeInfo);
 
@@ -281,8 +280,6 @@ namespace Revit.IFC.Export.Exporter
 
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
             ExporterCacheManager.TypeRelationsCache.Add(styleHandle, instanceHandle);
-
-         PropertyUtil.CreateInternalRevitPropertySets(exporterIFC, element, productWrapper.GetAllObjects());
 
          ExporterCacheManager.MEPCache.Register(element, instanceHandle);
 

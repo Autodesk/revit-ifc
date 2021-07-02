@@ -139,7 +139,7 @@ namespace Revit.IFC.Export.Utility
          // Roofs with no components are only allowed one material.  We will arbitrarily choose the thickest material.
          m_PrimaryMaterialHandle = ExporterCacheManager.MaterialSetCache.FindPrimaryMaterialHnd(typeElemId);
 
-         bool materialHandleIsNotValid = !IFCAnyHandleUtil.IsValidHandle(materialLayerSet);
+         bool materialHandleIsNotValid = IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet);
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet) || materialHandleIsNotValid)
          {
             if (materialHandleIsNotValid)

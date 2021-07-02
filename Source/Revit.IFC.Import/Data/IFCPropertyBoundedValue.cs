@@ -51,7 +51,15 @@ namespace Revit.IFC.Import.Data
             if (specFormatOptions.CanSuppressTrailingZeros())
                specFormatOptions.SuppressTrailingZeros = true;
             formatValueOptions.SetFormatOptions(specFormatOptions);
-            return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), IFCUnit.Spec, propertyValue.AsDouble(), false, formatValueOptions);
+
+            // If ScaleValues is false, value is in source file units, but 'UnitFormatUtils.Format' expects
+            // it in internal units and it then converts it to display units, which should be the same as
+            // the source file units.
+            double value = Importer.TheProcessor.ScaleValues ?
+               propertyValue.AsDouble() :
+               UnitUtils.ConvertToInternalUnits(propertyValue.AsDouble(), specFormatOptions.GetUnitTypeId());
+
+            return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), IFCUnit.Spec, value, false, formatValueOptions);
          }
          else
             return propertyValue.ValueAsString();

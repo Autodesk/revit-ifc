@@ -104,7 +104,11 @@ namespace BIM.IFC.Export.UI
          configuration.GeoRefMapUnit = crsInfo.uom;
          if (!string.IsNullOrWhiteSpace(crsInfo.epsgCode))
          {
-            configuration.GeoRefEPSGCode = crsInfo.epsgCode;
+            // Some time crsInfo returns a different epsgCode. In this case retain the original code if specified
+            if (!string.IsNullOrEmpty(newEPSGCode))
+               configuration.GeoRefEPSGCode = newEPSGCode;
+            else
+               configuration.GeoRefEPSGCode = crsInfo.epsgCode;
          }
          else
          {
@@ -236,17 +240,17 @@ namespace BIM.IFC.Export.UI
             UIDocument uiDoc = new UIDocument(IFCCommandOverrideApplication.TheDocument);
             Parameter currPhase = uiDoc.ActiveView.get_Parameter(BuiltInParameter.VIEW_PHASE);
             if (currPhase != null)
-               configuration.ActivePhaseId = currPhase.AsElementId();
+               configuration.ActivePhaseId = currPhase.AsElementId().IntegerValue;
             else
-               configuration.ActivePhaseId = ElementId.InvalidElementId;
+               configuration.ActivePhaseId = ElementId.InvalidElementId.IntegerValue;
          }
 
          if (!IFCPhaseAttributes.Validate(configuration.ActivePhaseId))
-            configuration.ActivePhaseId = ElementId.InvalidElementId;
+            configuration.ActivePhaseId = ElementId.InvalidElementId.IntegerValue;
 
          foreach (IFCPhaseAttributes attribute in comboboxActivePhase.Items.Cast<IFCPhaseAttributes>())
          {
-            if (configuration.ActivePhaseId == attribute.PhaseId)
+            if (configuration.ActivePhaseId == attribute.PhaseId.IntegerValue)
             {
                comboboxActivePhase.SelectedItem = attribute;
                break;
@@ -822,6 +826,12 @@ namespace BIM.IFC.Export.UI
       private IFCExportConfiguration GetSelectedConfiguration()
       {
          IFCExportConfiguration configuration = (IFCExportConfiguration)listBoxConfigurations.SelectedItem;
+         //if (configuration == null)
+         //{
+         //   configuration = IFCExportConfiguration.CreateDefaultConfiguration();
+         //   IFCExportConfiguration.SetInSession(configuration);
+         //   listBoxConfigurations.SelectedItem = configuration;
+         //}
          return configuration;
       }
 
@@ -1131,7 +1141,7 @@ namespace BIM.IFC.Export.UI
          IFCExportConfiguration configuration = GetSelectedConfiguration();
          if (configuration != null)
          {
-            configuration.ActivePhaseId = attributes.PhaseId;
+            configuration.ActivePhaseId = attributes.PhaseId.IntegerValue;
          }
       }
 
@@ -1431,14 +1441,18 @@ namespace BIM.IFC.Export.UI
 
       private void buttonAddressInformation_Click(object sender, RoutedEventArgs e)
       {
-         IFCAddressInformation addressInformationWindow = new IFCAddressInformation();
-         addressInformationWindow.Owner = this;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         IFCAddressInformation addressInformationWindow = new IFCAddressInformation(configuration)
+         {
+            Owner = this
+         };
          addressInformationWindow.ShowDialog();
       }
 
       private void buttonClassification_Click(object sender, RoutedEventArgs e)
       {
-         IFCClassificationWindow classificationInformationWindow = new IFCClassificationWindow();
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         IFCClassificationWindow classificationInformationWindow = new IFCClassificationWindow(configuration);
          classificationInformationWindow.Owner = this;
          classificationInformationWindow.ShowDialog();
       }

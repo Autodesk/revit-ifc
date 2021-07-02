@@ -1165,8 +1165,8 @@ namespace Revit.IFC.Export.Exporter
          if (ParameterUtil.GetDoubleValueFromElement(element, null, "Infiltration Rate", out infiltrationRate) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsReal(infiltrationRate);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "InfiltrationRate", null, paramVal,
-                ExporterCacheManager.UnitsCache["ACH"]);
+            IFCAnyHandle unitHnd = !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ? ExporterCacheManager.UnitsCache["ACH"] : null;
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "InfiltrationRate", null, paramVal, unitHnd);
             properties.Add(propSingleValue);
          }
 
@@ -1191,8 +1191,8 @@ namespace Revit.IFC.Export.Exporter
          {
             double scaledValue = UnitUtil.ScaleIlluminance(designIlluminance);
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsReal(designIlluminance);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "DesignIlluminance", null, paramVal,
-                ExporterCacheManager.UnitsCache["LUX"]);
+            IFCAnyHandle unitHnd = !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ? ExporterCacheManager.UnitsCache["LUX"] : null;
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "DesignIlluminance", null, paramVal, unitHnd);
             properties.Add(propSingleValue);
          }
 
