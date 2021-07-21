@@ -83,7 +83,15 @@ namespace Revit.IFC.Export.Utility
          if (parameter != null)
          {
             StorageType storageType = parameter.StorageType;
-            if (storageType != StorageType.String && storageType != StorageType.ElementId)
+            if (storageType == StorageType.Double || (storageType == StorageType.Integer && parameter.Definition.ParameterType != ParameterType.YesNo))
+            {
+               if (parameter.HasValue)
+               {
+                  propertyValue = parameter.AsValueString();
+                  return parameter;
+               }
+            }
+            else if (storageType != StorageType.String && storageType != StorageType.ElementId)
                return null;
 
             if (parameter.HasValue)

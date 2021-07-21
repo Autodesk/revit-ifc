@@ -272,7 +272,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          // "ExportAnnotations" override
-         cache.ExportAnnotationsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportAnnotations");
+         cache.ExportAnnotationsOverride = OptionsUtil.GetNamedBooleanOption(options, "Export2DElements");
 
          // "ExportSeparateParts" override
          cache.ExportPartsAsBuildingElementsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportPartsAsBuildingElements");
@@ -332,7 +332,7 @@ namespace Revit.IFC.Export.Utility
          cache.ActivePhaseId = ElementId.InvalidElementId;
 
          String activePhaseElementValue;
-         if (options.TryGetValue("ActivePhase", out activePhaseElementValue))
+         if (options.TryGetValue("ActivePhaseId", out activePhaseElementValue))
             cache.ActivePhaseId = ParseElementId(activePhaseElementValue);
 
          if ((cache.ActivePhaseId == ElementId.InvalidElementId) && (cache.FilterViewForExport != null))
@@ -450,7 +450,7 @@ namespace Revit.IFC.Export.Utility
       private static void ParseFileType(IDictionary<String, String> options, ExportOptionsCache cache)
       {
          String fileTypeString;
-         if (options.TryGetValue("FileType", out fileTypeString))
+         if (options.TryGetValue("IFCFileType", out fileTypeString))
          {
             IFCFileFormat fileType;
             if (Enum.TryParse<IFCFileFormat>(fileTypeString, true, out fileType))

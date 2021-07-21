@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
+using System.Web.Script.Serialization;
 
 namespace Revit.IFC.Common.Extensions
 {
@@ -84,7 +85,7 @@ namespace Revit.IFC.Common.Extensions
          {
             classificationEditionDate = value;
             // Call OnPropertyChanged whenever the property is updated
-            OnPropertyChanged("ClassificationEditionDateTextBox");
+            OnPropertyChanged("datePicker1");
          }
       }
 
@@ -122,6 +123,7 @@ namespace Revit.IFC.Common.Extensions
       /// This property is only used for the UI message. It will not be stored in the schema
       /// </summary>
       private string classificationTabMsg;
+      [ScriptIgnore]
       public string ClassificationTabMsg
       {
          get { return classificationTabMsg; }

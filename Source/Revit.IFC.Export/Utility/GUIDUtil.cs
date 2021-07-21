@@ -47,6 +47,8 @@ namespace Revit.IFC.Export.Utility
 
       static string s_ConversionTable_2X = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$";
 
+      private static System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
+
       static private string ConvertToIFCGuid(System.Guid guid)
       {
          byte[] byteArray = guid.ToByteArray();
@@ -160,7 +162,7 @@ namespace Revit.IFC.Export.Utility
          {
 
             if (parameterId != BuiltInParameter.INVALID)
-               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(projectInfo.Id, parameterId)] = ifcGUID;
+               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<Element, BuiltInParameter>(projectInfo, parameterId)] = ifcGUID;
          }
          return ifcGUID;
       }
@@ -201,7 +203,7 @@ namespace Revit.IFC.Export.Utility
          {
             string ifcGUID = ExporterIFCUtils.CreateAlternateGUID(level);
             if (ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID)
-               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(level.Id, BuiltInParameter.IFC_GUID)] = ifcGUID;
+               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<Element, BuiltInParameter>(level, BuiltInParameter.IFC_GUID)] = ifcGUID;
             return ifcGUID;
          }
          else
@@ -221,6 +223,17 @@ namespace Revit.IFC.Export.Utility
          if (element == null || subIndex <= 0)
             return CreateGUID();
          return ExporterIFCUtils.CreateSubElementGUID(element, subIndex);
+      }
+
+      /// <summary>
+      /// Generates IFC GUID from not empty string.
+      /// </summary>
+      /// <param name="uniqueString">String which should uniquely identify IFC entity.</param>
+      /// <returns>String in IFC GUID format. Uniqueness is highly likely, but not guaranteed even if input string is unique.</returns>
+      public static string GenerateIFCGuidFrom(string uniqueString)
+      {
+         byte[] hash = md5.ComputeHash(Encoding.Default.GetBytes(uniqueString));
+         return ConvertToIFCGuid(new Guid(hash));
       }
 
       /// <summary>
@@ -262,7 +275,7 @@ namespace Revit.IFC.Export.Utility
          string ifcGUID = CreateGUIDBase(element, parameterName, out shouldStore);
          if (shouldStore && ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID ||
              (ExporterCacheManager.ExportOptionsCache.GUIDOptions.Use2009BuildingStoreyGUIDs && element is Level))
-            ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(element.Id, parameterName)] = ifcGUID;
+            ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<Element, BuiltInParameter>(element, parameterName)] = ifcGUID;
 
          return ifcGUID;
       }

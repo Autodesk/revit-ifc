@@ -138,7 +138,7 @@ namespace Revit.IFC.Import.Utility
       /// If true, process the HasAssignments INVERSE attribute.  If false, ignore.
       /// This is necessary because the default IFC2x3_TC1 EXPRESS schema file is (incorrectly) missing this inverse attribute.
       /// </summary>
-      public bool AllowUseHasAssignments { get; set; } = true;
+      public bool AllowUseHasAssignments { get; set; } = false;
 
       /// <summary>
       /// If this value is false, then, if we find an already created Revit file corresponding to the IFC file,
@@ -180,6 +180,8 @@ namespace Revit.IFC.Import.Utility
       /// The action to be taken.  Open and link are currently allowed.
       /// </summary>
       public IFCImportAction Action { get; protected set; } = IFCImportAction.Open;
+
+      public IIFCFileProcessor Processor { get; protected set; }
 
       protected IFCImportOptions()
       {
@@ -269,6 +271,28 @@ namespace Revit.IFC.Import.Utility
          Int64? timestamp = OptionsUtil.GetNamedInt64Option(options, "FileModifiedTime", true);
          if (timestamp.HasValue)
             OriginalTimeStamp = OriginalTimeStamp.AddSeconds(timestamp.Value);
+
+         // NAVIS_TODO: Move the processor out of options.
+         string alternativeProcessor = OptionsUtil.GetNamedStringOption(options, "AlternativeProcessor");
+         if (!string.IsNullOrWhiteSpace(alternativeProcessor))
+         {
+            try
+            {
+               Type processorType = Type.GetType(alternativeProcessor);
+
+               object processor = Activator.CreateInstance(processorType);
+               if (typeof(IIFCFileProcessor).IsInstanceOfType(processor))
+               {
+                  Processor = processor as IIFCFileProcessor;
+               }
+            }
+            catch (Exception)
+            {
+            }
+         }
+
+         if (Processor == null)
+            Processor = new IFCDefaultProcessor();
       }
 
       /// <summary>

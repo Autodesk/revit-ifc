@@ -141,7 +141,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterMap">The parameters of the element.  Cached for performance.</param>
       /// <param name="propertySetName">The name of the containing property set.</param>
       /// <param name="createdParameters">The names of the created parameters.</param>
-      public override void Create(Document doc, Element element, Category category, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
+      public override void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
       {
          double baseValue = 0.0;
          IFCDataPrimitiveType type = Value.PrimitiveType;
@@ -160,8 +160,10 @@ namespace Revit.IFC.Import.Data
                return;
          }
 
-         double doubleValueToUse = IFCUnit != null ? IFCUnit.Convert(baseValue) : baseValue;
-
+         double doubleValueToUse = Importer.TheProcessor.ScaleValues ? 
+            IFCUnit?.Convert(baseValue) ?? baseValue :
+            baseValue;
+         
          Parameter existingParameter = null;
          string originalParameterName = Name + "(" + propertySetName + ")";
          string parameterName = originalParameterName;
@@ -179,13 +181,20 @@ namespace Revit.IFC.Import.Data
 
             if (existingParameter == null)
             {
-               ForgeTypeId specTypeId = new ForgeTypeId();
-               if (IFCUnit != null)
-                  specTypeId = IFCUnit.Spec;
-               else
-                  specTypeId = IFCDataUtil.GetUnitTypeFromData(Value, SpecTypeId.Number);
+               ForgeTypeId specTypeId;
+               ForgeTypeId unitsTypeId = null;
 
-               bool created = IFCPropertySet.AddParameterDouble(doc, element, category, parameterName, specTypeId, doubleValueToUse, Id);
+               if (IFCUnit != null)
+               {
+                  specTypeId = IFCUnit.Spec;
+                  unitsTypeId = IFCUnit.Unit;
+               }
+               else
+               {
+                  specTypeId = IFCDataUtil.GetUnitTypeFromData(Value, SpecTypeId.Number);                  
+               }
+
+               bool created = IFCPropertySet.AddParameterDouble(doc, element, category, objDef, parameterName, specTypeId, unitsTypeId, doubleValueToUse, Id);
                if (created)
                   createdParameters.Add(parameterName);
 

@@ -205,6 +205,12 @@
     <Compile Include="Toolkit\IFCDataUtil.cs" />
     <Compile Include="Toolkit\TransformSetter.cs" />
     <Compile Include="Utility\AllocatedGeometryObjectCache.cs" />
+    <Compile Include="Utility\Antlr4Gen\ParamExprGrammarBaseListener.cs" />
+    <Compile Include="Utility\Antlr4Gen\ParamExprGrammarBaseVisitor.cs" />
+    <Compile Include="Utility\Antlr4Gen\ParamExprGrammarLexer.cs" />
+    <Compile Include="Utility\Antlr4Gen\ParamExprGrammarListener.cs" />
+    <Compile Include="Utility\Antlr4Gen\ParamExprGrammarParser.cs" />
+    <Compile Include="Utility\Antlr4Gen\ParamExprGrammarVisitor.cs" />
     <Compile Include="Utility\AssemblyInstanceCache.cs" />
     <Compile Include="Utility\AttributeCache.cs" />
     <Compile Include="Utility\BooleanPropertyInfoCache.cs" />

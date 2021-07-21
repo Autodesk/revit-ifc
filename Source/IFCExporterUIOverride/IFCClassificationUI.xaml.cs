@@ -30,8 +30,7 @@ namespace BIM.IFC.Export.UI
    /// </summary>
    public partial class IFCClassificationWindow : ChildWindow
    {
-
-      private IFCClassification m_newClassification = new IFCClassification();
+      private IFCClassification m_newClassification;
       private IList<IFCClassification> m_newClassificationList = new List<IFCClassification>();
       private IFCClassification m_savedClassification = new IFCClassification();
 
@@ -40,9 +39,11 @@ namespace BIM.IFC.Export.UI
       /// initialization of IFCAssignemt class
       /// </summary>
       /// <param name="document"></param>
-      public IFCClassificationWindow()
+      public IFCClassificationWindow(IFCExportConfiguration configuration)
       {
          InitializeComponent();
+         m_newClassification = configuration.ClassificationSettings;
+         datePicker1.SelectedDate = DateTime.Today;
       }
 
       /// <summary>

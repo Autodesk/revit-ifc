@@ -163,7 +163,13 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
-      public static Autodesk.Revit.DB.Color GetElementColorAndTransparency(Element element, out double opacity)
+      /// <summary>
+      /// Get the element color and opacity from the material associated to an element's category, if any.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="opacity">The return opacity value.</param>
+      /// <returns>The material color.</returns>
+      public static Color GetElementColorAndOpacityFromCategory(Element element, out double opacity)
       {
          opacity = 1.0;
          Category category = element.Category;

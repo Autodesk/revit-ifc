@@ -312,6 +312,7 @@ namespace Revit.IFC.Export.Utility
       public void AddSystem(Element element, IFCAnyHandle handle)
       {
          RegisterHandleWithElement(element, handle);
+         m_CreatedHandles.Add(handle);
       }
 
       /// <summary>

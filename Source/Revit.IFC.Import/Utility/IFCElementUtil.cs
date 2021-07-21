@@ -110,7 +110,7 @@ namespace Revit.IFC.Import.Utility
       /// <param name="geomObjs">The list of geometries to add to the DirectShape.</param>
       /// <param name="id">The id of the IFCEntity object creating the DirectShape.</param>
       /// <returns>The DirectShape.</returns>
-      static public DirectShape CreateElement(Document doc, ElementId categoryId, string dataGUID, IList<GeometryObject> geomObjs, int id)
+      static public DirectShape CreateElement(Document doc, ElementId categoryId, string dataGUID, IList<GeometryObject> geomObjs, int id, IFCEntityType entityType)
       {
          string appGUID = Importer.ImportAppGUID();
          DirectShape directShape = DirectShape.CreateElement(doc, GetDSValidCategoryId(doc, categoryId, id));
@@ -129,9 +129,13 @@ namespace Revit.IFC.Import.Utility
             directShape.SetOptions(options);
          }
 
-
-         if (directShape != null && geomObjs != null)
-            directShape.SetShape(geomObjs);
+         // This is used in some places to create something not related to an IFCEntity
+         if (!Importer.TheProcessor.CreateOrUpdateElement(id, dataGUID, entityType.ToString(), 
+            categoryId.IntegerValue, geomObjs))
+         {
+            if (geomObjs != null)
+               directShape?.SetShape(geomObjs);
+         }
 
          return directShape;
       }
@@ -143,11 +147,18 @@ namespace Revit.IFC.Import.Utility
       /// <param name="name">The name of the DirectShapeType.</param>
       /// <param name="categoryId">The category of the DirectShape.</param>
       /// <param name="id">The id of the IFCEntity object creating the DirectShape.</param>
+      /// <param name="guid">The guid of the IFCEntity object creating the DirectShape.</param>
       /// <returns>The DirectShape.</returns>
-      static public DirectShapeType CreateElementType(Document doc, string name, ElementId categoryId, int id)
+      static public DirectShapeType CreateElementType(Document doc, string name, ElementId categoryId, int id, string guid, IFCEntityType entityType)
       {
-         DirectShapeType directShapeType = DirectShapeType.Create(doc, name, IFCElementUtil.GetDSValidCategoryId(doc, categoryId, id));
+         DirectShapeTypeOptions options = new DirectShapeTypeOptions();
+         options.AllowDuplicateNames = true;
+         ElementId validCategoryId = IFCElementUtil.GetDSValidCategoryId(doc, categoryId, id);
+         DirectShapeType directShapeType = DirectShapeType.Create(doc, name, validCategoryId, options);
          Importer.TheCache.CreatedDirectShapeTypes[id] = directShapeType.Id;
+
+         Importer.TheProcessor.CreateElementType(id, guid, entityType.ToString(), validCategoryId.IntegerValue);
+
          return directShapeType;
       }
    }

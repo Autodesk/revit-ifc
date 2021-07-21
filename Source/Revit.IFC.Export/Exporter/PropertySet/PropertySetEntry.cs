@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Export.Utility;
 using GeometryGym.Ifc;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
@@ -49,7 +50,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// A Table property (IfcPropertyTableValue)
       /// </summary>
-      TableValue
+      TableValue,
+      /// <summary>
+      /// A Bounded Value property (IfcPropertyBoundedValue)
+      /// </summary>
+      BoundedValue
    }
 
    /// <summary>
@@ -262,6 +267,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       PropertyType m_PropertyType = PropertyType.Label;
 
       /// <summary>
+      /// The type of the IFC argument of table property set entry. Use if PropertyValueType is TableValue
+      /// </summary>
+      public PropertyType PropertyArgumentType { get; set; } = PropertyType.Label;
+
+      /// <summary>
       /// The value type of the IFC property set entry.
       /// </summary>
       PropertyValueType m_PropertyValueType = PropertyValueType.SingleValue;
@@ -390,22 +400,22 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
-      /// Process to create element property.
+      /// Process to create element or connector property.
       /// </summary>
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="owningPsetName">Name of Property Set this entry belongs to .</param>
       /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
-      /// <param name="element">The element of which this property is created for.</param>
+      /// <param name="elementOrConnector">The element or connector of which this property is created for.</param>
       /// <param name="elementType">The element type of which this property is created for.</param>
       /// <param name="handle">The handle for which this property is created for.</param>
       /// <returns>The created property handle.</returns>
-      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, IFCExtrusionCreationData extrusionCreationData, Element element,
+      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, IFCExtrusionCreationData extrusionCreationData, ElementOrConnector elementOrConnector,
          ElementType elementType, IFCAnyHandle handle)
       {
          foreach (PropertySetEntryMap map in m_Entries)
          {
-            IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName, extrusionCreationData, element, elementType, handle, PropertyType, PropertyValueType, PropertyEnumerationType, PropertyName);
+            IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName, extrusionCreationData, elementOrConnector, elementType, handle, PropertyType, PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName);
             if (propHnd != null)
                return propHnd;
          }

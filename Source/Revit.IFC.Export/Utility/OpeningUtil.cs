@@ -78,7 +78,7 @@ namespace Revit.IFC.Export.Utility
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionHandle))
                   continue;
 
-               BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, extrusionHandle, ElementId.InvalidElementId);
+               // Openings shouldn't have surface styles for their geometry.
 
                HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
                bodyItems.Add(extrusionHandle);
@@ -198,7 +198,7 @@ namespace Revit.IFC.Export.Utility
          if (canUseElementGUID)
             return GUIDUtil.CreateGUID(openingElem);
          else
-            return GUIDUtil.CreateSubElementGUID(openingElem, (int)IFCDoorSubElements.DoorOpening);
+            return GUIDUtil.CreateGUID();
       }
 
       /// <summary>
@@ -253,22 +253,22 @@ namespace Revit.IFC.Export.Utility
             if (parentHandle == null)
                parentHandle = elementHandles[0];
 
-            string predefinedType;
-            IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, openingElem, out predefinedType);
-            bool exportingDoorOrWindow = (exportType.ExportInstance == IFCEntityType.IfcDoor ||
-                  exportType.ExportType == IFCEntityType.IfcDoorType ||
-                  exportType.ExportInstance == IFCEntityType.IfcWindow ||
-                  exportType.ExportType == IFCEntityType.IfcWindowType);
-
             bool isDoorOrWindowOpening = IsDoorOrWindowOpening(exporterIFC, openingElem, element);
             bool insertHasHost = false;
             bool insertInThisHost = false;
             if (openingElem is FamilyInstance && element is Wall)
             {
+               string ifcEnumType;
+               IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, openingElem, out ifcEnumType);
                Element instHost = (openingElem as FamilyInstance).Host;
                insertHasHost = (instHost != null);
                insertInThisHost = (insertHasHost && instHost.Id == element.Id);
-               isDoorOrWindowOpening = insertInThisHost && exportingDoorOrWindow;
+               isDoorOrWindowOpening = 
+                  insertInThisHost &&
+                  (exportType.ExportInstance == IFCEntityType.IfcDoor || 
+                  exportType.ExportType == IFCEntityType.IfcDoorType || 
+                  exportType.ExportInstance == IFCEntityType.IfcWindow || 
+                  exportType.ExportType == IFCEntityType.IfcWindowType);
             }
 
             if (isDoorOrWindowOpening && currentWallIsHost)
@@ -286,8 +286,8 @@ namespace Revit.IFC.Export.Utility
             // determined above, or an embedded wall, then we can't use the element GUID 
             // for the opening. 
             bool canUseElementGUID = (!insertHasHost || insertInThisHost) && 
-               !isDoorOrWindowOpening && !(openingElem is Wall) &&
-               !exportingDoorOrWindow;
+               !isDoorOrWindowOpening && 
+               !(openingElem is Wall);
 
             IList<Solid> solids = openingData.GetOpeningSolids();
             foreach (Solid solid in solids)
@@ -370,6 +370,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+         bodyExporterOptions.CreatingVoid = true;
          BodyData bodyData = BodyExporter.ExportBody(exporterIFC, insertElement, catId, ElementId.InvalidElementId,
              solid, bodyExporterOptions, extrusionCreationData);
 

@@ -249,7 +249,8 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle outer = IFCInstanceExporter.CreateClosedShell(file, faces);
 
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(outer))
-                  bodyItems.Add(RepresentationUtil.CreateFacetedBRep(exporterIFC, document, outer, ElementId.InvalidElementId));
+                  bodyItems.Add(RepresentationUtil.CreateFacetedBRep(exporterIFC, document, 
+                     false, outer, ElementId.InvalidElementId));
             }
          }
 

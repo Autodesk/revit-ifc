@@ -70,7 +70,6 @@ namespace Revit.IFC.Export.Exporter
                using (ProductWrapper genElemProductWrapper = ProductWrapper.Create(exporterIFC, true))
                {
                   GenericElementExporter.ExportGenericElement(exporterIFC, topoSurface, geometryElement, genElemProductWrapper, exportType);
-                  ExporterUtil.ExportRelatedProperties(exporterIFC, topoSurface, genElemProductWrapper);
                }
                productWrapper.ClearInternalHandleWrapperData(topoSurface.Document.ProjectInformation);
             }

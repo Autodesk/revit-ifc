@@ -383,6 +383,8 @@ namespace Revit.IFC.Import.Data
                   subElementIds.Add(objectDefinition.CreatedElementId);
 
                   // CreateDuplicateContainerGeometry is currently an API-only option (no UI), set to true by default.
+                  //
+                  // NAVIS_TODO - This is wrong if Importer.TheProcessor.ApplyTransforms is false
                   if (GroupSubElements() && Importer.TheOptions.CreateDuplicateContainerGeometry)
                   {
                      IList<GeometryObject> subGeometries = GetOrCloneGeometry(doc, objectDefinition);
@@ -400,13 +402,23 @@ namespace Revit.IFC.Import.Data
          {
             if (subElementIds.Count > 0)
             {
+               if (CreatedElementId != ElementId.InvalidElementId && groupedSubElementGeometries.Count == 0)
+               {
+                  // if CreateDuplicateContainerGeometry is false, 
+                  // then groupedSubElementGeometries is empty and we then create a new DirectShape with no content in it.
+                  //
+                  // for files such as NW-55644 that has geometry on the slab element and children with geometry, this
+                  // means that the slab geometry is thrown away
+                  return;
+               }
+
                if (CreatedElementId != ElementId.InvalidElementId)
                   subElementIds.Add(CreatedElementId);
 
                // We aren't yet actually grouping the elements.  DirectShape doesn't support grouping, and
                // the Group element doesn't support adding parameters.  For now, we will create a DirectShape that "forgets"
                // the association, which is good enough for link.
-               DirectShape directShape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, groupedSubElementGeometries, Id);
+               DirectShape directShape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, groupedSubElementGeometries, Id, EntityType);
                //Group group = doc.Create.NewGroup(subElementIds);
 
                if (directShape != null)
@@ -600,8 +612,11 @@ namespace Revit.IFC.Import.Data
          if (IFCAnyHandleUtil.IsSubTypeOf(ifcRelAssigns, IFCEntityType.IfcRelAssignsToGroup))
          {
             IFCGroup group = ProcessIFCRelation.ProcessRelatingGroup(ifcRelAssigns);
-            group.RelatedObjects.Add(this);
-            AssignmentGroups.Add(group);
+            if (group != null)
+            {
+               group.RelatedObjects.Add(this);
+               AssignmentGroups.Add(group);
+            }
          }
 
          // LOG: ERROR: #: Unknown assocation of type ifcRelAssigns.GetEntityType();
@@ -730,10 +745,9 @@ namespace Revit.IFC.Import.Data
       {
          // If the element has the built-in ALL_MODEL_DESCRIPTION parameter, populate that also.
          // We will create/populate the parameter even if the description is empty or null.
-         string description = string.IsNullOrWhiteSpace(Description) ? "" : Description;
-         Parameter descriptionParameter = element.get_Parameter(BuiltInParameter.ALL_MODEL_DESCRIPTION);
-         if (descriptionParameter != null)
-            descriptionParameter.Set(description);
+         string description = string.IsNullOrWhiteSpace(Description) ? string.Empty : Description;
+         Importer.TheProcessor.SetParameter(element, BuiltInParameter.ALL_MODEL_DESCRIPTION, description);
+         
          IFCPropertySet.AddParameterString(doc, element, category, this, IFCSharedParameters.IfcDescription, description, Id);
       }
 
@@ -794,7 +808,7 @@ namespace Revit.IFC.Import.Data
          }
 
          if (systemNames != null)
-            IFCPropertySet.AddParameterString(doc, element, category, "IfcSystem", systemNames, Id);
+            IFCPropertySet.AddParameterString(doc, element, category, this, "IfcSystem", systemNames, Id);
       }
 
       /// <summary>
@@ -828,6 +842,8 @@ namespace Revit.IFC.Import.Data
          {
             Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
 
+            Importer.TheProcessor.CreateOrUpdateElement(Id, GlobalId, EntityType.ToString(), CategoryId.IntegerValue, null);
+            
             // Set the element name.
             SetName(doc, element, category);
 
@@ -840,18 +856,18 @@ namespace Revit.IFC.Import.Data
             // Set the "IfcSystem" parameter.
             SetSystemParameter(doc, element, category);
 
-            // Set the element GUID.
-            bool elementIsType = (element is ElementType);
-            BuiltInParameter ifcGUIDId = GetGUIDParameter(element, elementIsType);
-            Parameter guidParam = element.get_Parameter(ifcGUIDId);
-            if (guidParam != null)
+            if (!string.IsNullOrWhiteSpace(GlobalId))
             {
-               if (!guidParam.IsReadOnly)
-                  guidParam.Set(GlobalId);
+               bool elementIsType = (element is ElementType);
+               BuiltInParameter ifcGUIDId = GetGUIDParameter(element, elementIsType);
+               if (!Importer.TheProcessor.SetParameter(element, ifcGUIDId, GlobalId))
+               {
+                  // NAVIS_TODO: Figure out better thing here.  Having a "ProcessGUID" seems overkill.
+                  if (Importer.TheProcessor is IFCDefaultProcessor)
+                     ExporterIFCUtils.AddValueString(element, new ElementId(ifcGUIDId), GlobalId);
+               }
             }
-            else
-               ExporterIFCUtils.AddValueString(element, new ElementId(ifcGUIDId), GlobalId);
-
+            
             // Set the "IfcExportAs" parameter.
             string ifcExportAs = IFCCategoryUtil.GetCustomCategoryName(this);
             if (!string.IsNullOrWhiteSpace(ifcExportAs))
@@ -862,8 +878,8 @@ namespace Revit.IFC.Import.Data
             {
                string containerParamName = (Decomposes is IFCElementAssembly) ? "IfcElementAssembly" : "IfcDecomposes";
                string containerParamGUIDName = (Decomposes is IFCElementAssembly) ? "IfcElementAssemblyGUID" : "IfcDecomposesGUID";
-               IFCPropertySet.AddParameterString(doc, element, category, containerParamName, Decomposes.Name, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, containerParamGUIDName, Decomposes.GlobalId, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, containerParamName, Decomposes.Name, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, containerParamGUIDName, Decomposes.GlobalId, Id);
             }
 
             // Set additional parameters (if any), e.g. for Classification assignments
@@ -872,13 +888,13 @@ namespace Revit.IFC.Import.Data
                foreach (KeyValuePair<string, object> parItem in AdditionalIntParameters)
                {
                   if (parItem.Value is string)
-                     IFCPropertySet.AddParameterString(doc, element, category, parItem.Key, (string)parItem.Value, Id);
+                     IFCPropertySet.AddParameterString(doc, element, category, this, parItem.Key, (string)parItem.Value, Id);
                   else if (parItem.Value is double)
-                     IFCPropertySet.AddParameterDouble(doc, element, category, parItem.Key, SpecTypeId.Custom, (double)parItem.Value, Id);
+                     IFCPropertySet.AddParameterDouble(doc, element, category, this, parItem.Key, SpecTypeId.Custom, UnitTypeId.General, (double)parItem.Value, Id);
                   else if (parItem.Value is int)
-                     IFCPropertySet.AddParameterInt(doc, element, category, parItem.Key, (int)parItem.Value, Id);
+                     IFCPropertySet.AddParameterInt(doc, element, category, this, parItem.Key, (int)parItem.Value, Id);
                   else if (parItem.Value is bool)
-                     IFCPropertySet.AddParameterBoolean(doc, element, category, parItem.Key, (bool)parItem.Value, Id);
+                     IFCPropertySet.AddParameterBoolean(doc, element, category, this, parItem.Key, (bool)parItem.Value, Id);
                }
             }
          }
@@ -975,7 +991,7 @@ namespace Revit.IFC.Import.Data
             IFCParameterSetByGroup parameterGroupMap = IFCParameterSetByGroup.Create(element);
             foreach (IFCPropertySetDefinition propertySet in propertySets.Values)
             {
-               Tuple<string, bool> newPropertySetCreated = propertySet.CreatePropertySet(doc, element, parameterGroupMap);
+               Tuple<string, bool> newPropertySetCreated = propertySet.CreatePropertySet(doc, element, this, parameterGroupMap);
                if (newPropertySetCreated == null || !newPropertySetCreated.Item2 || string.IsNullOrWhiteSpace(newPropertySetCreated.Item1))
                   continue;
 
@@ -988,7 +1004,7 @@ namespace Revit.IFC.Import.Data
          // Add property set-based parameters.
          // We are going to create this "fake" parameter so that we can filter elements in schedules based on their property sets.
          Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-         IFCPropertySet.AddParameterString(doc, element, category, propertySetListName, propertySetsCreated, Id);
+         IFCPropertySet.AddParameterString(doc, element, category, this, propertySetListName, propertySetsCreated, Id);
       }
    }
 }
