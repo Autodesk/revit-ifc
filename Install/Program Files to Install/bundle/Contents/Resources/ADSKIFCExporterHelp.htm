@@ -237,6 +237,55 @@ working on expanding and eventually removing this limit, and we will be tracking
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
 <div class="versionset">
+	<div class="version">21.4.0.0</div><div class="versioninfo-bullet">
+
+      <br><p>
+         General:
+			<ul>
+            <li>This version contains various improvements and bugfixes since the latest release of 21.2.0.0.
+			</ul>	
+			<br>
+		</p>
+     <p>
+	  		Improvements:
+			<ul>
+			   <li>Added support property data types: IfcPropertyBoundedValue, IfcPropertyListValue, IfcPropertyTableValue
+				<li>Added support to override SystemType of IfcDistributionPort from Description parameter
+			   <li>Improved the lifetime and status of cached element
+	  		   <li>Add support for IfcArcSegment and IfcLineSegment for IfcIndexedPolyCurve
+				<li>Add support for additional Ifc data types
+				<li>Use element name for and elementid parameter
+			   <li>Improvement in IFC export configuration: assign address to Site or Building option is now remembered, the Classification setting is also now remembered and will be saved into the configuration json file
+				<li>Improvement in getting material information from geometry
+				<li>Property set now gets a stable GUID
+			</ul>
+	  </p>
+	  <br> <p>
+         Bug Fixes:
+	  </p>
+			<p>
+			Export bug fixes:
+			<ul>
+				<li>Fixed issue that may cause export to IFC4 DTV to fail
+				<li>Fixed issue that the EPSG code in the Georeference dialog may get a different value after input
+				<li>Improved export performance for some geometries that contain extremely large number of faces
+				<li>Ensured IfcExportAs is obeyed when setting MEP system to IfcDistributionSystem
+			</ul>
+			</p>
+			<br><p>
+			Import bug fixes:
+			<ul>
+				<li>Fixed issue where IFC file with rotation linked in Revit incorrectly
+			   <li>Fixed issue that Columns may be imported without their proper category being set for IFC file from AllPlan
+				<li>Improved handling Spatial Structure elevation and Z-value of the placement
+				<li>Fixed issue of missing floors when linking IFC file from ARCHICAD
+				<li>Fixed crash issue when linking certain IFC file
+				<li>
+			</ul></p>
+			<br>
+	</div>
+	<br>
+	
 	<div class="version">21.2.1.0</div><div class="versioninfo-bullet">
       <br><p>
          General:
