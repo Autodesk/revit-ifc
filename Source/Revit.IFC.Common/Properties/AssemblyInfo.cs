@@ -13,8 +13,8 @@ using System.Reflection;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("21.3.0.0")]
-[assembly: AssemblyFileVersion("21.3.0.0")]
+[assembly: AssemblyVersion("21.4.0.0")]
+[assembly: AssemblyFileVersion("21.4.0.0")]
 #endif
 
 
