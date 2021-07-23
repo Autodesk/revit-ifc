@@ -238,7 +238,12 @@ namespace Revit.IFC.Export.Exporter
          {
             try
             {
+#if IFC_OPENSOURCE
+               string dllPath = Assembly.GetExecutingAssembly().Location;
+               Assembly assembly = Assembly.LoadFrom(Path.GetDirectoryName(dllPath) + @"\Autodesk.SteelConnections.ASIFC.dll");
+#else
                Assembly assembly = Assembly.LoadFrom(AppDomain.CurrentDomain.BaseDirectory + @"\Addins\SteelConnections\Autodesk.SteelConnections.ASIFC.dll");
+#endif
                if (assembly != null)
                {
                   Type type = assembly.GetType("Autodesk.SteelConnections.ASIFC.ASExporter");
