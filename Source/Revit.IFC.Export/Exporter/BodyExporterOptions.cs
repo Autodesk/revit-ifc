@@ -53,14 +53,15 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       public BodyExporterOptions(BodyExporterOptions options)
       {
-         TryToExportAsExtrusion = options.TryToExportAsExtrusion;
-         ExtrusionLocalCoordinateSystem = options.ExtrusionLocalCoordinateSystem;
-         TryToExportAsSweptSolid = options.TryToExportAsSweptSolid;
          AllowOffsetTransform = options.AllowOffsetTransform;
+         CollectFootprintHandle = options.CollectFootprintHandle;
+         CollectMaterialAndProfile = options.CollectMaterialAndProfile;
+         CreatingVoid = options.CreatingVoid;
+         ExtrusionLocalCoordinateSystem = options.ExtrusionLocalCoordinateSystem;
          TessellationControls = options.TessellationControls;
          TessellationLevel = options.TessellationLevel;
-         CollectMaterialAndProfile = options.CollectMaterialAndProfile;
-         CollectFootprintHandle = options.CollectFootprintHandle;
+         TryToExportAsExtrusion = options.TryToExportAsExtrusion;
+         TryToExportAsSweptSolid = options.TryToExportAsSweptSolid;
       }
 
       /// <summary>
@@ -90,6 +91,11 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.LevelOfDetail <= coarseThreshhold)
             TessellationLevel = BodyTessellationLevel.Coarse;
       }
+
+      /// <summary>
+      /// True if we are creating void (instead of solid) geometry.
+      /// </summary>
+      public bool CreatingVoid { get; set; } = false;
 
       /// <summary>
       /// Try to export the solids as extrusions, if possible.

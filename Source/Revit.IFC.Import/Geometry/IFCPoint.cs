@@ -162,7 +162,7 @@ namespace Revit.IFC.Import.Geometry
             xyzs.Add(xyz);
          }
 
-         IFCUnitUtil.ScaleLengths(xyzs);
+         IFCUnitUtil.ProjectScale(SpecTypeId.Length, xyzs);
          return xyzs;
       }
 

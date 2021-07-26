@@ -66,6 +66,9 @@ namespace Revit.IFC.Import.Data
 
       private IFCFile IFCFile { get; set; } = null;
 
+      public double OneHundrethOfAFoot { get; set; } = 0.01;
+      public double OneMillimeter { get; set; } = 1.0 / 304.8;
+
       private static void StoreIFCCreatorInfo(IFCFile ifcFile, ProjectInfo projectInfo)
       {
          if (ifcFile == null || projectInfo == null)
@@ -600,22 +603,22 @@ namespace Revit.IFC.Import.Data
          if (originalFileName != null)
             originalFileName.Set(ifcFileName);
          else
-            IFCPropertySet.AddParameterString(doc, projInfo, category, "Original IFC File Name", ifcFileName, -1);
+            IFCPropertySet.AddParameterString(doc, projInfo, category, TheFile.IFCProject, "Original IFC File Name", ifcFileName, -1);
 
          if (originalFileSizeParam != null)
             originalFileSizeParam.Set(ifcFileLength.ToString());
          else
-            IFCPropertySet.AddParameterString(doc, projInfo, category, "Original IFC File Size", ifcFileLength.ToString(), -1);
+            IFCPropertySet.AddParameterString(doc, projInfo, category, TheFile.IFCProject, "Original IFC File Size", ifcFileLength.ToString(), -1);
 
          if (originalTimeStampParam != null)
             originalTimeStampParam.Set(ticks.ToString());
          else
-            IFCPropertySet.AddParameterString(doc, projInfo, category, "Revit File Last Updated", ticks.ToString(), -1);
+            IFCPropertySet.AddParameterString(doc, projInfo, category, TheFile.IFCProject, "Revit File Last Updated", ticks.ToString(), -1);
 
          if (originalImporterVersion != null)
             originalImporterVersion.Set(IFCImportOptions.ImporterVersion);
          else
-            IFCPropertySet.AddParameterString(doc, projInfo, category, "Revit Importer Version", IFCImportOptions.ImporterVersion, -1);
+            IFCPropertySet.AddParameterString(doc, projInfo, category, TheFile.IFCProject, "Revit Importer Version", IFCImportOptions.ImporterVersion, -1);
       }
 
       private bool DontDeleteSpecialElement(ElementId elementId)
@@ -718,6 +721,32 @@ namespace Revit.IFC.Import.Data
          if (Importer.TheOptions.RevitLinkFileName != null)
             return Importer.TheOptions.RevitLinkFileName;
          return GenerateRevitFileName(baseFileName);
+      }
+
+      private static void RotateInstanceToProjectNorth(Document document, RevitLinkInstance instance)
+      {
+         if (document == null || instance == null)
+            return;
+
+         ProjectLocation projectLocation = document.ActiveProjectLocation;
+         if (projectLocation == null)
+            return;
+
+         Transform projectNorthRotation = projectLocation.GetTransform();
+         if (projectNorthRotation == null)
+            return;
+
+         XYZ rotatedNorth = projectNorthRotation.OfVector(XYZ.BasisY);
+         double angle = Math.Atan2(-rotatedNorth.X, rotatedNorth.Y);
+         if (MathUtil.IsAlmostZero(angle))
+            return;
+
+         Line zAxis = Line.CreateBound(XYZ.Zero, XYZ.BasisZ);
+         Location instanceLocation = instance.Location;
+         if (!instanceLocation.Rotate(zAxis, angle))
+         {
+            Importer.TheLog.LogError(-1, "Couldn't rotate link to project north.  This may result in an incorrect orientation.", false);
+         }
       }
 
       /// <summary>
@@ -831,7 +860,10 @@ namespace Revit.IFC.Import.Data
                }
 
                if (revitLinkTypeId != ElementId.InvalidElementId)
-                  RevitLinkInstance.Create(originalDocument, revitLinkTypeId);
+               {
+                  RevitLinkInstance linkInstance = RevitLinkInstance.Create(originalDocument, revitLinkTypeId);
+                  RotateInstanceToProjectNorth(originalDocument, linkInstance);
+               }
 
                Importer.PostDelayedLinkErrors(originalDocument);
                linkTransaction.Commit();

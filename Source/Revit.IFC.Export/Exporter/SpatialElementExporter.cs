@@ -82,18 +82,9 @@ namespace Revit.IFC.Export.Exporter
       /// </param>
       public static void ExportSpatialElement(ExporterIFC exporterIFC, SpatialElement spatialElement, ProductWrapper productWrapper)
       {
-         string ifcEnumType;
-         //IFCEntityType elementClassTypeEnum = IFCEntityType.UnKnown;
-         IFCExportInfoPair exportInfo = ExporterUtil.GetExportType(exporterIFC, spatialElement, out ifcEnumType);
-
-         // Force the default export to IfcSpace for Spatial Element if it is set to UnKnown
-         if (exportInfo.IsUnKnown)
-         {
-            exportInfo.SetValueWithPair(IFCEntityType.IfcSpace, ifcEnumType);
-         }
-
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportInfo.ExportInstance))
+         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcSpace;
+         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return;
 
          IFCFile file = exporterIFC.GetFile();
@@ -102,7 +93,7 @@ namespace Revit.IFC.Export.Exporter
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, spatialElement, null, null))
             {
                SpatialElementGeometryResults spatialElemGeomResult = null;
-               if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, exportInfo, out spatialElemGeomResult))
+               if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, out spatialElemGeomResult))
                   return;
 
                bool isArea = (spatialElement is Area);
@@ -412,7 +403,7 @@ namespace Revit.IFC.Export.Exporter
                            {
                               // We won't use the SpatialElementGeometryResults, as these are 1st level boundaries, not 2nd level.
                               SpatialElementGeometryResults results = null;
-                              if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, null, out results))
+                              if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, out results))
                                  continue;
 
                               exportedSpaceIds.Add(spatialElement.Id);
@@ -856,12 +847,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="setter">The PlacementSetter.</param>
       /// <returns>True if created successfully, false otherwise.</returns>
       static bool CreateIFCSpace(ExporterIFC exporterIFC, SpatialElement spatialElement, ProductWrapper productWrapper,
-          PlacementSetter setter, IFCExportInfoPair exportInfo, out SpatialElementGeometryResults results)
+          PlacementSetter setter, out SpatialElementGeometryResults results)
       {
          results = null;
-
-         if (exportInfo == null)
-            exportInfo = new IFCExportInfoPair(IFCEntityType.IfcSpace);
 
          // Avoid throwing for a spatial element with no location.
          if (spatialElement.Location == null)
@@ -940,6 +928,7 @@ namespace Revit.IFC.Export.Exporter
          }
 
          IFCAnyHandle spaceHnd = null;
+         IFCExportInfoPair exportInfo = new IFCExportInfoPair();
          using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
          {
             extraParams.SetLocalPlacement(localPlacement);
@@ -967,7 +956,8 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, XYZ.BasisZ, scaledRoomHeight, true);
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
                      return false;
-                  BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, shapeRep, ElementId.InvalidElementId);
+                  
+                  // Spaces shouldn't have styled items.
 
                   HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
                   bodyItems.Add(shapeRep);
@@ -985,20 +975,11 @@ namespace Revit.IFC.Export.Exporter
                extraParams.ScaledHeight = scaledRoomHeight;
                extraParams.ScaledArea = dArea;
 
-               if (exportInfo.ExportInstance == IFCEntityType.IfcSpace)
-               {
-                  spaceHnd = IFCInstanceExporter.CreateSpace(exporterIFC, spatialElement, GUIDUtil.CreateGUID(spatialElement),
-                                                ExporterCacheManager.OwnerHistoryHandle,
-                                                extraParams.GetLocalPlacement(), repHnd, IFCElementComposition.Element,
-                                                internalOrExternal);
-               }
-               else
-               {
-                  spaceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, spatialElement, GUIDUtil.CreateGUID(spatialElement),
-                                                ExporterCacheManager.OwnerHistoryHandle, extraParams.GetLocalPlacement(), repHnd);
-               }
-
-               //exportInfo.SetValueWithPair(IFCEntityType.IfcSpace);
+               spaceHnd = IFCInstanceExporter.CreateSpace(exporterIFC, spatialElement, GUIDUtil.CreateGUID(spatialElement),
+                                             ExporterCacheManager.OwnerHistoryHandle,
+                                             extraParams.GetLocalPlacement(), repHnd, IFCElementComposition.Element,
+                                             internalOrExternal);
+               exportInfo.SetValueWithPair(IFCEntityType.IfcSpace);
                if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
                {
                   IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(spatialElement, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
@@ -1167,8 +1148,8 @@ namespace Revit.IFC.Export.Exporter
          if (ParameterUtil.GetDoubleValueFromElement(element, null, "Infiltration Rate", out infiltrationRate) != null)
          {
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsReal(infiltrationRate);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "InfiltrationRate", null, paramVal,
-                ExporterCacheManager.UnitsCache["ACH"]);
+            IFCAnyHandle unitHnd = !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ? ExporterCacheManager.UnitsCache["ACH"] : null;
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "InfiltrationRate", null, paramVal, unitHnd);
             properties.Add(propSingleValue);
          }
 
@@ -1193,8 +1174,8 @@ namespace Revit.IFC.Export.Exporter
          {
             double scaledValue = UnitUtil.ScaleIlluminance(designIlluminance);
             IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsReal(designIlluminance);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "DesignIlluminance", null, paramVal,
-                ExporterCacheManager.UnitsCache["LUX"]);
+            IFCAnyHandle unitHnd = !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ? ExporterCacheManager.UnitsCache["LUX"] : null;
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "DesignIlluminance", null, paramVal, unitHnd);
             properties.Add(propSingleValue);
          }
 

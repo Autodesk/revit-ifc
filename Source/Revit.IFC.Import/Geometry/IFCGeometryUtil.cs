@@ -53,7 +53,7 @@ namespace Revit.IFC.Import.Geometry
                m_SolidValidator = IFCElementUtil.CreateElement(IFCImportFile.TheFile.Document,
                    new ElementId(BuiltInCategory.OST_GenericModel),
                    "(SolidValidator)",
-                   null, -1);
+                   null, -1, Common.Enums.IFCEntityType.UnKnown);
             }
             return m_SolidValidator;
          }
@@ -206,7 +206,7 @@ namespace Revit.IFC.Import.Geometry
       public static bool LineSegmentIsTooShort(XYZ pt1, XYZ pt2)
       {
          double dist = pt1.DistanceTo(pt2);
-         return (dist < IFCImportFile.TheFile.Document.Application.ShortCurveTolerance + MathUtil.Eps());
+         return (dist < Importer.TheProcessor.ShortCurveTolerance + MathUtil.Eps());
       }
 
       /// <summary>
@@ -524,6 +524,43 @@ namespace Revit.IFC.Import.Geometry
       }
 
       /// <summary>
+      /// Given a list of curves, finds any unbound cyclic curves and splits them.
+      /// </summary>
+      /// <param name="curves">The list of curves.</param>
+      /// <remarks>This will modify the input curves.  This will silently ignore
+      /// unbound, acyclic curves.
+      /// This does not respect the ordering of the curves.</remarks>
+      public static void SplitUnboundCyclicCurves(IList<Curve> curves)
+      {
+         IList<Curve> newCurves = null;
+
+         foreach (Curve curve in curves)
+         {
+            if (curve.IsBound || !curve.IsCyclic)
+               continue;
+
+            double period = curve.Period;
+            Curve newCurve = curve.Clone();
+
+            curve.MakeBound(0, period / 2);
+            newCurve.MakeBound(period / 2, period);
+
+            if (newCurves == null)
+               newCurves = new List<Curve>();
+
+            newCurves.Add(newCurve);
+         }
+
+         if (newCurves == null)
+            return;
+
+         foreach (Curve newCurve in newCurves)
+         {
+            curves.Add(newCurve);
+         }
+      }
+      
+      /// <summary>
       /// Trims the CurveLoop contained in an IFCCurve by the start and optional end parameter values.
       /// </summary>
       /// <param name="id">The id of the IFC entity containing the directrix, for messaging purposes.</param>
@@ -678,8 +715,6 @@ namespace Revit.IFC.Import.Geometry
       /// <returns>The result of the Boolean operation, or the first solid if the operation fails.</returns>
       public static Solid ExecuteSafeBooleanOperation(int id, int secondId, Solid firstSolid, Solid secondSolid, BooleanOperationsType opType, XYZ suggestedShiftDirection)
       {
-         const double footToMillimeter = 1.0 / 304.8;
-
          // Perform default operations if one of the arguments is null.
          if (firstSolid == null || secondSolid == null)
          {
@@ -751,7 +786,7 @@ namespace Revit.IFC.Import.Geometry
                   // ((ii + 3) >> 3) * 0.25mm shift.  Basically, a 0.25mm shift for every 8 attempts.
                   currentShiftFactor = ((ii + 1) >> 3) * 0.25;
                   int posOrNegDirection = (ii % 2 == 1) ? 1 : -1;
-                  double scale = currentShiftFactor * posOrNegDirection * footToMillimeter;
+                  double scale = currentShiftFactor * posOrNegDirection * IFCImportFile.TheFile.OneMillimeter;
                   Transform secondSolidShift = Transform.CreateTranslation(scale * shiftDirectionToUse);
                   secondOperand = SolidUtils.CreateTransformed(secondOperand, secondSolidShift);
                }

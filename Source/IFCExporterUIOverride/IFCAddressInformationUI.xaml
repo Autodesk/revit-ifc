@@ -16,7 +16,8 @@
                    SizeToContent="WidthAndHeight" 
                    HorizontalAlignment="Stretch" 
                    Margin="10,5,5,1" 
-                   Height="571.839" >
+                   Height="571.839" 
+                   Loaded="OnInit">
     <Grid Margin="0,0,1,0" HorizontalAlignment="Right" Width="551" Height="540" VerticalAlignment="Top">
         <Grid.RowDefinitions>
             <RowDefinition Height="499*"/>

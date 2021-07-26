@@ -56,7 +56,7 @@ namespace Revit.IFC.Export.Utility
             // We need to make sure the handle isn't stale.  If it is, remove it. 
             try
             {
-            if (!IFCAnyHandleUtil.IsValidHandle(handle))
+               if (!IFCAnyHandleUtil.IsValidHandle(handle))
                {
                   m_ElementIdToHandleDictionary.Remove(elementId);
                   handle = null;

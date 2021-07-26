@@ -48,20 +48,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       NotKnown,
       Unset}
 
-   public enum Pset_AirHandlerConstructionEnum {
-      ManufacturedItem,
-      ConstructedOnSite,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_AirHandlerFanCoilArrangementEnum {
-      BlowThrough,
-      DrawThrough,
-      Other,
-      NotKnown,
-      Unset}
-
    public enum PEnum_AirSideSystemType {
       CONSTANTVOLUME,
       CONSTANTVOLUMESINGLEZONE,
@@ -86,30 +72,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       OTHER,
       NOTKNOWN,
       UNSET}
-
-   public enum Pset_AirSideSystemTypeEnum {
-      ConstantVolume,
-      ConstantVolumeSingleZone,
-      ConstantVolumeMultipleZoneReheat,
-      ConstantVolumeBypass,
-      VariableAirVolume,
-      VariableAirVolumeReheat,
-      VariableAirVolumeInduction,
-      VariableAirVolumeFanPowered,
-      VariableAirVolumeDualConduit,
-      VariableAirVolumeVariableDiffusers,
-      VariableAirVolumeVariableTemperature,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_AirSideSystemDistributionTypeEnum {
-      SingleDuct,
-      DualDuct,
-      Multizone,
-      Other,
-      NotKnown,
-      Unset}
 
    public enum PEnum_AirTerminalBoxArrangementType {
       SINGLEDUCT,
@@ -226,22 +188,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       NotKnown,
       Unset}
 
-   public enum Pset_EventEnableEnum {
-      ToOffNormal,
-      ToFault,
-      ToNormal,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_NotifyTypeEnum {
-      Alarm,
-      Event,
-      AcknowledgeNotification,
-      Other,
-      NotKnown,
-      Unset}
-
    public enum PEnum_AssetAccountingType {
       Fixed,
       NonFixed,
@@ -285,38 +231,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       NotKnown,
       Unset}
 
-   public enum Pset_PolarityEnum {
-      Normal,
-      Reverse,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_AlarmValueEnum {
-      Inactive,
-      Active,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_AckedTransitionsEnum {
-      ToOffNormal,
-      ToFault,
-      ToNormal,
-      Other,
-      NotKnown,
-      Unset}
-
    public enum PEnum_BACnetAlarmValueType {
       Active,
       Inactive,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_FeedbackValueEnum {
-      Inactive,
-      Active,
       Other,
       NotKnown,
       Unset}
@@ -386,13 +303,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       OTHER,
       NOTKNOWN,
       UNSET}
-
-   public enum Pset_DamperBladeActionEnum {
-      Parallel,
-      Opposed,
-      Other,
-      NotKnown,
-      Unset}
 
    public enum PEnum_CooledBeamActiveAirFlowConfigurationType {
       BIDIRECTIONAL,
@@ -586,14 +496,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       NOTKNOWN,
       UNSET}
 
-   public enum Pset_DuctSizingMethodEnum {
-      ConstantFriction,
-      ConstantPressure,
-      StaticRegain,
-      Other,
-      NotKnown,
-      Unset}
-
    public enum PEnum_DuctSegmentShape {
       FLATOVAL,
       RECTANGULAR,
@@ -609,21 +511,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       OTHER,
       NOTKNOWN,
       UNSET}
-
-   public enum Pset_DuctSystemTypeEnum {
-      VariableAirVolume,
-      ConstantVolume,
-      DoubleDuct,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_ElectricActuatorTypeEnum {
-      MotorDrive,
-      Magnetic,
-      Other,
-      NotKnown,
-      Unset}
 
    public enum PEnum_InsulationStandardClass {
       Class0Appliance,
@@ -718,34 +605,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       OTHER,
       NOTKNOWN,
       UNSET}
-
-   public enum Pset_FireDamperBladeTypeEnum {
-      ParallelBlade,
-      FoldingCurtain,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_FireDamperActuationTypeEnum {
-      Gravity,
-      Spring,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_FireDamperClosureRatingEnum {
-      Dynamic,
-      Static,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_DamperMountingPositionEnum {
-      Horizontal,
-      Vertical,
-      Other,
-      NotKnown,
-      Unset}
 
    public enum PEnum_BreechingInletType {
       TWOWAY,
@@ -1056,33 +915,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       NOTKNOWN,
       UNSET}
 
-   public enum Pset_SensorTypeEnum {
-      Flow,
-      Pressure,
-      Temperature,
-      Gas,
-      Concentration,
-      Volts,
-      Amps,
-      Density,
-      Viscosity,
-      Energy,
-      Humidity,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_InsulationTypeEnum {
-      InorganicFibrous,
-      InorganicCellular,
-      OrganicFibrous,
-      OrganicCellular,
-      Metallic,
-      MetallizedOrganicReflectiveMembranes,
-      Other,
-      NotKnown,
-      Unset}
-
    public enum PEnum_LampBallastType {
       Conventional,
       Electronic,
@@ -1121,47 +953,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       NotKnown,
       Unset}
 
-   public enum Pset_LinearActuatorFailDirectionEnum {
-      FailIn,
-      FailOut,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_OccupancyTypeEnum {
-      Theater,
-      Office,
-      Hotel,
-      Apartment,
-      RetailStore,
-      DrugStore,
-      Bank,
-      Restaurant,
-      Factory,
-      DanceHall,
-      BowlingAlley,
-      Gymnasium,
-      Other,
-      NotKnown,
-      Unset}
-
    public enum PEnum_BuildingThermalExposure {
       LIGHT,
       MEDIUM,
       HEAVY,
       NOTKNOWN,
       UNSET}
-
-   public enum Pset_EnergySourceEnum {
-      Electricity,
-      NaturalGas,
-      Oil,
-      LiquifiedPetroleumGas,
-      Propane,
-      Steam,
-      Other,
-      NotKnown,
-      Unset}
 
    public enum PEnum_PackingCareType {
       Fragile,
@@ -1173,44 +970,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
    public enum PEnum_PermitType {
       Access,
       Work,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_PipeSizingMethodEnum {
-      MaximumVelocity,
-      MaximumPressureDrop,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_PipeFittingSubtypeEnum {
-      _45DegreeElbow,
-      _90DegreeElbow,
-      Cap,
-      Cock,
-      Crossover,
-      DoubleBranchElbow,
-      Flange,
-      Lateral,
-      PipeJoint,
-      Plug,
-      Reducer,
-      ReducingElbow,
-      Sleeve,
-      StreetElbow,
-      Tee,
-      Union,
-      Other,
-      NotKnown,
-      Unset}
-
-   public enum Pset_PipeSystemTypeEnum {
-      DomesticHotWater,
-      ChilledWater,
-      CondenserWater,
-      HeatingHotWater,
-      Steam,
       Other,
       NotKnown,
       Unset}
@@ -1780,14 +1539,4 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X2
       _134 = 134,
       _234 = 234,
       _1234 = 1234}
-
-   public enum Pset_WindowCleaningElementTypeEnum {
-      Apparatus,
-      Carriage,
-      Rails,
-      Rigging,
-      Tracks,
-      Other,
-      NotKnown,
-      Unset}
 }

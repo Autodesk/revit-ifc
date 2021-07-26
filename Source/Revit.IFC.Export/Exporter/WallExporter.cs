@@ -447,7 +447,7 @@ namespace Revit.IFC.Export.Exporter
          }
 
          ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(wallElement);
-         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, wallElement.Document, baseBodyItemHnd, matId);
+         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, wallElement.Document, false, baseBodyItemHnd, matId);
 
          HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
          bodyItems.Add(bodyItemHnd);

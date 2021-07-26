@@ -29,6 +29,97 @@ namespace Revit.IFC.Common.Utility
 {
    public class IFCAnyHandleUtil
    {
+      public class IfcPointList
+      {
+         public enum PointDimension
+         {
+            NotSet,
+            D2,
+            D3
+         };
+         public PointDimension Dimensionality { get; protected set; } = PointDimension.NotSet;
+         public List<PointBase> Points { get; protected set; } = new List<PointBase>();
+         public int Count { get { return Points.Count; } }
+         public PointBase Last() { return Points.Last(); }
+         public PointBase this[int key]
+         {
+            get => Points[key];
+            set => Points[key] = value;
+         }
+         /// <summary>
+         /// Sets dimension of points stored in container if it has never been set before.
+         /// Once set this function checks input dimension for compatibility with current dimension.
+         /// Throws exception if dimensions are not compatible.
+         /// </summary>
+         /// <param name="dim">Input dimension to be set or compared with.</param>
+         private void SetOrCheckPointDim(PointDimension dim)
+         {
+            if (Dimensionality != dim)
+            {
+               if (Dimensionality != PointDimension.NotSet)
+                  throw new ArgumentException("Input point dimension is not equal to container's point dimension");
+
+               Dimensionality = dim;
+            }
+         }
+
+         public void AddPoints(UV beg, UV end)
+         {
+            SetOrCheckPointDim(PointDimension.D2);
+
+            Points.Add(new Point2D(beg));
+            Points.Add(new Point2D(end));
+         }
+         public void AddPoints(XYZ beg, XYZ end)
+         {
+            SetOrCheckPointDim(PointDimension.D3);
+
+            Points.Add(new Point3D(beg));
+            Points.Add(new Point3D(end));
+         }
+         public void AddPoints(IList<XYZ> points)
+         {
+            SetOrCheckPointDim(PointDimension.D3);
+
+            foreach (var point in points)
+               Points.Add(new Point3D(point));
+         }
+         public void AddPoints(IList<UV> points)
+         {
+            SetOrCheckPointDim(PointDimension.D2);
+
+            foreach (var point in points)
+               Points.Add(new Point2D(point));
+         }
+         public void AddPoints(UV start, UV mid, UV end)
+         {
+            SetOrCheckPointDim(PointDimension.D2);
+
+            Points.Add(new Point2D(start));
+            Points.Add(new Point2D(mid));
+            Points.Add(new Point2D(end));
+         }
+         public void AddPoints(XYZ start, XYZ mid, XYZ end)
+         {
+            SetOrCheckPointDim(PointDimension.D3);
+
+            Points.Add(new Point3D(start));
+            Points.Add(new Point3D(mid));
+            Points.Add(new Point3D(end));
+         }
+         public void AddPointList(IfcPointList list)
+         {
+            SetOrCheckPointDim(list.Dimensionality);
+
+            Points.AddRange(list.Points);
+         }
+         public void InsertPointList(int index, IfcPointList list)
+         {
+            SetOrCheckPointDim(list.Dimensionality);
+
+            Points.InsertRange(index, list.Points);
+         }
+      }
       static Dictionary<IFCEntityType, string> m_sIFCEntityTypeToNames = new Dictionary<IFCEntityType, string>();
 
       static Dictionary<string, IFCEntityType> m_sIFCEntityNameToTypes = new Dictionary<string, IFCEntityType>();
@@ -160,9 +251,6 @@ namespace Revit.IFC.Common.Utility
          {
             foreach (IFCAnyHandle handle in handles)
             {
-               if (handle == null)
-                  continue;
-
                bool foundIsSubType = false;
                for (int ii = 0; ii < types.Length; ii++)
                {
@@ -530,6 +618,59 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Sets List of List of double value attribute for the handle
+      /// </summary>
+      /// <param name="handle">the handle</param>
+      /// <param name="name">The attribute name</param>
+      /// <param name="pointList">The points</param>
+      public static void SetAttribute(IFCAnyHandle handle, string name, IFCAnyHandleUtil.IfcPointList pointList,
+          int? outerListMin, int? outerListMax)
+      {
+         if (String.IsNullOrEmpty(name))
+            throw new ArgumentException("The name is empty.", "name");
+
+         if (pointList != null)
+         {
+            if (outerListMax != null)
+               if (pointList.Count > outerListMax)
+                  throw new ArgumentException("The outer List is larger than max. bound");
+            if (outerListMin != null)
+               if (pointList.Count < outerListMin)
+                  throw new ArgumentException("The outer List is less than min. bound");
+
+            IFCAggregate outerList = handle.CreateAggregateAttribute(name);
+
+            if (pointList.Dimensionality == IfcPointList.PointDimension.D3)
+            {
+               foreach (PointBase point in pointList.Points)
+               {
+                  Point3D point3D = point as Point3D;
+
+                  XYZ xyz = point3D.coords;
+                  IFCAggregate innerList = outerList.AddAggregate();
+                  innerList.Add(IFCData.CreateDouble(xyz.X));
+                  innerList.Add(IFCData.CreateDouble(xyz.Y));
+                  innerList.Add(IFCData.CreateDouble(xyz.Z));
+               }
+            }
+            else if (pointList.Dimensionality == IfcPointList.PointDimension.D2)
+            {
+               foreach (PointBase point in pointList.Points)
+               {
+                  Point2D point2D = point as Point2D;
+
+                  UV uv = point2D.coords;
+                  IFCAggregate innerList = outerList.AddAggregate();
+                  innerList.Add(IFCData.CreateDouble(uv.U));
+                  innerList.Add(IFCData.CreateDouble(uv.V));
+               }
+            }
+            else
+               throw new ArgumentException("Incorrect point dimension requirement");
+         }
+      }
+
+      /// <summary>
       /// Sets List of List of integer value attribute for the handle
       /// </summary>
       /// <param name="handle">the handle</param>
@@ -702,17 +843,7 @@ namespace Revit.IFC.Common.Utility
          if (values != null)
          {
             if (values.Contains(null))
-            {
-               // TEMP
-               IList<IFCAnyHandle> valueList = values.ToList(); 
-               for (int ii=valueList.Count-1; ii < 0; --ii )
-               {
-                  if (valueList[ii] == null)
-                     valueList.RemoveAt(ii);
-               }
-               values = valueList.ToHashSet();
-               //throw new ArgumentException("The collection contains null values.", "values");
-            }
+               throw new ArgumentException("The collection contains null values.", "values");
 
             handle.SetAttribute(name, values);
          }

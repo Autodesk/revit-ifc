@@ -130,6 +130,8 @@ namespace Revit.IFC.Import.Data
             }
          }
 
+         Importer.TheProcessor.PostProcessProject();
+
          // We need to process the units before we process the rest of the file, since we will scale values as we go along.
          base.Process(ifcProjectHandle);
 

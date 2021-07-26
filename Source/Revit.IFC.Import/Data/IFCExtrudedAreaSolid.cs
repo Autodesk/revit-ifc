@@ -527,7 +527,8 @@ namespace Revit.IFC.Import.Data
 
                // Create the extrusion for the material layer.
                GeometryObject extrusionSolid = GeometryCreationUtilities.CreateExtrusionGeometry(
-                   currLoops, materialExtrusionDirection, extrusionDistance, solidOptions);
+                      currLoops, materialExtrusionDirection, extrusionDistance, solidOptions);
+
                if (extrusionSolid == null)
                   return null;
 

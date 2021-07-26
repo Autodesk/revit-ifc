@@ -111,6 +111,6 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterMap">The parameters of the element.  Cached for performance.</param>
       /// <param name="propertySetName">The name of the containing property set.</param>
       /// <param name="createdParameters">The names of the created parameters.</param>
-      public abstract void Create(Document doc, Element element, Category category, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters);
+      public abstract void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters);
    }
 }

@@ -602,7 +602,7 @@ namespace Revit.IFC.Import.Data
                segments.Add(new IFCProfileLineSegment(cShapePoints[5], cShapePoints[6]));
                segments.Add(new IFCProfileLineSegment(cShapePoints[6], cFilletPoints[8]));
                
-               for (int jj = 0; jj < 3; ii++)
+               for (int jj = 0; jj < 3; jj++)
                {
                   segments.Add(new IFCProfileXYArcSegment(cFilletCenters[3 - jj], innerRadius, cRange[3 - jj][0], cRange[3 - jj][1], false));
                   segments.Add(new IFCProfileLineSegment(cFilletPoints[2 * jj + 9], cFilletPoints[2 * jj + 10]));

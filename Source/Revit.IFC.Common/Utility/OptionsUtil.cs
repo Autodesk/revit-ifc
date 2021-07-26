@@ -302,6 +302,10 @@ namespace Revit.IFC.Common.Utility
                         }
                      }
                   }
+                  else
+                  {
+                     epsgStr = authVal;   // Keep whatever value found if it is not EPSG
+                  }
                }
                else if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("Description", StringComparison.InvariantCultureIgnoreCase))
                {

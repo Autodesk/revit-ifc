@@ -132,8 +132,6 @@ namespace Revit.IFC.Export.Utility
             {
                ExporterCacheManager.PresentationLayerSetCache.AddRepresentationToLayer(ifcCADLayer, newShapeRepresentation);
             }
-            else
-               exporterIFC.RegisterShapeForPresentationLayer(element, categoryId, newShapeRepresentation);
          }
 
          return newShapeRepresentation;
@@ -202,13 +200,17 @@ namespace Revit.IFC.Export.Utility
       /// Creates an IfcFacetedBrep handle.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="document">The document being exported.</param>
+      /// <param name="isVoid">True is the geometry is void (vs. solid) geometry.</param>
       /// <param name="shell">The closed shell handle.</param>
+      /// <param name="overrideMaterialId">Material id to use instead of calculated value.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateFacetedBRep(ExporterIFC exporterIFC, Document document, IFCAnyHandle shell, ElementId overrideMaterialId)
+      public static IFCAnyHandle CreateFacetedBRep(ExporterIFC exporterIFC, Document document, bool isVoid,
+         IFCAnyHandle shell, ElementId overrideMaterialId)
       {
          IFCFile file = exporterIFC.GetFile();
          IFCAnyHandle brep = IFCInstanceExporter.CreateFacetedBrep(file, shell);
-         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, brep, overrideMaterialId);
+         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, isVoid, brep, overrideMaterialId);
          return brep;
       }
 

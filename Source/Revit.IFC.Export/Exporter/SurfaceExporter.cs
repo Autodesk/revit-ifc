@@ -67,7 +67,8 @@ namespace Revit.IFC.Export.Exporter
             if (items == null || items.Count == 0)
                return false;
 
-            BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, doc, items[0], BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element));
+            // Surface is never a void.
+            BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, doc, false, items[0], BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element));
 
             foreach (IFCAnyHandle item in items)
                surfaceItems.Add(item);
@@ -125,7 +126,8 @@ namespace Revit.IFC.Export.Exporter
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(surface))
             return false;
 
-         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, doc, surface, BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element));
+            // This is currently never a void.
+            BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, doc, false, surface, BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element));
 
          surfaceItems.Add(surface);
          }
