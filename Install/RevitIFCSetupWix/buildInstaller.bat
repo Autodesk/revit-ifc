@@ -5,7 +5,7 @@ echo %2
 
 set ThisBatFileRoot=%~dp0
 rem Set this path to your Wix bin directory.
-set WixRoot=E:\Revit\Dev\revit\ThirdParty\Wix\
+set WixRoot=%ThisBatFileRoot%..\..\..\..\..\..\ThirdParty\Wix\
 
 rem It is necessary to add the Wix bin directory to the system path temporarily to use the -ext flag below.
 SET PATH=%PATH%;%WixRoot%
