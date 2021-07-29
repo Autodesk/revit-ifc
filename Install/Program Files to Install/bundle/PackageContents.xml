@@ -8,7 +8,7 @@
   <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2022" SeriesMax="R2022" />
   <Components Description="2022">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2022" SeriesMax="R2022" />
-    <ComponentEntry AppName="IFC For Revit 2022" Version="22.2.0" ModuleName="./Contents/2022/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2022" />
-    <ComponentEntry AppName="IFC For Revit 2022" Version="22.2.0" ModuleName="./Contents/2022/Revit.IFC.addin" AppDescription="IFC For Revit 2022" />
+    <ComponentEntry AppName="IFC For Revit 2022" Version="22.2.1" ModuleName="./Contents/2022/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2022" />
+    <ComponentEntry AppName="IFC For Revit 2022" Version="22.2.1" ModuleName="./Contents/2022/Revit.IFC.addin" AppDescription="IFC For Revit 2022" />
   </Components>
 </ApplicationPackage>
