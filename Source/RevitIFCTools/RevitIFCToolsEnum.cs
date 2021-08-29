@@ -10,6 +10,7 @@ namespace RevitIFCTools
    {
       PROPERTYSET,
       QTOSET,
+      PREDEFINEDPSET,
       NOTDEFINED
    }
 

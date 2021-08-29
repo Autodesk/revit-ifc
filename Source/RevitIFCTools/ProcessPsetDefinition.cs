@@ -274,17 +274,35 @@ namespace RevitIFCTools
       public void processSimpleProperty(StreamWriter outF, PsetProperty prop, string propNamePrefix, string IfcVersion, string schemaVersion, 
          string varName, VersionSpecificPropertyDef vSpecPDef, string outputFile)
       {
+         string propTypeStr = "PropertyType";
+         // The original style for the param name (i.e. the same as the Property Name)
          string propNameToUse = prop.Name;
          if (!string.IsNullOrEmpty(propNamePrefix))
             propNameToUse = propNamePrefix + "." + propNameToUse;
-         outF.WriteLine("            ifcPSE = new PropertySetEntry(\"{0}\");", propNameToUse);
+         // The new style of parameter name (<Pset name>.<Property name>)
+         if (vSpecPDef.PropertySetDef.Name.StartsWith("Pset", StringComparison.InvariantCultureIgnoreCase))
+         {
+            string newParamName = vSpecPDef.PropertySetDef.Name + "." + propNameToUse;
+            outF.WriteLine("            ifcPSE = new PropertySetEntry(\"{0}\", \"{1}\");", newParamName, propNameToUse);
+         }
+         else if (vSpecPDef.PropertySetDef.Name.StartsWith("Ifc", StringComparison.InvariantCultureIgnoreCase))
+         {
+            // For Predefined Psets, no prefix of the Pset name will be used (the same as the original behavior)
+            outF.WriteLine("            ifcPSE = new PropertySetEntry(\"{0}\", null);", propNameToUse);
+         }
+         else
+         {
+            propTypeStr = "QuantityType";
+            outF.WriteLine("            ifcPSE = new QuantityEntry(\"{0}\");", propNameToUse);
+         }
+
          outF.WriteLine("            ifcPSE.PropertyName = \"{0}\";", propNameToUse);
          if (prop.PropertyType != null)
          {
             if (prop.PropertyType is PropertyEnumeratedValue)
             {
                PropertyEnumeratedValue propEnum = prop.PropertyType as PropertyEnumeratedValue;
-               outF.WriteLine("            ifcPSE.PropertyType = PropertyType.Label;");
+               outF.WriteLine("            ifcPSE.{0} = {0}.Label;", propTypeStr);
                outF.WriteLine("            ifcPSE.PropertyValueType = PropertyValueType.EnumeratedValue;");
                outF.WriteLine("            ifcPSE.PropertyEnumerationType = typeof(Revit.IFC.Export.Exporter.PropertySet." + IfcVersion + "." + propEnum.Name + ");");
                IList<string> enumItems = new List<string>();
@@ -298,16 +316,16 @@ namespace RevitIFCTools
             else if (prop.PropertyType is PropertyReferenceValue)
             {
                PropertyReferenceValue propRef = prop.PropertyType as PropertyReferenceValue;
-               outF.WriteLine("            ifcPSE.PropertyType = PropertyType.{0};", propRef.RefEntity.Trim());
+               outF.WriteLine("            ifcPSE.{0} = {0}.{1};", propTypeStr, propRef.RefEntity.Trim());
                outF.WriteLine("            ifcPSE.PropertyValueType = PropertyValueType.ReferenceValue;");
             }
             else if (prop.PropertyType is PropertyListValue)
             {
                PropertyListValue propList = prop.PropertyType as PropertyListValue;
                if (propList.DataType != null && !propList.DataType.Equals("IfcValue", StringComparison.InvariantCultureIgnoreCase))
-                  outF.WriteLine("            ifcPSE.PropertyType = PropertyType.{0};", propList.DataType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
+                  outF.WriteLine("            ifcPSE.{0} = {0}.{1};", propTypeStr, propList.DataType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
                else
-                  outF.WriteLine("            ifcPSE.PropertyType = PropertyType.Label;");    // default to Label if not defined
+                  outF.WriteLine("            ifcPSE.{0} = {0}.Label;", propTypeStr);    // default to Label if not defined
 
                outF.WriteLine("            ifcPSE.PropertyValueType = PropertyValueType.ListValue;");
             }
@@ -316,18 +334,29 @@ namespace RevitIFCTools
                PropertyTableValue propTab = prop.PropertyType as PropertyTableValue;
                // TableValue has 2 types: DefiningValue and DefinedValue. This is not fully implemented yet
                if (propTab.DefinedValueType != null)
-                  outF.WriteLine("            ifcPSE.PropertyType = PropertyType.{0};", propTab.DefinedValueType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
+                  outF.WriteLine("            ifcPSE.{0} = {0}.{1};", propTypeStr, propTab.DefinedValueType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
                else
-                  outF.WriteLine("            ifcPSE.PropertyType = PropertyType.Label;");    // default to Label if missing
+                  outF.WriteLine("            ifcPSE.{0} = {0}.Label;", propTypeStr);    // default to Label if missing
 
                outF.WriteLine("            ifcPSE.PropertyValueType = PropertyValueType.TableValue;");
+            }
+            else if (prop.PropertyType is PropertyBoundedValue)
+            {
+               PropertyBoundedValue propBound = prop.PropertyType as PropertyBoundedValue;
+               outF.WriteLine("            ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;");
+               if (propBound.DataType != null && !propBound.DataType.Equals("IfcValue", StringComparison.InvariantCultureIgnoreCase))
+                  outF.WriteLine("            ifcPSE.{0} = {0}.{1};", propTypeStr, propBound.DataType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
+               else
+                  outF.WriteLine("            ifcPSE.{0} = {0}.Label;", propTypeStr);    // default to Label if not defined
             }
             else
             {
                string propType = prop.PropertyType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim();
                if (propType.Equals("String", StringComparison.InvariantCultureIgnoreCase))
                   propType = "Text";
-               outF.WriteLine("            ifcPSE.PropertyType = PropertyType.{0};", propType);
+               outF.WriteLine("            ifcPSE.{0} = {0}.{1};", propTypeStr, propType);
+               if (!string.IsNullOrEmpty(prop.PropertyValueType))
+                  outF.WriteLine("            ifcPSE.PropertyValueType = {0};", prop.PropertyValueType);
             }
          }
          else
@@ -857,7 +886,8 @@ namespace RevitIFCTools
             else if (propDatType.Name.LocalName.Equals("TypeComplexProperty"))
             {
                ComplexProperty compProp = new ComplexProperty();
-               compProp.Name = propDatType.Attribute("name").Value;
+               if (propDatType.Attribute("name") != null)
+                  compProp.Name = propDatType.Attribute("name").Value;
                compProp.Properties = new List<PsetProperty>();
                foreach (XElement cpPropDef in propDatType.Elements(ns + "PropertyDef"))
                {
@@ -903,6 +933,8 @@ namespace RevitIFCTools
                || pset.IfcVersion.Equals("2X2", StringComparison.CurrentCultureIgnoreCase)
                || pset.IfcVersion.Equals("2.X", StringComparison.CurrentCultureIgnoreCase))
                pset.IfcVersion = "IFC2X2";  // BUG in the documentation. It ony contains "2x" instead of "2x2"
+            else if (pset.IfcVersion.StartsWith("IFC2X3", StringComparison.CurrentCultureIgnoreCase))
+               pset.IfcVersion = "IFC2X3";
             else
                pset.IfcVersion = "IFC" + pset.IfcVersion.ToUpper();   // Namespace cannot start with a number. e.g. make sure 2x3 -> IFC2x3
          }
@@ -1265,8 +1297,9 @@ namespace RevitIFCTools
          psetD.properties.Add(new PsetProperty()
          {
             Name = "PanelOperation",
-            PropertyType = new PropertySingleValue() { DataType = "IfcDoorPanelOperationEnum" }
-         });
+            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },
+            PropertyValueType = "PropertyValueType.EnumeratedValue"
+         }) ;
 
          psetD.properties.Add(new PsetProperty()
          {
@@ -1277,7 +1310,7 @@ namespace RevitIFCTools
          psetD.properties.Add(new PsetProperty()
          {
             Name = "PanelPosition",
-            PropertyType = new PropertySingleValue() { DataType = "IfcDoorPanelPositionEnum" }
+            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" }
          });
 
          if (schemaName.StartsWith("ifc2x2", StringComparison.InvariantCultureIgnoreCase))
@@ -1308,13 +1341,15 @@ namespace RevitIFCTools
          psetD.properties.Add(new PsetProperty()
          {
             Name = "OperationType",
-            PropertyType = new PropertySingleValue() { DataType = "IfcPermeableCoveringOperationEnum" }
+            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },
+            PropertyValueType = "PropertyValueType.EnumeratedValue"
          });
 
          psetD.properties.Add(new PsetProperty()
          {
             Name = "PanelPosition",
-            PropertyType = new PropertySingleValue() { DataType = "IfcWindowPanelPositionEnum" }
+            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },
+            PropertyValueType = "PropertyValueType.EnumeratedValue"
          });
 
          psetD.properties.Add(new PsetProperty()
@@ -1365,7 +1400,8 @@ namespace RevitIFCTools
          psetD.properties.Add(new PsetProperty()
          {
             Name = "ReinforcementSectionDefinitions",
-            PropertyType = new PropertySingleValue() { DataType = "IfcPropertyListValue" }
+            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },  // Not the correct one actually since it is actually a class that is not supported here directly
+            PropertyValueType = "PropertyValueType.ListValue"
          });
 
          return psetD;
@@ -1508,13 +1544,15 @@ namespace RevitIFCTools
          psetD.properties.Add(new PsetProperty()
          {
             Name = "OperationType",
-            PropertyType = new PropertySingleValue() { DataType = "IfcWindowPanelOperationEnum" }
+            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },
+            PropertyValueType = "PropertyValueType.EnumeratedValue"
          });
 
          psetD.properties.Add(new PsetProperty()
          {
             Name = "PanelPosition",
-            PropertyType = new PropertySingleValue() { DataType = "IfcWindowPanelPositionEnum" }
+            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },
+            PropertyValueType = "PropertyValueType.EnumeratedValue"
          });
 
          psetD.properties.Add(new PsetProperty()

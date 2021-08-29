@@ -41,7 +41,23 @@ namespace RevitIFCTools.PropertySet
    public class PsetDefinition
    {
       public string Name { get; set; }
-      public string IfcVersion { get; set; }
+      private string m_IfcVersion;
+      public string IfcVersion { 
+         get
+         {
+            return m_IfcVersion;
+         } 
+         set {
+            if (value.StartsWith("IFC2X2", StringComparison.InvariantCultureIgnoreCase))
+               m_IfcVersion = "IFC2X2";
+            else if (value.StartsWith("IFC2X3", StringComparison.InvariantCultureIgnoreCase))
+               m_IfcVersion = "IFC2X3";
+            else if (value.Equals("IFC4", StringComparison.InvariantCultureIgnoreCase))
+               m_IfcVersion = "IFC4";
+            else
+               m_IfcVersion = value;
+         } 
+      }
       public string IfdGuid { get; set; }
       public IList<string> ApplicableClasses { get; set; }
       public string ApplicableType { get; set; }
