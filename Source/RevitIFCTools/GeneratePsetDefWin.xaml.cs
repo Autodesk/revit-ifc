@@ -123,39 +123,11 @@ namespace RevitIFCTools
             return;
 
          var psdFolders = new DirectoryInfo(textBox_PSDSourceDir.Text).GetDirectories("psd", SearchOption.AllDirectories);
-         //var qtoFolders = new DirectoryInfo(textBox_PSDSourceDir.Text).GetDirectories("qto", SearchOption.AllDirectories);
+         var qtoFolders = new DirectoryInfo(textBox_PSDSourceDir.Text).GetDirectories("qto", SearchOption.AllDirectories);
 
          string dirName = Path.GetDirectoryName(textBox_OutputFile.Text);
-         string penumFileName = Path.Combine(dirName, Path.GetFileNameWithoutExtension(textBox_OutputFile.Text));
-
-         if (File.Exists(textBox_OutputFile.Text))
-            File.Delete(textBox_OutputFile.Text);
-
-         StreamWriter outF = new StreamWriter(textBox_OutputFile.Text);
-         outF.WriteLine("/********************************************************************************************************************************");
-         outF.WriteLine("** NOTE: This code is generated from IFC psd files automatically by RevitIFCTools.                                            **");
-         outF.WriteLine("**       DO NOT change it manually as it will be overwritten the next time this file is re-generated!!                        **");
-         outF.WriteLine("********************************************************************************************************************************/");
-         outF.WriteLine();
-         outF.WriteLine("using System;");
-         outF.WriteLine("using System.Collections.Generic;");
-         outF.WriteLine("using System.Linq;");
-         outF.WriteLine("using System.Text;");
-         outF.WriteLine("using System.Threading.Tasks;");
-         outF.WriteLine("using Autodesk.Revit;");
-         outF.WriteLine("using Autodesk.Revit.DB;");
-         outF.WriteLine("using Autodesk.Revit.DB.IFC;");
-         outF.WriteLine("using Autodesk.Revit.ApplicationServices;");
-         outF.WriteLine("using Revit.IFC.Export.Exporter.PropertySet;");
-         outF.WriteLine("using Revit.IFC.Export.Exporter.PropertySet.Calculators;");
-         outF.WriteLine("using Revit.IFC.Export.Utility;");
-         outF.WriteLine("using Revit.IFC.Export.Toolkit;");
-         outF.WriteLine("using Revit.IFC.Common.Enums;");
-         outF.WriteLine("");
-         outF.WriteLine("namespace Revit.IFC.Export.Exporter");
-         outF.WriteLine("{");
-         outF.WriteLine("   partial class ExporterInitializer");
-         outF.WriteLine("   {");
+         string outFileName = Path.GetFileNameWithoutExtension(textBox_OutputFile.Text);
+         string penumFileName = Path.Combine(dirName, outFileName);
 
          // Collect all Pset definition for psd folders
          Dictionary<ItemsInPsetQtoDefs, string> keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.PROPERTYSET];
@@ -175,30 +147,30 @@ namespace RevitIFCTools
             IfcSchemaProcessed.Add(schemaFolder);
          }
 
-//         // Collect all QtoSet definition for qto folders
-//         keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.QTOSET];
-//         foreach (DirectoryInfo qto in qtoFolders)
-//         {
-//            string schemaFolder = qto.FullName.Remove(0, textBox_PSDSourceDir.Text.Length + 1).Split('\\')[0];
+         // Collect all QtoSet definition for qto folders
+         keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.QTOSET];
+         foreach (DirectoryInfo qto in qtoFolders)
+         {
+            string schemaFolder = qto.FullName.Remove(0, textBox_PSDSourceDir.Text.Length + 1).Split('\\')[0];
 
-//#if DEBUG
-//            logF.WriteLine("\r\n*** Processing " + schemaFolder);
-//#endif
-//            foreach (DirectoryInfo subDir in qto.GetDirectories())
-//            {
-//               procPsetDef.ProcessSchemaPsetDef(schemaFolder, subDir, keywordsToProcess);
-//            }
-//            procPsetDef.ProcessSchemaPsetDef(schemaFolder, qto, keywordsToProcess);
-//         }
+#if DEBUG
+            logF.WriteLine("\r\n*** Processing " + schemaFolder);
+#endif
+            foreach (DirectoryInfo subDir in qto.GetDirectories())
+            {
+               procPsetDef.ProcessSchemaPsetDef(schemaFolder, subDir, keywordsToProcess);
+            }
+            procPsetDef.ProcessSchemaPsetDef(schemaFolder, qto, keywordsToProcess);
+         }
 
-//         // Process predefined properties
-//         foreach (string schemaName in IfcSchemaProcessed)
-//         {
-//#if DEBUG
-//            logF.WriteLine("\r\n*** Processing " + schemaName);
-//#endif
-//            procPsetDef.ProcessPredefinedPsets(schemaName);
-//         }
+         // Process predefined properties
+         foreach (string schemaName in IfcSchemaProcessed)
+         {
+#if DEBUG
+            logF.WriteLine("\r\n*** Processing " + schemaName);
+#endif
+            procPsetDef.ProcessPredefinedPsets(schemaName);
+         }
 
          // For testing purpose: Dump all the propertyset definition in a text file
          if (checkBox_Dump.IsChecked.HasValue && checkBox_Dump.IsChecked.Value)
@@ -226,51 +198,202 @@ namespace RevitIFCTools
             tx.Close();
          }
 
-         // Method to initialize all the propertysets
-         outF.WriteLine("      public static void InitCommonPropertySets(IList<IList<PropertySetDescription>> propertySets)");
+         string[] outFNameParts = outFileName.Split('_');
+
+         // Do it for the predefined propserty sets
+         string fNameToProcess = Path.Combine(dirName, outFNameParts[0] + "_PredefPset.cs");
+         if (File.Exists(fNameToProcess))
+            File.Delete(fNameToProcess);
+         StreamWriter outF = new StreamWriter(fNameToProcess);
+         WriteGeneratedCode(outF, procPsetDef, penumFileName, "Ifc");
+
+         // Do it for the predefined propserty sets
+         fNameToProcess = Path.Combine(dirName, outFNameParts[0] + "_PsetDef.cs");
+         if (File.Exists(fNameToProcess))
+            File.Delete(fNameToProcess);
+         outF = new StreamWriter(fNameToProcess);
+         WriteGeneratedCode(outF, procPsetDef, penumFileName, "Pset");
+
+         // Do it for the predefined propserty sets
+         fNameToProcess = Path.Combine(dirName, outFNameParts[0] + "_QsetDef.cs");
+         if (File.Exists(fNameToProcess))
+            File.Delete(fNameToProcess);
+          outF = new StreamWriter(fNameToProcess);
+         WriteGeneratedCode(outF, procPsetDef, penumFileName, "Qto");
+
+         // Close the Enum files
+         procPsetDef.endWriteEnumFile();
+
+         // Now write shared parameter definitions from the Dict to destination file
+         stSharedPar.WriteLine("# This is a Revit shared parameter file.");
+         stSharedPar.WriteLine("# Do not edit manually.");
+         stSharedPar.WriteLine("*META	VERSION	MINVERSION");
+         stSharedPar.WriteLine("META	2	1");
+         stSharedPar.WriteLine("*GROUP	ID	NAME");
+         stSharedPar.WriteLine("GROUP	2	IFC Properties");
+         stSharedPar.WriteLine("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE");
+         stSharedPar.WriteLine("#");
+         foreach (KeyValuePair<string, SharedParameterDef> parDef in ProcessPsetDefinition.SharedParamFileDict)
+         {
+            SharedParameterDef newPar = parDef.Value;
+            string vis = newPar.Visibility ? "1" : "0";
+            string usrMod = newPar.UserModifiable ? "1" : "0";
+
+            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
+                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+            stSharedPar.WriteLine(parEntry);
+         }
+
+         stSharedParType.WriteLine("# This is a Revit shared parameter file.");
+         stSharedParType.WriteLine("# Do not edit manually.");
+         stSharedParType.WriteLine("*META	VERSION	MINVERSION");
+         stSharedParType.WriteLine("META	2	1");
+         stSharedParType.WriteLine("*GROUP	ID	NAME");
+         stSharedParType.WriteLine("GROUP	2	IFC Properties");
+         stSharedParType.WriteLine("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE");
+         stSharedParType.WriteLine("#");
+         foreach (KeyValuePair<string, SharedParameterDef> parDef in ProcessPsetDefinition.SharedParamFileTypeDict)
+         {
+            SharedParameterDef newPar = parDef.Value;
+            string parName4Type;
+            if (newPar.Name.EndsWith("[Type]"))
+               parName4Type = newPar.Name;
+            else
+               parName4Type = newPar.Name + "[Type]";
+            string vis = newPar.Visibility ? "1" : "0";
+            string usrMod = newPar.UserModifiable ? "1" : "0";
+
+            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + parName4Type + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
+                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+            stSharedParType.WriteLine(parEntry);
+         }
+
+         stSharedPar.Close();
+         stSharedParType.Close();
+#if DEBUG
+         logF.Close();
+#endif
+      }
+
+      void WriteGeneratedCode(StreamWriter outF, ProcessPsetDefinition procPsetDef, string penumFileName, string whichCat)
+      {
+         // Header section of the generated code
+         outF.WriteLine("/********************************************************************************************************************************");
+         outF.WriteLine("** NOTE: This code is generated from IFC psd files automatically by RevitIFCTools.                                            **");
+         outF.WriteLine("**       DO NOT change it manually as it will be overwritten the next time this file is re-generated!!                        **");
+         outF.WriteLine("********************************************************************************************************************************/");
+         outF.WriteLine();
+         outF.WriteLine("using System;");
+         outF.WriteLine("using System.Collections.Generic;");
+         outF.WriteLine("using System.Linq;");
+         outF.WriteLine("using System.Text;");
+         outF.WriteLine("using System.Threading.Tasks;");
+         outF.WriteLine("using Autodesk.Revit;");
+         outF.WriteLine("using Autodesk.Revit.DB;");
+         outF.WriteLine("using Autodesk.Revit.DB.IFC;");
+         outF.WriteLine("using Autodesk.Revit.ApplicationServices;");
+         outF.WriteLine("using Revit.IFC.Export.Exporter.PropertySet;");
+         outF.WriteLine("using Revit.IFC.Export.Exporter.PropertySet.Calculators;");
+         outF.WriteLine("using Revit.IFC.Export.Utility;");
+         outF.WriteLine("using Revit.IFC.Export.Toolkit;");
+         outF.WriteLine("using Revit.IFC.Common.Enums;");
+         outF.WriteLine("");
+         outF.WriteLine("namespace Revit.IFC.Export.Exporter");
+         outF.WriteLine("{");
+         outF.WriteLine("   partial class ExporterInitializer");
+         outF.WriteLine("   {");
+
+         // Initialization section
+
+         string allPsetOrQtoSetsName = "allPsetOrQtoSets";
+         string theSetName = "theSets";
+         string initPsetOrQsets = null;
+         string setDescription = null;
+         switch (whichCat)
+         {
+            case "Pset":
+               initPsetOrQsets = "InitCommonPropertySets";
+               setDescription = "PropertySetDescription";
+               break;
+            case "Ifc":
+               initPsetOrQsets = "InitPredefinedPropertySets";
+               setDescription = "PropertySetDescription";
+               break;
+            case "Qto":
+               initPsetOrQsets = "InitQtoSets";
+               setDescription = "QuantityDescription";
+               break;
+            default:
+               logF.WriteLine("Category not supported {0}! Use only \"Pset\", \"Qto\", or \"Ifc\"", whichCat);
+               break;
+         }
+
+         outF.WriteLine("      public static void {0}(IList<IList<{1}>> {2})", initPsetOrQsets, setDescription, allPsetOrQtoSetsName);
          outF.WriteLine("      {");
-         outF.WriteLine("         IList<PropertySetDescription> commonPropertySets = new List<PropertySetDescription>();");
+         outF.WriteLine("         IList<{0}> {1} = new List<{0}>();", setDescription, theSetName);
          foreach (KeyValuePair<string, IList<VersionSpecificPropertyDef>> psetDefEntry in procPsetDef.allPDefDict)
          {
-            outF.WriteLine("         Init" + psetDefEntry.Key + "(commonPropertySets);");
+            // Skip key (name) that does not start with the requested type
+            if (!psetDefEntry.Key.StartsWith(whichCat.ToString(), StringComparison.InvariantCultureIgnoreCase))
+               continue;
+
+            outF.WriteLine("         Init" + psetDefEntry.Key + "({0});", theSetName);
          }
-         outF.WriteLine("\r\n         propertySets.Add(commonPropertySets);");
+         outF.WriteLine("\r\n         allPsetOrQtoSets.Add({0});", theSetName);
          outF.WriteLine("      }");
          outF.WriteLine("");
 
-         // For generated codes and shared parameters
+         // For Pset or QtoSet definitions
          foreach (KeyValuePair<string, IList<VersionSpecificPropertyDef>> psetDefEntry in procPsetDef.allPDefDict)
          {
+            // Skip key (name) that does not start with the requested type
+            if (!psetDefEntry.Key.StartsWith(whichCat.ToString(), StringComparison.InvariantCultureIgnoreCase))
+               continue;
+
+            string varName = null;
+            string setsName = null;
             string psetName = psetDefEntry.Key;
-            outF.WriteLine("      private static void Init" + psetName + "(IList<PropertySetDescription> commonPropertySets)");
-            outF.WriteLine("      {");
-
-            string varName = psetDefEntry.Key.Replace("Pset_", "propertySet");
-
-            outF.WriteLine("         PropertySetDescription {0} = new PropertySetDescription();", varName);
-
-            string psetEnumStr = psetName.Replace("PSet_", "PSet");
-            try
+            switch (whichCat)
             {
-               Revit.IFC.Export.Toolkit.IFCCommonPSets psetEnum = (Revit.IFC.Export.Toolkit.IFCCommonPSets)Enum.Parse(typeof(Revit.IFC.Export.Toolkit.IFCCommonPSets), psetEnumStr);
-               outF.WriteLine("         {0}.SubElementIndex = (int)IFCCommonPSets.{1};", varName, psetName.Replace("PSet_", "PSet"));
-            }
-            catch(ArgumentException)
-            {
-#if DEBUG
-               logF.WriteLine("   %Info: " + psetEnumStr + " is not defined in Revit.IFC.Export.Toolkit.IFCCommonPSets.");
-#endif
+               case "Pset":
+                  setsName = "commonPropertySets";
+                  outF.WriteLine("      private static void Init" + psetName + "(IList<{0}> {1})", setDescription, setsName);
+                  varName = psetDefEntry.Key.Replace("Pset_", "propertySet");
+                  outF.WriteLine("      {");
+                  outF.WriteLine("         {0} {1} = new {0}();", setDescription, varName);
+                  outF.WriteLine("         {0}.Name = \"{1}\";", varName, psetName);
+                  outF.WriteLine("         PropertySetEntry ifcPSE = null;");
+                  break;
+               case "Ifc":
+                  setsName = "commonPropertySets";
+                  outF.WriteLine("      private static void Init" + psetName + "(IList<{0}> {1})", setDescription, setsName);
+                  varName = psetDefEntry.Key.Replace("Pset_", "propertySet");
+                  outF.WriteLine("      {");
+                  outF.WriteLine("         {0} {1} = new {0}();", setDescription, varName);
+                  outF.WriteLine("         {0}.Name = \"{1}\";", varName, psetName);
+                  outF.WriteLine("         PropertySetEntry ifcPSE = null;");
+                  break;
+               case "Qto":
+                  setsName = "quantitySets";
+                  outF.WriteLine("      private static void Init" + psetName + "(IList<{0}> {1})", setDescription, setsName);
+                  varName = psetDefEntry.Key.Replace("Qto_", "qtoSet");
+                  outF.WriteLine("      {");
+                  outF.WriteLine("         {0} {1} = new {0}();", setDescription, varName);
+                  outF.WriteLine("         {0}.Name = \"{1}\";", varName, psetName);
+                  outF.WriteLine("         QuantityEntry ifcPSE = null;");
+                  break;
+               default:
+                  logF.WriteLine("Category not supported {0}! Use only \"Pset\", \"Qto\", or \"Ifc\"", whichCat);
+                  break;
             }
 
-            outF.WriteLine("         {0}.Name = \"{1}\";", varName, psetName);
-            outF.WriteLine("         PropertySetEntry ifcPSE = null;");
             outF.WriteLine("         Type calcType = null;");
 
             foreach (VersionSpecificPropertyDef vspecPDef in psetDefEntry.Value)
             {
                PsetDefinition pDef = vspecPDef.PropertySetDef;
 
-               if (vspecPDef.IfcVersion.Equals("IFC2X2", StringComparison.CurrentCultureIgnoreCase))
+               if (vspecPDef.IfcVersion.StartsWith("IFC2X2", StringComparison.CurrentCultureIgnoreCase))
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
@@ -286,7 +409,7 @@ namespace RevitIFCTools
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
                      outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
-               else if (vspecPDef.IfcVersion.Equals("IFC2X3TC1", StringComparison.CurrentCultureIgnoreCase)
+               else if (vspecPDef.IfcVersion.StartsWith("IFC2X3", StringComparison.CurrentCultureIgnoreCase)
                   || vspecPDef.IfcVersion.Equals("IFC2X3_TC1", StringComparison.CurrentCultureIgnoreCase))
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
@@ -303,8 +426,6 @@ namespace RevitIFCTools
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
                      outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
-               //else if (vspecPDef.IfcVersion.Equals("IFC4_ADD1"))
-               //{
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD1", StringComparison.CurrentCultureIgnoreCase))
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
@@ -378,7 +499,7 @@ namespace RevitIFCTools
                   else
                   {
                      procPsetDef.processSimpleProperty(outF, prop, null, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef, penumFileName);
-                  }                    
+                  }
                }
                outF.WriteLine("         }");
             }
@@ -386,7 +507,7 @@ namespace RevitIFCTools
             outF.WriteLine("         if (ifcPSE != null)");
             outF.WriteLine("         {");
             //outF.WriteLine("............{0}.Name = \"{1}\";", varName, psetName);
-            outF.WriteLine("            commonPropertySets.Add({0});", varName);
+            outF.WriteLine("            {0}.Add({1});", setsName, varName);
             outF.WriteLine("         }");
             outF.WriteLine("      }");
             outF.WriteLine("");
@@ -396,58 +517,8 @@ namespace RevitIFCTools
          outF.WriteLine("   }");
          outF.WriteLine("}");
          outF.Close();
-         procPsetDef.endWriteEnumFile();
-
-         // Now write shared parameter definitions from the Dict to destination file
-         stSharedPar.WriteLine("# This is a Revit shared parameter file.");
-         stSharedPar.WriteLine("# Do not edit manually.");
-         stSharedPar.WriteLine("*META	VERSION	MINVERSION");
-         stSharedPar.WriteLine("META	2	1");
-         stSharedPar.WriteLine("*GROUP	ID	NAME");
-         stSharedPar.WriteLine("GROUP	2	IFC Properties");
-         stSharedPar.WriteLine("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE");
-         stSharedPar.WriteLine("#");
-         foreach (KeyValuePair<string, SharedParameterDef> parDef in ProcessPsetDefinition.SharedParamFileDict)
-         {
-            SharedParameterDef newPar = parDef.Value;
-            string vis = newPar.Visibility ? "1" : "0";
-            string usrMod = newPar.UserModifiable ? "1" : "0";
-
-            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
-                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
-            stSharedPar.WriteLine(parEntry);
-         }
-
-         stSharedParType.WriteLine("# This is a Revit shared parameter file.");
-         stSharedParType.WriteLine("# Do not edit manually.");
-         stSharedParType.WriteLine("*META	VERSION	MINVERSION");
-         stSharedParType.WriteLine("META	2	1");
-         stSharedParType.WriteLine("*GROUP	ID	NAME");
-         stSharedParType.WriteLine("GROUP	2	IFC Properties");
-         stSharedParType.WriteLine("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE");
-         stSharedParType.WriteLine("#");
-         foreach (KeyValuePair<string, SharedParameterDef> parDef in ProcessPsetDefinition.SharedParamFileTypeDict)
-         {
-            SharedParameterDef newPar = parDef.Value;
-            string parName4Type;
-            if (newPar.Name.EndsWith("[Type]"))
-               parName4Type = newPar.Name;
-            else
-               parName4Type = newPar.Name + "[Type]";
-            string vis = newPar.Visibility ? "1" : "0";
-            string usrMod = newPar.UserModifiable ? "1" : "0";
-
-            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + parName4Type + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
-                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
-            stSharedParType.WriteLine(parEntry);
-         }
-
-         stSharedPar.Close();
-         stSharedParType.Close();
-#if DEBUG
-         logF.Close();
-#endif
       }
+      
 
       private void button_Cancel_Click(object sender, RoutedEventArgs e)
       {

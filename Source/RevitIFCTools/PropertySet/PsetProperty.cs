@@ -30,6 +30,7 @@ namespace RevitIFCTools.PropertySet
       public string IfdGuid { get; set; }
       public string Name { get; set; }
       public PropertyDataType PropertyType { get; set; }
+      public string PropertyValueType { get; set; }
       public IList<NameAlias> NameAliases { get; set; }
       public override string ToString()
       {

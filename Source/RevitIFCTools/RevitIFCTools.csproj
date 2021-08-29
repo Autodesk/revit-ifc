@@ -54,9 +54,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="RevitAPI, Version=21.1.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
+    <Reference Include="RevitAPI">
+      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -214,11 +213,11 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
-xcopy "$(TargetDir)IFC*.xsd" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
-xcopy "$(TargetDir)IFC*.exp" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
-xcopy "$(TargetDir)IFC Shared Parameters*.txt" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
-xcopy "$(TargetDir)IFCCertifiedEntitiesAndPSets.json" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
+    <PostBuildEvent>xcopy "$(TargetPath)" "H:\Temp\IFC master\" /F /R /Y /I
+xcopy "$(TargetDir)IFC*.xsd" "H:\Temp\IFC master\" /F /R /Y /I
+xcopy "$(TargetDir)IFC*.exp" "H:\Temp\IFC master\" /F /R /Y /I
+xcopy "$(TargetDir)IFC Shared Parameters*.txt" "H:\Temp\IFC master\" /F /R /Y /I
+xcopy "$(TargetDir)IFCCertifiedEntitiesAndPSets.json" "H:\Temp\IFC master\" /F /R /Y /I
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
