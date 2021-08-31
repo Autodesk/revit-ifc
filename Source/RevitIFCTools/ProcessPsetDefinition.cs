@@ -42,6 +42,7 @@ namespace RevitIFCTools
       public bool Visibility { get; set; } = true;
       public string Description { get; set; }
       public bool UserModifiable { get; set; } = true;
+      public string OwningPset { get; set; } = null;
 
       public virtual object Clone()
       {
@@ -75,8 +76,8 @@ namespace RevitIFCTools
       StreamWriter logF;
 #endif
 
-      public static IDictionary<string, SharedParameterDef> SharedParamFileDict  { get; set; } = new Dictionary<string, SharedParameterDef>();
-      public static IDictionary<string, SharedParameterDef> SharedParamFileTypeDict { get; set; } = new Dictionary<string, SharedParameterDef>();
+      public static SortedDictionary<string, SharedParameterDef> SharedParamFileDict  { get; set; } = new SortedDictionary<string, SharedParameterDef>();
+      public static SortedDictionary<string, SharedParameterDef> SharedParamFileTypeDict { get; set; } = new SortedDictionary<string, SharedParameterDef>();
 
       public ProcessPsetDefinition(StreamWriter logfile)
       {
@@ -271,7 +272,7 @@ namespace RevitIFCTools
          return null;
       }
 
-      public void processSimpleProperty(StreamWriter outF, PsetProperty prop, string propNamePrefix, string IfcVersion, string schemaVersion, 
+      public void processSimpleProperty(StreamWriter outF, string psetName, PsetProperty prop, string propNamePrefix, string IfcVersion, string schemaVersion, 
          string varName, VersionSpecificPropertyDef vSpecPDef, string outputFile)
       {
          string propTypeStr = "PropertyType";
@@ -280,20 +281,22 @@ namespace RevitIFCTools
          if (!string.IsNullOrEmpty(propNamePrefix))
             propNameToUse = propNamePrefix + "." + propNameToUse;
          // The new style of parameter name (<Pset name>.<Property name>)
+         string newParamName = propNameToUse;
          if (vSpecPDef.PropertySetDef.Name.StartsWith("Pset", StringComparison.InvariantCultureIgnoreCase))
          {
-            string newParamName = vSpecPDef.PropertySetDef.Name + "." + propNameToUse;
+            newParamName = vSpecPDef.PropertySetDef.Name + "." + propNameToUse;
             outF.WriteLine("            ifcPSE = new PropertySetEntry(\"{0}\", \"{1}\");", newParamName, propNameToUse);
          }
          else if (vSpecPDef.PropertySetDef.Name.StartsWith("Ifc", StringComparison.InvariantCultureIgnoreCase))
          {
-            // For Predefined Psets, no prefix of the Pset name will be used (the same as the original behavior)
-            outF.WriteLine("            ifcPSE = new PropertySetEntry(\"{0}\", null);", propNameToUse);
+            newParamName = vSpecPDef.PropertySetDef.Name + "." + propNameToUse;
+            outF.WriteLine("            ifcPSE = new PropertySetEntry(\"{0}\", \"{1}\");", newParamName, propNameToUse);
          }
          else
          {
+            newParamName = vSpecPDef.PropertySetDef.Name + "." + propNameToUse;
             propTypeStr = "QuantityType";
-            outF.WriteLine("            ifcPSE = new QuantityEntry(\"{0}\");", propNameToUse);
+            outF.WriteLine("            ifcPSE = new QuantityEntry(\"{0}\", \"{1}\");", newParamName, propNameToUse);
          }
 
          outF.WriteLine("            ifcPSE.PropertyName = \"{0}\";", propNameToUse);
@@ -397,7 +400,8 @@ namespace RevitIFCTools
 
          // Append new definition to the Shared parameter file
          SharedParameterDef newPar = new SharedParameterDef();
-         newPar.Name = propNameToUse;
+         newPar.Name = newParamName;
+         newPar.OwningPset = psetName;
 
          // Use IfdGuid for the GUID if defined
          Guid pGuid = Guid.Empty;
@@ -417,7 +421,7 @@ namespace RevitIFCTools
          else
          {
 #if DEBUG
-            logF.WriteLine("%Warning: " + propNameToUse + " from " + vSpecPDef.PropertySetDef.Name + "(" + vSpecPDef.SchemaFileVersion + ") is missing PropertyType/datatype.");
+            logF.WriteLine("%Warning: " + newPar.Name + " from " + vSpecPDef.PropertySetDef.Name + "(" + vSpecPDef.SchemaFileVersion + ") is missing PropertyType/datatype.");
 #endif
          }
 
@@ -548,20 +552,20 @@ namespace RevitIFCTools
          outF.WriteLine("");
       }
 
-      public static string processExistingParFile(string parFileName, bool isType, ref StreamWriter destFile)
+      public static IDictionary<string, SharedParameterDef> processExistingParFile(string parFileName/*, bool isType*/)
       {
-         IDictionary<string, SharedParameterDef> dictToFill;
-         if (isType)
-            dictToFill = SharedParamFileTypeDict;
-         else
-            dictToFill = SharedParamFileDict;
+         IDictionary<string, SharedParameterDef> dictToFill = new Dictionary<string, SharedParameterDef>();
+         //if (isType)
+         //   dictToFill = SharedParamFileTypeDict;
+         //else
+         //   dictToFill = SharedParamFileDict;
 
          string messageText = null;
          // Keep original data (for maintaining the GUID) in a dictionary
          using (StreamReader stSharedParam = File.OpenText(parFileName))
          {
             string line;
-            while ((line = stSharedParam.ReadLine()) != null && !string.IsNullOrEmpty(line))
+            while (!stSharedParam.EndOfStream && (line = stSharedParam.ReadLine()) != null && !string.IsNullOrEmpty(line))
             {
                // Copy content to the destination file
                //destFile.WriteLine(line);
@@ -638,7 +642,7 @@ namespace RevitIFCTools
                }
             }
          }
-         return messageText;
+         return dictToFill;
       }
 
       public PsetProperty getPropertyDef(XNamespace ns, XElement pDef, Dictionary<ItemsInPsetQtoDefs, string> psetOrQtoSet)
@@ -939,7 +943,7 @@ namespace RevitIFCTools
                pset.IfcVersion = "IFC" + pset.IfcVersion.ToUpper();   // Namespace cannot start with a number. e.g. make sure 2x3 -> IFC2x3
          }
          else if (pset.IfcVersion.StartsWith("IFC4"))
-            pset.IfcVersion = schemaVersion.ToUpper();
+            pset.IfcVersion = pset.IfcVersion.ToUpper();
 
          if (doc.Element(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertySetOrQtoSetDef].ToString()).Attribute("ifdguid") != null)
             pset.IfdGuid = doc.Element(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertySetOrQtoSetDef].ToString()).Attribute("ifdguid").Value;
@@ -1097,7 +1101,10 @@ namespace RevitIFCTools
          }
 
          HashSet<PsetProperty> propSet = new HashSet<PsetProperty>(new PropertyComparer());
-         var pDefs = from p in doc.Descendants(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertyOrQtoDef].ToString()) select p;
+         //var pDefs = from p in doc.Descendants(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertyOrQtoDef].ToString()) select p;
+         XElement psetD = doc.Element(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertySetOrQtoSetDef].ToString());
+         XElement propDefs = psetD.Element(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertyOrQtoDefs].ToString());
+         var pDefs = from p in propDefs.Elements(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertyOrQtoDef].ToString()) select p;
          foreach (XElement pDef in pDefs)
          {
             PsetProperty prop = getPropertyDef(ns, pDef, psetOrQtoSet);

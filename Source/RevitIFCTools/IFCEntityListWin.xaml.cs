@@ -201,7 +201,8 @@ namespace RevitIFCTools
                      IList<string> props = new List<string>();
                      foreach (PropertySet.PsetProperty property in vPdef.PropertySetDef.properties)
                      {
-                        props.Add(property.Name);
+                        // New style of property name (prefix with Pset name)
+                        props.Add(psetDef.PsetName + "." + property.Name);
                      }
                      psetDef.Properties = props;
                      schemaEntities.PsetDefList.Add(psetDef);
