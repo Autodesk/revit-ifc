@@ -100,13 +100,14 @@ namespace RevitIFCTools
 
          string parFileNameOut = Path.Combine(Path.GetDirectoryName(SharedParFileName), Path.GetFileNameWithoutExtension(SharedParFileName) + "_out.txt");
          stSharedPar = File.CreateText(parFileNameOut);
-         ProcessPsetDefinition.processExistingParFile(SharedParFileName, false, ref stSharedPar);
+         IDictionary<string, SharedParameterDef> existingParDict = ProcessPsetDefinition.processExistingParFile(SharedParFileName);
 
+         IDictionary<string, SharedParameterDef> existingTypeParDict = new Dictionary<string, SharedParameterDef>();
          if (File.Exists(SharedParFileNameType))
          {
             string typeParFileNameOut = Path.Combine(Path.GetDirectoryName(SharedParFileNameType), Path.GetFileNameWithoutExtension(SharedParFileNameType) + "_out.txt");
             stSharedParType = File.CreateText(typeParFileNameOut);
-            ProcessPsetDefinition.processExistingParFile(SharedParFileNameType, true, ref stSharedParType);
+            existingTypeParDict = ProcessPsetDefinition.processExistingParFile(SharedParFileNameType);
          }
          else
          {
@@ -198,6 +199,7 @@ namespace RevitIFCTools
             tx.Close();
          }
 
+         IDictionary<string, int> groupParamDict = new Dictionary<string, int>();
          string[] outFNameParts = outFileName.Split('_');
 
          // Do it for the predefined propserty sets
@@ -205,77 +207,149 @@ namespace RevitIFCTools
          if (File.Exists(fNameToProcess))
             File.Delete(fNameToProcess);
          StreamWriter outF = new StreamWriter(fNameToProcess);
-         WriteGeneratedCode(outF, procPsetDef, penumFileName, "Ifc");
+         // Group ID 1 and 2 are reserved
+         int offset = 3;
+         offset = WriteGeneratedCode(outF, procPsetDef, penumFileName, "Ifc", groupParamDict, offset);
 
          // Do it for the predefined propserty sets
          fNameToProcess = Path.Combine(dirName, outFNameParts[0] + "_PsetDef.cs");
          if (File.Exists(fNameToProcess))
             File.Delete(fNameToProcess);
          outF = new StreamWriter(fNameToProcess);
-         WriteGeneratedCode(outF, procPsetDef, penumFileName, "Pset");
+         offset = WriteGeneratedCode(outF, procPsetDef, penumFileName, "Pset", groupParamDict, offset);
 
          // Do it for the predefined propserty sets
          fNameToProcess = Path.Combine(dirName, outFNameParts[0] + "_QsetDef.cs");
          if (File.Exists(fNameToProcess))
             File.Delete(fNameToProcess);
           outF = new StreamWriter(fNameToProcess);
-         WriteGeneratedCode(outF, procPsetDef, penumFileName, "Qto");
+         offset = WriteGeneratedCode(outF, procPsetDef, penumFileName, "Qto", groupParamDict, offset);
 
          // Close the Enum files
          procPsetDef.endWriteEnumFile();
-
-         // Now write shared parameter definitions from the Dict to destination file
-         stSharedPar.WriteLine("# This is a Revit shared parameter file.");
-         stSharedPar.WriteLine("# Do not edit manually.");
-         stSharedPar.WriteLine("*META	VERSION	MINVERSION");
-         stSharedPar.WriteLine("META	2	1");
-         stSharedPar.WriteLine("*GROUP	ID	NAME");
-         stSharedPar.WriteLine("GROUP	2	IFC Properties");
-         stSharedPar.WriteLine("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE");
-         stSharedPar.WriteLine("#");
-         foreach (KeyValuePair<string, SharedParameterDef> parDef in ProcessPsetDefinition.SharedParamFileDict)
-         {
-            SharedParameterDef newPar = parDef.Value;
-            string vis = newPar.Visibility ? "1" : "0";
-            string usrMod = newPar.UserModifiable ? "1" : "0";
-
-            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + newPar.Name + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
-                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
-            stSharedPar.WriteLine(parEntry);
-         }
-
-         stSharedParType.WriteLine("# This is a Revit shared parameter file.");
-         stSharedParType.WriteLine("# Do not edit manually.");
-         stSharedParType.WriteLine("*META	VERSION	MINVERSION");
-         stSharedParType.WriteLine("META	2	1");
-         stSharedParType.WriteLine("*GROUP	ID	NAME");
-         stSharedParType.WriteLine("GROUP	2	IFC Properties");
-         stSharedParType.WriteLine("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE");
-         stSharedParType.WriteLine("#");
-         foreach (KeyValuePair<string, SharedParameterDef> parDef in ProcessPsetDefinition.SharedParamFileTypeDict)
-         {
-            SharedParameterDef newPar = parDef.Value;
-            string parName4Type;
-            if (newPar.Name.EndsWith("[Type]"))
-               parName4Type = newPar.Name;
-            else
-               parName4Type = newPar.Name + "[Type]";
-            string vis = newPar.Visibility ? "1" : "0";
-            string usrMod = newPar.UserModifiable ? "1" : "0";
-
-            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + parName4Type + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + newPar.GroupId.ToString()
-                              + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
-            stSharedParType.WriteLine(parEntry);
-         }
-
+         WriteRevitSharedParam(stSharedPar, existingParDict, groupParamDict, false, out IList<string> deferredParList);
+         AppendDeferredParamList(stSharedPar, deferredParList);
          stSharedPar.Close();
+
+         WriteRevitSharedParam(stSharedParType, existingTypeParDict, groupParamDict, true, out IList<string> deferredParTypeList);
+         AppendDeferredParamList(stSharedParType, deferredParTypeList);
          stSharedParType.Close();
 #if DEBUG
          logF.Close();
 #endif
       }
 
-      void WriteGeneratedCode(StreamWriter outF, ProcessPsetDefinition procPsetDef, string penumFileName, string whichCat)
+      void WriteRevitSharedParam(StreamWriter stSharedPar, IDictionary<string, SharedParameterDef> existingParDict, 
+         IDictionary<string, int> groupParamDict, bool isType, out IList<string> deferredParList)
+      {
+         // Now write shared parameter definitions from the Dict to destination file
+         stSharedPar.WriteLine("# This is a Revit shared parameter file.");
+         stSharedPar.WriteLine("# Do not edit manually.");
+         stSharedPar.WriteLine("*META	VERSION	MINVERSION");
+         stSharedPar.WriteLine("META	2	1");
+         stSharedPar.WriteLine("*GROUP	ID	NAME");
+         int groupID = groupParamDict["Revit IFCExporter Parameters"];
+
+         // Keep the list of Parameters that do not belong to any Pset to be written all together in one group at the end
+         deferredParList = new List<string>();
+         deferredParList.Add(string.Format("#"));
+         deferredParList.Add(string.Format("GROUP	{0}	Revit IFCExporter Parameters", groupID));
+         deferredParList.Add(string.Format("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE"));
+         deferredParList.Add(string.Format("#"));
+
+         string prevPsetName = "Revit IFCExporter Parameters";
+         int defaultGroupID = groupParamDict[prevPsetName];
+         SortedDictionary<string, SharedParameterDef> SharedParDict = null;
+         if (!isType)
+            SharedParDict = ProcessPsetDefinition.SharedParamFileDict;
+         else
+            SharedParDict = ProcessPsetDefinition.SharedParamFileTypeDict;
+
+         foreach (KeyValuePair<string, SharedParameterDef> parDef in ProcessPsetDefinition.SharedParamFileDict)
+         {
+            SharedParameterDef newPar = parDef.Value;
+            bool toBeDeferred = false;
+            if (!prevPsetName.Equals(newPar.OwningPset, StringComparison.InvariantCultureIgnoreCase))
+            {
+               if (!string.IsNullOrEmpty(newPar.OwningPset))
+               {
+                  prevPsetName = newPar.OwningPset;
+                  groupID = groupParamDict[newPar.OwningPset];
+                  stSharedPar.WriteLine("#");
+                  stSharedPar.WriteLine("GROUP	{0}	{1}", groupID, newPar.OwningPset);
+                  stSharedPar.WriteLine("*PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE");
+                  stSharedPar.WriteLine("#");
+               }
+               else
+                  toBeDeferred = true;
+            }
+
+            string parName = newPar.Name;
+            if (isType)
+            {
+               if (newPar.Name.EndsWith("[Type]"))
+                  parName = newPar.Name;
+               else
+                  parName = newPar.Name + "[Type]";
+            }
+
+            string vis = newPar.Visibility ? "1" : "0";
+            string usrMod = newPar.UserModifiable ? "1" : "0";
+
+            // Retain the same GUID if the existing file contains the same parameter name already. This is to keep consistent GUID, even for non-IfdGUID
+            if (existingParDict.ContainsKey(parName))
+            {
+               var existingPar = existingParDict[parName];
+               newPar.ParamGuid = existingPar.ParamGuid;
+            }
+            else if (isType)
+               newPar.ParamGuid = Guid.NewGuid();  // assign new GUID for [Type] parameter if not existing
+
+            if (toBeDeferred)
+            {
+               string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + parName + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + defaultGroupID.ToString()
+                  + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+               deferredParList.Add(parEntry);
+            }
+            else
+            {
+               string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + parName + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + groupID.ToString()
+                  + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+               stSharedPar.WriteLine(parEntry);
+            }
+         }
+
+         // Add items in the existing parameter dict that are not found in SharedParamFileDict, into the deferred list
+         var disjunctPars = existingParDict.Where(x => !SharedParDict.ContainsKey(x.Key));
+         foreach (KeyValuePair<string, SharedParameterDef> parDef in disjunctPars)
+         {
+            SharedParameterDef newPar = parDef.Value;
+            string parName = newPar.Name;
+            if (isType)
+            {
+               if (newPar.Name.EndsWith("[Type]"))
+                  parName = newPar.Name;
+               else
+                  parName = newPar.Name + "[Type]";
+            }
+            string vis = newPar.Visibility ? "1" : "0";
+            string usrMod = newPar.UserModifiable ? "1" : "0";
+            string parEntry = newPar.Param + "\t" + newPar.ParamGuid.ToString() + "\t" + parName + "\t" + newPar.ParamType + "\t" + newPar.DataCategory + "\t" + defaultGroupID.ToString()
+               + "\t" + vis + "\t" + newPar.Description + "\t" + usrMod;
+            deferredParList.Add(parEntry);
+         }
+      }
+
+      void AppendDeferredParamList(StreamWriter stSharedPar, IList<string> deferredParList)
+      {
+         foreach (string parToWrite in deferredParList)
+         {
+            stSharedPar.WriteLine(parToWrite);
+         }
+      }
+
+      int WriteGeneratedCode(StreamWriter outF, ProcessPsetDefinition procPsetDef, string penumFileName, string whichCat, 
+         IDictionary<string, int> paramGroupDict, int offset)
       {
          // Header section of the generated code
          outF.WriteLine("/********************************************************************************************************************************");
@@ -331,6 +405,12 @@ namespace RevitIFCTools
          outF.WriteLine("      public static void {0}(IList<IList<{1}>> {2})", initPsetOrQsets, setDescription, allPsetOrQtoSetsName);
          outF.WriteLine("      {");
          outF.WriteLine("         IList<{0}> {1} = new List<{0}>();", setDescription, theSetName);
+
+         int groupId = offset;
+         int defaultGroupId = 2;
+         if (!paramGroupDict.ContainsKey("Revit IFCExporter Parameters"))
+            paramGroupDict.Add("Revit IFCExporter Parameters", defaultGroupId);
+
          foreach (KeyValuePair<string, IList<VersionSpecificPropertyDef>> psetDefEntry in procPsetDef.allPDefDict)
          {
             // Skip key (name) that does not start with the requested type
@@ -338,6 +418,8 @@ namespace RevitIFCTools
                continue;
 
             outF.WriteLine("         Init" + psetDefEntry.Key + "({0});", theSetName);
+            if (!paramGroupDict.ContainsKey(psetDefEntry.Key))
+               paramGroupDict.Add(psetDefEntry.Key, groupId++);
          }
          outF.WriteLine("\r\n         allPsetOrQtoSets.Add({0});", theSetName);
          outF.WriteLine("      }");
@@ -493,12 +575,12 @@ namespace RevitIFCTools
                      foreach (PsetProperty propCx in complexProp.Properties)
                      {
                         string prefixName = prop.Name;
-                        procPsetDef.processSimpleProperty(outF, propCx, prefixName, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef, penumFileName);
+                        procPsetDef.processSimpleProperty(outF, psetName, propCx, prefixName, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef, penumFileName);
                      }
                   }
                   else
                   {
-                     procPsetDef.processSimpleProperty(outF, prop, null, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef, penumFileName);
+                     procPsetDef.processSimpleProperty(outF, psetName, prop, null, pDef.IfcVersion, vspecPDef.SchemaFileVersion, varName, vspecPDef, penumFileName);
                   }
                }
                outF.WriteLine("         }");
@@ -506,7 +588,6 @@ namespace RevitIFCTools
 
             outF.WriteLine("         if (ifcPSE != null)");
             outF.WriteLine("         {");
-            //outF.WriteLine("............{0}.Name = \"{1}\";", varName, psetName);
             outF.WriteLine("            {0}.Add({1});", setsName, varName);
             outF.WriteLine("         }");
             outF.WriteLine("      }");
@@ -517,6 +598,7 @@ namespace RevitIFCTools
          outF.WriteLine("   }");
          outF.WriteLine("}");
          outF.Close();
+         return groupId;
       }
       
 
