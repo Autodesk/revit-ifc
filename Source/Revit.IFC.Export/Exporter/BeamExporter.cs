@@ -273,7 +273,6 @@ namespace Revit.IFC.Export.Exporter
 
          Solid solid = geomObjects[0] as Solid;
 
-         bool completelyClipped;
          XYZ beamDirection = orientTrf.BasisX;
          XYZ planeXVec = orientTrf.BasisY.Normalize();
          XYZ planeYVec = orientTrf.BasisZ.Normalize();
@@ -285,10 +284,12 @@ namespace Revit.IFC.Export.Exporter
 
          Plane beamExtrusionBasePlane = GeometryUtil.CreatePlaneByXYVectorsAtOrigin(planeXVec, planeYVec);
          GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
-         info.RepresentationHandle = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, element,
-             catId, solid, beamExtrusionBasePlane, orientTrf.Origin, beamDirection, null, out completelyClipped,
+         ExtrusionExporter.ExtraClippingData extraClippingData = null;
+         info.RepresentationHandle = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, element, false,
+             catId, solid, beamExtrusionBasePlane, orientTrf.Origin, beamDirection, null, 
+             out extraClippingData,
              out footPrintInfo, out materialAndProfile, addInfo: addInfo, profileName: profileName);
-         if (completelyClipped)
+         if (extraClippingData.CompletelyClipped)
          {
             info.DontExport = true;
             return null;
@@ -545,10 +546,7 @@ namespace Revit.IFC.Export.Exporter
                       extrusionCreationData.GetLocalPlacement(), setter, productWrapper);
 
                   FamilyTypeInfo typeInfo = new FamilyTypeInfo();
-                  typeInfo.ScaledDepth = extrusionCreationData.ScaledLength;
-                  typeInfo.ScaledArea = extrusionCreationData.ScaledArea;
-                  typeInfo.ScaledInnerPerimeter = extrusionCreationData.ScaledInnerPerimeter;
-                  typeInfo.ScaledOuterPerimeter = extrusionCreationData.ScaledOuterPerimeter;
+                  typeInfo.extraParams = extrusionCreationData;
                   PropertyUtil.CreateBeamColumnBaseQuantities(exporterIFC, beam, element, typeInfo, null);
 
                   if (materialIds.Count != 0)

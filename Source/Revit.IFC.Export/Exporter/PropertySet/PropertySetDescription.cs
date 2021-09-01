@@ -164,11 +164,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC class.</param>
       /// <param name="ifcParams">The extrusion creation data, used to get extra parameter information.</param>
-      /// <param name="elementToUse">The base element.</param>
+      /// <param name="elementOrConnectorToUse">The base element or connector.</param>
       /// <param name="elemTypeToUse">The base element type.</param>
       /// <param name="handle">The handle for which we process the entries.</param>
       /// <returns>A set of property handles.</returns>
-      public ISet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData ifcParams, Element elementToUse, ElementType elemTypeToUse, IFCAnyHandle handle)
+      public ISet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData ifcParams, ElementOrConnector elementOrConnectorToUse, ElementType elemTypeToUse, IFCAnyHandle handle)
       {
          // We need to ensure that we don't have the same property name twice in the same property set.
          // By convention, we will keep the last property with the same name.  This allows for a user-defined
@@ -180,7 +180,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             try
             {
-               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementToUse, elemTypeToUse, handle);
+               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle);
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
                   continue;
 

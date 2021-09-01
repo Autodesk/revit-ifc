@@ -184,7 +184,7 @@ namespace Revit.IFC.Import.Data
 
          if (shapeType == null)
          {
-            shapeType = IFCElementUtil.CreateElementType(doc, GetVisibleName(), CategoryId, Id);
+            shapeType = IFCElementUtil.CreateElementType(doc, GetVisibleName(), CategoryId, Id, GlobalId, EntityType);
          }
          else
          {

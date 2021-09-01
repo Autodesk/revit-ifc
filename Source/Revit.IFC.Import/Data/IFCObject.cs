@@ -296,7 +296,7 @@ namespace Revit.IFC.Import.Data
             if (!string.IsNullOrWhiteSpace(objectTypeOverride))
             {
                Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, "ObjectTypeOverride", objectTypeOverride, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, "ObjectTypeOverride", objectTypeOverride, Id);
             }
          }
       }

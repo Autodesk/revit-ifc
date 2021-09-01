@@ -193,4 +193,7 @@ FakesAssemblies/
 *.ide-shm
 *.ide-wal
 .vs/
-*.sig
+Source/RevitIFCTools/IFC Shared Parameters-RevitIFCBuiltIn_ALL_out.txt
+Source/RevitIFCTools/IFC Shared Parameters-RevitIFCBuiltIn_ALL-old.txt
+Source/RevitIFCTools/IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL_out.txt
+Source/RevitIFCTools/IFC Shared Parameters-RevitIFCBuiltIn-Type_ALL-old.txt

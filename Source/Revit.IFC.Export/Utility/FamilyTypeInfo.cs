@@ -177,29 +177,7 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       public Transform StyleTransform { get; set; } = Transform.Identity;
 
-      /// <summary>
-      /// The area of the type's cross-section, scaled into the units of export.
-      /// This property is typically used only for columns, beams and other framing members.
-      /// </summary>
-      public double ScaledArea { get; set; } = 0.0;
-
-      /// <summary>
-      /// The depth of the type, scaled into the units of export.
-      /// This property is typically used only for columns, beams and other framing members.
-      /// </summary>
-      public double ScaledDepth { get; set; } = 0.0;
-
-      /// <summary>
-      /// The inner perimeter of the boundaries of the type's cross-section, scaled into the units of export.
-      /// This property is typically used only for columns, beams and other framing members.
-      /// </summary>
-      public double ScaledInnerPerimeter { get; set; } = 0.0;
-
-      /// <summary>
-      /// The outer perimeter of the boundaries of the type's cross-section, scaled into the units of export.
-      /// This property is typically used only for columns, beams and other framing members.
-      /// </summary>
-      public double ScaledOuterPerimeter { get; set; } = 0.0;
+      public IFCExtrusionCreationData extraParams { get; set; } = new IFCExtrusionCreationData();
 
       public MaterialAndProfile MaterialAndProfile { get; set; } = new MaterialAndProfile();
 

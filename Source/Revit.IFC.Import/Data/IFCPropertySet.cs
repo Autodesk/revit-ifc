@@ -339,7 +339,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterElementId(Document doc, Element element, Category category, string parameterName, ElementId parameterValue, int parameterSetId)
+      public static bool AddParameterElementId(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, ElementId parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
@@ -351,6 +351,10 @@ namespace Revit.IFC.Import.Data
          string name = parameterElement.Name;
          if (string.IsNullOrEmpty(name))
             return false;
+
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
 
          Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Text);
          if (parameter == null)
@@ -370,10 +374,14 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterBoolean(Document doc, Element element, Category category, string parameterName, bool parameterValue, int parameterSetId)
+      public static bool AddParameterBoolean(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, bool parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
+
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
 
          Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.YesNo);
          if (parameter == null)
@@ -393,10 +401,14 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterInt(Document doc, Element element, Category category, string parameterName, int parameterValue, int parameterSetId)
+      public static bool AddParameterInt(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, int parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
+
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
 
          Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Integer);
          if (parameter == null)
@@ -414,11 +426,11 @@ namespace Revit.IFC.Import.Data
       /// <param name="category">The category of the element.</param>
       /// <param name="parameterName">The parameter name.</param>
       /// <param name="specTypeId">Identifier of the parameter spec (e.g. length)</param>
-      /// <param name="allowedValues">The allowed values for the parameter (e.g. Nonnegative)</param>
-      /// <param name="parameterValue">The parameter value.</param>
+      /// <param name="unitsTypeId">Identifier of the unscaled parameter units (e.g. mm)</param>
+      /// <param name="parameterValue">The parameter value, scaled into document units.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterDouble(Document doc, Element element, Category category, string parameterName, ForgeTypeId specTypeId, double parameterValue, int parameterSetId)
+      public static bool AddParameterDouble(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, ForgeTypeId specTypeId, ForgeTypeId unitsTypeId, double parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
@@ -432,7 +444,7 @@ namespace Revit.IFC.Import.Data
             return false;
 
          parameter.Set(parameterValue);
-         return true;
+         return true; 
       }
 
       /// <summary>
@@ -445,10 +457,14 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterString(Document doc, Element element, Category category, string parameterName, string parameterValue, int parameterSetId)
+      public static bool AddParameterString(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, string parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
+
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
 
          Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Text);
          if (parameter == null)
@@ -475,6 +491,10 @@ namespace Revit.IFC.Import.Data
             return false;
 
          string parameterName = objDef.GetSharedParameterName(name, element is ElementType);
+
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
 
          Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Text);
          if (parameter == null)
@@ -511,7 +531,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="element">The element being created.</param>
       /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
       /// <returns>The name of the property set created, if it was created, and a Boolean value if it should be added to the property set list.</returns>
-      public override Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
+      public override Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap)
       {
          Category category = GetCategoryForParameterIfValid(element, Id);
          if (category == null)
@@ -522,7 +542,7 @@ namespace Revit.IFC.Import.Data
          ISet<string> parametersCreated = new HashSet<string>();
          foreach (IFCProperty property in IFCProperties.Values)
          {
-            property.Create(doc, element, category, parameterGroupMap, Name, parametersCreated);
+            property.Create(doc, element, category, objDef, parameterGroupMap, Name, parametersCreated);
          }
 
          CreateScheduleForPropertySet(doc, element, category, parameterGroupMap, parametersCreated);

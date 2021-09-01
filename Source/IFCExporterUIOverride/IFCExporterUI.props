@@ -27,5 +27,5 @@
     Revit.CSharp.targets file, otherwise VisualStudio will complain
     about missing OutputPath tags.
     -->
-  <Import Project="$(SolutionDir)VSProps\RA.CSharp.Addin-param.targets" />
+  <Import Project="$(SolutionDir)VSProps\RA.CSharp.Addin.targets" />
 </Project>

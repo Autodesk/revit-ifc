@@ -25,6 +25,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Utility;
+using Revit.IFC.Import.Enums;
 
 namespace Revit.IFC.Import.Data
 {
@@ -112,9 +113,20 @@ namespace Revit.IFC.Import.Data
             return cachedIFCGroup as IFCGroup;
 
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcGroup, IFCEntityType.IfcZone))
-            return IFCZone.ProcessIFCZone(ifcGroup);
+         {
+            IFCZone ifcZone = IFCZone.ProcessIFCZone(ifcGroup);
+            if (ifcZone != null)
+               IFCImportFile.TheFile.OtherEntitiesToCreate.Add(ifcZone);
+            return ifcZone;
+         }
+
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcGroup, IFCEntityType.IfcSystem))
-            return IFCSystem.ProcessIFCSystem(ifcGroup);
+         {
+            IFCSystem ifcSystem = IFCSystem.ProcessIFCSystem(ifcGroup);
+            if (ifcSystem != null)
+               IFCImportFile.TheFile.OtherEntitiesToCreate.Add(ifcSystem);
+            return ifcSystem;
+         }
 
          return new IFCGroup(ifcGroup);
       }

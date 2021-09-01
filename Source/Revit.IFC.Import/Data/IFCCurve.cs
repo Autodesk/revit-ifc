@@ -228,7 +228,7 @@ namespace Revit.IFC.Import.Data
          Curve firstCurve = curveIterator.Current;
          Curve returnCurve = null;
 
-         double vertexEps = IFCImportFile.TheFile.Document.Application.VertexTolerance;
+         double vertexEps = Importer.TheProcessor.VertexTolerance;
 
          // We only connect the curves if they are Line, Arc or Ellipse
          if (!((firstCurve is Line) || (firstCurve is Arc) || (firstCurve is Ellipse)))

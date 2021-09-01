@@ -130,7 +130,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The GUIDs to store at the end of export.
       /// </summary>
-      static Dictionary<KeyValuePair<ElementId, BuiltInParameter>, string> m_GUIDsToStoreCache;
+      static Dictionary<KeyValuePair<Element, BuiltInParameter>, string> m_GUIDsToStoreCache;
 
       /// <summary>
       /// The HandleToElementCache cache.
@@ -322,7 +322,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The common property sets to be exported for an entity type, regardless of Object Type.
       /// </summary>
-      static IDictionary<IFCEntityType, IList<PropertySetDescription>> m_PropertySetsForTypeCache;
+      static IDictionary<PropertySetKey, IList<PropertySetDescription>> m_PropertySetsForTypeCache;
 
       /// <summary>
       /// The material id to style handle cache.
@@ -485,12 +485,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The GUIDs to store in elements at the end of export, if the option to store GUIDs has been selected.
       /// </summary>
-      public static IDictionary<KeyValuePair<ElementId, BuiltInParameter>, string> GUIDsToStoreCache
+      public static IDictionary<KeyValuePair<Element, BuiltInParameter>, string> GUIDsToStoreCache
       {
          get
          {
             if (m_GUIDsToStoreCache == null)
-               m_GUIDsToStoreCache = new Dictionary<KeyValuePair<ElementId, BuiltInParameter>, string>();
+               m_GUIDsToStoreCache = new Dictionary<KeyValuePair<Element, BuiltInParameter>, string>();
             return m_GUIDsToStoreCache;
          }
       }
@@ -1155,14 +1155,29 @@ public static ParameterCache ParameterCache
       }
 
       /// <summary>
+      /// This class is used to identify property set in cache.
+      /// Current logic uses a combination of instance type and predefined type
+      /// to uniquely identify relation of ifc object and property set.
+      /// </summary>
+      public class PropertySetKey
+      {
+         public PropertySetKey(IFCEntityType entityType, string predefinedType)
+         {
+            this.entityType = entityType;
+            this.predefinedType = predefinedType;
+         }
+         IFCEntityType entityType;
+         string predefinedType;
+      }
+      /// <summary>
       /// The common property sets to be exported for an entity type, regardless of Object Type.
       /// </summary>
-      public static IDictionary<IFCEntityType, IList<PropertySetDescription>> PropertySetsForTypeCache
+      public static IDictionary<PropertySetKey, IList<PropertySetDescription>> PropertySetsForTypeCache
       {
          get
          {
             if (m_PropertySetsForTypeCache == null)
-               m_PropertySetsForTypeCache = new Dictionary<IFCEntityType, IList<PropertySetDescription>>();
+               m_PropertySetsForTypeCache = new Dictionary<PropertySetKey, IList<PropertySetDescription>>();
             return m_PropertySetsForTypeCache;
          }
       }

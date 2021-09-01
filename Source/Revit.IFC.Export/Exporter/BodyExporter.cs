@@ -250,28 +250,97 @@ namespace Revit.IFC.Export.Exporter
          return mostPopularId;
       }
 
+      private static bool isDuctCategory(BuiltInCategory categoryId)
+      {
+         return categoryId == BuiltInCategory.OST_DuctAccessory ||
+            categoryId == BuiltInCategory.OST_DuctCurves ||
+            categoryId == BuiltInCategory.OST_DuctFitting ||
+            categoryId == BuiltInCategory.OST_DuctInsulations ||
+            categoryId == BuiltInCategory.OST_DuctLinings ||
+            categoryId == BuiltInCategory.OST_DuctTerminal ||
+            categoryId == BuiltInCategory.OST_FlexDuctCurves ||
+            categoryId == BuiltInCategory.OST_PlaceHolderDucts;      
+      }
+
+      private static bool isPipeCategory(BuiltInCategory categoryId)
+      {
+         return categoryId == BuiltInCategory.OST_AnalyticalPipeConnections ||
+            categoryId == BuiltInCategory.OST_FlexPipeCurves ||
+            categoryId == BuiltInCategory.OST_PipeCurves ||
+            categoryId == BuiltInCategory.OST_PlaceHolderPipes ||
+            categoryId == BuiltInCategory.OST_PlumbingFixtures ||
+            categoryId == BuiltInCategory.OST_PipeAccessory ||
+            categoryId == BuiltInCategory.OST_PipeFitting ||
+            categoryId == BuiltInCategory.OST_PipeInsulations ||
+            categoryId == BuiltInCategory.OST_Sprinklers;
+      }
+
+      private static bool categoryHasMaterialIdParam(BuiltInCategory categoryId)
+      {
+         // OST_Cornices also has a MaterialId parameter, but Revit doesn't want us
+         // to ask for it.
+         return categoryId == BuiltInCategory.OST_Rebar ||
+            categoryId == BuiltInCategory.OST_FabricReinforcement ||
+            categoryId == BuiltInCategory.OST_Fascia ||
+            categoryId == BuiltInCategory.OST_Gutter ||
+            categoryId == BuiltInCategory.OST_EdgeSlab ||
+            categoryId == BuiltInCategory.OST_Parts ||
+            categoryId == BuiltInCategory.OST_PipeInsulations ||
+            categoryId == BuiltInCategory.OST_DuctInsulations ||
+            categoryId == BuiltInCategory.OST_DuctLinings;
+      }
+
+      private static bool categoryHasStructuralMaterialParam(BuiltInCategory categoryId)
+      {
+         return categoryId == BuiltInCategory.OST_BuildingPad ||
+            categoryId == BuiltInCategory.OST_Ceilings ||
+            categoryId == BuiltInCategory.OST_Floors ||
+            categoryId == BuiltInCategory.OST_Roofs ||
+            categoryId == BuiltInCategory.OST_StructConnectionAnchors ||
+            categoryId == BuiltInCategory.OST_StructConnectionBolts ||
+            categoryId == BuiltInCategory.OST_StructConnectionPlates ||
+            categoryId == BuiltInCategory.OST_StructConnectionProfiles ||
+            categoryId == BuiltInCategory.OST_StructConnectionShearStuds ||
+            categoryId == BuiltInCategory.OST_StructuralColumns ||
+            categoryId == BuiltInCategory.OST_StructuralFoundation ||
+            categoryId == BuiltInCategory.OST_StructuralFraming ||
+            categoryId == BuiltInCategory.OST_Walls;
+      }
+
       private static ElementId GetBestMaterialIdFromParameter(Element element)
       {
          ElementId matId = ExporterUtil.GetSingleMaterial(element);
-         if (matId == ElementId.InvalidElementId)
-         {
-            ElementId systemTypeId = ElementId.InvalidElementId;
-            if (element is Duct)
-               ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM, out systemTypeId);
-            else if (element is Pipe)
-               ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM, out systemTypeId);
+         if (matId != ElementId.InvalidElementId)
+            return matId;
 
-            if (systemTypeId != ElementId.InvalidElementId)
-            {
-               Element systemType = element.Document.GetElement(systemTypeId);
-               if (systemType != null)
-                  return GetBestMaterialIdFromParameter(systemType);
-            }
-            else if (element is DuctLining || element is MEPSystemType)
-               ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.MATERIAL_ID_PARAM, out matId);
-            else
-               ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.STRUCTURAL_MATERIAL_PARAM, out matId);
+         // Try to get it from the category of the element first.
+         BuiltInCategory categoryId = (BuiltInCategory)element.Category.Id.IntegerValue;
+         if (categoryHasMaterialIdParam(categoryId) || element is MEPSystemType)
+         {
+            ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.MATERIAL_ID_PARAM, out matId);
          }
+         else if (categoryHasStructuralMaterialParam(categoryId))
+         {
+            ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.STRUCTURAL_MATERIAL_PARAM, out matId);
+         }
+
+         if (matId != ElementId.InvalidElementId)
+            return matId;
+
+         // If not, try to get it from the system.
+         ElementId systemTypeId = ElementId.InvalidElementId;
+         if (isDuctCategory(categoryId))
+            ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM, out systemTypeId);
+         else if (isPipeCategory(categoryId))
+            ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM, out systemTypeId);
+
+         if (systemTypeId != ElementId.InvalidElementId)
+         {
+            Element systemType = element.Document.GetElement(systemTypeId);
+            if (systemType != null)
+               return GetBestMaterialIdFromParameter(systemType);
+         }
+          
          return matId;
       }
 
@@ -327,12 +396,13 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="document">The document.</param>
+      /// <param name="isVoid">True if the representation item represents a void (a space or an opening).</param>
       /// <param name="repItemHnd">The representation item.</param>
       /// <param name="overrideMatId">The material id to use instead of the one in the exporter, if provided.</param>
-      public static void CreateSurfaceStyleForRepItem(ExporterIFC exporterIFC, Document document, IFCAnyHandle repItemHnd,
-          ElementId overrideMatId)
+      public static void CreateSurfaceStyleForRepItem(ExporterIFC exporterIFC, Document document,
+         bool isVoid, IFCAnyHandle repItemHnd, ElementId overrideMatId)
       {
-         if (repItemHnd == null || ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+         if (isVoid || repItemHnd == null || ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
             return;
 
          // Restrict material to proper subtypes.
@@ -2355,7 +2425,7 @@ namespace Revit.IFC.Export.Exporter
          }
          else 
          {
-            exportColor = CategoryUtil.GetElementColorAndTransparency(element, out opacity);
+            exportColor = CategoryUtil.GetElementColorAndOpacityFromCategory(element, out opacity);
          }
 
          if (exportColor == null)
@@ -2658,7 +2728,7 @@ namespace Revit.IFC.Export.Exporter
                   bodyItems.Add(advancedBrepBodyItem);
                   alreadyExported = true;
                   hasAdvancedBrepGeometry = true;
-                  BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, advancedBrepBodyItem, materialId);
+                  CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, advancedBrepBodyItem, materialId);
                   bodyData.AddRepresentationItemInfo(document, geomObject, materialId, advancedBrepBodyItem);
                }
             }
@@ -2675,7 +2745,7 @@ namespace Revit.IFC.Export.Exporter
                   foreach (IFCAnyHandle triangulatedBodyItem in triangulatedBodyItems)
                   {
                      bodyItems.Add(triangulatedBodyItem);
-                     BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, triangulatedBodyItem, materialId);
+                     CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, triangulatedBodyItem, materialId);
                      bodyData.AddRepresentationItemInfo(document, geomObject, materialId, triangulatedBodyItem);
                   }
                   alreadyExported = true;
@@ -2799,7 +2869,8 @@ namespace Revit.IFC.Export.Exporter
                   ElementId currMatId = materialIds[matToUse];
 
                   IFCAnyHandle faceOuter = IFCInstanceExporter.CreateClosedShell(file, currentFaceHashSet);
-                  IFCAnyHandle brepHnd = RepresentationUtil.CreateFacetedBRep(exporterIFC, document, faceOuter, currMatId);
+                  IFCAnyHandle brepHnd = RepresentationUtil.CreateFacetedBRep(exporterIFC, document, 
+                     options.CreatingVoid, faceOuter, currMatId);
 
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(brepHnd))
                   {
@@ -2836,7 +2907,7 @@ namespace Revit.IFC.Export.Exporter
                   foreach (KeyValuePair<ElementId, HashSet<IFCAnyHandle>> faceSet in faceSets)
                   {
                      IFCAnyHandle surfaceModel = IFCInstanceExporter.CreateFaceBasedSurfaceModel(file, faceSet.Value);
-                     BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, surfaceModel, faceSet.Key);
+                     CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, surfaceModel, faceSet.Key);
 
                      bodyItems.Add(surfaceModel);
                   }
@@ -3073,11 +3144,11 @@ namespace Revit.IFC.Export.Exporter
                         if (options.CollectMaterialAndProfile)
                            footprintOrProfile |= GenerateAdditionalInfo.GenerateProfileDef;
 
-                        bool completelyClipped;
+                        ExtrusionExporter.ExtraClippingData extraClippingData = null;
                         HandleAndData extrusionData = ExtrusionExporter.CreateExtrusionWithClippingAndProperties(exporterIFC, element,
-                            CategoryUtil.GetSafeCategoryId(element), geometryList[0] as Solid, extrusionBasePlane, options.ExtrusionLocalCoordinateSystem.Origin,
-                            extrusionDirection, null, out completelyClipped, addInfo: footprintOrProfile, profileName: profileName);
-                        if (!completelyClipped && !IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionData.Handle))
+                            options.CreatingVoid, CategoryUtil.GetSafeCategoryId(element), geometryList[0] as Solid, extrusionBasePlane, options.ExtrusionLocalCoordinateSystem.Origin,
+                            extrusionDirection, null, out extraClippingData, addInfo: footprintOrProfile, profileName: profileName);
+                        if (!extraClippingData.CompletelyClipped && !IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionData.Handle))
                         {
                            // There are two valid cases here:
                            // 1. We actually created an extrusion.
@@ -3377,7 +3448,7 @@ namespace Revit.IFC.Export.Exporter
                {
                   int sz = bodyItems.Count();
                   for (int ii = 0; ii < sz; ii++)
-                     BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, bodyItems[ii], materialIdsForExtrusions[ii]);
+                     CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, bodyItems[ii], materialIdsForExtrusions[ii]);
 
                   if (exportSucceeded)
                   {
@@ -3631,6 +3702,7 @@ namespace Revit.IFC.Export.Exporter
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Solid geomSolid = geomObject as Solid;
          FaceArray faces = geomSolid.Faces;
+         double scale = UnitUtil.ScaleLengthForRevitAPI();
 
          // The default tessellationLevel is -1, which is illegal for Triangulate.  Get a value in range. 
          double tessellationLevel = options.TessellationControls.LevelOfDetail;
@@ -3648,7 +3720,7 @@ namespace Revit.IFC.Export.Exporter
                   MeshTriangle triangle = faceTriangulation.get_Triangle(ii);
                   for (int tri = 0; tri < 3; ++tri)
                   {
-                     XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
+                     XYZ vert = scale * triangle.get_Vertex(tri);
                      if (trfToUse != null)
                         vert = trfToUse.OfPoint(vert);
 
@@ -3669,13 +3741,14 @@ namespace Revit.IFC.Export.Exporter
       {
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Mesh geomMesh = geomObject as Mesh;
+         double scale = UnitUtil.ScaleLengthForRevitAPI();
          for (int ii = 0; ii < geomMesh.NumTriangles; ++ii)
          {
             List<XYZ> triangleVertices = new List<XYZ>();
             MeshTriangle triangle = geomMesh.get_Triangle(ii);
             for (int tri = 0; tri < 3; ++tri)
             {
-               XYZ vert = UnitUtil.ScaleLength(triangle.get_Vertex(tri));
+               XYZ vert = scale * triangle.get_Vertex(tri);
                if (trfToUse != null)
                   vert = trfToUse.OfPoint(vert);
 

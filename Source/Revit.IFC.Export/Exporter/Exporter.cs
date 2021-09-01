@@ -238,7 +238,12 @@ namespace Revit.IFC.Export.Exporter
          {
             try
             {
+#if IFC_OPENSOURCE
+               string dllPath = Assembly.GetExecutingAssembly().Location;
+               Assembly assembly = Assembly.LoadFrom(Path.GetDirectoryName(dllPath) + @"\Autodesk.SteelConnections.ASIFC.dll");
+#else
                Assembly assembly = Assembly.LoadFrom(AppDomain.CurrentDomain.BaseDirectory + @"\Addins\SteelConnections\Autodesk.SteelConnections.ASIFC.dll");
+#endif
                if (assembly != null)
                {
                   Type type = assembly.GetType("Autodesk.SteelConnections.ASIFC.ASExporter");
@@ -578,7 +583,7 @@ namespace Revit.IFC.Export.Exporter
                   if (graphicsCell != null) // Concrete elements with cell that have HasGraphics set to true, must be handled by Revit exporter.
                      hasGraphics = (bool)graphicsCell.GetValue(cell, null);
 
-                  if (!hasGraphics)
+                  if (hasGraphics)
                      return false;
                }
             }
@@ -1014,20 +1019,17 @@ namespace Revit.IFC.Export.Exporter
          IFCFileModelOptions modelOptions = new IFCFileModelOptions();
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
          {
-            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X2_ADD1.exp");
             modelOptions.SchemaFile = LocateSchemaFile("IFC2X2_ADD1.exp");
             modelOptions.SchemaName = "IFC2x2_FINAL";
          }
          else if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
-            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4.exp");
             modelOptions.SchemaFile = LocateSchemaFile("IFC4.exp");
             modelOptions.SchemaName = "IFC4";
          }
          else
          {
             // We leave IFC2x3 as default until IFC4 is finalized and generally supported across platforms.
-            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X3_TC1.exp");
             modelOptions.SchemaFile = LocateSchemaFile("IFC2X3_TC1.exp");
             modelOptions.SchemaName = "IFC2x3";
          }
@@ -1722,8 +1724,12 @@ namespace Revit.IFC.Export.Exporter
             // create material layer associations
             foreach (IFCAnyHandle materialSetLayerUsageHnd in ExporterCacheManager.MaterialLayerRelationsCache.Keys)
             {
+               HashSet<IFCAnyHandle> materialLayerRelCache = null;
+               if (!ExporterCacheManager.MaterialLayerRelationsCache.TryGetValue(materialSetLayerUsageHnd, out materialLayerRelCache))
+                  continue;
+
                IFCInstanceExporter.CreateRelAssociatesMaterial(file, GUIDUtil.CreateGUID(), ownerHistory,
-                   null, null, ExporterCacheManager.MaterialLayerRelationsCache[materialSetLayerUsageHnd],
+                   null, null, materialLayerRelCache,
                    materialSetLayerUsageHnd);
             }
 
@@ -1733,8 +1739,12 @@ namespace Revit.IFC.Export.Exporter
                // In some specific cased the reference object might have been deleted. Clear those from the Type cache first here
                ExporterCacheManager.MaterialRelationsCache.CleanRefObjects(materialHnd);
 
+               HashSet<IFCAnyHandle> materialRelationsHandles = null;
+               if (!ExporterCacheManager.MaterialRelationsCache.TryGetValue(materialHnd, out materialRelationsHandles))
+                  continue;
+
                IFCInstanceExporter.CreateRelAssociatesMaterial(file, GUIDUtil.CreateGUID(), ownerHistory,
-                   null, null, ExporterCacheManager.MaterialRelationsCache[materialHnd], materialHnd);
+                   null, null, materialRelationsHandles, materialHnd);
             }
 
             // create type relations
@@ -1743,8 +1753,12 @@ namespace Revit.IFC.Export.Exporter
                // In some specific cased the reference object might have been deleted. Clear those from the Type cache first here
                ExporterCacheManager.TypeRelationsCache.CleanRefObjects(typeObj);
 
+               HashSet<IFCAnyHandle> typeRelCache = null;
+               if (!ExporterCacheManager.TypeRelationsCache.TryGetValue(typeObj, out typeRelCache))
+                  continue;
+
                IFCInstanceExporter.CreateRelDefinesByType(file, GUIDUtil.CreateGUID(), ownerHistory,
-                   null, null, ExporterCacheManager.TypeRelationsCache[typeObj], typeObj);
+                   null, null, typeRelCache, typeObj);
             }
 
             // create type property relations
@@ -2036,13 +2050,12 @@ namespace Revit.IFC.Export.Exporter
                using (SubTransaction st = new SubTransaction(document))
                {
                   st.Start();
-                  foreach (KeyValuePair<KeyValuePair<ElementId, BuiltInParameter>, string> elementAndGUID in ExporterCacheManager.GUIDsToStoreCache)
+                  foreach (KeyValuePair<KeyValuePair<Element, BuiltInParameter>, string> elementAndGUID in ExporterCacheManager.GUIDsToStoreCache)
                   {
-                     Element element = document.GetElement(elementAndGUID.Key.Key);
-                     if (element == null || elementAndGUID.Key.Value == BuiltInParameter.INVALID || elementAndGUID.Value == null)
+                     if (elementAndGUID.Key.Key == null || elementAndGUID.Key.Value == BuiltInParameter.INVALID || elementAndGUID.Value == null)
                         continue;
 
-                     ParameterUtil.SetStringParameter(element, elementAndGUID.Key.Value, elementAndGUID.Value);
+                     ParameterUtil.SetStringParameter(elementAndGUID.Key.Key, elementAndGUID.Key.Value, elementAndGUID.Value);
                   }
                   st.Commit();
                }
@@ -2317,27 +2330,27 @@ namespace Revit.IFC.Export.Exporter
 
          double trueNorthAngleInRadians = 0;
          IFCAnyHandle wcs = null;
-         if (transformBasis == SiteTransformBasis.Shared)
+
+         switch (transformBasis)
+         {
+            case SiteTransformBasis.Shared:
          {
             if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             {
                IFCAnyHandle wcsOrigin = ExporterCacheManager.Global3DOriginHandle;
                wcs = IFCInstanceExporter.CreateAxis2Placement3D(file, wcsOrigin, null, null);
             }
-            else
-            {
-               XYZ orig = new XYZ(0, 0, 0);
-               wcs = ExporterUtil.CreateAxis2Placement3D(file, orig, null, null);
-            }
+                  break;
          }
-         else
+            case SiteTransformBasis.Project:
+            case SiteTransformBasis.Site:
          {
             ExporterUtil.GetSafeProjectPositionAngle(doc, out trueNorthAngleInRadians);
             ProjectLocation projLocation = doc.ActiveProjectLocation;
-            Transform siteSharedCoordinatesTrf = Transform.Identity;
-            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-               siteSharedCoordinatesTrf = projLocation == null ? Transform.Identity : projLocation.GetTransform().Inverse;
-            XYZ unscaledOrigin = new XYZ(0, 0, 0);
+                  Transform siteSharedCoordinatesTrf =
+                     (projLocation == null || !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4) ?
+                        Transform.Identity : projLocation.GetTransform().Inverse;
+                  XYZ unscaledOrigin = XYZ.Zero;
             if (transformBasis == SiteTransformBasis.Project)
             {
                BasePoint prjBasePoint = BasePoint.GetProjectBasePoint(doc);
@@ -2350,6 +2363,15 @@ namespace Revit.IFC.Export.Exporter
             unscaledOrigin = siteSharedCoordinatesTrf.OfPoint(unscaledOrigin);
             XYZ orig = UnitUtil.ScaleLength(unscaledOrigin);
             wcs = ExporterUtil.CreateAxis2Placement3D(file, orig, siteSharedCoordinatesTrf.BasisZ, siteSharedCoordinatesTrf.BasisX);
+                  break;
+               }
+         }
+
+         // This covers Internal case, and Shared case for IFC4+.  
+         // NOTE: If new cases appear, they should be covered above.
+         if (wcs == null)
+         {
+            wcs = ExporterUtil.CreateAxis2Placement3D(file, XYZ.Zero, null, null);
          }
 
          // CoordinationView2.0 requires that we always export true north, even if it is the same as project north.
@@ -3260,6 +3282,33 @@ namespace Revit.IFC.Export.Exporter
             unitSet.Add(volumetricFlowRateUnit);
 
             ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.AirFlow, volumetricFlowRateUnit, volumetricFlowRateFactor, 0.0);
+         }
+
+         // Mass flow rate - support kg/s only.
+         {
+            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, massSIUnit, 1));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, timeSIUnit, -1));
+
+            IFCAnyHandle massFlowRateUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
+                IFCDerivedUnitEnum.MassFlowRateUnit, null);
+            unitSet.Add(massFlowRateUnit);
+
+            double massFlowRateFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.KilogramsPerSecond);
+            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.PipingMassPerTime, massFlowRateUnit, massFlowRateFactor, 0.0);
+         }
+
+         // Rotational frequency - support cycles/s only.
+         {
+            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, timeSIUnit, -1));
+
+            IFCAnyHandle rotationalFrequencyUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
+                IFCDerivedUnitEnum.RotationalFrequencyUnit, null);
+            unitSet.Add(rotationalFrequencyUnit);
+
+            double rotationalFrequencyFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.RevolutionsPerSecond);
+            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.AngularSpeed, rotationalFrequencyUnit, rotationalFrequencyFactor, 0.0);
          }
 
          // Electrical current - support metric ampere only.

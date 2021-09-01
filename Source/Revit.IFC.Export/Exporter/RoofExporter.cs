@@ -176,7 +176,7 @@ namespace Revit.IFC.Export.Exporter
                            }
                         }
                      }
-                     else /*if (exportRoofAsSingleGeometry)*/
+                     else
                      {
                         OpeningUtil.CreateOpeningsIfNecessary(roofHnd, roof, ecData, offsetTransform,
                            exporterIFC, localPlacement, placementSetter, productWrapper);
@@ -423,7 +423,7 @@ namespace Revit.IFC.Export.Exporter
                                        return null;
                                     }
                                     ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
-                                    BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, itemShapeRep, matId);
+                                    BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, false, itemShapeRep, matId);
                                     bodyItems.Add(itemShapeRep);
                                  }
                                  else
@@ -439,8 +439,7 @@ namespace Revit.IFC.Export.Exporter
                                           return null;
                                        }
 
-                                       //ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
-                                       BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, itemShapeRep, matLayerInfo.m_baseMatId);
+                                       BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, false, itemShapeRep, matLayerInfo.m_baseMatId);
 
                                        bodyItems.Add(itemShapeRep);
                                        RepresentationUtil.CreateRepForShapeAspect(exporterIFC, element, prodDefShape, representationType, matLayerInfo.m_layerName, itemShapeRep);

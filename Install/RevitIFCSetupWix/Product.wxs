@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="15EEA25D-DB4B-462C-B3F1-2C6CB7565F01" Name="Revit IFC 2021" Language="1033" Version="21.2.1.0" Manufacturer="Autodesk" UpgradeCode="D8344D14-F520-44DA-9583-9AF4BD489CF8">
+   <Product Id="83C451C6-68E2-48B0-98A6-0CAC57D95B0F" Name="Revit IFC 2021" Language="1033" Version="21.4.0.0" Manufacturer="Autodesk" UpgradeCode="D8344D14-F520-44DA-9583-9AF4BD489CF8">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -13,7 +13,7 @@
       </UI>
       <Property Id="WIXUI_INSTALLDIR" Value ="INSTALLDIR"/>
 
-      <WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)..\Program Files to Install\LICENSE.rtf"></WixVariable>
+      <WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)..\..\LICENSE.rtf"></WixVariable>
       <WixVariable Id="WixUIBannerBmp" Value="$(var.ProjectDir)..\Program Files to Install\Autodesk Logo.bmp" />
       <WixVariable Id="WixUIDialogBmp" Value="$(var.ProjectDir)..\Program Files to Install\Adsk_sidebar_501x314.jpg" />
       <WixVariable Id="WixUIDefUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt"></WixVariable>
@@ -128,9 +128,15 @@
                <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.dll" KeyPath="yes" />
             </Component>
          <?endif?>
-        
+
+         <Component Id = "SteelCon_ASIFC_DLL" Guid="951F4BE6-CCA7-45B3-B687-3A82248B2F70">
+            <File Id ="FILE_SteelCon_ASIFC_DLL" Name="Autodesk.SteelConnections.ASIFC.dll" Source="$(var.ProjectDir)..\Program Files to Install\Autodesk.SteelConnections.ASIFC.dll" KeyPath="yes" />
+         </Component>
+         <Component Id = "SteelCon_ASIFC_Sig" Guid="E1C5CF5E-BA4B-4BE3-ABCD-83AABA86F7CC">
+            <File Id ="FILE_SteelCon_ASIFC_Sig" Name="Autodesk.SteelConnections.ASIFC.sig" Source="$(var.ProjectDir)..\Program Files to Install\Autodesk.SteelConnections.ASIFC.sig" KeyPath="yes" />
+         </Component>
          <Component Id = "COMP_LICENSE_RTF" Guid="9F0851DD-3A43-4D49-AC8C-8B8D2F394A91">
-            <File Id ="FILE_LICENSE_RTF" Name="LICENSE.rtf" Source="$(var.ProjectDir)..\Program Files to Install\LICENSE.rtf" KeyPath="yes" />
+            <File Id ="FILE_LICENSE_RTF" Name="LICENSE.rtf" Source="$(var.ProjectDir)..\..\LICENSE.rtf" KeyPath="yes" />
          </Component>
          <Component Id = "COMP_DEFAULT_USERDEF_TXT" Guid="A269554D-2E77-4DA1-8942-EBF6CC297C09">
             <File Id ="FILE_DEFAULT_USERDEF_TXT" Name="DefaultUserDefinedParameterSets.txt" Source="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt" KeyPath="yes" />

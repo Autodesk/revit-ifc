@@ -127,9 +127,7 @@ namespace Revit.IFC.Import.Data
          if (canCreateType)
          {
             MappingSource.CreateShape(shapeEditScope, null, null, guid);
-            IList<GeometryObject> instances = DirectShape.CreateGeometryInstance(shapeEditScope.Document, MappingSource.Id.ToString(), newLcs);
-            foreach (GeometryObject instance in instances)
-               shapeEditScope.AddGeometry(IFCSolidInfo.Create(Id, instance));
+            Importer.TheProcessor.PostProcessMappedItem(shapeEditScope, this, newLcs);
          }
          else
          {

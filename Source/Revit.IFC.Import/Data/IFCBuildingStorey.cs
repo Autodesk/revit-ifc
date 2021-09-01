@@ -98,7 +98,7 @@ namespace Revit.IFC.Import.Data
          {
             // Set "IfcElevation" parameter.
             Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-            IFCPropertySet.AddParameterDouble(doc, element, category, "IfcElevation", SpecTypeId.Length, Elevation, Id);
+            IFCPropertySet.AddParameterDouble(doc, element, category, this, "IfcElevation", SpecTypeId.Length, null, Elevation, Id);
          }
       }
 

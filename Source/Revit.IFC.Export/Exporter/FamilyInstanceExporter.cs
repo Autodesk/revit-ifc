@@ -412,7 +412,6 @@ namespace Revit.IFC.Export.Exporter
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(familySymbol);
 
          string familyName = familySymbol.Name;
-
          // A Family Instance can have its own copy of geometry, or use the symbol's copy with a transform.
          // The routine below tells us whether to use the Instance's copy or the Symbol's copy.
          bool useInstanceGeometry = GeometryUtil.UsesInstanceGeometry(familyInstance);
@@ -430,8 +429,6 @@ namespace Revit.IFC.Export.Exporter
 
          BodyData bodyData = null;
 
-         using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
-         {
             // Extra information if we are exporting a door or a window.
             DoorWindowInfo doorWindowInfo = null;
             if (exportType.ExportType == IFCEntityType.IfcDoorType || exportType.ExportInstance == IFCEntityType.IfcDoor)
@@ -440,12 +437,11 @@ namespace Revit.IFC.Export.Exporter
                doorWindowInfo = DoorWindowExporter.CreateWindow(exporterIFC, familyInstance, hostElement, overrideLevelId, trf, exportType);
 
             FamilyTypeInfo typeInfo = new FamilyTypeInfo();
+         IFCExtrusionCreationData extraParams = typeInfo.extraParams;
 
             bool flipped = doorWindowInfo != null ? doorWindowInfo.FlippedSymbol : false;
             FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(originalFamilySymbol.Id, flipped, exportType);
             bool found = currentTypeInfo.IsValid();
-
-            Family family = familySymbol.Family;
 
             IList<GeometryObject> geomObjects = new List<GeometryObject>();
             Transform offsetTransform = Transform.Identity;
@@ -553,8 +549,6 @@ namespace Revit.IFC.Export.Exporter
 
                         if (solids.Count > 0)
                         {
-                           bool completelyClipped = false;
-                           IList<ElementId> materialIds = null;
                            FootPrintInfo footprintInfo = null;
                            // The "extrudeDirection" passed in is in global coordinates if it represents
                            // a custom axis, while the geometry is in either the FamilyInstance or 
@@ -566,8 +560,9 @@ namespace Revit.IFC.Export.Exporter
                            Plane basePlaneToUse = GeometryUtil.CreatePlaneByNormalAtOrigin(extrusionDirectionToUse);
 
                            GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
+                        ExtrusionExporter.ExtraClippingData extraClippingData = null;
                            IFCAnyHandle bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
-                               categoryId, solids, basePlaneToUse, orig, extrusionDirectionToUse, null, out completelyClipped, out materialIds,
+                              categoryId, false, solids, basePlaneToUse, orig, extrusionDirectionToUse, null, out extraClippingData,
                                out footprintInfo, out materialAndProfile, out extrusionData, addInfo, profileName: profileName);
                            if (extrusionData != null)
                            {
@@ -582,7 +577,7 @@ namespace Revit.IFC.Export.Exporter
                               extraParams.ScaledOuterPerimeter = extrusionData.ScaledOuterPerimeter;
                            }
 
-                           typeInfo.MaterialIdList = materialIds;
+                        typeInfo.MaterialIdList = extraClippingData.MaterialIds;
                            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepresentation))
                            {
                               representations3D.Add(bodyRepresentation);
@@ -801,10 +796,10 @@ namespace Revit.IFC.Export.Exporter
 
                if (typeInfo.MaterialAndProfile != null)
                {
-                  typeInfo.ScaledArea = typeInfo.MaterialAndProfile.CrossSectionArea.HasValue ? typeInfo.MaterialAndProfile.CrossSectionArea.Value : 0.0;
-                  typeInfo.ScaledDepth = typeInfo.MaterialAndProfile.ExtrusionDepth.HasValue ? typeInfo.MaterialAndProfile.ExtrusionDepth.Value : 0.0;
-                  typeInfo.ScaledInnerPerimeter = typeInfo.MaterialAndProfile.InnerPerimeter.HasValue ? typeInfo.MaterialAndProfile.InnerPerimeter.Value : 0.0;
-                  typeInfo.ScaledOuterPerimeter = typeInfo.MaterialAndProfile.OuterPerimeter.HasValue ? typeInfo.MaterialAndProfile.OuterPerimeter.Value : 0.0;
+               typeInfo.extraParams.ScaledArea = typeInfo.MaterialAndProfile.CrossSectionArea.HasValue ? typeInfo.MaterialAndProfile.CrossSectionArea.Value : 0.0;
+               typeInfo.extraParams.ScaledLength = typeInfo.MaterialAndProfile.ExtrusionDepth.HasValue ? typeInfo.MaterialAndProfile.ExtrusionDepth.Value : 0.0;
+               typeInfo.extraParams.ScaledInnerPerimeter = typeInfo.MaterialAndProfile.InnerPerimeter.HasValue ? typeInfo.MaterialAndProfile.InnerPerimeter.Value : 0.0;
+               typeInfo.extraParams.ScaledOuterPerimeter = typeInfo.MaterialAndProfile.OuterPerimeter.HasValue ? typeInfo.MaterialAndProfile.OuterPerimeter.Value : 0.0;
                }
 
                HashSet<IFCAnyHandle> propertySets = null;
@@ -907,6 +902,8 @@ namespace Revit.IFC.Export.Exporter
             // we'll pretend we succeeded, but we'll do nothing.
             if (!typeInfo.IsValid())
                return;
+
+         extraParams = typeInfo.extraParams;
 
             if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             {
@@ -1437,7 +1434,6 @@ namespace Revit.IFC.Export.Exporter
                   DoorWindowDelayedOpeningCreator delayedCreator = DoorWindowDelayedOpeningCreator.Create(exporterIFC, doorWindowInfo, instanceHandle, setter.LevelId);
                   if (delayedCreator != null)
                      ExporterCacheManager.DoorWindowDelayedOpeningCreatorCache.Add(delayedCreator);
-               }
             }
          }
       }

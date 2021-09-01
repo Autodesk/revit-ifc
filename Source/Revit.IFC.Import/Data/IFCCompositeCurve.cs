@@ -167,7 +167,7 @@ namespace Revit.IFC.Import.Data
          if (segments == null)
             Importer.TheLog.LogError(Id, "Invalid IfcCompositeCurve with no segments.", true);
 
-         double shortCurveTol = IFCImportFile.TheFile.Document.Application.ShortCurveTolerance;
+         double shortCurveTol = Importer.TheProcessor.ShortCurveTolerance;
 
          // need List<> so that we can AddRange later.
          List<Curve> curveSegments = new List<Curve>();
@@ -216,12 +216,12 @@ namespace Revit.IFC.Import.Data
             XYZ curveLoopStartPoint = curveSegments[0].GetEndPoint(0);
             XYZ curveLoopEndPoint = curveSegments[0].GetEndPoint(1);
 
-            double vertexEps = IFCImportFile.TheFile.Document.Application.VertexTolerance;
+            double vertexEps = Importer.TheProcessor.VertexTolerance;
 
             // This is intended to be "relatively large".  The idea here is that the user would rather have the information presented
             // than thrown away because of a gap that is architecturally insignificant.
-            double gapVertexEps = Math.Max(vertexEps, 0.01); // 1/100th of a foot, or 3.048 mm.
-            
+            double gapVertexEps = Math.Max(vertexEps, IFCImportFile.TheFile.OneHundrethOfAFoot); // 1/100th of a foot, or 3.048 mm.
+
             // canRepairFirst may change over time, as we may potentially add curves to the start of the CurveLoop.
             bool canRepairFirst = (curveSegments[0] is Line);
             for (int ii = 1; ii < numSegments; ii++)
@@ -315,32 +315,97 @@ namespace Revit.IFC.Import.Data
                   XYZ originalCurveLoopEndPoint = curveLoopEndPoint;
                   curveLoopEndPoint = nextEndPoint;
                   if (canRepairNext)
+                  {
                      curveSegments[ii] = RepairLineAndReport(Id, originalCurveLoopEndPoint, curveLoopEndPoint, minGap);
+                  }
                   else if (curveSegments[ii - 1] is Line)  // = canRepairCurrent, only used here.
+                  {
                      curveSegments[ii - 1] = RepairLineAndReport(Id, curveSegments[ii - 1].GetEndPoint(0), curveSegments[ii].GetEndPoint(0), minGap);
+                  }
                   else
                   {
-                     // Can't add a line to fix a gap that is smaller than the short curve tolerance.
-                     // This will result in mutliple curve loops.
+                     XYZ repairStartPoint = originalCurveLoopEndPoint;
+                     XYZ repairEndPoint = null;
+                     double? nextCurveStartParameter = null;
+
+                     // We have two non-Lines meeting.  Try two more heuristics to clean the gap.
                      if (minGap < shortCurveTol + MathUtil.Eps())
                      {
-                        Importer.TheLog.LogError(Id, "IfcCompositeCurve contains a gap between two non-linear segments that is too short to be repaired by a connecting segment.", false);
+                        // If we are close, we can actually create a short segment that is
+                        // actually a bit longer than what we need, and the CurveLoop will
+                        // still consider itself continuous.
+                        double overshoot = (shortCurveTol * 1.01 - minGap) / 2.0;
+                        if (overshoot < vertexEps)
+                        {
+                           repairEndPoint = curveSegments[ii].GetEndPoint(0);
+                           XYZ repairLineOffset = overshoot * (repairEndPoint - repairStartPoint).Normalize();
+
+                           repairStartPoint -= repairLineOffset;
+                           repairEndPoint += repairLineOffset;
+                        }
+                        else
+                        {
+                           try
+                           {
+                              // Final attempt using tessellation.
+                              IList<XYZ> possiblePoints = curveSegments[ii].Tessellate();
+                              int numPoints = possiblePoints.Count;
+                              for (int jj = 1; jj < numPoints-1; jj++)
+                              {
+                                 double distanceTo = repairStartPoint.DistanceTo(possiblePoints[jj]);
+
+                                 if (distanceTo > shortCurveTol + MathUtil.Eps())
+                                 {
+                                    repairEndPoint = possiblePoints[jj];
+
+                                    IntersectionResult result = curveSegments[ii].Project(repairEndPoint);
+                                    nextCurveStartParameter = result?.Parameter;
+
+                                    break;
+                                 }
+                              }
+                           }
+                           catch
+                           {
+                           }
+                        }
                      }
                      else
                      {
+                        repairEndPoint = curveSegments[ii].GetEndPoint(0);
+                     }
+
+                     if (nextCurveStartParameter != null)
+                     {
                         try
                         {
-                           Line repairLine = Line.CreateBound(originalCurveLoopEndPoint, curveSegments[ii].GetEndPoint(0));
-                           curveSegments.Insert(ii, repairLine);
-                           ii++; // Skip the repair line as we've already "added" it and the non-linear segment to our growing loop.
-                           numSegments++;
-                           createdRepairLine = true;
+                           curveSegments[ii].MakeBound(nextCurveStartParameter.Value, curveSegments[ii].GetEndParameter(1));
                         }
                         catch
                         {
-                           Importer.TheLog.LogError(Id, "IfcCompositeCurve contains a gap between two non-linear segments that can't be fixed.", false);
+                           repairStartPoint = null;
+                           repairEndPoint = null;
                         }
                      }
+
+                     if (repairStartPoint != null && repairEndPoint != null)
+                     {
+                        try
+                        {
+                           Line repairLine = Line.CreateBound(repairStartPoint, repairEndPoint);
+                           curveSegments.Insert(ii, repairLine);
+                           createdRepairLine = true;
+
+                           ii++; // Skip the repair line as we've already "added" it and the non-linear segment to our growing loop.
+                           numSegments++;
+                        }
+                        catch
+                        {
+                        }
+                     }
+
+                     if (!createdRepairLine)
+                        Importer.TheLog.LogError(Id, "IfcCompositeCurve contains a gap between two non-linear segments that is too short to be repaired by a connecting segment.", false);
                   }
                }
                else
@@ -353,9 +418,13 @@ namespace Revit.IFC.Import.Data
                      curveSegments[ii] = RepairLineAndReport(Id, curveLoopStartPoint, originalCurveLoopStartPoint, minGap);
                   }
                   else if (canRepairFirst)
+                  {
                      curveSegments[0] = RepairLineAndReport(Id, curveSegments[ii].GetEndPoint(1), curveSegments[0].GetEndPoint(1), minGap);
+                  }
                   else
                   {
+                     // TODO: Allow heuristics in attachNextSegmentToEnd branch to apply here.
+
                      // Can't add a line to fix a gap that is smaller than the short curve tolerance.
                      // In the future, we may fix this gap by intersecting the two curves and extending one of them.
                      if (minGap < shortCurveTol + MathUtil.Eps())

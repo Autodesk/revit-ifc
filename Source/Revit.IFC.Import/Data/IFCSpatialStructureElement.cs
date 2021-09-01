@@ -132,7 +132,7 @@ namespace Revit.IFC.Import.Data
                   parameterName = EntityType.ToString() + " " + parameterName;
 
                Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, parameterName, longName, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, longName, Id);
             }
          }
       }

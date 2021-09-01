@@ -78,7 +78,7 @@ namespace Revit.IFC.Export.Utility
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionHandle))
                   continue;
 
-               BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, extrusionHandle, ElementId.InvalidElementId);
+               // Openings shouldn't have surface styles for their geometry.
 
                HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
                bodyItems.Add(extrusionHandle);
@@ -370,6 +370,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+         bodyExporterOptions.CreatingVoid = true;
          BodyData bodyData = BodyExporter.ExportBody(exporterIFC, insertElement, catId, ElementId.InvalidElementId,
              solid, bodyExporterOptions, extrusionCreationData);
 

@@ -41,7 +41,7 @@ namespace BIM.IFC.Export.UI
    {
       // The list of available configurations
       IFCExportConfigurationsMap m_configMap;
-      
+
       /// <summary>
       /// Keep the cache for the last selected configuration regardless whether it is built-in or not
       /// </summary>
@@ -208,7 +208,7 @@ namespace BIM.IFC.Export.UI
             if (LastSelectedConfig.ContainsKey(config.Name))
                textBoxSetupCoordinateBase.Text = (new IFCSitePlacementAttributes(LastSelectedConfig[config.Name].SitePlacement)).ToString();
             else
-               textBoxSetupCoordinateBase.Text = (new IFCSitePlacementAttributes(config.SitePlacement)).ToString();
+            textBoxSetupCoordinateBase.Text = (new IFCSitePlacementAttributes(config.SitePlacement)).ToString();
          }
       }
 
@@ -727,7 +727,7 @@ namespace BIM.IFC.Export.UI
          if (selectedConfig != null)
          {
             if (!IFCPhaseAttributes.Validate(selectedConfig.ActivePhaseId))
-               selectedConfig.ActivePhaseId = ElementId.InvalidElementId;
+               selectedConfig.ActivePhaseId = ElementId.InvalidElementId.IntegerValue;
 
             UpdateTextBoxesContent(selectedConfig);
 
