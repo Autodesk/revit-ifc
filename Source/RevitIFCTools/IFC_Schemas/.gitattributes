@@ -1,0 +1,3 @@
+Official[[:space:]]Releases[[:space:]]-[[:space:]]IFC2x2[[:space:]]schema.zip filter=lfs diff=lfs merge=lfs -text
+Official[[:space:]]Releases[[:space:]]-[[:space:]]IFC2X3_TC1.zip filter=lfs diff=lfs merge=lfs -text
+Official[[:space:]]Releases[[:space:]]-[[:space:]]IFC4.zip filter=lfs diff=lfs merge=lfs -text
