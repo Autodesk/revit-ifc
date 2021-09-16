@@ -865,7 +865,9 @@ namespace Revit.IFC.Export.Utility
          Element doorWindowElement = doc.GetElement(insertId);
 
          Parameter wallSlant = wall.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         bool wallIsVertical = (wallSlant != null) && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && MathUtil.IsAlmostZero(wallSlant.AsDouble());
+         bool wallIsVertical = true;   // Default to a vertical Wall
+         if ((wallSlant != null) && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && MathUtil.IsAlmostZero(wallSlant.AsDouble()))
+            wallIsVertical = false;
          Parameter insertOrientation = doorWindowElement.get_Parameter(BuiltInParameter.INSERT_ORIENTATION);
          bool insertIsVertical = (insertOrientation != null && insertOrientation.HasValue && insertOrientation.StorageType == StorageType.Integer && insertOrientation.AsInteger() == 0 /*vertical orientation*/);
 
