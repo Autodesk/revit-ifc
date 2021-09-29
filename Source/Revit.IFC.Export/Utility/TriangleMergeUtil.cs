@@ -362,6 +362,13 @@ namespace Revit.IFC.Export.Utility
       {
          m_Geom = triangulatedBody;
          m_MeshGeom = null;
+         m_MeshVertices.Clear();
+         int idx = 0;
+         foreach(XYZ vert in triangulatedBody.GetVertices())
+         {
+            m_MeshVertices.Add(idx, vert);
+            idx++;
+         }
       }
 
       /// <summary>
@@ -470,9 +477,9 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Combine coplanar triangles from the faceted body if they share the edge. From this process, polygonal faces (with or without holes) will be created
       /// </summary>
-      public void SimplifyAndMergeFaces()
+      public void SimplifyAndMergeFaces(bool ignoreMerge = false)
       {
-         int eulerBefore = CalculateEulerCharacteristic();
+         int eulerBefore = ignoreMerge ? 0 : CalculateEulerCharacteristic();
 
          int noTriangle = (IsMesh) ? m_MeshGeom.NumTriangles : m_Geom.TriangleCount;
          IEqualityComparer<XYZ> normalComparer = new VectorCompare();
@@ -513,7 +520,13 @@ namespace Revit.IFC.Export.Utility
             List<int> mergedFaceList = null;
             if (fListDict.Value.Count > 1)
             {
-               TryMergeFaces(fListDict.Value, out mergedFaceList);
+               if (!ignoreMerge)
+                  TryMergeFaces(fListDict.Value, out mergedFaceList);
+               else
+               {
+                  // keep original face list
+                  mergedFaceList = fListDict.Value;
+               }
                if (mergedFaceList != null && mergedFaceList.Count > 0)
                {
                   // insert only new face indexes as the mergedlist from different vertices can be duplicated
@@ -528,7 +541,7 @@ namespace Revit.IFC.Export.Utility
                m_MergedFaceSet.Add(fListDict.Value[0]);    // No pair face, add it into the mergedList
          }
 
-         int eulerAfter = CalculateEulerCharacteristic();
+         int eulerAfter = ignoreMerge ? 0 : CalculateEulerCharacteristic();
          if (eulerBefore != eulerAfter)
             throw new InvalidOperationException(); // Coplanar merge broke the mesh in some way, so we need to fall back to exporting a triangular mesh
       }

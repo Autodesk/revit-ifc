@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using Autodesk.Revit.DB;
-using Revit.IFC.Import.Data;
-using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import
 {
@@ -63,29 +60,38 @@ namespace Revit.IFC.Import
       /// <param name="shapeEditScope">The shape edit scope of the object.</param>
       /// <param name="mappedItem">The mapped item container.</param>
       /// <param name="newLcs">The local transform for the mapped item.</param>
-      void PostProcessMappedItem(IFCImportShapeEditScope shapeEditScope, IFCMappedItem mappedItem, Transform newLcs);
+      void PostProcessMappedItem(int creatorId,
+         string globalId,
+         string entityTypeAsString,
+         ElementId categoryId,
+         int geometrySourceId,
+         Transform newLcs);
 
       /// <summary>
       /// NAVIS_TODO
       /// </summary>
       /// <param name="ifcId">The STEP Id of the IFC entity</param>
-      /// <param name="typeObject">The IfcTypeObject related to the entity</param>
+      /// <param name="typeObjectId">The id of the IfcTypeObject related to the entity, if any</param>
       /// <param name="shapeEditScope">The shape edit scope</param>
       /// <param name="shape">The DirectShape containing the IFC entity data</param>
       /// <param name="lcs">The transform of the associated geometry</param>
       /// <param name="directShapeGeometries">The associated geometry</param>
-      void PostProcessProduct(int ifcId, IFCTypeObject typeObject, IFCImportShapeEditScope shapeEditScope,
-         DirectShape shape, Transform lcs, IList<GeometryObject> directShapeGeometries);
+      bool PostProcessProduct(int ifcId,
+         int? typeObjectId,
+         Transform lcs,
+         IList<GeometryObject> directShapeGeometries);
 
       /// <summary>
       /// NAVIS_TODO
       /// </summary>
-      void PostProcessProject();
+      void PostProcessProject(double? lengthScaleFactor, ForgeTypeId lengthUnit);
 
-      void PostProcessRepresentationMap(int typeId, IFCImportShapeEditScope shapeEditScope,
-         IList<Curve> mappedCurves, IList<GeometryObject> mappedSolids, DirectShapeType directShapeType);
+      bool PostProcessRepresentationMap(int typeId, 
+         IList<Curve> mappedCurves, IList<GeometryObject> mappedSolids);
 
-      void PostProcessSite(IFCSite site);
+      void PostProcessSite(int siteId, double? refLatitude, double? refLongitude,
+         double refElevation, string landTitleNumber, ForgeTypeId baseLengthUnits,
+         Transform lcs);
 
       /// <summary>
       /// Set a built-in parameter string value in an element.
@@ -96,8 +102,17 @@ namespace Revit.IFC.Import
       /// <returns>True if the parameter was set, false otherwise.</returns>
       bool SetParameter(Element element, BuiltInParameter parameterId, string value);
 
+      /// <summary>
+      /// Determine if we should apply transforms to geometries.
+      /// </summary>
       bool ApplyTransforms { get; }
 
+      /// <summary>
+      /// Determine if we should try to fix building and building story locations 
+      /// far from the origin.
+      /// </summary>
+      bool TryToFixFarawayOrigin { get; }
+      
       /// <summary>
       /// If true, then scale all values into internal units, otherwise leave them as is.
       /// </summary>
@@ -108,14 +123,13 @@ namespace Revit.IFC.Import
       /// </remarks>
       bool ScaleValues { get; }
 
+      bool FindAlternateGeometrySource { get; }
+      
       /// <summary>
-      /// Determines if the importer should try to fix files which have large origin offsets
-      /// for some entities.
+      /// Performs a processor-specific extra length scaling if necessary.
       /// </summary>
-      bool ShouldFixFarAwayLocation { get; }
-
-      double ShortCurveTolerance { get; set; }
-
-      double VertexTolerance { get; set; }
+      /// <param name="length">The original length.</param>
+      /// <returns>The scaled length.</returns>
+      double ScaleLength(double length);
    }
 }

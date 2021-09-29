@@ -68,7 +68,7 @@ namespace Revit.IFC.Export.Exporter
                   continue;
 
                Element otherElem = doc.GetElement(otherWallId);
-               GeometryElement otherGeomElem = (otherElem != null) ? otherElem.get_Geometry(options) : null;
+               GeometryElement otherGeomElem = otherElem?.get_Geometry(options);
                if (otherGeomElem == null)
                   continue;
 
@@ -555,7 +555,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       // Get List of Solids that are from Wall Sweep
-      private static IList<Solid> GetSolidOfWallSweep(Document doc, ExporterIFC exporterIFC, GeometryElement geometryElement, IFCRange range)
+      private static IList<Solid> GetSolidOfWallSweep(GeometryElement geometryElement, IFCRange range)
       {
          IList<Solid> solids = new List<Solid>();
 
@@ -714,7 +714,7 @@ namespace Revit.IFC.Export.Exporter
          Document doc = element.Document;
          // Collect solids of Wall Sweep first before attempting to split into Parts because once it is split, we cannot get the information
          // the owner being Wall Sweep
-         IList<Solid> solidsOfWallSweep = GetSolidOfWallSweep(doc, exporterIFC, geometryElement, range);
+         IList<Solid> solidsOfWallSweep = GetSolidOfWallSweep(geometryElement, range);
          using (SubTransaction tempPartTransaction = new SubTransaction(doc))
          {
             bool exportByComponents = false;
@@ -1196,7 +1196,7 @@ namespace Revit.IFC.Export.Exporter
                            }
 
                            // export Base Quantities
-                           if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+                           if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities && exportType.ExportType == IFCEntityType.IfcWallType)
                            {
                               scaledFootprintArea = MathUtil.AreaIsAlmostZero(scaledFootprintArea) ? extraParams.ScaledArea : scaledFootprintArea;
                               scaledLength = MathUtil.IsAlmostZero(scaledLength) ? extraParams.ScaledLength : scaledLength;

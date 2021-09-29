@@ -437,7 +437,7 @@ namespace Revit.IFC.Export.Exporter
          FamilyTypeInfo typeInfo = new FamilyTypeInfo();
          IFCExtrusionCreationData extraParams = typeInfo.extraParams;
 
-         bool flipped = doorWindowInfo != null ? doorWindowInfo.FlippedSymbol : false;
+         bool flipped = doorWindowInfo != null && doorWindowInfo.FlippedSymbol;
          FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(originalFamilySymbol.Id, flipped, exportType);
          bool found = currentTypeInfo.IsValid();
 
@@ -871,9 +871,9 @@ namespace Revit.IFC.Export.Exporter
                   else
                   {
                      Element elementType = familyInstance.Document.GetElement(familyInstance.GetTypeId());
-                     ElementId bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, elementType);
+                     ElementId bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, elementType);
                      if (bestMatId == ElementId.InvalidElementId)
-                        bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, exporterIFC, familyInstance);
+                        bestMatId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(exportGeometry, familyInstance);
 
                      // Also get the materials from Parameters
                      IList<ElementId> matIds = ParameterUtil.FindMaterialParameters(elementType);
@@ -1361,7 +1361,7 @@ namespace Revit.IFC.Export.Exporter
                                  ownerHistory, localPlacementToUse, repHnd, exportType.ValidatedPredefinedType);
                            }
 
-                           bool associateToLevel = containedInSpace ? false : !isChildInContainer;
+                           bool associateToLevel = !containedInSpace && !isChildInContainer;
                            wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, associateToLevel, exportType);
                            if (containedInSpace)
                               ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
@@ -1552,30 +1552,6 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Gets IFCBeamType from beam type name.
-      /// </summary>
-      /// <param name="element">The beam element.</param>
-      /// <param name="defaultBeamType">The default beam type name.</param>
-      /// <returns>The IFCBeamType.</returns>
-      static IFCBeamType GetBeamType(Element element, string beamType)
-      {
-         string value = null;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcType", out value) == null)
-            value = beamType;
-
-         if (String.IsNullOrEmpty(value))
-            return IFCBeamType.Beam;
-
-         string newValue = NamingUtil.RemoveSpacesAndUnderscores(value);
-
-         if (String.Compare(newValue, "USERDEFINED", true) == 0)
-            return IFCBeamType.UserDefined;
-
-         return IFCBeamType.Beam;
-      }
-
-
-      /// <summary>
       /// Gets IFCColumnType from column type name.
       /// </summary>
       /// <param name="element">The column element.</param>
@@ -1678,33 +1654,7 @@ namespace Revit.IFC.Export.Exporter
             cardinalPoint = null;       // not supported combination
          return cardinalPoint;
       }
-
-      /// <summary>
-      /// This function is to check whether a GeometryObject is empty (no Face/Edge for Solid, or no Triangle/Vert for Mesh). This may occur for certain geometry parts
-      /// </summary>
-      /// <param name="geom"></param>
-      /// <returns></returns>
-      private static bool GeometryIsEmpty(IList<Solid> solids, IList<Mesh> meshes)
-      {
-         if (solids.Count == 0 && meshes.Count == 0)
-            return true;
-
-         // We will return false (not empty) if any of the geometry is not empty
-         foreach (Solid solidGeom in solids)
-         {
-            if (!solidGeom.Faces.IsEmpty || !solidGeom.Edges.IsEmpty)
-               return false;
-         }
-
-         foreach (Mesh meshGeom in meshes)
-         {
-            if (meshGeom.NumTriangles > 0 || meshGeom.Vertices.Count > 0)
-               return false;
-         }
-
-         return true;
-      }
-
+      
       private static GeometryObject GetPotentialCurveOrPolyline(Element element, Options options)
       {
          IList<GeometryObject> potentialCurves = new List<GeometryObject>();

@@ -264,7 +264,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// The type of the IFC property set entry. Default is label.
       /// </summary>
-      PropertyType m_PropertyType = PropertyType.Label;
+      public PropertyType PropertyType { get; set; } = PropertyType.Label;
 
       /// <summary>
       /// The type of the IFC argument of table property set entry. Use if PropertyValueType is TableValue
@@ -274,16 +274,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// The value type of the IFC property set entry.
       /// </summary>
-      PropertyValueType m_PropertyValueType = PropertyValueType.SingleValue;
+      public PropertyValueType PropertyValueType { get; set; } = PropertyValueType.SingleValue;
 
       /// <summary>
       /// The type of the Enum that will validate the value for an enumeration.
       /// </summary>
-      Type m_PropertyEnumerationType = null;
+      public Type PropertyEnumerationType { get; set; } = null;
 
-      IFCAnyHandle m_DefaultProperty = null;
+      IFCAnyHandle DefaultProperty { get; set; } = null;
 
-      IfcValue m_DefaultValue = null;
+      public IfcValue DefaultValue { get; set; } = null;
+
+      public IList<TableCellCombinedParameterData> CombinedParameterData { get; set; } = null;
 
       /// <summary>
       /// Constructs a PropertySetEntry object.
@@ -295,108 +297,94 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           : base(revitParameterName)
       {
       }
+
       public PropertySetEntry(PropertyType propertyType, string revitParameterName)
           : base(revitParameterName)
       {
-         m_PropertyType = propertyType;
+         PropertyType = propertyType;
       }
       public PropertySetEntry(PropertyType propertyType, string propertyName, BuiltInParameter builtInParameter)
              : base(propertyName, new PropertySetEntryMap(propertyName) { RevitBuiltInParameter = builtInParameter })
       {
-         m_PropertyType = propertyType;
+         PropertyType = propertyType;
       }
       public PropertySetEntry(PropertyType propertyType, string propertyName, PropertyCalculator propertyCalculator)
              : base(propertyName, new PropertySetEntryMap(propertyName) { PropertyCalculator = propertyCalculator })
       {
-         m_PropertyType = propertyType;
+         PropertyType = propertyType;
       }
       public PropertySetEntry(PropertyType propertyType, string propertyName, BuiltInParameter builtInParameter, PropertyCalculator propertyCalculator)
              : base(propertyName, new PropertySetEntryMap(propertyName) { RevitBuiltInParameter = builtInParameter, PropertyCalculator = propertyCalculator })
       {
-         m_PropertyType = propertyType;
+         PropertyType = propertyType;
       }
       public PropertySetEntry(PropertyType propertyType, string propertyName, PropertySetEntryMap entry)
            : base(propertyName, entry)
       {
-         m_PropertyType = propertyType;
+         PropertyType = propertyType;
       }
       public PropertySetEntry(PropertyType propertyType, string propertyName, IEnumerable<PropertySetEntryMap> entries)
            : base(propertyName, entries)
       {
-         m_PropertyType = propertyType;
+         PropertyType = propertyType;
       }
-      /// <summary>
-      /// The type of the IFC property set entry.
-      /// </summary>
-      public PropertyType PropertyType
+      
+      private IFCAnyHandle SetDefaultProperty(IFCFile file)
       {
-         get
+         if (DefaultProperty == null)
          {
-            return m_PropertyType;
-         }
-         set
-         {
-            m_PropertyType = value;
-         }
-      }
-
-      /// <summary>
-      /// The value type of the IFC property set entry.
-      /// </summary>
-      public PropertyValueType PropertyValueType
-      {
-         get
-         {
-            return m_PropertyValueType;
-         }
-         set
-         {
-            m_PropertyValueType = value;
-         }
-      }
-
-      /// <summary>
-      /// The type of the Enum that will validate the value for an enumeration.
-      /// </summary>
-      public Type PropertyEnumerationType
-      {
-         get
-         {
-            return m_PropertyEnumerationType;
-         }
-         set
-         {
-            m_PropertyEnumerationType = value;
-         }
-      }
-
-      public IfcValue DefaultValue
-      {
-         set
-         {
-            m_DefaultValue = value;
-         }
-      }
-
-      private IFCAnyHandle DefaultProperty(IFCFile file)
-      {
-         if (m_DefaultProperty == null)
-         {
-            if (m_DefaultValue != null)
+            if (DefaultValue != null)
             {
                switch (PropertyType)
                {
                   case PropertyType.Label:
-                     return m_DefaultProperty = PropertyUtil.CreateLabelProperty(file, PropertyName, m_DefaultValue.ValueString, PropertyValueType, PropertyEnumerationType);
+                     return DefaultProperty = PropertyUtil.CreateLabelProperty(file, PropertyName, DefaultValue.ValueString, PropertyValueType, PropertyEnumerationType);
                   case PropertyType.Text:
-                     return m_DefaultProperty = PropertyUtil.CreateTextProperty(file, PropertyName, m_DefaultValue.ValueString, PropertyValueType);
+                     return DefaultProperty = PropertyUtil.CreateTextProperty(file, PropertyName, DefaultValue.ValueString, PropertyValueType);
                   case PropertyType.Identifier:
-                     return m_DefaultProperty = PropertyUtil.CreateIdentifierProperty(file, PropertyName, m_DefaultValue.ValueString, PropertyValueType);
+                     return DefaultProperty = PropertyUtil.CreateIdentifierProperty(file, PropertyName, DefaultValue.ValueString, PropertyValueType);
                   //todo make this work for all values
                }
             }
          }
-         return m_DefaultProperty;
+
+         return DefaultProperty;
+      }
+
+      private string GetParameterValueById(Element element, ElementId paramId)
+      {
+         if (element == null)
+            return string.Empty;
+
+         Parameter parameter = null;
+
+         int paramIdAsInteger = paramId.IntegerValue;
+         if (paramIdAsInteger < 0)
+         {
+            parameter = element.get_Parameter((BuiltInParameter)paramIdAsInteger);
+         }
+         else
+         {
+            ParameterElement parameterElem = element.Document.GetElement(paramId) as ParameterElement;            parameter = element?.get_Parameter((BuiltInParameter)paramIdAsInteger);
+            if (parameterElem == null)
+               return string.Empty;
+            parameter = element.get_Parameter(parameterElem.GetDefinition());
+         }
+
+         return parameter?.AsValueString() ?? string.Empty;
+      }
+
+      private IFCAnyHandle CreateTextPropertyFromCombinedParameterData(IFCFile file, Element element)
+      {
+         string parameterString = string.Empty;
+         foreach (var parameterData in CombinedParameterData)
+         {
+            parameterString += parameterData.Prefix;
+            parameterString += GetParameterValueById(element, parameterData.ParamId);
+            parameterString += (parameterData.Suffix + parameterData.Separator);
+         }
+
+         return PropertyUtil.CreateTextPropertyFromCache(file, PropertyName, parameterString, PropertyValueType);
       }
 
       /// <summary>
@@ -410,16 +398,28 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elementType">The element type of which this property is created for.</param>
       /// <param name="handle">The handle for which this property is created for.</param>
       /// <returns>The created property handle.</returns>
-      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, IFCExtrusionCreationData extrusionCreationData, ElementOrConnector elementOrConnector,
+      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
+         IFCExtrusionCreationData extrusionCreationData, ElementOrConnector elementOrConnector,
          ElementType elementType, IFCAnyHandle handle)
       {
-         foreach (PropertySetEntryMap map in m_Entries)
+         // if CombinedParameterData, then we have to recreate the parameter value, since there is no
+         // API for this.
+         if (CombinedParameterData != null)
          {
-            IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName, extrusionCreationData, elementOrConnector, elementType, handle, PropertyType, PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName);
+            return CreateTextPropertyFromCombinedParameterData(file, elementOrConnector.Element);
+         }
+
+         // Otherwise, do standard processing.
+         foreach (PropertySetEntryMap map in Entries)
+         {
+            IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName,
+               extrusionCreationData, elementOrConnector, elementType, handle, PropertyType,
+               PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName);
             if (propHnd != null)
                return propHnd;
          }
-         return DefaultProperty(file);
+
+         return SetDefaultProperty(file);
       }
 
       /// <summary>
@@ -620,6 +620,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          PropertySetEntry pse = new PropertySetEntry(revitParameterName);
          pse.PropertyType = PropertyType.Text;
+         return pse;
+      }
+
+      public static PropertySetEntry CreateParameterEntry(string propertyName, 
+         IList<TableCellCombinedParameterData> combinedParameterData)
+      {
+         PropertySetEntry pse = new PropertySetEntry(propertyName);
+         pse.PropertyType = PropertyType.Text;
+         pse.CombinedParameterData = combinedParameterData;
          return pse;
       }
 
@@ -959,6 +968,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.Volume;
                   }
+                  else if (type == SpecTypeId.PipingMassPerTime)
+                  {
+                     propertyType = PropertyType.MassFlowRate;
+                  }
+                  else if (type == SpecTypeId.AngularSpeed)
+                  {
+                     propertyType = PropertyType.RotationalFrequency;
+                  }
                   else
                   {
                      assigned = false;
@@ -979,6 +996,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   break;
                }
          }
+
          return new PropertySetEntry(propertyType, parameterDefinition.Name, builtInParameter);
       }
    }

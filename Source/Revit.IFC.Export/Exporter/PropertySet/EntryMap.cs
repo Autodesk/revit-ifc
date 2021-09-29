@@ -50,34 +50,35 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// The parameter name to be used to get the parameter value.  This is generally in English (ENU).
       /// </summary>
-      string m_RevitParameterName = String.Empty;
+      public string RevitParameterName { get; set; } = string.Empty;
 
       /// <summary>
       /// The parameter name to be used to get the parameter value in other locales.
       /// </summary>
-      Dictionary<LanguageType, string> m_LocalizedRevitParameterNames = null;
+      public Dictionary<LanguageType, string> LocalizedRevitParameterNames { get; set; } = null;
 
       /// <summary>
       /// The built in parameter.
       /// </summary>
-      BuiltInParameter m_RevitBuiltInParameter = BuiltInParameter.INVALID;
+      public BuiltInParameter RevitBuiltInParameter { get; set; } = BuiltInParameter.INVALID;
 
       /// <summary>
       /// The property calculator to calculate the property value.
       /// </summary>
-      PropertyCalculator m_PropertyCalculator;
+      public PropertyCalculator PropertyCalculator { get; set; }
 
       /// <summary>
       /// Indicates if the property value is retrieved only from the calculator.
       /// </summary>
-      bool m_UseCalculatorOnly = false;
+      public bool UseCalculatorOnly { get; set; }  = false;
 
       /// <summary>
       /// Calculated value indicates whether or not there is a valid parameter name associated with this entry.
       /// </summary>
-      bool m_ParameterNameIsValid = false;
+      public bool ParameterNameIsValid { get; private set; } = false;
 
       public EntryMap() { }
+
       /// <summary>
       /// Constructor to create an Entry object.
       /// </summary>
@@ -86,50 +87,31 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </param>
       public EntryMap(string revitParameterName)
       {
-         this.m_RevitParameterName = revitParameterName;
+         RevitParameterName = revitParameterName;
       }
+
       public EntryMap(BuiltInParameter builtInParameter)
       {
-         this.m_RevitBuiltInParameter = builtInParameter;
+         RevitBuiltInParameter = builtInParameter;
       }
+
       public EntryMap(PropertyCalculator calculator)
       {
-         this.m_PropertyCalculator = calculator;
+         PropertyCalculator = calculator;
       }
+
       public EntryMap(string revitParameterName, BuiltInParameter builtInParameter)
       {
-         this.m_RevitParameterName = revitParameterName;
-         this.m_RevitBuiltInParameter = builtInParameter;
+         RevitParameterName = revitParameterName;
+         RevitBuiltInParameter = builtInParameter;
       }
+
       /// <summary>
       /// Updates caches to make use of this Entry faster after it is completed.
       /// </summary>
       public void UpdateEntry()
       {
-         m_ParameterNameIsValid = (!UseCalculatorOnly && (!String.IsNullOrEmpty(RevitParameterName) || (RevitBuiltInParameter != BuiltInParameter.INVALID)));
-      }
-
-      /// <summary>
-      /// Returns whether the parameter has a usable (valid) name.
-      /// </summary>
-      public bool ParameterNameIsValid
-      {
-         get { return m_ParameterNameIsValid; }
-      }
-
-      /// <summary>
-      /// The standard name of the parameter in Revit (if it exists).
-      /// </summary>
-      public string RevitParameterName
-      {
-         get
-         {
-            return m_RevitParameterName;
-         }
-         set
-         {
-            m_RevitParameterName = value;
-         }
+         ParameterNameIsValid = (!UseCalculatorOnly && (!string.IsNullOrEmpty(RevitParameterName) || (RevitBuiltInParameter != BuiltInParameter.INVALID)));
       }
 
       /// <summary>
@@ -139,10 +121,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>The localized name, or null if it does not exist.</returns>
       public string LocalizedRevitParameterName(LanguageType locale)
       {
-         string localizedName = null;
-         if (m_LocalizedRevitParameterNames != null)
+         if (LocalizedRevitParameterNames != null)
          {
-            if (m_LocalizedRevitParameterNames.TryGetValue(locale, out localizedName))
+            if (LocalizedRevitParameterNames.TryGetValue(locale, out string localizedName))
                return localizedName;
          }
          return null;
@@ -155,57 +136,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="localizedName">The name for that language.</param>
       public void AddLocalizedParameterName(LanguageType locale, string localizedName)
       {
-         if (m_LocalizedRevitParameterNames == null)
-            m_LocalizedRevitParameterNames = new Dictionary<LanguageType, string>();
+         if (LocalizedRevitParameterNames == null)
+            LocalizedRevitParameterNames = new Dictionary<LanguageType, string>();
 
-         if (m_LocalizedRevitParameterNames.ContainsKey(locale))
+         if (LocalizedRevitParameterNames.ContainsKey(locale))
             throw new ArgumentException("Locale value already defined.");
-         m_LocalizedRevitParameterNames[locale] = localizedName;
-      }
-
-      /// <summary>
-      /// The built-in parameter.
-      /// </summary>
-      public BuiltInParameter RevitBuiltInParameter
-      {
-         get
-         {
-            return m_RevitBuiltInParameter;
-         }
-         set
-         {
-            m_RevitBuiltInParameter = value;
-         }
-      }
-
-      /// <summary>
-      /// The instance of a class that can calculate the value of the property or quantity.
-      /// </summary>
-      public PropertyCalculator PropertyCalculator
-      {
-         get
-         {
-            return m_PropertyCalculator;
-         }
-         set
-         {
-            m_PropertyCalculator = value;
-         }
-      }
-
-      /// <summary>
-      /// Indicates if the property value is retrieved only from the calculator.
-      /// </summary>
-      public bool UseCalculatorOnly
-      {
-         get
-         {
-            return m_UseCalculatorOnly;
-         }
-         set
-         {
-            m_UseCalculatorOnly = value;
-         }
+         LocalizedRevitParameterNames[locale] = localizedName;
       }
    }
 }

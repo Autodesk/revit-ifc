@@ -193,7 +193,7 @@ namespace Revit.IFC.Export.Exporter
                      }
                      else
                      {
-                        ElementId matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geomElem, exporterIFC, element);
+                        ElementId matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geomElem, element);
                         CategoryUtil.CreateMaterialAssociation(exporterIFC, covering, matId);
                      }
                   }

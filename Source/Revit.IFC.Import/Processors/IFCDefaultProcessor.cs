@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using Autodesk.Revit.DB;
-using Revit.IFC.Import.Data;
-using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import
 {
@@ -19,27 +16,21 @@ namespace Revit.IFC.Import
       {
       }
 
-      public void PostProcessMappedItem(IFCImportShapeEditScope shapeEditScope, IFCMappedItem mappedItem, Transform newLcs)
-      {
-         // We should now have a type object that contains geometry.
-         IFCRepresentationMap mappingSource = mappedItem.MappingSource;
-
-         IList<GeometryObject> instances = DirectShape.CreateGeometryInstance(shapeEditScope.Document, mappingSource.Id.ToString(), newLcs);
-         foreach (GeometryObject instance in instances)
-            shapeEditScope.AddGeometry(IFCSolidInfo.Create(mappedItem.Id, instance));
+      public void PostProcessMappedItem(int creatorId,
+         string globalId,
+         string entityTypeAsString,
+         ElementId categoryId,
+         int geometrySourceId,
+         Transform newLcs)
+      { 
       }
 
-      public void PostProcessProduct(int ifcId, IFCTypeObject typeObject, IFCImportShapeEditScope shapeEditScope,
-         DirectShape shape, Transform lcs, IList<GeometryObject> directShapeGeometries)
+      public bool PostProcessProduct(int ifcId,
+         int? typeObjectId,
+         Transform lcs,
+         IList<GeometryObject> directShapeGeometries)
       {
-         if (shape == null)
-            return;
-
-         shape.SetShape(directShapeGeometries);
-         shapeEditScope.SetPlanViewRep(shape);
-
-         if (typeObject != null && typeObject.CreatedElementId != ElementId.InvalidElementId)
-            shape.SetTypeId(typeObject.CreatedElementId);
+         return false;
       }
 
       public bool? ProcessParameter(int objDefId, ForgeTypeId specTypeId, ForgeTypeId unitsTypeId,
@@ -78,33 +69,30 @@ namespace Revit.IFC.Import
          return true;
       }
 
-      public void PostProcessRepresentationMap(int typeId, IFCImportShapeEditScope shapeEditScope,
-         IList<Curve> mappedCurves, IList<GeometryObject> mappedSolids, DirectShapeType directShapeType)
+      public bool PostProcessRepresentationMap(int typeId, 
+         IList<Curve> mappedCurves, IList<GeometryObject> mappedSolids)
       {
-         directShapeType.AppendShape(mappedSolids);
-         if (mappedCurves.Count != 0)
-            shapeEditScope.SetPlanViewRep(directShapeType);
+         return false;
       }
 
-      public void PostProcessSite(IFCSite site)
+      public void PostProcessSite(int siteId, double? refLatitude, double? refLongitude,
+         double refElevation, string landTitleNumber, ForgeTypeId baseLengthUnits,
+         Transform lcs)
       {
       }
 
-      public void PostProcessProject()
+      public void PostProcessProject(double? lengthScaleFactor, ForgeTypeId lengthUnit)
       {
-         var application = IFCImportFile.TheFile.Document.Application;
-         VertexTolerance = application.VertexTolerance;
-         ShortCurveTolerance = application.ShortCurveTolerance;
       }
 
-      public bool ShouldFixFarAwayLocation { get => true; }
+      public bool FindAlternateGeometrySource { get => false; }
 
       public bool ScaleValues { get => true; }
 
       public bool ApplyTransforms { get => true; }
 
-      public double VertexTolerance { get; set; } = 0.0;
-
-      public double ShortCurveTolerance { get; set; } = 0.0;
+      public bool TryToFixFarawayOrigin { get => true; }
+      
+      public double ScaleLength(double length) { return length; }
    }
 }

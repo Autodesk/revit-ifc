@@ -206,7 +206,7 @@ namespace Revit.IFC.Import.Geometry
       public static bool LineSegmentIsTooShort(XYZ pt1, XYZ pt2)
       {
          double dist = pt1.DistanceTo(pt2);
-         return (dist < Importer.TheProcessor.ShortCurveTolerance + MathUtil.Eps());
+         return (dist < IFCImportFile.TheFile.ShortCurveTolerance + MathUtil.Eps());
       }
 
       /// <summary>
@@ -703,6 +703,35 @@ namespace Revit.IFC.Import.Geometry
          return trimmedDirectrices;
       }
 
+      private class ShiftDistance
+      {
+         public static double GetScaledShiftDistance(int pass, out double unscaledDistance)
+         {
+            unscaledDistance = GetShiftDistanceInMM(pass);
+            return unscaledDistance * GetShiftDirection(pass) * OneMilliter;
+         }
+
+         private static double GetShiftDistanceInMM(int pass)
+         {
+            if (pass < 1 || pass > NumberOfPasses)
+               return 0.0;
+            return Distances[((pass - 1) >> 3)];
+         }
+
+         private static int GetShiftDirection(int pass)
+         {
+            return (pass % 2 == 1) ? 1 : -1;
+         }
+
+         private static readonly double[] Distances = new double[5] { 0.1, 0.25, 0.5, 0.75, 1.0 };
+
+         private static readonly int NumberOfNudgeDistances = 5;
+
+         public static int NumberOfPasses { get => NumberOfNudgeDistances * 8 + 1; }
+
+         private static readonly double OneMilliter = 1.0 / 304.8;
+      };
+      
       /// <summary>
       /// Execute a Boolean operation, and catch the exception.
       /// </summary>
@@ -750,13 +779,13 @@ namespace Revit.IFC.Import.Geometry
          // In the first pass, we will try to do the Boolean operation as-is.
          // For subsequent passes, we will shift the second operand by a small distance in 
          // a given direction, using the following formula:
-         // We start with a 1mm shift, and try each of (up to 4) shift directions given by
+         // We start with a 0.1mm shift, and try each of (up to 5) shift directions given by
          // the shiftDirections list below, in alternating positive and negative directions.
          // In none of these succeed, we will increment the distance by 1mm and try again
          // until we reach numPasses.
          // Boolean operations are expensive, and as such we want to limit the number of
          // attempts we make here to balance fidelity and performance.  Initial experimentation
-         // suggests that a maximum 3mm shift is a good first start for this balance.
+         // suggests that a maximum 1mm shift is a good first start for this balance.
          IList<XYZ> shiftDirections = new List<XYZ>()
          {
             suggestedShiftDirection,
@@ -765,10 +794,10 @@ namespace Revit.IFC.Import.Geometry
             XYZ.BasisY
          };
 
-         const int numberOfNudges = 4;
-         const int numPasses = numberOfNudges * 8 + 1; // 1 base, 8 possible nudges up to 0.75mm.
+         // 1 base, 8 possible nudges up to 1mm.
+         int numPasses = ShiftDistance.NumberOfPasses;
          double currentShiftFactor = 0.0;
-
+         
          for (int ii = 0; ii < numPasses; ii++)
          {
             try
@@ -783,10 +812,8 @@ namespace Revit.IFC.Import.Geometry
                   if (shiftDirectionToUse == null)
                      continue;
 
-                  // ((ii + 3) >> 3) * 0.25mm shift.  Basically, a 0.25mm shift for every 8 attempts.
-                  currentShiftFactor = ((ii + 1) >> 3) * 0.25;
-                  int posOrNegDirection = (ii % 2 == 1) ? 1 : -1;
-                  double scale = currentShiftFactor * posOrNegDirection * IFCImportFile.TheFile.OneMillimeter;
+                  // Increase the shift distance after every 8 attempts.
+                  double scale = ShiftDistance.GetScaledShiftDistance(ii, out currentShiftFactor);
                   Transform secondSolidShift = Transform.CreateTranslation(scale * shiftDirectionToUse);
                   secondOperand = SolidUtils.CreateTransformed(secondOperand, secondSolidShift);
                }

@@ -41,7 +41,7 @@ namespace Revit.IFC.Common.Utility
       {
          get
          {
-            return Path.Combine(RevitProgramPath, "EDM");
+            return Path.Combine(RevitProgramPath, "IFC");
          }
       }
    }

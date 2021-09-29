@@ -135,12 +135,6 @@ namespace Revit.IFC.Import.Utility
       public bool CreateDuplicateContainerGeometry { get; protected set; } = true;
 
       /// <summary>
-      /// If true, process the HasAssignments INVERSE attribute.  If false, ignore.
-      /// This is necessary because the default IFC2x3_TC1 EXPRESS schema file is (incorrectly) missing this inverse attribute.
-      /// </summary>
-      public bool AllowUseHasAssignments { get; set; } = false;
-
-      /// <summary>
       /// If this value is false, then, if we find an already created Revit file corresponding to the IFC file,
       /// and it is up-to-date (that is, the saved timestamp and file size on the RVT file are the same as on the IFC file),
       /// then we won't import and instead use the existing RVT file.  If this value is true (default), we will

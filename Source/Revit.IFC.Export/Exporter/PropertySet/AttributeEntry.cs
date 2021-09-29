@@ -67,7 +67,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          if (element == null)
             return null;
-         foreach (AttributeEntryMap entry in m_Entries)
+         foreach (AttributeEntryMap entry in Entries)
          {
             string result = entry.AsString(element);
             if (result != null)

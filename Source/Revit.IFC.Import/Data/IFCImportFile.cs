@@ -66,9 +66,6 @@ namespace Revit.IFC.Import.Data
 
       private IFCFile IFCFile { get; set; } = null;
 
-      public double OneHundrethOfAFoot { get; set; } = 0.01;
-      public double OneMillimeter { get; set; } = 1.0 / 304.8;
-
       private static void StoreIFCCreatorInfo(IFCFile ifcFile, ProjectInfo projectInfo)
       {
          if (ifcFile == null || projectInfo == null)
@@ -184,6 +181,16 @@ namespace Revit.IFC.Import.Data
       /// The project in the file.
       /// </summary>
       public IFCProject IFCProject { get; set; }
+
+      /// <summary>
+      /// The vertex tolerance for this import.  Convenience function.
+      /// </summary>
+      public double VertexTolerance { get; set; } = 0.0;
+
+      /// <summary>
+      /// The short curve tolerance for this import.  Convenience function.
+      /// </summary>
+      public double ShortCurveTolerance { get; set; } = 0.0;
 
       /// <summary>
       /// A list of entities not contained in IFCProject to create.  This could include, e.g., zones.
@@ -387,33 +394,6 @@ namespace Revit.IFC.Import.Data
          PreProcessPresentationLayers();
       }
 
-      private void PostProcessAssignments()
-      {
-         // The IFC toolkit relies on the IFC schema definition to read in the file. The schema definition has entities that have data fields,
-         // and INVERSE relationships. Unfortunately, the standard IFC 2x3 schema has a "bug" where one of the inverse relationships is missing. 
-         // Normally we don't care all that much, but now we do. So if we don't allow using this inverse (because if we did, it would just constantly 
-         // throw exceptions), we need another way to get the zones. This is the way.
-         // We are also using this to find IfcSystems that don't have the optional IfcRelServicesBuildings set.
-         if (!IFCImportFile.TheFile.Options.AllowUseHasAssignments)
-         {
-            IList<IFCAnyHandle> zones = IFCImportFile.TheFile.GetInstances(IFCEntityType.IfcZone, false);
-            foreach (IFCAnyHandle zone in zones)
-            {
-               IFCZone ifcZone = IFCZone.ProcessIFCZone(zone);
-               if (ifcZone != null)
-                  OtherEntitiesToCreate.Add(ifcZone);
-            }
-
-            IList<IFCAnyHandle> systems = IFCImportFile.TheFile.GetInstances(IFCEntityType.IfcSystem, false);
-            foreach (IFCAnyHandle system in systems)
-            {
-               IFCSystem ifcSystem = IFCSystem.ProcessIFCSystem(system);
-               if (ifcSystem != null)
-                  OtherEntitiesToCreate.Add(ifcSystem);
-            }
-         }
-      }
-
       /// <summary>
       /// Top-level function that processes an IFC file for reference.
       /// </summary>
@@ -435,7 +415,6 @@ namespace Revit.IFC.Import.Data
          // This is where the main work happens.
          IFCProject.ProcessIFCProject(projects[0]);
 
-         PostProcessAssignments();
          return PostProcessReference();
       }
 
@@ -1079,20 +1058,6 @@ namespace Revit.IFC.Import.Data
          }
       }
 
-      private static string LocateSchemaFile(string schemaFileName)
-      {
-         string filePath = null;
-#if IFC_OPENSOURCE
-         // Find the alternate schema file from the open source install folder
-         filePath = Path.Combine(Path.GetDirectoryName(Assembly.GetCallingAssembly().Location), schemaFileName);
-         if (!File.Exists(filePath))
-#endif
-         {
-            filePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM", schemaFileName);
-         }
-         return filePath;
-      }
-
       /// <summary>
       /// Gets IFCFileModelOptions from schema name.
       /// </summary>
@@ -1111,26 +1076,43 @@ namespace Revit.IFC.Import.Data
          }
          else if (schemaName.Equals("IFC2X3", StringComparison.OrdinalIgnoreCase))
          {
-            modelOptions.SchemaFile = LocateSchemaFile("IFC2X3_TC1.exp");
             schemaVersion = IFCSchemaVersion.IFC2x3;
          }
          else if (schemaName.Equals("IFC2X_FINAL", StringComparison.OrdinalIgnoreCase))
          {
-            modelOptions.SchemaFile = LocateSchemaFile("IFC2X_PROXY.exp");
             schemaVersion = IFCSchemaVersion.IFC2x;
          }
          else if (schemaName.Equals("IFC2X2_FINAL", StringComparison.OrdinalIgnoreCase))
          {
-            modelOptions.SchemaFile = LocateSchemaFile("IFC2X2_ADD1.exp");
             schemaVersion = IFCSchemaVersion.IFC2x2;
          }
          else if (schemaName.Equals("IFC4", StringComparison.OrdinalIgnoreCase))
          {
-            modelOptions.SchemaFile = LocateSchemaFile("IFC4.exp");
             schemaVersion = IFCSchemaVersion.IFC4;
+         }
+         else if (schemaName.Equals("IFC4X1", StringComparison.OrdinalIgnoreCase))
+         {
+            schemaVersion = IFCSchemaVersion.IFC4x1;
+         }
+         else if (schemaName.Equals("IFC4X2", StringComparison.OrdinalIgnoreCase))
+         {
+            schemaVersion = IFCSchemaVersion.IFC4x2;
+         }
+         else if (schemaName.Equals("IFC4X3_RC1", StringComparison.OrdinalIgnoreCase))
+         {
+            schemaVersion = IFCSchemaVersion.IFC4x3_RC1;
+         }
+         else if (schemaName.Equals("IFC4X3_RC3", StringComparison.OrdinalIgnoreCase))
+         {
+            schemaVersion = IFCSchemaVersion.IFC4x3_RC3;
          }
          else
             throw new ArgumentException("Invalid or unsupported schema: " + schemaName);
+
+         if (schemaVersion >= IFCSchemaVersion.IFC4x1)
+         {
+            Importer.TheLog.LogWarning(-1, "Schema " + schemaName + " is not fully supported. Some elements may be missed or imported incorrectly.", false);
+         }
 
          return modelOptions;
       }

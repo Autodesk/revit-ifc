@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using Autodesk.Revit.DB;
-using Revit.IFC.Import.Data;
-using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import
 {
@@ -114,43 +111,32 @@ namespace Revit.IFC.Import
          }
       }
 
-      public void PostProcessMappedItem(IFCImportShapeEditScope shapeEditScope, IFCMappedItem mappedItem, Transform newLcs)
+      public void PostProcessMappedItem(int creatorId,
+         string globalId,
+         string entityTypeAsString,
+         ElementId categoryId,
+         int geometrySourceId,
+         Transform newLcs)
       {
-         if (shapeEditScope.Creator != null)
+         // Copy some code from elsewhere to work out what the object was that got the geometry.
+         // Now get that type object
+         var typeEle = GetElementFromStepId(geometrySourceId);
+
+         // The type element might not have been created, if its geometry processing failed.
+         if (typeEle != null)
          {
-            // Copy some code from elsewhere to work out what the object was that got the geometry.
-            int originalMappingSourceId = mappedItem.MappingSource.Id;
-            int typeObjectId = originalMappingSourceId;
-            IFCTypeProduct typeProduct = null;
-            if (Importer.TheCache.RepMapToTypeProduct.TryGetValue(originalMappingSourceId, out typeProduct) && typeProduct != null)
-            {
-               typeObjectId = typeProduct.Id;
-            }
-
-            // Now get that type object
-            var typeEle = GetElementFromStepId(typeObjectId);
-
-            // The type element might not have been created, if its geometry processing failed.
-            if (typeEle != null)
-            {
-               // We now need to set the type object geometry onto the entity.
-               // The main reason for needing to do it here is because we have newLcs calculated, but we haven't yet got 
-               // and IElement for the entity, so first create one.
-               var instEle = CreateElement(shapeEditScope.Creator.Id, shapeEditScope.Creator.GlobalId, shapeEditScope.Creator.EntityType.ToString(), shapeEditScope.Creator.CategoryId.IntegerValue);
-               instEle.SetGeometry(typeEle, newLcs);
-
-               // Hack
-               // Add some bogus geometry so that later on we think that this object matters.
-               // Without this we don't create a DirectShape later on and so CreatedElementId is not set.
-               IList<GeometryObject> instances = DirectShape.CreateGeometryInstance(shapeEditScope.Document, originalMappingSourceId.ToString(), newLcs);
-               foreach (GeometryObject instance in instances)
-                  shapeEditScope.AddGeometry(IFCSolidInfo.Create(mappedItem.Id, instance));
-            }
+            // We now need to set the type object geometry onto the entity.
+            // The main reason for needing to do it here is because we have newLcs calculated, but we haven't yet got 
+            // and IElement for the entity, so first create one.
+            var instEle = CreateElement(creatorId, globalId, entityTypeAsString, categoryId.IntegerValue);
+            instEle.SetGeometry(typeEle, newLcs);
          }
       }
 
-      public void PostProcessProduct(int ifcId, IFCTypeObject typeObject, IFCImportShapeEditScope shapeEditScope,
-         DirectShape shape, Transform lcs, IList<GeometryObject> directShapeGeometries)
+      public bool PostProcessProduct(int ifcId, 
+         int? typeObjectId,
+         Transform lcs,
+         IList<GeometryObject> directShapeGeometries)
       {
          var ele = GetElementFromStepId(ifcId);
 
@@ -168,66 +154,34 @@ namespace Revit.IFC.Import
          // with this.
          ele.SetGeometry(directShapeGeometries);
 
-         if (typeObject != null)
+         if (typeObjectId.HasValue)
          {
-            var typeEle = GetElementFromStepId(typeObject.Id);
+            var typeEle = GetElementFromStepId(typeObjectId.Value);
 
             ele.SetType(typeEle);
          }
+
+         return true;
       }
 
-      public void PostProcessProject()
+      public void PostProcessProject(double? lengthScaleFactor, ForgeTypeId lengthUnit)
       {
-         var application = IFCImportFile.TheFile.Document.Application;
-         double vertexTolerance = application.VertexTolerance;
-         double shortCurveTolerance = application.ShortCurveTolerance;
-
-         if (ScaleValues)
+         if (lengthUnit != null && lengthScaleFactor.HasValue && !ScaleValues)
          {
-            ReportLengthUnits(UnitTypeId.Feet);
-            VertexTolerance = vertexTolerance;
-            ShortCurveTolerance = shortCurveTolerance;
+            LengthScale = 1.0 / lengthScaleFactor.Value;
+            ReportLengthUnits(lengthUnit);
          }
          else
          {
-            var units = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length);
-
-            if (units != null)
-            {
-               ReportLengthUnits(units.Unit);
-               VertexTolerance = vertexTolerance / units.ScaleFactor;
-               ShortCurveTolerance = shortCurveTolerance / units.ScaleFactor;
-               IFCImportFile.TheFile.OneHundrethOfAFoot = 0.01 / units.ScaleFactor;
-               IFCImportFile.TheFile.OneMillimeter = UnitUtils.Convert(1.0, UnitTypeId.Millimeters, units.Unit);
-            }
+            LengthScale = 1.0;
+            ReportLengthUnits(UnitTypeId.Feet);
          }
       }
 
-      public bool? ProcessParameter(int objDefId, ForgeTypeId specTypeId, ForgeTypeId unitsTypeId,
+      public bool? ProcessParameter(int objDefId, ForgeTypeId specTypeId, 
+         ForgeTypeId unitsTypeId,
          int parameterSetId, string parameterName, double parameterValue)
       {
-         if (unitsTypeId == null)
-         {
-            if (!ScaleValues)
-            {
-               // We can look up the units when the values are not scaled.
-               var units = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(specTypeId);
-               if (units != null)
-               {
-                  unitsTypeId = units.Unit;
-               }
-               else
-               {
-                  // No units - is this the current unit for that ?
-                  unitsTypeId = UnitTypeId.General;
-               }
-            }
-            else
-            {
-               // Get the internal units for the specTypeId
-            }
-         }
-
          GetElementFromStepId(objDefId).AddParameter(parameterSetId, parameterName, parameterValue, specTypeId, unitsTypeId);
          return true;
       }
@@ -261,57 +215,58 @@ namespace Revit.IFC.Import
          return false;
       }
 
-      public void PostProcessRepresentationMap(int typeId, IFCImportShapeEditScope shapeEditScope,
-         IList<Curve> mappedCurves, IList<GeometryObject> mappedSolids, DirectShapeType directShapeType)
+      public bool PostProcessRepresentationMap(int typeId,
+         IList<Curve> mappedCurves, IList<GeometryObject> mappedSolids)
       {
          GetElementFromStepId(typeId).SetGeometry(mappedSolids);
+         return true;
       }
 
-      public void PostProcessSite(IFCSite site)
+      public void PostProcessSite(int siteId, double? refLatitude, double? refLongitude, 
+         double refElevation, string landTitleNumber, ForgeTypeId baseLengthUnits, 
+         Transform lcs)
       {
-         var ele = GetElementFromStepId(site.Id);
-         if (site.RefLatitude.HasValue)
+         var ele = GetElementFromStepId(siteId);
+         if (refLatitude.HasValue)
          {
-            ele.AddParameter(-1, "Latitude", site.RefLatitude.Value, SpecTypeId.Angle, UnitTypeId.Degrees);
+            ele.AddParameter(-1, "Latitude", refLatitude.Value, SpecTypeId.Angle, UnitTypeId.Degrees);
          }
-         if (site.RefLongitude.HasValue)
+         if (refLongitude.HasValue)
          {
-            ele.AddParameter(-1, "Longitude", site.RefLongitude.Value, SpecTypeId.Angle, UnitTypeId.Degrees);
-         }
-
-         var lengthUnits = UnitTypeId.Feet;
-
-         if (!ScaleValues)
-         {
-            var lU = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length);
-            if (lU != null)
-            {
-               lengthUnits = lU.Unit;
-            }
+            ele.AddParameter(-1, "Longitude", refLongitude.Value, SpecTypeId.Angle, UnitTypeId.Degrees);
          }
 
-         ele.AddParameter(-1, "Elevation", site.RefElevation, SpecTypeId.Length, lengthUnits);
-         ele.AddParameter(-1, "LandTitleNumber", site.LandTitleNumber);
+         // refElevation comes from an attribute so will be in feet
+         ele.AddParameter(-1, "Elevation", refElevation, SpecTypeId.Length, UnitTypeId.Feet);
+         ele.AddParameter(-1, "LandTitleNumber", landTitleNumber);
 
-         if (site.ObjectLocation != null)
+         if (lcs != null)
          {
             // If we are reporting Latitude and Longitude, then we need a transform, to know 
             // where this survey point is, in our world space.
-            ele.SetTransform(site.ObjectLocation.TotalTransform);
+            ele.SetTransform(lcs);
          }
       }
 
-      public bool ShouldFixFarAwayLocation { get => false; }
+      public bool FindAlternateGeometrySource { get => true; }
 
       // For this initial implementation of a Navis processor, 
-      // we have no scaling and no applied transforms.
-      
+      // we have no applied transforms and property values are unscaled.
+      // However, geometry always need to be in feet and for simplicity
+      // this means that no values going through IFCUnitUtil are scaled.
+      // This means that transforms and attribute length values are also
+      // in feet
       public bool ScaleValues { get => false; }
 
       public bool ApplyTransforms { get => false; }
 
-      public double VertexTolerance { get; set; } = 0.0;
+      public bool TryToFixFarawayOrigin { get => false; }
 
-      public double ShortCurveTolerance { get; set; } = 0.0;
+      private double LengthScale { get; set; } = 1.0;
+
+      public double ScaleLength(double length)
+      {
+         return length * LengthScale;
+      }
    }
 }

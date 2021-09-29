@@ -36,7 +36,7 @@ namespace Revit.IFC.Import.Utility
       /// <returns>The result value in Revit internal units.</returns>
       static public double ScaleAngle(double inValue)
       {
-         return ProjectScale(SpecTypeId.Angle, inValue, true);
+         return ProjectScale(SpecTypeId.Angle, inValue);
       }
 
       /// <summary>
@@ -57,9 +57,6 @@ namespace Revit.IFC.Import.Utility
       /// <remarks>Note that the OffsetFactor is ignored.</remarks>
       static public XYZ ScaleLength(XYZ inValue)
       {
-         if (!Importer.TheProcessor.ScaleValues)
-            return inValue;
-
          IFCUnit projectUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length);
          if (projectUnit != null)
             return inValue * projectUnit.ScaleFactor;
@@ -72,16 +69,12 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       /// <param name="specTypeId">Identifier of the spec for this value.</param>
       /// <param name="inValue">The value to convert.</param>
-      /// <param name="forceScale">Force scaling of values whatever. 
       /// Some units we really always want in the standard document units.
       /// For example, angles in Radians.
       /// </param>
       /// <returns>The result value in Revit internal units.</returns>
-      static private double ProjectScale(ForgeTypeId specTypeId, double inValue, bool forceScale = false)
+      static private double ProjectScale(ForgeTypeId specTypeId, double inValue)
       {
-         if (!Importer.TheProcessor.ScaleValues && !forceScale)
-            return inValue;
-
          IFCUnit projectUnit = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(specTypeId);
          if (projectUnit != null)
             return inValue * projectUnit.ScaleFactor - projectUnit.OffsetFactor;
@@ -98,9 +91,6 @@ namespace Revit.IFC.Import.Utility
       /// <remarks>Note that the OffsetFactor is ignored.</remarks>
       static public void ProjectScale(ForgeTypeId specTypeId, IList<XYZ> inValues)
       {
-         if (!Importer.TheProcessor.ScaleValues)
-            return;
-
          if (inValues == null)
             return;
 
@@ -131,14 +121,6 @@ namespace Revit.IFC.Import.Utility
          if (lengthFormatOptions.CanSuppressTrailingZeros())
             lengthFormatOptions.SuppressTrailingZeros = true;
          formatValueOptions.SetFormatOptions(lengthFormatOptions);
-
-         if (!Importer.TheProcessor.ScaleValues)
-         {
-            // value is in source file units, but 'UnitFormatUtils.Format' expects it in internal units
-            // and it then converts it to display units, which should be the same as the source file units
-            value = UnitUtils.ConvertToInternalUnits(value, lengthFormatOptions.GetUnitTypeId());
-         }
-
          return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), SpecTypeId.Length, value, false, formatValueOptions);
       }
    }

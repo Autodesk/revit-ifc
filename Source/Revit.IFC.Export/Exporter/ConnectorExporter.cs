@@ -498,27 +498,31 @@ namespace Revit.IFC.Export.Exporter
             return parameterValue;
 
          string parsedValue = String.Empty;
-
          // For the connectors of pipes or fittings we extract the parameters from the connector's owner
          // for others - from the connector itself
-         Element owner = connector.Owner;
-         bool isPipeConnector = owner is Pipe;
-         bool isFittingConnector = owner is FamilyInstance && (owner as FamilyInstance).MEPModel is MechanicalFitting;
-         if (isPipeConnector || isFittingConnector)
+         if (!ExporterCacheManager.MEPCache.ConnectorDescriptionCache.TryGetValue(connector, out parsedValue))
          {
-            // Read description from the parameter with the name based on connector ID
-            int connectorId = connector.Id;
-            // ID's if pipe connectors are zero-based
-            if (isPipeConnector)
-               connectorId++;
+            Element owner = connector.Owner;
+            if (owner is Pipe ||
+               owner is Duct ||
+               owner is FamilyInstance && (owner as FamilyInstance).MEPModel is MechanicalFitting)
+            {
+               // Read description from the parameter with the name based on connector ID
+               int connectorId = connector.Id;
+               // ID's if pipe connectors are zero-based
+               if (owner is Pipe || owner is Duct)
+                  connectorId++;
 
-            string descriptionParameter = "PortDescription " + connectorId.ToString();
-            ParameterUtil.GetStringValueFromElementOrSymbol(owner, descriptionParameter, out parsedValue);
+               string descriptionParameter = "PortDescription " + connectorId.ToString();
+               ParameterUtil.GetStringValueFromElementOrSymbol(owner, descriptionParameter, out parsedValue);
+            }
+            else
+            {
+               parsedValue = connector.Description;
+            }
+            ExporterCacheManager.MEPCache.ConnectorDescriptionCache.Add(connector, parsedValue);
          }
-         else
-         {
-            parsedValue = connector.Description;
-         }
+
         
          if (String.IsNullOrEmpty(parsedValue))
             return parameterValue;

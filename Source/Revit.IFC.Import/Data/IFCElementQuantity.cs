@@ -140,7 +140,6 @@ namespace Revit.IFC.Import.Data
             quantity.Create(doc, element, category, objDef, parameterGroupMap, Name, parametersCreated);
          }
 
-         CreateScheduleForPropertySet(doc, element, category, parameterGroupMap, parametersCreated);
          return Tuple.Create(quotedName, true);
       }
    }

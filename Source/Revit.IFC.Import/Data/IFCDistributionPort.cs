@@ -19,14 +19,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Import.Enums;
-using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
@@ -36,16 +33,10 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCDistributionPort : IFCPort
    {
-      private IFCFlowDirection m_FlowDirection = IFCFlowDirection.NotDefined;
-
       /// <summary>
       /// The flow direction of this port.
       /// </summary>
-      public IFCFlowDirection FlowDirection
-      {
-         get { return m_FlowDirection; }
-         protected set { m_FlowDirection = value; }
-      }
+      public IFCFlowDirection FlowDirection { get; protected set; } = IFCFlowDirection.NotDefined;
 
       /// <summary>
       /// Default constructor.
@@ -93,15 +84,25 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
-         Transform lcs = (ObjectLocation != null) ? ObjectLocation.TotalTransform : Transform.Identity;
+         // Try to get the location:
+         // 1. From the ObjectLocation, if it exists.  This should be exact.
+         // 2. From the ObjectLocation of the element that the port is associated to, if it exists.
+         // This should be approximate.
+         // 3. Default to the origin.
+         Transform lcs = ObjectLocation?.TotalTransform;
+         if (lcs == null)
+            lcs = ContainedIn?.ObjectLocation?.TotalTransform;
+         if (lcs == null)
+            lcs = Transform.Identity;
 
          // 2016+ only.
-         Point point = Point.Create(lcs.Origin, GraphicsStyleId);
+         XYZ origin = lcs.Origin;
+         Point point = XYZ.IsWithinLengthLimits(origin) ? Point.Create(origin, GraphicsStyleId) : null;
 
          // 2015+: create cone(s) for the direction of flow.
          CurveLoop rightTrangle = new CurveLoop();
-         double radius = IFCImportFile.TheFile.OneHundrethOfAFoot * 4.0;
-         double height = IFCImportFile.TheFile.OneHundrethOfAFoot * 12.0;
+         const double radius = 0.04;
+         const double height = 0.12;
 
          SolidOptions solidOptions = new SolidOptions(ElementId.InvalidElementId, GraphicsStyleId);
 

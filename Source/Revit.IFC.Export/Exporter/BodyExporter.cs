@@ -49,7 +49,7 @@ namespace Revit.IFC.Export.Exporter
       public static ElementId SetBestMaterialIdInExporter(GeometryObject geometryObject, Element element, ElementId overrideMaterialId, ExporterIFC exporterIFC)
       {
          ElementId materialId = overrideMaterialId != ElementId.InvalidElementId ? overrideMaterialId :
-             GetBestMaterialIdFromGeometryOrParameter(geometryObject, exporterIFC, element);
+             GetBestMaterialIdFromGeometryOrParameter(geometryObject, element);
 
          if (materialId != ElementId.InvalidElementId)
             exporterIFC.SetMaterialIdForCurrentExportState(materialId);
@@ -92,7 +92,7 @@ namespace Revit.IFC.Export.Exporter
             {
                if (solids[currentSolid].Faces.Size > 0)
                {
-                  bestMaterialId = GetBestMaterialIdForGeometry(solids[currentSolid], null);
+                  bestMaterialId = GetBestMaterialIdForGeometry(solids[currentSolid]);
                   break;
                }
             }
@@ -118,7 +118,7 @@ namespace Revit.IFC.Export.Exporter
                if (solids[currentSolid].Faces.Size > 0)
                   continue;
 
-               ElementId currentMaterialId = GetBestMaterialIdForGeometry(solids[currentSolid], null);
+               ElementId currentMaterialId = GetBestMaterialIdForGeometry(solids[currentSolid]);
                if (currentMaterialId != ElementId.InvalidElementId && currentMaterialId != bestMaterialId)
                {
                   bestMaterialId = ElementId.InvalidElementId;
@@ -141,18 +141,12 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="range">The range to get the clipped geometry.</param>
       /// <returns>The material id.</returns>
       public static ElementId GetBestMaterialIdForGeometry(GeometryElement geometryElement,
-         ExporterIFC exporterIFC, IFCRange range)
+         IFCRange range)
       {
-         SolidMeshGeometryInfo solidMeshCapsule = null;
+         SolidMeshGeometryInfo solidMeshCapsule = (range == null) ?
+            GeometryUtil.GetSolidMeshGeometry(geometryElement, Transform.Identity) :
+            GeometryUtil.GetClippedSolidMeshGeometry(geometryElement, range);
 
-         if (range == null)
-         {
-            solidMeshCapsule = GeometryUtil.GetSolidMeshGeometry(geometryElement, Transform.Identity);
-         }
-         else
-         {
-            solidMeshCapsule = GeometryUtil.GetClippedSolidMeshGeometry(geometryElement, range);
-         }
 
          IList<Solid> solids = solidMeshCapsule.GetSolids();
          IList<Mesh> polyMeshes = solidMeshCapsule.GetMeshes();
@@ -166,12 +160,11 @@ namespace Revit.IFC.Export.Exporter
       /// Gets the best material id for the geometry.
       /// </summary>
       /// <param name="geometryObject">The geometry object to get the best material id.</param>
-      /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <returns>The material id.</returns>
-      public static ElementId GetBestMaterialIdForGeometry(GeometryObject geometryObject, ExporterIFC exporterIFC)
+      public static ElementId GetBestMaterialIdForGeometry(GeometryObject geometryObject)
       {
          if (geometryObject is GeometryElement)
-            return GetBestMaterialIdForGeometry(geometryObject as GeometryElement, exporterIFC, null);
+            return GetBestMaterialIdForGeometry(geometryObject as GeometryElement, null);
 
          if (!(geometryObject is Solid))
          {
@@ -250,7 +243,7 @@ namespace Revit.IFC.Export.Exporter
          return mostPopularId;
       }
 
-      private static bool isDuctCategory(BuiltInCategory categoryId)
+      private static bool IsDuctCategory(BuiltInCategory categoryId)
       {
          return categoryId == BuiltInCategory.OST_DuctAccessory ||
             categoryId == BuiltInCategory.OST_DuctCurves ||
@@ -262,7 +255,7 @@ namespace Revit.IFC.Export.Exporter
             categoryId == BuiltInCategory.OST_PlaceHolderDucts;      
       }
 
-      private static bool isPipeCategory(BuiltInCategory categoryId)
+      private static bool IsPipeCategory(BuiltInCategory categoryId)
       {
          return categoryId == BuiltInCategory.OST_AnalyticalPipeConnections ||
             categoryId == BuiltInCategory.OST_FlexPipeCurves ||
@@ -275,7 +268,7 @@ namespace Revit.IFC.Export.Exporter
             categoryId == BuiltInCategory.OST_Sprinklers;
       }
 
-      private static bool categoryHasMaterialIdParam(BuiltInCategory categoryId)
+      private static bool CategoryHasMaterialIdParam(BuiltInCategory categoryId)
       {
          // OST_Cornices also has a MaterialId parameter, but Revit doesn't want us
          // to ask for it.
@@ -290,7 +283,7 @@ namespace Revit.IFC.Export.Exporter
             categoryId == BuiltInCategory.OST_DuctLinings;
       }
 
-      private static bool categoryHasStructuralMaterialParam(BuiltInCategory categoryId)
+      private static bool CategoryHasStructuralMaterialParam(BuiltInCategory categoryId)
       {
          return categoryId == BuiltInCategory.OST_AnalyticalMember ||
             categoryId == BuiltInCategory.OST_BuildingPad ||
@@ -316,11 +309,11 @@ namespace Revit.IFC.Export.Exporter
 
          // Try to get it from the category of the element first.
          BuiltInCategory categoryId = (BuiltInCategory)element.Category.Id.IntegerValue;
-         if (categoryHasMaterialIdParam(categoryId) || element is MEPSystemType)
+         if (CategoryHasMaterialIdParam(categoryId) || element is MEPSystemType)
          {
             ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.MATERIAL_ID_PARAM, out matId);
          }
-         else if (categoryHasStructuralMaterialParam(categoryId))
+         else if (CategoryHasStructuralMaterialParam(categoryId))
          {
             ParameterUtil.GetElementIdValueFromElementOrSymbol(element, BuiltInParameter.STRUCTURAL_MATERIAL_PARAM, out matId);
          }
@@ -330,9 +323,9 @@ namespace Revit.IFC.Export.Exporter
 
          // If not, try to get it from the system.
          ElementId systemTypeId = ElementId.InvalidElementId;
-         if (isDuctCategory(categoryId))
+         if (IsDuctCategory(categoryId))
             ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM, out systemTypeId);
-         else if (isPipeCategory(categoryId))
+         else if (IsPipeCategory(categoryId))
             ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM, out systemTypeId);
 
          if (systemTypeId != ElementId.InvalidElementId)
@@ -369,9 +362,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="element">The element.</param>
       /// <returns>The material id.</returns>
       public static ElementId GetBestMaterialIdFromGeometryOrParameter(GeometryElement geometryElement,
-         ExporterIFC exporterIFC, IFCRange range, Element element)
+         IFCRange range, Element element)
       {
-         ElementId matId = GetBestMaterialIdForGeometry(geometryElement, exporterIFC, range);
+         ElementId matId = GetBestMaterialIdForGeometry(geometryElement, range);
          if (matId == ElementId.InvalidElementId && element != null)
             matId = GetBestMaterialIdFromParameter(element);
          return matId;
@@ -384,9 +377,10 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="element">The element.</param>
       /// <returns>The material id.</returns>
-      public static ElementId GetBestMaterialIdFromGeometryOrParameter(GeometryObject geometryObject, ExporterIFC exporterIFC, Element element)
+      public static ElementId GetBestMaterialIdFromGeometryOrParameter(GeometryObject geometryObject, 
+         Element element)
       {
-         ElementId matId = GetBestMaterialIdForGeometry(geometryObject, exporterIFC);
+         ElementId matId = GetBestMaterialIdForGeometry(geometryObject);
          if (matId == ElementId.InvalidElementId && element != null)
             matId = GetBestMaterialIdFromParameter(element);
          return matId;
@@ -422,16 +416,14 @@ namespace Revit.IFC.Export.Exporter
          if (materialId == ElementId.InvalidElementId)
             return;
 
-         IFCAnyHandle presStyleHnd = null;
-         presStyleHnd = ExporterCacheManager.PresentationStyleAssignmentCache.Find(materialId);
+         IFCAnyHandle presStyleHnd = ExporterCacheManager.PresentationStyleAssignmentCache.Find(materialId);
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(presStyleHnd))
          {
             IFCAnyHandle surfStyleHnd = CategoryUtil.GetOrCreateMaterialStyle(document, file, materialId);
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(surfStyleHnd))
                return;
 
-            ISet<IFCAnyHandle> styles = new HashSet<IFCAnyHandle>();
-            styles.Add(surfStyleHnd);
+            ISet<IFCAnyHandle> styles = new HashSet<IFCAnyHandle>() { surfStyleHnd };
 
             if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             {
@@ -452,8 +444,7 @@ namespace Revit.IFC.Export.Exporter
             HashSet<IFCAnyHandle> styledByItemHandles = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(repItemHnd, "StyledByItem");
             if (styledByItemHandles == null || styledByItemHandles.Count == 0)
             {
-               HashSet<IFCAnyHandle> presStyleSet = new HashSet<IFCAnyHandle>();
-               presStyleSet.Add(presStyleHnd);
+               HashSet<IFCAnyHandle> presStyleSet = new HashSet<IFCAnyHandle>() { presStyleHnd };
                IFCAnyHandle styledItem = IFCInstanceExporter.CreateStyledItem(file, repItemHnd, presStyleSet, null);
             }
             else
@@ -483,18 +474,15 @@ namespace Revit.IFC.Export.Exporter
          if (repItemHnd == null || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             return null;
 
-         IFCAnyHandle presStyleHnd = null;
          IFCFile file = exporterIFC.GetFile();
 
          IFCAnyHandle curveStyleHnd = IFCInstanceExporter.CreateCurveStyle(file, null, null, curveWidth, colorHnd);
-         ISet<IFCAnyHandle> styles = new HashSet<IFCAnyHandle>();
-         styles.Add(curveStyleHnd);
+         ISet<IFCAnyHandle> styles = new HashSet<IFCAnyHandle>() { curveStyleHnd };
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            presStyleHnd = IFCInstanceExporter.CreatePresentationStyleAssignment(file, styles);
-            HashSet<IFCAnyHandle> presStyleSet = new HashSet<IFCAnyHandle>();
-            presStyleSet.Add(presStyleHnd);
+            IFCAnyHandle presStyleHnd = IFCInstanceExporter.CreatePresentationStyleAssignment(file, styles);
+            HashSet<IFCAnyHandle> presStyleSet = new HashSet<IFCAnyHandle>() { presStyleHnd };
 
             return IFCInstanceExporter.CreateStyledItem(file, repItemHnd, presStyleSet, null);
          }
@@ -532,8 +520,8 @@ namespace Revit.IFC.Export.Exporter
                uint pt1 = meshTriangle.get_Index(jj);
                uint pt2 = meshTriangle.get_Index((jj + 1) % 3);
 
-               IList<uint> unmatchedEdgesPt2 = null;
-               if (unmatchedEdges.TryGetValue(pt2, out unmatchedEdgesPt2) && unmatchedEdgesPt2.Contains(pt1))
+               if (unmatchedEdges.TryGetValue(pt2, out IList<uint> unmatchedEdgesPt2) && 
+                  unmatchedEdgesPt2.Contains(pt1))
                {
                   unmatchedEdgesPt2.Remove(pt1);
                   unmatchedEdgeSz--;
@@ -607,16 +595,16 @@ namespace Revit.IFC.Export.Exporter
                   int pt1 = reverse ? points[(ii + 1) % sizeOfBoundary].Id : points[ii].Id;
                   int pt2 = reverse ? points[ii].Id : points[(ii + 1) % sizeOfBoundary].Id;
 
-                  IList<int> unmatchedEdgesPt2 = null;
-                  if (unmatchedEdges.TryGetValue(pt2, out unmatchedEdgesPt2) && unmatchedEdgesPt2.Contains(pt1))
+                  if (unmatchedEdges.TryGetValue(pt2, out IList<int> unmatchedEdgesPt2) && 
+                     unmatchedEdgesPt2.Contains(pt1))
                   {
                      unmatchedEdgesPt2.Remove(pt1);
                      unmatchedEdgeSz--;
                   }
                   else
                   {
-                     IList<int> unmatchedEdgesPt1 = null;
-                     if (unmatchedEdges.TryGetValue(pt1, out unmatchedEdgesPt1) && unmatchedEdgesPt1.Contains(pt2))
+                     if (unmatchedEdges.TryGetValue(pt1, out IList<int> unmatchedEdgesPt1) &&
+                        unmatchedEdgesPt1.Contains(pt2))
                      {
                         // An edge with the same orientation exists twice; can't create solid.
                         return false;
@@ -636,36 +624,6 @@ namespace Revit.IFC.Export.Exporter
          }
 
          return (unmatchedEdgeSz == 0);
-      }
-
-      private static IFCAnyHandle CreateBRepRepresentationMap(ExporterIFC exporterIFC, IFCFile file, Element element, ElementId categoryId,
-          IFCAnyHandle contextOfItems, IFCAnyHandle brepHnd)
-      {
-         ISet<IFCAnyHandle> currBodyItems = new HashSet<IFCAnyHandle>();
-         currBodyItems.Add(brepHnd);
-         IFCAnyHandle currRepHnd = RepresentationUtil.CreateBRepRep(exporterIFC, element, categoryId,
-             contextOfItems, currBodyItems);
-
-         IFCAnyHandle currOrigin = ExporterUtil.CreateAxis2Placement3D(file);
-         IFCAnyHandle currMappedRepHnd = IFCInstanceExporter.CreateRepresentationMap(file, currOrigin, currRepHnd);
-         return currMappedRepHnd;
-      }
-
-      private static IFCAnyHandle CreateSurfaceRepresentationMap(ExporterIFC exporterIFC, IFCFile file, Element element, ElementId categoryId,
-          IFCAnyHandle contextOfItems, IFCAnyHandle faceSetHnd)
-      {
-         HashSet<IFCAnyHandle> currFaceSet = new HashSet<IFCAnyHandle>();
-         currFaceSet.Add(faceSetHnd);
-
-         ISet<IFCAnyHandle> currFaceSetItems = new HashSet<IFCAnyHandle>();
-         IFCAnyHandle currSurfaceModelHnd = IFCInstanceExporter.CreateFaceBasedSurfaceModel(file, currFaceSet);
-         currFaceSetItems.Add(currSurfaceModelHnd);
-         IFCAnyHandle currRepHnd = RepresentationUtil.CreateSurfaceRep(exporterIFC, element, categoryId, contextOfItems,
-             currFaceSetItems, false, null);
-
-         IFCAnyHandle currOrigin = ExporterUtil.CreateAxis2Placement3D(file);
-         IFCAnyHandle currMappedRepHnd = IFCInstanceExporter.CreateRepresentationMap(file, currOrigin, currRepHnd);
-         return currMappedRepHnd;
       }
 
       // This is a simplified routine for solids that are composed of planar faces with polygonal edges.  This
@@ -711,9 +669,7 @@ namespace Revit.IFC.Export.Exporter
                   // Don't add last point to vertices, as this will be added in the next edge.
                   for (int idx = 0; idx < numPoints - 1; idx++)
                   {
-                     IFCAnyHandle pointHandle = null;
-
-                     if (!vertexCache.TryGetValue(curvePoints[idx], out pointHandle))
+                     if (!vertexCache.TryGetValue(curvePoints[idx], out IFCAnyHandle pointHandle))
                      {
                         XYZ pointScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, curvePoints[idx]);
                         pointHandle = ExporterUtil.CreateCartesianPoint(file, pointScaled);
@@ -825,8 +781,8 @@ namespace Revit.IFC.Export.Exporter
       // This class allows us to merge Planes that have normals and origins that are equal within a small tolerance.
       private class PlanarKey
       {
-         FuzzyPoint m_Norm;
-         FuzzyPoint m_Origin;
+         readonly FuzzyPoint m_Norm;
+         readonly FuzzyPoint m_Origin;
 
          public PlanarKey(XYZ norm, XYZ origin)
          {
@@ -898,13 +854,11 @@ namespace Revit.IFC.Export.Exporter
 
          public void AddTriangleIndexToVertexGrouping(int triangleIndex, int vertex)
          {
-            HashSet<int> trianglesAtVertex;
-            if (TrianglesAtVertexList.TryGetValue(vertex, out trianglesAtVertex))
+            if (TrianglesAtVertexList.TryGetValue(vertex, out HashSet<int> trianglesAtVertex))
                trianglesAtVertex.Add(triangleIndex);
             else
             {
-               trianglesAtVertex = new HashSet<int>();
-               trianglesAtVertex.Add(triangleIndex);
+               trianglesAtVertex = new HashSet<int>() { triangleIndex };
                TrianglesAtVertexList[vertex] = trianglesAtVertex;
             }
          }
@@ -956,10 +910,8 @@ namespace Revit.IFC.Export.Exporter
             XYZ origin = new XYZ(norm.X * distToOrig, norm.Y * distToOrig, norm.Z * distToOrig);
 
             // Go through map of existing planes and add triangle.
-            PlanarInfo planarGrouping = null;
-
             PlanarKey currKey = new PlanarKey(norm, origin);
-            if (planarGroupings.TryGetValue(currKey, out planarGrouping))
+            if (planarGroupings.TryGetValue(currKey, out PlanarInfo planarGrouping))
             {
                planarGrouping.TriangleList.Add(ii);
             }
@@ -1009,10 +961,12 @@ namespace Revit.IFC.Export.Exporter
                   continue;
                }
 
-               HashSet<int> currFacetVertices = new HashSet<int>();
-               currFacetVertices.Add(currTriangle.VertexIndex0);
-               currFacetVertices.Add(currTriangle.VertexIndex1);
-               currFacetVertices.Add(currTriangle.VertexIndex2);
+               HashSet<int> currFacetVertices = new HashSet<int>() 
+               {
+                  currTriangle.VertexIndex0,
+                  currTriangle.VertexIndex1,
+                  currTriangle.VertexIndex2 
+               };
 
                visitedTriangles.Add(idx);
 
@@ -1124,8 +1078,7 @@ namespace Revit.IFC.Export.Exporter
       {
          IFCAnyHandle faceOuterLoop = IFCInstanceExporter.CreatePolyLoop(file, vertices);
          IFCAnyHandle faceOuterBound = IFCInstanceExporter.CreateFaceOuterBound(file, faceOuterLoop, true);
-         HashSet<IFCAnyHandle> faceBounds = new HashSet<IFCAnyHandle>();
-         faceBounds.Add(faceOuterBound);
+         HashSet<IFCAnyHandle> faceBounds = new HashSet<IFCAnyHandle>() { faceOuterBound };
          return IFCInstanceExporter.CreateFace(file, faceBounds);
       }
 
@@ -1401,7 +1354,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="options">exporter option</param>
       /// <param name="geomObject">the geometry object</param>
       /// <returns>the handle</returns>
-      public static IFCAnyHandle ExportBodyAsAdvancedBrep(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
+      public static IFCAnyHandle ExportBodyAsAdvancedBrep(ExporterIFC exporterIFC, Element element, 
           GeometryObject geomObject)
       {
          IFCFile file = exporterIFC.GetFile();
@@ -1557,8 +1510,7 @@ namespace Revit.IFC.Export.Exporter
                   // calculate sameSense by getting a point on the Revit Surface and compute the normal of the Revit Face and the surface at that point
                   // if these two vectors agree, then sameSense is true.
                   // The point we use to test will be the middle point of the first appropriate edge in the in all loops of Revit Face
-                  UV revitTestUV = null;
-                  GetNonSingularUVPointForRevitFace(face, out revitTestUV);
+                  GetNonSingularUVPointForRevitFace(face, out UV revitTestUV);
                   if (revitTestUV == null)
                   {
                      return null;
@@ -1789,7 +1741,7 @@ namespace Revit.IFC.Export.Exporter
                         double paramStart = 1.0;
                         while (xDir.IsAlmostEqualTo(v2))
                         {
-                           paramStart = paramStart / 2;
+                           paramStart /= 2;
                            v2 = (firstProfileCurve.Evaluate(paramStart, true) - firstProfileCurve.GetEndPoint(0)).Normalize();
                         }
                         XYZ zdir = xDir.CrossProduct(v2).Normalize();
@@ -2053,16 +2005,15 @@ namespace Revit.IFC.Export.Exporter
       {
          IFCFile file = exporterIFC.GetFile();
 
-         double opacity;
-         IFCAnyHandle ifcColourRgbList = GetBestColourAndOpacity(file, exporterIFC, element, geomObject, out opacity);
+         IFCAnyHandle ifcColourRgbList = GetBestColourAndOpacity(file, element, geomObject, 
+            out double opacity, out ElementId matId);
 
          Document document = element.Document;
          IList<IFCAnyHandle> polygonalFaceSetList = new List<IFCAnyHandle>();
 
          // If the geomObject is GeometryELement or GeometryInstance, we need to collect their primitive Solid and Mesh first
-         bool allNotToBeExported;
          IList<GeometryObject> geomObjectPrimitives = GetGeometriesFromGeometryElement(
-            exporterIFC, document, geomObject, false, out allNotToBeExported);
+            exporterIFC, document, geomObject, false, out bool allNotToBeExported);
 
          // At this point all collected geometry will only contains Solid and/or Mesh
          foreach (GeometryObject geom in geomObjectPrimitives)
@@ -2111,8 +2062,16 @@ namespace Revit.IFC.Export.Exporter
                      coordList.Add(new List<double>() { vertexScaled.X, vertexScaled.Y, vertexScaled.Z });
                   }
 
-                  TriangleMergeUtil triMerge = new TriangleMergeUtil(mesh);
-                  IList<IFCAnyHandle> ifcFaces = MergeAndCreateIfcFaces(file, triMerge);
+                  IList<IFCAnyHandle> ifcFaces = null;
+                  try
+                  {
+                     ifcFaces = MergeAndCreateIfcFaces(file, new TriangleMergeUtil(mesh));
+                  }
+                  catch 
+                  {
+                     ifcFaces = MergeAndCreateIfcFaces(file, new TriangleMergeUtil(mesh), true);
+                  }
+                  
                   IFCAnyHandle polygonalFaceSet = ExportIfcFacesAsPolygonalFaceSet(file, ifcFaces, coordList, mesh.IsClosed, ifcColourRgbList, opacity);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(polygonalFaceSet))
                      polygonalFaceSetList.Add(polygonalFaceSet);
@@ -2134,6 +2093,9 @@ namespace Revit.IFC.Export.Exporter
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(triangulatedMesh))
                polygonalFaceSetList.Add(triangulatedMesh);
          }
+
+         foreach (IFCAnyHandle polygonalFaceSet in polygonalFaceSetList)
+            CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, polygonalFaceSet, matId);
 
          return polygonalFaceSetList;
       }
@@ -2162,10 +2124,11 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="file">the File</param>
       /// <param name="triMerge">TriangleMergeUtil instance with initialized geometry</param>
       /// <returns>List of IFC face handles</returns>
-      private static IList<IFCAnyHandle> MergeAndCreateIfcFaces(IFCFile file, TriangleMergeUtil triMerge)
+      private static IList<IFCAnyHandle> MergeAndCreateIfcFaces(IFCFile file, TriangleMergeUtil triMerge, bool ignoreMerge = false)
       {
          IList<IFCAnyHandle> faces = new List<IFCAnyHandle>();
-         triMerge.SimplifyAndMergeFaces();
+         triMerge.SimplifyAndMergeFaces(ignoreMerge);
+
          for (int jj = 0; jj < triMerge.NoOfFaces; ++jj)
          {
             IFCAnyHandle faceHandle = null;
@@ -2234,8 +2197,8 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
          Document document = element.Document;
 
-         double opacity;
-         IFCAnyHandle ifcColourRgbList = GetBestColourAndOpacity(file, exporterIFC, element, geomObject, out opacity);
+         IFCAnyHandle ifcColourRgbList = GetBestColourAndOpacity(file, element, 
+            geomObject, out double opacity, out ElementId matId);
 
          IList<IFCAnyHandle> triangulatedBodyList = new List<IFCAnyHandle>();
 
@@ -2243,9 +2206,8 @@ namespace Revit.IFC.Export.Exporter
          
          // We need to collect all SOlids and Meshes from the GeometryObject if it is of types GeometryElement or GeometryInstance
          // If the geomObject is GeometryELement or GeometryInstance, we need to collect their primitive Solid and Mesh first
-         bool allNotToBeExported;
          IList<GeometryObject> geomObjectPrimitives = GetGeometriesFromGeometryElement(
-            exporterIFC, document, geomObject, true, out allNotToBeExported);
+            exporterIFC, document, geomObject, true, out bool allNotToBeExported);
 
          // At this point the collection will only contains Solids and/or Meshes. Loop through each of them
          foreach (GeometryObject geom in geomObjectPrimitives)
@@ -2378,6 +2340,9 @@ namespace Revit.IFC.Export.Exporter
                triangulatedBodyList.Add(triangulatedMesh);
          }
 
+         foreach (IFCAnyHandle triangulatedBody in triangulatedBodyList)
+            CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, triangulatedBody, matId);
+
          return triangulatedBodyList;
       }
 
@@ -2406,9 +2371,9 @@ namespace Revit.IFC.Export.Exporter
          return tessellatedBodyList;
       }
 
-      private static IFCAnyHandle GetBestColourAndOpacity(IFCFile file, ExporterIFC exporterIFC, Element element, GeometryObject geometryObject, out double opacity)
+      private static IFCAnyHandle GetBestColourAndOpacity(IFCFile file, Element element, GeometryObject geometryObject, out double opacity, out ElementId bestMaterialId)
       {
-         ElementId bestMaterialId = GetBestMaterialIdFromGeometryOrParameter(geometryObject, exporterIFC, element);
+         bestMaterialId = GetBestMaterialIdFromGeometryOrParameter(geometryObject, element);
          
          Material matElem = (bestMaterialId != null && bestMaterialId != ElementId.InvalidElementId) ? 
             element.Document.GetElement(bestMaterialId) as Material : null;
@@ -2445,8 +2410,8 @@ namespace Revit.IFC.Export.Exporter
       {
          IFCFile file = exporterIFC.GetFile();
 
-         double opacity;
-         IFCAnyHandle ifcColourRgbList = GetBestColourAndOpacity(file, exporterIFC, element, geomObject, out opacity);
+         IFCAnyHandle ifcColourRgbList = GetBestColourAndOpacity(file, element, geomObject,
+            out double opacity, out _);
 
          IList<int> colourIndex = new List<int>();
 
@@ -2458,7 +2423,7 @@ namespace Revit.IFC.Export.Exporter
          }
          else if (geomObject is Mesh)
          {
-            triangleList = GetTriangleListFromMesh(geomObject, options, trfToUse);
+            triangleList = GetTriangleListFromMesh(geomObject, trfToUse);
          }
          // There is also a possibility that the geomObject is an GeometryElement thaat is a collection of GeometryObjects. Go through the collection and get the Mesh, Solid, or Face in it
          else if (geomObject is GeometryElement)
@@ -2469,14 +2434,15 @@ namespace Revit.IFC.Export.Exporter
                if (geom is Solid)
                   triangleList.AddRange(GetTriangleListFromSolid(geom, options, trfToUse));
                if (geom is Mesh)
-                  triangleList.AddRange(GetTriangleListFromMesh(geom, options, trfToUse));
+                  triangleList.AddRange(GetTriangleListFromMesh(geom, trfToUse));
                if (geom is Face)
                {
                   Mesh faceMesh = (geom as Face).Triangulate();
-                  triangleList.AddRange(GetTriangleListFromMesh(faceMesh, options, trfToUse));
+                  triangleList.AddRange(GetTriangleListFromMesh(faceMesh, trfToUse));
                }
             }
          }
+
          IFCAnyHandle indexedTriangles = GeometryUtil.GetIndexedTriangles(file, triangleList);
          for (int faceCnt = 0; faceCnt < triangleList.Count; ++faceCnt)
          {
@@ -2706,7 +2672,7 @@ namespace Revit.IFC.Export.Exporter
             if (exportAsBReps && (currAnalyzer != null))
             {
                SweptSolidExporter sweptSolidExporter = SweptSolidExporter.Create(exporterIFC, element, currAnalyzer, geomObject);
-               HashSet<IFCAnyHandle> facetHnds = (sweptSolidExporter != null) ? sweptSolidExporter.Facets : null;
+               HashSet<IFCAnyHandle> facetHnds = sweptSolidExporter?.Facets;
                if (facetHnds != null && facetHnds.Count != 0)
                {
                   currentFaceHashSetList.Add(facetHnds);
@@ -2718,7 +2684,7 @@ namespace Revit.IFC.Export.Exporter
             // Next, try to represent as an AdvancedBRep.
             if (!alreadyExported && canExportAsAdvancedGeometry)
             {
-               IFCAnyHandle advancedBrepBodyItem = ExportBodyAsAdvancedBrep(exporterIFC, element, options, geomObject);
+               IFCAnyHandle advancedBrepBodyItem = ExportBodyAsAdvancedBrep(exporterIFC, element, geomObject);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(advancedBrepBodyItem))
                {
                   bodyItems.Add(advancedBrepBodyItem);
@@ -2741,7 +2707,6 @@ namespace Revit.IFC.Export.Exporter
                   foreach (IFCAnyHandle triangulatedBodyItem in triangulatedBodyItems)
                   {
                      bodyItems.Add(triangulatedBodyItem);
-                     CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, triangulatedBodyItem, materialId);
                      bodyData.AddRepresentationItemInfo(document, geomObject, materialId, triangulatedBodyItem);
                   }
                   alreadyExported = true;
@@ -2885,15 +2850,13 @@ namespace Revit.IFC.Export.Exporter
                      matToUse++;
 
                   IFCAnyHandle faceSetHnd = IFCInstanceExporter.CreateConnectedFaceSet(file, currentFaceHashSet);
-                  HashSet<IFCAnyHandle> surfaceSet = null;
-                  if (faceSets.TryGetValue(materialIds[matToUse], out surfaceSet))
+                  if (faceSets.TryGetValue(materialIds[matToUse], out HashSet<IFCAnyHandle> surfaceSet))
                   {
                      surfaceSet.Add(faceSetHnd);
                   }
                   else
                   {
-                     surfaceSet = new HashSet<IFCAnyHandle>();
-                     surfaceSet.Add(faceSetHnd);
+                     surfaceSet = new HashSet<IFCAnyHandle>() { faceSetHnd };
                      faceSets[materialIds[matToUse]] = surfaceSet;
                   }
                }
@@ -3393,7 +3356,7 @@ namespace Revit.IFC.Export.Exporter
                                  addInfo |= GenerateAdditionalInfo.GenerateFootprint;
 
                               SweptSolidExporter sweptSolidExporter = SweptSolidExporter.Create(exporterIFC, element, simpleSweptSolidAnalyzer, solid, addInfo: addInfo);
-                              IFCAnyHandle sweptHandle = (sweptSolidExporter != null) ? sweptSolidExporter.RepresentationItem : null;
+                              IFCAnyHandle sweptHandle = sweptSolidExporter?.RepresentationItem;
 
                               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(sweptHandle))
                               {
@@ -3457,14 +3420,14 @@ namespace Revit.IFC.Export.Exporter
                            bodyData.RepresentationHnd =
                                  RepresentationUtil.CreateSweptSolidRep(exporterIFC, element, categoryId, contextOfItems, bodyItemSet, bodyData.RepresentationHnd);
                            bodyData.ShapeRepresentationType = ShapeRepresentationType.SweptSolid;
-                           bodyData = SaveMaterialAndFootprintInfo(exporterIFC, bodyData, materialAndProfile, footprintInfoSet, options.CollectFootprintHandle);
+                           bodyData = SaveMaterialAndFootprintInfo(bodyData, materialAndProfile, footprintInfoSet, options.CollectFootprintHandle);
                         }
                         else if (hasSweptSolids && !hasExtrusions)
                         {
                            bodyData.RepresentationHnd =
                                  RepresentationUtil.CreateAdvancedSweptSolidRep(exporterIFC, element, categoryId, contextOfItems, bodyItemSet, bodyData.RepresentationHnd);
                            bodyData.ShapeRepresentationType = ShapeRepresentationType.AdvancedSweptSolid;
-                           bodyData = SaveMaterialAndFootprintInfo(exporterIFC, bodyData, materialAndProfile, footprintInfoSet, options.CollectFootprintHandle);
+                           bodyData = SaveMaterialAndFootprintInfo(bodyData, materialAndProfile, footprintInfoSet, options.CollectFootprintHandle);
                         }
                         else if (hasRepresentationType == ShapeRepresentationType.Tessellation)
                         {
@@ -3645,13 +3608,8 @@ namespace Revit.IFC.Export.Exporter
          return ExportBody(exporterIFC, element, categoryId, overrideMaterialId, geomList,
              options, exportBodyParams);
       }
-
-      static void DeleteOrphanedFootprintHnd(IFCAnyHandle footprintHandle)
-      {
-         RepresentationUtil.DeleteShapeRepresentation(footprintHandle);
-      }
-
-      static BodyData SaveMaterialAndFootprintInfo(ExporterIFC exporterIFC, BodyData bodyData, MaterialAndProfile materialAndProfile, HashSet<FootPrintInfo> footprintInfoSet, bool collectFootprintOption)
+      
+      static BodyData SaveMaterialAndFootprintInfo(BodyData bodyData, MaterialAndProfile materialAndProfile, HashSet<FootPrintInfo> footprintInfoSet, bool collectFootprintOption)
       {
          if (materialAndProfile != null)
             bodyData.MaterialAndProfile = materialAndProfile;
@@ -3670,27 +3628,6 @@ namespace Revit.IFC.Export.Exporter
          }
 
          return bodyData;
-      }
-
-      static bool IsAllPlanar(GeometryObject geom)
-      {
-         bool ret = true;
-
-         if (geom is Solid)
-         {
-            Solid solid = geom as Solid;
-            foreach (Face f in solid.Faces)
-            {
-               if (!(f is PlanarFace))
-               {
-                  ret = false;
-                  break;
-               }
-            }
-            return ret;
-         }
-         else
-            return false;
       }
 
       static List<List<XYZ>> GetTriangleListFromSolid(GeometryObject geomObject, BodyExporterOptions options, Transform trfToUse)
@@ -3733,7 +3670,7 @@ namespace Revit.IFC.Export.Exporter
          return triangleList;
       }
 
-      static List<List<XYZ>> GetTriangleListFromMesh(GeometryObject geomObject, BodyExporterOptions options, Transform trfToUse)
+      static List<List<XYZ>> GetTriangleListFromMesh(GeometryObject geomObject, Transform trfToUse)
       {
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Mesh geomMesh = geomObject as Mesh;

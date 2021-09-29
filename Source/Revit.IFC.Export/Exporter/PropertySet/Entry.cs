@@ -17,14 +17,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
@@ -48,16 +43,22 @@ namespace Revit.IFC.Export.Exporter.PropertySet
    abstract public class Entry<T> where T : EntryMap, new()
    {
       /// <summary>
-      /// The default name for IFC property.  This is generally assumed to be in English (ENU).
+      /// The name of the property or quantity as stored in the IFC export.
       /// </summary>
-      string m_PropertyName = String.Empty;
+      /// <remarks>
+      /// Default is empty; if empty the name of the Revit parameter will be used.
+      /// </remarks>
+      public string PropertyName { get; set; } = string.Empty;
 
       /// <summary>
-      /// Indicates if the property is for element type.
+      /// True if the property comes from the element's type (vs. the element itself).
       /// </summary>
-      bool m_IsElementTypeProperty = true;
+      /// <remarks>
+      /// The default value is true.
+      /// </remarks>
+      public bool IsElementTypeProperty { get; set; } = true;
 
-      protected List<T> m_Entries = new List<T>();
+      protected List<T> Entries { get; set; } = new List<T>();
 
       /// <summary>
       /// Constructor to create an Entry object.
@@ -67,93 +68,60 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </param>
       public Entry(string revitParameterName)
       {
-         m_Entries.Add(new T() { RevitParameterName = revitParameterName });
-         this.m_PropertyName = revitParameterName;
+         Entries.Add(new T() { RevitParameterName = revitParameterName });
+         PropertyName = revitParameterName;
       }
+
       public Entry(string propertyName, T entry)
       {
-         m_Entries.Add(entry);
-         this.m_PropertyName = propertyName;
+         Entries.Add(entry);
+         PropertyName = propertyName;
       }
+
       public Entry(string propertyName, IEnumerable<T> entries)
       {
-         m_Entries.AddRange(entries);
-         this.m_PropertyName = propertyName;
-      }
-
-      /// <summary>
-      /// True if the property comes from the element's type (vs. the element itself).
-      /// </summary>
-      /// <remarks>
-      /// The default value is true.
-      /// </remarks>
-      public bool IsElementTypeProperty
-      {
-         get
-         {
-            return m_IsElementTypeProperty;
-         }
-         set
-         {
-            m_IsElementTypeProperty = value;
-         }
-      }
-
-      /// <summary>
-      /// The name of the property or quantity as stored in the IFC export.
-      /// </summary>
-      /// <remarks>
-      /// Default is empty; if empty the name of the Revit parameter will be used.
-      /// </remarks>
-      public string PropertyName
-      {
-         get
-         {
-            return m_PropertyName;
-         }
-         set
-         {
-            m_PropertyName = value;
-         }
+         Entries.AddRange(entries);
+         PropertyName = propertyName;
       }
 
       public PropertyCalculator PropertyCalculator
       {
          set
          {
-            if (m_Entries.Count > 0)
-               m_Entries[0].PropertyCalculator = value;
+            if (Entries.Count > 0)
+               Entries[0].PropertyCalculator = value;
          }
       }
       public void AddLocalizedParameterName(LanguageType locale, string localizedName)
       {
-         if (m_Entries.Count > 0)
-            m_Entries[0].AddLocalizedParameterName(locale, localizedName);
+         if (Entries.Count > 0)
+            Entries[0].AddLocalizedParameterName(locale, localizedName);
       }
+
       public void AddEntry(T entry)
       {
-         m_Entries.Add(entry);
+         Entries.Add(entry);
       }
+
       public void UpdateEntry()
       {
-         foreach (T entry in m_Entries)
+         foreach (T entry in Entries)
             entry.UpdateEntry();
       }
       public void SetRevitParameterName(string revitParameterName)
       {
-         if (m_Entries.Count == 0)
-            m_Entries.Add(new T() { RevitParameterName = revitParameterName });
+         if (Entries.Count == 0)
+            Entries.Add(new T() { RevitParameterName = revitParameterName });
          else
-            m_Entries[0].RevitParameterName = revitParameterName;
+            Entries[0].RevitParameterName = revitParameterName;
       }
 
       public void SetRevitBuiltInParameter(BuiltInParameter builtInParameter)
       {
-         if (m_Entries.Count == 0)
-            m_Entries.Add(new T() { RevitBuiltInParameter = builtInParameter });
+         if (Entries.Count == 0)
+            Entries.Add(new T() { RevitBuiltInParameter = builtInParameter });
          else
-            m_Entries[0].RevitBuiltInParameter = builtInParameter;
+            Entries[0].RevitBuiltInParameter = builtInParameter;
       }
-
    }
 }

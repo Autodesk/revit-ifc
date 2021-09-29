@@ -39,6 +39,10 @@ namespace Revit.IFC.Import.Enums
       // are older formats, in which case we can "downgrade" the version.
       IFC4Obsolete,
       IFC4Add1Obsolete,
-      IFC4
+      IFC4,
+      IFC4x1,
+      IFC4x2,
+      IFC4x3_RC1,
+      IFC4x3_RC3
    }
 }

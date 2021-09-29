@@ -1209,7 +1209,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="projDir">The projection direction of the extrusion.</param>
       /// <param name="analyzer">The extrusion analyzer.</param>
       /// <returns>The IFCExtrusionCreationData information.</returns>
-      public static IFCExtrusionCreationData GetExtrusionCreationDataFromAnalyzer(ExporterIFC exporterIFC, XYZ projDir, ExtrusionAnalyzer analyzer)
+      public static IFCExtrusionCreationData GetExtrusionCreationDataFromAnalyzer(XYZ projDir, ExtrusionAnalyzer analyzer)
       {
          IFCExtrusionCreationData exportBodyParams = new IFCExtrusionCreationData();
 
@@ -1334,9 +1334,8 @@ namespace Revit.IFC.Export.Exporter
                ExtraClippingData currentExtraClippingData = null;
                HandleAndAnalyzer currRetVal = CreateExtrusionWithClippingAndOpening(
                   exporterIFC, element, isVoid,
-                  catId, solid, basePlane, planeOrigin, projDir, range,
+                  solid, basePlane, planeOrigin, projDir, range,
                   out currentExtraClippingData,
-                  ref materialAndProfile,
                   addInfo: addInfo,
                   profileName: profileName);
 
@@ -1446,9 +1445,8 @@ namespace Revit.IFC.Export.Exporter
 
       private static HandleAndAnalyzer CreateExtrusionWithClippingAndOpening(
          ExporterIFC exporterIFC, Element element, bool isVoid,
-         ElementId catId, Solid solid, Plane basePlane, XYZ planeOrigin, XYZ projDir, IFCRange range,
+         Solid solid, Plane basePlane, XYZ planeOrigin, XYZ projDir, IFCRange range,
          out ExtraClippingData extraClippingData,
-         ref MaterialAndProfile materialAndProfile,
          GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody,
          string profileName = null)
       {
@@ -1702,7 +1700,7 @@ namespace Revit.IFC.Export.Exporter
                      }
                   }
 
-                  ElementId materialId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solid, exporterIFC, element);
+                  ElementId materialId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solid, element);
                   extraClippingData.MaterialIds.Add(materialId);
                   if ((addInfo & GenerateAdditionalInfo.GenerateBody) != 0)
                   {
@@ -1809,7 +1807,7 @@ namespace Revit.IFC.Export.Exporter
             materialAndProfile = handleAndAnalyzer.MaterialAndProfile;
          }
          if (handleAndAnalyzer.Analyzer != null)
-            extrusionData = GetExtrusionCreationDataFromAnalyzer(exporterIFC, projDir, handleAndAnalyzer.Analyzer);
+            extrusionData = GetExtrusionCreationDataFromAnalyzer(projDir, handleAndAnalyzer.Analyzer);
 
          return handleAndAnalyzer.Handle;
       }
@@ -1846,7 +1844,7 @@ namespace Revit.IFC.Export.Exporter
          ret.ShapeRepresentationType = handleAndAnalyzer.ShapeRepresentationType;
          ret.MaterialIds = extraClippingData.MaterialIds;
          if (handleAndAnalyzer.Analyzer != null)
-            ret.Data = GetExtrusionCreationDataFromAnalyzer(exporterIFC, projDir, handleAndAnalyzer.Analyzer);
+            ret.Data = GetExtrusionCreationDataFromAnalyzer(projDir, handleAndAnalyzer.Analyzer);
          if ((addInfo & GenerateAdditionalInfo.GenerateProfileDef) != 0)
             ret.MaterialAndProfile = handleAndAnalyzer.MaterialAndProfile;
          return ret;

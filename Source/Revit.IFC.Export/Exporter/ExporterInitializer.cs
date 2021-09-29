@@ -107,6 +107,7 @@ namespace Revit.IFC.Export.Exporter
                propertySetsToExport += InitCommonPropertySets;
 
             propertySetsToExport += InitExtraCommonPropertySets;
+            propertySetsToExport += InitPredefinedPropertySets;
          }
 
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportSchedulesAsPsets)
@@ -133,8 +134,7 @@ namespace Revit.IFC.Export.Exporter
                propertySetsToExport += InitCOBIEPropertySets;
          }
 
-         if (propertySetsToExport != null)
-            propertySetsToExport(cache.PropertySets);
+         propertySetsToExport?.Invoke(cache.PropertySets);
       }
 
       /// <summary>
@@ -148,10 +148,20 @@ namespace Revit.IFC.Export.Exporter
 
          if (exportBaseQuantities)
          {
-            if (quantitiesToExport == null)
-               quantitiesToExport = InitBaseQuantities;
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            {
+               if (quantitiesToExport == null)
+                  quantitiesToExport = InitBaseQuantities;
+               else
+                  quantitiesToExport += InitBaseQuantities;
+            }
             else
-               quantitiesToExport += InitBaseQuantities;
+            {
+               if (quantitiesToExport == null)
+                  quantitiesToExport = InitQtoSets;
+               else
+                  quantitiesToExport += InitQtoSets;
+            }
          }
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE)
@@ -162,8 +172,7 @@ namespace Revit.IFC.Export.Exporter
                quantitiesToExport += InitCOBIEQuantities;
          }
 
-         if (quantitiesToExport != null)
-            quantitiesToExport(cache.Quantities);
+         quantitiesToExport?.Invoke(cache.Quantities);
       }
 
       private static ISet<IFCEntityType> GetListOfRelatedEntities(IFCEntityType entityType)
@@ -416,6 +425,13 @@ namespace Revit.IFC.Export.Exporter
 
       }
 
+      private static bool IsSupportedFieldType(ScheduleFieldType fieldType)
+      {
+         return (fieldType == ScheduleFieldType.Instance ||
+            fieldType == ScheduleFieldType.ElementType ||
+            fieldType == ScheduleFieldType.CombinedParameter);
+      }
+
       /// <summary>
       /// Initializes custom property sets from schedules.
       /// </summary>
@@ -497,54 +513,76 @@ namespace Revit.IFC.Export.Exporter
                ScheduleField field = definition.GetField(ii);
 
                ScheduleFieldType fieldType = field.FieldType;
-               if (fieldType != ScheduleFieldType.Instance && fieldType != ScheduleFieldType.ElementType)
+               if (!IsSupportedFieldType(fieldType))
                   continue;
 
-               ElementId parameterId = field.ParameterId;
-               if (parameterId == ElementId.InvalidElementId)
-                  continue;
+               // Check if it is a combined parameter.  If so, calculate the formula later 
+               // as necessary.
+               PropertySetEntry ifcPSE = null;
 
-               // We use asBuiltInParameterId to get the parameter by id below.  We don't want to use it later, however, so
-               // we store builtInParameterId only if it is a proper member of the enumeration.
-               BuiltInParameter asBuiltInParameterId = (BuiltInParameter)parameterId.IntegerValue;
-               BuiltInParameter builtInParameterId =
-                   Enum.IsDefined(typeof(BuiltInParameter), asBuiltInParameterId) ? asBuiltInParameterId : BuiltInParameter.INVALID;
-
-               Parameter containedElementParameter = null;
-
-               // We could cache the actual elements when we store the element ids.  However, this would almost certainly take more
-               // time than getting one of the first few elements in the collector.
-               foreach (Element containedElement in elementsInViewScheduleCollector)
+               switch (fieldType)
                {
-                  if (fieldType == ScheduleFieldType.Instance)
-                     containedElementParameter = containedElement.get_Parameter(asBuiltInParameterId);
-
-                  // shared parameters can return ScheduleFieldType.Instance, even if they are type parameters, so take a look.
-                  if (containedElementParameter == null)
-                  {
-                     ElementId containedElementTypeId = containedElement.GetTypeId();
-                     Element containedElementType = null;
-                     if (containedElementTypeId != ElementId.InvalidElementId)
+                  case ScheduleFieldType.CombinedParameter:
                      {
-                        if (!cachedElementTypes.TryGetValue(containedElementTypeId, out containedElementType))
-                        {
-                           containedElementType = document.GetElement(containedElementTypeId);
-                           cachedElementTypes[containedElementTypeId] = containedElementType;
-                        }
+                        ifcPSE = PropertySetEntry.CreateParameterEntry(field.ColumnHeading, field.GetCombinedParameters());
+                        break;
                      }
-                     if (containedElementType != null)
-                        containedElementParameter = containedElementType.get_Parameter(asBuiltInParameterId);
-                  }
+                  default:
+                     {
+                        ElementId parameterId = field.ParameterId;
+                        if (parameterId == ElementId.InvalidElementId)
+                           continue;
 
-                  if (containedElementParameter != null)
-                     break;
+                        // We use asBuiltInParameterId to get the parameter by id below.  We don't want to use it later, however, so
+                        // we store builtInParameterId only if it is a proper member of the enumeration.
+                        BuiltInParameter asBuiltInParameterId = (BuiltInParameter)parameterId.IntegerValue;
+                        BuiltInParameter builtInParameterId =
+                            Enum.IsDefined(typeof(BuiltInParameter), asBuiltInParameterId) ? asBuiltInParameterId : BuiltInParameter.INVALID;
+
+                        // We could cache the actual elements when we store the element ids.  However,
+                        // this would almost certainly take more time than getting one of the first
+                        // few elements in the collector.
+                        foreach (Element containedElement in elementsInViewScheduleCollector)
+                        {
+                           Parameter containedElementParameter = null;
+
+                           if (fieldType == ScheduleFieldType.Instance)
+                              containedElementParameter = containedElement.get_Parameter(asBuiltInParameterId);
+
+                           // shared parameters can return ScheduleFieldType.Instance, even if they are type parameters, so take a look.
+                           if (containedElementParameter == null)
+                           {
+                              ElementId containedElementTypeId = containedElement.GetTypeId();
+                              Element containedElementType = null;
+                              if (containedElementTypeId != ElementId.InvalidElementId)
+                              {
+                                 if (!cachedElementTypes.TryGetValue(containedElementTypeId, out containedElementType))
+                                 {
+                                    containedElementType = document.GetElement(containedElementTypeId);
+                                    cachedElementTypes[containedElementTypeId] = containedElementType;
+                                 }
+                              }
+
+                              if (containedElementType != null)
+                                 containedElementParameter = containedElementType.get_Parameter(asBuiltInParameterId);
+                           }
+
+                           if (containedElementParameter != null)
+                           {
+                              ifcPSE = PropertySetEntry.CreateParameterEntry(containedElementParameter, builtInParameterId);
+                              break;
+                           }
+                        }
+
+                        break;
+                     }
                }
-               if (containedElementParameter == null)
-                  continue;
 
-               PropertySetEntry ifcPSE = PropertySetEntry.CreateParameterEntry(containedElementParameter, builtInParameterId);
-               ifcPSE.PropertyName = field.ColumnHeading;
-               customPSet.AddEntry(ifcPSE);
+               if (ifcPSE != null)
+               {
+                  ifcPSE.PropertyName = field.ColumnHeading;
+                  customPSet.AddEntry(ifcPSE);
+               }
             }
 
             customPropertySets.Add(customPSet);
@@ -970,6 +1008,60 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// Init Duct Fitting Quantities
+      /// </summary>
+      /// <param name="baseQuantities">The list of all of the quantity sets.</param>
+      private static void InitDuctFittingBaseQuantities(IList<QuantityDescription> baseQuantities)
+      {
+         QuantityDescription ifcDuctFittingQuantities = new QuantityDescription("DuctFitting", IFCEntityType.IfcDuctFitting);
+         ifcDuctFittingQuantities.AddEntry("Length", QuantityType.PositiveLength, LengthCalculator.Instance);
+         ifcDuctFittingQuantities.AddEntry("GrossCrossSectionArea", QuantityType.Area, GrossCrossSectionAreaCalculator.Instance);
+         ifcDuctFittingQuantities.AddEntry("NetCrossSectionArea", QuantityType.Area, NetCrossSectionAreaCalculator.Instance);
+         ifcDuctFittingQuantities.AddEntry("OuterSurfaceArea", QuantityType.Area, OuterSurfaceAreaCalculator.Instance);
+         ifcDuctFittingQuantities.AddEntry("GrossWeight", QuantityType.Weight, GrossWeightCalculator.Instance);
+
+         baseQuantities.Add(ifcDuctFittingQuantities);
+      }
+
+      private static void InitElectricApplianceBaseQuantities(IList<QuantityDescription> baseQuantities)
+      {
+         QuantityDescription ifcElectricApplianceQuantities = new QuantityDescription("ElectricAppliance", IFCEntityType.IfcElectricAppliance);
+         ifcElectricApplianceQuantities.AddEntry("GrossWeight", QuantityType.Weight, GrossWeightCalculator.Instance);
+
+         baseQuantities.Add(ifcElectricApplianceQuantities);
+      }
+
+      private static void InitCableCarrierFittingBaseQuantities(IList<QuantityDescription> baseQuantities)
+      {
+         QuantityDescription ifcCableCarrierFittingQuantities = new QuantityDescription("CableCarrierFitting", IFCEntityType.IfcCableCarrierFitting);
+         ifcCableCarrierFittingQuantities.AddEntry("GrossWeight", QuantityType.Weight, GrossWeightCalculator.Instance);
+
+         baseQuantities.Add(ifcCableCarrierFittingQuantities);
+      }
+
+      private static void InitCableCarrierSegmentQuantities(IList<QuantityDescription> baseQuantities)
+      {
+         QuantityDescription ifcCableCarrierSegmentQuantities = new QuantityDescription("CableCarrierSegment", IFCEntityType.IfcCableCarrierSegment);
+         ifcCableCarrierSegmentQuantities.AddEntry("Length", QuantityType.PositiveLength, LengthCalculator.Instance);
+         ifcCableCarrierSegmentQuantities.AddEntry("CrossSectionArea", QuantityType.Area, CrossSectionAreaCalculator.Instance);
+         ifcCableCarrierSegmentQuantities.AddEntry("OuterSurfaceArea", QuantityType.Area, OuterSurfaceAreaCalculator.Instance);
+         ifcCableCarrierSegmentQuantities.AddEntry("GrossWeight", QuantityType.Weight, GrossWeightCalculator.Instance);
+
+         baseQuantities.Add(ifcCableCarrierSegmentQuantities);
+      }
+
+      private static void InitCableSegmentQuantities(IList<QuantityDescription> baseQuantities)
+      {
+         QuantityDescription ifcCableSegmentQuantities = new QuantityDescription("CableSegment", IFCEntityType.IfcCableSegment);
+         ifcCableSegmentQuantities.AddEntry("Length", QuantityType.PositiveLength, LengthCalculator.Instance);
+         ifcCableSegmentQuantities.AddEntry("CrossSectionArea", QuantityType.Area, CrossSectionAreaCalculator.Instance);
+         ifcCableSegmentQuantities.AddEntry("OuterSurfaceArea", QuantityType.Area, OuterSurfaceAreaCalculator.Instance);
+         ifcCableSegmentQuantities.AddEntry("GrossWeight", QuantityType.Weight, GrossWeightCalculator.Instance);
+
+         baseQuantities.Add(ifcCableSegmentQuantities);
+      }
+
+      /// <summary>
       /// Initializes base quantities.
       /// </summary>
       /// <param name="quantities">List to store quantities.</param>
@@ -993,6 +1085,13 @@ namespace Revit.IFC.Export.Exporter
          InitSpaceBaseQuantities(baseQuantities);
          InitStairFlightBaseQuantities(baseQuantities);
          InitWindowBaseQuantities(baseQuantities);
+
+         // MEP Quantities
+         InitDuctFittingBaseQuantities(baseQuantities);
+         InitElectricApplianceBaseQuantities(baseQuantities);
+         InitCableCarrierFittingBaseQuantities(baseQuantities);
+         InitCableCarrierSegmentQuantities(baseQuantities);
+         InitCableSegmentQuantities(baseQuantities);
          
          quantities.Add(baseQuantities);
       }

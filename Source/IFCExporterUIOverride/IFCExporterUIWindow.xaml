@@ -32,7 +32,7 @@
                <Button Content="{x:Static p:Resources.Address}" Margin="0,0,10,9" Name="addressInformation" Click="buttonAddressInformation_Click" HorizontalAlignment="Right" Width="200" Height="23" VerticalAlignment="Bottom"/>
                <ComboBox x:Name="comboBoxExchangeRequirement" Margin="0,36,10,0" SelectionChanged="comboBoxExchangeRequirement_SelectionChanged" HorizontalAlignment="Right" Width="298" Height="22" VerticalAlignment="Top"/>
                <Label Content="{x:Static p:Resources.ExchangeRequirement}" Margin="10,34,0,0" Name="labelExchangeRequirement" HorizontalAlignment="Left" Width="176" Height="28" VerticalAlignment="Top" />
-               <Label Content="Projected Coordinate System Reference" Margin="10,204,0,0" x:Name="label_ProjectedCRS" RenderTransformOrigin="0.738,0.586" HorizontalAlignment="Left" Width="275" Height="26" VerticalAlignment="Top"/>
+               <Label Content="{x:Static p:Resources.ProjectedCRS}" Margin="10,204,0,0" x:Name="label_ProjectedCRS" RenderTransformOrigin="0.738,0.586" HorizontalAlignment="Left" Width="275" Height="26" VerticalAlignment="Top"/>
 
                <Border BorderBrush="#FFCBCBCB" BorderThickness="1" Margin="12,228,10,70" RenderTransformOrigin="0.5,0.5">
                   <Border.RenderTransform>

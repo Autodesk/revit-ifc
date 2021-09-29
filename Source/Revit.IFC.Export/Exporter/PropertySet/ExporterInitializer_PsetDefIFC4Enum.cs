@@ -16,6 +16,54 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
 {
 
 
+   public enum IFCDoorPanelOperation {
+      SWINGING,
+      DOUBLE_ACTING,
+      SLIDING,
+      FOLDING,
+      REVOLVING,
+      ROLLINGUP,
+      FIXEDPANEL,
+      USERDEFINED,
+      NOTDEFINED}
+
+   public enum IFCDoorPanelPosition {
+      LEFT,
+      MIDDLE,
+      RIGHT,
+      NOTDEFINED}
+
+   public enum IFCPermeableCoveringOperation {
+      GRILL,
+      LOUVER,
+      SCREEN,
+      USERDEFINED,
+      NOTDEFINED}
+
+   public enum IFCWindowPanelPosition {
+      LEFT,
+      MIDDLE,
+      RIGHT,
+      BOTTOM,
+      TOP,
+      NOTDEFINED}
+
+   public enum IFCWindowPanelOperation {
+      SIDEHUNGRIGHTHAND,
+      SIDEHUNGLEFTHAND,
+      TILTANDTURNRIGHTHAND,
+      TILTANDTURNLEFTHAND,
+      TOPHUNG,
+      BOTTOMHUNG,
+      PIVOTHORIZONTAL,
+      PIVOTVERTICAL,
+      SLIDINGHORIZONTAL,
+      SLIDINGVERTICAL,
+      REMOVABLECASEMENT,
+      FIXEDCASEMENT,
+      OTHEROPERATION,
+      NOTDEFINED}
+
    public enum PEnum_ElementStatus {
       NEW,
       EXISTING,

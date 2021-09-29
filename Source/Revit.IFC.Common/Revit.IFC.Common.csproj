@@ -68,6 +68,9 @@
     <Compile Include="Enums\CommonEnum.cs" />
     <Compile Include="Enums\IFC2xEntityType.cs" />
     <Compile Include="Enums\IFC4EntityType.cs" />
+    <Compile Include="Enums\IFC4x1EntityType.cs" />
+    <Compile Include="Enums\IFC4x2EntityType.cs" />
+    <Compile Include="Enums\IFC4x3EntityType.cs" />
     <Compile Include="Enums\IFCEntityType.cs" />
     <Compile Include="Enums\IFCKnownMVDAndER.cs" />
     <Compile Include="Extension\IFCAddress.cs" />

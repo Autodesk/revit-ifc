@@ -116,6 +116,16 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Converts a sound power value in Revit internal units to IFC units.
+      /// </summary>
+      /// <param name="unscaledPower">The power value in Revit internal units.</param>
+      /// <returns>The power in IFC units.</returns>
+      static public double ScaleSoundPower(double unscaledPower)
+      {
+         return ScaleDouble(SpecTypeId.Wattage, unscaledPower);
+      }
+
+      /// <summary>
       /// Converts an area in Revit internal units to IFC units.
       /// </summary>
       /// <param name="unscaledArea">The area in Revit internal units.</param>

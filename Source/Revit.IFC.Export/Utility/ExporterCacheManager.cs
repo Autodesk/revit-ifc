@@ -404,6 +404,11 @@ namespace Revit.IFC.Export.Utility
       static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> ComplexPropertyCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
 
       /// <summary>
+      /// Cache for information whether a QuantitySet specified in the Dict. value has been created for the elementHandle
+      /// </summary>
+      static public HashSet<(IFCAnyHandle, string)> QtoSetCreated { get; set; } = new HashSet<(IFCAnyHandle, string)>();
+
+      /// <summary>
       /// The ParameterCache object.
       /// </summary>
       public static AllocatedGeometryObjectCache AllocatedGeometryObjectCache
@@ -1497,6 +1502,7 @@ public static ParameterCache ParameterCache
          m_UnitsCache = null;
          m_ZoneCache = null;
          m_ZoneInfoCache = null;
+         QtoSetCreated.Clear();
       }
    }
 }

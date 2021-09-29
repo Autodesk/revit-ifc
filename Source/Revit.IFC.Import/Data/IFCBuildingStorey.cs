@@ -98,7 +98,7 @@ namespace Revit.IFC.Import.Data
          {
             // Set "IfcElevation" parameter.
             Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-            IFCPropertySet.AddParameterDouble(doc, element, category, this, "IfcElevation", SpecTypeId.Length, null, Elevation, Id);
+            IFCPropertySet.AddParameterDouble(doc, element, category, this, "IfcElevation", SpecTypeId.Length, UnitTypeId.Feet, Elevation, Id);
          }
       }
 
@@ -108,6 +108,8 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
+         IFCLocation.WarnIfFaraway(this);
+
          // We may re-use the ActiveView Level and View, since we can't delete them.
          // We will consider that we "created" this level and view for creation metrics.
          Level level = Importer.TheCache.UseElementByGUID<Level>(doc, GlobalId);
@@ -189,6 +191,12 @@ namespace Revit.IFC.Import.Data
          base.Process(ifcIFCBuildingStorey);
 
          Elevation = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcIFCBuildingStorey, "Elevation", 0.0);
+      }
+
+      public override void PostProcess()
+      {
+         TryToFixFarawayOrigin();
+         base.PostProcess();
       }
 
       /// <summary>

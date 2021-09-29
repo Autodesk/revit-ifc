@@ -19,14 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Import.Enums;
-using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
@@ -393,8 +389,8 @@ namespace Revit.IFC.Import.Data
          // would not be placed too close to one another; if they are, and they use different
          // grid structures, then the plan views may have overlapping grid lines.  This seems
          // more likely in theory than practice.
-         const double bottomOffset = -1.0 / 12.0;    // 1" =   2.54 cm
-         const double topOffset = 4.0;               // 4' = 121.92 cm
+         const double bottomOffset = 1.0 / 12.0;    // 1" =   2.54 cm
+         const double topOffset = 4.0;              // 4' = 121.92 cm
 
          double originalZ = (lcs != null) ? lcs.Origin.Z : 0.0;
 

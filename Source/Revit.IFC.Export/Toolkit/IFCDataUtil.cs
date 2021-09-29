@@ -283,6 +283,16 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Creates an IFCData object as IfcSoundPowerMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsSoundPowerMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcSoundPowerMeasure");
+      }
+
+      /// <summary>
       /// Creates an IFCData object as IfcFrequencyMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>

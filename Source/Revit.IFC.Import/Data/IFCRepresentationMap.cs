@@ -184,7 +184,14 @@ namespace Revit.IFC.Import.Data
                      typeId = Id;
                   }
 
-                  Importer.TheProcessor.PostProcessRepresentationMap(typeId, shapeEditScope, mappedCurves, mappedSolids, directShapeType);
+                  if (!Importer.TheProcessor.PostProcessRepresentationMap(typeId, mappedCurves, mappedSolids))
+                  {
+                     // Do the "default" here instead of the processor, since we don't want the processor
+                     // to know about Revit.IFC.Import stuff.
+                     directShapeType.AppendShape(mappedSolids);
+                     if (mappedCurves.Count != 0)
+                        shapeEditScope.SetPlanViewRep(directShapeType);
+                  }
 
                   IFCImportFile.TheFile.ShapeLibrary.AddDefinitionType(Id.ToString(), directShapeType.Id);
                }

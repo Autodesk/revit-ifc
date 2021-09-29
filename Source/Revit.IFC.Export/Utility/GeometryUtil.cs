@@ -92,6 +92,263 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Stores vertices list of geometry primitives.
+      /// Derived classes concretize the actual primitive type the vertices list belong to.
+      /// </summary>
+      private abstract class PrimVertices
+      {
+         public IFCAnyHandleUtil.IfcPointList PointList { get; protected set; } = new IFCAnyHandleUtil.IfcPointList();
+         public PointBase this[int key]
+         {
+            get => PointList[key];
+            set => PointList[key] = value;
+         }
+         public PointBase Last() { return PointList.Last(); }
+      }
+      private class PolyLineVertices : PrimVertices
+      {
+         public PolyLineVertices(UV beg, UV end)
+         {
+            PointList.AddPoints(beg, end);
+         }
+         public PolyLineVertices(XYZ beg, XYZ end)
+         {
+            PointList.AddPoints(beg, end);
+         }
+         public PolyLineVertices(List<XYZ> points)
+         {
+            if (points.Count < 2)
+               throw new ArgumentException("Number of points must be 2 or greater");
+
+            PointList.AddPoints(points);
+         }
+         public PolyLineVertices(List<UV> points)
+         {
+            if (points.Count < 2)
+               throw new ArgumentException("Number of points must be 2 or greater");
+
+            PointList.AddPoints(points);
+         }
+      }
+      private class ArcVertices : PrimVertices
+      {
+         public ArcVertices(UV start, UV mid, UV end)
+         {
+            PointList.AddPoints(start, mid, end);
+         }
+         public ArcVertices(XYZ start, XYZ mid, XYZ end)
+         {
+            PointList.AddPoints(start, mid, end);
+         }
+      }
+      /// <summary>
+      /// Stores indices list used to build geometry primitives.
+      /// Derived classes concretize the primitive type defined by indices.
+      /// </summary>
+      public abstract class SegmentIndices
+      {
+         public abstract int GetStart();
+         public abstract int GetEnd();
+         public abstract void SetEnd(int endIndex);
+         public abstract void CalcIndices(int startIdx);
+         public bool IsCalculated { get; protected set; } = false;
+         public virtual bool TryMerge(SegmentIndices segmentIndices)
+         {
+            return false;
+         }
+      }
+      public class PolyLineIndices : SegmentIndices
+      {
+         public PolyLineIndices(int lineCount)
+         { LineCount = lineCount; }
+         public List<int> Indices { get; protected set; }
+         public int m_lineCount = 0;
+         public int LineCount
+         {
+            get { return m_lineCount; }
+            //Indices are not valid because line count has been changed. So delete indince list.
+            set { m_lineCount = value; IsCalculated = false; }
+         }
+         public override int GetStart()
+         { return Indices[0]; }
+         public override int GetEnd()
+         { return Indices.Last(); }
+         public override void SetEnd(int endIndex)
+         { Indices[Indices.Count - 1] = endIndex; }
+         public override void CalcIndices(int startIdx)
+         {
+            Indices = new List<int> { startIdx };
+            Indices.AddRange(Enumerable.Range(startIdx, LineCount).Select(x => x + 1));
+            IsCalculated = true;
+         }
+         //Function assumes that input and this segmants are consecutive. End index of this segmant must be equal to start index of input segment.
+         public override bool TryMerge(SegmentIndices segmentIndices)
+         {
+            PolyLineIndices inputPolyLineIndices = segmentIndices as PolyLineIndices;
+            if (segmentIndices == this || inputPolyLineIndices == null)
+               return false;
+            
+            //Indices array after merge must not contain duplicated indices.
+            //So remove either End index of this segment or Start index of input segment.
+            Indices.RemoveAt(Indices.Count - 1);
+            Indices.AddRange(inputPolyLineIndices.Indices);
+            return true;
+         }
+      }
+      public class ArcIndices : SegmentIndices
+      {
+         public int Start { get; protected set; }
+         public int Mid { get; protected set; }
+         public int End { get; protected set; }
+         public override int GetStart()
+         { return Start; }
+         public override int GetEnd()
+         { return End; }
+         public override void SetEnd(int endIndex)
+         { End = endIndex; }
+         public override void CalcIndices(int startIdx)
+         {
+            Start = startIdx;
+            Mid = startIdx + 1;
+            End = startIdx + 2;
+            IsCalculated = true;
+         }
+      }
+      /// <summary>
+      /// Accumulates vertices and calculates indices.
+      /// This class assumes that primitive vertices should be connected in the order they appear in the array.
+      /// Based on this assumption this class constructs indices array.
+      /// </summary>
+      private class PolyCurve
+      {
+         private List<PrimVertices> PrimVerticesList { get; set; } = new List<PrimVertices>();
+         public bool PolyLinesOnly { get; protected set; } = true;
+         //PointList and SegmentsIndices are built by BuildVerticesAndIndices()
+         public IFCAnyHandleUtil.IfcPointList PointList { get; protected set; } = new IFCAnyHandleUtil.IfcPointList();
+         public List<SegmentIndices> SegmentsIndices { get; protected set; } = null;
+
+         public PolyCurve(PrimVertices primVertices)
+         {
+            if (!AddPrimVertices(primVertices))
+               throw new ArgumentException("Error when constructing PolyCurve");
+         }
+
+         public void BuildVerticesAndIndices()
+         {
+            foreach (PrimVertices primVertices in PrimVerticesList)
+            {
+               const int MinIndexValue = 1;
+
+               //1. Build point list.
+               //Current poly curve's end point and start point of primitive curve are always equal.
+               //So remove one of them from point list.
+               if (PointList.Count != 0)
+                  PointList.Points.RemoveAt(PointList.Count - 1);
+               PointList.AddPointList(primVertices.PointList);
+
+               //2. Build indices. Do not do it if poly curve contains poly line segments only.
+               PointBase endPoint = PointList.Last();
+               bool startEndPointsAreEqual = CoordsAreWithinVertexTol(PointList[0], endPoint);
+               SegmentIndices segmentIndices = null;
+               if (PolyLinesOnly)
+               {
+                  // Kind of workaround to ensure that the first and last points, if they are supposed to be 
+                  // the same, are exactly the same.
+                  if (startEndPointsAreEqual)
+                     PointList[0] = endPoint;
+               }
+               else
+               {
+                  if (SegmentsIndices == null)
+                     SegmentsIndices = new List<SegmentIndices>();
+
+                  if (primVertices as PolyLineVertices != null)
+                  {
+                     segmentIndices = new PolyLineIndices(primVertices.PointList.Count - 1);
+                  }
+                  else if (primVertices as ArcVertices != null)
+                  {
+                     segmentIndices = new ArcIndices();
+                  }
+                  else
+                     throw new ArgumentException("Unknown PrimVertices object");
+
+                  segmentIndices.CalcIndices(SegmentsIndices.Count == 0 ? MinIndexValue : SegmentsIndices.Last().GetEnd());
+
+                  // if start and end points of poly curve are equal we should remove duplicated point from vertices array.
+                  // Indices array should be updated accordingly ( to access end point programmer should use start index).
+                  if (startEndPointsAreEqual)
+                  {
+                     PointList.Points.RemoveAt(PointList.Count - 1);
+                     segmentIndices.SetEnd(MinIndexValue);
+                  }
+
+                  //TryMerge is implemented for polylines because we can easily merge two consecutive polyline segments.
+                  if (SegmentsIndices.Count == 0 || !SegmentsIndices.Last().TryMerge(segmentIndices))
+                     SegmentsIndices.Add(segmentIndices);
+               }
+            }
+         }
+
+         public bool AddPrimVertices(PrimVertices primVertices)
+         {
+            if (primVertices == null)
+               return false;
+
+            //PrimVertices class guarantees that number of points is always >= 2.
+            var curvePoints = primVertices.PointList.Points;
+            var pointsCount = curvePoints.Count;
+
+            PointBase currentStartPoint = PrimVerticesList.Count != 0 ? PrimVerticesList[0][0] : null;
+            PointBase currentEndPoint = PrimVerticesList.Count != 0 ? PrimVerticesList.Last().Last() : null;
+            bool addAtEnd = true;
+            bool reverseCurve = false;
+
+            if (currentStartPoint != null && currentEndPoint != null)
+            {
+               // Need to check all possible connections between the current curve and the
+               // existing curve by checking start and endpoints.
+
+               // For options to attach the next curve to the existing curve below.
+               if (!CoordsAreWithinVertexTol(curvePoints[0], currentEndPoint))
+               {
+                  if (CoordsAreWithinVertexTol(curvePoints[pointsCount - 1], currentEndPoint))
+                  {
+                     reverseCurve = true;
+                  }
+                  else
+                  {
+                     addAtEnd = false;
+                     if (CoordsAreWithinVertexTol(curvePoints[0], currentStartPoint))
+                     {
+                        reverseCurve = true;
+                     }
+                     else
+                     {
+                        //Neither start nor end point of Input curve coincide with any of this polycurve's edge points.
+                        //In this case we do not know how to connect them, so return false.
+                        return false;
+                     }
+                  }
+               }
+            }
+
+            if (reverseCurve)
+               curvePoints.Reverse();
+
+            if (primVertices as PolyLineVertices == null)
+               PolyLinesOnly = false;
+
+            if (addAtEnd)
+               PrimVerticesList.Add(primVertices);
+            else
+               PrimVerticesList.Insert(0, primVertices);
+
+            return true;
+         }
+      }
+
+      /// <summary>
       /// Creates a default plane whose origin is at (0, 0, 0) and normal is (0, 0, 1).
       /// </summary>
       /// <returns>
@@ -550,42 +807,42 @@ namespace Revit.IFC.Export.Utility
             // Add try catch here because in a rare cases we find solid that throws exception/invalid solid.Faces
             try
             {
-            Solid solid = geomObj as Solid;
-            if (solid != null && solid.Faces.Size > 0)
-            {
-               solidMeshCapsule.AddSolid(solid, containingElement);
-            }
-            else
-            {
-               Mesh mesh = geomObj as Mesh;
-               if (mesh != null)
+               Solid solid = geomObj as Solid;
+               if (solid != null && solid.Faces.Size > 0)
                {
-                  solidMeshCapsule.AddMesh(mesh);
+                  solidMeshCapsule.AddSolid(solid, containingElement);
                }
                else
                {
-                  // if the current geomObj is castable as a GeometryInstance, then we perform the same collection on its symbol geometry
-                  GeometryInstance inst = geomObj as GeometryInstance;
-
-                  if (inst != null)
+                  Mesh mesh = geomObj as Mesh;
+                  if (mesh != null)
                   {
-                     try
+                     solidMeshCapsule.AddMesh(mesh);
+                  }
+                  else
+                  {
+                     // if the current geomObj is castable as a GeometryInstance, then we perform the same collection on its symbol geometry
+                     GeometryInstance inst = geomObj as GeometryInstance;
+
+                     if (inst != null)
                      {
-                        GeometryElement instanceSymbol = inst.GetSymbolGeometry();
-                        if (instanceSymbol != null && instanceSymbol.Count() != 0)
+                        try
                         {
-                           Transform instanceTransform = localTrf.Multiply(inst.Transform);
-                           CollectSolidMeshGeometry(instanceSymbol, inst.Symbol,
-                              instanceTransform, solidMeshCapsule);
+                           GeometryElement instanceSymbol = inst.GetSymbolGeometry();
+                           if (instanceSymbol != null && instanceSymbol.Count() != 0)
+                           {
+                              Transform instanceTransform = localTrf.Multiply(inst.Transform);
+                              CollectSolidMeshGeometry(instanceSymbol, inst.Symbol,
+                                 instanceTransform, solidMeshCapsule);
+                           }
                         }
-                     }
-                     catch
-                     {
+                        catch
+                        {
+                        }
                      }
                   }
                }
             }
-         }
             catch
             {
             }
@@ -600,7 +857,7 @@ namespace Revit.IFC.Export.Utility
       public static bool BoundaryHasSameSense(IFCAnyHandle boundary)
       {
          bool? hasSameSense = IFCAnyHandleUtil.GetBooleanAttribute(boundary, "Orientation");
-         return hasSameSense != null ? (bool)hasSameSense : false;
+         return hasSameSense.HasValue && hasSameSense.Value;
       }
 
       /// <summary>
@@ -701,7 +958,7 @@ namespace Revit.IFC.Export.Utility
          SetPlacementRelTo(localPlacement, newPlacementRelTo);
          SetRelativePlacement(localPlacement, newRelativePlacement);
       }
-      
+
       /// <summary>
       /// Get geometry of one level of a potentially multi-story stair, ramp, or railing.
       /// </summary>
@@ -1020,7 +1277,7 @@ namespace Revit.IFC.Export.Utility
          return range;
       }
 
-      private static bool IsInRange(IFCRange range, CurveLoop loop, Transform lcs, XYZ extrusionDirection, out bool clipCompletely)
+      private static bool IsInRange(IFCRange range, Transform lcs, XYZ extrusionDirection, out bool clipCompletely)
       {
          clipCompletely = false;
          if (range != null)
@@ -1078,7 +1335,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          bool clipCompletely;
-         if (!IsInRange(range, outerBoundary, boundaryLCS, extrusionDirection, out clipCompletely))
+         if (!IsInRange(range, boundaryLCS, extrusionDirection, out clipCompletely))
             return clipCompletely ? null : bodyItemHnd;
 
          if (MathUtil.IsAlmostZero(clippingSlant))
@@ -2585,29 +2842,48 @@ namespace Revit.IFC.Export.Utility
          return true;
       }
 
-      static IList<double> ScaledUVListFromXYZ(XYZ thePoint, Transform lcs, XYZ projectDir)
+      static UV ScaledUVListFromXYZ(XYZ thePoint, Transform lcs, XYZ projectDir)
       {
          UV projectPoint = GeometryUtil.ProjectPointToXYPlaneOfLCS(lcs, projectDir, thePoint);
-         projectPoint = UnitUtil.ScaleLength(projectPoint);
-         return new List<double>(2) { projectPoint.U, projectPoint.V };
+         return UnitUtil.ScaleLength(projectPoint);
       }
 
-      private static double DistanceSquaredBetweenVertices(IList<double> coord1, IList<double> coord2)
+      private static double DistanceSquaredBetweenVertices(XYZ coord1, XYZ coord2)
       {
-         int size = coord1.Count;
-         if (size != coord2.Count)
-            return double.MaxValue;     // Cannot compare lists of different number of members
+         var dX = coord1.X - coord2.X;
+         var dY = coord1.Y - coord2.Y;
+         var dZ = coord1.Z - coord2.Z;
 
-         double distSq = 0.0;
-         for (int ii = 0; ii < size; ++ii)
-         {
-            distSq += (coord1[ii] - coord2[ii]) * (coord1[ii] - coord2[ii]);
-         }
+         return dX * dX + dY * dY + dZ * dZ;
+      }
+      private static double DistanceSquaredBetweenVertices(UV coord1, UV coord2)
+      {
+         var dU = coord1.U - coord2.U;
+         var dV = coord1.V - coord2.V;
 
-         return distSq;
+         return dU * dU + dV * dV;
       }
 
-      private static bool CoordsAreWithinVertexTol(IList<double> coord1, IList<double> coord2)
+      private static bool CoordsAreWithinVertexTol(PointBase coord1, PointBase coord2)
+      {
+         double vertexTol = UnitUtil.ScaleLength(ExporterCacheManager.Document.Application.VertexTolerance);
+         Point3D coord13D = coord1 as Point3D;
+         Point3D coord23D = coord2 as Point3D;
+         if (coord13D != null && coord23D != null)
+            return (DistanceSquaredBetweenVertices(coord13D.coords, coord23D.coords) < vertexTol * vertexTol);
+         Point2D coord12D = coord1 as Point2D;
+         Point2D coord22D = coord2 as Point2D;
+         if (coord12D != null && coord22D != null)
+            return (DistanceSquaredBetweenVertices(coord12D.coords, coord22D.coords) < vertexTol * vertexTol);
+
+         throw new ArgumentException("Invalid Point type");
+      }
+      private static bool CoordsAreWithinVertexTol(XYZ coord1, XYZ coord2)
+      {
+         double vertexTol = UnitUtil.ScaleLength(ExporterCacheManager.Document.Application.VertexTolerance);
+         return (DistanceSquaredBetweenVertices(coord1, coord2) < vertexTol * vertexTol);
+      }
+      private static bool CoordsAreWithinVertexTol(UV coord1, UV coord2)
       {
          double vertexTol = UnitUtil.ScaleLength(ExporterCacheManager.Document.Application.VertexTolerance);
          return (DistanceSquaredBetweenVertices(coord1, coord2) < vertexTol * vertexTol);
@@ -2623,47 +2899,20 @@ namespace Revit.IFC.Export.Utility
       /// <returns>IFCAnyHandle for the created IfcIndexedPolyCurve</returns>
       public static IFCAnyHandle CreatePolyCurveFromCurve(ExporterIFC exporterIFC, Curve curve, Transform lcs = null, XYZ projectDir = null)
       {
-         IList<IList<double>> pointList = PointListFromCurve(exporterIFC, curve, lcs, projectDir);
-         if (pointList == null)
+         IFCFile file = exporterIFC.GetFile();
+
+         PrimVertices vertices = PointListFromCurve(exporterIFC, curve, lcs, projectDir);
+         // Points from the curve may have been merged after projection, so skip curves that
+         // won't add any new points.
+         if (vertices == null)
             return null;
 
-         IFCFile file = exporterIFC.GetFile();
-         IFCAnyHandle pointListHnd;
-         if (Is2DPointList(ref pointList))
-            pointListHnd = IFCInstanceExporter.CreateCartesianPointList2D(file, pointList);
-         else
-            pointListHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, pointList);
+         PolyCurve polyCurve = new PolyCurve(vertices);
+         polyCurve.BuildVerticesAndIndices();
+         IList<SegmentIndices> segmentsIndices = polyCurve.SegmentsIndices;
 
-
-         IList<IList<int>> segmentIndexList = null;
-         return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentIndexList, false);
-   }
-
-      static bool Is2DPointList(ref IList<IList<double>> pointList)
-      {
-         bool contains2DPoint = false;
-         bool contains3DPoint = false;
-
-         foreach (IList<double> pointCoord in pointList)
-         {
-            if (pointCoord.Count == 2)
-               contains2DPoint |= true;
-            else if (pointCoord.Count == 3)
-               contains3DPoint |= true;
-            else
-               throw (new ArgumentOutOfRangeException("pointList", "Only 2D or 3D point coordinates are valid!"));
-         }
-         if (contains2DPoint && contains3DPoint)
-         {
-            // Something is not right because of a mix of 2D and 3D coordinates. It will normalize below and discard the 3rd ordinate of 3D coordinates to 2D
-            for (int ii = 0; ii < pointList.Count; ++ii)
-            {
-               if (pointList[ii].Count == 3)
-                  pointList[ii].RemoveAt(2);
-            }
-         }
-
-         return contains2DPoint;
+         IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList(file, polyCurve.PointList);
+         return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentsIndices, false);
       }
 
       /// <summary>
@@ -2680,88 +2929,31 @@ namespace Revit.IFC.Export.Utility
          if (curves.Count() == 0)
             return null;
 
-         bool use3DPoint = (lcs == null || projectDir == null);
-
          IFCFile file = exporterIFC.GetFile();
-         List<IList<double>> pointList = new List<IList<double>>();
-         
-         IList<double> currentStartPoint = null;
-         IList<double> currentEndPoint = null;
-         
+
+         PolyCurve polyCurve = null;
          foreach (Curve curve in curves)
          {
-            IList<IList<double>> curveCoords = PointListFromCurve(exporterIFC, curve, lcs, projectDir);
-
+            PrimVertices vertices = PointListFromCurve(exporterIFC, curve, lcs, projectDir);
             // Points from the curve may have been merged after projection, so skip curves that
             // won't add any new points.
-            if (curveCoords == null)
+            if (vertices == null)
                continue;
 
-            int curveCount = curveCoords.Count;
-            if (curveCoords.Count < 2)
-               continue;
-
-            bool removeDuplicatePoint = false;
-            bool addAtEnd = true;
-            bool reverseCurve = false;
-
-            if (currentStartPoint != null && currentEndPoint != null)
-            {
-               // Need to check all possible connections between the current curve and the
-               // existing curve by checking start and endpoints.
-               removeDuplicatePoint = true;
-
-               // For options to attach the next curve to the existing curve below.
-               if (!CoordsAreWithinVertexTol(curveCoords[0], currentEndPoint))
-               {
-                  if (CoordsAreWithinVertexTol(curveCoords[curveCount - 1], currentEndPoint))
-                  {
-                     reverseCurve = true;
-                  }
-                  else
-                  {
-                     addAtEnd = false;
-                     if (CoordsAreWithinVertexTol(curveCoords[0], currentStartPoint))
-                     {
-                        reverseCurve = true;
-                     }
-                  }
-               }
-            }
-
-            if (reverseCurve)
-               curveCoords.Reverse();
-
-            if (removeDuplicatePoint)
-               curveCoords.RemoveAt(addAtEnd ? 0 : curveCount-1);
-            
-            if (addAtEnd)
-               pointList.AddRange(curveCoords);
-            else
-               pointList.InsertRange(0, curveCoords);
-
-            currentStartPoint = pointList[0];
-            currentEndPoint = pointList[pointList.Count - 1];
+            if (polyCurve == null)
+               polyCurve = new PolyCurve(vertices);
+            else if (!polyCurve.AddPrimVertices(vertices))
+               return null;
          }
 
-         // Kind of workaround to ensure that the first and last points, if they are supposed to be 
-         // the same, are exactly the same.
-         if (CoordsAreWithinVertexTol(currentStartPoint, currentEndPoint))
-            pointList[pointList.Count - 1] = pointList[0];
+         polyCurve.BuildVerticesAndIndices();
+         IList<SegmentIndices> segmentsIndices = polyCurve.SegmentsIndices;
 
-         // SegmentIndexList is not yet supported.
-         IList<IList<int>> segmentIndexList = null;
-
-         IFCAnyHandle pointListHnd;
-         if (use3DPoint)
-            pointListHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, pointList);
-         else
-            pointListHnd = IFCInstanceExporter.CreateCartesianPointList2D(file, pointList);
-
-         return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentIndexList, false);
+         IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList(file, polyCurve.PointList);
+         return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentsIndices, false);
       }
 
-      private static IList<IList<double>> PointListFromCurve(ExporterIFC exporterIFC, Curve curve,
+      private static PrimVertices PointListFromCurve(ExporterIFC exporterIFC, Curve curve,
          Transform lcs, XYZ projectDir)
       {
          if (curve == null)
@@ -2769,100 +2961,146 @@ namespace Revit.IFC.Export.Utility
 
          if (curve is Line)
             return PointListFromLine(exporterIFC, curve as Line, lcs, projectDir);
-         
+
          if (curve is Arc)
             return PointListFromArc(exporterIFC, curve as Arc, lcs, projectDir);
-         
+
          return PointListFromGenericCurve(exporterIFC, curve, lcs, projectDir);
       }
 
-      private static IList<double> Scaled3dListFromXYZ(ExporterIFC exporterIFC, XYZ thePoint)
-      {
-         XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, thePoint);
-         return new List<double>(3) { vertexScaled.X, vertexScaled.Y, vertexScaled.Z };
-      }
-
-      private static IList<IList<double>> PointListFromLine(ExporterIFC exporterIFC, Line line, 
+      private static PolyLineVertices PointListFromLine(ExporterIFC exporterIFC, Line line,
          Transform lcs, XYZ projectDir)
       {
          bool use3DPoint = (lcs == null || projectDir == null);
 
-         IList<double> startPoint = use3DPoint ?
-            Scaled3dListFromXYZ(exporterIFC, line.GetEndPoint(0)) :
-            ScaledUVListFromXYZ(line.GetEndPoint(0), lcs, projectDir);
-
-         IList<double> endPoint = use3DPoint ?
-            Scaled3dListFromXYZ(exporterIFC, line.GetEndPoint(1)) :
-            ScaledUVListFromXYZ(line.GetEndPoint(1), lcs, projectDir);
-
-         // Avoid consecutive duplicates
-         if (CoordsAreWithinVertexTol(startPoint, endPoint))
-            return null;
-
-         List<IList<double>> pointList = new List<IList<double>>();
-         pointList.Add(startPoint);
-         pointList.Add(endPoint);
-         return pointList;
-      }
-
-      private static IList<IList<double>> PointListFromArc(ExporterIFC exporterIFC, Arc arc, 
-         Transform lcs, XYZ projectDir)
-      {
-         bool use3DPoint = (lcs == null || projectDir == null);
-
-         IList<IList<double>> pointList = new List<IList<double>>();
-         
-         // An integer value is used here to get an accurate interval the value ranges from
-         // 0 to 90 or 100 percent, depending on whether the arc is bound or not.
-         int normalizedEnd = arc.IsBound ? 10 : 9;
-         IList<double> lastPoint = null;
-         for (int ii = 0; ii <= normalizedEnd; ++ii)
+         if (use3DPoint)
          {
-            XYZ tessellationPt = arc.Evaluate(ii / 10.0, arc.IsBound);
-            IList<double> point = use3DPoint ?
-               Scaled3dListFromXYZ(exporterIFC, tessellationPt) :
-               ScaledUVListFromXYZ(tessellationPt, lcs, projectDir);
-
+            XYZ startPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, line.GetEndPoint(0));
+            XYZ endPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, line.GetEndPoint(1));
             // Avoid consecutive duplicates
-            if (lastPoint == null || !CoordsAreWithinVertexTol(point, lastPoint))
+            if (CoordsAreWithinVertexTol(startPoint, endPoint))
+               return null;
+
+            return new PolyLineVertices(startPoint, endPoint);
+         }
+         else
+         {
+            var startPoint = ScaledUVListFromXYZ(line.GetEndPoint(0), lcs, projectDir);
+            var endPoint = ScaledUVListFromXYZ(line.GetEndPoint(1), lcs, projectDir);
+            // Avoid consecutive duplicates
+            if (CoordsAreWithinVertexTol(startPoint, endPoint))
+               return null;
+
+            return new PolyLineVertices(startPoint, endPoint);
+         }
+      }
+
+      private static PrimVertices PointListFromArc(ExporterIFC exporterIFC, Arc arc,
+         Transform lcs, XYZ projectDir)
+      {
+         bool use3DPoint = (lcs == null || projectDir == null);
+
+         if (use3DPoint && arc.IsBound)
+         {
+            XYZ startPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, arc.Evaluate(0, true));
+            XYZ midPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, arc.Evaluate(0.5, true));
+            XYZ endPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, arc.Evaluate(1, true));
+
+            return new ArcVertices(startPoint, midPoint, endPoint);
+         }
+         else
+         {
+            //If arc's normal is parallel to projection direction and Z axis of lcs then projected arc will be of correct shape.
+            //That is why it can be defined by 3 points: start, mid, end.
+            if (MathUtil.VectorsAreParallel(arc.Normal, projectDir) && MathUtil.VectorsAreParallel(lcs.BasisZ, projectDir) && arc.IsBound)
             {
-               pointList.Add(point);
-               lastPoint = point;
+               var startPoint = ScaledUVListFromXYZ(arc.Evaluate(0, true), lcs, projectDir);
+               var midPoint = ScaledUVListFromXYZ(arc.Evaluate(0.5, true), lcs, projectDir);
+               var endPoint = ScaledUVListFromXYZ(arc.Evaluate(1, true), lcs, projectDir);
+
+               return new ArcVertices(startPoint, midPoint, endPoint);
             }
+
+            //Handle cases when Arc is a circle (arc.IsBound == false) or projected arc is of incorrect shape
+            //and cannot be defined by 3 points. Tesselate it in this case.
+            List<XYZ> pointList3D = new List<XYZ>();
+            List<UV> pointList2D = new List<UV>();
+
+            // An integer value is used here to get an accurate interval the value ranges from
+            // 0 to 90 or 100 percent, depending on whether the arc is bound or not.
+            int normalizedEnd = arc.IsBound ? 10 : 9;
+            XYZ lastPoint3D = null;
+            UV lastPoint2D = null;
+            for (int ii = 0; ii <= normalizedEnd; ++ii)
+            {
+               XYZ tessellationPt = arc.Evaluate(ii / 10.0, arc.IsBound);
+               if (use3DPoint)
+               {
+                  XYZ point = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, tessellationPt);
+
+                  // Avoid consecutive duplicates
+                  if (lastPoint3D == null || !CoordsAreWithinVertexTol(point, lastPoint3D))
+                  {
+                     pointList3D.Add(point);
+                     lastPoint3D = point;
+                  }
+               }
+               else
+               {
+                  var point2D = ScaledUVListFromXYZ(tessellationPt, lcs, projectDir);
+
+                  // Avoid consecutive duplicates
+                  if (lastPoint2D == null || !CoordsAreWithinVertexTol(point2D, lastPoint2D))
+                  {
+                     pointList2D.Add(point2D);
+                     lastPoint2D = point2D;
+                  }
+               }
+            }
+
+            if (pointList3D != null && pointList3D.Count >= 2)
+               return new PolyLineVertices(pointList3D);
+            else if (pointList2D != null && pointList2D.Count >= 2)
+               return new PolyLineVertices(pointList2D);
          }
 
-         if (pointList.Count < 2)
-            return null;
-
-         return pointList;
+         return null;
       }
 
-      private static IList<IList<double>> PointListFromGenericCurve(ExporterIFC exporterIFC,
+      private static PolyLineVertices PointListFromGenericCurve(ExporterIFC exporterIFC,
          Curve curve, Transform lcs, XYZ projectDir)
       {
          bool use3DPoint = (lcs == null || projectDir == null);
 
-         IList<IList<double>> pointList = new List<IList<double>>();
-         IList<XYZ> tessellatedCurve = curve.Tessellate();
-         IList<double> lastPoint = null;
-         for (int ii = 0; ii < tessellatedCurve.Count; ++ii)
-         {
-            IList<double> point = use3DPoint ?
-               Scaled3dListFromXYZ(exporterIFC, tessellatedCurve[ii]) :
-               ScaledUVListFromXYZ(tessellatedCurve[ii], lcs, projectDir);
+         List<XYZ> listXYZ = new List<XYZ>();
+         List<UV> listUV = new List<UV>();
 
-            // Avoid consecutive duplicates
-            if (lastPoint == null || !CoordsAreWithinVertexTol(point, lastPoint))
+         IList<XYZ> tessellatedCurve = curve.Tessellate();
+         var pointsCount = tessellatedCurve.Count;
+         for (int ii = 0; ii < pointsCount; ++ii)
+         {
+            if (use3DPoint)
             {
-               pointList.Add(point);
-               lastPoint = point;
+               var point = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, tessellatedCurve[ii]);
+               // Avoid consecutive duplicates
+               if (listXYZ.Count == 0 || !CoordsAreWithinVertexTol(point, listXYZ.Last()))
+                  listXYZ.Add(point);
+            }
+            else
+            {
+               var point = ScaledUVListFromXYZ(tessellatedCurve[ii], lcs, projectDir);
+               // Avoid consecutive duplicates
+               if (listUV.Count == 0 || !CoordsAreWithinVertexTol(point, listUV.Last()))
+                  listUV.Add(point);
             }
          }
 
-         if (pointList.Count < 2)
-            return null;
+         if (listXYZ != null && listXYZ.Count >= 2)
+            return new PolyLineVertices(listXYZ);
+         else if (listUV != null && listUV.Count >= 2)
+            return new PolyLineVertices(listUV);
 
-         return pointList;
+         return null;
       }
 
       static private bool AllowedCurveForAllowComplexBoundary(Curve curve)
@@ -3053,7 +3291,7 @@ namespace Revit.IFC.Export.Utility
          {
             coordList.Add(new List<double>(3));
          }
-         
+
          foreach (KeyValuePair<IFCFuzzyXYZ, int> vertexAndIndex in vertexMap)
          {
             IFCFuzzyXYZ vertex = vertexAndIndex.Key;
@@ -3413,15 +3651,18 @@ namespace Revit.IFC.Export.Utility
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {
-            IList<IList<double>> pointList = PointListFromCurve(exporterIFC, curve, additionalTrf, null);
-            if (pointList == null)
+            PrimVertices vertices = PointListFromCurve(exporterIFC, curve, additionalTrf, null);
+            // Points from the curve may have been merged after projection, so skip curves that
+            // won't add any new points.
+            if (vertices == null)
                return null;
 
-            // Segment index list not yet supported.
-            IList<IList<int>> segmentIndexList = null;
+            PolyCurve polyCurve = new PolyCurve(vertices);
+            polyCurve.BuildVerticesAndIndices();
+            IList<SegmentIndices> segmentsIndices = polyCurve.SegmentsIndices;
 
-            IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, pointList);
-            return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentIndexList, false);
+            IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList(file, polyCurve.PointList);
+            return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentsIndices, false);
          }
 
          // if the Curve is a line, do the following
@@ -3608,7 +3849,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="thePoint">The point</param>
       /// <param name="cartesianPoints">A map of already created IfcCartesianPoints.  This argument may be null.</param>
       /// <returns>The handle representing IfcCartesianPoint</returns>
-      public static IFCAnyHandle XYZtoIfcCartesianPoint(ExporterIFC exporterIFC, XYZ thePoint, 
+      public static IFCAnyHandle XYZtoIfcCartesianPoint(ExporterIFC exporterIFC, XYZ thePoint,
          IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints, Transform additionalTrf = null)
       {
          IFCFile file = exporterIFC.GetFile();
@@ -3786,7 +4027,7 @@ namespace Revit.IFC.Export.Utility
             return null;
          }
       }
-      
+
       /// <summary>
       /// Attempt to get profile and simple material information from a FamilyInstance element.
       /// </summary>
@@ -3795,7 +4036,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="basePlaneNormal">The normal used to try to find the profile.</param>
       /// <param name="basePlaneOrigin">The original for the profile.</param>
       /// <returns></returns>
-      public static MaterialAndProfile GetProfileAndMaterial(ExporterIFC exporterIFC, 
+      public static MaterialAndProfile GetProfileAndMaterial(ExporterIFC exporterIFC,
          Element element, XYZ basePlaneNormal, XYZ basePlaneOrigin)
       {
          MaterialAndProfile materialAndProfile = new MaterialAndProfile();
@@ -3820,7 +4061,7 @@ namespace Revit.IFC.Export.Utility
             XYZ projDir = XYZ.BasisZ;
             try
             {
-               CurveLoop curveloop = CurveLoop.Create(profileCurves);              
+               CurveLoop curveloop = CurveLoop.Create(profileCurves);
                if (curveloop.HasPlane())
                   projDir = curveloop.GetPlane().Normal;
             }
@@ -3861,7 +4102,7 @@ namespace Revit.IFC.Export.Utility
                   if (solid == null || solid.Faces.IsEmpty || solid.Edges.IsEmpty)
                      continue;
 
-                  ElementId materialId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solid, exporterIFC, familyInstance);
+                  ElementId materialId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solid, familyInstance);
                   IFCAnyHandle profileDef = GetExtrusionBaseProfile(exporterIFC, solid, profileName, basePlane, basePlaneOrigin, out extrusionEndFaces);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(profileDef))
                      materialAndProfile.Add(materialId, profileDef);
@@ -3935,7 +4176,7 @@ namespace Revit.IFC.Export.Utility
             return false;              // Supports only a planar based curve
 
          // Get the plane where the curve lies
-         Plane planeOfCurve = planarPlaneOf(curve);
+         Plane planeOfCurve = PlanarPlaneOf(curve);
          if (plane.Normal.IsAlmostEqualTo(planeOfCurve.Normal))
             return false;                 // THe planes are parallel to each other, no intersection
 
@@ -3963,7 +4204,7 @@ namespace Revit.IFC.Export.Utility
          return true;
       }
 
-      public static Plane planarPlaneOf(Curve curve)
+      public static Plane PlanarPlaneOf(Curve curve)
       {
          // We will only try up to six different parameters to find the 3rd point on the curve.
          IList<double> parToTry = new List<double>() { 0.15, 0.3, 0.45, 0.6, 0.75, 0.9 };
@@ -4234,7 +4475,7 @@ namespace Revit.IFC.Export.Utility
       public static List<Curve> GetCurvesFromGeometryElement(GeometryElement geomElem)
       {
          List<Curve> curveList = new List<Curve>();
-         foreach(GeometryObject geomObject in geomElem)
+         foreach (GeometryObject geomObject in geomElem)
          {
             if (geomObject is GeometryElement)
             {
@@ -4277,15 +4518,13 @@ namespace Revit.IFC.Export.Utility
          else
             return false;
       }
-      public static Transform GetWCS(Document doc)
+      public static Transform GetWCS(Document doc, double unscaledElevation)
       {
          Transform trf = null;
          ProjectLocation projLocation = doc.ActiveProjectLocation;
          if (projLocation == null)
             return trf;
 
-         double unscaledElevation = 0.0;
-         ExporterUtil.GetSafeProjectPositionElevation(doc, out unscaledElevation);
          SiteTransformBasis transformBasis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
 
          trf = Transform.Identity;
@@ -4309,9 +4548,7 @@ namespace Revit.IFC.Export.Utility
 
          if (!trf.IsIdentity)
          {
-            double unscaledSiteElevation = ExporterCacheManager.ExportOptionsCache.IncludeSiteElevation ? 0.0 : unscaledElevation;
-            XYZ orig = UnitUtil.ScaleLength(trf.Origin - new XYZ(0, 0, unscaledSiteElevation));
-
+            XYZ orig = UnitUtil.ScaleLength(trf.Origin - new XYZ(0, 0, unscaledElevation));
             trf = CreateTransformFromVectorsAndOrigin(trf.BasisX, trf.BasisY, trf.BasisZ, orig);
          }
 
