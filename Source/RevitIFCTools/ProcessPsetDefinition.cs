@@ -335,7 +335,11 @@ namespace RevitIFCTools
             else if (prop.PropertyType is PropertyTableValue)
             {
                PropertyTableValue propTab = prop.PropertyType as PropertyTableValue;
-               // TableValue has 2 types: DefiningValue and DefinedValue. This is not fully implemented yet
+               if (propTab.DefiningValueType != null)
+                  outF.WriteLine("            ifcPSE.PropertyArgumentType = {0}.{1};", propTypeStr, propTab.DefiningValueType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
+               else
+                  outF.WriteLine("            ifcPSE.PropertyArgumentType = {0}.Label;", propTypeStr);    // default to Label if missing
+			  
                if (propTab.DefinedValueType != null)
                   outF.WriteLine("            ifcPSE.{0} = {0}.{1};", propTypeStr, propTab.DefinedValueType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
                else
