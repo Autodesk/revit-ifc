@@ -1058,6 +1058,20 @@ namespace Revit.IFC.Import.Data
          }
       }
 
+      private static string LocateSchemaFile(string schemaFileName)
+      {
+         string filePath = null;
+#if IFC_OPENSOURCE
+         // Find the alternate schema file from the open source install folder
+         filePath = Path.Combine(Path.GetDirectoryName(Assembly.GetCallingAssembly().Location), schemaFileName);
+         if (!File.Exists(filePath))
+#endif
+         {
+            filePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM", schemaFileName);
+         }
+         return filePath;
+      }
+
       /// <summary>
       /// Gets IFCFileModelOptions from schema name.
       /// </summary>
@@ -1076,18 +1090,22 @@ namespace Revit.IFC.Import.Data
          }
          else if (schemaName.Equals("IFC2X3", StringComparison.OrdinalIgnoreCase))
          {
+            modelOptions.SchemaFile = LocateSchemaFile("IFC2X3_TC1.exp");
             schemaVersion = IFCSchemaVersion.IFC2x3;
          }
          else if (schemaName.Equals("IFC2X_FINAL", StringComparison.OrdinalIgnoreCase))
          {
+            modelOptions.SchemaFile = LocateSchemaFile("IFC2X_PROXY.exp");
             schemaVersion = IFCSchemaVersion.IFC2x;
          }
          else if (schemaName.Equals("IFC2X2_FINAL", StringComparison.OrdinalIgnoreCase))
          {
+            modelOptions.SchemaFile = LocateSchemaFile("IFC2X2_ADD1.exp");
             schemaVersion = IFCSchemaVersion.IFC2x2;
          }
          else if (schemaName.Equals("IFC4", StringComparison.OrdinalIgnoreCase))
          {
+            modelOptions.SchemaFile = LocateSchemaFile("IFC4.exp");
             schemaVersion = IFCSchemaVersion.IFC4;
          }
          else if (schemaName.Equals("IFC4X1", StringComparison.OrdinalIgnoreCase))

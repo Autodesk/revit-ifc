@@ -52,7 +52,7 @@ namespace Revit.IFC.Import.Data
          {
             foreach (IFCData styleData in styles)
             {
-               if (styleData.PrimitiveType == IFCDataPrimitiveType.Instance)
+               if (styleData.PrimitiveType.ToString() == "Instance")
                {
                   IFCAnyHandle style = styleData.AsInstance();
                   try

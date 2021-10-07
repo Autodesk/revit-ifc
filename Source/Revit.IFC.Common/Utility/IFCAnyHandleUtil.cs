@@ -1113,7 +1113,7 @@ namespace Revit.IFC.Common.Utility
 
          T aggregateAttribute = default(T);
 
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null)
@@ -1144,7 +1144,7 @@ namespace Revit.IFC.Common.Utility
 
          T aggregateAttribute = default(T);
 
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null)
@@ -1178,7 +1178,7 @@ namespace Revit.IFC.Common.Utility
 
          T aggregateAttribute = default(T);
 
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null)
@@ -1212,7 +1212,7 @@ namespace Revit.IFC.Common.Utility
 
          T aggregateAttribute = default(T);
 
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null)
@@ -1243,7 +1243,7 @@ namespace Revit.IFC.Common.Utility
 
          T aggregateAttribute = default(T);
 
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null)
@@ -1251,7 +1251,7 @@ namespace Revit.IFC.Common.Utility
                aggregateAttribute = new T();
                foreach (IFCData val in aggregate)
                {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
+                  if (val.PrimitiveType.ToString() == "Instance")
                   {
                      aggregateAttribute.Add(val.AsInstance());
                   }
@@ -1325,7 +1325,7 @@ namespace Revit.IFC.Common.Utility
             throw new ArgumentException("Not an IfcCartesianPoint handle.");
 
          IFCData ifcData = cartesianPoint.GetAttribute("Coordinates");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null && aggregate.Count > 0)
@@ -1355,7 +1355,7 @@ namespace Revit.IFC.Common.Utility
          try
          {
             IFCData ifcData = hnd.GetAttribute(name);
-            if (ifcData.PrimitiveType == IFCDataPrimitiveType.Instance)
+            if (ifcData.PrimitiveType.ToString() == "Instance")
                return ifcData.AsInstance();
          }
          catch { }
@@ -1554,7 +1554,7 @@ namespace Revit.IFC.Common.Utility
 
          if (!ifcData.HasValue)
             return false;
-         else if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         else if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null && aggregate.Count > 0)
@@ -1579,14 +1579,14 @@ namespace Revit.IFC.Common.Utility
 
          HashSet<IFCAnyHandle> decomposes = new HashSet<IFCAnyHandle>();
          IFCData ifcData = objectHandle.GetAttribute("IsDecomposedBy");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null && aggregate.Count > 0)
             {
                foreach (IFCData val in aggregate)
                {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
+                  if (val.PrimitiveType.ToString() == "Instance")
                   {
                      decomposes.Add(val.AsInstance());
                   }
@@ -1608,14 +1608,14 @@ namespace Revit.IFC.Common.Utility
 
          HashSet<IFCAnyHandle> hasRepresentation = new HashSet<IFCAnyHandle>();
          IFCData ifcData = objectHandle.GetAttribute("HasRepresentation");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null && aggregate.Count > 0)
             {
                foreach (IFCData val in aggregate)
                {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
+                  if (val.PrimitiveType.ToString() == "Instance")
                   {
                      hasRepresentation.Add(val.AsInstance());
                   }
@@ -1636,7 +1636,7 @@ namespace Revit.IFC.Common.Utility
             throw new ArgumentException("The operation is not valid for this handle.");
 
          IFCData ifcData = productHandle.GetAttribute("Representation");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Instance)
+         if (ifcData.PrimitiveType.ToString() == "Instance")
          {
             return ifcData.AsInstance();
          }
@@ -1655,7 +1655,7 @@ namespace Revit.IFC.Common.Utility
             throw new ArgumentException("The operation is not valid for this handle.");
 
          IFCData ifcData = representation.GetAttribute("ContextOfItems");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Instance)
+         if (ifcData.PrimitiveType.ToString() == "Instance")
          {
             return ifcData.AsInstance();
          }
@@ -1713,14 +1713,14 @@ namespace Revit.IFC.Common.Utility
 
          HashSet<IFCAnyHandle> items = new HashSet<IFCAnyHandle>();
          IFCData ifcData = representation.GetAttribute("Items");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null && aggregate.Count > 0)
             {
                foreach (IFCData val in aggregate)
                {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
+                  if (val.PrimitiveType.ToString() == "Instance")
                   {
                      items.Add(val.AsInstance());
                   }
@@ -1742,14 +1742,14 @@ namespace Revit.IFC.Common.Utility
 
          List<IFCAnyHandle> representations = new List<IFCAnyHandle>();
          IFCData ifcData = representation.GetAttribute("Representations");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null && aggregate.Count > 0)
             {
                foreach (IFCData val in aggregate)
                {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
+                  if (val.PrimitiveType.ToString() == "Instance")
                   {
                      representations.Add(val.AsInstance());
                   }
@@ -1771,14 +1771,14 @@ namespace Revit.IFC.Common.Utility
 
          List<IFCAnyHandle> openings = new List<IFCAnyHandle>();
          IFCData ifcData = ifcElement.GetAttribute("HasOpenings");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
             if (aggregate != null && aggregate.Count > 0)
             {
                foreach (IFCData val in aggregate)
                {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
+                  if (val.PrimitiveType.ToString() == "Instance")
                   {
                      IFCAnyHandle relVoidElement = val.AsInstance();
                      IFCData openingElementData = relVoidElement.GetAttribute("RelatedOpeningElement");
@@ -1992,6 +1992,27 @@ namespace Revit.IFC.Common.Utility
          if (handleType == type)
             return true;
          return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
+      }
+
+      /// <summary>
+      /// Gets the <see cref="IFCDataPrimitiveType"/> value from type name.
+      /// This method is used for negotiation differences between IfCDataPrimitiveType enums in 2022.0.1 and 2022.1 APIs using string comparison.
+      /// </summary>
+      /// <param name="typeName">Primitive type name.</param>
+      /// <returns><see cref="IFCDataPrimitiveType"/> value.</returns>
+      public static IFCDataPrimitiveType GetPrimitiveTypeForOlderAPI(string typeName)
+      {
+         IFCDataPrimitiveType resultType = IFCDataPrimitiveType.Integer;
+
+         for(int iterator = 0; iterator <= 21; iterator++)
+         {
+            if (resultType.ToString() == typeName)
+               return resultType;
+            else
+               resultType++;
+         }
+
+         return resultType;
       }
 
       /// <summary>

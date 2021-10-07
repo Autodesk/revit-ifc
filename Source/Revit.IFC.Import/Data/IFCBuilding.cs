@@ -60,7 +60,6 @@ namespace Revit.IFC.Import.Data
 
       public override void PostProcess()
       {
-         TryToFixFarawayOrigin();
          base.PostProcess();
       }
 

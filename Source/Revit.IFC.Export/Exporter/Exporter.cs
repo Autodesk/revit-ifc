@@ -242,7 +242,12 @@ namespace Revit.IFC.Export.Exporter
          {
             try
             {
+#if IFC_OPENSOURCE
+               string dllPath = Assembly.GetExecutingAssembly().Location;
+               Assembly assembly = Assembly.LoadFrom(Path.GetDirectoryName(dllPath) + @"\Autodesk.SteelConnections.ASIFC.dll");
+#else
                Assembly assembly = Assembly.LoadFrom(AppDomain.CurrentDomain.BaseDirectory + @"\Addins\SteelConnections\Autodesk.SteelConnections.ASIFC.dll");
+#endif
                if (assembly != null)
                {
                   Type type = assembly.GetType("Autodesk.SteelConnections.ASIFC.ASExporter");
@@ -1018,18 +1023,35 @@ namespace Revit.IFC.Export.Exporter
          IFCFileModelOptions modelOptions = new IFCFileModelOptions();
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
          {
+            modelOptions.SchemaFile = LocateSchemaFile("IFC2X2_ADD1.exp");
             modelOptions.SchemaName = "IFC2x2_FINAL";
          }
          else if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
+            modelOptions.SchemaFile = LocateSchemaFile("IFC4.exp");
             modelOptions.SchemaName = "IFC4";
          }
          else
          {
             // We leave IFC2x3 as default until IFC4 is finalized and generally supported across platforms.
+            modelOptions.SchemaFile = LocateSchemaFile("IFC2X3_TC1.exp");
             modelOptions.SchemaName = "IFC2x3";
          }
          return modelOptions;
+      }
+
+      private string LocateSchemaFile(string schemaFileName)
+      {
+         string filePath = null;
+#if IFC_OPENSOURCE
+         // Find the alternate schema file from the open source install folder
+         filePath = Path.Combine(Path.GetDirectoryName(Assembly.GetCallingAssembly().Location), schemaFileName);
+         if (!File.Exists(filePath))
+#endif
+         {
+            filePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM", schemaFileName);
+         }
+         return filePath;
       }
 
       /// <summary>

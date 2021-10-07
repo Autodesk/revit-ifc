@@ -323,7 +323,7 @@ namespace Revit.IFC.Import.Utility
 
          IFCData ifcData = handle.GetAttribute(name);
 
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate outer = ifcData.AsAggregate();
             if (outer != null)
@@ -367,7 +367,7 @@ namespace Revit.IFC.Import.Utility
 
          IFCData ifcData = handle.GetAttribute(name);
 
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate outer = ifcData.AsAggregate();
             if (outer != null)
@@ -411,7 +411,7 @@ namespace Revit.IFC.Import.Utility
 
          IFCData ifcData = handle.GetAttribute(name);
 
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         if (ifcData.PrimitiveType.ToString() == "Aggregate")
          {
             IFCAggregate outer = ifcData.AsAggregate();
             if (outer != null)
