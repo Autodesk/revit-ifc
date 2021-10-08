@@ -238,6 +238,60 @@ working on expanding and eventually removing this limit, and we will be tracking
 
 <div class="versionset">
 
+	<div class="version">22.3.0.0</div><div class="versioninfo-bullet">
+
+      <br><p>
+         General:
+			<ul>
+            <li>This version contains various improvements and bugfixes since the latest release of 22.2.1.0.
+			</ul>	
+			<br>
+		</p>
+     <p>
+	  		Improvements:
+			<ul>
+				<li>Added additional generic support for IFC4.x files for 2022.1. (Added entities represented in schemas:IFC2x, IFC4x, IFC4x2, IFC4x3).
+				<li>Added export NominalCapacityCooling as Pset_CoolingTowerTypeCommon.NominalCapacity.
+				<li>Added port description parsing for ducts.
+				<li>Improved performance by connectors description caching.
+				<li>Improved export of "invalid" files with Z value in the IfcSite offset.
+				<li>Implemented export IfcDistributionSystem by default for IFC4.
+				<li>Refactored IfcIndexedPolyCurve creation.
+				<li>Modified File interface based on new scaling requirements.
+				<li>Removed dependency on Revit.IFC.Import for processors.
+				<li>Improved Boolean shift heuristic.
+				<li>PEnum_ConductorFunctionEnum entity fixed according to IFC4x3 standards.
+				<li>Updated QtoSets.
+				<li>Table property separator is changed to semicolon.
+			</ul>
+	  </p>
+	  <br> <p>
+         Bug Fixes:
+	  </p>
+			<p>
+			Export bug fixes:
+			<ul>
+				<li>Removed duplicated indices when merging two consecutive IfcLineIndex segments into one.
+				<li>Fixed renaming of IFC export setup.
+				<li>Fixed export of combined parameters to IFC psets.
+				<li>Fixed color loss for Wall element that is exported as Tessellated geometry in IFC4 RV [Architecture] mode.
+				<li>Restored proper behavior for invalidElementId parameter export.
+				<li>Removed extra assignment of styledbyitems for IfcPolygonalFaceSet.
+				<li>Fixed bug with exporting of "Type" parameter in a schedule to IFC as Family+Type.
+			</ul>
+			</p>
+			<br><p>
+			Import bug fixes:
+			<ul>
+				<li>Fixed bugs in IFC2x3 connected with schema differences.
+				<li>Fixed applying voids to sub-elements on link. 
+				<li>Fixed creation swept disk solids far from the origin.
+				<li>Fixed IFC links updating.
+			</ul></p>
+			<br>
+	</div>
+	<br>
+
 		<div class="version">22.2.1.0</div><div class="versioninfo-bullet">
 
       <br><p>
