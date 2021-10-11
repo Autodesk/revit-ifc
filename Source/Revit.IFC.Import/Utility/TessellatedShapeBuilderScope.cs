@@ -208,7 +208,7 @@ namespace Revit.IFC.Import.Utility
          // sphere of equivalence.  In the case of AnyGeometry, we resort to the Solid tolerance as we are
          // generally trying to create Solids over Meshes.
          return (TargetGeometry == TessellatedShapeBuilderTarget.Mesh) ?
-            MathUtil.Eps() : Importer.TheProcessor.ShortCurveTolerance;
+            MathUtil.Eps() : IFCImportFile.TheFile.ShortCurveTolerance;
       }
 
       /// <summary>

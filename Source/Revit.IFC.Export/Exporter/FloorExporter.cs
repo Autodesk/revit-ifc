@@ -122,7 +122,7 @@ namespace Revit.IFC.Export.Exporter
                         }
                         else if (slabElement is FamilyInstance)
                         {
-                           ElementId matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, slabElement);
+                           ElementId matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, slabElement);
                            //Document doc = slabElement.Document;
                            if (typeHnd != null)
                               CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, matId);
@@ -433,6 +433,7 @@ namespace Revit.IFC.Export.Exporter
                            break;
                         case IFCEntityType.IfcSlab:
                            bool isBaseSlab = false;
+#pragma warning disable CS0612, CS0618//AnalyticalModel is obsolette
                            AnalyticalModel analyticalModel = floorElement.GetAnalyticalModel();
                            if (analyticalModel != null)
                            {
@@ -441,6 +442,7 @@ namespace Revit.IFC.Export.Exporter
                            }
                            exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCSlabType>(floorElement, ifcEnumType, isBaseSlab ? "BASESLAB" : "FLOOR");
                            break;
+#pragma warning restore CS0612, CS0618
                      }
 
                      for (int ii = 0; ii < numReps; ii++)

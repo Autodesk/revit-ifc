@@ -503,7 +503,9 @@ namespace Revit.IFC.Export.Utility
             excludedTypes.Add(typeof(Level));
 
             // exclude analytical models
+#pragma warning disable CS0612, CS0618 //AnalyticalModel is obsolette
             excludedTypes.Add(typeof(Autodesk.Revit.DB.Structure.AnalyticalModel));
+#pragma warning restore CS0612, CS0618
 
             ElementFilter excludedClassFilter = new ElementMulticlassFilter(excludedTypes, true);
 

@@ -125,7 +125,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (ObjectType == "")
             return true;
 
-         string objectType = IFCAnyHandleUtil.GetObjectType(handle);
+         string objectType = IFCAnyHandleUtil.GetEntityType(handle).ToString();
          return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
       }
 

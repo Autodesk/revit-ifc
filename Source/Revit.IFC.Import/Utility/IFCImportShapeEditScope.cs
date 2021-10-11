@@ -304,11 +304,11 @@ namespace Revit.IFC.Import.Utility
       public double GetShortSegmentTolerance()
       {
          if (BuilderType != IFCShapeBuilderType.TessellatedShapeBuilder)
-            return Importer.TheProcessor.ShortCurveTolerance;
+            return IFCImportFile.TheFile.ShortCurveTolerance;
 
          TessellatedShapeBuilderScope bs = BuilderScope as TessellatedShapeBuilderScope;
          return (bs.TargetGeometry == TessellatedShapeBuilderTarget.Mesh) ?
-            MathUtil.Eps() : Importer.TheProcessor.ShortCurveTolerance;
+            MathUtil.Eps() : IFCImportFile.TheFile.ShortCurveTolerance;
       }
 
       /// <summary>

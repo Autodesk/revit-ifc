@@ -50,7 +50,7 @@ namespace Revit.IFC.Import.Data
       /// <remarks>The calling function is responsible for logging errors.</remarks>
       private string ValidateSegment(IFCData segment)
       {
-         if (segment.PrimitiveType != IFCDataPrimitiveType.Aggregate)
+         if (segment.PrimitiveType.ToString() != "Aggregate")
          {
             return null;
          }

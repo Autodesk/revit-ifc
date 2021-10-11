@@ -69,7 +69,7 @@ namespace Revit.IFC.Export.Exporter
                      ElementId catId = CategoryUtil.GetSafeCategoryId(element);
 
 
-                     matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, exporterIFC, element);
+                     matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(geometryElement, element);
                      BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
 
                      StructuralMemberAxisInfo axisInfo = StructuralMemberExporter.GetStructuralMemberAxisTransform(element);

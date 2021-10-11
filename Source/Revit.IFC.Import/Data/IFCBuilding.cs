@@ -58,6 +58,12 @@ namespace Revit.IFC.Import.Data
          base.Process(ifcBuilding);
       }
 
+      public override void PostProcess()
+      {
+         base.PostProcess();
+      }
+
+
       /// <summary>
       /// Allow for override of IfcObjectDefinition shared parameter names.
       /// </summary>
@@ -101,6 +107,8 @@ namespace Revit.IFC.Import.Data
       protected override void Create(Document doc)
       {
          base.Create(doc);
+
+         IFCLocation.WarnIfFaraway(this);
 
          // IfcBuilding usually won't create an element, as it contains no geometry.
          // If it doesn't, use the ProjectInfo element in the document to store its parameters.

@@ -52,6 +52,7 @@ namespace Revit.IFC.Import.Utility
          m_MeasureCache["IfcLinearVelocityMeasure"] = SpecTypeId.HvacVelocity;
          m_MeasureCache["IfcLuminousFluxMeasure"] = SpecTypeId.LuminousFlux;
          m_MeasureCache["IfcLuminousIntensityMeasure"] = SpecTypeId.LuminousIntensity;
+         m_MeasureCache["IfcMassFlowRateMeasure"] = SpecTypeId.PipingMassPerTime;
          m_MeasureCache["IfcMassMeasure"] = SpecTypeId.Mass;
          m_MeasureCache["IfcMassDensityMeasure"] = SpecTypeId.MassDensity;
          m_MeasureCache["IfcMonetaryMeasure"] = SpecTypeId.Currency;
@@ -65,6 +66,8 @@ namespace Revit.IFC.Import.Utility
          m_MeasureCache["IfcPressureMeasure"] = SpecTypeId.HvacPressure;
          m_MeasureCache["IfcRatioMeasure"] = SpecTypeId.Number;
          m_MeasureCache["IfcReal"] = SpecTypeId.Number;
+         m_MeasureCache["IfcRotationalFrequencyMeasure"] = SpecTypeId.AngularSpeed;
+         m_MeasureCache["IfcSoundPowerMeasure"] = SpecTypeId.Wattage;
          m_MeasureCache["IfcTimeMeasure"] = SpecTypeId.Time;
          m_MeasureCache["IfcTimeStamp"] = SpecTypeId.Number;  // No unit type for time in Revit.
          m_MeasureCache["IfcThermalTransmittanceMeasure"] = SpecTypeId.HeatTransferCoefficient;

@@ -152,6 +152,10 @@ namespace Revit.IFC.Import.Data
          }
 
          IFCDataPrimitiveType dataType = IFCDataPrimitiveType.Unknown;
+
+         if(dataType.ToString() != "Unknown")
+            dataType = IFCAnyHandleUtil.GetPrimitiveTypeForOlderAPI("Unknown");
+
          ForgeTypeId specTypeId = new ForgeTypeId();
          ForgeTypeId unitsTypeId = null;
 
@@ -177,7 +181,7 @@ namespace Revit.IFC.Import.Data
          else
          {
             dataType = propertyValueToUse.Value.PrimitiveType;
-            if (dataType == IFCDataPrimitiveType.Instance)
+            if (dataType.ToString() == "Instance")
             {
                IFCAnyHandle propertyValueHandle = propertyValueToUse.Value.AsInstance();
                ElementId propertyValueAsId = IFCObjectReferenceSelect.ToElementId(propertyValueHandle);
@@ -258,27 +262,27 @@ namespace Revit.IFC.Import.Data
                Importer.TheLog.LogWarning(Id, "Renamed parameter: " + originalParameterName + " to: " + parameterName, false);
 
             bool created = false;
-            switch (dataType)
+            switch (dataType.ToString())
             {
-               case IFCDataPrimitiveType.String:
-               case IFCDataPrimitiveType.Enumeration:
-               case IFCDataPrimitiveType.Binary:
+               case "String":
+               case "Enumeration":
+               case "Binary":
                   created = IFCPropertySet.AddParameterString(doc, element, category, objDef, parameterName, stringValueToUse, Id);
                   break;
-               case IFCDataPrimitiveType.Integer:
+               case "Integer":
                   created = IFCPropertySet.AddParameterInt(doc, element, category, objDef, parameterName, intValueToUse.Value, Id);
                   break;
-               case IFCDataPrimitiveType.Boolean:
+               case "Boolean":
                   created = IFCPropertySet.AddParameterBoolean(doc, element, category, objDef, parameterName, boolValueToUse.Value, Id);
                   break;
-               case IFCDataPrimitiveType.Logical:
+               case "Logical":
                   if (logicalValueToUse != IFCLogical.Unknown)
                      created = IFCPropertySet.AddParameterBoolean(doc, element, category, objDef, parameterName, (logicalValueToUse == IFCLogical.True), Id);
                   break;
-               case IFCDataPrimitiveType.Double:
+               case "Double":
                   created = IFCPropertySet.AddParameterDouble(doc, element, category, objDef, parameterName, specTypeId, unitsTypeId, doubleValueToUse.Value, Id);
                   break;
-               case IFCDataPrimitiveType.Instance:
+               case "Instance":
                   created = IFCPropertySet.AddParameterElementId(doc, element, category, objDef, parameterName, elementIdValueToUse, Id);
                   break;
             }

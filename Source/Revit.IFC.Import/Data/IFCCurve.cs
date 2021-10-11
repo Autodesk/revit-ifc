@@ -228,7 +228,7 @@ namespace Revit.IFC.Import.Data
          Curve firstCurve = curveIterator.Current;
          Curve returnCurve = null;
 
-         double vertexEps = Importer.TheProcessor.VertexTolerance;
+         double vertexEps = IFCImportFile.TheFile.VertexTolerance;
 
          // We only connect the curves if they are Line, Arc or Ellipse
          if (!((firstCurve is Line) || (firstCurve is Arc) || (firstCurve is Ellipse)))
@@ -483,7 +483,7 @@ namespace Revit.IFC.Import.Data
 
       private Curve CreateTransformedCurve(Curve baseCurve, IFCRepresentation parentRep, Transform lcs)
       {
-         Curve transformedCurve = (baseCurve != null) ? baseCurve.CreateTransformed(lcs) : null;
+         Curve transformedCurve = baseCurve?.CreateTransformed(lcs);
          if (transformedCurve == null)
          {
             Importer.TheLog.LogWarning(Id, "couldn't create curve for " +
@@ -529,10 +529,13 @@ namespace Revit.IFC.Import.Data
 
          // TODO: set graphics style for footprint curves.
          IFCRepresentationIdentifier repId = (parentRep == null) ? IFCRepresentationIdentifier.Unhandled : parentRep.Identifier;
-         bool createModelGeometry = (repId == IFCRepresentationIdentifier.Body) || (repId == IFCRepresentationIdentifier.Axis) || (repId == IFCRepresentationIdentifier.Unhandled);
+         bool createModelGeometry = (repId == IFCRepresentationIdentifier.Body) || 
+            (repId == IFCRepresentationIdentifier.Axis) || 
+            (repId == IFCRepresentationIdentifier.Unhandled);
+         bool createFootprintGeometry = (repId == IFCRepresentationIdentifier.FootPrint);
 
          ElementId gstyleId = ElementId.InvalidElementId;
-         if (createModelGeometry)
+         if (createModelGeometry || createFootprintGeometry)
          {
             Category curveCategory = IFCCategoryUtil.GetSubCategoryForRepresentation(shapeEditScope.Document, Id, parentRep.Identifier);
             if (curveCategory != null)
@@ -545,16 +548,14 @@ namespace Revit.IFC.Import.Data
 
          foreach (Curve curve in transformedCurves)
          {
-            if (createModelGeometry)
-            {
+            if (gstyleId != ElementId.InvalidElementId)
                curve.SetGraphicsStyleId(gstyleId);
+  
+            // If it is not model geometry, assume it is a plan view curve.
+            if (createModelGeometry)
                shapeEditScope.AddGeometry(IFCSolidInfo.Create(Id, curve));
-            }
             else
-            {
-               // Default: assume a plan view curve.
                shapeEditScope.AddFootprintCurve(curve);
-            }
          }
       }
    }

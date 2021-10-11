@@ -89,7 +89,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             return false;
          }
          m_Span = extrusionCreationData.ScaledLength;
+#pragma warning disable CS0612, CS0618 //AnalyticalModel is obsolette
          AnalyticalModel elemAnalyticalModel = element.GetAnalyticalModel();
+#pragma warning restore CS0612, CS0618
          if (elemAnalyticalModel != null)
          {
             IList<AnalyticalModelSupport> supports = elemAnalyticalModel.GetAnalyticalModelSupports();

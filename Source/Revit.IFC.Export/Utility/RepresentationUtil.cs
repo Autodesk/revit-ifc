@@ -950,7 +950,7 @@ namespace Revit.IFC.Export.Utility
          if (IFCAnyHandleUtil.IsSubTypeOf(hostProdDefShape, IFCEntityType.IfcProductRepresentation))
          {
             IFCAnyHandle representationOfItem = RepresentationUtil.CreateShapeRepresentation(exporterIFC, hostElement, catId, contextOfItems, shapeIdent, repType, itemRepSet);
-            IFCAnyHandle shapeAspect = IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
+            IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(hostProdDefShape, IFCEntityType.IfcRepresentationMap))
          {
@@ -958,7 +958,7 @@ namespace Revit.IFC.Export.Utility
             string representationType = IFCAnyHandleUtil.GetRepresentationType(representation);
             IFCAnyHandle representationOfItem = RepresentationUtil.CreateShapeRepresentation(exporterIFC, hostElement, catId, contextOfItems, shapeIdent,
                representationType, itemRepSet);
-            IFCAnyHandle shapeAspect = IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
+            IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
          }
       }
 

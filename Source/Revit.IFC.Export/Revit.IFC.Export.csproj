@@ -79,6 +79,7 @@
     <Compile Include="Exporter\DuctInsulationExporter.cs" />
     <Compile Include="Exporter\DuctLiningExporter.cs" />
     <Compile Include="Exporter\ExporterInitializer_PsetDef.cs" />
+    <Compile Include="Exporter\ExporterInitializer_QsetDef.cs" />
     <Compile Include="Exporter\GenericElementExporter.cs" />
     <Compile Include="Exporter\ExtrusionExporter.cs" />
     <Compile Include="Exporter\FabricSheetExporter.cs" />
@@ -100,7 +101,9 @@
     <Compile Include="Exporter\PropertySet\AttributeEntryMap.cs" />
     <Compile Include="Exporter\PropertySet\AttributeSetDescription.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FireRatingCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\GrossCrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\IsExternalCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NetCrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NosingLengthCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfRiserCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfTreadsCalculator.cs" />
@@ -149,7 +152,7 @@
     <Compile Include="Exporter\PropertySet\ElectricalVoltagePropertyUtil.cs" />
     <Compile Include="Exporter\PropertySet\EntryMap.cs" />
     <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X2Enum.cs" />
-    <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X3TC1Enum.cs" />
+    <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X3Enum.cs" />
     <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC4Enum.cs" />
     <Compile Include="Exporter\PropertySet\FrequencyPropertyUtil.cs" />
     <Compile Include="Exporter\PropertySet\PositivePlaneAnglePropertyUtil.cs" />

@@ -80,25 +80,47 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          bool useProperty = (!String.IsNullOrEmpty(RevitParameterName)) || (RevitBuiltInParameter != BuiltInParameter.INVALID);
          
          bool success = false;
-         double val = 0;
+         object val = 0;
          if (useProperty)
          {
-            success = (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, RevitParameterName, parentEntry.IgnoreInternalValue, out val) != null);
-            if (!success && RevitBuiltInParameter != BuiltInParameter.INVALID)
-               success = (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, RevitBuiltInParameter, out val) != null);
+            double dblVal = 0.0;
+
+            if (parentEntry.QuantityType is QuantityType.Count)
+            {
+               int? intValPar = null;
+               intValPar = (ParameterUtil.GetIntValueFromElementOrSymbol(element, RevitParameterName));
+               if (intValPar.HasValue)
+               {
+                  success = true;
+                  val = intValPar.Value;
+               }
+            }
+            else
+            {
+               success = (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, RevitParameterName, parentEntry.IgnoreInternalValue, out dblVal) != null);
+               if (!success && RevitBuiltInParameter != BuiltInParameter.INVALID)
+                  success = (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, RevitBuiltInParameter, out dblVal) != null);
+               if (success)
+                  val = dblVal;
+            }
 
             if (success) // factor in the scale factor for all the parameters depending of the data type to get the correct value
             {
                switch (parentEntry.QuantityType)
                {
                   case QuantityType.PositiveLength:
-                     val = UnitUtil.ScaleLength(val);
+                  case QuantityType.Length:
+                     val = UnitUtil.ScaleLength((double)val);
                      break;
                   case QuantityType.Area:
-                     val = UnitUtil.ScaleArea(val);
+                     val = UnitUtil.ScaleArea((double)val);
                      break;
                   case QuantityType.Volume:
-                     val = UnitUtil.ScaleVolume(val);
+                     val = UnitUtil.ScaleVolume((double)val);
+                     break;
+                  case QuantityType.Count:
+                     break;
+                  case QuantityType.Time:
                      break;
                   default:
                      break;
@@ -109,7 +131,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (PropertyCalculator != null && !success)
          {
             success = PropertyCalculator.Calculate(exporterIFC, extrusionCreationData, element, elementType);
-            if (success)
+            if (success && parentEntry.QuantityType == QuantityType.Count)
+               val = PropertyCalculator.GetIntValue();
+            else
                val = PropertyCalculator.GetDoubleValue();
          }
 
@@ -119,16 +143,23 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             switch (parentEntry.QuantityType)
             {
                case QuantityType.PositiveLength:
-                  quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, val);
+               case QuantityType.Length:
+                  quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
                   break;
                case QuantityType.Area:
-                  quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, val);
+                  quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
                   break;
                case QuantityType.Volume:
-                  quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, val);
+                  quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
                   break;
                case QuantityType.Weight:
-                  quantityHnd = IFCInstanceExporter.CreateQuantityWeight(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, val);
+                  quantityHnd = IFCInstanceExporter.CreateQuantityWeight(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
+                  break;
+               case QuantityType.Count:
+                  quantityHnd = IFCInstanceExporter.CreateQuantityCount(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (int)val);
+                  break;
+               case QuantityType.Time:
+                  quantityHnd = IFCInstanceExporter.CreateQuantityTime(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
                   break;
                default:
                   throw new InvalidOperationException("Missing case!");

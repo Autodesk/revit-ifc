@@ -232,31 +232,31 @@ namespace Revit.IFC.Import.Data
             Transparency = IFCImportHandleUtil.GetOptionalNormalisedRatioAttribute(item, "Transparency", 0.0);
 
             IFCData diffuseColour = item.GetAttribute("DiffuseColour");
-            if (diffuseColour.PrimitiveType == IFCDataPrimitiveType.Instance)
+            if (diffuseColour.PrimitiveType.ToString() == "Instance")
                m_DiffuseColour = IFCColourRgb.ProcessIFCColourRgb(diffuseColour.AsInstance());
             else if (diffuseColour.PrimitiveType == IFCDataPrimitiveType.Double)
                m_DiffuseColourFactor = diffuseColour.AsDouble();
 
             IFCData transmissionColour = item.GetAttribute("TransmissionColour");
-            if (transmissionColour.PrimitiveType == IFCDataPrimitiveType.Instance)
+            if (transmissionColour.PrimitiveType.ToString() == "Instance")
                m_TransmissionColour = IFCColourRgb.ProcessIFCColourRgb(transmissionColour.AsInstance());
             else if (transmissionColour.PrimitiveType == IFCDataPrimitiveType.Double)
                m_TransmissionColourFactor = transmissionColour.AsDouble();
 
             IFCData diffuseTransmissionColour = item.GetAttribute("DiffuseTransmissionColour");
-            if (diffuseTransmissionColour.PrimitiveType == IFCDataPrimitiveType.Instance)
+            if (diffuseTransmissionColour.PrimitiveType.ToString() == "Instance")
                m_DiffuseTransmissionColour = IFCColourRgb.ProcessIFCColourRgb(diffuseTransmissionColour.AsInstance());
             else if (diffuseTransmissionColour.PrimitiveType == IFCDataPrimitiveType.Double)
                m_DiffuseTransmissionColourFactor = diffuseTransmissionColour.AsDouble();
 
             IFCData reflectionColour = item.GetAttribute("ReflectionColour");
-            if (reflectionColour.PrimitiveType == IFCDataPrimitiveType.Instance)
+            if (reflectionColour.PrimitiveType.ToString() == "Instance")
                m_ReflectionColour = IFCColourRgb.ProcessIFCColourRgb(reflectionColour.AsInstance());
             else if (reflectionColour.PrimitiveType == IFCDataPrimitiveType.Double)
                m_ReflectionColourFactor = reflectionColour.AsDouble();
 
             IFCData specularColour = item.GetAttribute("SpecularColour");
-            if (specularColour.PrimitiveType == IFCDataPrimitiveType.Instance)
+            if (specularColour.PrimitiveType.ToString() == "Instance")
                m_SpecularColour = IFCColourRgb.ProcessIFCColourRgb(specularColour.AsInstance());
             else if (specularColour.PrimitiveType == IFCDataPrimitiveType.Double)
                m_SpecularColourFactor = specularColour.AsDouble();

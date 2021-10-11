@@ -69,10 +69,18 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcGroup);
 
-         ICollection<IFCAnyHandle> isGroupedByList =
-             IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcGroup, "IsGroupedBy");
-         foreach (IFCAnyHandle isGroupedBy in isGroupedByList)
-            ProcessIFCRelAssignsToGroup(isGroupedBy);
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4))
+         {
+            ICollection<IFCAnyHandle> isGroupedByList =
+               IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcGroup, "IsGroupedBy");
+            foreach (IFCAnyHandle isGroupedBy in isGroupedByList)
+               ProcessIFCRelAssignsToGroup(isGroupedBy);
+         }
+         else
+         {
+            IFCAnyHandle isGroupedByHnd = IFCAnyHandleUtil.GetInstanceAttribute(ifcGroup, "IsGroupedBy");
+            ProcessIFCRelAssignsToGroup(isGroupedByHnd);
+         }
       }
 
       protected IFCGroup()

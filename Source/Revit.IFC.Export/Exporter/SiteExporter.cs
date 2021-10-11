@@ -201,8 +201,6 @@ namespace Revit.IFC.Export.Exporter
             }
 
             // Get elevation for site.
-            double elevation = UnitUtil.ScaleLength(unscaledElevation);
-
             IFCAnyHandle relativePlacement = null;
             IFCAnyHandle localPlacement = null;
             if (ExporterCacheManager.ExportOptionsCache.ExportingLink)
@@ -212,7 +210,9 @@ namespace Revit.IFC.Export.Exporter
             }
             else
             {
-               Transform wcs = GeometryUtil.GetWCS(doc);
+               if (ExporterCacheManager.ExportOptionsCache.IncludeSiteElevation)
+                  unscaledElevation = 0.0;
+               Transform wcs = GeometryUtil.GetWCS(doc, unscaledElevation);
                if (wcs != null && !wcs.IsIdentity)
                {
                   relativePlacement = ExporterUtil.CreateAxis2Placement3D(file, wcs.Origin, wcs.BasisZ, wcs.BasisX);
@@ -295,6 +295,8 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle address = null;
                if (Exporter.NeedToCreateAddressForSite(doc))
                   address = Exporter.CreateIFCAddress(file, doc, projectInfo);
+
+               double elevation = UnitUtil.ScaleLength(unscaledElevation);
 
                siteHandle = IFCInstanceExporter.CreateSite(exporterIFC, element, siteGUID, ownerHistory, siteName, siteDescription, siteObjectType, localPlacement,
                   siteRepresentation, siteLongName, IFCElementComposition.Element, latitude, longitude, elevation, siteLandTitleNumber, address);

@@ -130,7 +130,12 @@ namespace Revit.IFC.Import.Data
             }
          }
 
-         Importer.TheProcessor.PostProcessProject();
+         var application = IFCImportFile.TheFile.Document.Application;
+         var projectUnits = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length);
+
+         IFCImportFile.TheFile.VertexTolerance = application.VertexTolerance;
+         IFCImportFile.TheFile.ShortCurveTolerance = application.ShortCurveTolerance;
+         Importer.TheProcessor.PostProcessProject(projectUnits?.ScaleFactor, projectUnits?.Unit);
 
          // We need to process the units before we process the rest of the file, since we will scale values as we go along.
          base.Process(ifcProjectHandle);
@@ -282,6 +287,17 @@ namespace Revit.IFC.Import.Data
             grid.Name = Guid.NewGuid().ToString();
          }
 
+         // Pre-process sites to orient them properly.
+         IList<IFCSite> sites = new List<IFCSite>();
+         foreach (IFCObjectDefinition objectDefinition in ComposedObjectDefinitions)
+         {
+            if (objectDefinition is IFCSite)
+            {
+               sites.Add(objectDefinition as IFCSite);
+            }
+         }
+         IFCSite.ProcessSiteLocations(doc, sites);
+               
          base.Create(doc);
 
          // IfcProject usually won't create an element, as it contains no geometry.

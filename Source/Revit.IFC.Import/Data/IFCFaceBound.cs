@@ -176,7 +176,7 @@ namespace Revit.IFC.Import.Data
                }
                else
                {
-                  double vertexEps = Importer.TheProcessor.VertexTolerance;
+                  double vertexEps = IFCImportFile.TheFile.VertexTolerance;
 
                   for (int index = 0; index < count; index++)
                   {

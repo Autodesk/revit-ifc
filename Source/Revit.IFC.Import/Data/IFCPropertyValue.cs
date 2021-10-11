@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Import.Data
 {
@@ -57,7 +58,7 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       public IFCDataPrimitiveType Type
       {
-         get { return m_Value != null ? m_Value.PrimitiveType : IFCDataPrimitiveType.Unknown; }
+         get { return m_Value != null ? m_Value.PrimitiveType : IFCAnyHandleUtil.GetPrimitiveTypeForOlderAPI("Unknown"); }
       }
 
       /// <summary>
@@ -232,7 +233,7 @@ namespace Revit.IFC.Import.Data
       /// <returns>The bool value.</returns>
       public IFCAnyHandle AsInstance()
       {
-         if (Type == IFCDataPrimitiveType.Instance)
+         if (Type.ToString() == "Instance")
          {
             return Value.AsInstance();
          }

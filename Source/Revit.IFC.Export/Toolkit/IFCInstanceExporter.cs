@@ -3147,7 +3147,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="methodOfMeasurement">Name of the method of measurement used to calculate the element quantity.</param>
       /// <param name="quantities">The individual quantities for the element.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateElementQuantity(IFCFile file, string guid, IFCAnyHandle ownerHistory,
+      public static IFCAnyHandle CreateElementQuantity(IFCFile file, IFCAnyHandle elemHnd, string guid, IFCAnyHandle ownerHistory,
           string name, string description, string methodOfMeasurement, HashSet<IFCAnyHandle> quantities)
       {
          IFCAnyHandleUtil.ValidateSubTypeOf(quantities, false, IFCEntityType.IfcPhysicalQuantity);
@@ -3158,6 +3158,7 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.SetAttribute(elementQuantity, "MethodOfMeasurement", methodOfMeasurement);
          IFCAnyHandleUtil.SetAttribute(elementQuantity, "Quantities", quantities);
          SetPropertySetDefinition(elementQuantity, guid, ownerHistory, name, description);
+         ExporterCacheManager.QtoSetCreated.Add((elemHnd, name));
          return elementQuantity;
       }
 
@@ -5552,8 +5553,8 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="objectType">The object type.</param>
       /// <param name="longName">The long name.</param>
       /// <returns></returns>
-      public static IFCAnyHandle CreateDistributionSystem(IFCFile file, IFCExportInfoPair entityToCreate, string guid, IFCAnyHandle ownerHistory, string name,
-         string description, string objectType, string longName)
+      public static IFCAnyHandle CreateDistributionSystem(IFCFile file, string guid, IFCAnyHandle ownerHistory, string name,
+         string description, string objectType, string longName, string predefinedType)
       {
          if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             return null;
@@ -5561,8 +5562,8 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle buildingSystem = CreateInstance(file, IFCEntityType.IfcDistributionSystem, null);
          SetSystem(buildingSystem, guid, ownerHistory, name, description, objectType);
 
-         if (!string.IsNullOrEmpty(entityToCreate.ValidatedPredefinedType))
-            IFCAnyHandleUtil.SetAttribute(buildingSystem, "PredefinedType", entityToCreate.ValidatedPredefinedType, true);
+         if (!string.IsNullOrEmpty(predefinedType))
+            IFCAnyHandleUtil.SetAttribute(buildingSystem, "PredefinedType", predefinedType, true);
          if (!string.IsNullOrEmpty(longName))
             IFCAnyHandleUtil.SetAttribute(buildingSystem, "LongName", longName, false);
 
@@ -6958,6 +6959,15 @@ namespace Revit.IFC.Export.Toolkit
          return quantityVolume;
       }
 
+      /// <summary>
+      /// Creates an IfcQuantityWeight and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file</param>
+      /// <param name="name">The name</param>
+      /// <param name="description">The description</param>
+      /// <param name="unit">The unit</param>
+      /// <param name="weightValue">The value of the quantity, in the appropriate units.</param>
+      /// <returns>The handle</returns>
       public static IFCAnyHandle CreateQuantityWeight(IFCFile file, string name, string description, IFCAnyHandle unit, double weightValue)
       {
          ValidatePhysicalSimpleQuantity(name, description, unit);
@@ -6966,6 +6976,44 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.SetAttribute(quantityWeight, "WeightValue", weightValue);
          SetPhysicalSimpleQuantity(quantityWeight, name, description, unit);
          return quantityWeight;
+      }
+
+      /// <summary>
+      /// Creates an IfcQuantityCount and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file</param>
+      /// <param name="name">The name</param>
+      /// <param name="description">The description</param>
+      /// <param name="unit">The unit</param>
+      /// <param name="weightValue">The value of the quantity, in the appropriate units.</param>
+      /// <returns>The handle</returns>
+      public static IFCAnyHandle CreateQuantityCount(IFCFile file, string name, string description, IFCAnyHandle unit, int countValue)
+      {
+         ValidatePhysicalSimpleQuantity(name, description, unit);
+
+         IFCAnyHandle quantityCount = CreateInstance(file, IFCEntityType.IfcQuantityCount, null);
+         IFCAnyHandleUtil.SetAttribute(quantityCount, "CountValue", countValue);
+         SetPhysicalSimpleQuantity(quantityCount, name, description, unit);
+         return quantityCount;
+      }
+
+      /// <summary>
+      /// Creates an IfcQuantityTime and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file</param>
+      /// <param name="name">The name</param>
+      /// <param name="description">The description</param>
+      /// <param name="unit">The unit</param>
+      /// <param name="weightValue">The value of the quantity, in the appropriate units.</param>
+      /// <returns>The handle</returns>
+      public static IFCAnyHandle CreateQuantityTime(IFCFile file, string name, string description, IFCAnyHandle unit, double timeValue)
+      {
+         ValidatePhysicalSimpleQuantity(name, description, unit);
+
+         IFCAnyHandle quantityTime = CreateInstance(file, IFCEntityType.IfcQuantityTime, null);
+         IFCAnyHandleUtil.SetAttribute(quantityTime, "TimeValue", timeValue);
+         SetPhysicalSimpleQuantity(quantityTime, name, description, unit);
+         return quantityTime;
       }
 
       /// <summary>

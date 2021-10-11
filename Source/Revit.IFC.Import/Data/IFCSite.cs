@@ -239,6 +239,183 @@ namespace Revit.IFC.Import.Data
       /// used to offset objects placed not relative to a site.</remarks>
       public static XYZ BaseSiteOffset { get; set; } = null;
 
+      public static void ProcessSiteLocations(Document doc, IList<IFCSite> sites)
+      {
+         BaseSiteOffset = null;
+
+         // Ideally, in most cases, this routine will do nothing.  In particular, that is 
+         // true if the project has an arbitrary number of sites that are "close" to the
+         // origin.
+
+         if (sites == null || sites.Count == 0)
+            return;
+
+         ProjectLocation projectLocation = doc.ActiveProjectLocation;
+         if (projectLocation == null)
+            return;
+
+         // If there is one site, and it is far from the origin, then we will move the site
+         // close to the origin, give a warning, and set the shared coordinates in the file.
+
+         // If there is more than one site, and at least one site is far from the origin:
+         // 1. If all of the sites have an origin close to one another, then we will move the 
+         // site close to the origin based on the first site encountered, give a warning, 
+         // and set the shared coordinates in the file and the rest of the sites relative to
+         // the first site.
+         // 2. If the sites do not have origins close to one another, then we will do nothing
+         // and give an error that the site is far from the origin and may have poor
+         // performance and appearance.
+         int numSites = sites.Count;
+         bool hasSiteLocation = false;
+
+         // First pass: deal with latitude and longitude.
+         for (int ii = 0; ii < numSites; ii++)
+         {
+            IFCSite currSite = sites[ii];
+
+            // Set the project latitude and longitude if the information is available, and
+            // it hasn't already been set.
+            SiteLocation siteLocation = projectLocation.GetSiteLocation();
+            if (siteLocation != null)
+            {
+               // Some Tekla files may have invalid information here that would otherwise cause the
+               // link to fail.  Recover with a warning.
+               try
+               {
+                  bool foundSiteLocation = (currSite.RefLatitude.HasValue && currSite.RefLongitude.HasValue);
+                  if (foundSiteLocation)
+                  {
+                     if (hasSiteLocation)
+                     {
+                        Importer.TheLog.LogWarning(currSite.Id, "Duplicate latitude or longitude value supplied for IFCSITE, ignoring.", false);
+                     }
+                     else
+                     {
+                        hasSiteLocation = true;
+                        siteLocation.Latitude = currSite.RefLatitude.Value * Math.PI / 180.0;
+                        siteLocation.Longitude = currSite.RefLongitude.Value * Math.PI / 180.0;
+                     }
+                  }
+               }
+               catch (Exception ex)
+               {
+                  Importer.TheLog.LogWarning(currSite.Id, "Invalid latitude or longitude value supplied for IFCSITE: " + ex.Message, false);
+               }
+            }
+         }
+
+         int? distantOriginFirstSiteId = null;
+
+         for (int ii = 0; ii < numSites; ii++)
+         {
+            IFCSite currSite = sites[ii];
+
+            // This is effectively no offset.  This is good, as long as we don't have
+            // a distance origin.  In that case, we will warn and not do any special offsets.
+            if (currSite.ObjectLocation?.RelativeTransform == null)
+            {
+               if (distantOriginFirstSiteId.HasValue)
+               {
+                  BaseSiteOffset = null;
+                  break;
+               }
+               continue;
+            }
+
+            double elevationToUse = currSite.RefElevation;
+            XYZ projectLoc = currSite.ObjectLocation.RelativeTransform.Origin;
+            if (!MathUtil.IsAlmostZero(projectLoc.Z))
+            {
+               if (MathUtil.IsAlmostZero(elevationToUse))
+               {
+                  currSite.RefElevation = projectLoc.Z;
+                  Importer.TheLog.LogError(currSite.Id, "The Z-value of the IfcSite object placement relative transform should be zero.  This will override the RefElevation value of zero.", false);
+               }
+               else
+               {
+                  Importer.TheLog.LogError(currSite.Id, "The Z-value of the IfcSite object placement relative transform should be zero.  This will be ignored in favor of the non-zero RefElevation value.", false);
+               }
+            }
+
+            XYZ offset = new XYZ(projectLoc.X, projectLoc.Y, elevationToUse);
+            if (XYZ.IsWithinLengthLimits(offset))
+            {
+               if (distantOriginFirstSiteId.HasValue)
+               {
+                  BaseSiteOffset = null;
+                  break;
+               }
+               continue;
+            }
+
+            if (BaseSiteOffset == null)
+            {
+               distantOriginFirstSiteId = currSite.Id;
+               
+               // If the index is greater than 0, then we have found some sites close to the
+               // origin.  That means we have incompatible origins which is an issue.
+               if (ii == 0)
+                  BaseSiteOffset = offset;
+               else
+                  break;
+            }
+         }
+
+         if (BaseSiteOffset != null)
+         {
+            ProjectPosition projectPosition = projectLocation.GetProjectPosition(XYZ.Zero);
+
+            projectPosition.EastWest += BaseSiteOffset.X;
+            projectPosition.NorthSouth += BaseSiteOffset.Y;
+            projectPosition.Elevation += BaseSiteOffset.Z;
+
+            projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
+
+            // Modify the RelativeTransforms for each of these sites.
+            // Note that the RelativeTransform must be defined to have gotten here.
+            for (int ii = 0; ii < numSites; ii++)
+            {
+               XYZ currentOffset = 
+                  new XYZ(-BaseSiteOffset.X, -BaseSiteOffset.Y, -BaseSiteOffset.Z + sites[ii].RefElevation);
+               Transform newSiteTransform = sites[ii].ObjectLocation.TotalTransform;
+               newSiteTransform.Origin += currentOffset;
+               sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(newSiteTransform);
+            }
+         }
+         else
+         {
+            // In this case, we just have to make sure that the RefElevation is included in
+            // the site transform.
+            for (int ii = 0; ii < numSites; ii++)
+            {
+               if (MathUtil.IsAlmostZero(sites[ii].RefElevation))
+                  continue;
+
+               if (sites[ii].ObjectLocation == null || sites[ii].ObjectLocation.RelativeTransform == null)
+               {
+                  XYZ currentOffset = new XYZ(0, 0, sites[ii].RefElevation);
+                  sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(Transform.CreateTranslation(currentOffset));
+               }
+               else
+               {
+                  double currRefElevation = sites[ii].RefElevation;
+                  double currZOffset = sites[ii].ObjectLocation.RelativeTransform.Origin.Z;
+                  if (!MathUtil.IsAlmostEqual(currZOffset, currRefElevation))
+                  {
+                     XYZ currentOffset = new XYZ(0, 0, currRefElevation - currZOffset);
+                     Transform newSiteTransform = sites[ii].ObjectLocation.TotalTransform;
+                     newSiteTransform.Origin += currentOffset;
+                     sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(newSiteTransform);
+                  }
+               }
+            }
+         }
+
+         if (BaseSiteOffset == null && distantOriginFirstSiteId.HasValue)
+         {
+            Importer.TheLog.LogError(distantOriginFirstSiteId.Value, "There are multiple sites in the file that are located far away from each other.  This may result in poor visualization of the data.", false);
+         }
+      }
 
       /// <summary>
       /// Creates or populates Revit element params based on the information contained in this class.
@@ -266,7 +443,15 @@ namespace Revit.IFC.Import.Data
             }
          }
 
-         Importer.TheProcessor.PostProcessSite(this);
+         ForgeTypeId lengthUnits = null;
+         if (!Importer.TheProcessor.ScaleValues)
+         {
+            lengthUnits = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length)?.Unit;
+         }
+         
+         Importer.TheProcessor.PostProcessSite(Id, RefLatitude,
+            RefLongitude, RefElevation, LandTitleNumber, lengthUnits,
+            ObjectLocation?.TotalTransform);
       }
    }
 }

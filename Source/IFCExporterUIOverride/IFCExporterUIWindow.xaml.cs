@@ -826,12 +826,11 @@ namespace BIM.IFC.Export.UI
       private IFCExportConfiguration GetSelectedConfiguration()
       {
          IFCExportConfiguration configuration = (IFCExportConfiguration)listBoxConfigurations.SelectedItem;
-         //if (configuration == null)
-         //{
-         //   configuration = IFCExportConfiguration.CreateDefaultConfiguration();
-         //   IFCExportConfiguration.SetInSession(configuration);
-         //   listBoxConfigurations.SelectedItem = configuration;
-         //}
+         if (configuration == null)
+         {
+            configuration = IFCExportConfiguration.GetInSession();
+            listBoxConfigurations.SelectedItem = configuration;
+         }
          return configuration;
       }
 

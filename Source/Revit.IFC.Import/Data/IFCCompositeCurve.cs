@@ -167,7 +167,7 @@ namespace Revit.IFC.Import.Data
          if (segments == null)
             Importer.TheLog.LogError(Id, "Invalid IfcCompositeCurve with no segments.", true);
 
-         double shortCurveTol = Importer.TheProcessor.ShortCurveTolerance;
+         double shortCurveTol = IFCImportFile.TheFile.ShortCurveTolerance;
 
          // need List<> so that we can AddRange later.
          List<Curve> curveSegments = new List<Curve>();
@@ -216,11 +216,12 @@ namespace Revit.IFC.Import.Data
             XYZ curveLoopStartPoint = curveSegments[0].GetEndPoint(0);
             XYZ curveLoopEndPoint = curveSegments[0].GetEndPoint(1);
 
-            double vertexEps = Importer.TheProcessor.VertexTolerance;
+            double vertexEps = IFCImportFile.TheFile.VertexTolerance;
 
             // This is intended to be "relatively large".  The idea here is that the user would rather have the information presented
             // than thrown away because of a gap that is architecturally insignificant.
-            double gapVertexEps = Math.Max(vertexEps, IFCImportFile.TheFile.OneHundrethOfAFoot); // 1/100th of a foot, or 3.048 mm.
+            const double oneHundrethOfAFoot = 0.01;
+            double gapVertexEps = Math.Max(vertexEps, oneHundrethOfAFoot); // 1/100th of a foot, or 3.048 mm.
 
             // canRepairFirst may change over time, as we may potentially add curves to the start of the CurveLoop.
             bool canRepairFirst = (curveSegments[0] is Line);

@@ -186,7 +186,7 @@ namespace Revit.IFC.Export.Exporter
       /// The handle.
       /// </returns>
       public static IFCAnyHandle ExportCurtainObjectCommonAsOneBRep(ICollection<ElementId> allSubElements, Element wallElement,
-         ExporterIFC exporterIFC, PlacementSetter setter, IFCAnyHandle localPlacement)
+         ExporterIFC exporterIFC)
       {
          IFCAnyHandle prodDefRep = null;
          Document document = wallElement.Document;
@@ -231,8 +231,7 @@ namespace Revit.IFC.Export.Exporter
             // Export AdvancedFace before use fallback BREP
             else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView)
             {
-               BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(false, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-               IFCAnyHandle advancedBRep = BodyExporter.ExportBodyAsAdvancedBrep(exporterIFC, subElem, bodyExporterOptions, geomElem);
+               IFCAnyHandle advancedBRep = BodyExporter.ExportBodyAsAdvancedBrep(exporterIFC, subElem, geomElem);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(advancedBRep))
                {
                   bodyItems.Add(advancedBRep);
@@ -386,7 +385,7 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle rep = null;
                if (!canExportCurtainWallAsContainer)
                {
-                  rep = ExportCurtainObjectCommonAsOneBRep(allSubElements, element, exporterIFC, setter, localPlacement);
+                  rep = ExportCurtainObjectCommonAsOneBRep(allSubElements, element, exporterIFC);
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(rep))
                      return;
                }

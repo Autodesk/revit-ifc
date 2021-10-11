@@ -118,20 +118,22 @@ namespace Revit.IFC.Import.Data
             return null;
 
          // The X-dir of the transform of the start of the directrix will form the normal of the disk.
-         Plane diskPlane = Plane.CreateByNormalAndOrigin(originTrf.BasisX, originTrf.Origin);
+         // We are not using the origin in Plane.CreateByNormalAndOrigin because that has
+         // limits of [-30K,30K].
+         Plane diskPlaneAxes = Plane.CreateByNormalAndOrigin(originTrf.BasisX, XYZ.Zero);
 
          IList<CurveLoop> profileCurveLoops = new List<CurveLoop>();
 
          CurveLoop diskOuterCurveLoop = new CurveLoop();
-         diskOuterCurveLoop.Append(Arc.Create(diskPlane, Radius, 0, Math.PI));
-         diskOuterCurveLoop.Append(Arc.Create(diskPlane, Radius, Math.PI, 2.0 * Math.PI));
+         diskOuterCurveLoop.Append(Arc.Create(originTrf.Origin, Radius, 0, Math.PI, diskPlaneAxes.XVec, diskPlaneAxes.YVec));
+         diskOuterCurveLoop.Append(Arc.Create(originTrf.Origin, Radius, Math.PI, 2.0 * Math.PI, diskPlaneAxes.XVec, diskPlaneAxes.YVec));
          profileCurveLoops.Add(diskOuterCurveLoop);
 
          if (InnerRadius.HasValue)
          {
             CurveLoop diskInnerCurveLoop = new CurveLoop();
-            diskInnerCurveLoop.Append(Arc.Create(diskPlane, InnerRadius.Value, 0, Math.PI));
-            diskInnerCurveLoop.Append(Arc.Create(diskPlane, InnerRadius.Value, Math.PI, 2.0 * Math.PI));
+            diskInnerCurveLoop.Append(Arc.Create(originTrf.Origin, InnerRadius.Value, 0, Math.PI, diskPlaneAxes.XVec, diskPlaneAxes.YVec));
+            diskInnerCurveLoop.Append(Arc.Create(originTrf.Origin, InnerRadius.Value, Math.PI, 2.0 * Math.PI, diskPlaneAxes.XVec, diskPlaneAxes.YVec));
             profileCurveLoops.Add(diskInnerCurveLoop);
          }
 

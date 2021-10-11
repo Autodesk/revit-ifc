@@ -165,8 +165,7 @@ namespace Revit.IFC.Export.Exporter
 
             ParamExprListener.ResetParamExprInternalDicts();
             InitializeElementExporters();
-            if (m_ElementExporter != null)
-               m_ElementExporter(exporterIFC, document);
+            m_ElementExporter?.Invoke(exporterIFC, document);
 
             EndExport(exporterIFC, document);
             WriteIFCFile(exporterIFC, document);
@@ -373,7 +372,7 @@ namespace Revit.IFC.Export.Exporter
          // couldn't be exported above.
          // Note that FilteredElementCollector is one use only, so we need to create a new one here.
          FilteredElementCollector spatialElementCollector = GetExportElementCollector(document, useFilterViewInCollector);
-         SpatialElementExporter.InitializeSpatialElementGeometryCalculator(document, exporterIFC);
+         SpatialElementExporter.InitializeSpatialElementGeometryCalculator(document);
          ElementFilter spatialElementFilter = ElementFilteringUtil.GetSpatialElementFilter(document, exporterIFC);
          spatialElementCollector.WherePasses(spatialElementFilter);
 
@@ -648,7 +647,7 @@ namespace Revit.IFC.Export.Exporter
          }
          catch (System.Exception ex)
          {
-            HandleUnexpectedException(ex, exporterIFC, element);
+            HandleUnexpectedException(ex, element);
             return false;
          }
 
@@ -660,7 +659,7 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="ex">The unexpected exception.</param>
       /// <param name="element ">The element got the exception.</param>
-      internal void HandleUnexpectedException(Exception exception, ExporterIFC exporterIFC, Element element)
+      internal void HandleUnexpectedException(Exception exception, Element element)
       {
          Document document = element.Document;
          string errMsg = String.Format("IFC error: Exporting element \"{0}\",{1} - {2}", element.Name, element.Id, exception.ToString());
@@ -685,7 +684,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The IFC exporter object.</param>
       /// <param name="element">The element to check.</param>
       /// <returns>True for MEP type of elements.</returns>
-      private bool IsMEPType(ExporterIFC exporterIFC, Element element, IFCExportInfoPair exportType)
+      private bool IsMEPType(Element element, IFCExportInfoPair exportType)
       {
          return (ElementFilteringUtil.IsMEPType(exportType) || ElementFilteringUtil.ProxyForMEPType(element, exportType));
       }
@@ -975,7 +974,7 @@ namespace Revit.IFC.Export.Exporter
                   // We would then in addition have specialized functions that would convert specific Revit elements to specific IFC instances where extra information
                   // could be gathered from the element.
                   bool exported = false;
-                  if (IsMEPType(exporterIFC, element, exportType))
+                  if (IsMEPType(element, exportType))
                   {
                      exported = GenericMEPExporter.Export(exporterIFC, element, geomElem, exportType, ifcEnumType, productWrapper);
                   }
@@ -2027,9 +2026,9 @@ namespace Revit.IFC.Export.Exporter
                descriptions.Add("Options [Excluded Entities: " + ExporterCacheManager.ExportOptionsCache.ExcludeFilter + "]");
             }
 
-            string projectNumber = (projectInfo != null) ? projectInfo.Number : null;
-            string projectName = (projectInfo != null) ? projectInfo.Name : null;
-            string projectStatus = (projectInfo != null) ? projectInfo.Status : null;
+            string projectNumber = projectInfo?.Number;
+            string projectName = projectInfo?.Name;
+            string projectStatus = projectInfo?.Status;
 
             if (projectNumber == null)
                projectNumber = string.Empty;
@@ -2485,7 +2484,7 @@ namespace Revit.IFC.Export.Exporter
          }
          else
          {
-            IFCAnyHandle telecomAddress = GetTelecomAddressFromExtStorage(file, doc);
+            IFCAnyHandle telecomAddress = GetTelecomAddressFromExtStorage(file);
             IList<IFCAnyHandle> telecomAddresses = null;
             if (telecomAddress != null)
             {
@@ -2542,8 +2541,8 @@ namespace Revit.IFC.Export.Exporter
          else
          {
             // As per IFC implementer's agreement, we get IfcProject.Name from ProjectInfo.Number and IfcProject.Longname from ProjectInfo.Name 
-            projectName = (projectInfo != null) ? projectInfo.Number : null;
-            projectLongName = (projectInfo != null) ? projectInfo.Name : null;
+            projectName = projectInfo?.Number;
+            projectLongName = projectInfo?.Name;
 
             // Get project description if it is set in the Project info
             projectDescription = (projectInfo != null) ? NamingUtil.GetDescriptionOverride(projectInfo, null) : null;
@@ -2600,7 +2599,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle contactEntry = IFCInstanceExporter.CreatePersonAndOrganization(file, contactPerson, contactOrganization, actorRoles);
       }
 
-      private IFCAnyHandle GetTelecomAddressFromExtStorage(IFCFile file, Document document)
+      private IFCAnyHandle GetTelecomAddressFromExtStorage(IFCFile file)
       {
          IFCFileHeaderItem fHItem = ExporterCacheManager.ExportOptionsCache.FileHeaderItem;
          if (!String.IsNullOrEmpty(fHItem.AuthorEmail))
@@ -3228,10 +3227,11 @@ namespace Revit.IFC.Export.Exporter
          }
 
          // Power - support metric watt only.
+         IFCAnyHandle powerSIUnit = null;
          {
-            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, SpecTypeId.HvacPower, IFCUnit.PowerUnit, IFCSIUnitName.Watt,
+            powerSIUnit = CreateSIUnit(file, SpecTypeId.HvacPower, IFCUnit.PowerUnit, IFCSIUnitName.Watt,
                 null, UnitTypeId.Watts);
-            unitSet.Add(voltageSIUnit);      // created above, so unique.
+            unitSet.Add(powerSIUnit);      // created above, so unique.
          }
 
          // Force - support newtons (N) and kN only.
@@ -3299,6 +3299,19 @@ namespace Revit.IFC.Export.Exporter
             ExporterCacheManager.UnitsCache["LUMINOUSEFFICACY"] = luminousEfficacyUnit;
 
             unitSet.Add(luminousEfficacyUnit);
+         }
+
+         // Sound Power - support watt only.
+         {
+            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, powerSIUnit, 1));
+
+            IFCAnyHandle soundPowerUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
+                IFCDerivedUnitEnum.SoundPowerUnit, null);
+            unitSet.Add(soundPowerUnit);
+
+            double soundPowerFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Watts);
+            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Wattage, soundPowerUnit, soundPowerFactor, 0.0);
          }
 
          // Linear Velocity - support m/s only.
@@ -4025,24 +4038,19 @@ namespace Revit.IFC.Export.Exporter
 
                string systemGUID = GUIDUtil.CreateGUID(systemElem);
                IFCAnyHandle systemHandle = null;
-               string ifcEnumType;
-               IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(exporterIFC, systemElem, out ifcEnumType);
-               if (exportAs.ExportInstance == IFCEntityType.IfcDistributionSystem)
+               if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                {
-                  if (exportAs.ValidatedPredefinedType == null)
-                  {
-                     Toolkit.IFC4.IFCDistributionSystem systemType = ConnectorExporter.GetMappedIFCDistributionSystemFromElement(systemElem);
-                     exportAs.ValidatedPredefinedType = IFCValidateEntry.ValidateStrEnum<Toolkit.IFC4.IFCDistributionSystem>(systemType.ToString());
-                  }
-
-                  string longName = NamingUtil.GetLongNameOverride(systemElem, null);
-                  systemHandle = IFCInstanceExporter.CreateDistributionSystem(file, exportAs, systemGUID,
-                     ownerHistory, name, desc, objectType, longName);
+                  systemHandle = IFCInstanceExporter.CreateSystem(file, systemGUID,
+                     ownerHistory, name, desc, objectType);
                }
                else
                {
-                  systemHandle = IFCInstanceExporter.CreateSystem(file, systemGUID,
-                   ownerHistory, name, desc, objectType);
+                  string longName = NamingUtil.GetLongNameOverride(systemElem, null);
+                  Toolkit.IFC4.IFCDistributionSystem systemType = ConnectorExporter.GetMappedIFCDistributionSystemFromElement(systemElem);
+                  string predefinedType = IFCValidateEntry.ValidateStrEnum<Toolkit.IFC4.IFCDistributionSystem>(systemType.ToString());
+
+                  systemHandle = IFCInstanceExporter.CreateDistributionSystem(file, systemGUID,
+                     ownerHistory, name, desc, objectType, longName, predefinedType);
                }
 
                if (systemHandle == null)

@@ -76,7 +76,7 @@ namespace Revit.IFC.Import.Data
             Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
 
             // Set "ElevationWithFlooring" parameter.
-            IFCPropertySet.AddParameterDouble(doc, element, category, this, "ElevationWithFlooring", SpecTypeId.Length, null, ElevationWithFlooring, Id);
+            IFCPropertySet.AddParameterDouble(doc, element, category, this, "ElevationWithFlooring", SpecTypeId.Length, UnitTypeId.Feet, ElevationWithFlooring, Id);
 
             // Set "PredefinedType" parameter.
             if (PredefinedType != null)

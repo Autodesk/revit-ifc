@@ -297,12 +297,25 @@ namespace Revit.IFC.Import.Data
                supportedTypes[""] = Tuple.Create(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);    // Even if unit is grams, display kg.
                supportedTypes["KILO"] = Tuple.Create(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);
             }
+            else if (specTypeId.Equals(SpecTypeId.PipingMassPerTime))
+            {
+               supportedTypes[""] = Tuple.Create(UnitTypeId.KilogramsPerSecond, SymbolTypeId.KgPerS);    // Even if unit is grams, display kg.
+               supportedTypes["KILO"] = Tuple.Create(UnitTypeId.KilogramsPerSecond, SymbolTypeId.KgPerS);
+            }
+            else if (specTypeId.Equals(SpecTypeId.AngularSpeed))
+            {
+               supportedTypes[""] = Tuple.Create(UnitTypeId.RevolutionsPerSecond, SymbolTypeId.Rps);
+            }
             else if (specTypeId.Equals(SpecTypeId.Volume))
             {
                supportedTypes[""] = Tuple.Create(UnitTypeId.CubicMeters, SymbolTypeId.MSup3);
                supportedTypes["DECI"] = Tuple.Create(UnitTypeId.Liters, SymbolTypeId.Liter);
                supportedTypes["CENTI"] = Tuple.Create(UnitTypeId.CubicCentimeters, SymbolTypeId.CmSup3);
                supportedTypes["MILLI"] = Tuple.Create(UnitTypeId.CubicMillimeters, SymbolTypeId.MmSup3);
+            }
+            else if (specTypeId.Equals(SpecTypeId.Wattage))
+            {
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Watts, SymbolTypeId.Watt);
             }
             m_sSupportedMetricUnitTypes[specTypeId] = supportedTypes;
          }
@@ -605,6 +618,43 @@ namespace Revit.IFC.Import.Data
             expectedTypes2.AddCustomExpectedType(-2, "TIMEUNIT");
             expectedTypes2.AddExpectedType(-2, SpecTypeId.Length);
             expectedTypesList.Add(expectedTypes2);
+         }
+         else if (string.Compare(unitType, "MASSFLOWRATEUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.PipingMassPerTime;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support kg / s in the IFC file.
+
+            // kg / s
+            DerivedUnitExpectedTypes expectedTypesKgPerS = new DerivedUnitExpectedTypes(UnitTypeId.KilogramsPerSecond, SymbolTypeId.KgPerS);
+            expectedTypesKgPerS.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypesKgPerS.AddCustomExpectedType(-1, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypesKgPerS);
+         }
+         else if (string.Compare(unitType, "ROTATIONALFREQUENCYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.AngularSpeed;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support revolutions / s in the IFC file.
+
+            // revolutions / s
+            DerivedUnitExpectedTypes expectedTypesCps = new DerivedUnitExpectedTypes(UnitTypeId.RevolutionsPerSecond, SymbolTypeId.Rps);
+            expectedTypesCps.AddCustomExpectedType(-1, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypesCps);
+         }
+         else if (string.Compare(unitType, "SOUNDPOWERUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.Wattage;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support watt in the IFC file.
+
+            // watt
+            DerivedUnitExpectedTypes expectedTypesW = new DerivedUnitExpectedTypes(UnitTypeId.Watts, SymbolTypeId.Watt);
+            expectedTypesW.AddExpectedType(1, SpecTypeId.HvacPower);
+            expectedTypesList.Add(expectedTypesW);
          }
          else if (string.Compare(unitType, "USERDEFINED", true) == 0)
          {

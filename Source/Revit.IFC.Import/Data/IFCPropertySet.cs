@@ -38,8 +38,8 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The properties.
       /// </summary>
-      public IDictionary<string, IFCProperty> IFCProperties { get; protected set; }
-      
+      public IDictionary<string, IFCProperty> IFCProperties { get; protected set; } = new Dictionary<string, IFCProperty>();
+
       /// <summary>
       /// Processes IfcPropertySet attributes.
       /// </summary>
@@ -61,8 +61,6 @@ namespace Revit.IFC.Import.Data
 
          if (properties != null)
          {
-            IFCProperties = new Dictionary<string, IFCProperty>();
-
             foreach (IFCAnyHandle property in properties)
             {
                IFCProperty ifcProperty = IFCProperty.ProcessIFCProperty(property);
@@ -131,7 +129,7 @@ namespace Revit.IFC.Import.Data
          Parameter parameter = null;
          ElementBinding binding = null;
          bool reinsert = false;
-         
+
          if (!newlyCreated)
          {
             BindingMap bindingMap = Importer.TheCache.GetParameterBinding(doc);
@@ -153,7 +151,7 @@ namespace Revit.IFC.Import.Data
             if (!reinsert || !binding.Categories.Contains(category))
             {
                binding.Categories.Insert(category);
-      
+
                BindingMap bindingMap = Importer.TheCache.GetParameterBinding(doc);
                if (reinsert)
                   bindingMap.ReInsert(definition, binding, BuiltInParameterGroup.PG_IFC);
@@ -262,6 +260,17 @@ namespace Revit.IFC.Import.Data
          return true;
       }
 
+      private static ForgeTypeId CalculateUnitsTypeId(ForgeTypeId unitsTypeId,
+         ForgeTypeId specTypeId)
+      {
+         if (unitsTypeId != null || Importer.TheProcessor.ScaleValues)
+            return unitsTypeId;
+
+         // We can look up the units when the values are not scaled.
+         var units = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(specTypeId);
+         return (units != null) ? units.Unit : UnitTypeId.General;
+      }
+   
       /// <summary>
       /// Add a double parameter to an element.
       /// </summary>
@@ -274,11 +283,14 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterValue">The parameter value, scaled into document units.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterDouble(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, ForgeTypeId specTypeId, ForgeTypeId unitsTypeId, double parameterValue, int parameterSetId)
+      public static bool AddParameterDouble(Document doc, Element element, Category category,
+         IFCObjectDefinition objDef, string parameterName, ForgeTypeId specTypeId, 
+         ForgeTypeId unitsTypeId, double parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
 
+         unitsTypeId = CalculateUnitsTypeId(unitsTypeId, specTypeId);
          bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, 
             specTypeId, unitsTypeId, parameterSetId, parameterName, parameterValue);
          if (processedParameter.HasValue)
@@ -390,7 +402,6 @@ namespace Revit.IFC.Import.Data
             property.Create(doc, element, category, objDef, parameterGroupMap, Name, parametersCreated);
          }
 
-         CreateScheduleForPropertySet(doc, element, category, parameterGroupMap, parametersCreated);
          return Tuple.Create(quotedName, true);
       }
    }

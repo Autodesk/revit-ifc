@@ -121,14 +121,14 @@ namespace Revit.IFC.Import.Data
          }
 
          IFCData trim1 = ifcCurve.GetAttribute("Trim1");
-         if (trim1.PrimitiveType != IFCDataPrimitiveType.Aggregate)
+         if (trim1.PrimitiveType.ToString() != "Aggregate")
          {
             // LOG: ERROR: Invalid data type for Trim1 attribute for IfcTrimmedCurve #.
             return;
          }
 
          IFCData trim2 = ifcCurve.GetAttribute("Trim2");
-         if (trim2.PrimitiveType != IFCDataPrimitiveType.Aggregate)
+         if (trim2.PrimitiveType.ToString() != "Aggregate")
          {
             // LOG: ERROR: Invalid data type for Trim1 attribute for IfcTrimmedCurve #.
             return;
@@ -204,7 +204,7 @@ namespace Revit.IFC.Import.Data
             Curve copyCurve = baseCurve.Clone();
 
             double length = param2 - param1;
-            if (length <= Importer.TheProcessor.ShortCurveTolerance)
+            if (length <= IFCImportFile.TheFile.ShortCurveTolerance)
             {
                string lengthAsString = IFCUnitUtil.FormatLengthAsString(length);
                Importer.TheLog.LogError(Id, "curve length of " + lengthAsString + " is invalid, ignoring.", false);
@@ -283,12 +283,12 @@ namespace Revit.IFC.Import.Data
          bool preferParam = !(trimPreference == IFCTrimmingPreference.Cartesian);
          if (secondAttempt)
             preferParam = !preferParam;
-         double vertexEps = Importer.TheProcessor.VertexTolerance;
+         double vertexEps = IFCImportFile.TheFile.VertexTolerance;
 
          IFCAggregate trimAggregate = trim.AsAggregate();
          foreach (IFCData trimParam in trimAggregate)
          {
-            if (!preferParam && (trimParam.PrimitiveType == IFCDataPrimitiveType.Instance))
+            if (!preferParam && (trimParam.PrimitiveType.ToString() == "Instance"))
             {
                IFCAnyHandle trimParamInstance = trimParam.AsInstance();
                XYZ trimParamPt = IFCPoint.ProcessScaledLengthIFCCartesianPoint(trimParamInstance);

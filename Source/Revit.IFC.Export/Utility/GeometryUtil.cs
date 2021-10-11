@@ -550,42 +550,42 @@ namespace Revit.IFC.Export.Utility
             // Add try catch here because in a rare cases we find solid that throws exception/invalid solid.Faces
             try
             {
-            Solid solid = geomObj as Solid;
-            if (solid != null && solid.Faces.Size > 0)
-            {
-               solidMeshCapsule.AddSolid(solid, containingElement);
-            }
-            else
-            {
-               Mesh mesh = geomObj as Mesh;
-               if (mesh != null)
+               Solid solid = geomObj as Solid;
+               if (solid != null && solid.Faces.Size > 0)
                {
-                  solidMeshCapsule.AddMesh(mesh);
+                  solidMeshCapsule.AddSolid(solid, containingElement);
                }
                else
                {
-                  // if the current geomObj is castable as a GeometryInstance, then we perform the same collection on its symbol geometry
-                  GeometryInstance inst = geomObj as GeometryInstance;
-
-                  if (inst != null)
+                  Mesh mesh = geomObj as Mesh;
+                  if (mesh != null)
                   {
-                     try
+                     solidMeshCapsule.AddMesh(mesh);
+                  }
+                  else
+                  {
+                     // if the current geomObj is castable as a GeometryInstance, then we perform the same collection on its symbol geometry
+                     GeometryInstance inst = geomObj as GeometryInstance;
+
+                     if (inst != null)
                      {
-                        GeometryElement instanceSymbol = inst.GetSymbolGeometry();
-                        if (instanceSymbol != null && instanceSymbol.Count() != 0)
+                        try
                         {
-                           Transform instanceTransform = localTrf.Multiply(inst.Transform);
-                           CollectSolidMeshGeometry(instanceSymbol, inst.Symbol,
-                              instanceTransform, solidMeshCapsule);
+                           GeometryElement instanceSymbol = inst.GetSymbolGeometry();
+                           if (instanceSymbol != null && instanceSymbol.Count() != 0)
+                           {
+                              Transform instanceTransform = localTrf.Multiply(inst.Transform);
+                              CollectSolidMeshGeometry(instanceSymbol, inst.Symbol,
+                                 instanceTransform, solidMeshCapsule);
+                           }
                         }
-                     }
-                     catch
-                     {
+                        catch
+                        {
+                        }
                      }
                   }
                }
             }
-         }
             catch
             {
             }
@@ -600,7 +600,7 @@ namespace Revit.IFC.Export.Utility
       public static bool BoundaryHasSameSense(IFCAnyHandle boundary)
       {
          bool? hasSameSense = IFCAnyHandleUtil.GetBooleanAttribute(boundary, "Orientation");
-         return hasSameSense != null ? (bool)hasSameSense : false;
+         return hasSameSense.HasValue && hasSameSense.Value;
       }
 
       /// <summary>
@@ -701,7 +701,7 @@ namespace Revit.IFC.Export.Utility
          SetPlacementRelTo(localPlacement, newPlacementRelTo);
          SetRelativePlacement(localPlacement, newRelativePlacement);
       }
-      
+
       /// <summary>
       /// Get geometry of one level of a potentially multi-story stair, ramp, or railing.
       /// </summary>
@@ -1020,7 +1020,7 @@ namespace Revit.IFC.Export.Utility
          return range;
       }
 
-      private static bool IsInRange(IFCRange range, CurveLoop loop, Transform lcs, XYZ extrusionDirection, out bool clipCompletely)
+      private static bool IsInRange(IFCRange range, Transform lcs, XYZ extrusionDirection, out bool clipCompletely)
       {
          clipCompletely = false;
          if (range != null)
@@ -1078,7 +1078,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          bool clipCompletely;
-         if (!IsInRange(range, outerBoundary, boundaryLCS, extrusionDirection, out clipCompletely))
+         if (!IsInRange(range, boundaryLCS, extrusionDirection, out clipCompletely))
             return clipCompletely ? null : bodyItemHnd;
 
          if (MathUtil.IsAlmostZero(clippingSlant))
@@ -2637,7 +2637,7 @@ namespace Revit.IFC.Export.Utility
 
          IList<IList<int>> segmentIndexList = null;
          return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentIndexList, false);
-   }
+      }
 
       static bool Is2DPointList(ref IList<IList<double>> pointList)
       {
@@ -2684,10 +2684,10 @@ namespace Revit.IFC.Export.Utility
 
          IFCFile file = exporterIFC.GetFile();
          List<IList<double>> pointList = new List<IList<double>>();
-         
+
          IList<double> currentStartPoint = null;
          IList<double> currentEndPoint = null;
-         
+
          foreach (Curve curve in curves)
          {
             IList<IList<double>> curveCoords = PointListFromCurve(exporterIFC, curve, lcs, projectDir);
@@ -2733,8 +2733,8 @@ namespace Revit.IFC.Export.Utility
                curveCoords.Reverse();
 
             if (removeDuplicatePoint)
-               curveCoords.RemoveAt(addAtEnd ? 0 : curveCount-1);
-            
+               curveCoords.RemoveAt(addAtEnd ? 0 : curveCount - 1);
+
             if (addAtEnd)
                pointList.AddRange(curveCoords);
             else
@@ -2769,10 +2769,10 @@ namespace Revit.IFC.Export.Utility
 
          if (curve is Line)
             return PointListFromLine(exporterIFC, curve as Line, lcs, projectDir);
-         
+
          if (curve is Arc)
             return PointListFromArc(exporterIFC, curve as Arc, lcs, projectDir);
-         
+
          return PointListFromGenericCurve(exporterIFC, curve, lcs, projectDir);
       }
 
@@ -2782,7 +2782,7 @@ namespace Revit.IFC.Export.Utility
          return new List<double>(3) { vertexScaled.X, vertexScaled.Y, vertexScaled.Z };
       }
 
-      private static IList<IList<double>> PointListFromLine(ExporterIFC exporterIFC, Line line, 
+      private static IList<IList<double>> PointListFromLine(ExporterIFC exporterIFC, Line line,
          Transform lcs, XYZ projectDir)
       {
          bool use3DPoint = (lcs == null || projectDir == null);
@@ -2805,13 +2805,13 @@ namespace Revit.IFC.Export.Utility
          return pointList;
       }
 
-      private static IList<IList<double>> PointListFromArc(ExporterIFC exporterIFC, Arc arc, 
+      private static IList<IList<double>> PointListFromArc(ExporterIFC exporterIFC, Arc arc,
          Transform lcs, XYZ projectDir)
       {
          bool use3DPoint = (lcs == null || projectDir == null);
 
          IList<IList<double>> pointList = new List<IList<double>>();
-         
+
          // An integer value is used here to get an accurate interval the value ranges from
          // 0 to 90 or 100 percent, depending on whether the arc is bound or not.
          int normalizedEnd = arc.IsBound ? 10 : 9;
@@ -3053,7 +3053,7 @@ namespace Revit.IFC.Export.Utility
          {
             coordList.Add(new List<double>(3));
          }
-         
+
          foreach (KeyValuePair<IFCFuzzyXYZ, int> vertexAndIndex in vertexMap)
          {
             IFCFuzzyXYZ vertex = vertexAndIndex.Key;
@@ -3608,7 +3608,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="thePoint">The point</param>
       /// <param name="cartesianPoints">A map of already created IfcCartesianPoints.  This argument may be null.</param>
       /// <returns>The handle representing IfcCartesianPoint</returns>
-      public static IFCAnyHandle XYZtoIfcCartesianPoint(ExporterIFC exporterIFC, XYZ thePoint, 
+      public static IFCAnyHandle XYZtoIfcCartesianPoint(ExporterIFC exporterIFC, XYZ thePoint,
          IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints, Transform additionalTrf = null)
       {
          IFCFile file = exporterIFC.GetFile();
@@ -3786,7 +3786,7 @@ namespace Revit.IFC.Export.Utility
             return null;
          }
       }
-      
+
       /// <summary>
       /// Attempt to get profile and simple material information from a FamilyInstance element.
       /// </summary>
@@ -3795,7 +3795,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="basePlaneNormal">The normal used to try to find the profile.</param>
       /// <param name="basePlaneOrigin">The original for the profile.</param>
       /// <returns></returns>
-      public static MaterialAndProfile GetProfileAndMaterial(ExporterIFC exporterIFC, 
+      public static MaterialAndProfile GetProfileAndMaterial(ExporterIFC exporterIFC,
          Element element, XYZ basePlaneNormal, XYZ basePlaneOrigin)
       {
          MaterialAndProfile materialAndProfile = new MaterialAndProfile();
@@ -3820,7 +3820,7 @@ namespace Revit.IFC.Export.Utility
             XYZ projDir = XYZ.BasisZ;
             try
             {
-               CurveLoop curveloop = CurveLoop.Create(profileCurves);              
+               CurveLoop curveloop = CurveLoop.Create(profileCurves);
                if (curveloop.HasPlane())
                   projDir = curveloop.GetPlane().Normal;
             }
@@ -3861,7 +3861,7 @@ namespace Revit.IFC.Export.Utility
                   if (solid == null || solid.Faces.IsEmpty || solid.Edges.IsEmpty)
                      continue;
 
-                  ElementId materialId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solid, exporterIFC, familyInstance);
+                  ElementId materialId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solid, familyInstance);
                   IFCAnyHandle profileDef = GetExtrusionBaseProfile(exporterIFC, solid, profileName, basePlane, basePlaneOrigin, out extrusionEndFaces);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(profileDef))
                      materialAndProfile.Add(materialId, profileDef);
@@ -3935,7 +3935,7 @@ namespace Revit.IFC.Export.Utility
             return false;              // Supports only a planar based curve
 
          // Get the plane where the curve lies
-         Plane planeOfCurve = planarPlaneOf(curve);
+         Plane planeOfCurve = PlanarPlaneOf(curve);
          if (plane.Normal.IsAlmostEqualTo(planeOfCurve.Normal))
             return false;                 // THe planes are parallel to each other, no intersection
 
@@ -3963,7 +3963,7 @@ namespace Revit.IFC.Export.Utility
          return true;
       }
 
-      public static Plane planarPlaneOf(Curve curve)
+      public static Plane PlanarPlaneOf(Curve curve)
       {
          // We will only try up to six different parameters to find the 3rd point on the curve.
          IList<double> parToTry = new List<double>() { 0.15, 0.3, 0.45, 0.6, 0.75, 0.9 };
@@ -4234,7 +4234,7 @@ namespace Revit.IFC.Export.Utility
       public static List<Curve> GetCurvesFromGeometryElement(GeometryElement geomElem)
       {
          List<Curve> curveList = new List<Curve>();
-         foreach(GeometryObject geomObject in geomElem)
+         foreach (GeometryObject geomObject in geomElem)
          {
             if (geomObject is GeometryElement)
             {
@@ -4277,15 +4277,13 @@ namespace Revit.IFC.Export.Utility
          else
             return false;
       }
-      public static Transform GetWCS(Document doc)
+      public static Transform GetWCS(Document doc, double unscaledElevation)
       {
          Transform trf = null;
          ProjectLocation projLocation = doc.ActiveProjectLocation;
          if (projLocation == null)
             return trf;
 
-         double unscaledElevation = 0.0;
-         ExporterUtil.GetSafeProjectPositionElevation(doc, out unscaledElevation);
          SiteTransformBasis transformBasis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
 
          trf = Transform.Identity;
@@ -4309,9 +4307,7 @@ namespace Revit.IFC.Export.Utility
 
          if (!trf.IsIdentity)
          {
-            double unscaledSiteElevation = ExporterCacheManager.ExportOptionsCache.IncludeSiteElevation ? 0.0 : unscaledElevation;
-            XYZ orig = UnitUtil.ScaleLength(trf.Origin - new XYZ(0, 0, unscaledSiteElevation));
-
+            XYZ orig = UnitUtil.ScaleLength(trf.Origin - new XYZ(0, 0, unscaledElevation));
             trf = CreateTransformFromVectorsAndOrigin(trf.BasisX, trf.BasisY, trf.BasisZ, orig);
          }
 

@@ -36,6 +36,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// A length quantity.
       /// </summary>
+      Length,
       PositiveLength,
       /// <summary>
       /// An area quantity.
@@ -48,7 +49,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// A Weight quantity
       /// </summary>
-      Weight
+      Weight,
+      /// <summary>
+      /// A Count quantity
+      /// </summary>
+      Count,
+      /// <summary>
+      /// A time duration quantity
+      /// </summary>
+      Time
    }
 
    /// <summary>
@@ -121,7 +130,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC,
          IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         foreach (QuantityEntryMap entry in m_Entries)
+         foreach (QuantityEntryMap entry in Entries)
          {
             IFCAnyHandle result = entry.ProcessEntry(file, exporterIFC, extrusionCreationData, element, 
                elementType, this);
