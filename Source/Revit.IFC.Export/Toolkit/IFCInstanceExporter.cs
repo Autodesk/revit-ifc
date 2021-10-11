@@ -3925,7 +3925,7 @@ namespace Revit.IFC.Export.Toolkit
          return arcIndexData;
       }
 
-      public static IFCAnyHandle CreateIndexedPolyCurve(IFCFile file, IFCAnyHandle coordinates, IList<GeometryUtil.SegmentIndices> segmentIndexList, bool? selfIntersect)
+      public static IFCAnyHandle CreateIndexedPolyCurve(IFCFile file, IFCAnyHandle coordinates, IList<IList<int>> segmentIndexList, bool? selfIntersect)
       {
          if (coordinates == null)
             throw new ArgumentNullException("Points");
@@ -3936,41 +3936,7 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle indexedPolyCurveHnd = CreateInstance(file, IFCEntityType.IfcIndexedPolyCurve, null);
          IFCAnyHandleUtil.SetAttribute(indexedPolyCurveHnd, "Points", coordinates);
          if (segmentIndexList != null)
-         {
-            IFCAggregate segments = indexedPolyCurveHnd.CreateAggregateAttribute("Segments");
-            foreach (GeometryUtil.SegmentIndices segmentIndices in segmentIndexList)
-            {
-               if(segmentIndices.IsCalculated == false)
-                  throw new ArgumentNullException("Segments");
-
-               IFCData segment = null;
-
-               var polyLineIndices = segmentIndices as GeometryUtil.PolyLineIndices;
-               if (polyLineIndices != null)
-               {
-                  segment = segments.CreateValueOfType("IfcLineIndex");
-
-                  IFCAggregate lineIndexAggr = segment.AsAggregate();
-                  foreach (int index in polyLineIndices.Indices)
-                     lineIndexAggr.Add(IFCData.CreateInteger(index));
-               }
-               else
-               {
-                  var arcIndices = segmentIndices as GeometryUtil.ArcIndices;
-                  if (arcIndices != null)
-                  {
-                     segment = segments.CreateValueOfType("IfcArcIndex");
-
-                     IFCAggregate arcIndexAggr = segment.AsAggregate();
-                     arcIndexAggr.Add(IFCData.CreateInteger(arcIndices.Start));
-                     arcIndexAggr.Add(IFCData.CreateInteger(arcIndices.Mid));
-                     arcIndexAggr.Add(IFCData.CreateInteger(arcIndices.End));
-                  }
-               }
-               segments.Add(segment);
-            }
-         }
-
+            IFCAnyHandleUtil.SetAttribute(indexedPolyCurveHnd, "Segments", segmentIndexList, 1, null, 2, null);
          IFCAnyHandleUtil.SetAttribute(indexedPolyCurveHnd, "SelfIntersect", selfIntersect);
 
          return indexedPolyCurveHnd;
