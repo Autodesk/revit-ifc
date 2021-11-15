@@ -345,7 +345,14 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle axisCurve;
             if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             {
-               axisCurve = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, grid.Curve, lcs, projectionDirection);
+               try
+               {
+                  axisCurve = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, grid.Curve, lcs, projectionDirection);
+               }
+               catch
+               {
+                  axisCurve = GeometryUtil.OutdatedCreatePolyCurveFromCurve(exporterIFC, grid.Curve, lcs, projectionDirection);
+               }
             }
             else
             {

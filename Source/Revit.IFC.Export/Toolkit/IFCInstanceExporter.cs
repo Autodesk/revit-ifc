@@ -3925,7 +3925,7 @@ namespace Revit.IFC.Export.Toolkit
          return arcIndexData;
       }
 
-      public static IFCAnyHandle CreateIndexedPolyCurve(IFCFile file, IFCAnyHandle coordinates, IList<IList<int>> segmentIndexList, bool? selfIntersect)
+      public static IFCAnyHandle OutdatedCreateIndexedPolyCurve(IFCFile file, IFCAnyHandle coordinates, IList<IList<int>> segmentIndexList, bool? selfIntersect)
       {
          if (coordinates == null)
             throw new ArgumentNullException("Points");
@@ -3937,6 +3937,63 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.SetAttribute(indexedPolyCurveHnd, "Points", coordinates);
          if (segmentIndexList != null)
             IFCAnyHandleUtil.SetAttribute(indexedPolyCurveHnd, "Segments", segmentIndexList, 1, null, 2, null);
+         IFCAnyHandleUtil.SetAttribute(indexedPolyCurveHnd, "SelfIntersect", selfIntersect);
+
+         return indexedPolyCurveHnd;
+      }
+
+      public static IFCAnyHandle CreateIndexedPolyCurve(IFCFile file, IFCAnyHandle coordinates, IList<GeometryUtil.SegmentIndices> segmentIndexList, bool? selfIntersect)
+      {
+         if (coordinates == null)
+            throw new ArgumentNullException("Points");
+         IFCAnyHandleUtil.ValidateSubTypeOf(coordinates, false, IFCEntityType.IfcCartesianPointList);
+         if (segmentIndexList != null && segmentIndexList.Count == 0)
+            throw new ArgumentNullException("Segments");
+         IFCAnyHandle indexedPolyCurveHnd = CreateInstance(file, IFCEntityType.IfcIndexedPolyCurve, null);
+         IFCAnyHandleUtil.SetAttribute(indexedPolyCurveHnd, "Points", coordinates);
+         if (segmentIndexList != null)
+         {
+            IFCAggregate segments = indexedPolyCurveHnd.CreateAggregateAttribute("Segments");
+            int numSegments = 0;
+            foreach (GeometryUtil.SegmentIndices segmentIndices in segmentIndexList)
+            {
+               if (segmentIndices.IsCalculated == false)
+                  throw new ArgumentNullException("Segments");
+
+               IFCData segment = null;
+
+               // Note. In Revit 2022.1, CreateValueOfType does not add the segment to
+               // the IFCAggregate.  In Revit 2022.1.1, because of the ODA toolkit upgrade,
+               // it does.  So we need to check the size of the aggregate before and after
+               // the call to see if we need to add the new value or not.
+               var polyLineIndices = segmentIndices as GeometryUtil.PolyLineIndices;
+               if (polyLineIndices != null)
+               {
+                  segment = segments.CreateValueOfType("IfcLineIndex");
+                  IFCAggregate lineIndexAggr = segment.AsAggregate();
+                  foreach (int index in polyLineIndices.Indices)
+                     lineIndexAggr.Add(IFCData.CreateInteger(index));
+               }
+               else
+               {
+                  var arcIndices = segmentIndices as GeometryUtil.ArcIndices;
+                  if (arcIndices != null)
+                  {
+                     segment = segments.CreateValueOfType("IfcArcIndex");
+                     IFCAggregate arcIndexAggr = segment.AsAggregate();
+                     arcIndexAggr.Add(IFCData.CreateInteger(arcIndices.Start));
+                     arcIndexAggr.Add(IFCData.CreateInteger(arcIndices.Mid));
+                     arcIndexAggr.Add(IFCData.CreateInteger(arcIndices.End));
+                  }
+               }
+
+               int newNumSegments = segments.Count;
+               if (numSegments == newNumSegments)
+                  segments.Add(segment);
+               numSegments++;
+            }
+         }
+
          IFCAnyHandleUtil.SetAttribute(indexedPolyCurveHnd, "SelfIntersect", selfIntersect);
 
          return indexedPolyCurveHnd;

@@ -494,7 +494,16 @@ namespace Revit.IFC.Import.Data
             }
          }
 
-         ISet<IFCAnyHandle> hasAssignments = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcObjectDefinition, "HasAssignments");
+         ISet<IFCAnyHandle> hasAssignments;
+         try
+         {
+            hasAssignments = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcObjectDefinition, "HasAssignments");
+         }
+         catch
+         {
+            // The default IFC2x3_TC1.exp file does not have this INVERSE attribute correctly set.  Encapsulate this function.
+            hasAssignments = IFCImportHandleUtil.GetHasAssignments(ifcObjectDefinition);
+         }
 
          if (hasAssignments != null)
          {

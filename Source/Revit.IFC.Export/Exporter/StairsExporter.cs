@@ -1640,7 +1640,15 @@ namespace Revit.IFC.Export.Exporter
             {
                if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                {
-                  IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
+                  IFCAnyHandle curveHnd;
+                  try
+                  {
+                      curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
+                  }
+                  catch
+                  {
+                     curveHnd = GeometryUtil.OutdatedCreatePolyCurveFromCurve(exporterIFC, curve);
+                  }
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveHnd))
                      curveSet.Add(curveHnd);
                }
