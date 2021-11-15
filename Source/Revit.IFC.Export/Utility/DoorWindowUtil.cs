@@ -601,7 +601,6 @@ namespace Revit.IFC.Export.Utility
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "SecondMullionOffset", out value1) != null)
             secondMullionOffsetOpt = UnitUtil.ScaleLength(value1);
 
-         //string windowLiningGUID = GUIDUtil.CreateGUID();
          string windowLiningGUID = GUIDUtil.CreateSubElementGUID(familyInstance, (int)IFCWindowSubElements.WindowLining);
          string windowLiningName = NamingUtil.GetIFCName(familyInstance);
          return IFCInstanceExporter.CreateWindowLiningProperties(file, windowLiningGUID, ownerHistory,
@@ -658,7 +657,6 @@ namespace Revit.IFC.Export.Utility
                frameThickness = UnitUtil.ScaleLength(value2);
             }
 
-            //string panelGUID = GUIDUtil.CreateGUID();
             string panelGUID = GUIDUtil.CreateSubElementGUID(familyInstance, (int)IFCWindowSubElements.WindowPanelStart + panelNumber);
             string panelName = NamingUtil.GetIFCNamePlusIndex(familyInstance, panelNumber);
             panels.Add(IFCInstanceExporter.CreateWindowPanelProperties(file, panelGUID, ownerHistory,

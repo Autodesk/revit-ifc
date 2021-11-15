@@ -5739,17 +5739,12 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCAnyHandle CreateBuildingElementProxy(ExporterIFC exporterIFC, Element element, string guid, IFCAnyHandle ownerHistory,
           IFCAnyHandle objectPlacement, IFCAnyHandle representation, string predefinedType)
       {
-         //ValidateElement(guid, ownerHistory, objectPlacement, representation);
-
          IFCAnyHandle buildingElementProxy = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcBuildingElementProxy, element);
-         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         // We do not support CompositionType for IFC2x3, as it does not match the 
+         // IfcBuildingElementProxyType "PredefinedType" values.
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            if (!string.IsNullOrEmpty(predefinedType) && !predefinedType.Equals("NOTDEFINED", StringComparison.InvariantCultureIgnoreCase))
-               IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "CompositionType", predefinedType, true);
-         }
-         else
-         {
-            IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "preDefinedType", predefinedType, true);
+            IFCAnyHandleUtil.SetAttribute(buildingElementProxy, "PredefinedType", predefinedType, true);
          }
          SetElement(buildingElementProxy, element, guid, ownerHistory, null, null, null, objectPlacement, representation, null);
          return buildingElementProxy;

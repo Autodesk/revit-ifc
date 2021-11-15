@@ -375,9 +375,9 @@ namespace Revit.IFC.Export.Utility
          catch
          {
          	int vertCount = triangulatedBody.VertexCount;
-         	for (int counter = 0; counter < vertCount; counter++)
+         	for (int currentVertexIndex = 0; currentVertexIndex < vertCount; currentVertexIndex++)
          	{
-            	m_MeshVertices.Add(idx, triangulatedBody.GetVertex(counter));
+            	m_MeshVertices.Add(idx, triangulatedBody.GetVertex(currentVertexIndex));
             	idx++;
          	}
          }
