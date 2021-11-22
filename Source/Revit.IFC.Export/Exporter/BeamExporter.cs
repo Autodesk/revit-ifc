@@ -218,7 +218,16 @@ namespace Revit.IFC.Export.Exporter
          IList<IFCAnyHandle> axis_items = null;
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {
-            IFCAnyHandle axisHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
+            IFCAnyHandle axisHnd;
+            try
+            {
+               axisHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
+            }
+            catch
+            {
+               axisHnd = GeometryUtil.OutdatedCreatePolyCurveFromCurve(exporterIFC, curve);
+            }
+
             axis_items = new List<IFCAnyHandle>();
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisHnd))
             {

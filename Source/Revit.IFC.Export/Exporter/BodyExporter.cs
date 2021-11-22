@@ -1119,7 +1119,17 @@ namespace Revit.IFC.Export.Exporter
          bool sameSense, IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints)
       {
          bool allowAdvancedCurve = ExporterCacheManager.ExportOptionsCache.ExportAs4;
-         IFCAnyHandle baseCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC, curve, allowAdvancedCurve, cartesianPoints);
+
+         IFCAnyHandle baseCurve;
+         try
+         {
+            baseCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC, curve, allowAdvancedCurve, cartesianPoints);
+
+         }
+         catch
+         {
+            baseCurve = GeometryUtil.OutdatedCreateIFCCurveFromRevitCurve(file, exporterIFC, curve, allowAdvancedCurve, cartesianPoints);
+         }
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(baseCurve))
             return null;
@@ -1132,7 +1142,17 @@ namespace Revit.IFC.Export.Exporter
          IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints, Transform additionalTrf = null)
       {
          bool allowAdvancedCurve = ExporterCacheManager.ExportOptionsCache.ExportAs4;
-         IFCAnyHandle ifcCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC, curve, allowAdvancedCurve, cartesianPoints, additionalTrf);
+
+         IFCAnyHandle ifcCurve;
+         try
+         {
+            ifcCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC, curve, allowAdvancedCurve, cartesianPoints, additionalTrf);
+         }
+         catch
+         {
+            ifcCurve = GeometryUtil.OutdatedCreateIFCCurveFromRevitCurve(file, exporterIFC, curve, allowAdvancedCurve, cartesianPoints, additionalTrf);
+         }
+
          IFCAnyHandle sweptCurve = null;
 
          bool isBound = false;
@@ -2677,7 +2697,8 @@ namespace Revit.IFC.Export.Exporter
                {
                   currentFaceHashSetList.Add(facetHnds);
                   alreadyExported = true;
-                  bodyData.AddRepresentationItemInfo(document, geomObject, materialId, sweptSolidExporter.RepresentationItem);
+                  GraphicsStyle style = document.GetElement(geomObject.GraphicsStyleId) as GraphicsStyle;
+                  bodyData.AddRepresentationItemInfo(document, style, materialId, sweptSolidExporter.RepresentationItem);
                }
             }
 
@@ -2691,7 +2712,8 @@ namespace Revit.IFC.Export.Exporter
                   alreadyExported = true;
                   hasAdvancedBrepGeometry = true;
                   CreateSurfaceStyleForRepItem(exporterIFC, document, options.CreatingVoid, advancedBrepBodyItem, materialId);
-                  bodyData.AddRepresentationItemInfo(document, geomObject, materialId, advancedBrepBodyItem);
+                  GraphicsStyle style = document.GetElement(geomObject.GraphicsStyleId) as GraphicsStyle;
+                  bodyData.AddRepresentationItemInfo(document, style, materialId, advancedBrepBodyItem);
                }
             }
 
@@ -2704,10 +2726,11 @@ namespace Revit.IFC.Export.Exporter
                IList<IFCAnyHandle> triangulatedBodyItems = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
                if (triangulatedBodyItems != null && triangulatedBodyItems.Count > 0)
                {
+                  GraphicsStyle style = document.GetElement(geomObject.GraphicsStyleId) as GraphicsStyle;
                   foreach (IFCAnyHandle triangulatedBodyItem in triangulatedBodyItems)
                   {
                      bodyItems.Add(triangulatedBodyItem);
-                     bodyData.AddRepresentationItemInfo(document, geomObject, materialId, triangulatedBodyItem);
+                     bodyData.AddRepresentationItemInfo(document, style, materialId, triangulatedBodyItem);
                   }
                   alreadyExported = true;
                   hasTriangulatedGeometry = true;
@@ -2821,14 +2844,18 @@ namespace Revit.IFC.Export.Exporter
             int size = currentFaceHashSetList.Count;
             if (exportAsBReps)
             {
-               int matToUse = -1;
+               int brepIndex = -1;
+               ElementId currMatId = ElementId.InvalidElementId;
+               GraphicsStyle currStyle = null;
                for (int ii = 0; ii < size; ii++)
                {
-                  if (startIndexForObject[matToUse + 1] == ii)
-                     matToUse++;
+                  if (startIndexForObject[brepIndex + 1] == ii)
+                  {
+                     brepIndex++;
+                     currMatId = materialIds[brepIndex];
+                     currStyle = document.GetElement(splitGeometryList[brepIndex].GraphicsStyleId) as GraphicsStyle;
+                  }
                   HashSet<IFCAnyHandle> currentFaceHashSet = currentFaceHashSetList[ii];
-                  ElementId currMatId = materialIds[matToUse];
-
                   IFCAnyHandle faceOuter = IFCInstanceExporter.CreateClosedShell(file, currentFaceHashSet);
                   IFCAnyHandle brepHnd = RepresentationUtil.CreateFacetedBRep(exporterIFC, document, 
                      options.CreatingVoid, faceOuter, currMatId);
@@ -2836,6 +2863,7 @@ namespace Revit.IFC.Export.Exporter
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(brepHnd))
                   {
                      bodyItems.Add(brepHnd);
+                     bodyData.AddRepresentationItemInfo(document, currStyle, currMatId, brepHnd);
                   }
                }
             }
@@ -3123,7 +3151,8 @@ namespace Revit.IFC.Export.Exporter
                               materialIdsForExtrusions.Add(matId);
                               if (matId != ElementId.InvalidElementId)
                               {
-                                 bodyData.AddRepresentationItemInfo(document, geometryList[0], matId, extrusionData.BaseRepresentationItems[0]);
+                                 GraphicsStyle style = document.GetElement(geometryList[0].GraphicsStyleId) as GraphicsStyle;
+                                 bodyData.AddRepresentationItemInfo(document, style, matId, extrusionData.BaseRepresentationItems[0]);
                               }
                               bodyData.RepresentationHnd = extrusionData.Handle;
                               bodyData.ShapeRepresentationType = extrusionData.ShapeRepresentationType;
@@ -3308,7 +3337,9 @@ namespace Revit.IFC.Export.Exporter
                               }
                               exportedAsExtrusion = true;
                               hasExtrusions = true;
-                              bodyData.AddRepresentationItemInfo(document, geometryList[geomIndex], matId, extrusionHandle);
+                              GraphicsStyle style = document.GetElement(geometryList[geomIndex].GraphicsStyleId) as GraphicsStyle;
+
+                              bodyData.AddRepresentationItemInfo(document, style, matId, extrusionHandle);
                            }
                         }
 
@@ -3363,7 +3394,8 @@ namespace Revit.IFC.Export.Exporter
                                  bodyItems.Add(sweptHandle);
                                  ElementId matId = exporterIFC.GetMaterialIdForCurrentExportState();
                                  materialIdsForExtrusions.Add(matId);
-                                 bodyData.AddRepresentationItemInfo(document, solid, matId, sweptHandle);
+                                 GraphicsStyle style = document.GetElement(solid.GraphicsStyleId) as GraphicsStyle;
+                                 bodyData.AddRepresentationItemInfo(document, style, matId, sweptHandle);
                                  exported = true;
                                  hasRepresentationType = sweptSolidExporter.RepresentationType;
 

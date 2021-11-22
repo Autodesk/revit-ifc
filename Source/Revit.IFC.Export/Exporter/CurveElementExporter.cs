@@ -154,7 +154,16 @@ namespace Revit.IFC.Export.Exporter
                   List<Curve> curvesFromGeomElem = GeometryUtil.GetCurvesFromGeometryElement(geometryElement);
                   foreach (Curve curve in curvesFromGeomElem)
                   {
-                     IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve, trf);
+                     IFCAnyHandle curveHnd;
+                     try
+                     {
+                        curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve, trf);
+                     }
+                     catch
+                     {
+                        curveHnd = GeometryUtil.OutdatedCreatePolyCurveFromCurve(exporterIFC, curve, trf);
+                     }
+
                      if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveHnd))
                         curves.Add(curveHnd);
                   }

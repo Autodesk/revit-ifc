@@ -1874,7 +1874,16 @@ namespace Revit.IFC.Export.Exporter
          // A list of IfcCurve entities.
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {
-            IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, baseCurve, extrusionLCS, extrusionDir);
+            IFCAnyHandle curveHnd;
+            try
+            {
+               curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, baseCurve, extrusionLCS, extrusionDir);
+            }
+            catch
+            {
+               curveHnd = GeometryUtil.OutdatedCreatePolyCurveFromCurve(exporterIFC, baseCurve, extrusionLCS, extrusionDir);
+            }
+
             profileCurves = new List<IFCAnyHandle>();
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveHnd))
                profileCurves.Add(curveHnd);

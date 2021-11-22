@@ -362,6 +362,25 @@ namespace Revit.IFC.Export.Utility
       {
          m_Geom = triangulatedBody;
          m_MeshGeom = null;
+         m_MeshVertices.Clear();
+         int idx = 0;
+         try
+         {	
+         	foreach (XYZ vert in triangulatedBody.GetVertices())
+         	{
+            	m_MeshVertices.Add(idx, vert);
+            	idx++;
+         	}
+         }
+         catch
+         {
+         	int vertCount = triangulatedBody.VertexCount;
+         	for (int currentVertexIndex = 0; currentVertexIndex < vertCount; currentVertexIndex++)
+         	{
+            	m_MeshVertices.Add(idx, triangulatedBody.GetVertex(currentVertexIndex));
+            	idx++;
+         	}
+         }
       }
 
       /// <summary>

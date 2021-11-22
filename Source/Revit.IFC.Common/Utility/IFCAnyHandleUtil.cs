@@ -256,12 +256,20 @@ namespace Revit.IFC.Common.Utility
       public static string GetIFCEntityTypeName(IFCEntityType entityType)
       {
          string entityTypeName;
-         if (!m_sIFCEntityTypeToNames.TryGetValue(entityType, out entityTypeName))
+         try
          {
-            entityTypeName = entityType.ToString();
-            m_sIFCEntityTypeToNames[entityType] = entityTypeName;
+            if (!m_sIFCEntityTypeToNames.TryGetValue(entityType, out entityTypeName))
+            {
+               entityTypeName = entityType.ToString();
+               m_sIFCEntityTypeToNames[entityType] = entityTypeName;
+            }
+            return entityTypeName;
          }
-         return entityTypeName;
+
+         catch
+         {
+            return null;
+         }
       }
 
       /// <summary>
@@ -1239,7 +1247,14 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of attribute values.</returns>
       public static T GetValidAggregateInstanceAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<IFCAnyHandle>, new()
       {
-         IFCData ifcData = handle.GetAttribute(name);
+         IFCData ifcData = null;
+         try
+         {
+            ifcData = handle.GetAttribute(name);
+         }
+         catch
+         {
+         }
 
          T aggregateAttribute = default(T);
 
@@ -1975,7 +1990,15 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if the handle entity is an entity of either the given type or one of its sub-types.</returns>
       public static bool IsValidSubTypeOf(IFCAnyHandle handle, IFCEntityType type)
       {
-         return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
+         try
+         {
+            return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
+
+         }
+         catch
+         {
+            return false;
+         }
       }
 
       /// <summary>
