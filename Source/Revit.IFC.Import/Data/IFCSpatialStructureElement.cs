@@ -223,17 +223,8 @@ namespace Revit.IFC.Import.Data
 
       protected void TryToFixFarawayOrigin()
       {
-         try
-         {
-            if (!(ProjectScope?.IsSet ?? false))
-               return;
-         }
-         catch
-         {
-            //2022.0.1 doesnt contain BoundingBoxXYZ.IsSet
+         if (!(ProjectScope?.IsSet ?? false))
             return;
-         }
-         
 
          // It is amazing that this works at all, but basically if we set the ProjectScope,
          // and it has a reasonable bounding box size that is far from the origin, and

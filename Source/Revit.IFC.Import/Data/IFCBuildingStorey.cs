@@ -195,7 +195,14 @@ namespace Revit.IFC.Import.Data
 
       public override void PostProcess()
       {
-         TryToFixFarawayOrigin();
+         try
+         {
+            TryToFixFarawayOrigin();
+         }
+         catch
+         {
+            //2022.0.1 doesnt contain BoundingBoxXYZ.IsSet that used in TryToFixFarawayOrigin()
+         }
          base.PostProcess();
       }
 
