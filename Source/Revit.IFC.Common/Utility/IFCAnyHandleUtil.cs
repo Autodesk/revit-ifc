@@ -446,6 +446,7 @@ namespace Revit.IFC.Common.Utility
          // This allows you to set empty strings, which may not always be intended, but should be allowed.
          if (value != null)
          {
+            value = new string(value.Where(c => !char.IsControl(c)).ToArray());
             int maxStrLen = IFCLimits.CalculateMaxAllowedSize(value);
             if (value.Length > maxStrLen)
             {
