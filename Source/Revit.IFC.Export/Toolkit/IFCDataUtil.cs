@@ -57,7 +57,8 @@ namespace Revit.IFC.Export.Toolkit
          if (value == null)
             return null;
 
-         if(value.Length > IFCLimits.MAX_IFCLABEL_STR_LEN)
+         value = new string(value.Where(c => !char.IsControl(c)).ToArray());
+         if (value.Length > IFCLimits.MAX_IFCLABEL_STR_LEN)
          {
             OnIFCStringTooLongWarn(value, IFCLimits.MAX_IFCLABEL_STR_LEN);
             value = value.Remove(IFCLimits.MAX_IFCLABEL_STR_LEN);
@@ -75,6 +76,7 @@ namespace Revit.IFC.Export.Toolkit
          if (value == null)
             return null;
 
+         value = new string(value.Where(c => !char.IsControl(c)).ToArray());
          int maxStrLen = IFCLimits.CalculateMaxAllowedSize(value);
          if (value.Length > maxStrLen)
          {
@@ -94,6 +96,7 @@ namespace Revit.IFC.Export.Toolkit
          if (value == null)
             return null;
 
+         value = new string(value.Where(c => !char.IsControl(c)).ToArray());
          if (value.Length > IFCLimits.MAX_IFCIDENTIFIER_STR_LEN)
          {
             OnIFCStringTooLongWarn(value, IFCLimits.MAX_IFCIDENTIFIER_STR_LEN);
