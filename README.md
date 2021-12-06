@@ -16,7 +16,7 @@ Help for IFC in general can be found [here](http://help.autodesk.com/view/RVT/20
 An archive of the original SourceForge forums can be found [here](https://sourceforge.net/p/ifcexporter/discussion/).
 
 ## Issues and Labels
-When reporting an issue, please use the **Labels** to classify the nature of the issue to the best of your knowledge. 
+When reporting an issue, please use the **Labels** to classify the nature of the Issue to the best of your knowledge. 
 
 **Issue Type** 
 - Problem 
@@ -46,7 +46,7 @@ In addition to Label, please indicate at beginning of Issue text the exact incre
 - Duplicate 
 - Fixed 
 
-Ideally, each Issue should include a Type, Component, and Version Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. These Labels will make it easier to track issues and resolutions from both end user and developer sides.
+Ideally, each Issue should include a Type, Component, and Version Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. Later, the developer will add the Issue to a Milestone to indicate the version it was addressed/fixed. These Labels and Milestones will make it easier to track Issues and their resolutions from both end user and developer sides.
 
 ## License
 
