@@ -15,6 +15,31 @@ Help for IFC in general can be found [here](http://help.autodesk.com/view/RVT/20
 
 An archive of the original SourceForge forums can be found [here](https://sourceforge.net/p/ifcexporter/discussion/).
 
+## Issues and Labels
+When reporting an issue, please use the **Labels** to classify the nature of the issue to the best of your knowledge. 
+
+**Issue Type** 
+- Problem 
+- Enhancement 
+
+**Issue Components** 
+- UI/UX 
+- Export 
+- Import 
+- Documentation 
+- Geometry 
+- Parameters-properties 
+- Performance
+
+**Issue Status** (set by Autodesk Developers) 
+- Rejected 
+- In Progress 
+- Cannot Duplicate 
+- Duplicate 
+- Fixed 
+
+Ideally, each Issue should include a Type and Component Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. These Labels will make it easier to track issues and resolutions from both end user and developer sides.
+
 ## License
 
 The Revit IFC open source uses the Lesser General Public License version 2.0 (LGPLv2).  It relies on ANTLR 4 which uses the BSD license.
