@@ -37,7 +37,7 @@ When reporting an issue, please use the **Labels** to classify the nature of the
 - 2022
 - ... *(will expand as more versions are released)*
 
-In addition to Label, please indicate the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.1.0.0)
+In addition to Label, please indicate at beginning of Issue text the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.1.0.0)
 
 **Issue Status** (set by Autodesk Developers) 
 - Rejected 
