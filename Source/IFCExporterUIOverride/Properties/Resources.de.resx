@@ -184,7 +184,7 @@
     <value>Teile als Gebäudeelemente exportieren</value>
   </data>
   <data name="ExportIFCCommonPropertySets" xml:space="preserve">
-    <value>Allgemeine IFC-Eigenschaftensätze exportieren</value>
+    <value>Allgemeine Einstellungen</value>
   </data>
   <data name="IFCMVDFMHandOver" xml:space="preserve">
     <value>IFC 2x3 Basic FM Handover View</value>
@@ -788,6 +788,12 @@
   </data>
   <data name="UseOnlyTriangulation" xml:space="preserve">
     <value>Triangulation erzwingen</value>
+  </data>
+  <data name="UseTypeNameOnlyForIfcType" xml:space="preserve">
+    <value>Nur Typnamen als IFCType-Namen verwenden</value>
+  </data>
+  <data name="UseVisibleRevitNameAsEntityName" xml:space="preserve">
+    <value>Sichtbaren Revit-Namen als IFCEntity-Namen verwenden</value>
   </data>
   <data name="Eastings" xml:space="preserve">
     <value>Ostwert</value>

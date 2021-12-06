@@ -40,6 +40,8 @@ namespace Revit.IFC.Export.Toolkit
       {
          if (value == null)
             return null;
+
+         value = new string(value.Where(c => !char.IsControl(c)).ToArray());
          return IFCData.CreateStringOfType(value.Length > 255 ? value.Remove(255) : value, "IfcLabel");
       }
 
@@ -52,6 +54,8 @@ namespace Revit.IFC.Export.Toolkit
       {
          if (value == null)
             return null;
+
+         value = new string(value.Where(c => !char.IsControl(c)).ToArray());
          return IFCData.CreateStringOfType(value, "IfcText");
       }
 
@@ -64,6 +68,8 @@ namespace Revit.IFC.Export.Toolkit
       {
          if (value == null)
             return null;
+
+         value = new string(value.Where(c => !char.IsControl(c)).ToArray());
          return IFCData.CreateStringOfType(value.Length > 255 ? value.Remove(255) : value, "IfcIdentifier");
       }
 
