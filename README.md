@@ -31,6 +31,13 @@ When reporting an issue, please use the **Labels** to classify the nature of the
 - Parameters-properties 
 - Performance
 
+**Issue Version**
+- 2020
+- 2021
+- 2022
+- ... *(will expand as more versions are released)*
+In addition to Label, please indicate the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.1.1)
+
 **Issue Status** (set by Autodesk Developers) 
 - Rejected 
 - In Progress 
@@ -38,7 +45,7 @@ When reporting an issue, please use the **Labels** to classify the nature of the
 - Duplicate 
 - Fixed 
 
-Ideally, each Issue should include a Type and Component Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. These Labels will make it easier to track issues and resolutions from both end user and developer sides.
+Ideally, each Issue should include a Type, Component, and Version Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. These Labels will make it easier to track issues and resolutions from both end user and developer sides.
 
 ## License
 
