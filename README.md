@@ -19,8 +19,9 @@ An archive of the original SourceForge forums can be found [here](https://source
 When reporting an issue, please use the **Labels** to classify the nature of the Issue to the best of your knowledge. 
 
 **Issue Type** 
-- Problem 
-- Enhancement 
+- Problem: a "bug" or some kind of mistake found during the use of the functionality.
+- Enhancement: a request change to improve functionality and/or user interface (UI) and/or experience (UX)
+- Inquiry: a question about functionality and/or UI/UX but not a Problem or an Enhancement
 
 **Issue Components** 
 - UI/UX 
@@ -30,14 +31,18 @@ When reporting an issue, please use the **Labels** to classify the nature of the
 - Geometry 
 - Parameters-properties 
 - Performance
+- API
+
+More Labels of this type can be added as needed/requested by users and developers, but this should be a relatively simple list to make high-level sorting and identifying quicker and easier.
 
 **Issue Version**
+- 2019
 - 2020
 - 2021
 - 2022
 - ... *(will expand as more versions are released)*
 
-In addition to Label, please indicate at beginning of Issue text the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.1.0.0)
+In addition to Label, please indicate at beginning of Issue text the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.3.0.0)
 
 **Issue Status** (set by Autodesk Developers) 
 - Rejected 
@@ -46,7 +51,7 @@ In addition to Label, please indicate at beginning of Issue text the exact incre
 - Duplicate 
 - Fixed 
 
-Ideally, each Issue should include a Type, Component, and Version Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. Later, the developer will add the Issue to a Milestone to indicate the version it was addressed/fixed. These Labels and Milestones will make it easier to track Issues and their resolutions from both end user and developer sides.
+Ideally, each Issue should include a Type, Component, and Version Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. Later, the developer will add the Issue to a Milestone to indicate the version it was addressed/fixed. These Labels and Milestones will make it easier to track Issues and their resolutions from both end user and developer sides. Developers may also add an internal Autodesk Jira number/link to an Issue, but this is for internal reference and tracking only and not accessible to the general public.
 
 ## License
 
