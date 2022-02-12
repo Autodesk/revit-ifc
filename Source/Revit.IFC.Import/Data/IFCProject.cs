@@ -143,6 +143,10 @@ namespace Revit.IFC.Import.Data
          // process true north - take the first valid representation context that has a true north value.
          HashSet<IFCAnyHandle> repContexts = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcProjectHandle, "RepresentationContexts");
 
+         bool hasMapConv = false;
+         XYZ geoRef = XYZ.Zero;
+         string geoRefName = null;
+         double trueNorth = 0.0;
          if (repContexts != null)
          {
             foreach (IFCAnyHandle geomRepContextHandle in repContexts)
@@ -161,37 +165,122 @@ namespace Revit.IFC.Import.Data
                   {
                      WorldCoordinateSystem = context.WorldCoordinateSystem;
                   }
+
+                  // Process Map Conversion if any
+                  HashSet<IFCAnyHandle> coordOperation = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(geomRepContextHandle, "HasCoordinateOperation");
+                  if (coordOperation != null)
+                     if (coordOperation.Count > 0)
+                     {
+                        if (IFCAnyHandleUtil.IsSubTypeOf(coordOperation.FirstOrDefault(), IFCEntityType.IfcMapConversion))
+                        {
+                           hasMapConv = true;
+                           IFCAnyHandle mapConv = coordOperation.FirstOrDefault();
+                           bool found = false;
+                           double eastings = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(mapConv, "Eastings", out found);
+                           if (!found)
+                              eastings = 0.0;
+                           double northings = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(mapConv, "Northings", out found);
+                           if (!found)
+                              northings = 0.0;
+                           double orthogonalHeight = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(mapConv, "OrthogonalHeight", out found);
+                           if (!found)
+                              orthogonalHeight = 0.0;
+                           double xAxisAbs = IFCImportHandleUtil.GetOptionalRealAttribute(mapConv, "XAxisAbscissa", 1.0);
+                           double xAxisOrd = IFCImportHandleUtil.GetOptionalRealAttribute(mapConv, "XAxisOrdinate", 0.0);
+                           trueNorth = Math.Atan2(xAxisOrd, xAxisAbs);
+                           //angleToNorth = -((xAxisAngle > -Math.PI / 2.0) ? xAxisAngle - Math.PI / 2.0 : xAxisAngle + Math.PI * 1.5);
+                           double scale = IFCImportHandleUtil.GetOptionalRealAttribute(mapConv, "Scale", 1.0);
+                           geoRef = new XYZ(scale * eastings, scale * northings, scale * orthogonalHeight);
+
+                           // Process the IfcProjectedCRS
+                           IFCAnyHandle projCRS = IFCAnyHandleUtil.GetInstanceAttribute(mapConv, "TargetCRS");
+                           if (projCRS != null && IFCAnyHandleUtil.IsSubTypeOf(projCRS, IFCEntityType.IfcProjectedCRS))
+                           {
+                              geoRefName = IFCImportHandleUtil.GetRequiredStringAttribute(projCRS, "Name", false);
+                              string desc = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "Description", null);
+                              string geodeticDatum = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "GeodeticDatum", null);
+                              string verticalDatum = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "VerticalDatum", null);
+                              string mapProj = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "MapProjection", null);
+                              string mapZone = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "MapZone", null);
+                              IFCAnyHandle mapUnit = IFCImportHandleUtil.GetOptionalInstanceAttribute(projCRS, "MapUnit");
+
+                              Document doc = IFCImportFile.TheFile.Document;
+                              ProjectInfo projectInfo = doc.ProjectInformation;
+                              Category category = IFCPropertySet.GetCategoryForParameterIfValid(projectInfo, Id);
+                              IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.Name", geoRefName, Id);
+                              if (!string.IsNullOrEmpty(desc))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.Description", desc, Id);
+                              if (!string.IsNullOrEmpty(geodeticDatum))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.GeodeticDatum", geodeticDatum, Id);
+                              if (!string.IsNullOrEmpty(verticalDatum))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.VerticalDatum", verticalDatum, Id);
+                              if (!string.IsNullOrEmpty(mapProj))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapProjection", mapProj, Id);
+                              if (!string.IsNullOrEmpty(mapZone))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapZone", mapZone, Id);
+                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(mapUnit))
+                              {
+                                 IFCUnit mapUnitIfc = IFCUnit.ProcessIFCUnit(mapUnit);
+                                 string unitStr = UnitUtils.GetTypeCatalogStringForUnit(mapUnitIfc.Unit);
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapUnit", unitStr, Id);
+                              }
+                           }
+                        }
+                     }
                }
             }
 
             ProjectLocation projectLocation = IFCImportFile.TheFile.Document.ActiveProjectLocation;
+            ProjectPosition projectPosition;
             if (projectLocation != null)
             {
-               // Set initial project location based on the information above.
-               // This may be further modified by the site.
-               double trueNorth = 0.0;
-               if (TrueNorthDirection != null)
+               if (hasMapConv)
                {
-                  double geometricAngle = Math.Atan2(TrueNorthDirection.V, TrueNorthDirection.U);
-                  // Convert from geometric angle to compass direction.
-                  // This involves two steps: (1) subtract PI/2 from the angle, staying in (-PI, PI], then (2) reversing the result.
-                  trueNorth = (geometricAngle > -Math.PI / 2.0) ? geometricAngle - Math.PI / 2.0 : geometricAngle + Math.PI * 1.5;
-                  trueNorth = -trueNorth;
-               }
+                  projectPosition = new ProjectPosition(geoRef.X, geoRef.Y, geoRef.Z, trueNorth);
+                  projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
 
-               // TODO: Extend this to work properly if the world coordinate system
-               // isn't a simple translation.
-               XYZ origin = XYZ.Zero;
-               if (WorldCoordinateSystem != null &&
-                  WorldCoordinateSystem.IsTranslation &&
-                  !XYZ.IsWithinLengthLimits(WorldCoordinateSystem.Origin))
+                  if (!string.IsNullOrEmpty(geoRefName))
+                     IFCImportFile.TheFile.Document.SiteLocation.SetGeoCoordinateSystem(geoRefName);
+               }
+               else
                {
-                  origin = WorldCoordinateSystem.Origin;
-                  WorldCoordinateSystem = null;
-               }
+                  // Set initial project location based on the information above.
+                  // This may be further modified by the site.
+                  trueNorth = 0.0;
+                  if (TrueNorthDirection != null)
+                  {
+                     trueNorth = -Math.Atan2(-TrueNorthDirection.U, TrueNorthDirection.V);
+                  }
 
-               ProjectPosition projectPosition = new ProjectPosition(origin.X, origin.Y, origin.Z, trueNorth);
-               projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
+                  // TODO: Extend this to work properly if the world coordinate system
+                  // isn't a simple translation.
+                  XYZ origin = XYZ.Zero;
+                  if (WorldCoordinateSystem != null)
+                  {
+                     geoRef = WorldCoordinateSystem.Origin;
+                     double angleRot = Math.Atan2(WorldCoordinateSystem.BasisX.Y, WorldCoordinateSystem.BasisX.X);
+
+                     // If it is translation only, or if the WCS rotation is equal to trueNorth, we assume they are the same
+                     if (WorldCoordinateSystem.IsTranslation
+                        || MathUtil.IsAlmostEqual(angleRot, trueNorth))
+                     {
+                        WorldCoordinateSystem = null;
+                     }
+                     else
+                     {
+                        // If the trueNorth is not set (=0), set the trueNorth by the rotation of the WCS, otherwise add the angle                       
+                        if (MathUtil.IsAlmostZero(trueNorth))
+                           trueNorth = angleRot;
+                        else
+                           trueNorth += angleRot;
+
+                        WorldCoordinateSystem = null;
+                     }
+                  }
+
+                  projectPosition = new ProjectPosition(geoRef.X, geoRef.Y, geoRef.Z, trueNorth);
+                  projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
+               }
             }
          }
       }

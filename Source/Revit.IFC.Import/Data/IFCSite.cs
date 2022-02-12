@@ -322,22 +322,8 @@ namespace Revit.IFC.Import.Data
                continue;
             }
 
-            double elevationToUse = currSite.RefElevation;
             XYZ projectLoc = currSite.ObjectLocation.RelativeTransform.Origin;
-            if (!MathUtil.IsAlmostZero(projectLoc.Z))
-            {
-               if (MathUtil.IsAlmostZero(elevationToUse))
-               {
-                  currSite.RefElevation = projectLoc.Z;
-                  Importer.TheLog.LogError(currSite.Id, "The Z-value of the IfcSite object placement relative transform should be zero.  This will override the RefElevation value of zero.", false);
-               }
-               else
-               {
-                  Importer.TheLog.LogError(currSite.Id, "The Z-value of the IfcSite object placement relative transform should be zero.  This will be ignored in favor of the non-zero RefElevation value.", false);
-               }
-            }
-
-            XYZ offset = new XYZ(projectLoc.X, projectLoc.Y, elevationToUse);
+            XYZ offset = new XYZ(projectLoc.X, projectLoc.Y, projectLoc.Z);
             if (XYZ.IsWithinLengthLimits(offset))
             {
                if (distantOriginFirstSiteId.HasValue)
@@ -351,7 +337,7 @@ namespace Revit.IFC.Import.Data
             if (BaseSiteOffset == null)
             {
                distantOriginFirstSiteId = currSite.Id;
-               
+
                // If the index is greater than 0, then we have found some sites close to the
                // origin.  That means we have incompatible origins which is an issue.
                if (ii == 0)
@@ -363,20 +349,12 @@ namespace Revit.IFC.Import.Data
 
          if (BaseSiteOffset != null)
          {
-            ProjectPosition projectPosition = projectLocation.GetProjectPosition(XYZ.Zero);
-
-            projectPosition.EastWest += BaseSiteOffset.X;
-            projectPosition.NorthSouth += BaseSiteOffset.Y;
-            projectPosition.Elevation += BaseSiteOffset.Z;
-
-            projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
-
             // Modify the RelativeTransforms for each of these sites.
             // Note that the RelativeTransform must be defined to have gotten here.
             for (int ii = 0; ii < numSites; ii++)
             {
-               XYZ currentOffset = 
-                  new XYZ(-BaseSiteOffset.X, -BaseSiteOffset.Y, -BaseSiteOffset.Z + sites[ii].RefElevation);
+               XYZ currentOffset =
+                  new XYZ(-BaseSiteOffset.X, -BaseSiteOffset.Y, -BaseSiteOffset.Z /*+ sites[ii].RefElevation*/);
                Transform newSiteTransform = sites[ii].ObjectLocation.TotalTransform;
                newSiteTransform.Origin += currentOffset;
                sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(newSiteTransform);
@@ -402,9 +380,7 @@ namespace Revit.IFC.Import.Data
                   double currZOffset = sites[ii].ObjectLocation.RelativeTransform.Origin.Z;
                   if (!MathUtil.IsAlmostEqual(currZOffset, currRefElevation))
                   {
-                     XYZ currentOffset = new XYZ(0, 0, currRefElevation - currZOffset);
                      Transform newSiteTransform = sites[ii].ObjectLocation.TotalTransform;
-                     newSiteTransform.Origin += currentOffset;
                      sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(newSiteTransform);
                   }
                }
