@@ -43,7 +43,8 @@ namespace Revit.IFC.Export.Exporter
       private static void InitPset_ProvisionForVoid2x(IList<PropertySetDescription> commonPropertySets)
       {
          // The IFC4 version is contained in ExporterInitializer_PsetDef.cs.
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4
+            || !certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_ProvisionForVoid"))
             return;
 
          PropertySetDescription propertySetProvisionForVoid = new PropertySetDescription();
