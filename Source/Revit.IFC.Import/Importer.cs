@@ -439,8 +439,10 @@ namespace Revit.IFC.Import
       /// <param name="document">The host document for the import.</param>
       /// <param name="origFullFileName">The full file name of the document.</param>
       /// <param name="options">The list of configurable options for this import.</param>
-      public void ReferenceIFC(Document document, string origFullFileName, IDictionary<String, String> options)
+      public void ReferenceIFC(Document document, string origFullFileName, IDictionary<String, String> options, out ElementId revitLinkTypeId)
       {
+         revitLinkTypeId = ElementId.InvalidElementId;
+
          // We need to generate a local file name for all of the intermediate files (the log file, the cache file, and the shared parameters file).
          string localFileName = ImporterIFCUtils.GetLocalFileName(document, origFullFileName);
          if (localFileName == null)
@@ -506,7 +508,7 @@ namespace Revit.IFC.Import
                // If we have an original Revit link file name, don't create a new RevitLinkType - 
                // we will use the existing one.
                bool useExistingType = (TheOptions.RevitLinkFileName != null);
-               ElementId revitLinkTypeId = IFCImportFile.LinkInFile(origFullFileName, localFileName, ifcDocument, originalDocument, useExistingType, !useCachedRevitFile);
+               revitLinkTypeId = IFCImportFile.LinkInFile(origFullFileName, localFileName, ifcDocument, originalDocument, useExistingType, !useCachedRevitFile);
             }
          }
 
