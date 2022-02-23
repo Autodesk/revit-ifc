@@ -28,6 +28,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -177,7 +178,10 @@ namespace Revit.IFC.Export.Exporter
                double latitudeInDeg = projLocation.GetSiteLocation().Latitude * scaleToDegrees;
                double longitudeInDeg = projLocation.GetSiteLocation().Longitude * scaleToDegrees;
 
-               ExporterUtil.GetSafeProjectPositionElevation(doc, out unscaledElevation);
+               //ExporterUtil.GetSafeProjectPositionElevation(doc, out unscaledElevation);
+               SiteTransformBasis wcsBasis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
+               (double eastings, double northings, double orthogonalHeight) geoRefInfo = OptionsUtil.GeoReferenceInformation(doc, wcsBasis);
+               unscaledElevation = geoRefInfo.orthogonalHeight;
 
                int latDeg = ((int)latitudeInDeg); latitudeInDeg -= latDeg; latitudeInDeg *= 60;
                int latMin = ((int)latitudeInDeg); latitudeInDeg -= latMin; latitudeInDeg *= 60;
