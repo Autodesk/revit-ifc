@@ -16,9 +16,8 @@ Help for IFC in general can be found [here](http://help.autodesk.com/view/RVT/20
 An archive of the original SourceForge forums can be found [here](https://sourceforge.net/p/ifcexporter/discussion/).
 
 ## Issues and Labels
-> **To make the triage and reporting process faster and easier (may also mean getting your issues addressed with higher priority)**
-
-When reporting an issue, please use the **Labels** to classify the nature of the Issue to the best of your knowledge. In addition to Label, please indicate the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.3.0.0)
+> **To make the triage and reporting process faster and easier (may also mean getting your issues addressed with higher priority)!!! **
+> When reporting an issue, please use the **Labels** to classify the nature of the Issue to the best of your knowledge. In addition to Label, please indicate the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.3.0.0)
 
 **Issue Type** 
 - Problem: a "bug" or some kind of mistake found during the use of the functionality.
