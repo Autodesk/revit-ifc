@@ -16,7 +16,9 @@ Help for IFC in general can be found [here](http://help.autodesk.com/view/RVT/20
 An archive of the original SourceForge forums can be found [here](https://sourceforge.net/p/ifcexporter/discussion/).
 
 ## Issues and Labels
-When reporting an issue, please use the **Labels** to classify the nature of the Issue to the best of your knowledge. 
+**To make the triage and reporting process faster and easier (may also mean getting your issues addressed with higher priority)**
+
+When reporting an issue, please use the **Labels** to classify the nature of the Issue to the best of your knowledge. In addition to Label, please indicate the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.3.0.0)
 
 **Issue Type** 
 - Problem: a "bug" or some kind of mistake found during the use of the functionality.
@@ -50,6 +52,7 @@ In addition to Label, please indicate at beginning of Issue text the exact incre
 - Cannot Duplicate 
 - Duplicate 
 - Fixed 
+- Triage
 
 Ideally, each Issue should include a Type, Component, and Version Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. Later, the developer will add the Issue to a Milestone to indicate the version it was addressed/fixed. These Labels and Milestones will make it easier to track Issues and their resolutions from both end user and developer sides. Developers may also add an internal Autodesk Jira number/link to an Issue, but this is for internal reference and tracking only and not accessible to the general public.
 
