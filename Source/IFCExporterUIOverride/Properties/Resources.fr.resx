@@ -402,6 +402,9 @@
   <data name="Export" xml:space="preserve">
     <value>Exporter…</value>
   </data>
+  <data name="ExportAllPhases" xml:space="preserve">
+    <value>Exporter tous les éléments, quelle que soit la phase</value>
+  </data>
   <data name="ExportElementsVisibleInView" xml:space="preserve">
     <value>Exporter uniquement les éléments visibles  dans la vue actuelle</value>
   </data>

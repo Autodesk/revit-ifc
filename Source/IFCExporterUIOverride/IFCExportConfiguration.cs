@@ -301,16 +301,21 @@ namespace BIM.IFC.Export.UI
          /// </summary>
          public bool UseVisibleRevitNameAsEntityName { get; set; } = false;
 
+         /// <summary>
+         /// Value indicating whether to export all phases in the view or not
+         /// </summary>
+         public bool ExportAllPhases { get; set; } = false;
+
       #endregion  // AdvancedTab
 
 
       // Items under Entities to Export Tab
       #region EntitiesToExportTab
 
-         /// <summary>
-         /// Exclude filter string (element list in an arrary, seperated with semicolon ';')
-         /// </summary>
-         public string ExcludeFilter { get; set; } = "";
+      /// <summary>
+      /// Exclude filter string (element list in an arrary, seperated with semicolon ';')
+      /// </summary>
+      public string ExcludeFilter { get; set; } = "";
 
       #endregion  // EntitiesToExportTab
 

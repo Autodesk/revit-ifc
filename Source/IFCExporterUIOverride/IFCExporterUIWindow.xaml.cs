@@ -257,7 +257,7 @@ namespace BIM.IFC.Export.UI
             }
          }
 
-         comboboxActivePhase.IsEnabled = !configuration.VisibleElementsOfCurrentView;
+         comboboxActivePhase.IsEnabled = !(configuration.VisibleElementsOfCurrentView || configuration.ExportAllPhases);
       }
 
       /// <summary>
@@ -326,6 +326,7 @@ namespace BIM.IFC.Export.UI
          checkboxIncludeIfcSiteElevation.IsChecked = configuration.IncludeSiteElevation;
          checkboxStoreIFCGUID.IsChecked = configuration.StoreIFCGUID;
          checkBoxExportRoomsInView.IsChecked = configuration.ExportRoomsInView;
+         checkBoxExportAllPhases.IsChecked = configuration.ExportAllPhases;
          comboBoxLOD.SelectedIndex = (int)(Math.Round(configuration.TessellationLevelOfDetail * 4) - 1);
          checkboxIncludeSteelElements.IsChecked = configuration.IncludeSteelElements;
          comboBoxSitePlacement.SelectedIndex = (int)configuration.SitePlacement;
@@ -373,6 +374,7 @@ namespace BIM.IFC.Export.UI
                                                                 checkboxExportSchedulesAsPsets,
                                                                 checkBoxExportSpecificSchedules,
                                                                 checkBoxExportRoomsInView,
+                                                                checkBoxExportAllPhases,
                                                                 checkBoxLevelOfDetails,
                                                                 comboboxActivePhase,
                                                                 checkboxExportUserDefinedPset,
@@ -393,7 +395,7 @@ namespace BIM.IFC.Export.UI
          {
             element.IsEnabled = !configuration.IsBuiltIn;
          }
-         comboboxActivePhase.IsEnabled = comboboxActivePhase.IsEnabled && !configuration.VisibleElementsOfCurrentView;
+         comboboxActivePhase.IsEnabled = comboboxActivePhase.IsEnabled && !(configuration.VisibleElementsOfCurrentView || configuration.ExportAllPhases);
          userDefinedPropertySetFileName.IsEnabled = userDefinedPropertySetFileName.IsEnabled && configuration.ExportUserDefinedPsets;
          userDefinedParameterMappingTable.IsEnabled = userDefinedParameterMappingTable.IsEnabled && configuration.ExportUserDefinedParameterMapping;
          buttonBrowse.IsEnabled = buttonBrowse.IsEnabled && configuration.ExportUserDefinedPsets;
@@ -1408,6 +1410,17 @@ namespace BIM.IFC.Export.UI
          if (configuration != null)
          {
             configuration.ExportRoomsInView = GetCheckbuttonChecked(checkBox);
+         }
+      }
+
+      private void checkBoxExportAllPhases_Checked(object sender, RoutedEventArgs e)
+      {
+         CheckBox checkBox = (CheckBox)sender;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.ExportAllPhases = GetCheckbuttonChecked(checkBox);
+            UpdatePhaseAttributes(configuration);
          }
       }
 
