@@ -194,6 +194,8 @@ namespace BIM.IFC.Export.UI
                      configuration.UseTypeNameOnlyForIfcType = bool.Parse(configMap[s_useTypeNameOnlyForIfcType]);
                   if (configMap.ContainsKey(s_useVisibleRevitNameAsEntityName))
                      configuration.UseVisibleRevitNameAsEntityName = bool.Parse(configMap[s_useVisibleRevitNameAsEntityName]);
+                  if (configMap.ContainsKey(s_exportAllPhases))
+                     configuration.ExportAllPhases = bool.Parse(configMap[s_exportAllPhases]);
                   if (configMap.ContainsKey(s_useOnlyTriangulation))
                      configuration.UseOnlyTriangulation = bool.Parse(configMap[s_useOnlyTriangulation]);
                   if (configMap.ContainsKey(s_setupTessellationLevelOfDetail))
@@ -296,6 +298,9 @@ namespace BIM.IFC.Export.UI
                   Field fieldUseVisibleRevitNameAsEntityName = m_schema.GetField(s_useVisibleRevitNameAsEntityName);
                   if (fieldUseVisibleRevitNameAsEntityName != null)
                      configuration.UseVisibleRevitNameAsEntityName = configEntity.Get<bool>(s_useVisibleRevitNameAsEntityName);
+                  Field fieldExportAllPhases = m_schema.GetField(s_exportAllPhases);
+                  if (fieldExportAllPhases != null)
+                     configuration.ExportAllPhases = configEntity.Get<bool>(s_exportAllPhases);
                   Field fieldTessellationLevelOfDetail = m_schema.GetField(s_setupTessellationLevelOfDetail);
                   if (fieldTessellationLevelOfDetail != null)
                      configuration.TessellationLevelOfDetail = configEntity.Get<double>(s_setupTessellationLevelOfDetail);
@@ -349,6 +354,7 @@ namespace BIM.IFC.Export.UI
       private const string s_setupSitePlacement = "SitePlacement";
       private const string s_useTypeNameOnlyForIfcType = "UseTypeNameOnlyForIfcType";
       private const string s_useVisibleRevitNameAsEntityName = "UseVisibleRevitNameAsEntityName";
+      private const string s_exportAllPhases = "ExportAllPhases";
       // Used for COBie 2.4
       private const string s_cobieCompanyInfo = "COBieCompanyInfo";
       private const string s_cobieProjectInfo = "COBieProjectInfo";

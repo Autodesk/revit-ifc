@@ -99,7 +99,7 @@ namespace Revit.IFC.Export.Utility
          filters.Add(GetDesignOptionFilter());
 
          // Phases: only for non-spatial elements.  For spatial elements, we will do a check afterwards.
-         if (!forSpatialElements && !ExporterCacheManager.ExportOptionsCache.ExportingLink)
+         if (!forSpatialElements && !ExporterCacheManager.ExportOptionsCache.ExportingLink && !ExporterCacheManager.ExportOptionsCache.ExportAllPhases)
             filters.Add(GetPhaseStatusFilter(document));
 
          return new LogicalAndFilter(filters);
@@ -558,6 +558,8 @@ namespace Revit.IFC.Export.Utility
             Parameter phaseParameter = element.get_Parameter(BuiltInParameter.ROOM_PHASE);
             if (phaseParameter != null)
             {
+               if (ExporterCacheManager.ExportOptionsCache.ExportAllPhases)
+                  return true;
                ElementId phaseId = phaseParameter.AsElementId();
                if (phaseId != ElementId.InvalidElementId && phaseId != ExporterCacheManager.ExportOptionsCache.ActivePhaseId)
                   return true;
