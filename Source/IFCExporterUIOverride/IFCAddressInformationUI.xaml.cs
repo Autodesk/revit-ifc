@@ -254,27 +254,6 @@ namespace BIM.IFC.Export.UI
       }
 
       /// <summary>
-      /// Event when update project information is checked
-      /// </summary>
-      /// <param name="sender"></param>
-      /// <param name="e"></param>
-      private void UpdateProjInfocheckBox_Checked(object sender, RoutedEventArgs e)
-      {
-         m_newAddressItem.UpdateProjectInformation = true;
-      }
-
-      /// <summary>
-      /// Event when the update project information is unchecked
-      /// </summary>
-      /// <param name="sender"></param>
-      /// <param name="e"></param>
-      private void UpdateProjInfocheckBox_Unchecked(object sender, RoutedEventArgs e)
-      {
-         m_newAddressItem.UpdateProjectInformation = false;
-      }
-
-
-      /// <summary>
       /// Upon AddressTab initialization
       /// </summary>
       /// <param name="sender"></param>
@@ -317,26 +296,6 @@ namespace BIM.IFC.Export.UI
             m_newAddressItem.Purpose = getUserDefinedStringFromIFCPurposeList();
             PurposeComboBox.SelectedItem = Properties.Resources.UserDefined;
          }
-      }
-
-      private void Checkbox_AssignToBuilding_Checked(object sender, RoutedEventArgs e)
-      {
-         m_newAddressItem.AssignAddressToBuilding = true;
-      }
-
-      private void Checkbox_AssignToSite_Checked(object sender, RoutedEventArgs e)
-      {
-         m_newAddressItem.AssignAddressToSite = true;
-      }
-
-      private void Checkbox_AssignToBuilding_Unchecked(object sender, RoutedEventArgs e)
-      {
-         m_newAddressItem.AssignAddressToBuilding = false;
-      }
-
-      private void Checkbox_AssignToSite_Unchecked(object sender, RoutedEventArgs e)
-      {
-         m_newAddressItem.AssignAddressToSite = false;
       }
    }
 }
