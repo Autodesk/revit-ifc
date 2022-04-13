@@ -52,7 +52,7 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>..\..\..\..\2022API\RevitAPI.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
     </Reference>
 	<Reference Include="System" />
     <Reference Include="System.Core" />

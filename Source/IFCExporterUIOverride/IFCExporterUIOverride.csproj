@@ -56,16 +56,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Autodesk.UI.Windows">
-      <HintPath>..\..\..\..\2022API\Autodesk.UI.Windows.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2022\Autodesk.UI.Windows.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPI">
-      <HintPath>..\..\..\..\2022API\RevitAPI.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>..\..\..\..\2022API\RevitAPIIFC.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIUI">
-      <HintPath>..\..\..\..\2022API\RevitAPIUI.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -82,7 +82,7 @@
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
     <Reference Include="UserInterfaceUtility">
-      <HintPath>..\..\..\..\2022API\UserInterfaceUtility.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2022\UserInterfaceUtility.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
