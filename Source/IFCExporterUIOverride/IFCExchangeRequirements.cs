@@ -19,8 +19,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Autodesk.Revit.DB;
 using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Common.Enums;
@@ -39,12 +37,15 @@ namespace BIM.IFC.Export.UI
       {
          if (KnownExchangeRequirements.Count == 0)
          {
-            // For IFC4RV
-            IFCVersion ifcVersion = IFCVersion.IFC4RV;
+            // For IFC2x3 CV2.0
+            IFCVersion ifcVersion = IFCVersion.IFC2x3CV2;
             KnownExchangeRequirements.Add(ifcVersion, new List<KnownERNames>() { KnownERNames.Architecture, KnownERNames.BuildingService, KnownERNames.Structural });
-            List<string> erNameListForUI = new List<string>();
-            foreach (KnownERNames erEnum in KnownExchangeRequirements[ifcVersion])
-               erNameListForUI.Add(GetERNameForUI(erEnum));
+            List<string> erNameListForUI = new List<string>(KnownExchangeRequirements[ifcVersion].Select(x => x.ToFullLabel()));
+            KnownExchangeRequirementsLocalized.Add(ifcVersion, erNameListForUI);
+
+            // For IFC4RV
+            ifcVersion = IFCVersion.IFC4RV;
+            KnownExchangeRequirements.Add(ifcVersion, new List<KnownERNames>() { KnownERNames.Architecture, KnownERNames.BuildingService, KnownERNames.Structural });
             KnownExchangeRequirementsLocalized.Add(ifcVersion, erNameListForUI);
          }
       }
@@ -54,10 +55,10 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       public static IDictionary<IFCVersion, IList<KnownERNames>> ExchangeRequirements
       {
-         get 
-         { 
-            Initialize();  
-            return KnownExchangeRequirements; 
+         get
+         {
+            Initialize();
+            return KnownExchangeRequirements;
          }
       }
 
@@ -69,9 +70,7 @@ namespace BIM.IFC.Export.UI
       public static IList<string> ExchangeRequirementListForUI(IFCVersion ifcVers)
       {
          Initialize();
-         if (KnownExchangeRequirementsLocalized.ContainsKey(ifcVers))
-            return KnownExchangeRequirementsLocalized[ifcVers];
-         return null;
+         return KnownExchangeRequirementsLocalized.FirstOrDefault(x => x.Key == ifcVers).Value;
       }
 
       /// <summary>
@@ -94,35 +93,18 @@ namespace BIM.IFC.Export.UI
       }
 
       /// <summary>
-      /// Get the UI Name for the Exchange Requirement (ER). Note that this string may be localized
-      /// </summary>
-      /// <param name="erEnum">The ER Enum value</param>
-      /// <returns>The localized ER name string</returns>
-      public static string GetERNameForUI (KnownERNames erEnum)
-      {
-         if (erEnum == KnownERNames.Architecture)
-            return Resources.ER_Architecture;
-         else if (erEnum == KnownERNames.BuildingService)
-            return Resources.ER_BuildingService;
-         else if (erEnum == KnownERNames.Structural)
-            return Resources.ER_Structural;
-         else
-            return "";
-      }
-
-      /// <summary>
       /// Parse the Exchange Requirement (ER) name string into the associated Enum
       /// </summary>
       /// <param name="erName">The ER Name</param>
       /// <returns>The ER enum</returns>
       public static KnownERNames ParseEREnum(string erName)
       {
-         KnownERNames erEnum = KnownERNames.NotDefined;
-         if (Enum.TryParse(erName, out erEnum))
+         if (Enum.TryParse(erName, out KnownERNames erEnum))
          {
             return erEnum;
          }
-         return erEnum;
+
+         return KnownERNames.NotDefined;
       }
    }
 }

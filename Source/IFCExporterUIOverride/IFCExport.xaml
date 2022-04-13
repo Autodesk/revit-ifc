@@ -11,7 +11,7 @@
                   Title="{x:Static p:Resources.IFCExport}" 
                   WindowStyle="SingleBorderWindow" 
                   ContentRendered="ChildWindow_ContentRendered"
-                  SaveWindowSettings="False"
+                  SaveWindowSettings="True"
                   Closing="Window_Closing" 
                   Height="390" 
                   Width="730" MinWidth="550" MinHeight="300">

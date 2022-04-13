@@ -231,8 +231,7 @@ namespace Revit.IFC.Import.Data
          }
          catch (Exception ex)
          {
-            if (ex.Message != "Don't Import")
-               Importer.TheLog.LogError(ifcPort.StepId, ex.Message, false);
+            HandleError(ex.Message, ifcPort, true);
             return null;
          }
 

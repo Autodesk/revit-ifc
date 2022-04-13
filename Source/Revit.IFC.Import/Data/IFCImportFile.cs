@@ -308,26 +308,26 @@ namespace Revit.IFC.Import.Data
          ISet<IFCEntity> alreadyProcessed = new HashSet<IFCEntity>();
          // Processing an entity may result in a new entity being processed for the first time.  We'll have to post-process it also.
          // Post-processing should be fast, and do nothing if called multiple times, so we won't bother 
+
+         int oldTotal = 0;
+         int newTotal = 0;
          do
          {
-            int total = IFCImportFile.TheFile.EntityMap.Count;
+            oldTotal = IFCImportFile.TheFile.EntityMap.Count;
             List<IFCEntity> currentValues = IFCImportFile.TheFile.EntityMap.Values.ToList();
             foreach (IFCEntity entity in currentValues)
             {
-               if (alreadyProcessed.Contains(entity))
+               if (entity == null || alreadyProcessed.Contains(entity))
                   continue;
 
                entity.PostProcess();
                count++;
-               Importer.TheLog.ReportPostProcessedEntity(count, total);
+               Importer.TheLog.ReportPostProcessedEntity(count, oldTotal);
+               alreadyProcessed.Add(entity);
             }
 
-            int newTotal = IFCImportFile.TheFile.EntityMap.Values.Count;
-            if (total == newTotal)
-               break;
-
-            alreadyProcessed.UnionWith(currentValues);
-         } while (true);
+            newTotal = IFCImportFile.TheFile.EntityMap.Values.Count;
+         } while (oldTotal != newTotal);
 
          return true;
       }
@@ -1060,12 +1060,9 @@ namespace Revit.IFC.Import.Data
 
       private static string LocateSchemaFile(string schemaFileName)
       {
-         string filePath = null;
-#if IFC_OPENSOURCE
          // Find the alternate schema file from the open source install folder
-         filePath = Path.Combine(Path.GetDirectoryName(Assembly.GetCallingAssembly().Location), schemaFileName);
+         string filePath = Path.Combine(Path.GetDirectoryName(Assembly.GetCallingAssembly().Location), schemaFileName);
          if (!File.Exists(filePath))
-#endif
          {
             filePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM", schemaFileName);
          }

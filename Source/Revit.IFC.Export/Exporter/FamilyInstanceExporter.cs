@@ -345,7 +345,7 @@ namespace Revit.IFC.Export.Exporter
             return null;
 
          if (guid != null)
-            ExporterUtil.SetGlobalId(typeStyle, guid);
+            ExporterUtil.SetGlobalId(typeStyle, guid, familyInstance);
 
          typeInfo.Style = typeStyle;
 

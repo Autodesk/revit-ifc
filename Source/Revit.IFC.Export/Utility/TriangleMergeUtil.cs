@@ -161,6 +161,37 @@ namespace Revit.IFC.Export.Utility
             idx++;
          }
       }
+
+      public void UpdateIndexes(List<int> removedVertices)
+      {
+         Func<int, IList<int>, int> greaterCount = (index, list) => 
+         {
+            int num = 0;
+            foreach (int val in list)
+            {
+               if (val > index)
+                  break; // list is sorted
+               ++num;
+            }
+            return num;
+         };
+
+         if (IndexOuterBoundary != null)
+            for (int ii = 0; ii < IndexOuterBoundary.Count; ii++)
+               IndexOuterBoundary[ii] -= greaterCount(IndexOuterBoundary[ii], removedVertices);
+
+         if (IndexedInnerBoundaries != null)
+            for (int ii = 0; ii < IndexedInnerBoundaries.Count; ii++)
+               for (int jj = 0; jj < IndexedInnerBoundaries[ii].Count; jj++)
+                  IndexedInnerBoundaries[ii][jj] -= greaterCount(IndexedInnerBoundaries[ii][jj], removedVertices);
+
+         if (OuterAndInnerBoundaries != null)
+            for (int ii = 0; ii < OuterAndInnerBoundaries.Count; ii++)
+            {
+               OuterAndInnerBoundaries[ii].StartPindex -= greaterCount(OuterAndInnerBoundaries[ii].StartPindex, removedVertices);
+               OuterAndInnerBoundaries[ii].EndPIndex -= greaterCount(OuterAndInnerBoundaries[ii].EndPIndex, removedVertices);
+            }
+      }
    }
 
    /// <summary>
@@ -277,6 +308,8 @@ namespace Revit.IFC.Export.Utility
    {
       protected TriangulatedShellComponent m_Geom = null;
       protected Mesh m_MeshGeom = null;
+
+      // A Dictionary is created for the mesh vertices due to performance issue for very large mesh if the vertex is accessed via its index
       protected IDictionary<int, XYZ> m_MeshVertices = new Dictionary<int, XYZ>();
 
       HashSet<int> m_MergedFaceSet = new HashSet<int>();
@@ -290,6 +323,8 @@ namespace Revit.IFC.Export.Utility
 
       public bool IsMesh { get { return (m_MeshGeom != null && m_Geom == null); } }
 
+      public List<XYZ> GetVertices() { return m_MeshVertices.Values.ToList(); }
+
       /// <summary>
       /// Function called before and after triangle merging.
       /// Before merging it calculates the Euler characteristic of the original mesh.
@@ -301,7 +336,6 @@ namespace Revit.IFC.Export.Utility
          int noHoles = 0; // Stays zero if mesh is triangular
          int noFaces;
          HashSet<IndexSegment> edges = new HashSet<IndexSegment>(new SegmentComparer(true/*compareBothDirections*/));
-         HashSet<int> vertices = new HashSet<int>();
 
          if (m_MergedFaceSet.Count != 0)
          {
@@ -309,18 +343,11 @@ namespace Revit.IFC.Export.Utility
             noFaces = m_MergedFaceSet.Count;
             foreach (int mergedFace in m_MergedFaceSet)
             {
-               m_FacesCollDict[mergedFace].IndexOuterBoundary.ToList().ForEach(vt => vertices.Add(vt));
-               if (m_FacesCollDict[mergedFace].IndexedInnerBoundaries != null)
-               {
-                  foreach (IList<int> innerB in m_FacesCollDict[mergedFace].IndexedInnerBoundaries)
-                     innerB.ToList().ForEach(vt => vertices.Add(vt));
-               }
-
                m_FacesCollDict[mergedFace].OuterAndInnerBoundaries.ToList().ForEach(vp => edges.Add(vp.Value));
                if (m_FacesCollDict[mergedFace].IndexedInnerBoundaries != null)
                   noHoles += m_FacesCollDict[mergedFace].IndexedInnerBoundaries.Count;
             }
-            noVertices = vertices.Count;  // Vertices must be counted from the final merged faces as some of the inner vertices may disappear after stitching
+            noVertices = m_MeshVertices.Count; // m_MeshVertices doesn't contain isolated vertices
          }
          else
          {
@@ -362,25 +389,8 @@ namespace Revit.IFC.Export.Utility
       {
          m_Geom = triangulatedBody;
          m_MeshGeom = null;
-         m_MeshVertices.Clear();
-         int idx = 0;
-         try
-         {	
-         	foreach (XYZ vert in triangulatedBody.GetVertices())
-         	{
-            	m_MeshVertices.Add(idx, vert);
-            	idx++;
-         	}
-         }
-         catch
-         {
-         	int vertCount = triangulatedBody.VertexCount;
-         	for (int currentVertexIndex = 0; currentVertexIndex < vertCount; currentVertexIndex++)
-         	{
-            	m_MeshVertices.Add(idx, triangulatedBody.GetVertex(currentVertexIndex));
-            	idx++;
-         	}
-         }
+         Reset();
+
       }
 
       /// <summary>
@@ -391,14 +401,27 @@ namespace Revit.IFC.Export.Utility
       {
          m_Geom = null;
          m_MeshGeom = triangulatedMesh;
-         // A Dictionary is created for the mesh vertices due to performance issue for very large mesh if the vertex is accessed via its index
+         Reset();
+      }
+
+      /// <summary>
+      /// Reset internal data
+      /// </summary>
+      public void Reset()
+      {
+         m_MergedFaceSet.Clear();
+         m_FacesCollDict.Clear();
          m_MeshVertices.Clear();
-         int idx = 0;
-         foreach (XYZ vert in m_MeshGeom.Vertices)
-         {
-            m_MeshVertices.Add(idx, vert);
-            idx++;
-         }
+         
+         IList<XYZ> vertices = null;
+         if (m_Geom != null)
+            vertices = m_Geom.GetVertices();
+         else if (m_MeshGeom != null)
+            vertices = m_MeshGeom.Vertices;
+
+         if (vertices != null)
+            for (int idx = 0; idx < vertices.Count; ++idx)
+               m_MeshVertices.Add(idx, vertices[idx]);
       }
 
       /// <summary>
@@ -553,11 +576,48 @@ namespace Revit.IFC.Export.Utility
                m_MergedFaceSet.Add(fListDict.Value[0]);    // No pair face, add it into the mergedList
          }
 
+         // Remove unused vertices
+         CleanVerticesAndUpdateIndexes();
+
          int eulerAfter = ignoreMerge ? 0 : CalculateEulerCharacteristic();
          if (eulerBefore != eulerAfter)
             throw new InvalidOperationException(); // Coplanar merge broke the mesh in some way, so we need to fall back to exporting a triangular mesh
       }
 
+      /// <summary>
+      /// Remove the vertices that became isolated after face merging and update vertices indexes
+      /// </summary>
+      void CleanVerticesAndUpdateIndexes()
+      {
+         List<int> isolatedVertices = new List<int>();
+
+         if (m_MergedFaceSet.Count != 0)
+         {
+            HashSet<int> vertices = new HashSet<int>();
+
+            foreach (int mergedFace in m_MergedFaceSet)
+            {
+               m_FacesCollDict[mergedFace].IndexOuterBoundary.ToList().ForEach(vt => vertices.Add(vt));
+               if (m_FacesCollDict[mergedFace].IndexedInnerBoundaries != null)
+               {
+                  foreach (IList<int> innerB in m_FacesCollDict[mergedFace].IndexedInnerBoundaries)
+                     innerB.ToList().ForEach(vt => vertices.Add(vt));
+               }
+            }
+
+            if (vertices.Count < m_MeshVertices.Count)
+               isolatedVertices = Enumerable.Range(0, m_MeshVertices.Count).Except(vertices).OrderBy(x => x).ToList();
+         }
+
+         if (isolatedVertices.Count > 0)
+         {
+            foreach (int vertexInd in isolatedVertices)
+               m_MeshVertices.Remove(vertexInd);
+
+            foreach (IndexFace face in m_FacesCollDict.Values)
+               face.UpdateIndexes(isolatedVertices);
+         }
+      }
       /// <summary>
       /// Go through the input face list that share the same vertex and has the same normal (coplannar).
       /// </summary>
@@ -646,9 +706,10 @@ namespace Revit.IFC.Export.Utility
                // Now we need to check other edges of this face whether there is other coincide edge (this is in the case of hole(s))
                List<int> fFaceIdxList = new List<int>();
                List<int> currFaceIdxList = new List<int>();
-               int ci = 0;
+               int ci = -1;
                foreach (KeyValuePair<int,IndexSegment> idxSeg in currFace.OuterAndInnerBoundaries)
                {
+                  ci++;
                   if (ci == idx)
                      continue;   // skip already known coincide edge
                   int ffIdx = -1;
@@ -659,7 +720,6 @@ namespace Revit.IFC.Export.Utility
                      fFaceIdxList.Add(ffIdx);        // List of edges to skip when merging
                      currFaceIdxList.Add(ci);        // List of edges to skip when merging
                   }
-                  ci++;
                }
 
                // Now we will remove the paired edges and merge the faces

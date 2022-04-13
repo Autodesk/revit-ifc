@@ -163,7 +163,6 @@ namespace Revit.IFC.Export.Exporter
                      {
                         curveHnd = GeometryUtil.OutdatedCreatePolyCurveFromCurve(exporterIFC, curve, trf);
                      }
-
                      if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveHnd))
                         curves.Add(curveHnd);
                   }

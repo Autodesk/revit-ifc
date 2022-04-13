@@ -268,6 +268,7 @@ namespace Revit.IFC.Export.Exporter
                      IList<IList<CurveLoop>> extrusionLoops = new List<IList<CurveLoop>>();
                      IList<IFCExtrusionCreationData> loopExtraParams = new List<IFCExtrusionCreationData>();
                      Plane floorPlane = GeometryUtil.CreateDefaultPlane();
+                     IFCExtrusionCreationData ecData = new IFCExtrusionCreationData();
 
                      IList<IFCAnyHandle> localPlacements = new List<IFCAnyHandle>();
 
@@ -400,22 +401,19 @@ namespace Revit.IFC.Export.Exporter
                            }
                            else
                            {
-                              using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+                              // Brep representation using tesellation after ExportSlabAsExtrusion does not return prodReps
+                              BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.Medium);
+                              BodyData bodyData;
+                              prodDefHnd = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC,
+                                    floorElement, catId, geometryElement, bodyExporterOptions, null, ecData, out bodyData);
+                              if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodDefHnd))
                               {
-                                 // Brep representation using tesellation after ExportSlabAsExtrusion does not return prodReps
-                                 BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.Medium);
-                                 BodyData bodyData;
-                                 prodDefHnd = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC,
-                                     floorElement, catId, geometryElement, bodyExporterOptions, null, ecData, out bodyData);
-                                 if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodDefHnd))
-                                 {
-                                    ecData.ClearOpenings();
-                                    return;
-                                 }
-
-                                 prodReps.Add(prodDefHnd);
-                                 repTypes.Add(bodyData.ShapeRepresentationType);
+                                 ecData.ClearOpenings();
+                                 return;
                               }
+
+                              prodReps.Add(prodDefHnd);
+                              repTypes.Add(bodyData.ShapeRepresentationType);
                            }
                         }
                      }
@@ -486,6 +484,9 @@ namespace Revit.IFC.Export.Exporter
                            else
                               nonBrepSlabHnds.Add(slabHnd);
                         }
+
+                        OpeningUtil.CreateOpeningsIfNecessary(slabHnd, floorElement, ecData, null,
+                           exporterIFC, localPlacement, placementSetter, productWrapper);
                      }
 
                      for (int ii = 0; ii < numReps; ii++)

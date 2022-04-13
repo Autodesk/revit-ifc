@@ -99,14 +99,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns></returns>
       public bool IsSubTypeOfEntityTypes(IFCEntityType ifcEntityType)
       {
+         IFCVersion ifcVersion = ExporterCacheManager.ExportOptionsCache.FileVersion;
          var ifcEntitySchemaTree = IfcSchemaEntityTree.GetEntityDictFor(ExporterCacheManager.ExportOptionsCache.FileVersion);
-         if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.Count == 0)
+         if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.IfcEntityDict == null || ifcEntitySchemaTree.IfcEntityDict.Count == 0)
             return false;
 
          // Note that although EntityTypes is represented as a set, we still need to go through each item in the last to check for subtypes.
          foreach (IFCEntityType entityType in EntityTypes)
          {
-            if (IfcSchemaEntityTree.IsSubTypeOf(ifcEntityType.ToString(), entityType.ToString(), strict: false))
+            if (IfcSchemaEntityTree.IsSubTypeOf(ifcVersion, ifcEntityType.ToString(), entityType.ToString(), strict: false))
                return true;
          }
          return false;

@@ -35,6 +35,7 @@ namespace Revit.IFC.Export.Toolkit
          {
             try
             {
+               string toolkitName = "Revit.IFC.Export.Toolkit.";
                string desiredTypeExtra = null;
                if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
                   desiredTypeExtra = "IFC4.";
@@ -44,12 +45,23 @@ namespace Revit.IFC.Export.Toolkit
                   if (!(theTypeEnumStr.Length > 4 && theTypeEnumStr.Substring(theTypeEnumStr.Length - 4, 4).Equals("TYPE", StringComparison.InvariantCultureIgnoreCase)))
                      theTypeEnumStr = theTypeEnumStr + "Type";
                }
-               string desiredType = "Revit.IFC.Export.Toolkit." + desiredTypeExtra + theTypeEnumStr;
+
+               string desiredType = toolkitName + desiredTypeExtra + theTypeEnumStr;
                Type theTypeEnum = Type.GetType(desiredType, false, true);
                
-               // In this case, the entity doesn't have a predefined type.
                if (theTypeEnum == null)
-                  return null;
+               {
+                  if (ProcessRuleExceptions(ref theTypeEnumStr))
+                  {
+                     desiredType = toolkitName + desiredTypeExtra + theTypeEnumStr;
+                     theTypeEnum = Type.GetType(desiredType, false, true);
+                  }
+
+                  // In this case, the entity doesn't have a predefined type.
+                  if (theTypeEnum == null)
+                     return null;
+               }
+                 
 
                if (theTypeEnum != null && !string.IsNullOrEmpty(typeName))
                   enumValue = Enum.Parse(theTypeEnum, typeName, true).ToString();
@@ -127,5 +139,18 @@ namespace Revit.IFC.Export.Toolkit
       {
          return entityCheck;
       }
+
+      public static bool ProcessRuleExceptions(ref string theTypeEnumStr)
+      {
+         bool processed = false;
+         // Particular case: the Predefined type of IfcDistributionCircuit is in IfcDistributionSystemEnum
+         if (theTypeEnumStr == "IfcDistributionCircuit")
+         {
+            theTypeEnumStr = "IfcDistributionSystem";
+            processed = true;
+         }
+         return processed;
+      }
+      
    }
 }

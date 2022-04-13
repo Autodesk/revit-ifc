@@ -170,6 +170,7 @@ namespace Revit.IFC.Import.Data
          // This allows us to skip Box representations if any of the Body representations create 3D geometry.  Until we have UI in place, 
          // this will disable creating extra 3D (bounding box) geometry that clutters the display, is only marginally useful and is hard to turn off.
          List<IFCRepresentation> sortedReps = new List<IFCRepresentation>(); // Double usage as body rep list.
+         IList<IFCRepresentation> fallbackReps = new List<IFCRepresentation>();
          IList<IFCRepresentation> boxReps = new List<IFCRepresentation>();
          IList<IFCRepresentation> otherReps = new List<IFCRepresentation>();
 
@@ -179,6 +180,9 @@ namespace Revit.IFC.Import.Data
             {
                case IFCRepresentationIdentifier.Body:
                   sortedReps.Add(representation);
+                  break;
+               case IFCRepresentationIdentifier.BodyFallback:
+                  fallbackReps.Add(representation);
                   break;
                case IFCRepresentationIdentifier.Box:
                   boxReps.Add(representation);
@@ -190,11 +194,17 @@ namespace Revit.IFC.Import.Data
          }
 
          // Add back the other representations.
+         sortedReps.AddRange(fallbackReps);
          sortedReps.AddRange(boxReps);
          sortedReps.AddRange(otherReps);
 
          foreach (IFCRepresentation representation in sortedReps)
          {
+            // Only process fallback geometry if we didn't process the Body geometry.
+            if ((representation.Identifier == IFCRepresentationIdentifier.BodyFallback) &&
+               shapeEditScope.Creator.Solids.Count > 0)
+               continue;
+
             // Since we process all Body representations first, the misnamed "Solids" field will contain 3D geometry.
             // If this isn't empty, then we'll skip the bounding box, unless we are always importing bounding box geometry.
             // Note that we process Axis representations later since they create model geometry also,

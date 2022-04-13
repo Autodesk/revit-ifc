@@ -1085,5 +1085,17 @@ namespace Revit.IFC.Export.Utility
          Element elem = document.GetElement(spaceId);
          return ParameterUtil.OverrideContainmentParameter(exporterIFC, elem, out overrideContainerHnd);
       }
+
+      /// <summary>
+      /// Checks if the if parameter data type is equal to forgeTypeId
+      /// </summary>
+      /// <param name="parameter">The parameter.</param>
+      /// <param name="forgeTypeId">The ForgeTypeId.</param>
+      /// <returns>True if parameter data type is equal to forgeTypeId.</returns>
+      public static bool ParameterDataTypeIsEqualTo(Parameter parameter, ForgeTypeId forgeTypeId)
+      {
+         return (parameter.Definition != null && parameter.Definition.GetDataType() == forgeTypeId);
+      }
+
    }
 }

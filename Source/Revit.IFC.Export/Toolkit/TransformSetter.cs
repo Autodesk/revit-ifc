@@ -204,8 +204,9 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="bbox">The bounding box.</param>
       /// <param name="ecData">The extrusion creation data which contains the local placement.</param>
       /// <param name="unscaledTrfOrig">The scaled local placement origin.</param>
+      /// <param name="locationCurve">The optional location curve.</param>
       /// <returns>The transform corresponding to the movement, if any.</returns>
-      public Transform InitializeFromBoundingBox(ExporterIFC exporterIFC, BoundingBoxXYZ bbox, IFCExtrusionCreationData ecData, out XYZ unscaledTrfOrig)
+      public Transform InitializeFromBoundingBox(ExporterIFC exporterIFC, BoundingBoxXYZ bbox, IFCExtrusionCreationData ecData, LocationCurve locationCurve, out XYZ unscaledTrfOrig)
       {
          unscaledTrfOrig = new XYZ();
          if (ecData == null)
@@ -224,8 +225,24 @@ namespace Revit.IFC.Export.Toolkit
                  (bbox.Min.Z < MathUtil.Eps() && bbox.Max.Z > -MathUtil.Eps())))
                return trf;
 
-            XYZ bboxMin = bbox.Min;
-            XYZ scaledOrig = UnitUtil.ScaleLength(bboxMin);
+            XYZ corner = bbox.Min;
+
+            // Rise the origin to the top corner for some linear inclined geometries
+            // to fix the problem of misalignment between Body and 'Curve2D' Axis
+            if (locationCurve != null && locationCurve.Curve is Line)
+            {
+               XYZ lineDir = (locationCurve.Curve as Line).Direction;
+               double angle = 0.0;
+               if (!MathUtil.IsAlmostZero(lineDir.X))
+                  angle = Math.Atan2(lineDir.Z, lineDir.X);
+               else
+                  angle = Math.Atan2(lineDir.Z, lineDir.Y);
+
+               if (angle > 0.5 * Math.PI && angle < Math.PI || angle > -0.5 * Math.PI && angle < 0)
+                  corner = new XYZ(corner.X, corner.Y, bbox.Max.Z);
+            }
+
+            XYZ scaledOrig = UnitUtil.ScaleLength(corner);
 
             Transform scaledTrf = GeometryUtil.GetScaledTransform(exporterIFC);
 
@@ -238,7 +255,7 @@ namespace Revit.IFC.Export.Toolkit
 
             XYZ unscaledInvOrig = UnitUtil.UnscaleLength(scaledInvOrig);
 
-            unscaledTrfOrig = unscaledInvOrig - bboxMin;
+            unscaledTrfOrig = unscaledInvOrig - corner;
             if (!ecData.AllowVerticalOffsetOfBReps)
                unscaledTrfOrig = new XYZ(unscaledTrfOrig.X, unscaledTrfOrig.Y, 0.0);
 

@@ -14,8 +14,20 @@ namespace Revit.IFC.Common.Utility
    {
       IfcSchemaEntityNode superType = null;
       IList<IfcSchemaEntityNode> subType = null;
+
+      /// <summary>
+      /// Entity node name
+      /// </summary>
       public string Name { get; }
+
+      /// <summary>
+      /// The status whether the entity is Abstract type
+      /// </summary>
       public bool isAbstract { get; set; }
+
+      /// <summary>
+      /// The predefined type
+      /// </summary>
       public string PredefinedType { get; set; }
 
       /// <summary>

@@ -786,4 +786,13 @@
   <data name="UseOnlyTriangulation" xml:space="preserve">
     <value>Triangulation erzwingen</value>
   </data>
+  <data name="ER_ArchitectureShort" xml:space="preserve">
+    <value>Architecture</value>
+  </data>
+  <data name="ER_BuildingServiceShort" xml:space="preserve">
+    <value>BuildingService</value>
+  </data>
+  <data name="ER_StructuralShort" xml:space="preserve">
+    <value>Structural</value>
+  </data>
 </root>

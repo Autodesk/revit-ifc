@@ -11,19 +11,14 @@ namespace Revit.IFC.Common.Utility
 {
    public class ProcessIFCXMLSchema
    {
-      static string loadedSchema = string.Empty;
-
       /// <summary>
       /// Process an IFCXML schema file
       /// </summary>
       /// <param name="ifcxmlSchemaFile">the IfcXML schema file info</param>
-      public static bool ProcessIFCSchema(FileInfo ifcxmlSchemaFile)
+      /// <param name="theTree">the IFC Entity tree</param>
+      public static bool ProcessIFCSchema(FileInfo ifcxmlSchemaFile, ref IfcSchemaEntityTree theTree)
       {
-         if (ifcxmlSchemaFile.Name.Equals(loadedSchema) && IfcSchemaEntityTree.EntityDict.Count > 0)
-            return false;     // The schema file has been processed and loaded before
-
-         loadedSchema = Path.GetFileNameWithoutExtension(ifcxmlSchemaFile.Name);
-         IfcSchemaEntityTree.Initialize(loadedSchema);
+         string loadedSchema = Path.GetFileNameWithoutExtension(ifcxmlSchemaFile.Name);
          XmlTextReader reader = new XmlTextReader(ifcxmlSchemaFile.FullName);
          XmlSchema theSchema = XmlSchema.Read(reader, ValidationCallback);
          foreach (XmlSchemaObject item in theSchema.Items)
@@ -88,9 +83,9 @@ namespace Revit.IFC.Common.Utility
                         }
                      }
                   }
-            }
+               }
 
-               IfcSchemaEntityTree.Add(entityName, parentName, predefTypeEnum, isAbstract: ct.IsAbstract);
+               theTree.Add(entityName, parentName, predefTypeEnum, isAbstract: ct.IsAbstract);
             }
             else if (item is XmlSchemaSimpleType)
             {
@@ -105,9 +100,9 @@ namespace Revit.IFC.Common.Utility
                      IList<string> enumValueList = new List<string>();
                      foreach (XmlSchemaEnumerationFacet enumFacet in enums.Facets)
                      {
-                        if (IfcSchemaEntityTree.PredefinedTypeEnumDict.ContainsKey(enumName))
+                        if (theTree.PredefinedTypeEnumDict.ContainsKey(enumName))
                         {
-                           IfcSchemaEntityTree.PredefinedTypeEnumDict[enumName].Add(enumFacet.Value.ToUpper());
+                           theTree.PredefinedTypeEnumDict[enumName].Add(enumFacet.Value.ToUpper());
                         }
                         else
                         {
@@ -115,7 +110,7 @@ namespace Revit.IFC.Common.Utility
                         }
                      }
                      if (enumValueList.Count > 0)
-                        IfcSchemaEntityTree.PredefinedTypeEnumDict.Add(enumName, enumValueList);
+                        theTree.PredefinedTypeEnumDict.Add(enumName, enumValueList);
                   }
                }
             }

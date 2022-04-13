@@ -2,7 +2,7 @@
 
 using Autodesk.Revit.DB;
 
-namespace Revit.IFC.Import
+namespace Revit.IFC.Import.Core
 {
    /// <summary>
    /// The consumer object.
@@ -21,7 +21,7 @@ namespace Revit.IFC.Import
       /// <param name="ifcGuid">The GUID of the IFC entity</param>
       /// <param name="ifcEntityType">The entity type name of the IFC entity</param>
       /// <param name="categoryId">The Revit category Id - not sure if this will be used in the end</param>
-      bool CreateOrUpdateElement(int ifcId, string ifcGuid, string ifcEntityType, int categoryId,
+      bool CreateOrUpdateElement(int ifcId, string ifcGuid, string ifcEntityType, long categoryId,
          IList<GeometryObject> geomObjs);
 
       /// <summary>
@@ -31,7 +31,7 @@ namespace Revit.IFC.Import
       /// <param name="ifcGuid">The GUID of the IFC type element</param>
       /// <param name="ifcEntityType">The entity type name of the IFC type element</param>
       /// <param name="categoryId">The Revit category Id - not sure if this will be used in the end</param>
-      void CreateElementType(int ifcId, string ifcGuid, string ifcEntityType, int categoryId);
+      void CreateElementType(int ifcId, string ifcGuid, string ifcEntityType, long categoryId);
 
       /// <summary>
       /// Allow a processor to add a parameter with a double value.

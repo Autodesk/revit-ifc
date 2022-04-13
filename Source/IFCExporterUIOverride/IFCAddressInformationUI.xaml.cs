@@ -64,7 +64,6 @@ namespace BIM.IFC.Export.UI
       public IFCAddressInformation(IFCExportConfiguration configuration)
       {
          InitializeComponent();
-         RestorePreviousWindow();
 
          m_newAddressItem = configuration.ProjectAddress;
 
@@ -103,22 +102,6 @@ namespace BIM.IFC.Export.UI
       }
 
       /// <summary>
-      /// Restores the previous window. If no previous window found, place on the left top.
-      /// </summary>
-      private void RestorePreviousWindow()
-      {
-         // Refresh restore bounds from previous window opening
-         Rect restoreBounds = IFCUISettings.LoadWindowBounds(m_SettingFile);
-         if (restoreBounds != new Rect())
-         {
-            this.Left = restoreBounds.Left;
-            this.Top = restoreBounds.Top;
-            this.Width = restoreBounds.Width;
-            this.Height = restoreBounds.Height;
-         }
-      }
-
-      /// <summary>
       /// Event when the Purpose combo box is initialized. The list of enum text for Purpose is added here
       /// </summary>
       /// <param name="sender"></param>
@@ -140,7 +123,14 @@ namespace BIM.IFC.Export.UI
       {
          m_newAddressItem.Purpose = ifcPurposeList[PurposeComboBox.SelectedIndex];
          if (String.Compare(m_newAddressItem.Purpose, getUserDefinedStringFromIFCPurposeList()) != 0) // ifcPurposeList == "USERDEFINED"
+         {
             m_newAddressItem.UserDefinedPurpose = "";         // Set User Defined Purpose field to empty if the Purpose is changed to other values
+            UserDefinedPurposeTextBox.IsEnabled = false;
+         }
+         else
+         {
+            UserDefinedPurposeTextBox.IsEnabled = true;
+         }
       }
 
       /// <summary>

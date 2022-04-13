@@ -27,6 +27,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Import.Data;
 using Revit.IFC.Import.Utility;
 using IFCImportOptions = Revit.IFC.Import.Utility.IFCImportOptions;
+using Revit.IFC.Import.Core;
 
 namespace Revit.IFC.Import
 {

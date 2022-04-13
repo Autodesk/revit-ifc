@@ -790,4 +790,13 @@
   <data name="UseOnlyTriangulation" xml:space="preserve">
     <value>Garder la tessellation de la géométrie en tant que triangulation</value>
   </data>
+  <data name="ER_ArchitectureShort" xml:space="preserve">
+    <value>Architecture</value>
+  </data>
+  <data name="ER_BuildingServiceShort" xml:space="preserve">
+    <value>BuildingService</value>
+  </data>
+  <data name="ER_StructuralShort" xml:space="preserve">
+    <value>Structural</value>
+  </data>
 </root>

@@ -109,7 +109,12 @@ namespace Revit.IFC.Import.Data
             Parameter existingParameter = null;
             if (!parameterGroupMap.TryFindParameter(name, out existingParameter))
             {
-               IFCPropertySet.AddParameterDouble(doc, element, category, objDef, name, property.Key.Item2, null, property.Value, Id);
+               ForgeTypeId valueType = property.Key.Item2;
+               // If we aren't scaling values, all length values have come from Attributes
+               // and so will always be in feet.
+               ForgeTypeId unitType = (!Importer.TheProcessor.ScaleValues && valueType == SpecTypeId.Length) ? 
+                  UnitTypeId.Feet : null;
+               IFCPropertySet.AddParameterDouble(doc, element, category, objDef, name, valueType, unitType, property.Value, Id);
                continue;
             }
 

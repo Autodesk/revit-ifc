@@ -151,8 +151,13 @@ namespace Revit.IFC.Import.Data
                }
 
                // Check triangle that is too narrow (2 vertices are within the tolerance
-               List<XYZ> validVertices;
-               IFCGeometryUtil.CheckAnyDistanceVerticesWithinTolerance(Id, shapeEditScope, transformedVertices, out validVertices);
+               IFCGeometryUtil.CheckAnyDistanceVerticesWithinTolerance(Id, shapeEditScope, transformedVertices, out List<XYZ> validVertices);
+
+               if (validVertices.Count != transformedVertices.Count && tsBuilderScope.CanRevertToMesh())
+               {
+                  tsBuilderScope.RevertToMeshIfPossible();
+                  IFCGeometryUtil.CheckAnyDistanceVerticesWithinTolerance(Id, shapeEditScope, transformedVertices, out validVertices);
+               }
 
                // We are going to catch any exceptions if the loop is invalid.  
                // We are going to hope that we can heal the parent object in the TessellatedShapeBuilder.

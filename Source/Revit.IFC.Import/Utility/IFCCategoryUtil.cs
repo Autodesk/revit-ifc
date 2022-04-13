@@ -421,6 +421,7 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingBarType] = BuiltInCategory.OST_Rebar;
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingMesh] = BuiltInCategory.OST_FabricAreas;
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingMeshType] = BuiltInCategory.OST_FabricAreas;
+         m_EntityTypeToCategory[IFCEntityType.IfcRoad] = BuiltInCategory.OST_Roads;
          m_EntityTypeToCategory[IFCEntityType.IfcRoof] = BuiltInCategory.OST_Roofs;
          m_EntityTypeToCategory[IFCEntityType.IfcRoofType] = BuiltInCategory.OST_Roofs;
          m_EntityTypeToCategory[IFCEntityType.IfcSanitaryTerminal] = BuiltInCategory.OST_PlumbingFixtures;
@@ -489,6 +490,7 @@ namespace Revit.IFC.Import.Utility
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "TUMBLEDRYER")] = BuiltInCategory.OST_ElectricalFixtures;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "WASHINGMACHINE")] = BuiltInCategory.OST_ElectricalFixtures;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "USERDEFINED")] = BuiltInCategory.OST_ElectricalFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFacilityPart, "ROADSEGMENT")] = BuiltInCategory.OST_Roads;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFireSuppressionTerminal, "SPRINKLER")] = BuiltInCategory.OST_Sprinklers;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowController, "CIRCUITBREAKER")] = BuiltInCategory.OST_ElectricalEquipment;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowSegment, "CABLESEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;

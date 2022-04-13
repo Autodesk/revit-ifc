@@ -192,6 +192,23 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// The DoublePropertyInfoCache object for Numeric parameter types.
+      /// </summary>
+      public DoublePropertyInfoCache NumericCache
+      {
+         get
+         {
+            DoublePropertyInfoCache numericPropertyInfoCache;
+            if (!DoubleCacheMap.TryGetValue(PropertyType.Numeric, out numericPropertyInfoCache))
+            {
+               numericPropertyInfoCache = new DoublePropertyInfoCache();
+               DoubleCacheMap[PropertyType.Numeric] = numericPropertyInfoCache;
+            }
+            return numericPropertyInfoCache;
+         }
+      }
+
+      /// <summary>
       /// The DoublePropertyInfoCache object for LengthMeasure parameter types.
       /// </summary>
       public DoublePropertyInfoCache LengthMeasureCache

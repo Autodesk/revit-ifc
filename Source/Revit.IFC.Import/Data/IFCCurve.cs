@@ -118,12 +118,16 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Get the one and only CurveLoop if it exists, otherwise null.
+      /// Get the one and only CurveLoop if it exists and is non-empty, otherwise null.
       /// </summary>
-      /// <returns>The one and only CurveLoop if it exists.</returns>
+      /// <returns>The one and only CurveLoop if it exists and is non-empty.</returns>
       public CurveLoop GetTheCurveLoop()
       {
-         return (CurveLoops != null && CurveLoops.Count == 1) ? CurveLoops[0] : null;
+         if ((CurveLoops?.Count ?? 0) != 1)
+            return null;
+
+         CurveLoop theCurveLoop = CurveLoops[0];
+         return ((theCurveLoop?.NumberOfCurves() ?? 0) > 0) ? theCurveLoop : null;
       }
 
       /// <summary>

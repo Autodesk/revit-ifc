@@ -52,13 +52,11 @@
     <DefineConstants>TRACE;IFC_OPENSOURCE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="RevitAPI, Version=22.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\..\2022API\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=22.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>..\..\..\..\2022API\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Web.Extensions" />
@@ -83,6 +81,7 @@
     <AppDesigner Include="Properties\" />
     <Compile Include="Utility\COBieCompanyInfo.cs" />
     <Compile Include="Utility\COBieProjectInfo.cs" />
+    <Compile Include="Utility\CoordReferenceInfo.cs" />
     <Compile Include="Utility\DirectoryUtil.cs" />
     <Compile Include="Utility\IFCAnyHandleUtil.cs" />
     <Compile Include="Utility\IFCCompatibilityType.cs" />

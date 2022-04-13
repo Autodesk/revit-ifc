@@ -17,61 +17,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System.Collections.Generic;
-using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Common.Utility;
-
 namespace Revit.IFC.Export.Utility
 {
    /// <summary>
    /// Used to keep a cache of the IfcRoot handles mapping to an IfcMaterial or IfcMaterialList handle.
    /// </summary>
-   public class MaterialRelationsCache : Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>
+   public class MaterialRelationsCache : BaseRelationsCache
    {
-      /// <summary>
-      /// Adds the IfcRoot handle to the dictionary.
-      /// </summary>
-      /// <param name="material">The material handle.</param>
-      /// <param name="product">The product handle.</param>
-      public void Add(IFCAnyHandle material, IFCAnyHandle product)
-      {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(material))
-            return;
-
-         if (ContainsKey(material))
-         {
-            this[material].Add(product);
-         }
-         else
-         {
-            HashSet<IFCAnyHandle> products = new HashSet<IFCAnyHandle>();
-            products.Add(product);
-            this[material] = products;
-         }
-      }
-
-      /// <summary>
-      /// To clean the set of reference objects from the material in the case of some deleted entity
-      /// </summary>
-      /// <param name="material">the material</param>
-      public void CleanRefObjects(IFCAnyHandle material)
-      {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(material))
-            return;
-
-         if (ContainsKey(material))
-         {
-            IList<IFCAnyHandle> refObjToDel = new List<IFCAnyHandle>();
-            foreach (IFCAnyHandle handle in this[material])
-            {
-               if (ExporterCacheManager.HandleToDeleteCache.Contains(handle))
-                  refObjToDel.Add(handle);
-            }
-            foreach (IFCAnyHandle handle in refObjToDel)
-               this[material].Remove(handle);
-         }
-         else
-            return;
-      }
    }
 }

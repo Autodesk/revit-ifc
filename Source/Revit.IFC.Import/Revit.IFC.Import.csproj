@@ -58,10 +58,10 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\2022API\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\2022API\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -73,6 +73,7 @@
     <Compile Include="Data\IFCAdvancedBrep.cs" />
     <Compile Include="Data\IFCAdvancedFace.cs" />
     <Compile Include="Data\IFCApplication.cs" />
+    <Compile Include="Data\IFCBlock.cs" />
     <Compile Include="Data\IFCBooleanOperand.cs" />
     <Compile Include="Data\IFCBooleanResult.cs" />
     <Compile Include="Data\IFCBoundedCurve.cs" />
@@ -94,6 +95,7 @@
     <Compile Include="Data\IFCCompositeCurve.cs" />
     <Compile Include="Data\IFCConic.cs" />
     <Compile Include="Data\IFCConnectedFaceSet.cs" />
+    <Compile Include="Data\IFCCsgPrimitive3D.cs" />
     <Compile Include="Data\IFCCSGSolid.cs" />
     <Compile Include="Data\IFCCurve.cs" />
     <Compile Include="Data\IFCCylindricalSurface.cs" />
@@ -224,10 +226,8 @@
     <Compile Include="Data\IFCUnits.cs" />
     <Compile Include="Geometry\IFCVirtualGridIntersection.cs" />
     <Compile Include="Geometry\IIFCBooleanOperand.cs" />
-    <Compile Include="Processors\IFCDefaultProcessor.cs" />
-    <Compile Include="Processors\IFCNavisProcessor.cs" />
-    <Compile Include="Processors\IIFCFileProcessor.cs" />
     <Compile Include="Importer.cs" />
+    <Compile Include="Processors\IFCDefaultProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <AppDesigner Include="Properties\" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -282,6 +282,11 @@
     <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj">
       <Project>{032EA4DC-181F-4453-9F93-E08DE1C07D95}</Project>
       <Name>Revit.IFC.Common</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Revit.IFC.Import.Core\Revit.IFC.Import.Core.csproj">
+      <Project>{B1E159B7-4B12-45A9-B83F-159E37798D44}</Project>
+      <Name>Revit.IFC.Import.Core</Name>
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>

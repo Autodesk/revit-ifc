@@ -476,7 +476,7 @@ namespace Revit.IFC.Export.Exporter
 
             PropertySetDescription customPSet = new PropertySetDescription();
 
-            string scheduleName = schedule.Name;
+            string scheduleName = NamingUtil.GetNameOverride(schedule, schedule.Name);
             if (string.IsNullOrWhiteSpace(scheduleName))
             {
                scheduleName = "Unnamed Schedule " + unnamedScheduleIndex;
@@ -514,7 +514,7 @@ namespace Revit.IFC.Export.Exporter
                ScheduleField field = definition.GetField(ii);
 
                ScheduleFieldType fieldType = field.FieldType;
-               if (!IsSupportedFieldType(fieldType))
+               if (field.IsHidden || !IsSupportedFieldType(fieldType))
                   continue;
 
                // Check if it is a combined parameter.  If so, calculate the formula later 

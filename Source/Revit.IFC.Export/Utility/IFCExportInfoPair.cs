@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Export.Toolkit;
+using Autodesk.Revit.DB;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -156,7 +157,9 @@ namespace Revit.IFC.Export.Utility
       /// <param name="entityTypeStr">the entity or type string</param>
       /// <param name="predefineType">predefinedtype string</param>
       public void SetValueWithPair(string entityTypeStr, string predefineType = null)
-      { 
+      {
+         IFCVersion ifcVersion = ExporterCacheManager.ExportOptionsCache.FileVersion;
+         IfcSchemaEntityTree theTree = IfcSchemaEntityTree.GetEntityDictFor(ifcVersion);
          int typeLen = 4;
          bool isType = entityTypeStr.Substring(entityTypeStr.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase);
          if (!isType)
@@ -173,7 +176,7 @@ namespace Revit.IFC.Export.Utility
          {
             // Get the instance
             string instName = entityTypeStr.Substring(0, entityTypeStr.Length - typeLen);
-            IfcSchemaEntityNode node = IfcSchemaEntityTree.Find(instName);
+            IfcSchemaEntityNode node = theTree.Find(instName);
             if (node != null && !node.isAbstract)
             {
                IFCEntityType instType = IFCEntityType.UnKnown;
@@ -183,7 +186,7 @@ namespace Revit.IFC.Export.Utility
             else
             {
                // If not found, try non-abstract supertype derived from the type
-               node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(instName);
+               node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(ifcVersion, instName);
                if (node != null)
                {
                   IFCEntityType instType = IFCEntityType.UnKnown;
@@ -198,7 +201,7 @@ namespace Revit.IFC.Export.Utility
                m_ExportType = entityType;
             else
             {
-               node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(entityTypeStr);
+               node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(ifcVersion, entityTypeStr);
                if (node != null)
                {
                   IFCEntityType instType = IFCEntityType.UnKnown;
@@ -216,7 +219,7 @@ namespace Revit.IFC.Export.Utility
             else
             {
                // If not found, try non-abstract supertype derived from the type
-               IfcSchemaEntityNode node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(entityTypeStr);
+               IfcSchemaEntityNode node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(ifcVersion, entityTypeStr);
                if (node != null)
                {
                   instType = IFCEntityType.UnKnown;
@@ -241,13 +244,13 @@ namespace Revit.IFC.Export.Utility
             else
             {
                // If the type name is not found, likely it does not have the pair at this level, needs to get the supertype of the instance to get the type pair
-               IList<IfcSchemaEntityNode> instNodes = IfcSchemaEntityTree.FindAllSuperTypes(entityTypeStr, "IfcProduct", "IfcGroup");
+               IList<IfcSchemaEntityNode> instNodes = IfcSchemaEntityTree.FindAllSuperTypes(ifcVersion, entityTypeStr, "IfcProduct", "IfcGroup");
                foreach (IfcSchemaEntityNode instNode in instNodes)
                {
                   typeName = instNode.Name + "Type";
-                  IfcSchemaEntityNode node = IfcSchemaEntityTree.Find(typeName);
+                  IfcSchemaEntityNode node = theTree.Find(typeName);
                   if (node == null)
-                     node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(typeName);
+                     node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(ifcVersion, typeName);
 
                   if (node != null && !node.isAbstract)
                   {

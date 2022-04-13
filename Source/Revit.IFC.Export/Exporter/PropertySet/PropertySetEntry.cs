@@ -916,6 +916,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   else if (type == SpecTypeId.ApparentPower ||
                      type == SpecTypeId.ElectricalPower ||
                      type == SpecTypeId.Wattage ||
+                     type == SpecTypeId.CoolingLoad ||
+                     type == SpecTypeId.HeatingLoad ||
                      type == SpecTypeId.HvacPower)
                   {
                      propertyType = PropertyType.Power;
@@ -941,6 +943,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      type == SpecTypeId.PipingTemperature)
                   {
                      propertyType = PropertyType.ThermodynamicTemperature;
+                  }
+                  else if (type == SpecTypeId.HeatTransferCoefficient)
+                  {
+                     propertyType = PropertyType.ThermalTransmittance;
                   }
                   else if (type == SpecTypeId.Force)
                   {

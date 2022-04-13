@@ -649,11 +649,13 @@ namespace Revit.IFC.Import.Data
             Spec = SpecTypeId.Wattage;
             UnitSystem = UnitSystem.Metric;
 
-            // Support watt in the IFC file.
+            // Support kg * m^2 / c^3 in the IFC file.
 
-            // watt
+            // kg * m^2 / c^3
             DerivedUnitExpectedTypes expectedTypesW = new DerivedUnitExpectedTypes(UnitTypeId.Watts, SymbolTypeId.Watt);
-            expectedTypesW.AddExpectedType(1, SpecTypeId.HvacPower);
+            expectedTypesW.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypesW.AddExpectedType(2, SpecTypeId.Length);
+            expectedTypesW.AddCustomExpectedType(-3, "TIMEUNIT");
             expectedTypesList.Add(expectedTypesW);
          }
          else if (string.Compare(unitType, "USERDEFINED", true) == 0)

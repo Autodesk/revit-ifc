@@ -71,6 +71,9 @@ namespace Revit.IFC.Export.Utility
          if (allCapsDoorStyleOperationType.Contains("USERDEFINED"))
             return "USERDEFINED";
 
+         if (allCapsDoorStyleOperationType.Contains("FIXED"))
+            return "FIXEDPANEL";
+
          return baseValue;
       }
 

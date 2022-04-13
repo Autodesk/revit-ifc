@@ -663,10 +663,9 @@ namespace Revit.IFC.Import.Data
          }
          catch (Exception ex)
          {
-            if (ex.Message == "Don't Import")
-               return null;
+            HandleError(ex.Message, ifcObjectDefinition, false);
+            return null;
          }
-
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcObjectDefinition, IFCEntityType.IfcObjectDefinition, false);
          return null;

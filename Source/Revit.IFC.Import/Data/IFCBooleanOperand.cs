@@ -17,17 +17,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Geometry;
-using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
@@ -47,6 +40,8 @@ namespace Revit.IFC.Import.Data
             return IFCHalfSpaceSolid.ProcessIFCHalfSpaceSolid(ifcBooleanOperand);
          else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcSolidModel))
             return IFCSolidModel.ProcessIFCSolidModel(ifcBooleanOperand);
+         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcCsgPrimitive3D))
+            return IFCCsgPrimitive3D.ProcessIFCCsgPrimitive3D(ifcBooleanOperand);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcBooleanOperand, "IfcBooleanOperand", true);
          return null;

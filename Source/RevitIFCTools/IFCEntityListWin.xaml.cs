@@ -79,24 +79,25 @@ namespace RevitIFCTools
       /// <param name="f">IFCXML schema file</param>
       private void processSchema(FileInfo f)
       {
-         ProcessIFCXMLSchema.ProcessIFCSchema(f);
+         IfcSchemaEntityTree entityTree = new IfcSchemaEntityTree();
+         bool success = ProcessIFCXMLSchema.ProcessIFCSchema(f, ref entityTree);
 
          string schemaName = f.Name.Replace(".xsd", "");
 
          if (checkBox_outputSchemaTree.IsChecked == true)
          {
-            string treeDump = IfcSchemaEntityTree.DumpTree();
+            string treeDump = entityTree.DumpTree();
             System.IO.File.WriteAllText(outputFolder + @"\entityTree" + schemaName + ".txt", treeDump);
          }
 
          if (checkBox_outputSchemaEnum.IsChecked == true)
          {
-            string dictDump = IfcSchemaEntityTree.DumpEntityDict(schemaName);
+            string dictDump = entityTree.DumpEntityDict(schemaName);
             System.IO.File.WriteAllText(outputFolder + @"\entityEnum" + schemaName + ".cs", dictDump);
          }
 
          // Add aggregate of the entity list into a set
-         foreach (KeyValuePair<string,IfcSchemaEntityNode> entry in IfcSchemaEntityTree.EntityDict)
+         foreach (KeyValuePair<string,IfcSchemaEntityNode> entry in entityTree.IfcEntityDict)
          {
             aggregateEntities.Add(entry.Key);
          }
@@ -147,7 +148,8 @@ namespace RevitIFCTools
             ProcessPsetDefinition procPdef = new ProcessPsetDefinition(logF);
 
             string schemaName = f.Name.Replace(".xsd", "");
-            IDictionary<string, IfcSchemaEntityNode> entDict = IfcSchemaEntityTree.GetEntityDictFor(f.Name);
+            IfcSchemaEntityTree entTree = IfcSchemaEntityTree.GetEntityDictFor(f.Name);
+            IDictionary<string, IfcSchemaEntityNode> entDict = entTree.IfcEntityDict;
             IFCEntityAndPsetList schemaEntities = new IFCEntityAndPsetList();
             schemaEntities.Version = schemaName;
             schemaEntities.EntityList = new HashSet<IFCEntityInfo>();
@@ -258,9 +260,9 @@ namespace RevitIFCTools
                entInfo.Entity = ent.Key;
                if (!string.IsNullOrEmpty(ent.Value.PredefinedType))
                {
-                  if (IfcSchemaEntityTree.PredefinedTypeEnumDict.ContainsKey(ent.Value.PredefinedType))
+                  if (entTree.PredefinedTypeEnumDict.ContainsKey(ent.Value.PredefinedType))
                   {
-                     entInfo.PredefinedType = IfcSchemaEntityTree.PredefinedTypeEnumDict[ent.Value.PredefinedType];
+                     entInfo.PredefinedType = entTree.PredefinedTypeEnumDict[ent.Value.PredefinedType];
                   }
                }
                
@@ -270,7 +272,7 @@ namespace RevitIFCTools
                   entInfo.PropertySets = entPsetDict[entInfo.Entity].ToList();
                }
                // Collect Pset that is applicable to the supertype of this entity
-               IList<IfcSchemaEntityNode> supertypeList = IfcSchemaEntityTree.FindAllSuperTypes(entInfo.Entity, 
+               IList<IfcSchemaEntityNode> supertypeList = IfcSchemaEntityTree.FindAllSuperTypes(ExporterCacheManager.ExportOptionsCache.FileVersion, entInfo.Entity, 
                   "IfcProduct", "IfcTypeProduct", "IfcGroup");
                if (supertypeList != null && supertypeList.Count > 0)
                {
@@ -394,7 +396,7 @@ namespace RevitIFCTools
          if (string.IsNullOrEmpty(textBox_type1.Text) || string.IsNullOrEmpty(textBox_type2.Text))
             return;
 
-         bool res = IfcSchemaEntityTree.IsSubTypeOf(textBox_type1.Text, textBox_type2.Text);
+         bool res = IfcSchemaEntityTree.IsSubTypeOf(ExporterCacheManager.ExportOptionsCache.FileVersion, textBox_type1.Text, textBox_type2.Text);
          if (res)
             checkBox_testResult.IsChecked = true;
          else
@@ -406,7 +408,7 @@ namespace RevitIFCTools
          if (string.IsNullOrEmpty(textBox_type1.Text) || string.IsNullOrEmpty(textBox_type2.Text))
             return;
 
-         bool res = IfcSchemaEntityTree.IsSuperTypeOf(textBox_type1.Text, textBox_type2.Text);
+         bool res = IfcSchemaEntityTree.IsSuperTypeOf(ExporterCacheManager.ExportOptionsCache.FileVersion, textBox_type1.Text, textBox_type2.Text);
          if (res)
             checkBox_testResult.IsChecked = true;
          else

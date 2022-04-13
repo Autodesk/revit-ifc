@@ -78,7 +78,9 @@ namespace Revit.IFC.Import.Data
          {
             try
             {
-               Faces.Add(IFCFace.ProcessIFCFace(ifcCfsFace));
+               IFCFace currentFace = IFCFace.ProcessIFCFace(ifcCfsFace);
+               if (!currentFace.IsEmpty())
+                  Faces.Add(currentFace);
             }
             catch
             {

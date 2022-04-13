@@ -178,15 +178,19 @@ namespace Revit.IFC.Common.Utility
          if (period < Eps())
             return number;
 
-         double[] range = new double[2];
          double halfPeriod = 0.5 * period;
-         range[0] = midRange - halfPeriod;
-         range[1] = midRange + halfPeriod;
+         double[] range = new double[2] { midRange - halfPeriod, midRange + halfPeriod };
+
+         for (int ii = 0; ii < 2; ii++)
+         {
+            if (IsAlmostEqual(number, range[ii]))
+               return range[ii];
+         }
 
          double shiftCountAsDouble = 0.0;
-         if (number < range[0] && !MathUtil.IsAlmostEqual(number, range[0]))
+         if (number < range[0])
             shiftCountAsDouble += (1.0 + Math.Floor((range[0] - number) / period));
-         if (number >= range[1] && !MathUtil.IsAlmostEqual(number, range[1]))
+         if (number >= range[1])
             shiftCountAsDouble -= (1.0 + Math.Floor((number - range[1]) / period));
 
          number += period * shiftCountAsDouble;

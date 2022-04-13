@@ -84,7 +84,9 @@ namespace Revit.IFC.Import.Data
                   FilledByElement = IFCElement.ProcessIFCElement(relatedFillingElement);
                else
                   FilledByElement = filledByElement as IFCElement;
-               FilledByElement.FillsOpening = this;
+               
+               if (FilledByElement != null)
+                  FilledByElement.FillsOpening = this;
                break;
             }
          }

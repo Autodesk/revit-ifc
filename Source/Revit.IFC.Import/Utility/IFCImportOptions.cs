@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.IO;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Import.Core;
 
 namespace Revit.IFC.Import.Utility
 {

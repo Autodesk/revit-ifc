@@ -103,7 +103,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcPipeSegmentType, IFCPipeSegmentType.Gutter.ToString());
 
                   IFCAnyHandleUtil.SetAttribute(style, "Tag", originalTag);
-                  ExporterUtil.SetGlobalId(style, typeGuid);
+                  ExporterUtil.SetGlobalId(style, typeGuid, element);
                   IFCAnyHandleUtil.SetAttribute(style, "ElementType", elementTypeName);
 
                   List<IFCAnyHandle> representationMaps = GeometryUtil.GetRepresentationMaps(style);

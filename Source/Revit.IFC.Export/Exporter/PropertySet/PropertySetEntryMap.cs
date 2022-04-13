@@ -272,6 +272,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   data = PropertyUtil.CreateNormalisedRatioMeasureDataFromString(valueString);
                   break;
                }
+            case PropertyType.Numeric:
+               {
+                  if (Double.TryParse(valueString, out double value))
+                     data = IFCDataUtil.CreateAsNumeric(value);
+                  break;
+               }
             case PropertyType.PlaneAngle:
                {
                   if (Double.TryParse(valueString, out double value))
@@ -567,6 +573,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                          ifcPropertyName, valueType);
                      break;
                   }
+               case PropertyType.Numeric:
+                  {
+                     propHnd = PropertyUtil.CreateNumericPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
+                     break;
+                  }
                case PropertyType.PlaneAngle:
                   {
                      propHnd = PropertyUtil.CreatePlaneAngleMeasurePropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName,
@@ -776,17 +787,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                  revitParameterName, propertyName, RevitBuiltInParameter,
                  propertyType, propertyArgumentType, valueType, propertyEnumerationType);
             }
-            //When querying values from ProjectInfo (or when the name exists in different psets)
-            //we need to try alternative parameter names too.
-            //These names are constructed as shown below.
-            bool isOverlappingName = (propertyName == "NominalCapacity") ? true : false;
-            if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (element is ProjectInfo || isOverlappingName))
-            {
-               revitParameterName = owningPsetName + "." + RevitParameterName;
-               propHnd = CreatePropertyFromElementBase(file, exporterIFC, element,
-                 revitParameterName, propertyName, RevitBuiltInParameter,
-                 propertyType, propertyArgumentType, valueType, propertyEnumerationType);
-            }
          }
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (elementType != null))
@@ -937,6 +937,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                {
                   double val = (useCalculator) ? PropertyCalculator.GetDoubleValue() : double.Parse(propertyValue);
                   propHnd = PropertyUtil.CreateNormalisedRatioMeasureProperty(file, propertyName, val, valueType);
+                  break;
+               }
+            case PropertyType.Numeric:
+               {
+                  double val = (useCalculator) ? PropertyCalculator.GetDoubleValue() : double.Parse(propertyValue);
+                  propHnd = PropertyUtil.CreateNumericPropertyFromCache(file, propertyName, val, valueType);
                   break;
                }
             case PropertyType.PositiveRatio:

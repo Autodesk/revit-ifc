@@ -33,6 +33,8 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using UserInterfaceUtility.Json;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.EntityTree;
+using System.Resources;
 
 namespace BIM.IFC.Export.UI
 {
@@ -68,6 +70,9 @@ namespace BIM.IFC.Export.UI
          m_configurationsMap = configurationsMap;
 
          ResetToOriginalConfigSettings(currentConfigName);
+#if !DEBUG
+         button_ExcludeElement.Visibility = System.Windows.Visibility.Hidden;
+#endif
       }
 
       /// <summary>
@@ -104,11 +109,7 @@ namespace BIM.IFC.Export.UI
          configuration.GeoRefMapUnit = crsInfo.uom;
          if (!string.IsNullOrWhiteSpace(crsInfo.epsgCode))
          {
-            // Some time crsInfo returns a different epsgCode. In this case retain the original code if specified
-            if (!string.IsNullOrEmpty(newEPSGCode))
-               configuration.GeoRefEPSGCode = newEPSGCode;
-            else
-               configuration.GeoRefEPSGCode = crsInfo.epsgCode;
+            configuration.GeoRefEPSGCode = crsInfo.epsgCode;
          }
          else
          {
@@ -428,8 +429,6 @@ namespace BIM.IFC.Export.UI
          checkbox_UseVisibleRevitNameAsEntityName.IsChecked = configuration.UseVisibleRevitNameAsEntityName;
          checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
 
-         LoadTreeviewFilterElement(treeView_FilterElement);
-
          if (configuration.IFCVersion.Equals(IFCVersion.IFC2x3FM))
          {
             DoCOBieSpecificSetup(configuration);
@@ -573,7 +572,6 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportUserDefinedPsetsFileName = userDefinedPropertySetFileName.Text;
             configuration.ExportUserDefinedParameterMappingFileName = userDefinedParameterMappingTable.Text;
-            configuration.ExcludeFilter = GetSelectedExcludeFilter(treeView_FilterElement);
             IFCExport.LastSelectedConfig[configuration.Name] = configuration;
          }
 
@@ -792,8 +790,6 @@ namespace BIM.IFC.Export.UI
          return newName;
       }
 
-
-
       /// <summary>
       /// Creates a new configuration, either a default or a copy configuration.
       /// </summary>
@@ -857,9 +853,6 @@ namespace BIM.IFC.Export.UI
             prevConfig = e.RemovedItems[0] as IFCExportConfiguration;
             if (prevConfig != null)
             {
-               prevConfig.ExcludeFilter = GetSelectedExcludeFilter(treeView_FilterElement);
-               ClearTreeViewChecked(treeView_FilterElement);   // Clear the list
-
                // Keep COBie specific data from the special tabs
                if (prevConfig.IFCVersion == IFCVersion.IFC2x3FM)
                {
@@ -1029,11 +1022,6 @@ namespace BIM.IFC.Export.UI
          if (e.RemovedItems.Count > 0)
          {
             prevConfig = e.RemovedItems[0] as IFCExportConfiguration;
-            if (prevConfig != null)
-            {
-               prevConfig.ExcludeFilter = GetSelectedExcludeFilter(treeView_FilterElement);
-               ClearTreeViewChecked(treeView_FilterElement);   // Clear the list
-            }
          }
 
          IFCVersionAttributes attributes = (IFCVersionAttributes)comboboxIfcType.SelectedItem;
@@ -1053,8 +1041,6 @@ namespace BIM.IFC.Export.UI
             }
 
             UpdateExchangeRequirement(configuration);
-
-            LoadTreeviewFilterElement(treeView_FilterElement);
          }
 
          if (configuration.IFCVersion.Equals(IFCVersion.IFC2x3FM))
@@ -1091,8 +1077,9 @@ namespace BIM.IFC.Export.UI
          else
          { 
             Document doc = IFCExport.TheDocument;
-           (double eastings, double northings, double orthogonalHeight) geoRefInfo =
-               OptionsUtil.ScaledGeoReferenceInformation(doc, configuration.SitePlacement);
+            ProjectLocation projLocation = doc.ActiveProjectLocation;
+            (double eastings, double northings, double orthogonalHeight, double angleTN, double origAngleTN) geoRefInfo =
+               OptionsUtil.ScaledGeoReferenceInformation(doc, configuration.SitePlacement, projLocation);
             TextBox_Eastings.Text = geoRefInfo.eastings.ToString("F4");
             TextBox_Northings.Text = geoRefInfo.northings.ToString("F4");
          }
@@ -1456,363 +1443,6 @@ namespace BIM.IFC.Export.UI
          classificationInformationWindow.ShowDialog();
       }
 
-      private void treeView_FilterElement_Loaded(object sender, RoutedEventArgs e)
-      {
-         LoadTreeviewFilterElement(sender);
-      }
-
-      private void LoadTreeviewFilterElement(object sender)
-      {
-         TreeView tv = sender as TreeView;
-
-         try
-         {
-            IFCExportConfiguration configuration = GetSelectedConfiguration();
-            IFCVersion ifcFileVersion = configuration.IFCVersion;
-            string schemaFile = string.Empty;
-            switch (ifcFileVersion)
-            {
-               case IFCVersion.IFC2x2:
-                  schemaFile = "IFC2X2_ADD1.xsd";
-                  break;
-               case IFCVersion.IFCBCA:
-               case IFCVersion.IFC2x3:
-               case IFCVersion.IFC2x3BFM:
-               case IFCVersion.IFC2x3CV2:
-               case IFCVersion.IFC2x3FM:
-               case IFCVersion.IFCCOBIE:
-                  schemaFile = "IFC2X3_TC1.xsd";
-                  break;
-               case IFCVersion.IFC4:
-               case IFCVersion.IFC4DTV:
-               case IFCVersion.IFC4RV:
-                  schemaFile = "IFC4.xsd";
-                  break;
-               default:
-                  schemaFile = "IFC4.xsd";
-                  break;
-            }
-
-            // Process IFCXml schema here, then search for IfcProduct and build TreeView beginning from that node. Allow checks for the tree nodes. Grey out (and Italic) the abstract entity
-            string schemaLoc = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            schemaFile = System.IO.Path.Combine(schemaLoc, schemaFile);
-            FileInfo schemaFileInfo = new FileInfo(schemaFile);
-
-            HashSet<string> exclElementSet = FillSetFromList(configuration.ExcludeFilter);
-
-            bool newLoad = ProcessIFCXMLSchema.ProcessIFCSchema(schemaFileInfo);
-            if (newLoad || tv.Items.Count == 0)
-            {
-               tv.Items.Clear();
-               m_TreeViewItemDict.Clear();
-
-               IfcSchemaEntityNode ifcProductNode;
-               if (IfcSchemaEntityTree.EntityDict.TryGetValue("IfcProduct", out ifcProductNode))
-               {
-                  // From IfcProductNode, recursively get all the children nodes and assign them into the treeview node (they are similar in the form)
-                  TreeViewItem prod = new TreeViewItem();
-                  prod.Name = "IfcProduct";
-                  prod.Header = ifcProductNode.Name + " Entities to be excluded";
-                  prod.IsExpanded = true;
-                  prod.FontWeight = FontWeights.Bold;
-                  tv.Items.Add(GetNode(ifcProductNode, prod, exclElementSet));
-               }
-
-               IfcSchemaEntityNode ifcTypeProductNode;
-               if (IfcSchemaEntityTree.EntityDict.TryGetValue("IfcTypeProduct", out ifcTypeProductNode))
-               {
-                  // From IfcTypeProductNode, recursively get all the children nodes and assign them into the treeview node (they are similar in the form)
-                  TreeViewItem typeProd = new TreeViewItem();
-                  typeProd.Name = "IfcTypeProduct";
-                  typeProd.Header = ifcTypeProductNode.Name + " Entities to be excluded";
-                  typeProd.IsExpanded = true;
-                  typeProd.FontWeight = FontWeights.Bold;
-                  tv.Items.Add(GetNode(ifcTypeProductNode, typeProd, exclElementSet));
-               }
-
-               IfcSchemaEntityNode ifcGroupNode;
-               if (IfcSchemaEntityTree.EntityDict.TryGetValue("IfcGroup", out ifcGroupNode))
-               {
-                  // For IfcGroup, a header is neaded because the IfcGroup itself is not a Abstract entity
-                  TreeViewItem groupHeader = new TreeViewItem();
-                  groupHeader.Name = "IfcGroupHeader";
-                  groupHeader.Header = "IfcGroup" + " Entities to be excluded";
-                  groupHeader.IsExpanded = true;
-                  groupHeader.FontWeight = FontWeights.Bold;
-                  tv.Items.Add(groupHeader);
-
-                  // From IfcGroup Node, recursively get all the children nodes and assign them into the treeview node (they are similar in the form)
-                  TreeViewItem groupNode = new TreeViewItem();
-                  CheckBox groupNodeItem = new CheckBox();
-                  groupNode.Name = "IfcGroup";
-                  groupNode.Header = groupNodeItem;
-                  groupNode.IsExpanded = true;
-                  m_TreeViewItemDict.Add(groupNode.Name, groupNode);
-
-                  groupNodeItem.Name = "IfcGroup";
-                  groupNodeItem.Content = "IfcGroup";
-                  groupNodeItem.FontWeight = FontWeights.Normal;
-                  groupNodeItem.IsChecked = true;         // Default is always Checked
-                  if (exclElementSet.Contains(groupNode.Name))
-                     groupNodeItem.IsChecked = false;     // if the name is inside the excluded element hashset, UNcheck the checkbox (= remember the earlier choice)
-
-                  groupNodeItem.Checked += new RoutedEventHandler(treeViewItem_HandleChecked);
-                  groupNodeItem.Unchecked += new RoutedEventHandler(treeViewItem_HandleUnchecked);
-
-                  groupHeader.Items.Add(GetNode(ifcGroupNode, groupNode, exclElementSet));
-               }
-            }
-            else
-            {
-               // Check all elements that have been excluded before for this configuration
-               foreach (TreeViewItem tvItem in tv.Items)
-                  UnCheckSelectedNode(tvItem, exclElementSet);
-            }
-         }
-         catch
-         {
-            // Error above in processing - disable the tree view.
-            tv.IsEnabled = false;
-         }
-      }
-
-      void UnCheckSelectedNode(TreeViewItem node, HashSet<string> exclElementSet)
-      {
-         CheckBox chkbox = node.Header as CheckBox;
-         if (chkbox != null)
-         {
-            if (exclElementSet.Contains(chkbox.Name))
-               chkbox.IsChecked = false;
-         }
-         foreach (TreeViewItem nodeChld in node.Items)
-            UnCheckSelectedNode(nodeChld, exclElementSet);
-      }
-
-      TreeViewItem GetNode(IfcSchemaEntityNode ifcNode, TreeViewItem thisNode, HashSet<string> exclSet)
-      {
-         foreach (IfcSchemaEntityNode ifcNodeChild in ifcNode.GetChildren())
-         {
-            bool alwaysDisable = false;
-
-            // Disable selection for the *StandardCase entities to avoid this type of confusion "what it means when IfcWall is selected but not the IfcWallStandardCase?"
-            if (ifcNodeChild.Name.Length > 12)
-               if (string.Compare(ifcNodeChild.Name, (ifcNodeChild.Name.Length - 12), "StandardCase", 0, 12, true) == 0)
-                  alwaysDisable = true;
-
-            // Skip the spatial structure element because of its impact to containment and containment structure
-            if (ifcNodeChild.Name.Equals("IfcSpatialStructureElement") || ifcNodeChild.IsSubTypeOf("IfcSpatialStructureElement")
-               || ifcNodeChild.Name.Equals("IfcSpatialStructureElementType") || ifcNodeChild.IsSubTypeOf("IfcSpatialStructureElementType"))
-               continue;
-
-            TreeViewItem childNode = new TreeViewItem();
-            CheckBox childNodeItem = new CheckBox();
-            childNode.Name = ifcNodeChild.Name;
-            m_TreeViewItemDict.Add(childNode.Name, childNode);
-            childNodeItem.Name = ifcNodeChild.Name;
-            if (ifcNodeChild.isAbstract)
-            {
-               childNodeItem.FontStyle = FontStyles.Italic;
-               childNodeItem.Foreground = Brushes.Gray;
-               childNodeItem.Content = "(ABS) " + ifcNodeChild.Name;
-            }
-            else
-               childNodeItem.Content = ifcNodeChild.Name;
-
-            childNodeItem.FontWeight = FontWeights.Normal;
-            childNodeItem.IsChecked = true;         // Default is always Checked
-            if (exclSet.Contains(ifcNodeChild.Name))
-               childNodeItem.IsChecked = false;     // if the name is inside the excluded element hashset, UNcheck the checkbox (= remember the earlier choice)
-
-            if (alwaysDisable)
-               childNodeItem.IsEnabled = false;
-
-            childNodeItem.Checked += new RoutedEventHandler(treeViewItem_HandleChecked);
-            childNodeItem.Unchecked += new RoutedEventHandler(treeViewItem_HandleUnchecked);
-            childNode.Header = childNodeItem;
-            childNode.IsExpanded = true;
-            childNode = GetNode(ifcNodeChild, childNode, exclSet);
-            thisNode.Items.Add(childNode);
-         }
-         return thisNode;
-      }
-
-      void treeViewItem_HandleChecked(object sender, RoutedEventArgs e)
-      {
-         TreeViewItem node = (sender as CheckBox).Parent as TreeViewItem;
-         CheckOrUnCheckThisNodeAndBelow(node, isChecked: true);
-      }
-
-      void treeViewItem_HandleUnchecked(object sender, RoutedEventArgs e)
-      {
-         TreeViewItem node = (sender as CheckBox).Parent as TreeViewItem;
-         CheckOrUnCheckThisNodeAndBelow(node, isChecked: false);
-      }
-
-      void CheckOrUnCheckThisNodeAndBelow(TreeViewItem thisNode, bool isChecked)
-      {
-         (thisNode.Header as CheckBox).IsChecked = isChecked;
-
-         // Here, to make sure the exclusion/inclusion is consistent for IfcProduct and IfcTypeProduct, 
-         // if the Type is checked/unchecked the associated Entity will be checked/unchecked too
-         // and the other way round too: if the Entity is checked/unchecked the associated Type will be checked/unchecked
-         string clName = thisNode.Name.Substring(thisNode.Name.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ? thisNode.Name.Substring(0, thisNode.Name.Length - 4) : thisNode.Name;
-         string tyName = thisNode.Name.Substring(thisNode.Name.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ? thisNode.Name : thisNode.Name + "Type";
-         if (thisNode.Name.Equals(clName))
-         {
-            TreeViewItem assocTypeItem;
-            if (m_TreeViewItemDict.TryGetValue(tyName, out assocTypeItem))
-               (assocTypeItem.Header as CheckBox).IsChecked = isChecked;
-         }
-         else if (thisNode.Name.Equals(tyName))
-         {
-            TreeViewItem assocEntityItem;
-            if (m_TreeViewItemDict.TryGetValue(clName, out assocEntityItem))
-               (assocEntityItem.Header as CheckBox).IsChecked = isChecked;
-         }
-
-         foreach (TreeViewItem tvItem in thisNode.Items)
-            CheckOrUnCheckThisNodeAndBelow(tvItem, isChecked);
-      }
-
-      void EnableOrDisableThisNodeAndBelow(TreeViewItem thisNode, bool enable)
-      {
-         bool toEnable = enable;
-
-         // Always disable selection for the *StandardCase entities to avoid this type of confusion "what it means when IfcWall is selected but not the IfcWallStandardCase?"
-         if (thisNode.Name.Length > 12)
-            if (string.Compare(thisNode.Name, (thisNode.Name.Length - 12), "StandardCase", 0, 12, true) == 0)
-               toEnable = false;
-
-         // Must check if it is null (the first level in the tree is not a checkbox)
-         CheckBox chkbox = thisNode.Header as CheckBox;
-         if (chkbox != null)
-            chkbox.IsEnabled = toEnable;
-
-         // Here, to make sure the exclusion/inclusion is consistent for IfcProduct and IfcTypeProduct, 
-         // if the Type is checked/unchecked the associated Entity will be checked/unchecked too
-         // and the other way round too: if the Entity is checked/unchecked the associated Type will be checked/unchecked
-         string clName = thisNode.Name.Substring(thisNode.Name.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ? thisNode.Name.Substring(0, thisNode.Name.Length - 4) : thisNode.Name;
-         string tyName = thisNode.Name.Substring(thisNode.Name.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ? thisNode.Name : thisNode.Name + "Type";
-         if (thisNode.Name.Equals(clName))
-         {
-            TreeViewItem assocTypeItem;
-            if (m_TreeViewItemDict.TryGetValue(tyName, out assocTypeItem))
-               (assocTypeItem.Header as CheckBox).IsEnabled = toEnable;
-         }
-         else if (thisNode.Name.Equals(tyName))
-         {
-            TreeViewItem assocEntityItem;
-            if (m_TreeViewItemDict.TryGetValue(clName, out assocEntityItem))
-               (assocEntityItem.Header as CheckBox).IsEnabled = toEnable;
-         }
-
-         foreach (TreeViewItem tvItem in thisNode.Items)
-            EnableOrDisableThisNodeAndBelow(tvItem, enable);
-      }
-
-      bool IsAllDescendantsChecked(TreeViewItem thisNode)
-      {
-         bool isAllChecked = true;
-
-         foreach (TreeViewItem tvItem in thisNode.Items)
-         {
-            CheckBox itemCheckBox = tvItem.Header as CheckBox;
-            bool checkBoxIsChecked = false;
-            if (itemCheckBox.IsChecked.HasValue)
-               checkBoxIsChecked = itemCheckBox.IsChecked.Value;
-
-            isAllChecked = isAllChecked && checkBoxIsChecked;
-            if (!isAllChecked)
-               return false;
-
-            isAllChecked = isAllChecked && IsAllDescendantsChecked(tvItem);   // Do recursive check
-            if (!isAllChecked)
-               return false;
-         }
-         return true;
-      }
-
-      bool IsAllDescendantsUnhecked(TreeViewItem thisNode)
-      {
-         bool hasSomechecked = false;
-
-         foreach (TreeViewItem tvItem in thisNode.Items)
-         {
-            CheckBox itemCheckBox = tvItem.Header as CheckBox;
-            bool checkBoxIsChecked = false;
-            if (itemCheckBox.IsChecked.HasValue)
-               checkBoxIsChecked = itemCheckBox.IsChecked.Value;
-
-            hasSomechecked = hasSomechecked || checkBoxIsChecked;
-            if (hasSomechecked)
-               return false;
-
-            hasSomechecked = hasSomechecked || IsAllDescendantsUnhecked(tvItem);    // Do recursive check
-            if (hasSomechecked)
-               return false;
-         }
-         return true;
-      }
-
-      string GetSelectedExcludeFilter(TreeView tv)
-      {
-         string filteredElemList = string.Empty;
-         foreach (TreeViewItem tvChld in tv.Items)
-            filteredElemList += GetSelectedExcludeFilter(tvChld);
-         return filteredElemList;
-      }
-
-      string GetSelectedExcludeFilter(TreeViewItem tvItem)
-      {
-         string filteredElemList = string.Empty;
-         CheckBox cbElem = tvItem.Header as CheckBox;
-         if (cbElem != null)
-         {
-            if (cbElem.IsChecked.HasValue)
-               if (cbElem.IsChecked.Value == false)
-                  filteredElemList += cbElem.Name + ";";
-         }
-         foreach (TreeViewItem tvChld in tvItem.Items)
-            filteredElemList += GetSelectedExcludeFilter(tvChld);
-
-         return filteredElemList;
-      }
-
-      void ClearTreeViewChecked(TreeView tv)
-      {
-         foreach (TreeViewItem tvItem in tv.Items)
-            ClearTreeviewChecked(tvItem);
-      }
-
-      /// <summary>
-      /// This will clear any select/unselect and returns to the default which is ALL checked
-      /// </summary>
-      /// <param name="tv"></param>
-      void ClearTreeviewChecked(TreeViewItem tv)
-      {
-         foreach (TreeViewItem tvItem in tv.Items)
-         {
-            CheckBox cbElem = tvItem.Header as CheckBox;
-            if (cbElem != null)
-               cbElem.IsChecked = true;
-
-            ClearTreeviewChecked(tvItem);
-         }
-      }
-
-      HashSet<string> FillSetFromList(string elemList)
-      {
-         HashSet<string> exclSet = new HashSet<string>();
-         if (!string.IsNullOrEmpty(elemList))
-         {
-            elemList = elemList.TrimEnd(';');   // Remove the ending semicolon ';'
-            string[] eList = elemList.Split(';');
-            foreach (string elem in eList)
-               exclSet.Add(elem);
-         }
-         return exclSet;
-      }
-
       private void checkBox_TriangulationOnly_Checked(object sender, RoutedEventArgs e)
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
@@ -1876,7 +1506,7 @@ namespace BIM.IFC.Export.UI
          if (IFCExchangeRequirements.ExchangeRequirements.ContainsKey(configuration.IFCVersion))
          {
             comboBoxExchangeRequirement.ItemsSource = IFCExchangeRequirements.ExchangeRequirementListForUI(configuration.IFCVersion);
-            comboBoxExchangeRequirement.SelectedItem = IFCExchangeRequirements.GetERNameForUI(configuration.ExchangeRequirement);
+            comboBoxExchangeRequirement.SelectedItem = configuration.ExchangeRequirement.ToFullLabel();
          }
          else
          {
@@ -1884,10 +1514,7 @@ namespace BIM.IFC.Export.UI
             comboBoxExchangeRequirement.SelectedItem = null;
          }
 
-         if (configuration.IsBuiltIn)
-            comboBoxExchangeRequirement.IsEnabled = false;
-         else
-            comboBoxExchangeRequirement.IsEnabled = true;
+         comboBoxExchangeRequirement.IsEnabled = !configuration.IsBuiltIn;
       }
 
       private void TextBox_EPSG_TextChanged(object sender, TextChangedEventArgs e)
@@ -1954,6 +1581,56 @@ namespace BIM.IFC.Export.UI
             ResetToOriginalConfigSettings(configuration.Name);
          else
             ResetToOriginalConfigSettings(Properties.Resources.InSessionConfiguration);
+      }
+      
+      private void button_ExcludeElement_Click(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         ResourceManager rmgr = Properties.Resources.ResourceManager;
+         string desc = rmgr.GetString("ExcludeEntitySelection");
+         EntityTree entityTree = new EntityTree(configuration.IFCVersion, configuration.ExcludeFilter, desc, singleNodeSelection: false);
+         entityTree.Owner = this;
+         entityTree.Title = rmgr.GetString("IFCEntitySelection");
+         entityTree.OKLabelOverride = rmgr.GetString("OK");
+         entityTree.CancelLabelOverride = rmgr.GetString("Cancel");
+         entityTree.IFCSchemaLabelOverride = rmgr.GetString("IFCSchemaVersion");
+         entityTree.ShowDialog();
+         if (entityTree.Status)
+            configuration.ExcludeFilter = entityTree.GetUnSelectedEntity();
+      }
+
+      /// <summary>
+      /// This is only for testing the UI code that will do the selection to be used later on for IFC Export As
+      /// To be removed when the final implementation is done
+      /// </summary>
+      /// <param name="sender"></param>
+      /// <param name="e"></param>
+      private void button_SelectSingleElement_Click(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         ResourceManager rmgr = Properties.Resources.ResourceManager;
+         string desc = rmgr.GetString("SelectSingleElement");
+         EntityTree entityTree = new EntityTree(IFCVersion.Default, configuration.ExcludeFilter, desc, singleNodeSelection: true);
+         entityTree.Owner = this;
+         entityTree.Title = rmgr.GetString("IFCEntitySelection");
+         entityTree.OKLabelOverride = rmgr.GetString("OK");
+         entityTree.CancelLabelOverride = rmgr.GetString("Cancel");
+         entityTree.IFCSchemaLabelOverride = rmgr.GetString("IFCSchemaVersion");
+         entityTree.ShowDialog();
+         string selectedEntity = null;
+         if (entityTree.Status)
+            selectedEntity = entityTree.GetSelectedEntity().Replace(";" ,"");
+
+         if (string.IsNullOrEmpty(selectedEntity))
+            return;
+
+         PredefinedTypeSelection predefSelection = new PredefinedTypeSelection(configuration.IFCVersion, selectedEntity);
+         predefSelection.Owner = this;
+         predefSelection.Title = rmgr.GetString("PredefinedTypeSelection");
+         predefSelection.OKLabelOverride = rmgr.GetString("OK"); 
+         predefSelection.CancelLabelOverride = rmgr.GetString("Cancel");
+         predefSelection.ShowDialog();
+         string selPredef = predefSelection.GetSelectedPredefinedType();
       }
    }
 }

@@ -35,44 +35,6 @@ namespace BIM.IFC.Export.UI
    static public class IFCUISettings
    {
       /// <summary>
-      /// Load the location and size of a window from file. If the file is not found, then return the default location and size.
-      /// </summary>
-      /// <param name="filename">The file to store the Rect data.</param>
-      /// <returns>The Rect object.</returns>
-      static public Rect LoadWindowBounds(string filename)
-      {
-         IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForAssembly();
-         try
-         {
-            using (IsolatedStorageFileStream stream = new IsolatedStorageFileStream(filename, FileMode.Open, storage))
-            using (StreamReader reader = new StreamReader(stream))
-            {
-               // Read restore bounds value from file
-               Rect restoreBounds = Rect.Parse(reader.ReadLine());
-
-               // if the saved version of rect is not current version, then use the default.
-               string savedUIVersion = reader.ReadLine();
-               string uiVersion = GetAssemblyVersion();
-               if (!(string.Compare(uiVersion, savedUIVersion) == 0))
-                  return new Rect();
-               return restoreBounds;
-            }
-         }
-         catch (FileNotFoundException)
-         {
-            // Handle when file is not found in isolated storage, which is when:
-            // * This is first application session
-            // * The file has been deleted
-            return new Rect();
-         }
-         catch (System.Exception)
-         {
-            // Handle when other exceptions caught, e.g. cannot parse the file.
-            return new Rect();
-         }
-      }
-
-      /// <summary>
       /// Save the restore bounds of the window.
       /// </summary>
       /// <param name="filename">The file to store the Rect data.</param>

@@ -15,5 +15,7 @@ namespace Revit.IFC.Common.Enums
       Site = 1,
       Project = 2,
       Internal = 3,
+      ProjectInTN = 4,
+      InternalInTN = 5
    }
 }

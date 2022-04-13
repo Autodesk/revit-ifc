@@ -153,7 +153,7 @@ namespace Revit.IFC.Import.Data
 
          IFCDataPrimitiveType dataType = IFCDataPrimitiveType.Unknown;
 
-         if(dataType.ToString() != "Unknown")
+         if (dataType.ToString() != "Unknown")
             dataType = IFCAnyHandleUtil.GetPrimitiveTypeForOlderAPI("Unknown");
 
          ForgeTypeId specTypeId = new ForgeTypeId();

@@ -189,7 +189,8 @@ namespace Revit.IFC.Export.Toolkit
       {
          ValidateRoot(guid, ownerHistory);
 
-         ExporterUtil.SetGlobalId(root, guid);
+         ExporterUtil.SetGlobalId(root, guid, element);
+
          IFCAnyHandleUtil.SetAttribute(root, "OwnerHistory", ownerHistory);
 
          string overrideName = name;
@@ -513,7 +514,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="name">The name.</param>
       /// <param name="description">The description.</param>
       /// <param name="relatedObjects">The objects to be related to the material.</param>
-      private static void ValidateRelAssociates(string guid, IFCAnyHandle ownerHistory, string name, string description, HashSet<IFCAnyHandle> relatedObjects)
+      private static void ValidateRelAssociates(string guid, IFCAnyHandle ownerHistory, string name, string description, ISet<IFCAnyHandle> relatedObjects)
       {
          IFCAnyHandleUtil.ValidateSubTypeOf(relatedObjects, false, IFCEntityType.IfcRoot);
 
@@ -530,7 +531,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="description">The description.</param>
       /// <param name="relatedObjects">The objects to be related to the material.</param>
       private static void SetRelAssociates(IFCAnyHandle relAssociates,
-          string guid, IFCAnyHandle ownerHistory, string name, string description, HashSet<IFCAnyHandle> relatedObjects)
+          string guid, IFCAnyHandle ownerHistory, string name, string description, ISet<IFCAnyHandle> relatedObjects)
       {
          IFCAnyHandleUtil.SetAttribute(relAssociates, "RelatedObjects", relatedObjects);
          SetRelationship(relAssociates, guid, ownerHistory, name, description);
@@ -823,6 +824,27 @@ namespace Revit.IFC.Export.Toolkit
           string objectType)
       {
          SetGroup(system, guid, ownerHistory, name, description, objectType);
+      }
+
+      /// <summary>
+      /// Sets attributes to IfcDistributionSystem.
+      /// </summary>
+      /// <param name="distributionSystem">The IfcDistributionSystem.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      private static void SetDistributionSystem(IFCAnyHandle distributionSystem,
+          string guid, IFCAnyHandle ownerHistory, string name, string description,
+          string objectType, string longName, string predefinedType)
+      {
+         SetSystem(distributionSystem, guid, ownerHistory, name, description, objectType);
+
+         if (!string.IsNullOrEmpty(predefinedType))
+            IFCAnyHandleUtil.SetAttribute(distributionSystem, "PredefinedType", predefinedType, true);
+         if (!string.IsNullOrEmpty(longName))
+            IFCAnyHandleUtil.SetAttribute(distributionSystem, "LongName", longName, false);
       }
 
       /// <summary>
@@ -2796,7 +2818,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="relatingMaterial">The material.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateRelAssociatesMaterial(IFCFile file, string guid, IFCAnyHandle ownerHistory,
-          string name, string description, HashSet<IFCAnyHandle> relatedObjects, IFCAnyHandle relatingMaterial)
+          string name, string description, ISet<IFCAnyHandle> relatedObjects, IFCAnyHandle relatingMaterial)
       {
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
             IFCAnyHandleUtil.ValidateSubTypeOf(relatingMaterial, false, IFCEntityType.IfcMaterialDefinition, IFCEntityType.IfcMaterialList, IFCEntityType.IfcMaterialUsageDefinition);
@@ -2824,7 +2846,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="relatingType">The relating type.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateRelDefinesByType(IFCFile file, string guid, IFCAnyHandle ownerHistory,
-          string name, string description, HashSet<IFCAnyHandle> relatedObjects, IFCAnyHandle relatingType)
+          string name, string description, ISet<IFCAnyHandle> relatedObjects, IFCAnyHandle relatingType)
       {
          IFCAnyHandleUtil.ValidateSubTypeOf(relatingType, false, IFCEntityType.IfcTypeObject);
          ValidateRelDefines(guid, ownerHistory, name, description, relatedObjects);
@@ -3949,6 +3971,7 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.ValidateSubTypeOf(coordinates, false, IFCEntityType.IfcCartesianPointList);
          if (segmentIndexList != null && segmentIndexList.Count == 0)
             throw new ArgumentNullException("Segments");
+
          IFCAnyHandle indexedPolyCurveHnd = CreateInstance(file, IFCEntityType.IfcIndexedPolyCurve, null);
          IFCAnyHandleUtil.SetAttribute(indexedPolyCurveHnd, "Points", coordinates);
          if (segmentIndexList != null)
@@ -3957,7 +3980,7 @@ namespace Revit.IFC.Export.Toolkit
             int numSegments = 0;
             foreach (GeometryUtil.SegmentIndices segmentIndices in segmentIndexList)
             {
-               if (segmentIndices.IsCalculated == false)
+               if(segmentIndices.IsCalculated == false)
                   throw new ArgumentNullException("Segments");
 
                IFCData segment = null;
@@ -4602,6 +4625,19 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Set non optional attributes by default for some generic types
+      /// </summary>
+      /// <param name="handleType">The handle type.</param>
+      /// <param name="entityType">The entity type.</param>
+      public static void SetGenericTypeNonOptionalAttributes(IFCAnyHandle handleType, IFCEntityType entityType)
+      {
+         if (entityType == IFCEntityType.IfcWindowType)
+         {
+            IFCAnyHandleUtil.SetAttribute(handleType, "PartitioningType", IFC4.IFCWindowTypePartitioning.NOTDEFINED);
+         }
+      }
+
+      /// <summary>
       /// Creation of Generic IFC object, mainly used for MEP Objects as most of MEP objects are identical
       /// </summary>
       /// <param name="entityToCreate">The specific Entity (Enum) to create</param>
@@ -4613,26 +4649,24 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="objectType">ObjectType attribute</param>
       /// <param name="objectPlacement">Placement</param>
       /// <param name="representation">Geometry representation</param>
-      /// <param name="elementTag">Element Tag attribue</param>
+      /// <param name="elementTag">Element Tag attribute</param>
       /// <returns></returns>
       public static IFCAnyHandle CreateGenericIFCEntity(IFCExportInfoPair entityToCreate, ExporterIFC exporterIFC, Element element, string guid,
              IFCAnyHandle ownerHistory, IFCAnyHandle objectPlacement, IFCAnyHandle representation)
       {
-         //ValidateElement(guid, ownerHistory, objectPlacement, representation);
-
-         IFCAnyHandle genericIFCEntity = null;
-
-         // There is no need to check for valid entity type because that has been enforced inside IFCExportInfoPair, only default to IfcBuildingElementProxy when it is UnKnown type
-         if (entityToCreate.ExportInstance == IFCEntityType.UnKnown)
-            genericIFCEntity = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcBuildingElementProxy, element);
-         else
-            genericIFCEntity = CreateInstance(exporterIFC.GetFile(), entityToCreate.ExportInstance, element);
-
+         // There is no need to check for valid entity type because that has been enforced inside
+         // IFCExportInfoPair, only default to IfcBuildingElementProxy when it is UnKnown type
+         IFCEntityType typeToUse = (entityToCreate.ExportInstance == IFCEntityType.UnKnown) ?
+            IFCEntityType.IfcBuildingElementProxy : entityToCreate.ExportInstance;
+         IFCAnyHandle genericIFCEntity = CreateInstance(exporterIFC.GetFile(), typeToUse, element);
+         
          if (genericIFCEntity == null)
             return null;
 
-         if (IFCAnyHandleUtil.IsSubTypeOf(genericIFCEntity, IFCEntityType.IfcProduct))
+         if (IFCAnyHandleUtil.IsSubTypeOf(genericIFCEntity, IFCEntityType.IfcElement))
             SetElement(genericIFCEntity, element, guid, ownerHistory, null, null, null, objectPlacement, representation, null);
+         else if (IFCAnyHandleUtil.IsSubTypeOf(genericIFCEntity, IFCEntityType.IfcProduct))
+            SetProduct(genericIFCEntity, element, guid, ownerHistory, null, null, null, objectPlacement, representation);
 
          if (!string.IsNullOrEmpty(entityToCreate.ValidatedPredefinedType))
          {
@@ -4709,6 +4743,8 @@ namespace Revit.IFC.Export.Toolkit
             }
             catch { }
          }
+
+         SetGenericTypeNonOptionalAttributes(genericIFCType, typeEntityToCreate.ExportType);
 
          return genericIFCType;
       }
@@ -5616,15 +5652,34 @@ namespace Revit.IFC.Export.Toolkit
          if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             return null;
 
-         IFCAnyHandle buildingSystem = CreateInstance(file, IFCEntityType.IfcDistributionSystem, null);
-         SetSystem(buildingSystem, guid, ownerHistory, name, description, objectType);
+         IFCAnyHandle distributionSystem = CreateInstance(file, IFCEntityType.IfcDistributionSystem, null);
+         SetDistributionSystem(distributionSystem, guid, ownerHistory, name, description, objectType, longName, predefinedType);
 
-         if (!string.IsNullOrEmpty(predefinedType))
-            IFCAnyHandleUtil.SetAttribute(buildingSystem, "PredefinedType", predefinedType, true);
-         if (!string.IsNullOrEmpty(longName))
-            IFCAnyHandleUtil.SetAttribute(buildingSystem, "LongName", longName, false);
+         return distributionSystem;
+      }
 
-         return buildingSystem;
+      /// <summary>
+      /// Creates an IfcDistributionCircuit, and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="entityToCreate">The specific Entity (Enum) to create</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="longName">The long name.</param>
+      /// <returns></returns>
+      public static IFCAnyHandle CreateDistributionCircuit(IFCFile file, string guid, IFCAnyHandle ownerHistory, string name,
+         string description, string objectType, string longName, string predefinedType)
+      {
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            return null;
+
+         IFCAnyHandle distributionCircuit = CreateInstance(file, IFCEntityType.IfcDistributionCircuit, null);
+         SetDistributionSystem(distributionCircuit, guid, ownerHistory, name, description, objectType, longName, predefinedType);
+
+         return distributionCircuit;
       }
 
       /// <summary>

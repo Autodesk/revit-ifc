@@ -103,7 +103,7 @@ namespace Revit.IFC.Import.Data
          if (IFCAnyHandleUtil.IsSubTypeOf(ifcSolidModel, IFCEntityType.IfcSweptDiskSolid))
             return IFCSweptDiskSolid.ProcessIFCSweptDiskSolid(ifcSolidModel);
 
-         Importer.TheLog.LogUnhandledSubTypeError(ifcSolidModel, IFCEntityType.IfcSolidModel, true);
+         Importer.TheLog.LogUnhandledSubTypeError(ifcSolidModel, IFCEntityType.IfcSolidModel, false);
          return null;
       }
    }

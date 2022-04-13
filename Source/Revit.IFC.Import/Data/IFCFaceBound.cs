@@ -34,37 +34,28 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCFaceBound : IFCRepresentationItem
    {
-      IFCLoop m_Bound = null;
-
-      bool m_Orientation = true;
-
-      bool m_IsOuter = false;
-
       /// <summary>
       /// Return the defining loop of the face boundary.
       /// </summary>
-      public IFCLoop Bound
-      {
-         get { return m_Bound; }
-         protected set { m_Bound = value; }
-      }
+      public IFCLoop Bound { get; protected set; } = null;
 
       /// <summary>
       /// Return the orientation of the defining loop of the face boundary.
       /// </summary>
-      public bool Orientation
-      {
-         get { return m_Orientation; }
-         protected set { m_Orientation = value; }
-      }
+      public bool Orientation { get; protected set; } = true;
 
       /// <summary>
       /// Returns whether this is an outer boundary (TRUE) or an inner boundary (FALSE).
       /// </summary>
-      public bool IsOuter
+      public bool IsOuter { get; protected set; } = false;
+
+      /// <summary>
+      /// Checks if the FaceBound definition represents a non-empty boundary.
+      /// </summary>
+      /// <returns>True if the FaceBound contains any information.</returns>
+      public bool IsEmpty()
       {
-         get { return m_IsOuter; }
-         protected set { m_IsOuter = value; }
+         return Bound?.IsEmpty() ?? true;
       }
 
       protected IFCFaceBound()

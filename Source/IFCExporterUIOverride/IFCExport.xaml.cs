@@ -162,22 +162,6 @@ namespace BIM.IFC.Export.UI
       }
 
       /// <summary>
-      /// Restores the previous window. If no previous window found, place on the left top.
-      /// </summary>
-      private void RestorePreviousWindow()
-      {
-         // Refresh restore bounds from previous window opening
-         Rect restoreBounds = IFCUISettings.LoadWindowBounds(m_SettingFile);
-         if (restoreBounds != new Rect())
-         {
-            this.Left = restoreBounds.Left;
-            this.Top = restoreBounds.Top;
-            this.Width = restoreBounds.Width;
-            this.Height = restoreBounds.Height;
-         }
-      }
-
-      /// <summary>
       /// Update the current selected configuration in the combobox. 
       /// </summary>
       /// <param name="selected">The name of selected configuration.</param>
@@ -254,8 +238,6 @@ namespace BIM.IFC.Export.UI
          SetParent(app.MainWindowHandle);
 
          InitializeComponent();
-
-         RestorePreviousWindow();
 
          currentSelectedSetup.SelectionChanged -= currentSelectedSetup_SelectionChanged;
 
@@ -456,10 +438,11 @@ namespace BIM.IFC.Export.UI
 
          if (editorWindow.DialogResult.HasValue && editorWindow.DialogResult.Value)
          {
-            IFCCommandOverrideApplication.PotentiallyUpdatedConfigurations = true;
+            // Check here for changes in configurations. If changed, the changes will be saved into the storage
+            configurationsMap.UpdateSavedConfigurations();
             currentSelectedSetup.Items.Clear();
             m_configMap = configurationsMap;
-            String selectedConfigName = editorWindow.GetSelectedConfigurationName();
+            string selectedConfigName = editorWindow.GetSelectedConfigurationName();
 
             UpdateCurrentSelectedSetupCombo(selectedConfigName);
 

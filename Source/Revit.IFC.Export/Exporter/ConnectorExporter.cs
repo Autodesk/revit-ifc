@@ -265,6 +265,7 @@ namespace Revit.IFC.Export.Exporter
                if (m_ProcessedWires.Contains(outElement.Id))
                   return;
                m_ProcessedWires.Add(outElement.Id);
+               ExporterCacheManager.SystemsCache.AddElectricalSystem((outElement as Wire).MEPSystem.Id);
 
                try
                {

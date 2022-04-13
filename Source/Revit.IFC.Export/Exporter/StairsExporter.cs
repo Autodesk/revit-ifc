@@ -1643,12 +1643,13 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle curveHnd;
                   try
                   {
-                      curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
+                     curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
                   }
                   catch
                   {
                      curveHnd = GeometryUtil.OutdatedCreatePolyCurveFromCurve(exporterIFC, curve);
                   }
+
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveHnd))
                      curveSet.Add(curveHnd);
                }
