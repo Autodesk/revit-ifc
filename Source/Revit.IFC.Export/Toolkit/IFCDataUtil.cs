@@ -146,6 +146,16 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Creates an IFCData object as IfcNumericMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsNumeric(double value)
+      {
+         return CreateAsMeasure(value, "IfcNumericMeasure");
+      }
+
+      /// <summary>
       /// Creates an IFCData object as IfcRatioMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>

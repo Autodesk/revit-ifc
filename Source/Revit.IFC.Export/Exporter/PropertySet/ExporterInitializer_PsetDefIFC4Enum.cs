@@ -852,9 +852,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
       UNSET}
 
    public enum PEnum_ConductorFunctionEnum {
-      L1,
-      L2,
-      L3}
+      PHASE_L1,
+      PHASE_L2,
+      PHASE_L3,
+      NEUTRAL,
+      PROTECTIVEEARTH,
+      PROTECTIVEEARTHNEUTRAL,
+      OTHER,
+      NOTKNOWN,
+      UNSET}
 
    public enum PEnum_InsulationStandardClass {
       CLASS0APPLIANCE,

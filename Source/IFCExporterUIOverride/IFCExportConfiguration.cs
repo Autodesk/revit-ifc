@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Web.Script.Serialization;
+using System.Linq;
 
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
@@ -401,8 +402,7 @@ namespace BIM.IFC.Export.UI
       /// <param name="exportBoundingBox">The exportBoundingBox option.</param>
       /// <param name="exportLinkedFiles">The exportLinkedFiles option.</param>
       /// <returns>The builtIn configuration.</returns>
-      public static IFCExportConfiguration CreateBuiltInConfiguration(string name,
-                                 IFCVersion ifcVersion,
+      public static IFCExportConfiguration CreateBuiltInConfiguration(IFCVersion ifcVersion,
                                  int spaceBoundaries,
                                  bool exportBaseQuantities,
                                  bool splitWalls,
@@ -415,12 +415,18 @@ namespace BIM.IFC.Export.UI
                                  bool exportLinkedFiles,
                                  string excludeFilter = "",
                                  bool includeSteelElements = false,
-                                 KnownERNames exchangeRequirement = KnownERNames.NotDefined)
+                                 KnownERNames exchangeRequirement = KnownERNames.NotDefined,
+                                 string customName = null)
       {
          IFCExportConfiguration configuration = new IFCExportConfiguration();
 
          // Items from General Tab
-         configuration.Name = name;
+         configuration.Name = string.IsNullOrWhiteSpace(customName) ? ifcVersion.ToLabel() : customName;
+         if(exchangeRequirement != KnownERNames.NotDefined)
+         {
+            configuration.Name = $"{configuration.Name} [{exchangeRequirement.ToShortLabel()}]";
+         }
+
          configuration.IFCVersion = ifcVersion;
          configuration.ExchangeRequirement = exchangeRequirement;
          configuration.IFCFileType = IFCFileFormat.Ifc;
@@ -439,7 +445,7 @@ namespace BIM.IFC.Export.UI
          configuration.ExportBaseQuantities = exportBaseQuantities;
          configuration.ExportSchedulesAsPsets = schedulesAsPSets;
          configuration.ExportUserDefinedPsets = userDefinedPSets;
-         configuration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\" + name + @".txt";
+         configuration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\" + configuration.Name + @".txt";
          configuration.ExportUserDefinedParameterMapping = userDefinedParameterMapping;
 
          // Items from Advanced Tab
@@ -508,6 +514,27 @@ namespace BIM.IFC.Export.UI
             throw new ArgumentException("SetInSession requires an In-Session configuration", "configuration");
          }
          s_inSessionConfiguration = configuration;
+      }
+
+      /// <summary>
+      /// Update Built-in configuration from specified configuration (mainly used to update from the cached data) 
+      /// </summary>
+      /// <param name="updatedConfig">the configuration providing the updates</param>
+      public void UpdateBuiltInConfiguration(IFCExportConfiguration updatedConfig)
+      {
+         if (m_isBuiltIn && Name.Equals(updatedConfig.Name))
+         {
+            IDictionary<string, object> updConfigDict = updatedConfig.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(updatedConfig));
+
+            foreach (PropertyInfo prop in GetType().GetProperties())
+            {
+               if (updConfigDict.TryGetValue(prop.Name, out object value))
+               {
+                  if (prop.GetSetMethod() != null)
+                     prop.SetValue(this, value);
+               }
+            }
+         }
       }
 
       /// <summary>
@@ -628,6 +655,16 @@ namespace BIM.IFC.Export.UI
                m_isInSession = serializer.ConvertToType<bool>(propValue);
             }
          }
+      }
+
+      /// <summary>
+      /// Serialize the configuration into Json to be stored
+      /// </summary>
+      /// <returns>the serialized json string for the configuration</returns>
+      public string SerializeConfigToJson()
+      {
+         JavaScriptSerializer js = new JavaScriptSerializer();
+         return js.Serialize(this);
       }
    }
 

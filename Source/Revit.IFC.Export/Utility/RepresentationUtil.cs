@@ -608,6 +608,8 @@ namespace Revit.IFC.Export.Utility
          if (!skipBody)
          {
             ElementId matId = ExporterUtil.GetSingleMaterial(element);
+            if (matId == ElementId.InvalidElementId)
+               matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
 
             bodyData = BodyExporter.ExportBody(exporterIFC, element, categoryId, matId, geometryList,
                 bodyExporterOptions, extrusionCreationData);

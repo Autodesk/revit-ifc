@@ -26,28 +26,7 @@ namespace Revit.IFC.Export.Utility
    /// <summary>
    /// Used to keep a cache of the IfcRoot handles mapping to a IfcMaterial___SetUsage handle. It includes IfcMaterialLayerSetUsage, IfcMaterialProfileSetUsage in IFC4
    /// </summary>
-   public class MaterialSetUsageCache : Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>
+   public class MaterialSetUsageCache : BaseRelationsCache
    {
-      /// <summary>
-      /// Adds the IfcRoot handle to the dictionary.
-      /// </summary>
-      /// <param name="material">The material handle.</param>
-      /// <param name="product">The product handle.</param>
-      public void Add(IFCAnyHandle material, IFCAnyHandle product)
-      {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(material) || IFCAnyHandleUtil.IsNullOrHasNoValue(product))
-            return;
-
-         if (ContainsKey(material))
-         {
-            this[material].Add(product);
-         }
-         else
-         {
-            HashSet<IFCAnyHandle> products = new HashSet<IFCAnyHandle>();
-            products.Add(product);
-            this[material] = products;
-         }
-      }
    }
 }

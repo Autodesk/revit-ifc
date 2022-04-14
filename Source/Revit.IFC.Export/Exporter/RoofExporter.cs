@@ -406,8 +406,7 @@ namespace Revit.IFC.Export.Exporter
                                  double scaledExtrusionDepth = scaledDepth * slope;
                                  IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
                                  IFCAnyHandle prodDefShape = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
-                                 string shapeIdent = "Body";
-                                 IFCAnyHandle contextOfItems = exporterIFC.Get3DContextHandle(shapeIdent);
+                                 IFCAnyHandle contextOfItems = exporterIFC.Get3DContextHandle("Body");
                                  string representationType = ShapeRepresentationType.SweptSolid.ToString();
 
                                  // Create representation items based on the layers
@@ -428,11 +427,21 @@ namespace Revit.IFC.Export.Exporter
                                  }
                                  else
                                  {
+                                    List<MaterialLayerSetInfo.MaterialInfo> MaterialIds = layersetInfo.MaterialIds;
+                                    ElementId typeElemId = element.GetTypeId();
+                                    // From CollectMaterialLayerSet() Roofs with no components are only allowed one material. It arbitrarily chooses the thickest material.
+                                    // To be consistant with Roof(as Slab), we will reverse the order.
+                                    IFCAnyHandle materialLayerSet = ExporterCacheManager.MaterialSetCache.FindLayerSet(typeElemId);
+                                    bool materialHandleIsNotValid = IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet);
+                                    if (IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet) || materialHandleIsNotValid)
+                                       MaterialIds.Reverse();
+
                                     double scaleProj = extrusionDir.DotProduct(plane.Normal);
-                                    foreach (MaterialLayerSetInfo.MaterialInfo matLayerInfo in layersetInfo.MaterialIds)
+                                    foreach (MaterialLayerSetInfo.MaterialInfo matLayerInfo in MaterialIds)
                                     {
                                        double itemExtrDepth = matLayerInfo.m_matWidth;
-                                       IFCAnyHandle itemShapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, extrusionDir, itemExtrDepth, false);
+                                       double scaledItemExtrDepth = UnitUtil.ScaleLength(itemExtrDepth) * slope;
+                                       IFCAnyHandle itemShapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, extrusionDir, scaledItemExtrDepth, false);
                                        if (IFCAnyHandleUtil.IsNullOrHasNoValue(itemShapeRep))
                                        {
                                           productWrapper.ClearInternalHandleWrapperData(element);
@@ -449,12 +458,17 @@ namespace Revit.IFC.Export.Exporter
                                     }
                                  }
 
-                                 IFCAnyHandle shapeRep = RepresentationUtil.CreateSweptSolidRep(exporterIFC, element, catId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null);
+                                 IFCAnyHandle shapeRep = RepresentationUtil.CreateSweptSolidRep(exporterIFC, element, catId, contextOfItems, bodyItems, null);
                                  shapeReps.Add(shapeRep);
                                  IFCAnyHandleUtil.SetAttribute(prodDefShape, "Representations", shapeReps);
 
-                                 // Allow support for up to 256 named IfcSlab components, as defined in IFCSubElementEnums.cs.
-                                 string slabGUID = (loopNum < 256) ? GUIDUtil.CreateSubElementGUID(element, subElementStart + loopNum) : GUIDUtil.CreateGUID();
+                                 // We could replace the code below to just use the newer, and better, 
+                                 // GenerateIFCGuidFrom.  The code below maintains compatibility with older
+                                 // versions while generating a stable GUID for all slabs (in the unlikely
+                                 // case that we have more than 255 of them).
+                                 string slabGUID = (loopNum < 256) ?
+                                    GUIDUtil.CreateSubElementGUID(element, subElementStart + loopNum) :
+                                    GUIDUtil.GenerateIFCGuidFrom(elementGUID + loopNum.ToString());
 
                                  IFCAnyHandle slabPlacement = ExporterUtil.CreateLocalPlacement(file, slabExtrusionCreationData.GetLocalPlacement(), null);
                                  IFCAnyHandle slabHnd = IFCInstanceExporter.CreateSlab(exporterIFC, element, slabGUID, ownerHistory,
@@ -498,7 +512,6 @@ namespace Revit.IFC.Export.Exporter
                            OpeningUtil.AddOpeningsToElement(exporterIFC, elementHandles, hostObjectOpeningLoops, element, null, maximumScaledDepth,
                                null, setter, localPlacement, productWrapper);
 
-                           
                            transaction.Commit();
                            return hostObjectHandle;
                         }

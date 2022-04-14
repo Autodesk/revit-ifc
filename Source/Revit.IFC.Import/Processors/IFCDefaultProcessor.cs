@@ -1,18 +1,19 @@
 ﻿using System.Collections.Generic;
 
 using Autodesk.Revit.DB;
+using Revit.IFC.Import.Core;
 
 namespace Revit.IFC.Import
 {
    public class IFCDefaultProcessor : IIFCFileProcessor
    {
-      public bool CreateOrUpdateElement(int ifcId, string ifcGuid, string ifcEntityType, int categoryId,
+      public bool CreateOrUpdateElement(int ifcId, string ifcGuid, string ifcEntityType, long categoryId,
          IList<GeometryObject> geomObjs)
       {
          return false;
       }
 
-      public void CreateElementType(int ifcId, string ifcGuid, string ifcEntityType, int categoryId)
+      public void CreateElementType(int ifcId, string ifcGuid, string ifcEntityType, long categoryId)
       {
       }
 

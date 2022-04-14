@@ -698,13 +698,14 @@ namespace Revit.IFC.Export.Utility
       /// <returns>return the appropriate IFCEntityType enumeration or Unknown</returns>
       public static IFCEntityType GetValidIFCEntityType (string entityType)
       {
+         IFCVersion ifcVersion = ExporterCacheManager.ExportOptionsCache.FileVersion;
          IFCEntityType ret = IFCEntityType.UnKnown;
 
          var ifcEntitySchemaTree = IfcSchemaEntityTree.GetEntityDictFor(ExporterCacheManager.ExportOptionsCache.FileVersion);
-         if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.Count == 0)
+         if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.IfcEntityDict == null || ifcEntitySchemaTree.IfcEntityDict.Count == 0)
             throw new Exception("Unable to locate IFC Schema xsd file! Make sure the relevant xsd " + ExporterCacheManager.ExportOptionsCache.FileVersion + " exists.");
 
-         IfcSchemaEntityNode node = IfcSchemaEntityTree.Find(entityType);
+         IfcSchemaEntityNode node = ifcEntitySchemaTree.Find(entityType);
          IFCEntityType ifcType = IFCEntityType.UnKnown;
          if (node != null && !node.isAbstract)
          {
@@ -723,7 +724,7 @@ namespace Revit.IFC.Export.Utility
          }
          else if (node != null && node.isAbstract)
          {
-            node = IfcSchemaEntityTree.FindNonAbsSuperType(entityType, "IfcProduct", "IfcProductType", "IfcGroup", "IfcProject");
+            node = IfcSchemaEntityTree.FindNonAbsSuperType(ifcVersion, entityType, "IfcProduct", "IfcProductType", "IfcGroup", "IfcProject");
             if (node != null)
             {
                if (Enum.TryParse<IFCEntityType>(node.Name, true, out ifcType))

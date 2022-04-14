@@ -212,15 +212,26 @@ namespace Revit.IFC.Import.Geometry
       /// <summary>
       /// Determines if (firstPt, midPt) and (midPt, finalPt) overlap at more than one point.
       /// </summary>
-      /// <param name="firstPt">The start point of the first line segment.</param>
-      /// <param name="midPt">The end point of the first line segment (and start point of the second).</param>
-      /// <param name="finalPt">The end point of the second line segment.</param>
+      /// <param name="p1">The start point of the first line segment.</param>
+      /// <param name="p2">The end point of the first line segment (and start point of the second).</param>
+      /// <param name="p3">The end point of the second line segment.</param>
       /// <returns>True if the line segments overlap at more than one point.</returns>
-      private static bool LineSegmentsOverlap(XYZ firstPt, XYZ midPt, XYZ finalPt)
+      private static bool LineSegmentsOverlap(XYZ p1, XYZ p2, XYZ p3)
       {
-         XYZ firstDir = midPt - firstPt;
-         XYZ secondDir = finalPt - midPt;
-         return MathUtil.VectorsAreParallel2(firstDir, secondDir) == -1;
+         XYZ v12 = p2 - p1;
+         XYZ v23 = p3 - p2;
+         if (MathUtil.VectorsAreParallel2(v12, v23) != -1)
+            return false;
+
+         // If the vectors are anti-parallel, then make sure that the distance is less
+         // than vertex tolerance.
+         double v12Dist = v12.GetLength();
+         if (MathUtil.IsAlmostZero(v12Dist))
+            return true;
+
+         XYZ crossProduct = v12.CrossProduct(v23);
+         double height = crossProduct.GetLength() / v12Dist;
+         return height < IFCImportFile.TheFile.VertexTolerance;
       }
 
       private static IList<XYZ> GeneratePolyCurveLoopVertices(IList<XYZ> pointXYZs,
@@ -559,7 +570,21 @@ namespace Revit.IFC.Import.Geometry
             curves.Add(newCurve);
          }
       }
-      
+
+      /// <summary>
+      /// Given a curveloop, finds any unbound cyclic curves in it and splits them.
+      /// </summary>
+      /// <param name="curveLoop">Curveloop to process.</param>
+      /// <returns>New curveloop, which has all the curves split.</returns>
+      public static CurveLoop SplitUnboundCyclicCurves(CurveLoop curveLoop)
+      {
+         var curves = curveLoop.ToList();
+         SplitUnboundCyclicCurves(curves);
+         CurveLoop splitCurveLoop = new CurveLoop();
+         curves.ForEach(x => splitCurveLoop.Append(x));
+         return splitCurveLoop;
+      }
+
       /// <summary>
       /// Trims the CurveLoop contained in an IFCCurve by the start and optional end parameter values.
       /// </summary>

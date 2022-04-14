@@ -179,7 +179,7 @@ namespace Revit.IFC.Export.Exporter
             {
                // We will update the GUID of the one created element to be the element GUID.
                // This will allow the IfcGUID parameter to be use/set if appropriate.
-               ExporterUtil.SetGlobalId(createdRebarCouplerHandles.ElementAt(0), couplerGUID);
+               ExporterUtil.SetGlobalId(createdRebarCouplerHandles.ElementAt(0), couplerGUID, coupler);
             }
 
             tr.Commit();

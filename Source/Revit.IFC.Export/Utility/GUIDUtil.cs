@@ -275,6 +275,20 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Updates IfcGUID value
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="guid">New GUID for the element.</param>
+      static public void UpdateIFCGUIDValue(Element element, string guid)
+      {
+         if ((element != null) && CanStoreGUID(element) && ExporterCacheManager.ExportOptionsCache.GUIDOptions.AllowGUIDParameterOverride)
+         {
+            BuiltInParameter parameterName = (element is ElementType) ? BuiltInParameter.IFC_TYPE_GUID : BuiltInParameter.IFC_GUID;
+            ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(element.Id, parameterName)] = guid;
+         }
+      }
+
+      /// <summary>
       /// Thin wrapper for the CreateGUID(element) Revit API function.
       /// </summary>
       /// <param name="element">The element.</param>

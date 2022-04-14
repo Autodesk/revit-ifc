@@ -73,27 +73,29 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       {
          double crossSectionArea = 0;
 
-         // 1. Use the builtin parameter first
-         if (ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.HOST_AREA_COMPUTED, out crossSectionArea) != null)
-         {
-            m_Area = UnitUtil.ScaleArea(crossSectionArea);
-            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-               return true;
-         }
-
-         // 2. Check override parameter
+         // 1. Check override parameter
          if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyCrossSectionArea", out crossSectionArea) == null)
                ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "CrossSectionArea", out crossSectionArea);
          m_Area = UnitUtil.ScaleArea(crossSectionArea);
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
             return true;
 
-         // 3. try using extrusion data
-         if (extrusionCreationData == null)
-            return false;
+         // 2. try using extrusion data
+         if (extrusionCreationData != null)
+         {
+            m_Area = extrusionCreationData.ScaledArea;
+            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+               return true;
+         }
 
-         m_Area = extrusionCreationData.ScaledArea;
-         return m_Area > MathUtil.Eps() * MathUtil.Eps();
+         // 3. Use the builtin parameter after extrusionCreationData because the HOST_AREA_COMPUTED returns total area
+         if (ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.HOST_AREA_COMPUTED, out crossSectionArea) != null)
+         {
+            m_Area = UnitUtil.ScaleArea(crossSectionArea);
+            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+               return true;
+         }
+         return false;
       }
 
       /// <summary>

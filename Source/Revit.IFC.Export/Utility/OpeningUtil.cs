@@ -218,6 +218,17 @@ namespace Revit.IFC.Export.Utility
          IList<CurveLoop> curveLoops, Element element, Transform lcs, double scaledWidth,
          IFCRange range, PlacementSetter setter, IFCAnyHandle localPlacement, ProductWrapper localWrapper)
       {
+         if (lcs == null && curveLoops != null && curveLoops.Count > 0)
+         {
+            Plane hostObjPlane = null;
+            // assumption: first curve loop defines the plane.
+            if (curveLoops[0].HasPlane())
+               hostObjPlane = curveLoops[0].GetPlane();
+            
+            if (hostObjPlane != null)
+               lcs = GeometryUtil.CreateTransformFromPlane(hostObjPlane);
+         }
+
          IList<IFCOpeningData> openingDataList = ExporterIFCUtils.GetOpeningData(exporterIFC, element, lcs, range);
          IFCFile file = exporterIFC.GetFile();
          IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;

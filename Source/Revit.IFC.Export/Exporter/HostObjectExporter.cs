@@ -257,6 +257,9 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>The material id.</returns>
       public static ElementId GetFirstLayerMaterialId(HostObject hostObject)
       {
+         if (hostObject == null)
+            return ElementId.InvalidElementId;
+
          ElementId typeElemId = hostObject.GetTypeId();
          HostObjAttributes hostObjAttr = hostObject.Document.GetElement(typeElemId) as HostObjAttributes;
          if (hostObjAttr == null)

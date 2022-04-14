@@ -359,6 +359,13 @@ namespace Revit.IFC.Import.Data
                newSiteTransform.Origin += currentOffset;
                sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(newSiteTransform);
             }
+
+            // Register the offset by moving the Shared Coordinates away
+            ProjectPosition pPos = projectLocation.GetProjectPosition(XYZ.Zero);
+            pPos.EastWest += BaseSiteOffset.X;
+            pPos.NorthSouth += BaseSiteOffset.Y;
+            pPos.Elevation += BaseSiteOffset.Z;
+            projectLocation.SetProjectPosition(XYZ.Zero, pPos);
          }
          else
          {
@@ -371,7 +378,7 @@ namespace Revit.IFC.Import.Data
 
                if (sites[ii].ObjectLocation == null || sites[ii].ObjectLocation.RelativeTransform == null)
                {
-                  XYZ currentOffset = new XYZ(0, 0, sites[ii].RefElevation);
+                  XYZ currentOffset = XYZ.Zero;
                   sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(Transform.CreateTranslation(currentOffset));
                }
                else

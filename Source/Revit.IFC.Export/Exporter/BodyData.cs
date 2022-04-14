@@ -150,13 +150,13 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Add the pair of component category name and material id pair
       /// </summary>
       /// <param name="materialId">The material id</param>
-      public void AddRepresentationItemInfo(Document document, GraphicsStyle style, ElementId materialId, IFCAnyHandle repItem)
+      public void AddRepresentationItemInfo(Document document, GraphicsStyle style, ElementId materialId,
+         IFCAnyHandle repItem)
       {
          // Set with the proper category name if any
-         string catName = style?.GraphicsStyleCategory?.Name;
+         string catName = style?.GraphicsStyleCategory?.Name;         
 
          if (catName == null)
          {

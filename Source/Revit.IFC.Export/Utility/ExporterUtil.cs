@@ -81,7 +81,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="handle">The IFC entity.</param>
       /// <param name="guid">The GUID value.</param>
-      public static void SetGlobalId(IFCAnyHandle handle, string guid)
+      public static void SetGlobalId(IFCAnyHandle handle, string guid, Element element = null)
       {
          try
          {
@@ -89,7 +89,10 @@ namespace Revit.IFC.Export.Utility
             // already created guids, and export a random GUID if necessary.
             // TODO: log message to user.
             if (ExporterCacheManager.GUIDCache.Contains(guid))
+            {
                guid = GUIDUtil.CreateGUID();
+               GUIDUtil.UpdateIFCGUIDValue(element, guid);
+            }
             else
                ExporterCacheManager.GUIDCache.Add(guid);
 
@@ -98,6 +101,7 @@ namespace Revit.IFC.Export.Utility
          catch
          {
          }
+         
       }
 
       /// <summary>
@@ -956,6 +960,20 @@ namespace Revit.IFC.Export.Utility
          public PsetsByTypeAndPredefinedType ByIfcEntity { get; set; } = new PsetsByTypeAndPredefinedType();
          public PsetsByTypeAndPredefinedType ByIfcEntityType { get; set; } = new PsetsByTypeAndPredefinedType();
       }
+
+      /// <summary>
+      /// Determines if an IFCEntityType is a non-strict sub-type of another IFCEntityType for the
+      /// current IFC schema.
+      /// </summary>
+      /// <param name="entityType">The child entity type.</param>
+      /// <param name="parentType">The parent entity type.</param>
+      /// <returns>True if the child is a non-strict sub-type.</returns>
+      public static bool IsSubTypeOf(IFCEntityType entityType, IFCEntityType parentType)
+      {
+         return IfcSchemaEntityTree.IsSubTypeOf(ExporterCacheManager.ExportOptionsCache.FileVersion,
+            entityType.ToString(), parentType.ToString(), strict: false);
+      }
+
       /// <summary>
       /// Gets the list of common property sets appropriate to this handle.
       /// </summary>
@@ -1573,7 +1591,7 @@ namespace Revit.IFC.Export.Utility
             // Ignore the value if we can't process it.
             IFCExportInfoPair overrideExportType = ElementFilteringUtil.GetExportTypeFromClassName(symbolClassName);
             if (!overrideExportType.IsUnKnown && 
-               IfcSchemaEntityTree.IsSubTypeOf(overrideExportType.ExportInstance, restrictedGroup))
+               IfcSchemaEntityTree.IsSubTypeOf(ExporterCacheManager.ExportOptionsCache.FileVersion, overrideExportType.ExportInstance, restrictedGroup))
             { 
                exportType = overrideExportType;
             }

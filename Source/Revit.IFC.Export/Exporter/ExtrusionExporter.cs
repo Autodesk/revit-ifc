@@ -1355,26 +1355,28 @@ namespace Revit.IFC.Export.Exporter
                   {
                      extrusionClippingBodyItems.Add(repHandle);
                      // This potentially is exported as a StandardCase element (if it is a single clipping), keep the information of the profile and material
-                     if ((addInfo & GenerateAdditionalInfo.GenerateProfileDef) != 0 && currRetVal.ProfileDefHandle != null)
+                     if ((addInfo & GenerateAdditionalInfo.GenerateProfileDef) != 0)
                      {
                         retVal.MaterialAndProfile = currRetVal.MaterialAndProfile;
-                        foreach (ElementId materialId in extraClippingData.MaterialIds)
-                        {
-                           retVal.MaterialAndProfile.Add(materialId, currRetVal.ProfileDefHandle);
-                        }
+                        if (currRetVal.ProfileDefHandle != null)
+                           foreach (ElementId materialId in extraClippingData.MaterialIds)
+                           {
+                              retVal.MaterialAndProfile.Add(materialId, currRetVal.ProfileDefHandle);
+                           }
                      }
                   }
                   else
                   {
                      extrusionBodyItems.Add(repHandle);
                      // This potentially is exported as a StandardCase element, keep the information of the profile and material
-                     if ((addInfo & GenerateAdditionalInfo.GenerateProfileDef) != 0 && currRetVal.ProfileDefHandle != null)
+                     if ((addInfo & GenerateAdditionalInfo.GenerateProfileDef) != 0)
                      {
                         retVal.MaterialAndProfile = currRetVal.MaterialAndProfile;
-                        foreach (ElementId materialId in extraClippingData.MaterialIds)
-                        {
-                           retVal.MaterialAndProfile.Add(materialId, currRetVal.ProfileDefHandle);
-                        }
+                        if (currRetVal.ProfileDefHandle != null)
+                           foreach (ElementId materialId in extraClippingData.MaterialIds)
+                           {
+                              retVal.MaterialAndProfile.Add(materialId, currRetVal.ProfileDefHandle);
+                           }
                      }
                   }
                }
@@ -1467,7 +1469,7 @@ namespace Revit.IFC.Export.Exporter
                baseLoopOffset = elementAnalyzer.StartParameter * projDir;
 
             Face extrusionBase = elementAnalyzer.GetExtrusionBase();
-            retVal.MaterialAndProfile.CrossSectionArea = extrusionBase.Area;
+            retVal.MaterialAndProfile.CrossSectionArea = UnitUtil.ScaleArea(extrusionBase.Area);
 
             IList<GeometryUtil.FaceBoundaryType> boundaryTypes;
             IList<CurveLoop> extrusionBoundaryLoops =
@@ -1547,14 +1549,28 @@ namespace Revit.IFC.Export.Exporter
                                  retVal.MaterialAndProfile.InnerPerimeter = extrusionBoundaryLoops[lcnt].GetExactLength();
                            }
                         }
+
+                       if (retVal.MaterialAndProfile.InnerPerimeter.HasValue)
+                          retVal.MaterialAndProfile.InnerPerimeter = UnitUtil.ScaleLength(retVal.MaterialAndProfile.InnerPerimeter.Value);
+                       if (retVal.MaterialAndProfile.OuterPerimeter.HasValue)
+                          retVal.MaterialAndProfile.OuterPerimeter = UnitUtil.ScaleLength(retVal.MaterialAndProfile.OuterPerimeter.Value);
+
                         retVal.MaterialAndProfile.LCSTransformUsed = extrusionBaseLCS;
                      }
                   }
 
                   finalExtrusionBodyItemHnd = extrusionBodyItemHnd;
-                  IDictionary<ElementId, ICollection<ICollection<Face>>> elementCutouts =
-                      GeometryUtil.GetCuttingElementFaces(element, elementAnalyzer);
-
+                  IDictionary<ElementId, ICollection<ICollection<Face>>> elementCutouts;
+                  try
+                  {
+                     elementCutouts = GeometryUtil.GetCuttingElementFaces(element, elementAnalyzer);
+                  }
+                  catch
+                  {
+                     tr.RollBack();
+                     return nullVal;
+                  }
+                  
                   // A litle explanation is necessary here.
                   // We would like to ensure that, on export, we have a stable ordering of the clip planes that we create.
                   // The reason for this is that the order of the Boolean operations, if there are more than 1, can affect the end result; 

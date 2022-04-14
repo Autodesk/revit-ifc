@@ -7,8 +7,10 @@
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
                   mc:Ignorable="d" 
                   Title="{x:Static p:Resources.FileHeader}" 
+                  ResizeMode ="NoResize" 
                   Name="FileHeaderTab" 
                   Loaded="Window_Loaded" 
+                  SaveWindowSettings="False"
                   Initialized="FileHeaderTab_Initialized" 
                   SizeToContent="WidthAndHeight" 
                   HorizontalAlignment="Stretch" 
@@ -26,23 +28,23 @@
                 <ColumnDefinition Width="418*" />
             </Grid.ColumnDefinitions>
             <Label Content="{x:Static p:Resources.FileDescription}" Height="28" HorizontalAlignment="Left" Margin="0,17,0,0" Name="labelFileDescription" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
-            <TextBox Text="{Binding Path=FileDescription, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetByExportOption}}" Height="23" HorizontalAlignment="Stretch" Margin="72,19,33,0" Name="FileDescriptionTextBox" VerticalAlignment="Top" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
+            <TextBox Text="{Binding Path=FileDescription, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetByExportOption}}" Height="23" HorizontalAlignment="Stretch" Margin="72,19,33,0" Name="FileDescriptionTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
             <Label Content="{x:Static p:Resources.SourceFileName}" Height="28" HorizontalAlignment="Left" Margin="0,46,0,0" Name="labelSourceFileName" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
-            <TextBox Text="{Binding Path=SourceFileName, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetOnExport}}" Height="23" HorizontalAlignment="Stretch" Margin="72,48,33,0" Name="SourceFileNameTextBox" VerticalAlignment="Top" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
+            <TextBox Text="{Binding Path=SourceFileName, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetOnExport}}" Height="23" HorizontalAlignment="Stretch" Margin="72,48,33,0" Name="SourceFileNameTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
             <Label Content="{x:Static p:Resources.AuthorsName}" Height="28" HorizontalAlignment="Left" Margin="0,75,0,0" Name="labelAuthorFirstName" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
-            <TextBox Text="{Binding Path=AuthorName, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,77,33,0" Name="AuthorNameTextBox" VerticalAlignment="Top" Grid.Column="1" />
+            <TextBox Text="{Binding Path=AuthorName, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,77,33,0" Name="AuthorNameTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1" />
             <Label Content="{x:Static p:Resources.AuthorsEMail}" Height="28" HorizontalAlignment="Left" Margin="0,104,0,0" Name="labelAuthorLastName" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
-            <TextBox Text="{Binding Path=AuthorEmail, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,106,33,0" Name="AuthorEmailTextBox" VerticalAlignment="Top" Grid.Column="1" />
+            <TextBox Text="{Binding Path=AuthorEmail, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,106,33,0" Name="AuthorEmailTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1" />
             <Label Content="{x:Static p:Resources.Organization}" Height="28" HorizontalAlignment="Left" Margin="0,133,0,0" Name="labelOrganization" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
-            <TextBox Text="{Binding Path=Organization, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,135,33,0" Name="OrganizationTextBox" VerticalAlignment="Top" Grid.Column="1" />
+            <TextBox Text="{Binding Path=Organization, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,135,33,0" Name="OrganizationTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1" />
             <Label Content="{x:Static p:Resources.Authorization}" Height="28" HorizontalAlignment="Left" Margin="0,162,0,0" Name="labelAuthorization" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
-            <TextBox Text="{Binding Path=Authorization, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,164,33,0" Name="AuthorizationTextBox" VerticalAlignment="Top" Grid.Column="1" />
+            <TextBox Text="{Binding Path=Authorization, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,164,33,0" Name="AuthorizationTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1" />
             <Label Content="{x:Static p:Resources.ApplicationName}" Height="28" HorizontalAlignment="Left" Margin="0,191,0,0" Name="labelApplicationName" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
-            <TextBox Text="{Binding Path=ApplicationName, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,193,33,0" Name="ApplicationNameTextBox" VerticalAlignment="Top" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" Opacity="0.7" />
+            <TextBox Text="{Binding Path=ApplicationName, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,193,33,0" Name="ApplicationNameTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" Opacity="0.7" />
             <Label Content="{x:Static p:Resources.VersionNumber}" Height="28" HorizontalAlignment="Left" Margin="0,220,0,0" Name="labelVersionNumber" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
-            <TextBox Text="{Binding Path=VersionNumber, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,222,33,0" Name="VersionNumberTextBox" VerticalAlignment="Top" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" Opacity="0.7" />
+            <TextBox Text="{Binding Path=VersionNumber, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="72,222,33,0" Name="VersionNumberTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" IsReadOnly="True" Grid.Column="1" Background="#FFE8E8E8" Opacity="0.7" />
             <Label Content="{x:Static p:Resources.FileSchema}" Height="28" HorizontalAlignment="Left" Margin="0,249,0,0" Name="labelLocation" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="176" />
-            <TextBox Text="{Binding Path=FileSchema, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetByExportOption}}" Height="23" HorizontalAlignment="Stretch" Margin="72,251,33,0" Name="FileSchemaTextBox" VerticalAlignment="Top" Grid.Column="1" IsReadOnly="True" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
+            <TextBox Text="{Binding Path=FileSchema, UpdateSourceTrigger=PropertyChanged, TargetNullValue={x:Static p:Resources.ValueSetByExportOption}}" Height="23" HorizontalAlignment="Stretch" Margin="72,251,33,0" Name="FileSchemaTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1" IsReadOnly="True" Background="#FFE8E8E8" FontStyle="Italic" Opacity="0.7" />
             <Button Content="{x:Static p:Resources.OK}" Height="22" Name="buttonOK" Width="75" Click="buttonOK_Click" RenderTransformOrigin="0.48,-5.227" Grid.Column="1" Margin="230,343,113,11"/>
             <Button Content="{x:Static p:Resources.Cancel}" Height="22" x:Name="buttonCancel" Width="75" Click="bottonCancel_Click" Margin="310,343,33,11" Grid.Column="1" RenderTransformOrigin="0.547,1.273"/>
         </Grid>

@@ -238,6 +238,74 @@ working on expanding and eventually removing this limit, and we will be tracking
 
 <div class="versionset">
 
+	<div class="version">22.5.0.0</div><div class="versioninfo-bullet">
+
+      <br><p>
+         Improvement:
+			<ul>
+            <li>Created Revit.IFC.Import.Core DLL to house Navis processor and interface.
+            <li>Added support for Sound power units on IFC export.
+            <li>Corrected the IFC GUID parameter value on export if the value used was different than the value set for the element.
+            <li>Improved Door and Window property units for Navisworks.
+            <li>Created DLL for UI to select IFC Entity to be used for Entity selection.
+            <li>Disallow openings and connections for Walls that are not exported as IfcElements.
+            <li>Implemented removing of isolated points in polygonal faceset.
+            <li>Implemented IfcDistributionCircuit export.
+            <li>Updated ability of Navis to create ProjectInformation before adding parameters.
+            <li>Improved face margin.
+            <li>Improved linking of extrusions with slivery outlines.
+            <li>Added support for linking IFC files with the IfcBlock entity.
+            <li>Added non-optional attributes export for generic type.
+			</ul>	
+		</p>
+      <br><p>
+         UI bugfix:
+			<ul>
+ 			   <li>Removed truncated strings from some localized IFC dialogs.
+ 			   <li>Fixed error during renaming of IFC export setup error.
+ 			   <li>Improved localization of the current selected setup dropdown in the IFC export dialog box.
+ 			   <li>Improved localization of some IFC export dialog options.
+ 			   <li>Fixing GLOB issue in some labels and buttons
+			</ul>	
+		</p>
+		<br><p>
+         Export bugfix:
+			<ul>
+ 			   <li>Improved export of some walls to IFC whose end is cut by an in-place void.
+ 			   <li>Improved export of curved railings material.
+ 			   <li>Corrected units for some properties of rooms and spaces in schedules exported to IFC as property sets.
+ 			   <li>Fixed the center line location of beams with trimmed ends exported to IFC 2x3.
+ 			   <li>Fix for Column family geometry export. 
+ 			   <li>Improved export of some clipped structural beams to IFC.
+ 			   <li>Improved export of walls containing adjacent openings to IFC.
+ 			   <li>Improved the export of walls with extensions cut by wall sweeps to IFC.
+ 			   <li>Fixed export of roofs as polygonal face sets.
+ 			   <li>Added opening creation in floor.
+ 			   <li>Improved the creation of openings for some walls export to IFC with the option to split walls by level selected.
+ 			   <li>Fixed issue with unintended unit conversion for IFC property values.
+ 			   <li>Fixed export of thermal transmittance parameters to IFC.
+ 			   <li>Fixed CrossSectionArea property.
+ 			   <li>Fixed material display of roofs.
+ 			   <li>Fixed pressure properties scaling.
+ 			   <li>Fix for shifted openings on floor.
+ 			   <li>Fixed curtain walls geometry export
+			</ul>	
+		</p>
+		<br><p>
+         Import bugfix:
+			<ul>
+ 			   <li>Included wall in linking of IFC walls when they contained excluded doors and windows.
+ 			   <li>Fixed linking of axes with invalid data. 
+ 			   <li>Improved Openings cuts processing when linking IFC.
+ 			   <li>Fixed IfcIndexedPolyCurve linking.
+ 			   <li>Fixed linking of some triangulated face sets.
+ 			   <li>Improved support for linking some invalid IFC files
+ 			   <li>Improved linking of IFC files that contained geometry with degenerate faces.
+			</ul>	
+		</p>
+	</div>
+	<br>
+	
 	<div class="version">22.4.2.0</div><div class="versioninfo-bullet">
 
       <br><p>

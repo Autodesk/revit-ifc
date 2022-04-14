@@ -30,21 +30,11 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCFace : IFCTopologicalRepresentationItem
    {
-      ISet<IFCFaceBound> m_Bounds = null;
-
       /// <summary>
       /// Return the bounding loops of the face.
       /// </summary>
-      public ISet<IFCFaceBound> Bounds
-      {
-         get
-         {
-            if (m_Bounds == null)
-               m_Bounds = new HashSet<IFCFaceBound>();
-            return m_Bounds;
-         }
-      }
-
+      public ISet<IFCFaceBound> Bounds { get; set; } = new HashSet<IFCFaceBound>();
+      
       protected IFCFace()
       {
       }
@@ -87,6 +77,24 @@ namespace Revit.IFC.Import.Data
                hasOuter = true;
             }
          }
+      }
+
+      /// <summary>
+      /// Checks if the Face definition represents a non-empty boundary.
+      /// </summary>
+      /// <returns>True if the face contains any information.</returns>
+      public bool IsEmpty()
+      {
+         if (Bounds == null)
+            return true;
+
+         foreach (IFCFaceBound bound in Bounds)
+         {
+            if (!bound.IsEmpty())
+               return false;
+         }
+
+         return true;
       }
 
       private IList<List<XYZ>> CreateTriangulation(IList<XYZ> boundary)

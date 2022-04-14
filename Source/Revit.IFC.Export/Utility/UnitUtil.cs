@@ -126,6 +126,16 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Converts a thermal transmittance value in Revit internal units to IFC units.
+      /// </summary>
+      /// <param name="unscaledThermalTransmittance">The thermal transmittance value in Revit internal units.</param>
+      /// <returns>The thermal transmittance in IFC units.</returns>
+      static public double ScaleThermalTransmittance(double unscaledThermalTransmittance)
+      {
+         return ScaleDouble(SpecTypeId.HeatTransferCoefficient, unscaledThermalTransmittance);
+      }
+
+      /// <summary>
       /// Converts an area in Revit internal units to IFC units.
       /// </summary>
       /// <param name="unscaledArea">The area in Revit internal units.</param>

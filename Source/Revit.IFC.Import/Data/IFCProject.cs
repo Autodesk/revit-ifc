@@ -169,6 +169,7 @@ namespace Revit.IFC.Import.Data
                   // Process Map Conversion if any
                   HashSet<IFCAnyHandle> coordOperation = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(geomRepContextHandle, "HasCoordinateOperation");
                   if (coordOperation != null)
+                  {
                      if (coordOperation.Count > 0)
                      {
                         if (IFCAnyHandleUtil.IsSubTypeOf(coordOperation.FirstOrDefault(), IFCEntityType.IfcMapConversion))
@@ -206,6 +207,14 @@ namespace Revit.IFC.Import.Data
 
                               Document doc = IFCImportFile.TheFile.Document;
                               ProjectInfo projectInfo = doc.ProjectInformation;
+
+                              // We add this here because we want to make sure that external processors (e.g., Navisworks)
+                              // get a chance to add a container for the parameters that get added below.  In general,
+                              // we should probably augment Processor.AddParameter to ensure that CreateOrUpdateElement
+                              // is called before anything is attempted to be added.  This is a special case, though,
+                              // as in Revit we don't actually create an element for the IfcProject.
+                              Importer.TheProcessor.CreateOrUpdateElement(Id, GlobalId, EntityType.ToString(), CategoryId.IntegerValue, null);
+
                               Category category = IFCPropertySet.GetCategoryForParameterIfValid(projectInfo, Id);
                               IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.Name", geoRefName, Id);
                               if (!string.IsNullOrEmpty(desc))
@@ -223,10 +232,16 @@ namespace Revit.IFC.Import.Data
                                  IFCUnit mapUnitIfc = IFCUnit.ProcessIFCUnit(mapUnit);
                                  string unitStr = UnitUtils.GetTypeCatalogStringForUnit(mapUnitIfc.Unit);
                                  IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapUnit", unitStr, Id);
+                                 double convFactor = UnitUtils.Convert(1.0, mapUnitIfc.Unit, IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length).Unit);
+                                 eastings = convFactor * eastings;
+                                 northings = convFactor * northings;
+                                 orthogonalHeight = convFactor * orthogonalHeight;
+                                 geoRef = new XYZ(eastings, northings, orthogonalHeight);
                               }
                            }
                         }
                      }
+                  }
                }
             }
 

@@ -500,8 +500,7 @@ namespace Revit.IFC.Import.Data
          }
          catch (Exception ex)
          {
-            if (ex.Message != "Don't Import")
-               Importer.TheLog.LogError(ifcProduct.StepId, ex.Message, false);
+            HandleError(ex.Message, ifcProduct, true); 
             return null;
          }
 

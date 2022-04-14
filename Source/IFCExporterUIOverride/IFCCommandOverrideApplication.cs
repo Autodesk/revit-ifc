@@ -330,13 +330,6 @@ namespace BIM.IFC.Export.UI
             // The cancel button should cancel the export, not any "OK"ed setup changes.
             if (mainWindow.Result == IFCExportResult.ExportAndSaveSettings || mainWindow.Result == IFCExportResult.Cancel)
             {
-               if (PotentiallyUpdatedConfigurations)
-               {
-                  configurationsMap = mainWindow.GetModifiedConfigurations();
-                  configurationsMap.UpdateSavedConfigurations();
-               }
-
-               // Remember last selected configuration
                m_mruConfiguration = mainWindow.GetSelectedConfiguration().Name;
             }
          }

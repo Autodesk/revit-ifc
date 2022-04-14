@@ -38,12 +38,15 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Slow_Debug|x64'">
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG;IFC_OPENSOURCE</DefineConstants>
@@ -99,6 +102,7 @@
     <Compile Include="IFCClassificationUI.xaml.cs">
       <DependentUpon>IFCClassificationUI.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IFCEnumExtensions.cs" />
     <Compile Include="IFCExchangeRequirements.cs" />
     <Compile Include="IFCFileHeaderInformationUI.xaml.cs">
       <DependentUpon>IFCFileHeaderInformationUI.xaml</DependentUpon>
@@ -153,6 +157,7 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <None Include="CreateResource.bat" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -183,12 +188,12 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="COBieCompanyInfoTab.xaml">
-      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="COBieProjectInfoTab.xaml">
-      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="IFCAddressInformationUI.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -226,12 +231,19 @@
     <Resource Include="icons\duplicate_ico.ico" />
     <Resource Include="icons\load.ico" />
     <Resource Include="icons\save.ico" />
+    <Content Include="Autodesk.IFC.Export.UI.addin">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj">
       <Project>{032EA4DC-181F-4453-9F93-E08DE1C07D95}</Project>
       <Name>Revit.IFC.Common</Name>
       <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Revit.IFC.EntityTree\Revit.IFC.EntityTree.csproj">
+      <Project>{5fc56ba3-315a-444b-ac6b-81aacf727517}</Project>
+      <Name>Revit.IFC.EntityTree</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project=".\IFCExporterUIOverride.props" />

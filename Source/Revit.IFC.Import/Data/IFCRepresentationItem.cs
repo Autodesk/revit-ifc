@@ -176,7 +176,9 @@ namespace Revit.IFC.Import.Data
             return IFCShellBasedSurfaceModel.ProcessIFCShellBasedSurfaceModel(ifcRepresentationItem);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcSolidModel))
             return IFCSolidModel.ProcessIFCSolidModel(ifcRepresentationItem);
-         
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcCsgPrimitive3D))
+            return IFCCsgPrimitive3D.ProcessIFCCsgPrimitive3D(ifcRepresentationItem);
+
          // TODO: Move the items below to IFCGeometricRepresentationItem->IFCTessellatedItem->IfcTessellatedFaceSet.
          if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTriangulatedFaceSet))
             return IFCTriangulatedFaceSet.ProcessIFCTriangulatedFaceSet(ifcRepresentationItem);
@@ -196,7 +198,7 @@ namespace Revit.IFC.Import.Data
                throw ex;
          }
 
-         Importer.TheLog.LogUnhandledSubTypeError(ifcRepresentationItem, IFCEntityType.IfcRepresentationItem, true);
+         Importer.TheLog.LogUnhandledSubTypeError(ifcRepresentationItem, IFCEntityType.IfcRepresentationItem, false);
          return null;
       }
    }

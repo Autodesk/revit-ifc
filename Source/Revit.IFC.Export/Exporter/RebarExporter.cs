@@ -232,7 +232,7 @@ namespace Revit.IFC.Export.Exporter
             // We will update the GUID of the one created IfcReinforcingElement to be the element GUID.
             // This will allow the IfcGUID parameter to be use/set if appropriate.
             if (createdRebars.Count == 1 && guid != null)
-               ExporterUtil.SetGlobalId(createdRebars.ElementAt(0).ElementHandle, guid);
+               ExporterUtil.SetGlobalId(createdRebars.ElementAt(0).ElementHandle, guid, element);
          }
       }
    

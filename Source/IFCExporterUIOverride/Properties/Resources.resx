@@ -830,4 +830,61 @@
   <data name="ResetToOriginals" xml:space="preserve">
     <value>Reset</value>
   </data>
+  <data name="ResetConfigToolTip" xml:space="preserve">
+    <value>Reset configurations back to the original settings</value>
+  </data>
+  <data name="ER_ArchitectureShort" xml:space="preserve">
+    <value>Architecture</value>
+  </data>
+  <data name="ER_BuildingServiceShort" xml:space="preserve">
+    <value>BuildingService</value>
+  </data>
+  <data name="ER_StructuralShort" xml:space="preserve">
+    <value>Structural</value>
+  </data>
+  <data name="IFCEntitySelection" xml:space="preserve">
+    <value>IFC Entity Selection</value>
+  </data>
+  <data name="ExcludeEntitySelection" xml:space="preserve">
+    <value>Entity(ies) to be included/excluded from export</value>
+  </data>
+  <data name="IFCSchemaVersion" xml:space="preserve">
+    <value>IFC Schema version</value>
+  </data>
+  <data name="PredefinedTypeSelection" xml:space="preserve">
+    <value>PredefinedType selection</value>
+  </data>
+  <data name="SelectSingleElement" xml:space="preserve">
+    <value>Select Export As IFC Entity</value>
+  </data>
+  <data name="DeleteOldConfiguration" xml:space="preserve">
+    <value>Delete old configuration</value>
+  </data>
+  <data name="SaveConfigurationChanges" xml:space="preserve">
+    <value>Save changes to IFC export configuration</value>
+  </data>
+  <data name="CollapseAll" xml:space="preserve">
+    <value>Collapse All</value>
+  </data>
+  <data name="ExpandAll" xml:space="preserve">
+    <value>Expand All</value>
+  </data>
+  <data name="HelpAssignIfcEntity" xml:space="preserve">
+    <value>How do I assign IFC Entity and Predefined Type?</value>
+  </data>
+  <data name="HelpSelectEntityForExport" xml:space="preserve">
+    <value>How do IFC Entity selections affect export?</value>
+  </data>
+  <data name="NoPredefinedType" xml:space="preserve">
+    <value>Entity does not have predefined type</value>
+  </data>
+  <data name="ShowAll" xml:space="preserve">
+    <value>Show all entities</value>
+  </data>
+  <data name="ShowChecked" xml:space="preserve">
+    <value>Show only checked entities</value>
+  </data>
+  <data name="ShowUnchecked" xml:space="preserve">
+    <value>Show only un-checked entities</value>
+  </data>
 </root>

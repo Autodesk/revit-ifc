@@ -187,7 +187,7 @@ namespace Revit.IFC.Export.Utility
             PolyLineIndices inputPolyLineIndices = segmentIndices as PolyLineIndices;
             if (segmentIndices == this || inputPolyLineIndices == null)
                return false;
-
+            
             //Indices array after merge must not contain duplicated indices.
             //So remove either End index of this segment or Start index of input segment.
             Indices.RemoveAt(Indices.Count - 1);
@@ -1156,7 +1156,7 @@ namespace Revit.IFC.Export.Utility
             }
             catch
             {
-               continue;
+               throw new ArgumentException(string.Format("Can't get generating element Ids for face: {0}", currFace.Key.Id));
             }
 
             if (generatingElementIds == null)
@@ -1464,13 +1464,6 @@ namespace Revit.IFC.Export.Utility
 
          int numFaces = clippingFaces.Count;
 
-         // Special case: one face is a clip plane.
-         if (numFaces == 1)
-         {
-            return ProcessClippingFace(exporterIFC, outerCurveLoops[0], outerCurveLoopLCS[0], extrusionBaseLCS,
-                extrusionDirection, range, false, origBodyRepHnd);
-         }
-
          KeyValuePair<bool, bool> clipsExtrusionEnds = CollectionClipsExtrusionEnds(outerCurveLoops, extrusionDirection, range);
          if (clipsExtrusionEnds.Key == true || clipsExtrusionEnds.Value == true)
          {
@@ -1527,6 +1520,13 @@ namespace Revit.IFC.Export.Utility
                      facesToSkip.Add(ii);
                   }
                }
+            }
+
+            // Special case: one face is a clip plane.
+            if (numFaces == 1)
+            {
+               return ProcessClippingFace(exporterIFC, outerCurveLoops[0], outerCurveLoopLCS[0], extrusionBaseLCS,
+                   extrusionDirection, range, false, origBodyRepHnd);
             }
 
             IFCAnyHandle newBodyRepHnd = origBodyRepHnd;
@@ -2874,14 +2874,17 @@ namespace Revit.IFC.Export.Utility
          var dX = coord1.X - coord2.X;
          var dY = coord1.Y - coord2.Y;
          var dZ = coord1.Z - coord2.Z;
+
          return dX * dX + dY * dY + dZ * dZ;
       }
       private static double DistanceSquaredBetweenVertices(UV coord1, UV coord2)
       {
          var dU = coord1.U - coord2.U;
          var dV = coord1.V - coord2.V;
+
          return dU * dU + dV * dV;
       }
+
       private static bool CoordsAreWithinVertexTol(PointBase coord1, PointBase coord2)
       {
          double vertexTol = UnitUtil.ScaleLength(ExporterCacheManager.Document.Application.VertexTolerance);
@@ -2896,13 +2899,11 @@ namespace Revit.IFC.Export.Utility
 
          throw new ArgumentException("Invalid Point type");
       }
-
       private static bool CoordsAreWithinVertexTol(XYZ coord1, XYZ coord2)
       {
          double vertexTol = UnitUtil.ScaleLength(ExporterCacheManager.Document.Application.VertexTolerance);
          return (DistanceSquaredBetweenVertices(coord1, coord2) < vertexTol * vertexTol);
       }
-
       private static bool CoordsAreWithinVertexTol(UV coord1, UV coord2)
       {
          double vertexTol = UnitUtil.ScaleLength(ExporterCacheManager.Document.Application.VertexTolerance);
@@ -2941,6 +2942,7 @@ namespace Revit.IFC.Export.Utility
       public static IFCAnyHandle CreatePolyCurveFromCurve(ExporterIFC exporterIFC, Curve curve, Transform lcs = null, XYZ projectDir = null)
       {
          IFCFile file = exporterIFC.GetFile();
+
          PrimVertices vertices = PointListFromCurve(exporterIFC, curve, lcs, projectDir);
          // Points from the curve may have been merged after projection, so skip curves that
          // won't add any new points.
@@ -2950,19 +2952,20 @@ namespace Revit.IFC.Export.Utility
          PolyCurve polyCurve = new PolyCurve(vertices);
          polyCurve.BuildVerticesAndIndices();
          IList<SegmentIndices> segmentsIndices = polyCurve.SegmentsIndices;
+
          IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList(file, polyCurve.PointList);
          return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentsIndices, false);
       }
 
-         /// <summary>
-         /// Create IFC4 IfcIndexedPolyCurve from Revit Curve
-         /// </summary>
-         /// <param name="exporterIFC">the ExporterIFC</param>
-         /// <param name="curve">the Revit curve</param>
-         /// <param name="lcs">Transform for the LCS (default=null)</param>
-         /// <param name="projectDir">Projection direction (default=null)</param>
-         /// <returns>IFCAnyHandle for the created IfcIndexedPolyCurve</returns>
-         public static IFCAnyHandle OutdatedCreatePolyCurveFromCurve(ExporterIFC exporterIFC, Curve curve, Transform lcs = null, XYZ projectDir = null)
+      /// <summary>
+      /// Create IFC4 IfcIndexedPolyCurve from Revit Curve
+      /// </summary>
+      /// <param name="exporterIFC">the ExporterIFC</param>
+      /// <param name="curve">the Revit curve</param>
+      /// <param name="lcs">Transform for the LCS (default=null)</param>
+      /// <param name="projectDir">Projection direction (default=null)</param>
+      /// <returns>IFCAnyHandle for the created IfcIndexedPolyCurve</returns>
+      public static IFCAnyHandle OutdatedCreatePolyCurveFromCurve(ExporterIFC exporterIFC, Curve curve, Transform lcs = null, XYZ projectDir = null)
       {
          IList<IList<double>> pointList = OutdatedPointListFromCurve(exporterIFC, curve, lcs, projectDir);
          if (pointList == null)
@@ -3020,7 +3023,9 @@ namespace Revit.IFC.Export.Utility
       {
          if (curves.Count() == 0)
             return null;
+
          IFCFile file = exporterIFC.GetFile();
+
          PolyCurve polyCurve = null;
          foreach (Curve curve in curves)
          {
@@ -3029,13 +3034,16 @@ namespace Revit.IFC.Export.Utility
             // won't add any new points.
             if (vertices == null)
                continue;
+
             if (polyCurve == null)
                polyCurve = new PolyCurve(vertices);
             else if (!polyCurve.AddPrimVertices(vertices))
                return null;
          }
+
          polyCurve.BuildVerticesAndIndices();
          IList<SegmentIndices> segmentsIndices = polyCurve.SegmentsIndices;
+
          IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList(file, polyCurve.PointList);
          return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentsIndices, false);
       }
@@ -3164,6 +3172,7 @@ namespace Revit.IFC.Export.Utility
 
          return OutdatedPointListFromGenericCurve(exporterIFC, curve, lcs, projectDir);
       }
+
       private static PolyLineVertices PointListFromLine(ExporterIFC exporterIFC, Line line,
          Transform lcs, XYZ projectDir)
       {
@@ -3176,6 +3185,7 @@ namespace Revit.IFC.Export.Utility
             // Avoid consecutive duplicates
             if (CoordsAreWithinVertexTol(startPoint, endPoint))
                return null;
+
             return new PolyLineVertices(startPoint, endPoint);
          }
          else
@@ -3260,6 +3270,7 @@ namespace Revit.IFC.Export.Utility
             XYZ startPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, arc.Evaluate(0, true));
             XYZ midPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, arc.Evaluate(0.5, true));
             XYZ endPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, arc.Evaluate(1, true));
+
             return new ArcVertices(startPoint, midPoint, endPoint);
          }
          else
@@ -3271,6 +3282,7 @@ namespace Revit.IFC.Export.Utility
                var startPoint = ScaledUVListFromXYZ(arc.Evaluate(0, true), lcs, projectDir);
                var midPoint = ScaledUVListFromXYZ(arc.Evaluate(0.5, true), lcs, projectDir);
                var endPoint = ScaledUVListFromXYZ(arc.Evaluate(1, true), lcs, projectDir);
+
                return new ArcVertices(startPoint, midPoint, endPoint);
             }
 
@@ -3354,8 +3366,8 @@ namespace Revit.IFC.Export.Utility
             return new PolyLineVertices(listUV);
          return null;
       }
-         private static IList<IList<double>> OutdatedPointListFromGenericCurve(ExporterIFC exporterIFC,
-         Curve curve, Transform lcs, XYZ projectDir)
+      private static IList<IList<double>> OutdatedPointListFromGenericCurve(ExporterIFC exporterIFC,
+      Curve curve, Transform lcs, XYZ projectDir)
       {
          bool use3DPoint = (lcs == null || projectDir == null);
 
@@ -3480,7 +3492,7 @@ namespace Revit.IFC.Export.Utility
             {
                profileCurve = IFCInstanceExporter.OutdatedCreateIndexedPolyCurve(file, coordsHnd, null, false);
             }
-
+            
             return profileCurve;
          }
 
@@ -3947,6 +3959,7 @@ namespace Revit.IFC.Export.Utility
             PolyCurve polyCurve = new PolyCurve(vertices);
             polyCurve.BuildVerticesAndIndices();
             IList<SegmentIndices> segmentsIndices = polyCurve.SegmentsIndices;
+
             IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList(file, polyCurve.PointList);
             return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentsIndices, false);
          }
@@ -4128,6 +4141,7 @@ namespace Revit.IFC.Export.Utility
 
             IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList3D(file, pointList);
             return IFCInstanceExporter.OutdatedCreateIndexedPolyCurve(file, pointListHnd, segmentIndexList, false);
+
          }
 
          // if the Curve is a line, do the following
@@ -4983,41 +4997,105 @@ namespace Revit.IFC.Export.Utility
          else
             return false;
       }
-      public static Transform GetWCS(Document doc, double unscaledElevation)
+
+      /// <summary>
+      /// Get Site local placement depending on the coordinate reference selected (unscaled)
+      /// </summary>
+      /// <param name="doc">the Document</param>
+      /// <returns>site local placement transform</returns>
+      public static Transform GetSiteLocalPlacement(Document doc)
       {
          Transform trf = null;
          ProjectLocation projLocation = doc.ActiveProjectLocation;
          if (projLocation == null)
             return trf;
 
-         SiteTransformBasis transformBasis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
-
-         trf = Transform.Identity;
-         if (transformBasis != SiteTransformBasis.Internal)
+         using (SubTransaction projLocTr = new SubTransaction(doc))
          {
-            BasePoint basePoint = null;
-            if (transformBasis == SiteTransformBasis.Project)
-               basePoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_ProjectBasePoint)).First() as BasePoint;
-            else if (transformBasis == SiteTransformBasis.Site)
-               basePoint = new FilteredElementCollector(doc).WherePasses(new ElementCategoryFilter(BuiltInCategory.OST_SharedBasePoint)).First() as BasePoint;
+            doc.ActiveProjectLocation = projLocation;
 
-            if (basePoint != null)
+            BasePoint surveyPoint = BasePoint.GetSurveyPoint(doc);
+            BasePoint projectBasePoint = BasePoint.GetProjectBasePoint(doc);
+            (double svNorthings, double svEastings, double svElevation, double svAngle, double pbNorthings,
+               double pbEastings, double pbElevation, double pbAngle) = OptionsUtil.ProjectLocationInfo(doc, surveyPoint.Position, projectBasePoint.Position);
+
+            SiteTransformBasis transformBasis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
+
+            trf = Transform.Identity;
+            Transform rotationTrfAtInternal = Transform.CreateRotationAtPoint(new XYZ(0, 0, 1), pbAngle, XYZ.Zero);
+
+            // For Linked file, the WCS should always be based on the shared coordinates
+            if (!ExporterCacheManager.ExportOptionsCache.ExportingLink)
             {
-               BoundingBoxXYZ bbox = basePoint.get_BoundingBox(null);
-               XYZ xyz = bbox.Min;
-               trf = Transform.CreateTranslation(new XYZ(-xyz.X, -xyz.Y, unscaledElevation - xyz.Z));
+               switch (transformBasis)
+               {
+                  case SiteTransformBasis.Shared:
+                     XYZ intPointOffset = rotationTrfAtInternal.OfPoint(projectBasePoint.Position);
+                     XYZ xyz = new XYZ((projectBasePoint.SharedPosition.X - intPointOffset.X),
+                                    (projectBasePoint.SharedPosition.Y - intPointOffset.Y),
+                                     (projectBasePoint.SharedPosition.Z - intPointOffset.Z));
+                     trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
+                     break;
+                  case SiteTransformBasis.Site:
+                     xyz = surveyPoint.Position;
+                     xyz = new XYZ(-xyz.X, -xyz.Y, -xyz.Z);
+                     trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
+                     break;
+                  case SiteTransformBasis.Project:
+                     xyz = projectBasePoint.Position;
+                     xyz = new XYZ(-xyz.X, -xyz.Y, -xyz.Z);
+                     trf = CreateTransformFromVectorsAndOrigin(Transform.Identity.BasisX, Transform.Identity.BasisY, Transform.Identity.BasisZ, xyz);
+                     break;
+                  case SiteTransformBasis.ProjectInTN:
+                     xyz = projectBasePoint.Position;
+                     xyz = new XYZ(-xyz.X, -xyz.Y, -xyz.Z);
+                     trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
+                     break;
+                  case SiteTransformBasis.Internal:
+                     xyz = new XYZ(0.0, 0.0, 0.0);
+                     trf = CreateTransformFromVectorsAndOrigin(Transform.Identity.BasisX, Transform.Identity.BasisY, Transform.Identity.BasisZ, xyz);
+                     break;
+                  case SiteTransformBasis.InternalInTN:
+                     xyz = new XYZ(0.0, 0.0, 0.0);
+                     trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
+                     break;
+                  default:
+                     break;
+               }
             }
-            else
-               trf = projLocation.GetTransform().Inverse;
          }
-
-         if (!trf.IsIdentity)
-         {
-            XYZ orig = UnitUtil.ScaleLength(trf.Origin - new XYZ(0, 0, unscaledElevation));
-            trf = CreateTransformFromVectorsAndOrigin(trf.BasisX, trf.BasisY, trf.BasisZ, orig);
-         }
-
          return trf;
+      }
+
+      /// <summary>
+      /// Compute the relative Transform due to offset of the Site placement to the Internal (when different coordinate based is used)
+      /// </summary>
+      /// <param name="origUnscaledTransform">The original unscaled Transform</param>
+      /// <returns>The new offset transform (unscaled)</returns>
+      public static Transform CoordRefOffsetTransform(Transform origUnscaledTransform)
+      {
+         Transform sitePl = new Transform(CoordReferenceInfo.MainModelCoordReferenceOffset);
+         Transform offsetTrf = new Transform(origUnscaledTransform);
+         XYZ offset = XYZ.Zero;
+         if (ExporterCacheManager.ExportOptionsCache.SiteTransformation == SiteTransformBasis.InternalInTN
+            || ExporterCacheManager.ExportOptionsCache.SiteTransformation == SiteTransformBasis.ProjectInTN
+            || ExporterCacheManager.ExportOptionsCache.SiteTransformation == SiteTransformBasis.Shared
+            || ExporterCacheManager.ExportOptionsCache.SiteTransformation == SiteTransformBasis.Site)
+         {
+            // For those that oriented in the TN, a rotation is needed to compute a correct offset in TN orientation
+            Transform rotationTrfAtInternal = Transform.CreateRotationAtPoint(new XYZ(0, 0, 1), CoordReferenceInfo.MainModelTNAngle, XYZ.Zero);
+            offset = rotationTrfAtInternal.OfPoint(offsetTrf.Origin) - sitePl.Origin;
+         }
+         else
+         {
+            offset = offsetTrf.Origin - sitePl.Origin;
+         }
+         sitePl.Origin = XYZ.Zero;
+         offsetTrf.Origin = XYZ.Zero;
+         Transform linkTotTrf = Transform.Identity;
+         linkTotTrf.Origin = offset;
+
+         return linkTotTrf;
       }
    }
 }

@@ -191,8 +191,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="catId">The beam category id.</param>
       /// <param name="axisInfo">The optional beam axis information.</param>
       /// <param name="offsetTransform">The optional offset transform applied to the "Body" representation.</param>
+      /// <param name="elevation">The optional level elevation.</param>
       /// <returns>The handle, or null if not created.</returns>
-      private static IFCAnyHandle CreateBeamAxis(ExporterIFC exporterIFC, Element element, ElementId catId, BeamAxisInfo axisInfo, Transform offsetTransform)
+      private static IFCAnyHandle CreateBeamAxis(ExporterIFC exporterIFC, Element element, ElementId catId, BeamAxisInfo axisInfo, Transform offsetTransform, double elevation)
       {
          if (axisInfo == null)
             return null;
@@ -205,11 +206,14 @@ namespace Revit.IFC.Export.Exporter
 
          XYZ curveOffset = XYZ.Zero;
          if (offsetTransform != null)
+         {
             curveOffset = -(offsetTransform.Origin);
+            curveOffset -= new XYZ(0, 0, elevation);
+         }
          else
          {
-         // Note that we do not have to have any scaling adjustment here, since the curve origin is in the 
-         // same internal coordinate system as the curve.
+            // Note that we do not have to have any scaling adjustment here, since the curve origin is in the 
+            // same internal coordinate system as the curve.
             curveOffset = -lcs.Origin;
          }
 
@@ -493,6 +497,8 @@ namespace Revit.IFC.Export.Exporter
                   {
                      materialIds = extrusionInfo.Materials;
                      extrusionCreationData.Slope = extrusionInfo.Slope;
+                     if (extrusionInfo?.MaterialAndProfile?.CrossSectionArea != null)
+                        extrusionCreationData.ScaledArea = extrusionInfo.MaterialAndProfile.CrossSectionArea.Value;
                   }
                   else
                   {
@@ -527,7 +533,8 @@ namespace Revit.IFC.Export.Exporter
                   }
 
                   IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
-                  IFCAnyHandle axisRep = CreateBeamAxis(exporterIFC, element, catId, axisInfo, offsetTransform);
+                  double elevation = (setter.LevelInfo != null) ? setter.LevelInfo.Elevation : 0.0;
+                  IFCAnyHandle axisRep = CreateBeamAxis(exporterIFC, element, catId, axisInfo, offsetTransform, elevation);
                      if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
                         representations.Add(axisRep);
                   representations.Add(repHnd);

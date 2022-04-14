@@ -20,14 +20,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Web.Script.Serialization;
 
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.DB.ExtensibleStorage;
-using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Common.Enums;
 
 namespace BIM.IFC.Export.UI
@@ -38,9 +35,11 @@ namespace BIM.IFC.Export.UI
    public class IFCExportConfigurationsMap
    {
       private Dictionary<String, IFCExportConfiguration> m_configurations = new Dictionary<String, IFCExportConfiguration>();
-      private Schema m_schema = null;
+
+      private Schema m_OldSchema = null;
+      private static Guid s_OldSchemaId = new Guid("A1E672E5-AC88-4933-A019-F9068402CFA7");
+
       private Schema m_mapSchema = null;
-      private static Guid s_schemaId = new Guid("A1E672E5-AC88-4933-A019-F9068402CFA7");
       private static Guid s_mapSchemaId = new Guid("DCB88B13-594F-44F6-8F5D-AE9477305AC3");
 
       // New schema based on json for the entire configuration instead of individual item
@@ -74,19 +73,19 @@ namespace BIM.IFC.Export.UI
       {
          // These are the built-in configurations.  Provide a more extensible means of storage.
          // Order of construction: name, version, space boundaries, QTO, split walls, internal sets, 2d elems, boundingBox
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View 2.0", IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Coordination View", IFCVersion.IFC2x3, 1, false, false, true, false, false, false, true, false, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 GSA Concept Design BIM 2010", IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, true, true, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 Basic FM Handover View", IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, true, false, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x2 Coordination View", IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC2x3 COBie 2.4 Design Deliverable", IFCVersion.IFC2x3FM, 1, true, false, false, true, true, false, true, true, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View [Architecture]", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3, 1, false, false, true, false, false, false, true, false, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, true, true, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, true, false, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3FM, 1, true, false, false, true, true, false, true, true, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
             exchangeRequirement:KnownERNames.Architecture));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View [Structural]", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
             exchangeRequirement:KnownERNames.Structural));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Reference View [BuildingService]", IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
             exchangeRequirement:KnownERNames.BuildingService));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration("IFC4 Design Transfer View", IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true));
       }
 
       /// <summary>
@@ -96,211 +95,218 @@ namespace BIM.IFC.Export.UI
       {
          try
          {
-            if (m_schema == null)
+            // find the config in old schema.
+            if (m_OldSchema == null)
             {
-               m_schema = Schema.Lookup(s_schemaId);
+               m_OldSchema = Schema.Lookup(s_OldSchemaId);
+
+               if (m_OldSchema != null)
+               {
+                  foreach (DataStorage storedSetup in GetSavedConfigurations(m_OldSchema))
+                  {
+                     Entity configEntity = storedSetup.GetEntity(m_OldSchema);
+                     IFCExportConfiguration configuration = IFCExportConfiguration.CreateDefaultConfiguration();
+                     configuration.Name = configEntity.Get<String>(s_setupName);
+                     configuration.IFCVersion = (IFCVersion)configEntity.Get<int>(s_setupVersion);
+                     configuration.ExchangeRequirement = IFCExchangeRequirements.ParseEREnum(configEntity.Get<String>(s_exchangeRequirement));
+                     configuration.IFCFileType = (IFCFileFormat)configEntity.Get<int>(s_setupFileFormat);
+                     configuration.SpaceBoundaries = configEntity.Get<int>(s_setupSpaceBoundaries);
+                     configuration.ExportBaseQuantities = configEntity.Get<bool>(s_setupQTO);
+                     configuration.SplitWallsAndColumns = configEntity.Get<bool>(s_splitWallsAndColumns);
+                     configuration.Export2DElements = configEntity.Get<bool>(s_setupExport2D);
+                     configuration.ExportInternalRevitPropertySets = configEntity.Get<bool>(s_setupExportRevitProps);
+                     Field fieldIFCCommonPropertySets = m_OldSchema.GetField(s_setupExportIFCCommonProperty);
+                     if (fieldIFCCommonPropertySets != null)
+                        configuration.ExportIFCCommonPropertySets = configEntity.Get<bool>(s_setupExportIFCCommonProperty);
+                     configuration.Use2DRoomBoundaryForVolume = configEntity.Get<bool>(s_setupUse2DForRoomVolume);
+                     configuration.UseFamilyAndTypeNameForReference = configEntity.Get<bool>(s_setupUseFamilyAndTypeName);
+                     Field fieldPartsAsBuildingElements = m_OldSchema.GetField(s_setupExportPartsAsBuildingElements);
+                     if (fieldPartsAsBuildingElements != null)
+                        configuration.ExportPartsAsBuildingElements = configEntity.Get<bool>(s_setupExportPartsAsBuildingElements);
+                     Field fieldExportBoundingBox = m_OldSchema.GetField(s_setupExportBoundingBox);
+                     if (fieldExportBoundingBox != null)
+                        configuration.ExportBoundingBox = configEntity.Get<bool>(s_setupExportBoundingBox);
+                     Field fieldExportSolidModelRep = m_OldSchema.GetField(s_setupExportSolidModelRep);
+                     if (fieldExportSolidModelRep != null)
+                        configuration.ExportSolidModelRep = configEntity.Get<bool>(s_setupExportSolidModelRep);
+                     Field fieldExportSchedulesAsPsets = m_OldSchema.GetField(s_setupExportSchedulesAsPsets);
+                     if (fieldExportSchedulesAsPsets != null)
+                        configuration.ExportSchedulesAsPsets = configEntity.Get<bool>(s_setupExportSchedulesAsPsets);
+                     Field fieldExportUserDefinedPsets = m_OldSchema.GetField(s_setupExportUserDefinedPsets);
+                     if (fieldExportUserDefinedPsets != null)
+                        configuration.ExportUserDefinedPsets = configEntity.Get<bool>(s_setupExportUserDefinedPsets);
+                     Field fieldExportUserDefinedPsetsFileName = m_OldSchema.GetField(s_setupExportUserDefinedPsetsFileName);
+                     if (fieldExportUserDefinedPsetsFileName != null)
+                        configuration.ExportUserDefinedPsetsFileName = configEntity.Get<string>(s_setupExportUserDefinedPsetsFileName);
+
+                     Field fieldExportUserDefinedParameterMapingTable = m_OldSchema.GetField(s_setupExportUserDefinedParameterMapping);
+                     if (fieldExportUserDefinedParameterMapingTable != null)
+                        configuration.ExportUserDefinedParameterMapping = configEntity.Get<bool>(s_setupExportUserDefinedParameterMapping);
+
+                     Field fieldExportUserDefinedParameterMappingFileName = m_OldSchema.GetField(s_setupExportUserDefinedParameterMappingFileName);
+                     if (fieldExportUserDefinedParameterMappingFileName != null)
+                        configuration.ExportUserDefinedParameterMappingFileName = configEntity.Get<string>(s_setupExportUserDefinedParameterMappingFileName);
+
+                     Field fieldExportLinkedFiles = m_OldSchema.GetField(s_setupExportLinkedFiles);
+                     if (fieldExportLinkedFiles != null)
+                        configuration.ExportLinkedFiles = configEntity.Get<bool>(s_setupExportLinkedFiles);
+                     Field fieldIncludeSiteElevation = m_OldSchema.GetField(s_setupIncludeSiteElevation);
+                     if (fieldIncludeSiteElevation != null)
+                        configuration.IncludeSiteElevation = configEntity.Get<bool>(s_setupIncludeSiteElevation);
+                     Field fieldStoreIFCGUID = m_OldSchema.GetField(s_setupStoreIFCGUID);
+                     if (fieldStoreIFCGUID != null)
+                        configuration.StoreIFCGUID = configEntity.Get<bool>(s_setupStoreIFCGUID);
+                     Field fieldActivePhase = m_OldSchema.GetField(s_setupActivePhase);
+                     if (fieldActivePhase != null)
+                        configuration.ActivePhaseId = int.Parse(configEntity.Get<string>(s_setupActivePhase));
+                     Field fieldExportRoomsInView = m_OldSchema.GetField(s_setupExportRoomsInView);
+                     if (fieldExportRoomsInView != null)
+                        configuration.ExportRoomsInView = configEntity.Get<bool>(s_setupExportRoomsInView);
+                     Field fieldIncludeSteelElements = m_OldSchema.GetField(s_includeSteelElements);
+                     if (fieldIncludeSteelElements != null)
+                        configuration.IncludeSteelElements = configEntity.Get<bool>(s_includeSteelElements);
+                     Field fieldUseOnlyTriangulation = m_OldSchema.GetField(s_useOnlyTriangulation);
+                     if (fieldUseOnlyTriangulation != null)
+                        configuration.UseOnlyTriangulation = configEntity.Get<bool>(s_useOnlyTriangulation);
+                     Field fieldUseTypeNameOnlyForIfcType = m_OldSchema.GetField(s_useTypeNameOnlyForIfcType);
+                     if (fieldUseTypeNameOnlyForIfcType != null)
+                        configuration.UseTypeNameOnlyForIfcType = configEntity.Get<bool>(s_useTypeNameOnlyForIfcType);
+                     Field fieldUseVisibleRevitNameAsEntityName = m_OldSchema.GetField(s_useVisibleRevitNameAsEntityName);
+                     if (fieldUseVisibleRevitNameAsEntityName != null)
+                        configuration.UseVisibleRevitNameAsEntityName = configEntity.Get<bool>(s_useVisibleRevitNameAsEntityName);
+                     Field fieldTessellationLevelOfDetail = m_OldSchema.GetField(s_setupTessellationLevelOfDetail);
+                     if (fieldTessellationLevelOfDetail != null)
+                        configuration.TessellationLevelOfDetail = configEntity.Get<double>(s_setupTessellationLevelOfDetail);
+
+                     Add(configuration);
+                  }
+               }
             }
+
+            // This is the newer schema
             if (m_mapSchema == null)
             {
                m_mapSchema = Schema.Lookup(s_mapSchemaId);
-            }
-            if (m_jsonSchema == null)
-            {
-               m_jsonSchema = Schema.Lookup(s_jsonSchemaId);
+
+               if (m_mapSchema != null)
+               {
+                  foreach (DataStorage storedSetup in GetSavedConfigurations(m_mapSchema))
+                  {
+                     Entity configEntity = storedSetup.GetEntity(m_mapSchema);
+                     IDictionary<string, string> configMap = configEntity.Get<IDictionary<string, string>>(s_configMapField);
+                     IFCExportConfiguration configuration = IFCExportConfiguration.CreateDefaultConfiguration();
+                     if (configMap.ContainsKey(s_setupName))
+                        configuration.Name = configMap[s_setupName];
+                     if (configMap.ContainsKey(s_setupVersion))
+                        configuration.IFCVersion = (IFCVersion)Enum.Parse(typeof(IFCVersion), configMap[s_setupVersion]);
+                     if (configMap.ContainsKey(s_exchangeRequirement))
+                        configuration.ExchangeRequirement = IFCExchangeRequirements.ParseEREnum(configMap[s_exchangeRequirement]);
+                     if (configMap.ContainsKey(s_setupFileFormat))
+                        configuration.IFCFileType = (IFCFileFormat)Enum.Parse(typeof(IFCFileFormat), configMap[s_setupFileFormat]);
+                     if (configMap.ContainsKey(s_setupSpaceBoundaries))
+                        configuration.SpaceBoundaries = int.Parse(configMap[s_setupSpaceBoundaries]);
+                     if (configMap.ContainsKey(s_setupActivePhase))
+                        configuration.ActivePhaseId = int.Parse(configMap[s_setupActivePhase]);
+                     if (configMap.ContainsKey(s_setupQTO))
+                        configuration.ExportBaseQuantities = bool.Parse(configMap[s_setupQTO]);
+                     if (configMap.ContainsKey(s_setupCurrentView))
+                        configuration.VisibleElementsOfCurrentView = bool.Parse(configMap[s_setupCurrentView]);
+                     if (configMap.ContainsKey(s_splitWallsAndColumns))
+                        configuration.SplitWallsAndColumns = bool.Parse(configMap[s_splitWallsAndColumns]);
+                     if (configMap.ContainsKey(s_setupExport2D))
+                        configuration.Export2DElements = bool.Parse(configMap[s_setupExport2D]);
+                     if (configMap.ContainsKey(s_setupExportRevitProps))
+                        configuration.ExportInternalRevitPropertySets = bool.Parse(configMap[s_setupExportRevitProps]);
+                     if (configMap.ContainsKey(s_setupExportIFCCommonProperty))
+                        configuration.ExportIFCCommonPropertySets = bool.Parse(configMap[s_setupExportIFCCommonProperty]);
+                     if (configMap.ContainsKey(s_setupUse2DForRoomVolume))
+                        configuration.Use2DRoomBoundaryForVolume = bool.Parse(configMap[s_setupUse2DForRoomVolume]);
+                     if (configMap.ContainsKey(s_setupUseFamilyAndTypeName))
+                        configuration.UseFamilyAndTypeNameForReference = bool.Parse(configMap[s_setupUseFamilyAndTypeName]);
+                     if (configMap.ContainsKey(s_setupExportPartsAsBuildingElements))
+                        configuration.ExportPartsAsBuildingElements = bool.Parse(configMap[s_setupExportPartsAsBuildingElements]);
+                     if (configMap.ContainsKey(s_useActiveViewGeometry))
+                        configuration.UseActiveViewGeometry = bool.Parse(configMap[s_useActiveViewGeometry]);
+                     if (configMap.ContainsKey(s_setupExportSpecificSchedules))
+                        configuration.ExportSpecificSchedules = bool.Parse(configMap[s_setupExportSpecificSchedules]);
+                     if (configMap.ContainsKey(s_setupExportBoundingBox))
+                        configuration.ExportBoundingBox = bool.Parse(configMap[s_setupExportBoundingBox]);
+                     if (configMap.ContainsKey(s_setupExportSolidModelRep))
+                        configuration.ExportSolidModelRep = bool.Parse(configMap[s_setupExportSolidModelRep]);
+                     if (configMap.ContainsKey(s_setupExportSchedulesAsPsets))
+                        configuration.ExportSchedulesAsPsets = bool.Parse(configMap[s_setupExportSchedulesAsPsets]);
+                     if (configMap.ContainsKey(s_setupExportUserDefinedPsets))
+                        configuration.ExportUserDefinedPsets = bool.Parse(configMap[s_setupExportUserDefinedPsets]);
+                     if (configMap.ContainsKey(s_setupExportUserDefinedPsetsFileName))
+                        configuration.ExportUserDefinedPsetsFileName = configMap[s_setupExportUserDefinedPsetsFileName];
+                     if (configMap.ContainsKey(s_setupExportUserDefinedParameterMapping))
+                        configuration.ExportUserDefinedParameterMapping = bool.Parse(configMap[s_setupExportUserDefinedParameterMapping]);
+                     if (configMap.ContainsKey(s_setupExportUserDefinedParameterMappingFileName))
+                        configuration.ExportUserDefinedParameterMappingFileName = configMap[s_setupExportUserDefinedParameterMappingFileName];
+                     if (configMap.ContainsKey(s_setupExportLinkedFiles))
+                        configuration.ExportLinkedFiles = bool.Parse(configMap[s_setupExportLinkedFiles]);
+                     if (configMap.ContainsKey(s_setupIncludeSiteElevation))
+                        configuration.IncludeSiteElevation = bool.Parse(configMap[s_setupIncludeSiteElevation]);
+                     if (configMap.ContainsKey(s_setupStoreIFCGUID))
+                        configuration.StoreIFCGUID = bool.Parse(configMap[s_setupStoreIFCGUID]);
+                     if (configMap.ContainsKey(s_setupExportRoomsInView))
+                        configuration.ExportRoomsInView = bool.Parse(configMap[s_setupExportRoomsInView]);
+                     if (configMap.ContainsKey(s_includeSteelElements))
+                        configuration.IncludeSteelElements = bool.Parse(configMap[s_includeSteelElements]);
+                     if (configMap.ContainsKey(s_useTypeNameOnlyForIfcType))
+                        configuration.UseTypeNameOnlyForIfcType = bool.Parse(configMap[s_useTypeNameOnlyForIfcType]);
+                     if (configMap.ContainsKey(s_useVisibleRevitNameAsEntityName))
+                        configuration.UseVisibleRevitNameAsEntityName = bool.Parse(configMap[s_useVisibleRevitNameAsEntityName]);
+                     if (configMap.ContainsKey(s_useOnlyTriangulation))
+                        configuration.UseOnlyTriangulation = bool.Parse(configMap[s_useOnlyTriangulation]);
+                     if (configMap.ContainsKey(s_setupTessellationLevelOfDetail))
+                        configuration.TessellationLevelOfDetail = double.Parse(configMap[s_setupTessellationLevelOfDetail]);
+                     if (configMap.ContainsKey(s_setupSitePlacement))
+                     {
+                        SiteTransformBasis siteTrfBasis = SiteTransformBasis.Shared;
+                        if (Enum.TryParse(configMap[s_setupSitePlacement], out siteTrfBasis))
+                           configuration.SitePlacement = siteTrfBasis;
+                     }
+                     // Geo Reference info
+                     if (configMap.ContainsKey(s_geoRefCRSName))
+                        configuration.GeoRefCRSName = configMap[s_geoRefCRSName];
+                     if (configMap.ContainsKey(s_geoRefCRSDesc))
+                        configuration.GeoRefCRSDesc = configMap[s_geoRefCRSDesc];
+                     if (configMap.ContainsKey(s_geoRefEPSGCode))
+                        configuration.GeoRefEPSGCode = configMap[s_geoRefEPSGCode];
+                     if (configMap.ContainsKey(s_geoRefGeodeticDatum))
+                        configuration.GeoRefGeodeticDatum = configMap[s_geoRefGeodeticDatum];
+                     if (configMap.ContainsKey(s_geoRefMapUnit))
+                        configuration.GeoRefMapUnit = configMap[s_geoRefMapUnit];
+
+                     Add(configuration);
+                  }
+               }
             }
 
             // In this latest schema, the entire configuration for one config is stored as a json string in the entirety
-            if (m_jsonSchema != null)
+            if (m_jsonSchema == null)
             {
-               foreach (DataStorage storedSetup in GetSavedConfigurations(m_jsonSchema))
+               m_jsonSchema = Schema.Lookup(s_jsonSchemaId);
+               if (m_jsonSchema != null)
                {
-                  Entity configEntity = storedSetup.GetEntity(m_jsonSchema);
-                  string configData = configEntity.Get<string>(s_configMapField);
-                  JavaScriptSerializer ser = new JavaScriptSerializer();
-                  IFCExportConfiguration configuration = ser.Deserialize<IFCExportConfiguration>(configData);
-
-                  Add(configuration);
-               }
-               return; // if finds the config in map schema, return and skip finding the old schema.
-            }
-
-            // This is the older schema
-            if (m_mapSchema != null)
-            {
-               foreach (DataStorage storedSetup in GetSavedConfigurations(m_mapSchema))
-               {
-                  Entity configEntity = storedSetup.GetEntity(m_mapSchema);
-                  IDictionary<string, string> configMap = configEntity.Get<IDictionary<string, string>>(s_configMapField);
-                  IFCExportConfiguration configuration = IFCExportConfiguration.CreateDefaultConfiguration();
-                  if (configMap.ContainsKey(s_setupName))
-                     configuration.Name = configMap[s_setupName];
-                  if (configMap.ContainsKey(s_setupVersion))
-                     configuration.IFCVersion = (IFCVersion)Enum.Parse(typeof(IFCVersion), configMap[s_setupVersion]);
-                  if (configMap.ContainsKey(s_exchangeRequirement))
-                     configuration.ExchangeRequirement = IFCExchangeRequirements.ParseEREnum(configMap[s_exchangeRequirement]);
-                  if (configMap.ContainsKey(s_setupFileFormat))
-                     configuration.IFCFileType = (IFCFileFormat)Enum.Parse(typeof(IFCFileFormat), configMap[s_setupFileFormat]);
-                  if (configMap.ContainsKey(s_setupSpaceBoundaries))
-                     configuration.SpaceBoundaries = int.Parse(configMap[s_setupSpaceBoundaries]);
-                  if (configMap.ContainsKey(s_setupActivePhase))
-                     configuration.ActivePhaseId = int.Parse(configMap[s_setupActivePhase]);
-                  if (configMap.ContainsKey(s_setupQTO))
-                     configuration.ExportBaseQuantities = bool.Parse(configMap[s_setupQTO]);
-                  if (configMap.ContainsKey(s_setupCurrentView))
-                     configuration.VisibleElementsOfCurrentView = bool.Parse(configMap[s_setupCurrentView]);
-                  if (configMap.ContainsKey(s_splitWallsAndColumns))
-                     configuration.SplitWallsAndColumns = bool.Parse(configMap[s_splitWallsAndColumns]);
-                  if (configMap.ContainsKey(s_setupExport2D))
-                     configuration.Export2DElements = bool.Parse(configMap[s_setupExport2D]);
-                  if (configMap.ContainsKey(s_setupExportRevitProps))
-                     configuration.ExportInternalRevitPropertySets = bool.Parse(configMap[s_setupExportRevitProps]);
-                  if (configMap.ContainsKey(s_setupExportIFCCommonProperty))
-                     configuration.ExportIFCCommonPropertySets = bool.Parse(configMap[s_setupExportIFCCommonProperty]);
-                  if (configMap.ContainsKey(s_setupUse2DForRoomVolume))
-                     configuration.Use2DRoomBoundaryForVolume = bool.Parse(configMap[s_setupUse2DForRoomVolume]);
-                  if (configMap.ContainsKey(s_setupUseFamilyAndTypeName))
-                     configuration.UseFamilyAndTypeNameForReference = bool.Parse(configMap[s_setupUseFamilyAndTypeName]);
-                  if (configMap.ContainsKey(s_setupExportPartsAsBuildingElements))
-                     configuration.ExportPartsAsBuildingElements = bool.Parse(configMap[s_setupExportPartsAsBuildingElements]);
-                  if (configMap.ContainsKey(s_useActiveViewGeometry))
-                     configuration.UseActiveViewGeometry = bool.Parse(configMap[s_useActiveViewGeometry]);
-                  if (configMap.ContainsKey(s_setupExportSpecificSchedules))
-                     configuration.ExportSpecificSchedules = bool.Parse(configMap[s_setupExportSpecificSchedules]);
-                  if (configMap.ContainsKey(s_setupExportBoundingBox))
-                     configuration.ExportBoundingBox = bool.Parse(configMap[s_setupExportBoundingBox]);
-                  if (configMap.ContainsKey(s_setupExportSolidModelRep))
-                     configuration.ExportSolidModelRep = bool.Parse(configMap[s_setupExportSolidModelRep]);
-                  if (configMap.ContainsKey(s_setupExportSchedulesAsPsets))
-                     configuration.ExportSchedulesAsPsets = bool.Parse(configMap[s_setupExportSchedulesAsPsets]);
-                  if (configMap.ContainsKey(s_setupExportUserDefinedPsets))
-                     configuration.ExportUserDefinedPsets = bool.Parse(configMap[s_setupExportUserDefinedPsets]);
-                  if (configMap.ContainsKey(s_setupExportUserDefinedPsetsFileName))
-                     configuration.ExportUserDefinedPsetsFileName = configMap[s_setupExportUserDefinedPsetsFileName];
-                  if (configMap.ContainsKey(s_setupExportUserDefinedParameterMapping))
-                     configuration.ExportUserDefinedParameterMapping = bool.Parse(configMap[s_setupExportUserDefinedParameterMapping]);
-                  if (configMap.ContainsKey(s_setupExportUserDefinedParameterMappingFileName))
-                     configuration.ExportUserDefinedParameterMappingFileName = configMap[s_setupExportUserDefinedParameterMappingFileName];
-                  if (configMap.ContainsKey(s_setupExportLinkedFiles))
-                     configuration.ExportLinkedFiles = bool.Parse(configMap[s_setupExportLinkedFiles]);
-                  if (configMap.ContainsKey(s_setupIncludeSiteElevation))
-                     configuration.IncludeSiteElevation = bool.Parse(configMap[s_setupIncludeSiteElevation]);
-                  if (configMap.ContainsKey(s_setupStoreIFCGUID))
-                     configuration.StoreIFCGUID = bool.Parse(configMap[s_setupStoreIFCGUID]);
-                  if (configMap.ContainsKey(s_setupExportRoomsInView))
-                     configuration.ExportRoomsInView = bool.Parse(configMap[s_setupExportRoomsInView]);
-                  if (configMap.ContainsKey(s_includeSteelElements))
-                     configuration.IncludeSteelElements = bool.Parse(configMap[s_includeSteelElements]);
-                  if (configMap.ContainsKey(s_useTypeNameOnlyForIfcType))
-                     configuration.UseTypeNameOnlyForIfcType = bool.Parse(configMap[s_useTypeNameOnlyForIfcType]);
-                  if (configMap.ContainsKey(s_useVisibleRevitNameAsEntityName))
-                     configuration.UseVisibleRevitNameAsEntityName = bool.Parse(configMap[s_useVisibleRevitNameAsEntityName]);
-                  if (configMap.ContainsKey(s_useOnlyTriangulation))
-                     configuration.UseOnlyTriangulation = bool.Parse(configMap[s_useOnlyTriangulation]);
-                  if (configMap.ContainsKey(s_setupTessellationLevelOfDetail))
-                     configuration.TessellationLevelOfDetail = double.Parse(configMap[s_setupTessellationLevelOfDetail]);
-                  if (configMap.ContainsKey(s_setupSitePlacement))
+                  foreach (DataStorage storedSetup in GetSavedConfigurations(m_jsonSchema))
                   {
-                     SiteTransformBasis siteTrfBasis = SiteTransformBasis.Shared;
-                     if (Enum.TryParse(configMap[s_setupSitePlacement], out siteTrfBasis))
-                        configuration.SitePlacement = siteTrfBasis;
+                     Entity configEntity = storedSetup.GetEntity(m_jsonSchema);
+                     string configData = configEntity.Get<string>(s_configMapField);
+                     JavaScriptSerializer ser = new JavaScriptSerializer();
+                     IFCExportConfiguration configuration = ser.Deserialize<IFCExportConfiguration>(configData);
+                     Add(configuration);
                   }
-                  // Geo Reference info
-                  if (configMap.ContainsKey(s_geoRefCRSName))
-                     configuration.GeoRefCRSName = configMap[s_geoRefCRSName];
-                  if (configMap.ContainsKey(s_geoRefCRSDesc))
-                     configuration.GeoRefCRSDesc = configMap[s_geoRefCRSDesc];
-                  if (configMap.ContainsKey(s_geoRefEPSGCode))
-                     configuration.GeoRefEPSGCode = configMap[s_geoRefEPSGCode];
-                  if (configMap.ContainsKey(s_geoRefGeodeticDatum))
-                     configuration.GeoRefGeodeticDatum = configMap[s_geoRefGeodeticDatum];
-                  if (configMap.ContainsKey(s_geoRefMapUnit))
-                     configuration.GeoRefMapUnit = configMap[s_geoRefMapUnit];
-
-                  Add(configuration);
                }
-               return; // if finds the config in map schema, return and skip finding the old schema.
             }
 
-            // find the config in old schema.
-            if (m_schema != null)
+            // Add the last selected configurations if any
+            if (IFCExport.LastSelectedConfig != null && IFCExport.LastSelectedConfig.Count > 0)
             {
-               foreach (DataStorage storedSetup in GetSavedConfigurations(m_schema))
+               foreach (KeyValuePair<string, IFCExportConfiguration> lastSelConfig in IFCExport.LastSelectedConfig)
                {
-                  Entity configEntity = storedSetup.GetEntity(m_schema);
-                  IFCExportConfiguration configuration = IFCExportConfiguration.CreateDefaultConfiguration();
-                  configuration.Name = configEntity.Get<String>(s_setupName);
-                  configuration.IFCVersion = (IFCVersion)configEntity.Get<int>(s_setupVersion);
-                  configuration.ExchangeRequirement = IFCExchangeRequirements.ParseEREnum(configEntity.Get<String>(s_exchangeRequirement));
-                  configuration.IFCFileType = (IFCFileFormat)configEntity.Get<int>(s_setupFileFormat);
-                  configuration.SpaceBoundaries = configEntity.Get<int>(s_setupSpaceBoundaries);
-                  configuration.ExportBaseQuantities = configEntity.Get<bool>(s_setupQTO);
-                  configuration.SplitWallsAndColumns = configEntity.Get<bool>(s_splitWallsAndColumns);
-                  configuration.Export2DElements = configEntity.Get<bool>(s_setupExport2D);
-                  configuration.ExportInternalRevitPropertySets = configEntity.Get<bool>(s_setupExportRevitProps);
-                  Field fieldIFCCommonPropertySets = m_schema.GetField(s_setupExportIFCCommonProperty);
-                  if (fieldIFCCommonPropertySets != null)
-                     configuration.ExportIFCCommonPropertySets = configEntity.Get<bool>(s_setupExportIFCCommonProperty);
-                  configuration.Use2DRoomBoundaryForVolume = configEntity.Get<bool>(s_setupUse2DForRoomVolume);
-                  configuration.UseFamilyAndTypeNameForReference = configEntity.Get<bool>(s_setupUseFamilyAndTypeName);
-                  Field fieldPartsAsBuildingElements = m_schema.GetField(s_setupExportPartsAsBuildingElements);
-                  if (fieldPartsAsBuildingElements != null)
-                     configuration.ExportPartsAsBuildingElements = configEntity.Get<bool>(s_setupExportPartsAsBuildingElements);
-                  Field fieldExportBoundingBox = m_schema.GetField(s_setupExportBoundingBox);
-                  if (fieldExportBoundingBox != null)
-                     configuration.ExportBoundingBox = configEntity.Get<bool>(s_setupExportBoundingBox);
-                  Field fieldExportSolidModelRep = m_schema.GetField(s_setupExportSolidModelRep);
-                  if (fieldExportSolidModelRep != null)
-                     configuration.ExportSolidModelRep = configEntity.Get<bool>(s_setupExportSolidModelRep);
-                  Field fieldExportSchedulesAsPsets = m_schema.GetField(s_setupExportSchedulesAsPsets);
-                  if (fieldExportSchedulesAsPsets != null)
-                     configuration.ExportSchedulesAsPsets = configEntity.Get<bool>(s_setupExportSchedulesAsPsets);
-                  Field fieldExportUserDefinedPsets = m_schema.GetField(s_setupExportUserDefinedPsets);
-                  if (fieldExportUserDefinedPsets != null)
-                     configuration.ExportUserDefinedPsets = configEntity.Get<bool>(s_setupExportUserDefinedPsets);
-                  Field fieldExportUserDefinedPsetsFileName = m_schema.GetField(s_setupExportUserDefinedPsetsFileName);
-                  if (fieldExportUserDefinedPsetsFileName != null)
-                     configuration.ExportUserDefinedPsetsFileName = configEntity.Get<string>(s_setupExportUserDefinedPsetsFileName);
-
-                  Field fieldExportUserDefinedParameterMapingTable = m_schema.GetField(s_setupExportUserDefinedParameterMapping);
-                  if (fieldExportUserDefinedParameterMapingTable != null)
-                     configuration.ExportUserDefinedParameterMapping = configEntity.Get<bool>(s_setupExportUserDefinedParameterMapping);
-
-                  Field fieldExportUserDefinedParameterMappingFileName = m_schema.GetField(s_setupExportUserDefinedParameterMappingFileName);
-                  if (fieldExportUserDefinedParameterMappingFileName != null)
-                     configuration.ExportUserDefinedParameterMappingFileName = configEntity.Get<string>(s_setupExportUserDefinedParameterMappingFileName);
-
-                  Field fieldExportLinkedFiles = m_schema.GetField(s_setupExportLinkedFiles);
-                  if (fieldExportLinkedFiles != null)
-                     configuration.ExportLinkedFiles = configEntity.Get<bool>(s_setupExportLinkedFiles);
-                  Field fieldIncludeSiteElevation = m_schema.GetField(s_setupIncludeSiteElevation);
-                  if (fieldIncludeSiteElevation != null)
-                     configuration.IncludeSiteElevation = configEntity.Get<bool>(s_setupIncludeSiteElevation);
-                  Field fieldStoreIFCGUID = m_schema.GetField(s_setupStoreIFCGUID);
-                  if (fieldStoreIFCGUID != null)
-                     configuration.StoreIFCGUID = configEntity.Get<bool>(s_setupStoreIFCGUID);
-                  Field fieldActivePhase = m_schema.GetField(s_setupActivePhase);
-                  if (fieldActivePhase != null)
-                     configuration.ActivePhaseId = int.Parse(configEntity.Get<string>(s_setupActivePhase));
-                  Field fieldExportRoomsInView = m_schema.GetField(s_setupExportRoomsInView);
-                  if (fieldExportRoomsInView != null)
-                     configuration.ExportRoomsInView = configEntity.Get<bool>(s_setupExportRoomsInView);
-                  Field fieldIncludeSteelElements = m_schema.GetField(s_includeSteelElements);
-                  if (fieldIncludeSteelElements != null)
-                     configuration.IncludeSteelElements = configEntity.Get<bool>(s_includeSteelElements);
-                  Field fieldUseOnlyTriangulation = m_schema.GetField(s_useOnlyTriangulation);
-                  if (fieldUseOnlyTriangulation != null)
-                     configuration.UseOnlyTriangulation = configEntity.Get<bool>(s_useOnlyTriangulation);
-                  Field fieldUseTypeNameOnlyForIfcType = m_schema.GetField(s_useTypeNameOnlyForIfcType);
-                  if (fieldUseTypeNameOnlyForIfcType != null)
-                     configuration.UseTypeNameOnlyForIfcType = configEntity.Get<bool>(s_useTypeNameOnlyForIfcType);
-                  Field fieldUseVisibleRevitNameAsEntityName = m_schema.GetField(s_useVisibleRevitNameAsEntityName);
-                  if (fieldUseVisibleRevitNameAsEntityName != null)
-                     configuration.UseVisibleRevitNameAsEntityName = configEntity.Get<bool>(s_useVisibleRevitNameAsEntityName);
-                  Field fieldTessellationLevelOfDetail = m_schema.GetField(s_setupTessellationLevelOfDetail);
-                  if (fieldTessellationLevelOfDetail != null)
-                     configuration.TessellationLevelOfDetail = configEntity.Get<double>(s_setupTessellationLevelOfDetail);
-
-                  Add(configuration);
+                  Add(lastSelConfig.Value);
                }
             }
          }
@@ -366,20 +372,20 @@ namespace BIM.IFC.Export.UI
       public void UpdateSavedConfigurations()
       {
          // delete the old schema and the DataStorage.
-         if (m_schema == null)
+         if (m_OldSchema == null)
          {
-            m_schema = Schema.Lookup(s_schemaId);
+            m_OldSchema = Schema.Lookup(s_OldSchemaId);
          }
-         if (m_schema != null)
+         if (m_OldSchema != null)
          {
-            IList<DataStorage> oldSavedConfigurations = GetSavedConfigurations(m_schema);
+            IList<DataStorage> oldSavedConfigurations = GetSavedConfigurations(m_OldSchema);
             if (oldSavedConfigurations.Count > 0)
             {
                Transaction deleteTransaction = new Transaction(IFCCommandOverrideApplication.TheDocument,
                    Properties.Resources.DeleteOldSetups);
                try
                {
-                  deleteTransaction.Start();
+                  deleteTransaction.Start(Properties.Resources.DeleteOldConfiguration);
                   List<ElementId> dataStorageToDelete = new List<ElementId>();
                   foreach (DataStorage dataStorage in oldSavedConfigurations)
                   {
@@ -410,7 +416,7 @@ namespace BIM.IFC.Export.UI
                    Properties.Resources.DeleteOldSetups);
                try
                {
-                  deleteTransaction.Start();
+                  deleteTransaction.Start(Properties.Resources.DeleteOldConfiguration);
                   List<ElementId> dataStorageToDelete = new List<ElementId>();
                   foreach (DataStorage dataStorage in oldSavedConfigurations)
                   {
@@ -463,50 +469,52 @@ namespace BIM.IFC.Export.UI
             m_jsonSchema = builder.Finish();
          }
 
-         // Overwrite all saved configs with the new list
-         Transaction transaction = new Transaction(IFCCommandOverrideApplication.TheDocument, Properties.Resources.UpdateExportSetups);
-         try
+         // It won't start any transaction if there is no change to the configurations
+         if (setupsToSave.Count > 0)
          {
-            transaction.Start();
-            IList<DataStorage> savedConfigurations = GetSavedConfigurations(m_jsonSchema);
-            int savedConfigurationCount = savedConfigurations.Count<DataStorage>();
-            int savedConfigurationIndex = 0;
-            foreach (IFCExportConfiguration configuration in setupsToSave)
+            // Overwrite all saved configs with the new list
+            Transaction transaction = new Transaction(IFCCommandOverrideApplication.TheDocument, Properties.Resources.UpdateExportSetups);
+            try
             {
-               DataStorage configStorage;
-               if (savedConfigurationIndex >= savedConfigurationCount)
+               transaction.Start(Properties.Resources.SaveConfigurationChanges);
+               IList<DataStorage> savedConfigurations = GetSavedConfigurations(m_jsonSchema);
+               int savedConfigurationCount = savedConfigurations.Count<DataStorage>();
+               int savedConfigurationIndex = 0;
+               foreach (IFCExportConfiguration configuration in setupsToSave)
                {
-                  configStorage = DataStorage.Create(IFCCommandOverrideApplication.TheDocument);
-               }
-               else
-               {
-                  configStorage = savedConfigurations[savedConfigurationIndex];
-                  savedConfigurationIndex++;
+                  DataStorage configStorage;
+                  if (savedConfigurationIndex >= savedConfigurationCount)
+                  {
+                     configStorage = DataStorage.Create(IFCCommandOverrideApplication.TheDocument);
+                  }
+                  else
+                  {
+                     configStorage = savedConfigurations[savedConfigurationIndex];
+                     savedConfigurationIndex++;
+                  }
+
+                  Entity mapEntity = new Entity(m_jsonSchema);
+                  string configData = configuration.SerializeConfigToJson();
+                  mapEntity.Set<string>(s_configMapField, configData);
+                  configStorage.SetEntity(mapEntity);
                }
 
-               Entity mapEntity = new Entity(m_jsonSchema);
-               JavaScriptSerializer ser = new JavaScriptSerializer();
-               string configData = ser.Serialize(configuration);
-               mapEntity.Set<string>(s_configMapField, configData);
+               List<ElementId> elementsToDelete = new List<ElementId>();
+               for (; savedConfigurationIndex < savedConfigurationCount; savedConfigurationIndex++)
+               {
+                  DataStorage configStorage = savedConfigurations[savedConfigurationIndex];
+                  elementsToDelete.Add(configStorage.Id);
+               }
+               if (elementsToDelete.Count > 0)
+                  IFCCommandOverrideApplication.TheDocument.Delete(elementsToDelete);
 
-               configStorage.SetEntity(mapEntity);
+               transaction.Commit();
             }
-
-            List<ElementId> elementsToDelete = new List<ElementId>();
-            for (; savedConfigurationIndex < savedConfigurationCount; savedConfigurationIndex++)
+            catch (System.Exception)
             {
-               DataStorage configStorage = savedConfigurations[savedConfigurationIndex];
-               elementsToDelete.Add(configStorage.Id);
+               if (transaction.HasStarted())
+                  transaction.RollBack();
             }
-            if (elementsToDelete.Count > 0)
-               IFCCommandOverrideApplication.TheDocument.Delete(elementsToDelete);
-
-            transaction.Commit();
-         }
-         catch (System.Exception)
-         {
-            if (transaction.HasStarted())
-               transaction.RollBack();
          }
       }
 

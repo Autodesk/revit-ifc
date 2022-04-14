@@ -1,0 +1,15 @@
+﻿<auiw:ChildWindow x:Class="Revit.IFC.EntityTree.PredefinedTypeSelection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Revit.IFC.EntityTree"
+             mc:Ignorable="d"
+             Title="PredefinedType Select" Height="375.76" Width="260.041">
+   <Grid>
+      <TreeView x:Name="TreeView_PredefinedType" Margin="0,0,2,45"/>
+      <Button x:Name="Button_Cancel" Content="Cancel" Margin="0,0,10,9" Click="Button_Cancel_Click" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom"/>
+      <Button x:Name="Button_OK" Content="OK" Margin="0,0,90,9" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom" Click="Button_OK_Click"/>
+   </Grid>
+</auiw:ChildWindow>

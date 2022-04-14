@@ -2,7 +2,7 @@
 
 using Autodesk.Revit.DB;
 
-namespace Revit.IFC.Import
+namespace Revit.IFC.Import.Core
 {
 
    public interface IElement
@@ -52,13 +52,13 @@ namespace Revit.IFC.Import
          return null;
       }
 
-      public virtual IElement CreateElement(int ifcId, string ifcGuid, string ifcEntityType, int categoryId)
+      public virtual IElement CreateElement(int ifcId, string ifcGuid, string ifcEntityType, long categoryId)
       {
          // NAVIS_TODO: This is inside Navis code.
          return null;
       }
 
-      public virtual void CreateTypeElement(int ifcId, string ifcGuid, string ifcEntityType, int categoryId)
+      public virtual void CreateTypeElement(int ifcId, string ifcGuid, string ifcEntityType, long categoryId)
       {
          // NAVIS_TODO: This is inside Navis code.
          return;
@@ -74,7 +74,7 @@ namespace Revit.IFC.Import
          return;
       }
 
-      public bool CreateOrUpdateElement(int ifcId, string ifcGuid, string ifcEntityType, int categoryId,
+      public bool CreateOrUpdateElement(int ifcId, string ifcGuid, string ifcEntityType, long categoryId,
          IList<GeometryObject> geomObjs)
       {
          if (ifcId <= 0)
@@ -102,7 +102,7 @@ namespace Revit.IFC.Import
          return true;
       }
 
-      public void CreateElementType(int ifcId, string ifcGuid, string ifcEntityType, int categoryId)
+      public void CreateElementType(int ifcId, string ifcGuid, string ifcEntityType, long categoryId)
       {
          // This is used in some places to create something not related to an IFCEntity
          if (ifcId > 0)
@@ -140,7 +140,7 @@ namespace Revit.IFC.Import
       {
          var ele = GetElementFromStepId(ifcId);
 
-         if (!Importer.TheProcessor.ApplyTransforms)
+         if (!ApplyTransforms)
          {
             // Now provide the transform for the consumer to use with the untransformed geometry.
             // If a transform was already set by calling IElement.SetGeometry(IElement geomInstEle, Transform transform)

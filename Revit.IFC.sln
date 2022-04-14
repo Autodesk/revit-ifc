@@ -17,6 +17,10 @@ Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "RevitIFCSetupWix", "Install
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitIFCTools", "Source\RevitIFCTools\RevitIFCTools.csproj", "{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revit.IFC.Import.Core", "Source\Revit.IFC.Import.Core\Revit.IFC.Import.Core.csproj", "{FDC65177-E78D-4122-ACE1-110F27081071}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revit.IFC.EntityTree", "Source\Revit.IFC.EntityTree\Revit.IFC.EntityTree.csproj", "{5FC56BA3-315A-444B-AC6B-81AACF727517}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +91,30 @@ Global
 		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Release|x86.ActiveCfg = Release|Any CPU
 		{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}.Release|x86.Build.0 = Release|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Debug|x86.Build.0 = Debug|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Release|x86.ActiveCfg = Release|Any CPU
+		{FDC65177-E78D-4122-ACE1-110F27081071}.Release|x86.Build.0 = Release|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Debug|x86.Build.0 = Debug|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Release|x86.ActiveCfg = Debug|Any CPU
+		{5FC56BA3-315A-444B-AC6B-81AACF727517}.Release|x86.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
