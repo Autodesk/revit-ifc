@@ -801,7 +801,7 @@
     <value>{0} is a reserved Windows device name. Choose another name and try again.</value>
   </data>
   <data name="OffsetDistanceTooLarge" xml:space="preserve">
-    <value>The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coordinate basis.</value>
+    <value>The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coodinate basis.</value>
   </data>
   <data name="Eastings" xml:space="preserve">
     <value>Eastings</value>
@@ -829,5 +829,104 @@
   </data>
   <data name="ResetToOriginals" xml:space="preserve">
     <value>Reset</value>
+  </data>
+  <data name="AngleTrueNorth" xml:space="preserve">
+    <value>Angle from True North</value>
+  </data>
+  <data name="Elevation" xml:space="preserve">
+    <value>Elevation</value>
+  </data>
+  <data name="GeoReference" xml:space="preserve">
+    <value>Geographic Reference</value>
+  </data>
+  <data name="Override" xml:space="preserve">
+    <value>Override</value>
+  </data>
+  <data name="ProjectSite" xml:space="preserve">
+    <value>Project Site</value>
+  </data>
+  <data name="ResetConfigToolTip" xml:space="preserve">
+    <value>Reset configurations back to the original settings</value>
+  </data>
+  <data name="ResetOverrideToolTip" xml:space="preserve">
+    <value>Reset override values</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>Save Changes</value>
+  </data>
+  <data name="SaveChangesTooltip" xml:space="preserve">
+    <value>Save changes to the configurations into the document</value>
+  </data>
+  <data name="ProjectInTN" xml:space="preserve">
+    <value>Project Base Point oriented in True North</value>
+  </data>
+  <data name="InternalCoordinatesInTN" xml:space="preserve">
+    <value>Internal Origin oriented in True North</value>
+  </data>
+  <data name="ER_ArchitectureShort" xml:space="preserve">
+    <value>Architecture</value>
+  </data>
+  <data name="ER_BuildingServiceShort" xml:space="preserve">
+    <value>BuildingService</value>
+  </data>
+  <data name="ER_StructuralShort" xml:space="preserve">
+    <value>Structural</value>
+  </data>
+  <data name="IFCEntitySelection" xml:space="preserve">
+    <value>IFC Entity Selection</value>
+  </data>
+  <data name="ExcludeEntitySelection" xml:space="preserve">
+    <value>Entities to Export ...</value>
+  </data>
+  <data name="IFCSchemaVersion" xml:space="preserve">
+    <value>IFC Schema version</value>
+  </data>
+  <data name="PredefinedTypeSelection" xml:space="preserve">
+    <value>PredefinedType selection</value>
+  </data>
+  <data name="SelectSingleElement" xml:space="preserve">
+    <value>Select Export As IFC Entity</value>
+  </data>
+  <data name="DeleteOldConfiguration" xml:space="preserve">
+    <value>Delete old configuration</value>
+  </data>
+  <data name="SaveConfigurationChanges" xml:space="preserve">
+    <value>Save changes to IFC export configuration</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="MultipleAssignments" xml:space="preserve">
+    <value>Multiple assignments found in the selected objects !</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="CollapseAll" xml:space="preserve">
+    <value>Collapse All</value>
+  </data>
+  <data name="ExpandAll" xml:space="preserve">
+    <value>Expand All</value>
+  </data>
+  <data name="HelpAssignIfcEntity" xml:space="preserve">
+    <value>How do I assign IFC Entity and Predefined Type?</value>
+  </data>
+  <data name="HelpSelectEntityForExport" xml:space="preserve">
+    <value>How do IFC Entity selections affect export?</value>
+  </data>
+  <data name="NoPredefinedType" xml:space="preserve">
+    <value>Entity does not have predefined type</value>
+  </data>
+  <data name="ShowAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="ShowChecked" xml:space="preserve">
+    <value>Checked entities</value>
+  </data>
+  <data name="ShowUnchecked" xml:space="preserve">
+    <value>Un-checked entities</value>
+  </data>
+  <data name="Show" xml:space="preserve">
+    <value>Show</value>
   </data>
 </root>

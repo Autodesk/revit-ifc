@@ -17,13 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Autodesk.Revit;
-using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
-
+using System.IO;
 
 namespace Revit.IFC.Common.Utility
 {
@@ -39,7 +33,23 @@ namespace Revit.IFC.Common.Utility
       {
          get
          {
-            return System.IO.Path.GetDirectoryName(typeof(Autodesk.Revit.ApplicationServices.Application).Assembly.Location);
+            return Path.GetDirectoryName(typeof(Autodesk.Revit.ApplicationServices.Application).Assembly.Location);
+         }
+      }
+
+      public static string IFCSchemaLocation
+      {
+         get
+         {
+#if IFC_OPENSOURCE
+            // For the open source code, search it from the IfcExporter install folder
+            string schemaLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
+            if (!string.IsNullOrEmpty(schemaLoc))
+            {
+               return schemaLoc;
+            }
+#endif
+            return Path.Combine(RevitProgramPath, "IFC");
          }
       }
    }

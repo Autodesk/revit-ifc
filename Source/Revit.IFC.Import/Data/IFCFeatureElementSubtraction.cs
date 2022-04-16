@@ -83,14 +83,22 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         IFCEntity cachedFeatureElementSubtraction;
-         if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcFeatureElementSubtraction.StepId, out cachedFeatureElementSubtraction))
-            return (cachedFeatureElementSubtraction as IFCFeatureElementSubtraction);
+         try
+         {
+            IFCEntity cachedFeatureElementSubtraction;
+            if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcFeatureElementSubtraction.StepId, out cachedFeatureElementSubtraction))
+               return (cachedFeatureElementSubtraction as IFCFeatureElementSubtraction);
 
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcFeatureElementSubtraction, IFCEntityType.IfcOpeningElement))
-            return IFCOpeningElement.ProcessIFCOpeningElement(ifcFeatureElementSubtraction);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcFeatureElementSubtraction, IFCEntityType.IfcOpeningElement))
+               return IFCOpeningElement.ProcessIFCOpeningElement(ifcFeatureElementSubtraction);
 
-         return new IFCFeatureElementSubtraction(ifcFeatureElementSubtraction);
+            return new IFCFeatureElementSubtraction(ifcFeatureElementSubtraction);
+         }
+         catch (Exception ex)
+         {
+            HandleError(ex.Message, ifcFeatureElementSubtraction, true);
+            return null;
+         }
       }
    }
 }

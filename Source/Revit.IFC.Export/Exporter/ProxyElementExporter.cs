@@ -35,76 +35,6 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Exports an element as building element proxy.
       /// </summary>
-      /// <remarks>
-      /// This function is called from the Export function, but can also be called directly if you do not
-      /// want CreateInternalPropertySets to be called.
-      /// </remarks>
-      /// <param name="exporterIFC">The ExporterIFC object.</param>
-      /// <param name="element">The element.</param>
-      /// <param name="geometryElement">The geometry element.</param>
-      /// <param name="productWrapper">The ProductWrapper.</param>
-      /// <returns>The handle if created, null otherwise.</returns>
-      public static IFCAnyHandle ExportBuildingElementProxy(ExporterIFC exporterIFC, Element element,
-          GeometryElement geometryElement, ProductWrapper productWrapper, IFCExportInfoPair exportType=null)
-      {
-         if (element == null || geometryElement == null)
-            return null;
-
-         if (exportType == null)
-         {
-            exportType = new IFCExportInfoPair(IFCEntityType.IfcBuildingElementProxy, IFCEntityType.IfcBuildingElementProxyType, "NOTDEFINED");
-         }
-
-         // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcBuildingElementProxy;
-         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
-            return null;
-
-         IFCFile file = exporterIFC.GetFile();
-         IFCAnyHandle buildingElementProxy = null;
-         using (IFCTransaction tr = new IFCTransaction(file))
-         {
-            // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-
-            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
-            {
-               using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
-               {
-                  ecData.SetLocalPlacement(placementSetter.LocalPlacement);
-
-                  ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
-
-                  BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-                  IFCAnyHandle representation = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC, element,
-                      categoryId, geometryElement, bodyExporterOptions, null, ecData, true);
-
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(representation))
-                  {
-                     ecData.ClearOpenings();
-                     return null;
-                  }
-
-                  string guid = GUIDUtil.CreateGUID(element);
-                  IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-                  IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
-
-                  buildingElementProxy = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, element, guid,
-                      ownerHistory, localPlacement, representation, exportType.ValidatedPredefinedType);
-
-                  productWrapper.AddElement(element, buildingElementProxy, placementSetter.LevelInfo, ecData, true, exportType);
-               }
-               tr.Commit();
-            }
-         }
-
-         return buildingElementProxy;
-      }
-
-      /// <summary>
-      /// Exports an element as building element proxy.
-      /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="element">The element.</param>
       /// <param name="geometryElement">The geometry element.</param>
@@ -126,8 +56,7 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            //exported = (ExportBuildingElementProxy(exporterIFC, element, geometryElement, productWrapper, exportType) != null);
-            exported = (GenericElementExporter.ExportGenericElement(exporterIFC, element, geometryElement, productWrapper, exportType) != null);
+            exported = (GenericElementExporter.ExportSimpleGenericElement(exporterIFC, element, geometryElement, productWrapper, exportType) != null);
             if (exported)
                tr.Commit();
          }

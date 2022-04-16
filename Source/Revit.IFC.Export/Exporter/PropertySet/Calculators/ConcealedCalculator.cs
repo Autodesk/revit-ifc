@@ -47,20 +47,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         int? concealedFlooring = ParameterUtil.GetIntValueFromElementOrSymbol(element, "ConcealedFlooring");
-         int? concealedCovering = ParameterUtil.GetIntValueFromElementOrSymbol(element, "ConcealedCovering");
-         if (concealedFlooring.HasValue || concealedCovering.HasValue)
-         {
-            Concealed = 
-               concealedFlooring.GetValueOrDefault(0) != 0 || concealedCovering.GetValueOrDefault(0) != 0;
-            return true;
-         }
+         int? concealed = ParameterUtil.GetIntValueFromElementOrSymbol(element, entryMap.RevitParameterName);
+         if (!concealed.HasValue)
+            concealed = ParameterUtil.GetIntValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName);
 
-         int? concealed = ParameterUtil.GetIntValueFromElementOrSymbol(element, "Concealed");
+         if (!concealed.HasValue)
+            return false;
+
          Concealed = concealed.GetValueOrDefault(0) != 0;
-
          return true;
       }
 

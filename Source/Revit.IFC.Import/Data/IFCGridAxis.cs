@@ -19,14 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Import.Enums;
-using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
@@ -60,7 +56,7 @@ namespace Revit.IFC.Import.Data
       /// If this value is set, then this axis is actually a duplicate of an already created 
       /// axis.  Use the original axis instead.
       /// </summary>
-      public int DuplicateAxisId { get; protected set; } = -1;
+      public long DuplicateAxisId { get; protected set; } = -1;
 
       /// <summary>
       /// Returns the main element id associated with this object.  Only valid after the call to Create(Document).
@@ -131,7 +127,7 @@ namespace Revit.IFC.Import.Data
          return false;
       }
 
-      private int FindMatchingGrid(IList<Curve> otherCurves, int id, ref IList<Curve> curves, ref int curveCount)
+      private long FindMatchingGrid(IList<Curve> otherCurves, long id, ref IList<Curve> curves, ref int curveCount)
       {
          if (curves == null)
          {
@@ -162,10 +158,10 @@ namespace Revit.IFC.Import.Data
          return sameCurves ? id : -1;
       }
 
-      private int FindMatchingGrid(IFCGridAxis gridAxis, ref IList<Curve> curves, ref int curveCount)
+      private long FindMatchingGrid(IFCGridAxis gridAxis, ref IList<Curve> curves, ref int curveCount)
       {
          IList<Curve> otherCurves = gridAxis.AxisCurve.GetCurves();
-         int id = gridAxis.Id;
+         long id = gridAxis.Id;
          return FindMatchingGrid(otherCurves, id, ref curves, ref curveCount);
       }
 
@@ -253,7 +249,7 @@ namespace Revit.IFC.Import.Data
                if (gridCurve != null)
                {
                   otherCurves.Add(gridCurve);
-                  int matchingGridId = FindMatchingGrid(otherCurves, grid.Id.IntegerValue, ref curves, ref curveCount);
+                  long matchingGridId = FindMatchingGrid(otherCurves, grid.Id.IntegerValue, ref curves, ref curveCount);
 
                   if (matchingGridId != -1)
                   {
@@ -269,7 +265,7 @@ namespace Revit.IFC.Import.Data
          IFCGridAxis gridAxis = null;
          if (gridAxes.TryGetValue(AxisTag, out gridAxis))
          {
-            int matchingGridId = FindMatchingGrid(gridAxis, ref curves, ref curveCount);
+            long matchingGridId = FindMatchingGrid(gridAxis, ref curves, ref curveCount);
             if (matchingGridId != -1)
             {
                DuplicateAxisId = matchingGridId;
@@ -393,8 +389,8 @@ namespace Revit.IFC.Import.Data
          // would not be placed too close to one another; if they are, and they use different
          // grid structures, then the plan views may have overlapping grid lines.  This seems
          // more likely in theory than practice.
-         const double bottomOffset = -1.0 / 12.0;    // 1" =   2.54 cm
-         const double topOffset = 4.0;               // 4' = 121.92 cm
+         const double bottomOffset = 1.0 / 12.0;    // 1" =   2.54 cm
+         const double topOffset = 4.0;              // 4' = 121.92 cm
 
          double originalZ = (lcs != null) ? lcs.Origin.Z : 0.0;
 

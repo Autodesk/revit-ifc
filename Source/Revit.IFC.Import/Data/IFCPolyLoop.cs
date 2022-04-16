@@ -49,6 +49,15 @@ namespace Revit.IFC.Import.Data
          protected set { m_Polygon = value; }
       }
 
+      /// <summary>
+      /// Checks if the Loop definition represents a non-empty boundary.
+      /// </summary>
+      /// <returns>True if the FaceBound contains any information.</returns>
+      public override bool IsEmpty()
+      {
+         return (Polygon?.Count ?? 0) == 0;
+      }
+
       protected IFCPolyLoop()
       {
       }
@@ -65,17 +74,18 @@ namespace Revit.IFC.Import.Data
 
          Polygon = IFCPoint.ProcessScaledLengthIFCCartesianPoints(ifcPolygon);
 
+         // Check for duplicate points, including wrapping around, and remove them.
          int numVertices = Polygon.Count;
-         if (numVertices > 1)
+         for (int ii = numVertices - 1; (ii != -1) && numVertices >= 3; ii--)
          {
-            if (MathUtil.IsAlmostEqualAbsolute(Polygon[0], Polygon[numVertices - 1]))
+            if (MathUtil.IsAlmostEqualAbsolute(Polygon[ii], Polygon[(ii + 1) % numVertices]))
             {
-               // LOG: Warning: #: First and last points are almost identical, removing extra point.
-               Polygon.RemoveAt(numVertices - 1);
+               Importer.TheLog.LogError(ifcPolyLoop.StepId, "The polygon vertex at index " + ii + " is a duplicate, removing.", false);
+               Polygon.RemoveAt(ii);
                numVertices--;
             }
          }
-
+         
          if (numVertices < 3)
          {
             // This used to throw an error.  However, we found files that threw this error

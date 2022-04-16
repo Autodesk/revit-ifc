@@ -85,6 +85,12 @@ namespace Revit.IFC.Import.Utility
 
          foreach (IFCAnyHandle relatedObject in relatedObjects)
          {
+            if (relatedObject.Id == relatedTo.Id)
+            {
+               Importer.TheLog.LogError(ifcRelAssignsOrAggregates.Id, "An objected is related to itself, ignoring.", false);
+               continue;
+            }
+
             IFCObjectDefinition objectDefinition = IFCObjectDefinition.ProcessIFCObjectDefinition(relatedObject);
             if (objectDefinition != null)
             {

@@ -70,7 +70,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          ElementId rebarShapeId;
          if (ParameterUtil.GetElementIdValueFromElement(element, BuiltInParameter.REBAR_SHAPE, out rebarShapeId) == null)

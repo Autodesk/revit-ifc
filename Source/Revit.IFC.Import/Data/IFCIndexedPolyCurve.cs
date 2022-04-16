@@ -157,11 +157,14 @@ namespace Revit.IFC.Import.Data
                      if (currentIndex == null)
                         continue;
 
+                     // We want to aggregate line segments, but if we have no points
+                     // yet, we need to always add the start point.
                      int validCurrentIndex = currentIndex.Value;
-                     if (lastIndex != validCurrentIndex)
+                     if (lastIndex != validCurrentIndex || currentLineSegmentPoints.Count == 0)
                      {
-                        pointXYZs.Add(pointListXYZs[validCurrentIndex]);
-                        currentLineSegmentPoints.Add(pointListXYZs[validCurrentIndex]);
+                        XYZ currPt = pointListXYZs[validCurrentIndex];
+                        pointXYZs.Add(currPt);
+                        currentLineSegmentPoints.Add(currPt);
                         lastIndex = validCurrentIndex;
                      }
                   }
@@ -190,7 +193,7 @@ namespace Revit.IFC.Import.Data
                   XYZ endPoint = pointListXYZs[endIndex.Value];
                   try
                   {
-                     arcSegment = Arc.Create(startPoint, pointOnArc, endPoint);
+                     arcSegment = Arc.Create(startPoint, endPoint, pointOnArc);
                      if (arcSegment != null)
                         curveLoop.Append(arcSegment);
                   }

@@ -24,7 +24,7 @@ namespace Revit.IFC.Export.Utility
    {
       public bool Equals(ElementTypeKey key1, ElementTypeKey key2)
       {
-         if (key1.Item1.Id.IntegerValue == key2.Item1.Id.IntegerValue
+         if (key1.Item1.Id == key2.Item1.Id
             && key1.Item2 == key2.Item2
             && string.Equals(key1.Item3, key2.Item3, StringComparison.InvariantCultureIgnoreCase))
             return true;
@@ -35,7 +35,7 @@ namespace Revit.IFC.Export.Utility
       public int GetHashCode(ElementTypeKey key)
       {
          int hash = 23;
-         hash = hash * 31 + key.Item1.Id.IntegerValue;
+         hash = hash * 31 + key.Item1.Id.GetHashCode();
          hash = hash * 31 + (int) key.Item2;
          if (key.Item3 != null)
             hash = hash * 31 + key.Item3.GetHashCode();
@@ -47,7 +47,7 @@ namespace Revit.IFC.Export.Utility
    {
       public bool Equals(ElementType key1, ElementType key2)
       {
-         if (key1.Id.IntegerValue == key2.Id.IntegerValue)
+         if (key1.Id == key2.Id)
             return true;
          else
             return false;
@@ -55,14 +55,15 @@ namespace Revit.IFC.Export.Utility
 
       public int GetHashCode(ElementType key)
       {
-         int hash = key.Id.IntegerValue;
+         int hash = key.Id.GetHashCode();
          return hash;
       }
    }
 
    /// <summary>
    /// Used to keep a cache of a mapping of an ElementType to a handle.
-   /// This is specially handled because the same type can be assigned to different IFC entity with IfcExportAs and IfcExportType
+   /// This is specially handled because the same type can be assigned to different IFC entities 
+   /// based on parameter settings.
    /// </summary>
    public class ElementTypeToHandleCache
    {

@@ -28,6 +28,7 @@ using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Exporter.PropertySet;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -77,7 +78,8 @@ namespace Revit.IFC.Export.Exporter
             IFCExportInfoPair exportInfo = new IFCExportInfoPair(elementClassTypeEnum);
             productWrapper.AddElement(element, areaScheme, exportInfo);
 
-            IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
+            string groupGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssignsToGroup, areaScheme);
+            IFCInstanceExporter.CreateRelAssignsToGroup(file, groupGuid, ownerHistory,
                 null, null, areaHandles, null, areaScheme);
 
             tr.Commit();

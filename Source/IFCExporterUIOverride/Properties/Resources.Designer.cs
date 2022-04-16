@@ -133,6 +133,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Angle from True North.
+        /// </summary>
+        public static string AngleTrueNorth {
+            get {
+                return ResourceManager.GetString("AngleTrueNorth", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Application name.
         /// </summary>
         public static string ApplicationName {
@@ -331,6 +340,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Collapse All.
+        /// </summary>
+        public static string CollapseAll {
+            get {
+                return ResourceManager.GetString("CollapseAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Company email.
         /// </summary>
         public static string CompanyEmail {
@@ -444,6 +462,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string DefaultPhase {
             get {
                 return ResourceManager.GetString("DefaultPhase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete old configuration.
+        /// </summary>
+        public static string DeleteOldConfiguration {
+            get {
+                return ResourceManager.GetString("DeleteOldConfiguration", resourceCulture);
             }
         }
         
@@ -565,6 +592,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Elevation.
+        /// </summary>
+        public static string Elevation {
+            get {
+                return ResourceManager.GetString("Elevation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to EPSG Code.
         /// </summary>
         public static string EPSGCode {
@@ -583,11 +619,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Architecture.
+        /// </summary>
+        public static string ER_ArchitectureShort {
+            get {
+                return ResourceManager.GetString("ER_ArchitectureShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to MEP Reference Exchange.
         /// </summary>
         public static string ER_BuildingService {
             get {
                 return ResourceManager.GetString("ER_BuildingService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to BuildingService.
+        /// </summary>
+        public static string ER_BuildingServiceShort {
+            get {
+                return ResourceManager.GetString("ER_BuildingServiceShort", resourceCulture);
             }
         }
         
@@ -601,11 +655,47 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Structural.
+        /// </summary>
+        public static string ER_StructuralShort {
+            get {
+                return ResourceManager.GetString("ER_StructuralShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error.
+        /// </summary>
+        public static string Error {
+            get {
+                return ResourceManager.GetString("Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Exchange Requirement.
         /// </summary>
         public static string ExchangeRequirement {
             get {
                 return ResourceManager.GetString("ExchangeRequirement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entities to Export ....
+        /// </summary>
+        public static string ExcludeEntitySelection {
+            get {
+                return ResourceManager.GetString("ExcludeEntitySelection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Expand All.
+        /// </summary>
+        public static string ExpandAll {
+            get {
+                return ResourceManager.GetString("ExpandAll", resourceCulture);
             }
         }
         
@@ -889,11 +979,38 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Geographic Reference.
+        /// </summary>
+        public static string GeoReference {
+            get {
+                return ResourceManager.GetString("GeoReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to How do I specify an export setup?.
         /// </summary>
         public static string Help {
             get {
                 return ResourceManager.GetString("Help", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How do I assign IFC Entity and Predefined Type?.
+        /// </summary>
+        public static string HelpAssignIfcEntity {
+            get {
+                return ResourceManager.GetString("HelpAssignIfcEntity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How do IFC Entity selections affect export?.
+        /// </summary>
+        public static string HelpSelectEntityForExport {
+            get {
+                return ResourceManager.GetString("HelpSelectEntityForExport", resourceCulture);
             }
         }
         
@@ -957,6 +1074,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCAssignments {
             get {
                 return ResourceManager.GetString("IFCAssignments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC Entity Selection.
+        /// </summary>
+        public static string IFCEntitySelection {
+            get {
+                return ResourceManager.GetString("IFCEntitySelection", resourceCulture);
             }
         }
         
@@ -1047,6 +1173,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCMVDGSA {
             get {
                 return ResourceManager.GetString("IFCMVDGSA", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC Schema version.
+        /// </summary>
+        public static string IFCSchemaVersion {
+            get {
+                return ResourceManager.GetString("IFCSchemaVersion", resourceCulture);
             }
         }
         
@@ -1240,6 +1375,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Internal Origin oriented in True North.
+        /// </summary>
+        public static string InternalCoordinatesInTN {
+            get {
+                return ResourceManager.GetString("InternalCoordinatesInTN", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Internal location.
         /// </summary>
         public static string InternalLocation {
@@ -1366,6 +1510,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Multiple assignments found in the selected objects !.
+        /// </summary>
+        public static string MultipleAssignments {
+            get {
+                return ResourceManager.GetString("MultipleAssignments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Multiple files.
         /// </summary>
         public static string MultipleFiles {
@@ -1411,6 +1564,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Entity does not have predefined type.
+        /// </summary>
+        public static string NoPredefinedType {
+            get {
+                return ResourceManager.GetString("NoPredefinedType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Northings.
         /// </summary>
         public static string Northings {
@@ -1429,7 +1591,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coordinate basis..
+        ///   Looks up a localized string similar to The elements in this model are very far from the origin in this exported file, which may cause display issues in the receiving software. Please consider using the project base point or site survey point as your coodinate basis..
         /// </summary>
         public static string OffsetDistanceTooLarge {
             get {
@@ -1474,6 +1636,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Override.
+        /// </summary>
+        public static string Override {
+            get {
+                return ResourceManager.GetString("Override", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Phase to export.
         /// </summary>
         public static string PhaseToExport {
@@ -1497,6 +1668,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string PostalCode {
             get {
                 return ResourceManager.GetString("PostalCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PredefinedType selection.
+        /// </summary>
+        public static string PredefinedTypeSelection {
+            get {
+                return ResourceManager.GetString("PredefinedTypeSelection", resourceCulture);
             }
         }
         
@@ -1555,6 +1735,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Project Base Point oriented in True North.
+        /// </summary>
+        public static string ProjectInTN {
+            get {
+                return ResourceManager.GetString("ProjectInTN", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Project name.
         /// </summary>
         public static string ProjectName {
@@ -1578,6 +1767,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string ProjectPhase {
             get {
                 return ResourceManager.GetString("ProjectPhase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Project Site.
+        /// </summary>
+        public static string ProjectSite {
+            get {
+                return ResourceManager.GetString("ProjectSite", resourceCulture);
             }
         }
         
@@ -1798,11 +1996,56 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Reset configurations back to the original settings.
+        /// </summary>
+        public static string ResetConfigToolTip {
+            get {
+                return ResourceManager.GetString("ResetConfigToolTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset override values.
+        /// </summary>
+        public static string ResetOverrideToolTip {
+            get {
+                return ResourceManager.GetString("ResetOverrideToolTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Reset.
         /// </summary>
         public static string ResetToOriginals {
             get {
                 return ResourceManager.GetString("ResetToOriginals", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save Changes.
+        /// </summary>
+        public static string SaveChanges {
+            get {
+                return ResourceManager.GetString("SaveChanges", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save changes to the configurations into the document.
+        /// </summary>
+        public static string SaveChangesTooltip {
+            get {
+                return ResourceManager.GetString("SaveChangesTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save changes to IFC export configuration.
+        /// </summary>
+        public static string SaveConfigurationChanges {
+            get {
+                return ResourceManager.GetString("SaveConfigurationChanges", resourceCulture);
             }
         }
         
@@ -1816,11 +2059,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Search.
+        /// </summary>
+        public static string Search {
+            get {
+                return ResourceManager.GetString("Search", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Please select at least one project to export..
         /// </summary>
         public static string SelectOneOrMoreProjects {
             get {
                 return ResourceManager.GetString("SelectOneOrMoreProjects", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select Export As IFC Entity.
+        /// </summary>
+        public static string SelectSingleElement {
+            get {
+                return ResourceManager.GetString("SelectSingleElement", resourceCulture);
             }
         }
         
@@ -1839,6 +2100,42 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string SharedCoordinates {
             get {
                 return ResourceManager.GetString("SharedCoordinates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show.
+        /// </summary>
+        public static string Show {
+            get {
+                return ResourceManager.GetString("Show", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to All.
+        /// </summary>
+        public static string ShowAll {
+            get {
+                return ResourceManager.GetString("ShowAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Checked entities.
+        /// </summary>
+        public static string ShowChecked {
+            get {
+                return ResourceManager.GetString("ShowChecked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Un-checked entities.
+        /// </summary>
+        public static string ShowUnchecked {
+            get {
+                return ResourceManager.GetString("ShowUnchecked", resourceCulture);
             }
         }
         

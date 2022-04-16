@@ -3,7 +3,7 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
     <ProjectGuid>{FFD592F6-DB2C-4E5D-9C38-9CCC9EABB3EA}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -33,29 +33,27 @@
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\Debugx64\</OutputPath>
     <DefineConstants>TRACE;DEBUG;OVERRIDE_VERSION;IFC_OPENSOURCE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\Releasex64\</OutputPath>
     <DefineConstants>TRACE;IFC_OPENSOURCE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -197,6 +195,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime">
+      <Version>4.6.6</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj">
       <Project>{032ea4dc-181f-4453-9f93-e08de1c07d95}</Project>
       <Name>Revit.IFC.Common</Name>
@@ -206,18 +209,13 @@
       <Name>Revit.IFC.Export</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Antlr4.Runtime">
-      <Version>4.6.6</Version>
-    </PackageReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "H:\Temp\IFC master\" /F /R /Y /I
-xcopy "$(TargetDir)IFC*.xsd" "H:\Temp\IFC master\" /F /R /Y /I
-xcopy "$(TargetDir)IFC*.exp" "H:\Temp\IFC master\" /F /R /Y /I
-xcopy "$(TargetDir)IFC Shared Parameters*.txt" "H:\Temp\IFC master\" /F /R /Y /I
-xcopy "$(TargetDir)IFCCertifiedEntitiesAndPSets.json" "H:\Temp\IFC master\" /F /R /Y /I
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I
+xcopy "$(TargetDir)IFC*.xsd" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I
+xcopy "$(TargetDir)IFC*.exp" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I
+xcopy "$(TargetDir)IFC Shared Parameters*.txt" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I
+xcopy "$(TargetDir)IFCCertifiedEntitiesAndPSets.json" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

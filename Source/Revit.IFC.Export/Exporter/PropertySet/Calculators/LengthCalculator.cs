@@ -26,6 +26,7 @@ using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 {
@@ -70,11 +71,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          double lengthFromParam = 0;
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyLength", out lengthFromParam) == null)
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Length", out lengthFromParam);
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out lengthFromParam) == null)
+            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out lengthFromParam) == null)
+               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyLength", out lengthFromParam);
          m_Length = UnitUtil.ScaleLength(lengthFromParam);
 
          // Check for Stair Run - Do special computation for the length
@@ -106,7 +108,19 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                m_Length = UnitUtil.ScaleLength(m_Length);
          }
          else
-            m_Length = extrusionCreationData.ScaledLength;
+         {
+            // For Slab, length is the major edge of the rectangle area profile (get it from ScaledWidth)
+            // Also for Stair support
+            IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
+            if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcSlab) || element.Category.BuiltInCategory == BuiltInCategory.OST_StairsStringerCarriage)
+            {
+               m_Length = extrusionCreationData.ScaledWidth;
+            }
+            else
+            {
+               m_Length = extrusionCreationData.ScaledLength;
+            }
+         }
 
          if (m_Length > MathUtil.Eps())
             return true;

@@ -9,48 +9,49 @@
                    ResizeMode ="NoResize" 
                    Name="AddressTab" 
                    Closing="Window_Closing" 
-                   SaveWindowSettings="False"
+                   SaveWindowSettings="True"
                    mc:Ignorable="d" 
                    Initialized="AddressTab_Initialized" 
                    d:DesignWidth="560" 
                    SizeToContent="WidthAndHeight" 
                    HorizontalAlignment="Stretch" 
                    Margin="10,5,5,1" 
-                   Height="571.839" >
+                   Height="571.839" 
+                   Loaded="OnInit">
     <Grid Margin="0,0,1,0" HorizontalAlignment="Right" Width="551" Height="540" VerticalAlignment="Top">
         <Grid.RowDefinitions>
             <RowDefinition Height="499*"/>
             <RowDefinition Height="41*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="158*"/>
-            <ColumnDefinition Width="393*"/>
+            <ColumnDefinition Width="216*"/>
+            <ColumnDefinition Width="335*"/>
         </Grid.ColumnDefinitions>
-        <Label Content="{x:Static p:Resources.Purpose}" Height="28" HorizontalAlignment="Left" Margin="21,10,0,0" x:Name="labelPurpose" VerticalAlignment="Top" Width="147" Grid.ColumnSpan="2"/>
-        <Label Content="{x:Static p:Resources.Description}" Height="28" HorizontalAlignment="Left" Margin="21,43,0,0" x:Name="labelDescription" VerticalAlignment="Top" Width="152" Grid.ColumnSpan="2"/>
-        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,45,10,0" x:Name="DescriptionTextBox" VerticalAlignment="Top" Grid.Column="1"/>
-        <Label Content="{x:Static p:Resources.UserDefinedPurpose}" Height="28" HorizontalAlignment="Left" Margin="21,75,0,0" x:Name="labelUserDefinedPurpose" VerticalAlignment="Top" Width="147" Grid.ColumnSpan="2" />
-        <TextBox Text="{Binding UserDefinedPurpose, UpdateSourceTrigger=PropertyChanged}" LostFocus="UserDefinedPurposeTextBox_LostFocus" Height="23" Margin="14,80,10,0" x:Name="UserDefinedPurposeTextBox" VerticalAlignment="Top" ToolTip="Entering value here will reset Purpose to &quot;USERDEFINED&quot;" Grid.Column="1"/>
-        <Label Content="{x:Static p:Resources.AddressLine1}" Height="28" HorizontalAlignment="Left" Margin="21,110,0,0" x:Name="labelAddressLine1" VerticalAlignment="Top" Width="152" Grid.ColumnSpan="2"/>
-        <TextBox Text="{Binding AddressLine1, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Right" Margin="0,115,10,0" x:Name="AddressLine1TextBox" VerticalAlignment="Top" Width="368" Grid.Column="1" />
-        <Label Content="{x:Static p:Resources.AddressLine2}" Height="28" HorizontalAlignment="Left" Margin="21,145,0,0" x:Name="labelAddressLine2" VerticalAlignment="Top" Width="152" Grid.ColumnSpan="2"/>
-        <TextBox Text="{Binding AddressLine2, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,150,10,0" x:Name="AddressLine2TextBox" VerticalAlignment="Top" Grid.Column="1"/>
-        <Label Content="{x:Static p:Resources.POBox}" Height="28" HorizontalAlignment="Left" Margin="21,180,0,0" x:Name="labelPOBox" VerticalAlignment="Top" Width="152" Grid.ColumnSpan="2"/>
-        <TextBox Text="{Binding POBox, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,185,10,0" x:Name="POBoxTextBox" VerticalAlignment="Top" Grid.Column="1"/>
-        <Label Content="{x:Static p:Resources.City}" Height="28" HorizontalAlignment="Left" Margin="21,217,0,0" x:Name="labelCity" VerticalAlignment="Top" VerticalContentAlignment="Top" Width="147" Grid.ColumnSpan="2"/>
-        <TextBox Text="{Binding TownOrCity, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,220,10,0" x:Name="CityTextBox" VerticalAlignment="Top" Grid.Column="1"/>
-        <Label Content="{x:Static p:Resources.State}" Height="28" HorizontalAlignment="Left" Margin="21,290,0,0" x:Name="labelState" VerticalAlignment="Top" Width="147" Grid.ColumnSpan="2" />
-        <TextBox Text="{Binding RegionOrState, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,295,10,0" x:Name="StateTextBox" VerticalAlignment="Top" Grid.Column="1"/>
-        <Label Content="{x:Static p:Resources.PostalCode}" Height="28" HorizontalAlignment="Left" Margin="21,250,0,0" x:Name="labelPostalCode" VerticalAlignment="Top" Width="147" Grid.ColumnSpan="2" />
-        <TextBox Text="{Binding PostalCode, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,255,10,0" x:Name="PostalCodeTextBox" VerticalAlignment="Top" Grid.Column="1"/>
-        <Label Content="{x:Static p:Resources.Country}" Height="28" HorizontalAlignment="Left" Margin="21,327,0,0" x:Name="labelCountry" VerticalAlignment="Top" Width="147" Grid.ColumnSpan="2" />
-        <TextBox Text="{Binding Country, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,332,10,0" x:Name="CountryTextBox" VerticalAlignment="Top" Grid.Column="1"/>
-        <Label Content="{x:Static p:Resources.InternalLocation}" Height="28" HorizontalAlignment="Left" Margin="21,367,0,0" x:Name="labelInternalLocation" VerticalAlignment="Top" Width="147" Grid.ColumnSpan="2" />
-        <TextBox Text="{Binding InternalLocation, UpdateSourceTrigger=PropertyChanged}" Height="23" Margin="15,372,10,0" x:Name="InternalLocationTextBox" VerticalAlignment="Top" Grid.Column="1"/>
+        <Label Content="{x:Static p:Resources.Purpose}" Height="28" HorizontalAlignment="Left" Margin="21,10,0,0" x:Name="labelPurpose" VerticalAlignment="Top" Width="147"/>
+        <Label Content="{x:Static p:Resources.UserDefinedPurpose}" Height="28" HorizontalAlignment="Left" Margin="21,43,0,0" x:Name="labelUserDefinedPurpose" VerticalAlignment="Top" Width="195" />
+        <TextBox Text="{Binding UserDefinedPurpose, UpdateSourceTrigger=PropertyChanged}" LostFocus="UserDefinedPurposeTextBox_LostFocus" Height="23" Margin="14,45,10,0" x:Name="UserDefinedPurposeTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" ToolTip="Entering value here will reset Purpose to &quot;USERDEFINED&quot;" Grid.Column="1"/>
+        <Label Content="{x:Static p:Resources.Description}" Height="28" HorizontalAlignment="Left" Margin="21,75,0,0" x:Name="labelDescription" VerticalAlignment="Top" Width="152"/>
+        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,80,10,0" x:Name="DescriptionTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1"/>
+        <Label Content="{x:Static p:Resources.AddressLine1}" Height="28" HorizontalAlignment="Left" Margin="21,110,0,0" x:Name="labelAddressLine1" VerticalAlignment="Top" Width="152"/>
+        <TextBox Text="{Binding AddressLine1, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Right" Margin="0,115,10,0" x:Name="AddressLine1TextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Width="310" Grid.Column="1" />
+        <Label Content="{x:Static p:Resources.AddressLine2}" Height="28" HorizontalAlignment="Left" Margin="21,145,0,0" x:Name="labelAddressLine2" VerticalAlignment="Top" Width="152"/>
+        <TextBox Text="{Binding AddressLine2, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,150,10,0" x:Name="AddressLine2TextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1"/>
+        <Label Content="{x:Static p:Resources.POBox}" Height="28" HorizontalAlignment="Left" Margin="21,180,0,0" x:Name="labelPOBox" VerticalAlignment="Top" Width="152"/>
+        <TextBox Text="{Binding POBox, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,185,10,0" x:Name="POBoxTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1"/>
+        <Label Content="{x:Static p:Resources.City}" Height="28" HorizontalAlignment="Left" Margin="21,217,0,0" x:Name="labelCity" VerticalAlignment="Top" VerticalContentAlignment="Top" Width="147"/>
+        <TextBox Text="{Binding TownOrCity, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,220,10,0" x:Name="CityTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1"/>
+        <Label Content="{x:Static p:Resources.State}" Height="28" HorizontalAlignment="Left" Margin="21,290,0,0" x:Name="labelState" VerticalAlignment="Top" Width="147" />
+        <TextBox Text="{Binding RegionOrState, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,295,10,0" x:Name="StateTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1"/>
+        <Label Content="{x:Static p:Resources.PostalCode}" Height="28" HorizontalAlignment="Left" Margin="21,250,0,0" x:Name="labelPostalCode" VerticalAlignment="Top" Width="147" />
+        <TextBox Text="{Binding PostalCode, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,255,10,0" x:Name="PostalCodeTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1"/>
+        <Label Content="{x:Static p:Resources.Country}" Height="28" HorizontalAlignment="Left" Margin="21,327,0,0" x:Name="labelCountry" VerticalAlignment="Top" Width="147" />
+        <TextBox Text="{Binding Country, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,332,10,0" x:Name="CountryTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1"/>
+        <Label Content="{x:Static p:Resources.InternalLocation}" Height="28" HorizontalAlignment="Left" Margin="21,367,0,0" x:Name="labelInternalLocation" VerticalAlignment="Top" Width="147" />
+        <TextBox Text="{Binding InternalLocation, UpdateSourceTrigger=PropertyChanged}" Height="23" Margin="15,372,10,0" x:Name="InternalLocationTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1"/>
         <ComboBox  ItemsSource="{Binding}" Height="23" HorizontalAlignment="Stretch" Margin="15,10,10,0" x:Name="PurposeComboBox" VerticalAlignment="Top" SelectionChanged="PurposeComboBox_SelectionChanged" Initialized="PurposeComboBox_Initialized" Grid.Column="1" />
         <CheckBox Content="{x:Static p:Resources.UpdateProjectInformation}" Height="16" x:Name="UpdateProjInfocheckBox" Margin="21,427,0,0" Checked="UpdateProjInfocheckBox_Checked" Unchecked="UpdateProjInfocheckBox_Unchecked" VerticalAlignment="Top" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="299"/>
-        <Button Content="{x:Static p:Resources.OK}" x:Name="buttonOK" Click="buttonOK_Click" Margin="238,10,85,8" Grid.Column="1" Grid.Row="1"/>
-        <Button Content="{x:Static p:Resources.Cancel}" x:Name="buttonCancel" Click="bottonCancel_Click" Margin="313,10,10,8" Grid.Column="1" Grid.Row="1" />
+        <Button Content="{x:Static p:Resources.OK}" x:Name="buttonOK" Click="buttonOK_Click" Margin="180,10,85,8" Grid.Column="1" Grid.Row="1"/>
+        <Button Content="{x:Static p:Resources.Cancel}" x:Name="buttonCancel" Click="bottonCancel_Click" Margin="255,10,10,8" Grid.Column="1" Grid.Row="1" />
         <CheckBox Content="{x:Static p:Resources.AssignAddressToBuilding}" Height="16" x:Name="Checkbox_AssignToBuilding" Margin="0,427,10,0" VerticalAlignment="Top" Grid.Column="1" HorizontalAlignment="Right" Width="250" IsChecked="True" Checked="Checkbox_AssignToBuilding_Checked" Unchecked="Checkbox_AssignToBuilding_Unchecked"/>
         <CheckBox Content="{x:Static p:Resources.AssignAddressToSite}" Height="16" x:Name="Checkbox_AssignToSite" Margin="0,448,10,0" VerticalAlignment="Top" Grid.Column="1" HorizontalAlignment="Right" Width="250" Checked="Checkbox_AssignToSite_Checked" Unchecked="Checkbox_AssignToSite_Unchecked"/>
     </Grid>

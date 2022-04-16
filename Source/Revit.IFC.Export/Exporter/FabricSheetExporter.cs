@@ -78,8 +78,10 @@ namespace Revit.IFC.Export.Exporter
             IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcGroup);
             productWrapper.AddElement(element, fabricArea, exportInfo);
 
-            IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
-                null, null, fabricSheetHandles, null, fabricArea);
+            string groupGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssignsToGroup,
+               fabricArea);
+            IFCInstanceExporter.CreateRelAssignsToGroup(file, groupGuid, ownerHistory,
+               null, null, fabricSheetHandles, null, fabricArea);
 
             tr.Commit();
             return true;

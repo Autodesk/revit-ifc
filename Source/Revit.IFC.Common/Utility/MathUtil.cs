@@ -28,6 +28,22 @@ using Autodesk.Revit.DB.IFC;
 namespace Revit.IFC.Common.Utility
 {
    /// <summary>
+   /// Simple wrapper for UV and XYZ.
+   /// The only purpose of it is to introduce common base class for them in order to have possibility to write generic code for UV and XYZ.
+   /// </summary>
+   public abstract class PointBase
+   { }
+   public class Point2D : PointBase
+   {
+      public Point2D(UV uv) { coords = uv; }
+      public UV coords { get; protected set; }
+   }
+   public class Point3D : PointBase
+   {
+      public Point3D(XYZ xyz) { coords = xyz; }
+      public XYZ coords { get; protected set; }
+   }
+   /// <summary>
    /// Provides static methods for mathematical functions.
    /// </summary>
    public class MathUtil
@@ -121,6 +137,16 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Check if the double variable is almost equal to the closest (floor) integer.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>True if the value is almost equal to the closest (floor) integer, false otherwise.</returns>
+      public static bool IsAlmostInteger(double value)
+      {
+         return (MathUtil.IsAlmostEqual(value, Math.Floor(value)));
+      }
+
+      /// <summary>
       /// Check if the area value is almost equal to zero.
       /// </summary>
       /// <param name="area">The area.</param>
@@ -152,15 +178,19 @@ namespace Revit.IFC.Common.Utility
          if (period < Eps())
             return number;
 
-         double[] range = new double[2];
          double halfPeriod = 0.5 * period;
-         range[0] = midRange - halfPeriod;
-         range[1] = midRange + halfPeriod;
+         double[] range = new double[2] { midRange - halfPeriod, midRange + halfPeriod };
+
+         for (int ii = 0; ii < 2; ii++)
+         {
+            if (IsAlmostEqual(number, range[ii]))
+               return range[ii];
+         }
 
          double shiftCountAsDouble = 0.0;
-         if (number < range[0] && !MathUtil.IsAlmostEqual(number, range[0]))
+         if (number < range[0])
             shiftCountAsDouble += (1.0 + Math.Floor((range[0] - number) / period));
-         if (number >= range[1] && !MathUtil.IsAlmostEqual(number, range[1]))
+         if (number >= range[1])
             shiftCountAsDouble -= (1.0 + Math.Floor((number - range[1]) / period));
 
          number += period * shiftCountAsDouble;

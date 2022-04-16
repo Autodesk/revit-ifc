@@ -154,18 +154,18 @@ namespace Revit.IFC.Import.Utility
             if (optionalTypeValue != null)
             {
                if (StringEquals(optionalTypeValue, "SourceAndSink"))
-                  return Tuple.Create(new Color(0, 255, 0), 127);
+                  return Tuple.Create(new Color(0, 255, 0), 50);
                if (StringEquals(optionalTypeValue, "Source"))
-                  return Tuple.Create(new Color(0, 0, 255), 127);
+                  return Tuple.Create(new Color(0, 0, 255), 50);
                if (StringEquals(optionalTypeValue, "Sink"))
-                  return Tuple.Create(new Color(255, 0, 0), 127);
+                  return Tuple.Create(new Color(255, 0, 0), 50);
             }
-            return Tuple.Create(new Color(0, 0, 0), 127);
+            return Tuple.Create(new Color(0, 0, 0), 50);
          }
 
          if (StringStartsWith(categoryName, "IfcOpening"))
          {
-            return Tuple.Create(new Color(255, 165, 0), 64);
+            return Tuple.Create(new Color(255, 165, 0), 75);
          }
          
          // There are other entities that start with IfcSpace, such as IfcSpaceHeater.  But
@@ -177,23 +177,23 @@ namespace Revit.IFC.Import.Utility
             if (optionalTypeValue != null && StringEquals(optionalTypeValue, "External"))
             {
                // A nice shade of green.
-               return Tuple.Create(new Color(141, 184, 78), 64);
+               return Tuple.Create(new Color(141, 184, 78), 75);
             }
             // Default is internal.
             // Similar to "Light Sky Blue"
-            return Tuple.Create(new Color(164, 232, 232), 64); 
+            return Tuple.Create(new Color(164, 232, 232), 75); 
          }
 
          if (StringStartsWith(categoryName, "IfcZone"))
          {
             // (Teal Blue (Crayola)), according to Wikipedia.
-            return Tuple.Create(new Color(24, 167, 181), 64);
+            return Tuple.Create(new Color(24, 167, 181), 75);
          }
 
          if (StringEquals(categoryName, "Box"))
          {
             // Lemon chiffon, a lovely color for a bounding box.                             
-            return Tuple.Create(new Color(255, 250, 205), 64);
+            return Tuple.Create(new Color(255, 250, 205), 75);
          }
 
          return null;
@@ -297,19 +297,16 @@ namespace Revit.IFC.Import.Utility
       }
 
       /// <summary>
-      /// Create a custom sub-category name for an entity.
+      /// Get the strings corresponding to the entity name and the predefined type.
       /// </summary>
       /// <param name="entity">The entity.</param>
-      /// <returns>The category name.</returns>
-      /// <remarks>This will also be used to populate the IfcExportAs parameter.</remarks>
-      public static string GetCustomCategoryName(IFCObjectDefinition entity)
+      /// <returns>The entity name and the predefined type as strings.</returns>
+      public static (string, string) GetEntityNameAndPredefinedType(IFCObjectDefinition entity)
       {
          IFCEntityType entityType = entity.EntityType;
          string predefinedType = entity.PredefinedType;
 
-         IFCEntityType? typeEntityType = null;
-         string typePredefinedType = null;
-         GetAssociatedTypeEntityInfo(entity, out typeEntityType, out typePredefinedType);
+         GetAssociatedTypeEntityInfo(entity, out IFCEntityType? typeEntityType, out string typePredefinedType);
 
          if (typeEntityType.HasValue)
             entityType = typeEntityType.Value;
@@ -317,6 +314,17 @@ namespace Revit.IFC.Import.Utility
             predefinedType = typePredefinedType;
 
          string categoryName = entityType.ToString();
+         return (categoryName, predefinedType);
+      }
+
+      /// <summary>
+      /// Create a custom sub-category name for an entity.
+      /// </summary>
+      /// <param name="entity">The entity.</param>
+      /// <returns>The category name.</returns>
+      public static string GetCustomCategoryName(IFCObjectDefinition entity)
+      {
+         (string categoryName, string predefinedType) = GetEntityNameAndPredefinedType(entity);
          if (!string.IsNullOrWhiteSpace(predefinedType))
             categoryName += "." + predefinedType;
          return categoryName;
@@ -421,6 +429,7 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingBarType] = BuiltInCategory.OST_Rebar;
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingMesh] = BuiltInCategory.OST_FabricAreas;
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingMeshType] = BuiltInCategory.OST_FabricAreas;
+         m_EntityTypeToCategory[IFCEntityType.IfcRoad] = BuiltInCategory.OST_Roads;
          m_EntityTypeToCategory[IFCEntityType.IfcRoof] = BuiltInCategory.OST_Roofs;
          m_EntityTypeToCategory[IFCEntityType.IfcRoofType] = BuiltInCategory.OST_Roofs;
          m_EntityTypeToCategory[IFCEntityType.IfcSanitaryTerminal] = BuiltInCategory.OST_PlumbingFixtures;
@@ -489,6 +498,7 @@ namespace Revit.IFC.Import.Utility
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "TUMBLEDRYER")] = BuiltInCategory.OST_ElectricalFixtures;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "WASHINGMACHINE")] = BuiltInCategory.OST_ElectricalFixtures;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcElectricAppliance, "USERDEFINED")] = BuiltInCategory.OST_ElectricalFixtures;
+         m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFacilityPart, "ROADSEGMENT")] = BuiltInCategory.OST_Roads;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFireSuppressionTerminal, "SPRINKLER")] = BuiltInCategory.OST_Sprinklers;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowController, "CIRCUITBREAKER")] = BuiltInCategory.OST_ElectricalEquipment;
          m_EntityPredefinedTypeToCategory[Tuple.Create(IFCEntityType.IfcFlowSegment, "CABLESEGMENT")] = BuiltInCategory.OST_ElectricalEquipment;
@@ -647,9 +657,9 @@ namespace Revit.IFC.Import.Utility
             }
 
             if (string.IsNullOrWhiteSpace(ifcTypeName))
-               m_EntityTypeToCategory[ifcClassType] = (BuiltInCategory)category.Id.IntegerValue;
+               m_EntityTypeToCategory[ifcClassType] = category.BuiltInCategory;
             else
-               m_EntityPredefinedTypeToCategory[Tuple.Create(ifcClassType, ifcTypeName)] = (BuiltInCategory)category.Id.IntegerValue;
+               m_EntityPredefinedTypeToCategory[Tuple.Create(ifcClassType, ifcTypeName)] = category.BuiltInCategory;
          }
 
          return true;
@@ -798,16 +808,17 @@ namespace Revit.IFC.Import.Utility
          }
 
          ElementId catElemId = GetCategoryElementId(entityType, predefinedType);
-
+         ElementId genericModelId = new ElementId(BuiltInCategory.OST_GenericModel)
+;
          // If we didn't find a category, or if we found the generic model category, try again with the IfcTypeObject, if there is one.
-         if (catElemId == ElementId.InvalidElementId || catElemId.IntegerValue == (int)BuiltInCategory.OST_GenericModel)
+         if (catElemId == ElementId.InvalidElementId || catElemId == genericModelId)
          {
             if (typeEntityType.HasValue)
                catElemId = GetCategoryElementId(typeEntityType.Value, predefinedType);
          }
 
          Category subCategory = null;
-         if (catElemId.IntegerValue == (int)BuiltInCategory.OST_GenericModel)
+         if (catElemId == genericModelId)
          {
             string subCategoryName = GetCustomCategoryName(entity);
 
@@ -821,7 +832,7 @@ namespace Revit.IFC.Import.Utility
          }
          else if (catElemId == ElementId.InvalidElementId)
          {
-            catElemId = new ElementId(BuiltInCategory.OST_GenericModel);
+            catElemId = genericModelId;
 
             // Top level entities that are OK to be here.
             if (entityType != IFCEntityType.IfcProject &&
@@ -846,7 +857,7 @@ namespace Revit.IFC.Import.Utility
 
          Category categoryToCheck = null;
 
-         if (catElemId.IntegerValue < 0)
+         if (catElemId <= ElementId.InvalidElementId)
             categoryToCheck = Importer.TheCache.DocumentCategories.get_Item((BuiltInCategory)catElemId.IntegerValue);
          else
             categoryToCheck = subCategory;

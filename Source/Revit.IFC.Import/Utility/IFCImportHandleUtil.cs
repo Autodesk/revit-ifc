@@ -436,31 +436,5 @@ namespace Revit.IFC.Import.Utility
          }
          return outerList;
       }
-
-      /// <summary>
-      /// Read the HasAssignments INVERSE attribute from an IfcObjectDefinition, if it is defined.
-      /// </summary>
-      /// <param name="ifcObjectDefinition">The handle assumed to be an IfcObjectDefinition.</param>
-      /// <returns>The set.</returns>
-      /// <remarks>This deals with the issue that the default IFC2x3 EXP file doesn't have this inverse attribute set.</remarks>
-      static public ISet<IFCAnyHandle> GetHasAssignments(IFCAnyHandle ifcObjectDefinition)
-      {
-         HashSet<IFCAnyHandle> hasAssignments = null;
-         if (IFCImportFile.TheFile.Options.AllowUseHasAssignments)
-         {
-            try
-            {
-               hasAssignments = IFCAnyHandleUtil.GetAggregateInstanceAttribute
-                   <HashSet<IFCAnyHandle>>(ifcObjectDefinition, "HasAssignments");
-            }
-            catch
-            {
-               IFCImportFile.TheFile.Options.AllowUseHasAssignments = false;
-               hasAssignments = null;
-            }
-         }
-
-         return hasAssignments;
-      }
    }
 }

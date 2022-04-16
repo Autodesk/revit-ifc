@@ -26,6 +26,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using System.Linq;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -34,45 +35,6 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    class RailingExporter
    {
-      private static Toolkit.IFCRailingType GetIFCRailingTypeFromString(string value)
-      {
-         if (String.IsNullOrEmpty(value))
-            return Toolkit.IFCRailingType.NotDefined;
-
-         if (String.Compare(value, "USERDEFINED", true) == 0)
-            return Toolkit.IFCRailingType.UserDefined;
-         if (String.Compare(value, "HANDRAIL", true) == 0)
-            return Toolkit.IFCRailingType.HandRail;
-         if (String.Compare(value, "GUARDRAIL", true) == 0)
-            return Toolkit.IFCRailingType.GuardRail;
-         if (String.Compare(value, "BALUSTRADE", true) == 0)
-            return Toolkit.IFCRailingType.Balustrade;
-
-         return Toolkit.IFCRailingType.NotDefined;
-      }
-
-      /// <summary>
-      /// Gets IFC railing type for an element.
-      /// </summary>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <param name="typeName">
-      /// The type name.
-      /// </param>
-      private static Toolkit.IFCRailingType GetIFCRailingType(Element element, string typeName)
-      {
-         string value = null;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcType", out value) == null)
-            value = typeName;
-
-         if (String.IsNullOrEmpty(value))
-            return Toolkit.IFCRailingType.NotDefined;
-
-         string newValue = NamingUtil.RemoveSpacesAndUnderscores(value);
-         return GetIFCRailingTypeFromString(newValue);
-      }
-
       private static ElementId GetStairOrRampHostId(ExporterIFC exporterIFC, Railing railingElem)
       {
          ElementId returnHostId = ElementId.InvalidElementId;
@@ -98,7 +60,8 @@ namespace Revit.IFC.Export.Exporter
          return returnHostId;
       }
 
-      private static IFCAnyHandle CopyRailingHandle(ExporterIFC exporterIFC, Element elem, ElementId catId, IFCAnyHandle origLocalPlacement, IFCAnyHandle origRailing)
+      private static IFCAnyHandle CopyRailingHandle(ExporterIFC exporterIFC, Element elem, 
+         ElementId catId, IFCAnyHandle origLocalPlacement, IFCAnyHandle origRailing, int index)
       {
          IFCFile file = exporterIFC.GetFile();
 
@@ -142,7 +105,7 @@ namespace Revit.IFC.Export.Exporter
 
          string ifcEnumTypeAsString = IFCAnyHandleUtil.GetEnumerationAttribute(origRailing, "PredefinedType");
 
-         string copyGUID = GUIDUtil.CreateGUID();
+         string copyGUID = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRailing, index.ToString(), origRailing);
          IFCAnyHandle copyOwnerHistory = IFCAnyHandleUtil.GetInstanceAttribute(origRailing, "OwnerHistory");
 
          return IFCInstanceExporter.CreateRailing(exporterIFC, elem, copyGUID, copyOwnerHistory, newLocalPlacement, newProdRep, ifcEnumTypeAsString);
@@ -169,14 +132,15 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
-         GeometryElement geomElement = GeometryUtil.GetOneLevelGeometryElement(railing.get_Geometry(geomOptions), 0);
+         var oneLevelGeom = GeometryUtil.GetOneLevelGeometryElement(railing.get_Geometry(geomOptions), 0);
+         GeometryElement geomElement = oneLevelGeom.element;
 
          // If this is a multistory railing, the geometry will contain all of the levels of railing.  We only want one.
          if (geomElement == null)
             return;
 
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, railing, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, railing, out ifcEnumType);
          if (exportType.IsUnKnown)
          {
             ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(exporterIFC, railing);
@@ -293,16 +257,25 @@ namespace Revit.IFC.Export.Exporter
                      Element subElement = railingElem.Document.GetElement(subElementId);
                      if (subElement != null)
                      {
-                        GeometryElement subElementGeom = GeometryUtil.GetOneLevelGeometryElement(subElement.get_Geometry(geomOptions), 0);
+                        GeometryElement allLevelsGeometry = subElement.get_Geometry(geomOptions);
+                        var oneLevelGeom = GeometryUtil.GetOneLevelGeometryElement(allLevelsGeometry, 0);
+                        GeometryElement subElementGeom = oneLevelGeom.element;
+                        // Get rail terminations geometry
+                        List<GeometryElement> overallGeometry = GeometryUtil.GetAdditionalOneLevelGeometry(allLevelsGeometry, oneLevelGeom.symbolId);
+                        overallGeometry.Add(subElementGeom);
 
-                        SolidMeshGeometryInfo subElementSolidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(subElementGeom);
-                        IList<Solid> subElemSolids = subElementSolidMeshInfo.GetSolids();
-                        IList<Mesh> subElemMeshes = subElementSolidMeshInfo.GetMeshes();
-                        IList<GeometryObject> partGObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref subElemSolids, ref subElemMeshes);
-                        foreach (Solid subElSolid in subElemSolids)
-                           solids.Add(subElSolid);
-                        foreach (Mesh subElMesh in subElemMeshes)
-                           meshes.Add(subElMesh);
+                        foreach (GeometryElement subGeomentry in overallGeometry)
+                        {
+                           SolidMeshGeometryInfo subElementSolidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(subGeomentry);
+                           IList<Solid> subElemSolids = subElementSolidMeshInfo.GetSolids();
+                           IList<Mesh> subElemMeshes = subElementSolidMeshInfo.GetMeshes();
+                           IList<GeometryObject> partGObjs = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref subElemSolids, ref subElemMeshes);
+
+                           foreach (Solid subElSolid in subElemSolids)
+                              solids.Add(subElSolid);
+                           foreach (Mesh subElMesh in subElemMeshes)
+                              meshes.Add(subElMesh);
+                        }
                      }
                   }
 
@@ -348,7 +321,7 @@ namespace Revit.IFC.Export.Exporter
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
 
-                  IFCExportInfoPair exportInfo = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
+                  IFCExportInfoPair exportInfo = ExporterUtil.GetProductExportType(exporterIFC, element, out ifcEnumType);
 
                   IFCAnyHandle railing = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, element, instanceGUID, ownerHistory,
                             ecData.GetLocalPlacement(), prodRep);
@@ -390,12 +363,28 @@ namespace Revit.IFC.Export.Exporter
                      stairRampInfo.AddComponent(0, railing);
 
                      List<IFCAnyHandle> stairHandles = stairRampInfo.StairOrRampHandles;
-                     for (int ii = 1; ii < stairHandles.Count; ii++)
+                     int levelCount = stairHandles.Count;
+
+                     if (levelCount > 0 && railingElem != null)
+                     {
+                        Stairs stairs = railingElem.Document.GetElement(railingElem.HostId) as Stairs;
+                        if ((stairs?.MultistoryStairsId ?? ElementId.InvalidElementId) != ElementId.InvalidElementId)
+                        {
+                           // If the railing is hosted by stairs, don't use stairHandles.Count,
+                           // use ids (count) of levels the railing is placed on.
+                           ISet<ElementId> multistoryStairsPlacementLevels = railingElem.GetMultistoryStairsPlacementLevels();
+                           if (multistoryStairsPlacementLevels != null)
+                              levelCount = multistoryStairsPlacementLevels.Count;
+                        }
+                     }
+                        
+                     for (int ii = 1; ii < levelCount; ii++)
                      {
                         IFCAnyHandle railingLocalPlacement = stairRampInfo.LocalPlacements[ii];
                         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(railingLocalPlacement))
                         {
-                           IFCAnyHandle railingHndCopy = CopyRailingHandle(exporterIFC, element, catId, railingLocalPlacement, railing);
+                           IFCAnyHandle railingHndCopy = CopyRailingHandle(exporterIFC, element, catId,
+                              railingLocalPlacement, railing, ii);
                            stairRampInfo.AddComponent(ii, railingHndCopy);
                            productWrapper.AddElement(element, railingHndCopy, (IFCLevelInfo)null, ecData, false, exportInfo);
                            CategoryUtil.CreateMaterialAssociationWithShapeAspect(exporterIFC, element, railingHndCopy, bodyData.RepresentationItemInfo);

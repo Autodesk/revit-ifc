@@ -100,7 +100,7 @@ namespace Revit.IFC.Export.Exporter
          /// <summary>
          /// The material profile set for the extruded Beam
          /// </summary>
-         public MaterialAndProfile materialAndProfile { get; set; }
+         public MaterialAndProfile MaterialAndProfile { get; set; }
 
          /// <summary>
          /// The calculated slope of the beam along its axis, relative to the XY plane.
@@ -191,8 +191,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="catId">The beam category id.</param>
       /// <param name="axisInfo">The optional beam axis information.</param>
       /// <param name="offsetTransform">The optional offset transform applied to the "Body" representation.</param>
+      /// <param name="elevation">The optional level elevation.</param>
       /// <returns>The handle, or null if not created.</returns>
-      private static IFCAnyHandle CreateBeamAxis(ExporterIFC exporterIFC, Element element, ElementId catId, BeamAxisInfo axisInfo, Transform offsetTransform)
+      private static IFCAnyHandle CreateBeamAxis(ExporterIFC exporterIFC, Element element, ElementId catId, BeamAxisInfo axisInfo, Transform offsetTransform, double elevation)
       {
          if (axisInfo == null)
             return null;
@@ -205,11 +206,14 @@ namespace Revit.IFC.Export.Exporter
 
          XYZ curveOffset = XYZ.Zero;
          if (offsetTransform != null)
+         {
             curveOffset = -(offsetTransform.Origin);
+            curveOffset -= new XYZ(0, 0, elevation);
+         }
          else
          {
-         // Note that we do not have to have any scaling adjustment here, since the curve origin is in the 
-         // same internal coordinate system as the curve.
+            // Note that we do not have to have any scaling adjustment here, since the curve origin is in the 
+            // same internal coordinate system as the curve.
             curveOffset = -lcs.Origin;
          }
 
@@ -273,7 +277,6 @@ namespace Revit.IFC.Export.Exporter
 
          Solid solid = geomObjects[0] as Solid;
 
-         bool completelyClipped;
          XYZ beamDirection = orientTrf.BasisX;
          XYZ planeXVec = orientTrf.BasisY.Normalize();
          XYZ planeYVec = orientTrf.BasisZ.Normalize();
@@ -285,10 +288,12 @@ namespace Revit.IFC.Export.Exporter
 
          Plane beamExtrusionBasePlane = GeometryUtil.CreatePlaneByXYVectorsAtOrigin(planeXVec, planeYVec);
          GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
-         info.RepresentationHandle = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, element,
-             catId, solid, beamExtrusionBasePlane, orientTrf.Origin, beamDirection, null, out completelyClipped,
+         ExtrusionExporter.ExtraClippingData extraClippingData = null;
+         info.RepresentationHandle = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, element, false,
+             catId, solid, beamExtrusionBasePlane, orientTrf.Origin, beamDirection, null, 
+             out extraClippingData,
              out footPrintInfo, out materialAndProfile, addInfo: addInfo, profileName: profileName);
-         if (completelyClipped)
+         if (extraClippingData.CompletelyClipped)
          {
             info.DontExport = true;
             return null;
@@ -301,13 +306,13 @@ namespace Revit.IFC.Export.Exporter
             IFCExtrusionBasis bestAxis = (Math.Abs(beamDirection[0]) > Math.Abs(beamDirection[1])) ?
                 IFCExtrusionBasis.BasisX : IFCExtrusionBasis.BasisY;
             info.Slope = GeometryUtil.GetSimpleExtrusionSlope(beamDirection, bestAxis);
-            ElementId materialId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solid, exporterIFC, element);
+            ElementId materialId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solid, element);
             if (materialId != ElementId.InvalidElementId)
                info.Materials.Add(materialId);
          }
 
          if (materialAndProfile != null)
-            info.materialAndProfile = materialAndProfile;
+            info.MaterialAndProfile = materialAndProfile;
 
          return info;
       }
@@ -377,7 +382,8 @@ namespace Revit.IFC.Export.Exporter
          }
 
          // Property sets will be set later.
-         beamType = IFCInstanceExporter.CreateBeamType(exporterIFC.GetFile(), elementType, null, null, predefinedType);
+         beamType = IFCInstanceExporter.CreateBeamType(exporterIFC.GetFile(), elementType, null,
+            null, null, predefinedType);
 
          wrapper.RegisterHandleWithElementType(elementType, exportType, beamType, null);
 
@@ -454,7 +460,7 @@ namespace Revit.IFC.Export.Exporter
                   bool tryToCreateBeamGeometryAsExtrusion = true;
 
                   //bool useFamilySymbolGeometry = (element is FamilyInstance) ? !ExporterIFCUtils.UsesInstanceGeometry(element as FamilyInstance) : false;
-                  bool useFamilySymbolGeometry = (element is FamilyInstance) ? !GeometryUtil.UsesInstanceGeometry(element as FamilyInstance) : false;
+                  bool useFamilySymbolGeometry = (element is FamilyInstance) && !GeometryUtil.UsesInstanceGeometry(element as FamilyInstance);
                   ElementId beamTypeId = element.GetTypeId();
                   if (useFamilySymbolGeometry)
                   {
@@ -477,12 +483,14 @@ namespace Revit.IFC.Export.Exporter
                      return null;
                   }
 
-                  IFCAnyHandle repHnd = (extrusionInfo != null) ? extrusionInfo.RepresentationHandle : null;
+                  IFCAnyHandle repHnd = extrusionInfo?.RepresentationHandle;
 
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(repHnd))
                   {
                      materialIds = extrusionInfo.Materials;
                      extrusionCreationData.Slope = extrusionInfo.Slope;
+                     if (extrusionInfo?.MaterialAndProfile?.CrossSectionArea != null)
+                        extrusionCreationData.ScaledArea = extrusionInfo.MaterialAndProfile.CrossSectionArea.Value;
                   }
                   else
                   {
@@ -517,12 +525,13 @@ namespace Revit.IFC.Export.Exporter
                   }
 
                   IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
-                  IFCAnyHandle axisRep = CreateBeamAxis(exporterIFC, element, catId, axisInfo, offsetTransform);
+                  double elevation = (setter.LevelInfo != null) ? setter.LevelInfo.Elevation : 0.0;
+                  IFCAnyHandle axisRep = CreateBeamAxis(exporterIFC, element, catId, axisInfo, offsetTransform, elevation);
                      if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
                         representations.Add(axisRep);
                   representations.Add(repHnd);
 
-                  Transform boundingBoxTrf = (offsetTransform == null) ? Transform.Identity : offsetTransform.Inverse;
+                  Transform boundingBoxTrf = offsetTransform?.Inverse ?? Transform.Identity;
                   IFCAnyHandle boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, boundingBoxTrf);
                   if (boundingBoxRep != null)
                      representations.Add(boundingBoxRep);
@@ -545,10 +554,7 @@ namespace Revit.IFC.Export.Exporter
                       extrusionCreationData.GetLocalPlacement(), setter, productWrapper);
 
                   FamilyTypeInfo typeInfo = new FamilyTypeInfo();
-                  typeInfo.ScaledDepth = extrusionCreationData.ScaledLength;
-                  typeInfo.ScaledArea = extrusionCreationData.ScaledArea;
-                  typeInfo.ScaledInnerPerimeter = extrusionCreationData.ScaledInnerPerimeter;
-                  typeInfo.ScaledOuterPerimeter = extrusionCreationData.ScaledOuterPerimeter;
+                  typeInfo.extraParams = extrusionCreationData;
                   PropertyUtil.CreateBeamColumnBaseQuantities(exporterIFC, beam, element, typeInfo, null);
 
                   if (materialIds.Count != 0)
@@ -562,23 +568,6 @@ namespace Revit.IFC.Export.Exporter
             transaction.Commit();
             return beam;
          }
-      }
-
-      static IFCBeamType GetBeamType(Element element, string beamType)
-      {
-         string value = null;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcType", out value) == null)
-            value = beamType;
-
-         if (String.IsNullOrEmpty(value))
-            return IFCBeamType.Beam;
-
-         string newValue = NamingUtil.RemoveSpacesAndUnderscores(value);
-
-         if (String.Compare(newValue, "USERDEFINED", true) == 0)
-            return IFCBeamType.UserDefined;
-
-         return IFCBeamType.Beam;
       }
    }
 }

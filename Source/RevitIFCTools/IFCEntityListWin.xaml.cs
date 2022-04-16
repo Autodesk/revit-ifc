@@ -20,17 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Forms;
 using System.Runtime.Serialization.Json;
 using System.IO;
@@ -48,6 +39,7 @@ namespace RevitIFCTools
       SortedSet<string> aggregateEntities;
       string outputFolder = @"c:\temp";
       StreamWriter logF;
+
       public IFCEntityListWin()
       {
          InitializeComponent();
@@ -79,24 +71,25 @@ namespace RevitIFCTools
       /// <param name="f">IFCXML schema file</param>
       private void processSchema(FileInfo f)
       {
-         ProcessIFCXMLSchema.ProcessIFCSchema(f);
+         IfcSchemaEntityTree entityTree = new IfcSchemaEntityTree();
+         ProcessIFCXMLSchema.ProcessIFCSchema(f, ref entityTree);
 
          string schemaName = f.Name.Replace(".xsd", "");
 
          if (checkBox_outputSchemaTree.IsChecked == true)
          {
-            string treeDump = IfcSchemaEntityTree.DumpTree();
-            System.IO.File.WriteAllText(outputFolder + @"\entityTree" + schemaName + ".txt", treeDump);
+            string treeDump = entityTree.DumpTree();
+            File.WriteAllText(outputFolder + @"\entityTree" + schemaName + ".txt", treeDump);
          }
 
          if (checkBox_outputSchemaEnum.IsChecked == true)
          {
-            string dictDump = IfcSchemaEntityTree.DumpEntityDict(schemaName);
-            System.IO.File.WriteAllText(outputFolder + @"\entityEnum" + schemaName + ".cs", dictDump);
+            string dictDump = entityTree.DumpEntityDict(schemaName);
+            File.WriteAllText(outputFolder + @"\entityEnum" + schemaName + ".cs", dictDump);
          }
 
          // Add aggregate of the entity list into a set
-         foreach (KeyValuePair<string,IfcSchemaEntityNode> entry in IfcSchemaEntityTree.EntityDict)
+         foreach (KeyValuePair<string,IfcSchemaEntityNode> entry in entityTree.IfcEntityDict)
          {
             aggregateEntities.Add(entry.Key);
          }
@@ -129,7 +122,7 @@ namespace RevitIFCTools
             return;
          }
 
-         logF = new StreamWriter(System.IO.Path.Combine(outputFolder, "entityList.log"));
+         logF = new StreamWriter(Path.Combine(outputFolder, "entityList.log"));
 
          IList<IFCEntityAndPsetList> fxEntityNPsetList = new List<IFCEntityAndPsetList>();
 
@@ -147,14 +140,15 @@ namespace RevitIFCTools
             ProcessPsetDefinition procPdef = new ProcessPsetDefinition(logF);
 
             string schemaName = f.Name.Replace(".xsd", "");
-            IDictionary<string, IfcSchemaEntityNode> entDict = IfcSchemaEntityTree.GetEntityDictFor(f.Name);
+            IfcSchemaEntityTree entityTree = IfcSchemaEntityTree.GetEntityDictFor(schemaName);
+            IDictionary<string, IfcSchemaEntityNode> entDict = entityTree.IfcEntityDict;
             IFCEntityAndPsetList schemaEntities = new IFCEntityAndPsetList();
             schemaEntities.Version = schemaName;
             schemaEntities.EntityList = new HashSet<IFCEntityInfo>();
             schemaEntities.PsetDefList = new HashSet<IFCPropertySetDef>();
 
             Dictionary<ItemsInPsetQtoDefs, string> keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.PROPERTYSET];
-            DirectoryInfo[] psdFolders = new DirectoryInfo(System.IO.Path.Combine(textBox_folderLocation.Text, schemaName)).GetDirectories("psd", SearchOption.AllDirectories);
+            DirectoryInfo[] psdFolders = new DirectoryInfo(Path.Combine(textBox_folderLocation.Text, schemaName)).GetDirectories("psd", SearchOption.AllDirectories);
             DirectoryInfo[] underpsdFolders = psdFolders[0].GetDirectories();
             if (underpsdFolders.Count() > 0)
             {
@@ -169,7 +163,7 @@ namespace RevitIFCTools
             }
 
             keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.QTOSET];
-            DirectoryInfo[] qtoFolders = new DirectoryInfo(System.IO.Path.Combine(textBox_folderLocation.Text, schemaName)).GetDirectories("qto", SearchOption.AllDirectories);
+            DirectoryInfo[] qtoFolders = new DirectoryInfo(Path.Combine(textBox_folderLocation.Text, schemaName)).GetDirectories("qto", SearchOption.AllDirectories);
             if (qtoFolders.Count() > 0)
             {
                DirectoryInfo[] underqtoFolders = qtoFolders[0].GetDirectories();
@@ -259,9 +253,9 @@ namespace RevitIFCTools
                entInfo.Entity = ent.Key;
                if (!string.IsNullOrEmpty(ent.Value.PredefinedType))
                {
-                  if (IfcSchemaEntityTree.PredefinedTypeEnumDict.ContainsKey(ent.Value.PredefinedType))
+                  if (entityTree.PredefinedTypeEnumDict.ContainsKey(ent.Value.PredefinedType))
                   {
-                     entInfo.PredefinedType = IfcSchemaEntityTree.PredefinedTypeEnumDict[ent.Value.PredefinedType];
+                     entInfo.PredefinedType = entityTree.PredefinedTypeEnumDict[ent.Value.PredefinedType];
                   }
                }
                
@@ -270,8 +264,9 @@ namespace RevitIFCTools
                {
                   entInfo.PropertySets = entPsetDict[entInfo.Entity].ToList();
                }
+
                // Collect Pset that is applicable to the supertype of this entity
-               IList<IfcSchemaEntityNode> supertypeList = IfcSchemaEntityTree.FindAllSuperTypes(entInfo.Entity, 
+               IList<IfcSchemaEntityNode> supertypeList = IfcSchemaEntityTree.FindAllSuperTypes(schemaName, entInfo.Entity, 
                   "IfcProduct", "IfcTypeProduct", "IfcGroup");
                if (supertypeList != null && supertypeList.Count > 0)
                {
@@ -324,7 +319,7 @@ namespace RevitIFCTools
                         + "\r\n      DontExport"
                         + "\r\n   }"
                         + "\r\n}";
-            System.IO.File.WriteAllText(outputFolder + @"\IFCEntityType.cs", entityList);
+            File.WriteAllText(outputFolder + @"\IFCEntityType.cs", entityList);
          }
 
          foreach (IFCEntityAndPsetList fxEntityNPset in fxEntityNPsetList)
@@ -354,7 +349,7 @@ namespace RevitIFCTools
                         + "\r\n      DontExport"
                         + "\r\n   }"
                         + "\r\n}";
-            System.IO.File.WriteAllText(outputFolder + @"\" + fxEntityNPset.Version + "EntityType.cs", entityList);
+            File.WriteAllText(outputFolder + @"\" + fxEntityNPset.Version + "EntityType.cs", entityList);
          }
 
          // Only allows test when only one schema is selected
@@ -392,10 +387,17 @@ namespace RevitIFCTools
 
       private void button_subtypeTest_Click(object sender, RoutedEventArgs e)
       {
+         if (listBox_schemaList.SelectedItems.Count == 0 || listBox_schemaList.SelectedItems.Count > 1)
+            return;
+
+         DirectoryInfo dInfo = new DirectoryInfo(textBox_folderLocation.Text);
+         FileInfo f = dInfo.GetFiles(listBox_schemaList.SelectedItem.ToString()).First();
+         string schemaName = f.Name.Replace(".xsd", "");
+
          if (string.IsNullOrEmpty(textBox_type1.Text) || string.IsNullOrEmpty(textBox_type2.Text))
             return;
 
-         bool res = IfcSchemaEntityTree.IsSubTypeOf(textBox_type1.Text, textBox_type2.Text);
+         bool res = IfcSchemaEntityTree.IsSubTypeOf(schemaName, textBox_type1.Text, textBox_type2.Text);
          if (res)
             checkBox_testResult.IsChecked = true;
          else
@@ -404,10 +406,17 @@ namespace RevitIFCTools
 
       private void button_supertypeTest_Click(object sender, RoutedEventArgs e)
       {
+         if (listBox_schemaList.SelectedItems.Count == 0 || listBox_schemaList.SelectedItems.Count > 1)
+            return;
+
+         DirectoryInfo dInfo = new DirectoryInfo(textBox_folderLocation.Text);
+         FileInfo f = dInfo.GetFiles(listBox_schemaList.SelectedItem.ToString()).First();
+         string schemaName = f.Name.Replace(".xsd", "");
+
          if (string.IsNullOrEmpty(textBox_type1.Text) || string.IsNullOrEmpty(textBox_type2.Text))
             return;
 
-         bool res = IfcSchemaEntityTree.IsSuperTypeOf(textBox_type1.Text, textBox_type2.Text);
+         bool res = IfcSchemaEntityTree.IsSuperTypeOf(schemaName, textBox_type1.Text, textBox_type2.Text);
          if (res)
             checkBox_testResult.IsChecked = true;
          else

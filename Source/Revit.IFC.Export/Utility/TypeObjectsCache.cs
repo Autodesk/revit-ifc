@@ -39,22 +39,16 @@ namespace Revit.IFC.Export.Utility
    /// The Boolean is used solely for doors and windows to signal if the doors or windows are flipped or not, the default value is false
    /// for non-doors and windows.
    /// The export type is used to distinguish between two instances of the same family but have different export types, this can happen
-   /// if user uses the IfcExportAs shared parameter at the instance level.
+   /// if user uses the IFC_EXPORT_ELEMENT_AS parameter at the instance level.
    /// </summary>
    public class TypeObjectsCache : Dictionary<TypeObjectKey, FamilyTypeInfo>
    {
       /// <summary>
       /// Adds the FamilyTypeInfo to the dictionary.
       /// </summary>
-      /// <param name="elementId">
-      /// The element elementId.
-      /// </param>
-      /// <param name="flipped">
-      /// Indicates if the element is flipped.
-      /// </param>
-      /// <param name="exportType">
-      /// The export type of the element.
-      /// </param>
+      /// <param name="elementId">The element elementId.</param>
+      /// <param name="flipped">Indicates if the element is flipped.</param>
+      /// <param name="exportType">The export type of the element.</param>
       public void Register(ElementId elementId, bool flipped, IFCExportInfoPair exportType, FamilyTypeInfo typeInfo)
       {
          var key = new TypeObjectKey(elementId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType);

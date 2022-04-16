@@ -33,39 +33,22 @@ namespace Revit.IFC.Import.Data
    public class IFCComplexProperty : IFCProperty
    {
       /// <summary>
-      /// The properties in the complex property.
-      /// </summary>
-      IDictionary<string, IFCProperty> m_IFCProperties = new Dictionary<string, IFCProperty>();
-
-      /// <summary>
       /// The usage name.
       /// </summary>
-      string m_UsageName;
-
-      /// <summary>
-      /// The usage name.
-      /// </summary>
-      public string UsageName
-      {
-         get { return m_UsageName; }
-         protected set { m_UsageName = value; }
-      }
+      public string UsageName { get; protected set; } = null;
 
       /// <summary>
       /// The IFC properties.
       /// </summary>
-      public IDictionary<string, IFCProperty> IFCProperties
-      {
-         get { return m_IFCProperties; }
-      }
-
+      public IDictionary<string, IFCProperty> IFCProperties { get; } = new Dictionary<string, IFCProperty>();
+      
       /// <summary>
       /// Returns the property value as a string, for Set().
       /// </summary>
       /// <returns>The property value as a string.</returns>
       public override string PropertyValueAsString()
       {
-         int numValues = (IFCProperties != null) ? IFCProperties.Count : 0;
+         int numValues = IFCProperties.Count;
          if (numValues == 0)
             return "";
 

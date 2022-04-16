@@ -50,7 +50,7 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, topoSurface, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, topoSurface, out ifcEnumType);
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
          Common.Enums.IFCEntityType elementClassTypeEnum;
@@ -69,7 +69,7 @@ namespace Revit.IFC.Export.Exporter
                ExportDefaultSite(exporterIFC, topoSurface.Document, productWrapper);
                using (ProductWrapper genElemProductWrapper = ProductWrapper.Create(exporterIFC, true))
                {
-                  GenericElementExporter.ExportGenericElement(exporterIFC, topoSurface, geometryElement, genElemProductWrapper, exportType);
+                  GenericElementExporter.ExportSimpleGenericElement(exporterIFC, topoSurface, geometryElement, genElemProductWrapper, exportType);
                   ExporterUtil.ExportRelatedProperties(exporterIFC, topoSurface, genElemProductWrapper);
                }
                productWrapper.ClearInternalHandleWrapperData(topoSurface.Document.ProjectInformation);
@@ -168,7 +168,7 @@ namespace Revit.IFC.Export.Exporter
 
             List<int> latitude = new List<int>();
             List<int> longitude = new List<int>();
-            ProjectLocation projLocation = doc.ActiveProjectLocation;
+            ProjectLocation projLocation = ExporterCacheManager.SelectedSiteProjectLocation;
 
             double unscaledElevation = 0.0;
             if (projLocation != null)
@@ -177,7 +177,10 @@ namespace Revit.IFC.Export.Exporter
                double latitudeInDeg = projLocation.GetSiteLocation().Latitude * scaleToDegrees;
                double longitudeInDeg = projLocation.GetSiteLocation().Longitude * scaleToDegrees;
 
-               ExporterUtil.GetSafeProjectPositionElevation(doc, out unscaledElevation);
+               if (CoordReferenceInfo.MainModelGeoRefOrWCS != null)
+               {
+                  unscaledElevation = CoordReferenceInfo.MainModelGeoRefOrWCS.Origin.Z;
+               }
 
                int latDeg = ((int)latitudeInDeg); latitudeInDeg -= latDeg; latitudeInDeg *= 60;
                int latMin = ((int)latitudeInDeg); latitudeInDeg -= latMin; latitudeInDeg *= 60;
@@ -201,27 +204,19 @@ namespace Revit.IFC.Export.Exporter
             }
 
             // Get elevation for site.
-            double elevation = UnitUtil.ScaleLength(unscaledElevation);
-
             IFCAnyHandle relativePlacement = null;
             IFCAnyHandle localPlacement = null;
-            if (ExporterCacheManager.ExportOptionsCache.ExportingLink)
+            if (!ExporterCacheManager.ExportOptionsCache.ExportingLink)
             {
-               relativePlacement = ExporterUtil.CreateAxis2Placement3D(file, UnitUtil.ScaleLength(ExporterCacheManager.HostRvtFileWCS.Origin), ExporterCacheManager.HostRvtFileWCS.BasisZ, ExporterCacheManager.HostRvtFileWCS.BasisX);
-               localPlacement = IFCInstanceExporter.CreateLocalPlacement(file, null, relativePlacement);
-            }
-            else
-            {
-               Transform wcs = GeometryUtil.GetWCS(doc);
-               if (wcs != null && !wcs.IsIdentity)
+               if (ExporterCacheManager.ExportOptionsCache.IncludeSiteElevation)
+                  unscaledElevation = 0.0;
+               Transform siteTrf = GeometryUtil.GetSiteLocalPlacement(doc);
+               if (siteTrf != null && !siteTrf.IsIdentity)
                {
-                  relativePlacement = ExporterUtil.CreateAxis2Placement3D(file, wcs.Origin, wcs.BasisZ, wcs.BasisX);
+                  relativePlacement = ExporterUtil.CreateAxis2Placement3D(file, UnitUtil.ScaleLength(siteTrf.Origin), siteTrf.BasisZ, siteTrf.BasisX);
                   localPlacement = IFCInstanceExporter.CreateLocalPlacement(file, null, relativePlacement);
-                  ExporterCacheManager.HostRvtFileWCS = wcs;
-                  ExporterCacheManager.HostRvtFileWCS.Origin = UnitUtil.UnscaleLength(ExporterCacheManager.HostRvtFileWCS.Origin);
+                  CoordReferenceInfo.MainModelCoordReferenceOffset = siteTrf;
                }
-               else
-                  ExporterCacheManager.HostRvtFileWCS = Transform.Identity;
             }
 
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(relativePlacement))
@@ -248,7 +243,7 @@ namespace Revit.IFC.Export.Exporter
                exportSite = true;
 
                // We will use the Project Information site name as the primary name, if it exists.
-               siteGUID = (element != null) ? GUIDUtil.CreateSiteGUID(doc, element) : GUIDUtil.CreateProjectLevelGUID(doc, IFCProjectLevelGUIDType.Site); ;
+               siteGUID = (element != null) ? GUIDUtil.CreateSiteGUID(doc, element) : GUIDUtil.CreateProjectLevelGUID(doc, GUIDUtil.ProjectLevelGUIDType.Site); ;
 
                if (element != null)
                {
@@ -295,6 +290,8 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle address = null;
                if (Exporter.NeedToCreateAddressForSite(doc))
                   address = Exporter.CreateIFCAddress(file, doc, projectInfo);
+
+               double elevation = UnitUtil.ScaleLength(unscaledElevation);
 
                siteHandle = IFCInstanceExporter.CreateSite(exporterIFC, element, siteGUID, ownerHistory, siteName, siteDescription, siteObjectType, localPlacement,
                   siteRepresentation, siteLongName, IFCElementComposition.Element, latitude, longitude, elevation, siteLandTitleNumber, address);

@@ -36,7 +36,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The IFC project units.
       /// </summary>
-      Dictionary<ForgeTypeId, IFCUnit> m_ProjectUnitsDictionary = new Dictionary<ForgeTypeId, IFCUnit>();
+      Dictionary<ForgeTypeId, IFCUnit> ProjectUnitsDictionary { get; set; }  = new Dictionary<ForgeTypeId, IFCUnit>();
 
       /// <summary>
       /// Gets the unit of a type.
@@ -46,7 +46,7 @@ namespace Revit.IFC.Import.Data
       public IFCUnit GetIFCProjectUnit(ForgeTypeId specTypeId)
       {
          IFCUnit projectUnit = null;
-         if (m_ProjectUnitsDictionary.TryGetValue(specTypeId, out projectUnit))
+         if (ProjectUnitsDictionary.TryGetValue(specTypeId, out projectUnit))
          {
             return projectUnit;
          }
@@ -56,7 +56,7 @@ namespace Revit.IFC.Import.Data
             if (specTypeId.Equals(SpecTypeId.Length))
             {
                IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, UnitSystem.Metric, UnitTypeId.Meters, 1.0 / 0.3048);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               ProjectUnitsDictionary[specTypeId] = unit;
                return unit;
             }
             else if (specTypeId.Equals(SpecTypeId.Area))
@@ -70,7 +70,7 @@ namespace Revit.IFC.Import.Data
                    (1.0 / 0.3048) * (1.0 / 0.3048) : 1.0;
 
                IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, unitSystem, unitName, scaleFactor);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               ProjectUnitsDictionary[specTypeId] = unit;
                return unit;
             }
             else if (specTypeId.Equals(SpecTypeId.Volume))
@@ -84,19 +84,19 @@ namespace Revit.IFC.Import.Data
                    (1.0 / 0.3048) * (1.0 / 0.3048) * (1.0 / 0.3048) : 1.0;
 
                IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, unitSystem, unitName, scaleFactor);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               ProjectUnitsDictionary[specTypeId] = unit;
                return unit;
             }
             else if (specTypeId.Equals(SpecTypeId.Angle))
             {
                IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, UnitSystem.Metric, UnitTypeId.Degrees, Math.PI / 180);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               ProjectUnitsDictionary[specTypeId] = unit;
                return unit;
             }
             else if (specTypeId.Equals(SpecTypeId.HvacTemperature))
             {
                IFCUnit unit = IFCUnit.ProcessIFCDefaultUnit(specTypeId, UnitSystem.Metric, UnitTypeId.Kelvin, 1.0);
-               m_ProjectUnitsDictionary[specTypeId] = unit;
+               ProjectUnitsDictionary[specTypeId] = unit;
                return unit;
             }
          }
@@ -112,7 +112,7 @@ namespace Revit.IFC.Import.Data
       {
          IFCUnit unit = IFCUnit.ProcessIFCUnit(unitHnd);
          if (unit != null)
-            m_ProjectUnitsDictionary[unit.Spec] = unit;
+            ProjectUnitsDictionary[unit.Spec] = unit;
 
          return unit;
       }

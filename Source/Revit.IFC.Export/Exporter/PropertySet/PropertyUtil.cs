@@ -60,7 +60,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          }
       }
 
-      private static void ValidateEnumeratedValue(string value, Type propertyEnumerationType)
+      private static string ValidateEnumeratedValue(string value, Type propertyEnumerationType)
       {
          if (propertyEnumerationType != null && propertyEnumerationType.IsEnum && !string.IsNullOrEmpty(value))
          {
@@ -69,26 +69,25 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                string enumValue = enumeratedValue.ToString();
                if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(value, enumValue))
                {
-                  value = enumValue;
-                  return;
+                  return enumValue;
                }
             }
-            //value = null;
          }
 
-         throw new InvalidEnumArgumentException("Enum value cannot be empty!");
+         return null;
       }
 
       protected static IFCAnyHandle CreateCommonProperty(IFCFile file, string propertyName, IFCData valueData, PropertyValueType valueType, string unitTypeKey)
       {
-         IFCAnyHandle unitHnd = (unitTypeKey != null) ? ExporterCacheManager.UnitsCache[unitTypeKey] : null;
+         IFCAnyHandle unitHnd = (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && unitTypeKey != null) ? ExporterCacheManager.UnitsCache[unitTypeKey] : null;
+
          switch (valueType)
          {
             case PropertyValueType.EnumeratedValue:
                {
                   IList<IFCData> valueList = new List<IFCData>();
                   valueList.Add(valueData);
-                  return IFCInstanceExporter.CreatePropertyEnumeratedValue(file, propertyName, null, valueList, unitHnd);
+                  return IFCInstanceExporter.CreatePropertyEnumeratedValue(file, propertyName, null, valueList, null);
                }
             case PropertyValueType.SingleValue:
                {
@@ -100,9 +99,65 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   valueList.Add(valueData);
                   return IFCInstanceExporter.CreatePropertyListValue(file, propertyName, null, valueList, unitHnd);
                }
+            case PropertyValueType.BoundedValue:
+               {
+                  IList<IFCData> valueList = new List<IFCData>();
+                  valueList.Add(valueData);
+                  return CreateBoundedValuePropertyFromList(file, propertyName, valueList, unitTypeKey);
+               }
+            case PropertyValueType.TableValue:
+               {
+                  // must be handled in CreatePropertyFromElementBase
+                  throw new InvalidOperationException("Unhandled table property!");
+               }
             default:
                throw new InvalidOperationException("Missing case!");
          }
+      }
+
+      /// <summary>
+      /// Creates an IfcPropertyBoundedValue.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="propertyName">The name.</param>
+      /// <param name="valueDataList">The list of values.</param>
+      /// <param name="unitTypeKey">The unit name.</param>
+      protected static IFCAnyHandle CreateBoundedValuePropertyFromList(IFCFile file, string propertyName, IList<IFCData> valueDataList, string unitTypeKey)
+      {
+         if (valueDataList.Count < 1)
+            throw new InvalidOperationException("Invalid bounded property!");
+         IFCAnyHandle unitHnd = (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && unitTypeKey != null) ? ExporterCacheManager.UnitsCache[unitTypeKey] : null;
+
+         IFCData setPointValue = valueDataList[0];
+         IFCData upperBoundValue = valueDataList.Count > 1 ? valueDataList[1] : null;
+         IFCData lowerBoundValue = valueDataList.Count > 2 ? valueDataList[2] : null;
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && upperBoundValue == null && lowerBoundValue == null)
+         {
+            // In IFC2x3, IfcPropertyBoundedValue has no SetPointValue attribute and upper/lower values should satisfy the rule WR22 : EXISTS(UpperBoundValue) OR EXISTS(LowerBoundValue);
+            return IFCInstanceExporter.CreatePropertySingleValue(file, propertyName, null, setPointValue, null);
+         }
+         else
+         {
+            return IFCInstanceExporter.CreatePropertyBoundedValue(file, propertyName, null, lowerBoundValue, upperBoundValue, setPointValue, unitHnd);
+         }      
+      }
+
+      /// <summary>
+      /// Creates an IfcPropertyTableValue.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="propertyName">The name.</param>
+      /// <param name="definingValues">The defining values of the property.</param>
+      /// <param name="definedValues">The defined values of the property.</param>
+      /// <param name="definingUnitTypeKey">Unit for the defining values.</param>
+      /// <param name="definedUnitTypeKey">Unit for the defined values.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateTableProperty(IFCFile file, string propertyName, IList<IFCData> definingValues, IList<IFCData> definedValues, string definingUnitTypeKey, string definedUnitTypeKey)
+      {
+         IFCAnyHandle definingUnitHnd = (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && definingUnitTypeKey != null) ? ExporterCacheManager.UnitsCache[definingUnitTypeKey] : null;
+         IFCAnyHandle definedUnitHnd = (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && definedUnitTypeKey != null) ? ExporterCacheManager.UnitsCache[definedUnitTypeKey] : null;
+
+         return IFCInstanceExporter.CreatePropertyTableValue(file, propertyName, null, definingValues, definedValues, definingUnitHnd, definedUnitHnd);
       }
 
       /// <summary>
@@ -121,8 +176,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             case PropertyValueType.EnumeratedValue:
                {
                   IList<IFCData> valueList = new List<IFCData>();
-                  ValidateEnumeratedValue(value, propertyEnumerationType);
-                  valueList.Add(IFCDataUtil.CreateAsLabel(value));
+                  string validatedString = ValidateEnumeratedValue(value, propertyEnumerationType);
+                  if (validatedString == null)
+                     return null;
+                  valueList.Add(IFCDataUtil.CreateAsLabel(validatedString));
                   return IFCInstanceExporter.CreatePropertyEnumeratedValue(file, propertyName, null, valueList, null);
                }
             case PropertyValueType.SingleValue:
@@ -162,7 +219,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>The created property handle.</returns>
       public static IFCAnyHandle CreateTextPropertyFromCache(IFCFile file, string propertyName, string value, PropertyValueType valueType)
       {
-         bool canCache = (value == String.Empty);
+         bool canCache = (value == string.Empty);
          StringPropertyInfoCache stringInfoCache = null;
          IFCAnyHandle textHandle = null;
 
@@ -547,6 +604,20 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          return CreateCommonProperty(file, propertyName, realData, valueType, null);
       }
 
+      /// <summary>
+      /// Create a numeric property.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="propertyName">The name of the property.</param>
+      /// <param name="value">The value of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateNumericProperty(IFCFile file, string propertyName, double value, PropertyValueType valueType)
+      {
+         IFCData NumericData = IFCDataUtil.CreateAsNumeric(value);
+         return CreateCommonProperty(file, propertyName, NumericData, valueType, null);
+      }
+
       /// <summary>Create a real property, using a cached value if possible.</summary>
       /// <param name="file">The IFC file.</param>
       /// <param name="propertyName">The name of the property.</param>
@@ -580,6 +651,39 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          return propertyHandle;
       }
 
+      /// <summary>Create a numeric property, using a cached value if possible.</summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="propertyName">The name of the property.</param>
+      /// <param name="value">The value of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created or cached property handle.</returns>
+      public static IFCAnyHandle CreateNumericPropertyFromCache(IFCFile file, string propertyName, double value, PropertyValueType valueType)
+      {
+         double? adjustedValue = CanCacheDouble(value);
+         bool canCache = adjustedValue.HasValue;
+         if (canCache)
+         {
+            value = adjustedValue.GetValueOrDefault();
+         }
+
+         IFCAnyHandle propertyHandle;
+         if (canCache)
+         {
+            propertyHandle = ExporterCacheManager.PropertyInfoCache.NumericCache.Find(propertyName, value);
+            if (propertyHandle != null)
+               return propertyHandle;
+         }
+
+         propertyHandle = CreateNumericProperty(file, propertyName, value, valueType);
+
+         if (canCache && !IFCAnyHandleUtil.IsNullOrHasNoValue(propertyHandle))
+         {
+            ExporterCacheManager.PropertyInfoCache.NumericCache.Add(propertyName, value, propertyHandle);
+         }
+
+         return propertyHandle;
+      }
+
       /// <summary>Create a Thermodyanamic Temperature property, using a cached value if possible.</summary>
       /// <param name="file">The IFC file.</param>
       /// <param name="propertyName">The name of the property.</param>
@@ -601,8 +705,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                return propertyHandle;
          }
 
-         double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacTemperature, value);
-         propertyHandle = CreateThermodynamicTemperatureProperty(file, propertyName, scaledValue, valueType);
+         propertyHandle = CreateThermodynamicTemperatureProperty(file, propertyName, value, valueType);
 
          if (canCache && !IFCAnyHandleUtil.IsNullOrHasNoValue(propertyHandle))
             ExporterCacheManager.PropertyInfoCache.ThermodynamicTemperatureCache.Add(propertyName, value, propertyHandle);
@@ -735,6 +838,34 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
+      /// Creates a sound power measure property.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="propertyName">The name of the property.</param>
+      /// <param name="value">The value of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateSoundPowerMeasureProperty(IFCFile file, string propertyName, double value, PropertyValueType valueType)
+      {
+         IFCData soundPowerData = IFCDataUtil.CreateAsSoundPowerMeasure(value);
+         return CreateCommonProperty(file, propertyName, soundPowerData, valueType, null);
+      }
+
+      /// <summary>
+      /// Creates a sound pressure measure property.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="propertyName">The name of the property.</param>
+      /// <param name="value">The value of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateSoundPressureMeasureProperty(IFCFile file, string propertyName, double value, PropertyValueType valueType)
+      {
+         IFCData soundPressureData = IFCDataUtil.CreateAsSoundPressureMeasure(value);
+         return CreateCommonProperty(file, propertyName, soundPressureData, valueType, null);
+      }
+
+      /// <summary>
       /// Create a positive length measure property.
       /// </summary>
       /// <param name="file">The IFC file.</param>
@@ -766,8 +897,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          return CreateCommonProperty(file, propertyName, linearVelocityData, valueType, null);
       }
 
-      private static IFCAnyHandle CreateRatioMeasurePropertyCommon(IFCFile file, string propertyName, double value, PropertyValueType valueType,
-          PropertyType propertyType)
+      private static IFCData CreateRatioMeasureDataCommon(double value, PropertyType propertyType)
       {
          IFCData ratioData = null;
          switch (propertyType)
@@ -795,7 +925,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                }
          }
 
-         return CreateCommonProperty(file, propertyName, ratioData, valueType, null);
+         return ratioData;
       }
 
       /// <summary>
@@ -808,7 +938,19 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>The created property handle.</returns>
       public static IFCAnyHandle CreateRatioMeasureProperty(IFCFile file, string propertyName, double value, PropertyValueType valueType)
       {
-         return CreateRatioMeasurePropertyCommon(file, propertyName, value, valueType, PropertyType.Ratio);
+         IFCData data = CreateRatioMeasureData(value);
+         return CreateCommonProperty(file, propertyName, data, valueType, null);
+      }
+
+      /// <summary>
+      /// Create a ratio measure data from value.
+      /// </summary>
+      /// <param name="value">The value of the property.</param>
+      /// <returns>The created property data.</returns>
+
+      public static IFCData CreateRatioMeasureData(double value)
+      {
+         return CreateRatioMeasureDataCommon(value, PropertyType.Ratio);
       }
 
       /// <summary>
@@ -821,8 +963,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>The created property handle.</returns>
       public static IFCAnyHandle CreateNormalisedRatioMeasureProperty(IFCFile file, string propertyName, double value, PropertyValueType valueType)
       {
-         return CreateRatioMeasurePropertyCommon(file, propertyName, value, valueType, PropertyType.NormalisedRatio);
+         IFCData data = CreateNormalisedRatioMeasureData(value);
+         return CreateCommonProperty(file, propertyName, data, valueType, null);
       }
+
+      /// <summary>
+      /// Create a normalised ratio measure data from value.
+      /// </summary>
+      /// <param name="value">The value of the property.</param>
+      /// <returns>The created property data.</returns>
+      public static IFCData CreateNormalisedRatioMeasureData(double value)
+      {
+         return CreateRatioMeasureDataCommon(value, PropertyType.NormalisedRatio);
+      }
+
+
 
       /// <summary>
       /// Create a positive ratio measure property.
@@ -834,7 +989,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>The created property handle.</returns>
       public static IFCAnyHandle CreatePositiveRatioMeasureProperty(IFCFile file, string propertyName, double value, PropertyValueType valueType)
       {
-         return CreateRatioMeasurePropertyCommon(file, propertyName, value, valueType, PropertyType.PositiveRatio);
+         IFCData data = CreatePositiveRatioMeasureData(value);
+         return CreateCommonProperty(file, propertyName, data, valueType, null);
+      }
+
+      /// <summary>
+      /// Create a positive ratio measure data from value.
+      /// </summary>
+      /// <param name="value">The value of the property.</param>
+      /// <returns>The created property data.</returns>
+      public static IFCData CreatePositiveRatioMeasureData(double value)
+      {
+         return CreateRatioMeasureDataCommon(value, PropertyType.PositiveRatio);
       }
 
       /// <summary>
@@ -1010,7 +1176,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (revitBuiltInParam != BuiltInParameter.INVALID)
          {
             string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
-            propHnd = CreateDoublePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName, 
+            propHnd = CreateDoublePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName,
                "IfcLinearForceMeasure", SpecTypeId.LinearForce, valueType);
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
                return propHnd;
@@ -1106,6 +1272,89 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
+      /// Create a Time measure property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateTimePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
+      {
+         return CreateDoublePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName,
+         "IfcTimeMeasure", SpecTypeId.Time, valueType);
+      }
+
+      /// <summary>
+      /// Create a Sound power measure property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateSoundPowerPropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
+      {
+         double propertyValue;
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
+         {
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleSoundPower(propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Wattage, "IfcSoundPowerMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateSoundPowerMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            }
+         }
+         return null;
+      }
+
+      /// <summary>
+      /// Create a Sound pressure measure property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateSoundPressurePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
+      {
+         double propertyValue;
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
+         {
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleSoundPressure(propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.HvacPressure, "IfcSoundPressureMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateSoundPressureMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            }
+         }
+         return null;
+      }
+
+      /// <summary>
       /// Create a Color Temperature measure property from the element's parameter.  This will be an IfcReal with a custom unit.
       /// </summary>
       /// <param name="file">The IFC file.</param>
@@ -1113,26 +1362,24 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elem">The Element.</param>
       /// <param name="revitParameterName">The name of the parameter.</param>
       /// <param name="ifcPropertyName">The name of the property.  Also, the backup name of the parameter.</param>
-      /// <param name="valueType">The value type of the property.</param>
       /// <returns>The created property handle.</returns>
       public static IFCAnyHandle CreateColorTemperaturePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
-          string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
+          string revitParameterName, string ifcPropertyName)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
          {
-            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.ColorTemperature, propertyValue);
-            IFCData colorTemperatureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
-            return CreateCommonProperty(file, ifcPropertyName, colorTemperatureData,
-                PropertyValueType.SingleValue, "COLORTEMPERATURE");
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleDouble(SpecTypeId.ColorTemperature, propertyValue);
+            return CreateColorTemperaturePropertyFromValue(file, ifcPropertyName, propertyValue);
          }
          return null;
       }
 
-      public static IFCAnyHandle CreateColorTemperaturePropertyFromValue(IFCFile file, string ifcPropertyName, double propertyValue, PropertyValueType valueType)
+      public static IFCAnyHandle CreateColorTemperaturePropertyFromValue(IFCFile file, string ifcPropertyName, double propertyValue)
       {
-         double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.ColorTemperature, propertyValue);
-         IFCData colorTemperatureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
+         IFCData colorTemperatureData = IFCDataUtil.CreateAsMeasure(propertyValue, "IfcReal");
          return CreateCommonProperty(file, ifcPropertyName, colorTemperatureData,
                PropertyValueType.SingleValue, "COLORTEMPERATURE");
       }
@@ -1151,20 +1398,28 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
          {
-            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Efficacy, propertyValue);
-            IFCData electricalEfficacyData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
-            return CreateCommonProperty(file, ifcPropertyName, electricalEfficacyData,
-                PropertyValueType.SingleValue, "LUMINOUSEFFICACY");
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleDouble(SpecTypeId.Efficacy, propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Efficacy, "IfcReal");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, "LUMINOUSEFFICACY");
+            }
+            else
+            {
+               return CreateElectricalEfficacyPropertyFromValue(file, ifcPropertyName, propertyValue);
+            }
          }
          return null;
       }
 
-      public static IFCAnyHandle CreateElectricalEfficacyPropertyFromValue(IFCFile file, string ifcPropertyName, double propertyValue, PropertyValueType valueType)
+      public static IFCAnyHandle CreateElectricalEfficacyPropertyFromValue(IFCFile file, string ifcPropertyName, double propertyValue)
       {
-         double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Efficacy, propertyValue);
-         IFCData electricalEfficacyData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
+         IFCData electricalEfficacyData = IFCDataUtil.CreateAsMeasure(propertyValue, "IfcReal");
          return CreateCommonProperty(file, ifcPropertyName, electricalEfficacyData,
                PropertyValueType.SingleValue, "LUMINOUSEFFICACY");
       }
@@ -1185,10 +1440,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          double propertyValue;
          if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
          {
-            IFCData currencyData = ExporterCacheManager.UnitsCache.ContainsKey("CURRENCY") ?
-                IFCDataUtil.CreateAsMeasure(propertyValue, "IfcMonetaryMeasure") :
-                IFCDataUtil.CreateAsMeasure(propertyValue, "IfcReal");
-            return CreateCommonProperty(file, ifcPropertyName, currencyData, PropertyValueType.SingleValue, null);
+            string measureName = ExporterCacheManager.UnitsCache.ContainsKey("CURRENCY") ? "IfcMonetaryMeasure" : "IfcReal";
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Number, measureName);
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               IFCData currencyData = IFCDataUtil.CreateAsMeasure(propertyValue, measureName);
+               return CreateCommonProperty(file, ifcPropertyName, currencyData, PropertyValueType.SingleValue, null);
+            }
          }
          return null;
       }
@@ -1207,12 +1469,42 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
-            return CreateThermodynamicTemperaturePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, ifcPropertyName, out propertyValue) != null)
-            return CreateThermodynamicTemperaturePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
+         {
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleDouble(SpecTypeId.HvacTemperature, propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.HvacTemperature, "IfcThermodynamicTemperatureMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateThermodynamicTemperaturePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
+         }
+
+         param = ParameterUtil.GetDoubleValueFromElement(elem, null, ifcPropertyName, out propertyValue);
+         if (param != null)
+         {
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleDouble(SpecTypeId.HvacTemperature, propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, ifcPropertyName, propertyValue, SpecTypeId.HvacTemperature, "IfcThermodynamicTemperatureMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateThermodynamicTemperaturePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
+         }
          return null;
       }
+
 
       /// <summary>
       /// Create a color temperature property from the element's parameter.  This will be an IfcReal with a special temperature unit.
@@ -1228,14 +1520,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public static IFCAnyHandle CreateColorTemperaturePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
           string revitParameterName, BuiltInParameter revitBuiltInParam, string ifcPropertyName, PropertyValueType valueType)
       {
-         IFCAnyHandle propHnd = CreateColorTemperaturePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName, valueType);
+         IFCAnyHandle propHnd = CreateColorTemperaturePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
             return propHnd;
 
          if (revitBuiltInParam != BuiltInParameter.INVALID)
          {
             string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
-            propHnd = CreateColorTemperaturePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName, valueType);
+            propHnd = CreateColorTemperaturePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName);
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
                return propHnd;
          }
@@ -1360,6 +1652,93 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
+      /// Create a Time property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="revitBuiltInParam">The built in parameter to use, if revitParameterName isn't found.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateTimePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, BuiltInParameter revitBuiltInParam, string ifcPropertyName, PropertyValueType valueType)
+      {
+         IFCAnyHandle propHnd = CreateTimePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName, valueType);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+            return propHnd;
+
+         if (revitBuiltInParam != BuiltInParameter.INVALID)
+         {
+            string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
+            propHnd = CreateTimePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName, valueType);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+               return propHnd;
+         }
+
+         return null;
+      }
+
+      /// <summary>
+      /// Create a Sound power property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="revitBuiltInParam">The built in parameter to use, if revitParameterName isn't found.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateSoundPowerPropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, BuiltInParameter revitBuiltInParam, string ifcPropertyName, PropertyValueType valueType)
+      {
+         IFCAnyHandle propHnd = CreateSoundPowerPropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName, valueType);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+            return propHnd;
+
+         if (revitBuiltInParam != BuiltInParameter.INVALID)
+         {
+            string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
+            propHnd = CreateSoundPowerPropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName, valueType);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+               return propHnd;
+         }
+
+         return null;
+      }
+
+      /// <summary>
+      /// Create a Sound pressure property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="revitBuiltInParam">The built in parameter to use, if revitParameterName isn't found.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateSoundPressurePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, BuiltInParameter revitBuiltInParam, string ifcPropertyName, PropertyValueType valueType)
+      {
+         IFCAnyHandle propHnd = CreateSoundPressurePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName, valueType);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+            return propHnd;
+
+         if (revitBuiltInParam != BuiltInParameter.INVALID)
+         {
+            string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
+            propHnd = CreateSoundPressurePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName, valueType);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+               return propHnd;
+         }
+
+         return null;
+      }
+
+      /// <summary>
       /// Create an IfcClassificationReference property from the element's parameter.
       /// </summary>
       /// <param name="file">The IFC file.</param>
@@ -1397,31 +1776,87 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           string revitParameterName, string ifcPropertyName, string measureType, ForgeTypeId specTypeId, PropertyValueType valueType)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
          {
-            double scaledValue = UnitUtil.ScaleDouble(specTypeId, propertyValue);
-            IFCData doubleData = IFCDataUtil.CreateAsMeasure(scaledValue, measureType);
-            return CreateCommonProperty(file, ifcPropertyName, doubleData, valueType, null);
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleDouble(specTypeId, propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, specTypeId, measureType);
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               IFCData doubleData = IFCDataUtil.CreateAsMeasure(propertyValue, measureType);
+               return CreateCommonProperty(file, ifcPropertyName, doubleData, valueType, null);
+            }
          }
          return null;
       }
 
       /// <summary>
-      /// 
+      /// Create a list of bounded data.
       /// </summary>
-      /// <param name="file"></param>
-      /// <param name="ifcPropertyName"></param>
-      /// <param name="propertyValue"></param>
-      /// <param name="measureType"></param>
-      /// <param name="specTypeId"></param>
-      /// <param name="valueType"></param>
-      /// <returns></returns>
-      public static IFCAnyHandle CreateDoublePropertyFromValue(IFCFile file, string ifcPropertyName, double propertyValue,
-         string measureType, ForgeTypeId specTypeId, PropertyValueType valueType)
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="propertyValue">The SetPoint value.</param>
+      /// <param name="specTypeId">Identifier of the property spec.</param>
+      /// <param name="measureType">The IfcMeasure type of the property.</param>
+      /// <returns>List of bounded data. Null if unset.</returns>
+      public static IList<IFCData> GetBoundedDataFromElement(Element elem, string revitParameterName, double propertyValue, ForgeTypeId specTypeId, string measureType)
       {
-         double scaledValue = UnitUtil.ScaleDouble(specTypeId, propertyValue);
-         IFCData doubleData = IFCDataUtil.CreateAsMeasure(scaledValue, measureType);
-         return CreateCommonProperty(file, ifcPropertyName, doubleData, valueType, null);
+         IList<IFCData> boundedData = new List<IFCData>();
+
+         IList<double?> boundedValues = GetBoundedValuesFromElement(elem, revitParameterName, specTypeId);
+         boundedValues.Insert(0, propertyValue);
+         foreach (double? val in boundedValues)
+         {
+            if (!val.HasValue)
+               boundedData.Add(null);
+            else
+               boundedData.Add(IFCDataUtil.CreateAsMeasure(val.Value, measureType));
+         }
+         return boundedData;
+      }
+
+      /// <summary>
+      /// Reads bounded values from element
+      /// </summary>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="specTypeId">Identifier of the property spec.</param>
+      /// <returns>List of bounded values. Null if unset.</returns>
+      public static IList<double?> GetBoundedValuesFromElement(Element elem, string revitParameterName, ForgeTypeId specTypeId)
+      {
+         IList<double?> boundedValues = new List<double?>();
+
+         double upperBound;
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName + ".UpperBoundValue", out upperBound);
+         if (param != null)
+         {
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               boundedValues.Add(UnitUtil.ScaleDouble(specTypeId, upperBound));
+         }
+         else
+         {
+            boundedValues.Add(null);
+         }
+
+         double lowerBound;
+         param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName + ".LowerBoundValue", out lowerBound);
+         if (param != null)
+         {
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               boundedValues.Add(UnitUtil.ScaleDouble(specTypeId, lowerBound));
+         }
+         else
+         {
+            boundedValues.Add(null);
+         }
+
+         return boundedValues;
       }
 
       /// <summary>
@@ -1460,9 +1895,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             // We are going to do a little hack here which we will need to extend in a nice way. The built-in parameter corresponding
             // to "TotalWattage" is a string value in Revit that is likely going to be in the current units, and doesn't need to be scaled twice.
-            bool needToScale = !(ifcPropertyName == "TotalWattage" && powerParam.StorageType == StorageType.String);
+            bool needToScale = !(ifcPropertyName == "TotalWattage" && powerParam.StorageType == StorageType.String)
+                                 && ParameterUtil.ParameterDataTypeIsEqualTo(powerParam, SpecTypeId.HvacPower);
+
             double scaledpropertyValue = needToScale ? UnitUtil.ScalePower(propertyValue) : propertyValue;
-            return CreatePowerPropertyFromCache(file, ifcPropertyName, scaledpropertyValue, valueType);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, 
+                     needToScale ? SpecTypeId.HvacPower : SpecTypeId.Number, "IfcPowerMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreatePowerPropertyFromCache(file, ifcPropertyName, scaledpropertyValue, valueType);
+            }
          }
          return null;
       }
@@ -1583,10 +2030,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
          {
-            // TODO: scale!
-            return CreateThermalTransmittancePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleThermalTransmittance(propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.HeatTransferCoefficient, "IfcThermalTransmittanceMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateThermalTransmittancePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
          }
          return null;
       }
@@ -1705,7 +2163,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          return null;
       }
-      
+
       /// <summary>
       /// Create a Mass density measure property from the element's parameter.
       /// </summary>
@@ -1752,7 +2210,97 @@ namespace Revit.IFC.Export.Exporter.PropertySet
              "IfcMassDensityMeasure", SpecTypeId.MassDensity, valueType);
       }
 
+      /// <summary>
+      /// Create a Mass flow rate measure property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="revitBuiltInParam">The built in parameter to use, if revitParameterName isn't found.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateMassFlowRatePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, BuiltInParameter revitBuiltInParam, string ifcPropertyName, PropertyValueType valueType)
+      {
+         IFCAnyHandle propHnd = CreateMassFlowRatePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName, valueType);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+            return propHnd;
 
+         if (revitBuiltInParam != BuiltInParameter.INVALID)
+         {
+            string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
+            propHnd = CreateMassFlowRatePropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName, valueType);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+               return propHnd;
+         }
+
+         return null;
+      }
+
+      /// <summary>
+      /// Create a Mass flow rate measure property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateMassFlowRatePropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
+      {
+         return CreateDoublePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName,
+             "IfcMassFlowRateMeasure", SpecTypeId.PipingMassPerTime, valueType);
+      }
+
+      /// <summary>
+      /// Create a Rotational frequency measure property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="revitBuiltInParam">The built in parameter to use, if revitParameterName isn't found.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateRotationalFrequencyPropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, BuiltInParameter revitBuiltInParam, string ifcPropertyName, PropertyValueType valueType)
+      {
+         IFCAnyHandle propHnd = CreateRotationalFrequencyPropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName, valueType);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+            return propHnd;
+
+         if (revitBuiltInParam != BuiltInParameter.INVALID)
+         {
+            string builtInParamName = LabelUtils.GetLabelFor(revitBuiltInParam);
+            propHnd = CreateRotationalFrequencyPropertyFromElement(file, exporterIFC, elem, builtInParamName, ifcPropertyName, valueType);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+               return propHnd;
+         }
+
+         return null;
+      }
+
+      /// <summary>
+      /// Create a Rotational frequency measure property from the element's parameter.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="ifcPropertyName">The name of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateRotationalFrequencyPropertyFromElement(IFCFile file, ExporterIFC exporterIFC, Element elem,
+          string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
+      {
+         return CreateDoublePropertyFromElement(file, exporterIFC, elem, revitParameterName, ifcPropertyName,
+             "IfcRotationalFrequencyMeasure", SpecTypeId.AngularSpeed, valueType);
+      }
       /// <summary>
       /// Create an Area density measure property from the element's parameter.
       /// </summary>
@@ -2152,10 +2700,62 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           PropertyValueType valueType)
       {
          double propertyValue;
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param == null)
+            param = ParameterUtil.GetDoubleValueFromElement(elem, null, ifcPropertyName, out propertyValue);
+
+         if (param != null)
+         {
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Number, "IfcReal");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateRealPropertyBasingOnParameterType(file, param, ifcPropertyName, propertyValue, valueType);
+            }
+         }
+
+         return null;
+      }
+
+      /// <summary>Create a numeric property from the element's parameter.</summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="elem">The Element.</param>
+      /// <param name="revitParameterName">The name of the parameter.</param>
+      /// <param name="ifcPropertyName">The name of the property.  Also, the backup name of the parameter.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateNumericPropertyFromElement(IFCFile file, Element elem, string revitParameterName, string ifcPropertyName,
+          PropertyValueType valueType)
+      {
+         double propertyValue;
          if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
-            return CreateRealPropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+         {
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Number, "IfcNumericMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateNumericPropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
+         }
+
          if (ParameterUtil.GetDoubleValueFromElement(elem, null, ifcPropertyName, out propertyValue) != null)
-            return CreateRealPropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+         {
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, ifcPropertyName, propertyValue, SpecTypeId.Number, "IfcNumericMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateNumericPropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
+         }
 
          return null;
       }
@@ -2176,11 +2776,34 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          double propertyValue;
 
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
-            return CreateLengthMeasurePropertyFromCache(file, ifcPropertyName, UnitUtil.ScaleLength(propertyValue), valueType);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
+         {
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleLength(propertyValue);
 
-         if ((builtInParameterName != null) && (ParameterUtil.GetDoubleValueFromElement(elem, null, builtInParameterName, out propertyValue) != null))
-            return CreateLengthMeasurePropertyFromCache(file, ifcPropertyName, UnitUtil.ScaleLength(propertyValue), valueType);
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Length, "IfcLengthMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateLengthMeasurePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
+         }
+
+
+         if (builtInParameterName != null)
+         {
+            param = ParameterUtil.GetDoubleValueFromElement(elem, null, builtInParameterName, out propertyValue);
+            if (param != null)
+            {
+               if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+                  propertyValue = UnitUtil.ScaleLength(propertyValue);
+               return CreateLengthMeasurePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
+         }
 
          return null;
       }
@@ -2200,18 +2823,32 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          string revitParameterName, string builtInParameterName, string ifcPropertyName, PropertyValueType valueType)
       {
          double propertyValue;
-         ForgeTypeId unitType;
-
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue, out unitType) != null)
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
          {
-            propertyValue = UnitUtil.ScaleLength(propertyValue);
-            return CreatePositiveLengthMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleLength(propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Length, "IfcPositiveLengthMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreatePositiveLengthMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            }
          }
 
-         if ((builtInParameterName != null) && (ParameterUtil.GetDoubleValueFromElement(elem, null, builtInParameterName, out propertyValue) != null))
+         if (builtInParameterName != null)
          {
-            propertyValue = UnitUtil.ScaleLength(propertyValue);
-            return CreatePositiveLengthMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            param = ParameterUtil.GetDoubleValueFromElement(elem, null, builtInParameterName, out propertyValue);
+            if (param != null)
+            {
+               if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+                  propertyValue = UnitUtil.ScaleLength(propertyValue);
+               return CreatePositiveLengthMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            }
          }
 
          return null;
@@ -2288,6 +2925,20 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
+      /// Create a ratio measure data from string value.
+      /// </summary>
+      /// <param name="value">The value of the property.</param>
+      /// <returns>The created property data.</returns>
+      public static IFCData CreateRatioMeasureDataFromString(string value)
+      {
+         double propertyValue;
+         if (Double.TryParse(value, out propertyValue))
+            return CreateRatioMeasureData(propertyValue);
+
+         return null;
+      }
+
+      /// <summary>
       /// Create a normalised ratio property from the element's parameter.
       /// </summary>
       /// <param name="file">The IFC file.</param>
@@ -2305,6 +2956,20 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             return CreateNormalisedRatioMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
          if (ParameterUtil.GetDoubleValueFromElement(elem, null, ifcPropertyName, out propertyValue) != null)
             return CreateNormalisedRatioMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+
+         return null;
+      }
+
+      /// <summary>
+      /// Create a normalised ratio measure data from string value.
+      /// </summary>
+      /// <param name="value">The value of the property.</param>
+      /// <returns>The created property data.</returns>
+      public static IFCData CreateNormalisedRatioMeasureDataFromString(string value)
+      {
+         double propertyValue;
+         if (Double.TryParse(value, out propertyValue))
+            return CreateNormalisedRatioMeasureData(propertyValue);
 
          return null;
       }
@@ -2354,6 +3019,20 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
+      /// Create a positive ratio measure data from string value.
+      /// </summary>
+      /// <param name="value">The value of the property.</param>
+      /// <returns>The created property data.</returns>
+      public static IFCData CreatePositiveRatioMeasureDataFromString(string value)
+      {
+         double propertyValue;
+         if (Double.TryParse(value, out propertyValue))
+            return CreatePositiveRatioMeasureData(propertyValue);
+
+         return null;
+      }
+
+      /// <summary>
       /// Create a plane angle measure property from the element's parameter.
       /// </summary>
       /// <param name="file">The IFC file.</param>
@@ -2365,10 +3044,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public static IFCAnyHandle CreatePlaneAngleMeasurePropertyFromElement(IFCFile file, Element elem, string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
          {
-            propertyValue = UnitUtil.ScaleAngle(propertyValue);
-            return CreatePlaneAngleMeasurePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleAngle(propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Angle, "IfcPlaneAngleMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreatePlaneAngleMeasurePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
          }
 
          return null;
@@ -2388,10 +3078,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
          {
-            propertyValue = UnitUtil.ScaleArea(propertyValue);
-            return CreateAreaMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleArea(propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Area, "IfcAreaMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateAreaMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            }
          }
          return null;
       }
@@ -2410,10 +3111,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if (param != null)
          {
-            propertyValue = UnitUtil.ScaleVolume(propertyValue);
-            return CreateVolumeMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleVolume(propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Volume, "IfcVolumeMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateVolumeMeasureProperty(file, ifcPropertyName, propertyValue, valueType);
+            }
          }
          return null;
       }
@@ -2549,12 +3261,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          IFCFile file = exporterIFC.GetFile();
          HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
-         double scaledLength = typeInfo.ScaledDepth;
+         double scaledLength = typeInfo.extraParams.ScaledLength;
          //According to investigation of current code the passed in typeInfo contains grossArea
-         double scaledGrossArea = typeInfo.ScaledArea;
+         double scaledGrossArea = typeInfo.extraParams.ScaledArea;
          double crossSectionArea = scaledGrossArea;
-         double scaledOuterPerimeter = typeInfo.ScaledOuterPerimeter;
-         double scaledInnerPerimeter = typeInfo.ScaledInnerPerimeter;
+         double scaledOuterPerimeter = typeInfo.extraParams.ScaledOuterPerimeter;
+         double scaledInnerPerimeter = typeInfo.extraParams.ScaledInnerPerimeter;
          double outSurfaceArea = 0.0;
 
          if (scaledLength > MathUtil.Eps())
@@ -2582,7 +3294,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             double scaledPerimeter = scaledOuterPerimeter + scaledInnerPerimeter;
             //According to the IFC documentation, OuterSurfaceArea does not include the end caps area, only Length * Perimeter
-            outSurfaceArea = scaledLength * scaledPerimeter;
+            outSurfaceArea = UnitUtil.ScaleArea(UnitUtil.UnscaleLength(scaledLength) * UnitUtil.UnscaleLength(scaledPerimeter));
             IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "OuterSurfaceArea", null, null, outSurfaceArea);
             quantityHnds.Add(quantityHnd);
          }
@@ -2591,12 +3303,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (MathUtil.AreaIsAlmostZero(crossSectionArea) && MathUtil.AreaIsAlmostZero(outSurfaceArea))
          {
             double scaledPerimeter = scaledOuterPerimeter + scaledInnerPerimeter;
-            double grossSurfaceArea = scaledGrossArea * 2 + scaledLength * scaledPerimeter;
+            double grossSurfaceArea = scaledGrossArea * 2 + UnitUtil.ScaleArea(UnitUtil.UnscaleLength(scaledLength) * UnitUtil.UnscaleLength(scaledPerimeter));
             IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "GrossSurfaceArea", null, null, grossSurfaceArea);
             quantityHnds.Add(quantityHnd);
          }
 
-         double grossVolume = scaledLength * scaledGrossArea;
+         double grossVolume = UnitUtil.ScaleVolume(UnitUtil.UnscaleLength(scaledLength) * UnitUtil.UnscaleArea(scaledGrossArea));
          double netVolume = 0.0;
          if (element != null)
          {
@@ -2662,10 +3374,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          IFCAnyHandle areaQuantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, area);
          HashSet<IFCAnyHandle> areaQuantityHnds = new HashSet<IFCAnyHandle>();
          areaQuantityHnds.Add(areaQuantityHnd);
-         IFCAnyHandle quantity = IFCInstanceExporter.CreateElementQuantity(file, GUIDUtil.CreateGUID(), ownerHistory, quantityName, null, areaName, areaQuantityHnds);
-         HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
-         relatedObjects.Add(elemHnd);
-         ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(), ownerHistory, null, null, relatedObjects, quantity);
+
+         PropertyUtil.CreateAndRelateBaseQuantities(file, exporterIFC, elemHnd, areaQuantityHnds, quantityName, null, areaName);
       }
 
       /// <summary>
@@ -2848,17 +3558,31 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="elemHnd">The element handle.</param>
       /// <param name="quantityHnds">The quantity handles.</param>
-      static public void CreateAndRelateBaseQuantities(IFCFile file, ExporterIFC exporterIFC, IFCAnyHandle elemHnd, HashSet<IFCAnyHandle> quantityHnds, string quantitySetName = null)
+      static public void CreateAndRelateBaseQuantities(IFCFile file, ExporterIFC exporterIFC, IFCAnyHandle elemHnd, HashSet<IFCAnyHandle> quantityHnds,
+         string quantitySetName = null, string description = null, string methodOfMeasurement = null)
       {
          if (quantityHnds.Count > 0)
          {
             if (string.IsNullOrEmpty(quantitySetName))
                quantitySetName = "BaseQuantities";
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-            IFCAnyHandle quantity = IFCInstanceExporter.CreateElementQuantity(file, GUIDUtil.CreateGUID(), ownerHistory, quantitySetName, null, null, quantityHnds);
-            HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
-            relatedObjects.Add(elemHnd);
-            ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(), ownerHistory, null, null, relatedObjects, quantity);
+
+            // Skip if the elementHandle has the associated QuantitySet has been created before 
+            if (!ExporterCacheManager.QtoSetCreated.Contains((elemHnd, quantitySetName)))
+            {
+               string quantityGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcElementQuantity,
+                  quantitySetName, elemHnd);
+               IFCAnyHandle quantity = IFCInstanceExporter.CreateElementQuantity(file, elemHnd,
+                  quantityGuid, ownerHistory, quantitySetName, description, 
+                  methodOfMeasurement, quantityHnds);
+               HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
+               relatedObjects.Add(elemHnd);
+
+               string quantityRelGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelDefinesByProperties,
+                  quantitySetName, elemHnd);
+               ExporterUtil.CreateRelDefinesByProperties(file, quantityRelGuid, ownerHistory, null, null, 
+                  relatedObjects, quantity);
+            }
          }
       }
 
@@ -2871,50 +3595,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="ecData">The IFCExtrusionCreationData containing the appropriate data.</param>
       public static void CreateBeamColumnMemberBaseQuantities(ExporterIFC exporterIFC, IFCAnyHandle elemHandle, Element element, IFCExtrusionCreationData ecData)
       {
-         FamilyTypeInfo ifcTypeInfo = new FamilyTypeInfo();
-         ifcTypeInfo.ScaledDepth = ecData.ScaledLength;
-         ifcTypeInfo.ScaledArea = ecData.ScaledArea;
-         ifcTypeInfo.ScaledInnerPerimeter = ecData.ScaledInnerPerimeter;
-         ifcTypeInfo.ScaledOuterPerimeter = ecData.ScaledOuterPerimeter;
+         FamilyTypeInfo ifcTypeInfo = new FamilyTypeInfo() { extraParams = ecData };
          CreateBeamColumnBaseQuantities(exporterIFC, elemHandle, element, ifcTypeInfo, null);
-      }
-
-      /// <summary>
-      /// Returns a string value corresponding to an ElementId Parameter.
-      /// </summary>
-      /// <param name="parameter">The parameter.</param>
-      /// <returns>The string.</returns>
-      public static string ElementIdParameterAsString(Parameter parameter)
-      {
-         ElementId value = parameter.AsElementId();
-         if (value == ElementId.InvalidElementId)
-            return null;
-
-         string valueString = null;
-         // All real elements in Revit have non-negative ids.
-         if (value.IntegerValue >= 0)
-         {
-            // Get the family and element name.
-            Element paramElement = ExporterCacheManager.Document.GetElement(value);
-            valueString = (paramElement != null) ? paramElement.Name : null;
-            if (!string.IsNullOrEmpty(valueString))
-            {
-               ElementType paramElementType = paramElement is ElementType ? paramElement as ElementType :
-                   ExporterCacheManager.Document.GetElement(paramElement.GetTypeId()) as ElementType;
-               string paramElementTypeName = (paramElementType != null) ? paramElementType.FamilyName : null;
-               if (!string.IsNullOrEmpty(paramElementTypeName))
-                  valueString = paramElementTypeName + ": " + valueString;
-            }
-         }
-         else
-         {
-            valueString = parameter.AsValueString();
-         }
-
-         if (string.IsNullOrEmpty(valueString))
-            valueString = value.ToString();
-
-         return valueString;
       }
 
       /// <summary>
@@ -3021,11 +3703,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                            string valueAsString = parameter.AsValueString();
 
                            // YesNo or actual integer?
-                           if (parameterDefinition.ParameterType == ParameterType.YesNo)
+                           if (parameterDefinition.GetDataType() == SpecTypeId.Boolean.YesNo)
                            {
                               currPropertiesForGroup.Add(CreateBooleanPropertyFromCache(file, parameterCaption, value != 0, PropertyValueType.SingleValue));
                            }
-                           else if (parameterDefinition.ParameterType == ParameterType.Invalid && (valueAsString != null))
+                           else if (parameterDefinition.GetDataType().Empty() && (valueAsString != null))
                            {
                               // This is probably an internal enumerated type that should be exported as a string.
                               currPropertiesForGroup.Add(CreateIdentifierPropertyFromCache(file, parameterCaption, valueAsString, PropertyValueType.SingleValue));
@@ -3037,253 +3719,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                            break;
                         }
                      case StorageType.Double:
-                        {
+                        {  
                            double value = parameter.AsDouble();
-                           IFCAnyHandle propertyHandle = null;
-
-                           // There are many different ParameterTypes in Revit that share the same unit dimensions, but that
-                           // have potentially different display units (e.g. Bar Diameter could be in millimeters while the project 
-                           // default length parameter is in meters.)  For now, we will only support one unit type.  At a later
-                           // point, we could decide to have different caches for each parameter type, and export a different
-                           // IFCUnit for each one.
-                           switch (parameterDefinition.ParameterType)
-                           {
-                              case ParameterType.Angle:
-                           {
-                              propertyHandle = CreatePlaneAngleMeasurePropertyFromCache(file, parameterCaption,
-                                 UnitUtil.ScaleAngle(value), PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.Area:
-                              case ParameterType.HVACCrossSection:
-                              case ParameterType.ReinforcementArea:
-                              case ParameterType.SectionArea:
-                           {
-                              double scaledValue = UnitUtil.ScaleArea(value);
-                              propertyHandle = CreateAreaMeasureProperty(file, parameterCaption,
-                                  scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.BarDiameter:
-                              case ParameterType.CrackWidth:
-                              case ParameterType.DisplacementDeflection:
-                              case ParameterType.ElectricalCableTraySize:
-                              case ParameterType.ElectricalConduitSize:
-                              case ParameterType.Length:
-                              case ParameterType.HVACDuctInsulationThickness:
-                              case ParameterType.HVACDuctLiningThickness:
-                              case ParameterType.HVACDuctSize:
-                              case ParameterType.HVACRoughness:
-                              case ParameterType.PipeInsulationThickness:
-                              case ParameterType.PipeSize:
-                              case ParameterType.PipingRoughness:
-                              case ParameterType.ReinforcementCover:
-                              case ParameterType.ReinforcementLength:
-                              case ParameterType.ReinforcementSpacing:
-                              case ParameterType.SectionDimension:
-                              case ParameterType.SectionProperty:
-                              case ParameterType.WireSize:
-                              case ParameterType.SurfaceArea:           // This is actually SurfaceAreaPerUnitLength (SpecTypeId.SurfaceAreaPerUnitLength)
-                           {
-                              propertyHandle = CreateLengthMeasurePropertyFromCache(file, parameterCaption,
-                                    UnitUtil.ScaleLength(value), PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.ColorTemperature:
-                           {
-                              double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.ColorTemperature, value);
-                              IFCData colorTemperatureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, colorTemperatureData,
-                                    PropertyValueType.SingleValue, "COLORTEMPERATURE");
-                                    break;
-                           }
-                              case ParameterType.Currency:
-                           {
-                              IFCData currencyData = ExporterCacheManager.UnitsCache.ContainsKey("CURRENCY") ?
-                                    IFCDataUtil.CreateAsMeasure(value, "IfcMonetaryMeasure") :
-                                    IFCDataUtil.CreateAsMeasure(value, "IfcReal");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, currencyData,
-                                    PropertyValueType.SingleValue, null);
-                                    break;
-                           }
-                              case ParameterType.ElectricalApparentPower:
-                              case ParameterType.ElectricalPower:
-                              case ParameterType.ElectricalWattage:
-                              case ParameterType.HVACCoolingLoad:
-                              case ParameterType.HVACHeatGain:
-                              case ParameterType.HVACHeatingLoad:
-                              case ParameterType.HVACPower:
-                           {
-                              double scaledValue = UnitUtil.ScalePower(value);
-                              propertyHandle = CreatePowerProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.ElectricalCurrent:
-                           {
-                              double scaledValue = UnitUtil.ScaleElectricCurrent(value);
-                              propertyHandle = ElectricalCurrentPropertyUtil.CreateElectricalCurrentMeasureProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.ElectricalEfficacy:
-                           {
-                              double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Efficacy, value);
-                              IFCData electricalEfficacyData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, electricalEfficacyData,
-                                    PropertyValueType.SingleValue, "LUMINOUSEFFICACY");
-                                    break;
-                           }
-                              case ParameterType.ElectricalFrequency:
-                           {
-                              propertyHandle = FrequencyPropertyUtil.CreateFrequencyProperty(file, parameterCaption,
-                                    value, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.ElectricalIlluminance:
-                           {
-                              double scaledValue = UnitUtil.ScaleIlluminance(value);
-                              propertyHandle = CreateIlluminanceProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.ElectricalLuminousFlux:
-                           {
-                              double scaledValue = UnitUtil.ScaleLuminousFlux(value);
-                              propertyHandle = CreateLuminousFluxMeasureProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.ElectricalLuminousIntensity:
-                           {
-                              double scaledValue = UnitUtil.ScaleLuminousIntensity(value);
-                              propertyHandle = CreateLuminousIntensityProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.ElectricalPotential:
-                           {
-                              double scaledValue = UnitUtil.ScaleElectricVoltage(value);
-                              propertyHandle = ElectricVoltagePropertyUtil.CreateElectricVoltageMeasureProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.ElectricalTemperature:
-                              case ParameterType.HVACTemperature:
-                              case ParameterType.PipingTemperature:
-                           {
-                              double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacTemperature, value);
-                              IFCData temperatureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcThermalTransmittanceMeasure");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, temperatureData,
-                                    PropertyValueType.SingleValue, null);
-                                    break;
-                           }
-                              case ParameterType.Force:
-                           {
-                              double scaledValue = UnitUtil.ScaleForce(value);
-                              propertyHandle = CreateForceProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.AreaForce:
-                           {
-                              double scaledValue = UnitUtil.ScalePlanarForce(value);
-                              propertyHandle = CreatePlanarForceProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.LinearForce:
-                           {
-                              double scaledValue = UnitUtil.ScaleLinearForce(value);
-                              propertyHandle = CreateLinearForceProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.HVACAirflow:
-                              case ParameterType.PipingFlow:
-                           {
-                              double scaledValue = UnitUtil.ScaleVolumetricFlowRate(value);
-                              propertyHandle = CreateVolumetricFlowRateMeasureProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              case ParameterType.HVACFriction:
-                           {
-                              double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacFriction, value);
-                              IFCData frictionData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, frictionData,
-                                    PropertyValueType.SingleValue, "FRICTIONLOSS");
-                                    break;
-                           }
-                              case ParameterType.HVACPressure:
-                              case ParameterType.PipingPressure:
-                              case ParameterType.Stress:
-                           {
-                              double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacPressure, value);
-                              IFCData pressureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcPressureMeasure");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, pressureData,
-                                    PropertyValueType.SingleValue, null);
-                                    break;
-                           }
-                              case ParameterType.HVACVelocity:
-                              case ParameterType.PipingVelocity:
-                           {
-                              double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacVelocity, value);
-                              IFCData linearVelocityData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcLinearVelocityMeasure");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, linearVelocityData,
-                                    PropertyValueType.SingleValue, null);
-                                    break;
-                           }
-                              case ParameterType.Mass:
-                           {
-                              double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Mass, value);
-                              IFCData massData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMassMeasure");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, massData,
-                                    PropertyValueType.SingleValue, null);
-                                    break;
-                           }
-                              case ParameterType.MassDensity:
-                           {
-                              double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.MassDensity, value);
-                              IFCData massDensityData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMassDensityMeasure");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, massDensityData,
-                                    PropertyValueType.SingleValue, null);
-                                    break;
-                           }
-                              case ParameterType.MomentOfInertia:
-                           {
-                              double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.MomentOfInertia, value);
-                              IFCData momentOfInertiaData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMomentofInertiaMeasure");
-                              propertyHandle = CreateCommonProperty(file, parameterCaption, momentOfInertiaData,
-                                    PropertyValueType.SingleValue, null);
-                                    break;
-                           }
-                              case ParameterType.PipingVolume:
-                              case ParameterType.ReinforcementVolume:
-                              case ParameterType.SectionModulus:
-                              case ParameterType.Volume:
-                           {
-                              double scaledValue = UnitUtil.ScaleVolume(value);
-                              propertyHandle = CreateVolumeMeasureProperty(file, parameterCaption,
-                                    scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                           }
-                              default:
-                           {
-                              double scaledValue = value;
-                              try
-                              {
-                                 scaledValue = UnitUtils.ConvertFromInternalUnits(value, parameter.GetUnitTypeId());
-                              }
-                              catch 
-                              { 
-                                 // GetUnitTypeId() can fail for reasons that don't seem to be knowable in
-                                 // advance, so we won't convert in these cases.
-                              }
-                              propertyHandle = CreateRealPropertyFromCache(file, parameterCaption, scaledValue, PropertyValueType.SingleValue);
-                                    break;
-                                 }
-                           }
+                           IFCAnyHandle propertyHandle = CreateRealPropertyBasingOnParameterType(file, parameter, parameterCaption, value, PropertyValueType.SingleValue);
 
                            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propertyHandle))
                               currPropertiesForGroup.Add(propertyHandle);
@@ -3292,18 +3730,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      case StorageType.String:
                         {
                            string value = parameter.AsString();
-
                            currPropertiesForGroup.Add(CreateTextPropertyFromCache(file, parameterCaption, value, PropertyValueType.SingleValue));
                            break;
                         }
                      case StorageType.ElementId:
                         {
-                           ElementId value = parameter.AsElementId();
-                           if (value == ElementId.InvalidElementId)
-                              continue;
-
-                           string valueString = ElementIdParameterAsString(parameter);
-                           currPropertiesForGroup.Add(CreateLabelPropertyFromCache(file, parameter.Id, parameterCaption, valueString, PropertyValueType.SingleValue, true, null));
+                           if (parameter.AsElementId() != ElementId.InvalidElementId)
+                           {
+                              string valueString = parameter.AsValueString();
+                              currPropertiesForGroup.Add(CreateLabelPropertyFromCache(file, parameter.Id, parameterCaption, valueString, PropertyValueType.SingleValue, true, null));
+                           }
                            break;
                         }
                   }
@@ -3345,8 +3781,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                }
                else
                {
-                  psetGUID = GUIDUtil.CreateGUID();
-                  if (which == 0) psetRelGUID = GUIDUtil.CreateGUID();
+                  psetGUID = GUIDUtil.GenerateIFCGuidFrom(whichElement, 
+                     "IfcPropertySet: " + currPropertySet.Key);
+                  if (which == 0)
+                  {
+                     psetRelGUID = GUIDUtil.GenerateIFCGuidFrom(whichElement,
+                        "IfcRelDefinesByProperties: " + currPropertySet.Key);
+                  }
                }
 
                IFCAnyHandle propertySet = IFCInstanceExporter.CreatePropertySet(file, psetGUID, ExporterCacheManager.OwnerHistoryHandle,
@@ -3362,6 +3803,262 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             if (which == 1)
                ExporterCacheManager.TypePropertyInfoCache.AddNewTypeProperties(typeId, typePropertySets, elementSets);
          }
+      }
+
+      /// <summary>
+      /// Creates property from real parameter.
+      /// There are many different ParameterTypes in Revit that share the same unit dimensions, but that
+      /// have potentially different display units (e.g. Bar Diameter could be in millimeters while the project 
+      /// default length parameter is in meters.)  For now, we will only support one unit type.  At a later
+      /// point, we could decide to have different caches for each parameter type, and export a different
+      /// IFCUnit for each one.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="parameter">The Parameter.</param>
+      /// <param name="propertyName">The name of the property.</param>
+      /// <param name="propertyValue">The value of the property.</param>
+      /// <param name="valueType">The value type of the property.</param>
+      /// <returns>The created property handle.</returns>
+      public static IFCAnyHandle CreateRealPropertyBasingOnParameterType(IFCFile file, Parameter parameter, string propertyName, double propertyValue, PropertyValueType valueType)
+      {
+         IFCAnyHandle propertyHandle = null;
+         
+         if (parameter == null || parameter.Definition == null || parameter.Definition.GetDataType() == null)
+            return propertyHandle;
+
+         ForgeTypeId type = parameter.Definition.GetDataType();
+         if (type == SpecTypeId.Angle)
+         {
+            propertyHandle = CreatePlaneAngleMeasurePropertyFromCache(file, propertyName,
+               UnitUtil.ScaleAngle(propertyValue), valueType);
+         }
+         else if (type == SpecTypeId.Area ||
+            type == SpecTypeId.CrossSection ||
+            type == SpecTypeId.ReinforcementArea ||
+            type == SpecTypeId.SectionArea)
+         {
+            double scaledValue = UnitUtil.ScaleArea(propertyValue);
+            propertyHandle = CreateAreaMeasureProperty(file, propertyName,
+                scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.BarDiameter ||
+            type == SpecTypeId.CrackWidth ||
+            type == SpecTypeId.Displacement ||
+            type == SpecTypeId.CableTraySize ||
+            type == SpecTypeId.ConduitSize ||
+            type == SpecTypeId.Length ||
+            type == SpecTypeId.DuctInsulationThickness ||
+            type == SpecTypeId.DuctLiningThickness ||
+            type == SpecTypeId.DuctSize ||
+            type == SpecTypeId.HvacRoughness ||
+            type == SpecTypeId.PipeInsulationThickness ||
+            type == SpecTypeId.PipeSize ||
+            type == SpecTypeId.PipingRoughness ||
+            type == SpecTypeId.ReinforcementCover ||
+            type == SpecTypeId.ReinforcementLength ||
+            type == SpecTypeId.ReinforcementSpacing ||
+            type == SpecTypeId.SectionDimension ||
+            type == SpecTypeId.SectionProperty ||
+            type == SpecTypeId.WireDiameter ||
+            type == SpecTypeId.SurfaceAreaPerUnitLength)
+         {
+            propertyHandle = CreateLengthMeasurePropertyFromCache(file, propertyName,
+                  UnitUtil.ScaleLength(propertyValue), valueType);
+         }
+         else if (type == SpecTypeId.ColorTemperature)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.ColorTemperature, propertyValue);
+            propertyHandle = CreateColorTemperaturePropertyFromValue(file, propertyName, scaledValue);
+         }
+         else if (type == SpecTypeId.Currency)
+         {
+            IFCData currencyData = ExporterCacheManager.UnitsCache.ContainsKey("CURRENCY") ?
+                  IFCDataUtil.CreateAsMeasure(propertyValue, "IfcMonetaryMeasure") :
+                  IFCDataUtil.CreateAsMeasure(propertyValue, "IfcReal");
+            propertyHandle = CreateCommonProperty(file, propertyName, currencyData,
+                  valueType, null);
+         }
+         else if (type == SpecTypeId.ApparentPower ||
+            type == SpecTypeId.ElectricalPower ||
+            type == SpecTypeId.Wattage ||
+            type == SpecTypeId.CoolingLoad ||
+            type == SpecTypeId.HeatGain ||
+            type == SpecTypeId.HeatingLoad ||
+            type == SpecTypeId.HvacPower)
+         {
+            double scaledValue = UnitUtil.ScalePower(propertyValue);
+            propertyHandle = CreatePowerProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.Current)
+         {
+            double scaledValue = UnitUtil.ScaleElectricCurrent(propertyValue);
+            propertyHandle = ElectricalCurrentPropertyUtil.CreateElectricalCurrentMeasureProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.Efficacy)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Efficacy, propertyValue);
+            propertyHandle = CreateElectricalEfficacyPropertyFromValue(file, propertyName, scaledValue);
+         }
+         else if (type == SpecTypeId.ElectricalFrequency)
+         {
+            propertyHandle = FrequencyPropertyUtil.CreateFrequencyProperty(file, propertyName,
+                  propertyValue, valueType);
+         }
+         else if (type == SpecTypeId.Illuminance)
+         {
+            double scaledValue = UnitUtil.ScaleIlluminance(propertyValue);
+            propertyHandle = CreateIlluminanceProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.LuminousFlux)
+         {
+            double scaledValue = UnitUtil.ScaleLuminousFlux(propertyValue);
+            propertyHandle = CreateLuminousFluxMeasureProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.LuminousIntensity)
+         {
+            double scaledValue = UnitUtil.ScaleLuminousIntensity(propertyValue);
+            propertyHandle = CreateLuminousIntensityProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.ElectricalPotential)
+         {
+            double scaledValue = UnitUtil.ScaleElectricVoltage(propertyValue);
+            propertyHandle = ElectricVoltagePropertyUtil.CreateElectricVoltageMeasureProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.ElectricalTemperature ||
+            type == SpecTypeId.HvacTemperature ||
+            type == SpecTypeId.PipingTemperature)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacTemperature, propertyValue);
+            IFCData temperatureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcThermodynamicTemperatureMeasure");
+            propertyHandle = CreateCommonProperty(file, propertyName, temperatureData,
+                  valueType, null);
+         }
+         else if (type == SpecTypeId.HeatTransferCoefficient)
+         {
+            double scaledValue = UnitUtil.ScaleThermalTransmittance(propertyValue);
+            IFCData temperatureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcThermalTransmittanceMeasure");
+            propertyHandle = CreateCommonProperty(file, propertyName, temperatureData,
+                  valueType, null);
+         }
+         else if (type == SpecTypeId.Force)
+         {
+            double scaledValue = UnitUtil.ScaleForce(propertyValue);
+            propertyHandle = CreateForceProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.AreaForce)
+         {
+            double scaledValue = UnitUtil.ScalePlanarForce(propertyValue);
+            propertyHandle = CreatePlanarForceProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.LinearForce)
+         {
+            double scaledValue = UnitUtil.ScaleLinearForce(propertyValue);
+            propertyHandle = CreateLinearForceProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.AirFlow ||
+            type == SpecTypeId.Flow)
+         {
+            double scaledValue = UnitUtil.ScaleVolumetricFlowRate(propertyValue);
+            propertyHandle = CreateVolumetricFlowRateMeasureProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.HvacFriction)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacFriction, propertyValue);
+            IFCData frictionData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcReal");
+            propertyHandle = CreateCommonProperty(file, propertyName, frictionData,
+                  valueType, "FRICTIONLOSS");
+         }
+         else if (type == SpecTypeId.HvacPressure ||
+            type == SpecTypeId.PipingPressure ||
+            type == SpecTypeId.Stress)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacPressure, propertyValue);
+            IFCData pressureData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcPressureMeasure");
+            propertyHandle = CreateCommonProperty(file, propertyName, pressureData,
+                  valueType, null);
+         }
+         else if (type == SpecTypeId.HvacVelocity ||
+            type == SpecTypeId.PipingVelocity)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacVelocity, propertyValue);
+            IFCData linearVelocityData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcLinearVelocityMeasure");
+            propertyHandle = CreateCommonProperty(file, propertyName, linearVelocityData,
+                  valueType, null);
+         }
+         else if (type == SpecTypeId.Mass)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Mass, propertyValue);
+            IFCData massData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMassMeasure");
+            propertyHandle = CreateCommonProperty(file, propertyName, massData,
+                  valueType, null);
+         }
+         else if (type == SpecTypeId.MassDensity)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.MassDensity, propertyValue);
+            IFCData massDensityData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMassDensityMeasure");
+            propertyHandle = CreateCommonProperty(file, propertyName, massDensityData,
+                  valueType, null);
+         }
+         else if (type == SpecTypeId.MomentOfInertia)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.MomentOfInertia, propertyValue);
+            IFCData momentOfInertiaData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMomentofInertiaMeasure");
+            propertyHandle = CreateCommonProperty(file, propertyName, momentOfInertiaData,
+                  valueType, null);
+         }
+         else if (type == SpecTypeId.Number)
+         {
+            propertyHandle = CreateRealPropertyFromCache(file, propertyName, propertyValue, valueType);
+         }
+         else if (type == SpecTypeId.PipingVolume ||
+            type == SpecTypeId.ReinforcementVolume ||
+            type == SpecTypeId.SectionModulus ||
+            type == SpecTypeId.Volume)
+         {
+            double scaledValue = UnitUtil.ScaleVolume(propertyValue);
+            propertyHandle = CreateVolumeMeasureProperty(file, propertyName,
+                  scaledValue, valueType);
+         }
+         else if (type == SpecTypeId.PipingMassPerTime)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.PipingMassPerTime, propertyValue);
+            IFCData massFlowRateData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcMassFlowRateMeasure");
+            propertyHandle = CreateCommonProperty(file, propertyName, massFlowRateData,
+                  valueType, null);
+         }
+         else if (type == SpecTypeId.AngularSpeed)
+         {
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.AngularSpeed, propertyValue);
+            IFCData rotationalFrequencyData = IFCDataUtil.CreateAsMeasure(scaledValue, "IfcRotationalFrequencyMeasure");
+            propertyHandle = CreateCommonProperty(file, propertyName, rotationalFrequencyData,
+                  valueType, null);
+         }
+         else
+         {
+            double scaledValue = propertyValue;
+            try
+            {
+               scaledValue = UnitUtils.ConvertFromInternalUnits(propertyValue, parameter.GetUnitTypeId());
+            }
+            catch
+            {
+               // GetUnitTypeId() can fail for reasons that don't seem to be knowable in
+               // advance, so we won't convert in these cases.
+            }
+            propertyHandle = CreateRealPropertyFromCache(file, propertyName, scaledValue, valueType);
+         }
+
+         return propertyHandle;
       }
 
       /// <summary>
@@ -3405,13 +4102,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   if (!ExporterCacheManager.ViewScheduleElementCache[currDesc.ViewScheduleId].Contains(typeId))
                      continue;
 
-               ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementType, elementType, prodTypeHnd);
+               ElementOrConnector elementOrConnector = new ElementOrConnector(elementType);
+               ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementOrConnector, elementType, prodTypeHnd);
                if (props.Count > 0)
                {
-                  int subElementIndex = currDesc.SubElementIndex;
-                  string guid = GUIDUtil.CreateSubElementGUID(elementType, subElementIndex);
-
                   string paramSetName = currDesc.Name;
+                  string guid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcPropertySet, 
+                     paramSetName, prodTypeHnd);
+
                   IFCAnyHandle propertySet = IFCInstanceExporter.CreatePropertySet(file, guid, ownerHistory, paramSetName, null, props);
                   propertySets.Add(propertySet);
                }

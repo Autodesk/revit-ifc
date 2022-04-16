@@ -76,15 +76,15 @@ namespace Revit.IFC.Import.Data
             Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
 
             // Set "ElevationWithFlooring" parameter.
-            IFCPropertySet.AddParameterDouble(doc, element, category, "ElevationWithFlooring", SpecTypeId.Length, ElevationWithFlooring, Id);
+            IFCPropertySet.AddParameterDouble(doc, element, category, this, "ElevationWithFlooring", SpecTypeId.Length, UnitTypeId.Feet, ElevationWithFlooring, Id);
 
             // Set "PredefinedType" parameter.
             if (PredefinedType != null)
             {
                if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
-                  IFCPropertySet.AddParameterString(doc, element, category, "PredefinedType", PredefinedType, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "PredefinedType", PredefinedType, Id);
                else
-                  IFCPropertySet.AddParameterString(doc, element, category, "InteriorOrExteriorSpace", PredefinedType, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "InteriorOrExteriorSpace", PredefinedType, Id);
             }
 
             // Set "IfcZone" parameter.
@@ -105,7 +105,7 @@ namespace Revit.IFC.Import.Data
             }
 
             if (zoneNames != null)
-               IFCPropertySet.AddParameterString(doc, element, category, "IfcZone", zoneNames, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcZone", zoneNames, Id);
          }
       }
 

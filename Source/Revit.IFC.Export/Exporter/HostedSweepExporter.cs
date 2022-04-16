@@ -98,12 +98,12 @@ namespace Revit.IFC.Export.Exporter
                   string elementTypeName = NamingUtil.CreateIFCObjectName(exporterIFC, element);
 
                   string typeGuid = GUIDUtil.CreateSubElementGUID(element, (int)IFCHostedSweepSubElements.PipeSegmentType);
-                  IFCAnyHandle style = IFCInstanceExporter.CreatePipeSegmentType(file, null, null, repMapList, IFCPipeSegmentType.Gutter);
+                  IFCAnyHandle style = IFCInstanceExporter.CreatePipeSegmentType(file, null, typeGuid,
+                     null, repMapList, IFCPipeSegmentType.Gutter);
                   IFCAnyHandleUtil.OverrideNameAttribute(style, elementTypeName);
                   IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcPipeSegmentType, IFCPipeSegmentType.Gutter.ToString());
 
                   IFCAnyHandleUtil.SetAttribute(style, "Tag", originalTag);
-                  ExporterUtil.SetGlobalId(style, typeGuid);
                   IFCAnyHandleUtil.SetAttribute(style, "ElementType", elementTypeName);
 
                   List<IFCAnyHandle> representationMaps = GeometryUtil.GetRepresentationMaps(style);

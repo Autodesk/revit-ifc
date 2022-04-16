@@ -91,7 +91,7 @@ namespace Revit.IFC.Import.Data
          try
          {
             nurbsSpline = NurbSpline.CreateCurve(Degree, revitKnots, ControlPointsList);
-         SetCurve(nurbsSpline);
+            SetCurve(nurbsSpline);
          }
          catch (Autodesk.Revit.Exceptions.ArgumentException ex)
          {

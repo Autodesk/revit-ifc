@@ -53,7 +53,7 @@ namespace Revit.IFC.Import.Geometry
                m_SolidValidator = IFCElementUtil.CreateElement(IFCImportFile.TheFile.Document,
                    new ElementId(BuiltInCategory.OST_GenericModel),
                    "(SolidValidator)",
-                   null, -1);
+                   null, -1, Common.Enums.IFCEntityType.UnKnown);
             }
             return m_SolidValidator;
          }
@@ -78,8 +78,28 @@ namespace Revit.IFC.Import.Geometry
          return newLoop;
       }
 
+      private static bool IsNonNegativeLength(double val)
+      {
+         return val > -MathUtil.Eps() && val < 30000 + MathUtil.Eps();
+      }
+
+      /// <summary>
+      /// Determines if the radius value is acceptable for creating an arc.
+      /// </summary>
+      /// <param name="val">The radius.</param>
+      /// <returns>True if it is within acceptable parameters, false otherwise.</returns>
+      public static bool IsValidRadius(double val)
+      {
+         return IsNonNegativeLength(val);
+      }
+
       private static Curve CreateArcOrEllipse(XYZ center, double radiusX, double radiusY, XYZ xAxis, XYZ yAxis, double startParam, double endParam)
       {
+         if (!IsValidRadius(radiusX) || !IsValidRadius(radiusY))
+         {
+            return null;
+         }
+
          if (MathUtil.IsAlmostEqual(radiusX, radiusY))
             return Arc.Create(center, radiusX, startParam, endParam, xAxis, yAxis);
          else
@@ -206,21 +226,32 @@ namespace Revit.IFC.Import.Geometry
       public static bool LineSegmentIsTooShort(XYZ pt1, XYZ pt2)
       {
          double dist = pt1.DistanceTo(pt2);
-         return (dist < IFCImportFile.TheFile.Document.Application.ShortCurveTolerance + MathUtil.Eps());
+         return (dist < IFCImportFile.TheFile.ShortCurveTolerance + MathUtil.Eps());
       }
 
       /// <summary>
       /// Determines if (firstPt, midPt) and (midPt, finalPt) overlap at more than one point.
       /// </summary>
-      /// <param name="firstPt">The start point of the first line segment.</param>
-      /// <param name="midPt">The end point of the first line segment (and start point of the second).</param>
-      /// <param name="finalPt">The end point of the second line segment.</param>
+      /// <param name="p1">The start point of the first line segment.</param>
+      /// <param name="p2">The end point of the first line segment (and start point of the second).</param>
+      /// <param name="p3">The end point of the second line segment.</param>
       /// <returns>True if the line segments overlap at more than one point.</returns>
-      private static bool LineSegmentsOverlap(XYZ firstPt, XYZ midPt, XYZ finalPt)
+      private static bool LineSegmentsOverlap(XYZ p1, XYZ p2, XYZ p3)
       {
-         XYZ firstDir = midPt - firstPt;
-         XYZ secondDir = finalPt - midPt;
-         return MathUtil.VectorsAreParallel2(firstDir, secondDir) == -1;
+         XYZ v12 = p2 - p1;
+         XYZ v23 = p3 - p2;
+         if (MathUtil.VectorsAreParallel2(v12, v23) != -1)
+            return false;
+
+         // If the vectors are anti-parallel, then make sure that the distance is less
+         // than vertex tolerance.
+         double v12Dist = v12.GetLength();
+         if (MathUtil.IsAlmostZero(v12Dist))
+            return true;
+
+         XYZ crossProduct = v12.CrossProduct(v23);
+         double height = crossProduct.GetLength() / v12Dist;
+         return height < IFCImportFile.TheFile.VertexTolerance;
       }
 
       private static IList<XYZ> GeneratePolyCurveLoopVertices(IList<XYZ> pointXYZs,
@@ -524,6 +555,57 @@ namespace Revit.IFC.Import.Geometry
       }
 
       /// <summary>
+      /// Given a list of curves, finds any unbound cyclic curves and splits them.
+      /// </summary>
+      /// <param name="curves">The list of curves.</param>
+      /// <remarks>This will modify the input curves.  This will silently ignore
+      /// unbound, acyclic curves.
+      /// This does not respect the ordering of the curves.</remarks>
+      public static void SplitUnboundCyclicCurves(IList<Curve> curves)
+      {
+         IList<Curve> newCurves = null;
+
+         foreach (Curve curve in curves)
+         {
+            if (curve.IsBound || !curve.IsCyclic)
+               continue;
+
+            double period = curve.Period;
+            Curve newCurve = curve.Clone();
+
+            curve.MakeBound(0, period / 2);
+            newCurve.MakeBound(period / 2, period);
+
+            if (newCurves == null)
+               newCurves = new List<Curve>();
+
+            newCurves.Add(newCurve);
+         }
+
+         if (newCurves == null)
+            return;
+
+         foreach (Curve newCurve in newCurves)
+         {
+            curves.Add(newCurve);
+         }
+      }
+
+      /// <summary>
+      /// Given a curveloop, finds any unbound cyclic curves in it and splits them.
+      /// </summary>
+      /// <param name="curveLoop">Curveloop to process.</param>
+      /// <returns>New curveloop, which has all the curves split.</returns>
+      public static CurveLoop SplitUnboundCyclicCurves(CurveLoop curveLoop)
+      {
+         var curves = curveLoop.ToList();
+         SplitUnboundCyclicCurves(curves);
+         CurveLoop splitCurveLoop = new CurveLoop();
+         curves.ForEach(x => splitCurveLoop.Append(x));
+         return splitCurveLoop;
+      }
+
+      /// <summary>
       /// Trims the CurveLoop contained in an IFCCurve by the start and optional end parameter values.
       /// </summary>
       /// <param name="id">The id of the IFC entity containing the directrix, for messaging purposes.</param>
@@ -666,6 +748,35 @@ namespace Revit.IFC.Import.Geometry
          return trimmedDirectrices;
       }
 
+      private class ShiftDistance
+      {
+         public static double GetScaledShiftDistance(int pass, out double unscaledDistance)
+         {
+            unscaledDistance = GetShiftDistanceInMM(pass);
+            return unscaledDistance * GetShiftDirection(pass) * OneMilliter;
+         }
+
+         private static double GetShiftDistanceInMM(int pass)
+         {
+            if (pass < 1 || pass > NumberOfPasses)
+               return 0.0;
+            return Distances[((pass - 1) >> 3)];
+         }
+
+         private static int GetShiftDirection(int pass)
+         {
+            return (pass % 2 == 1) ? 1 : -1;
+         }
+
+         private static readonly double[] Distances = new double[5] { 0.1, 0.25, 0.5, 0.75, 1.0 };
+
+         private static readonly int NumberOfNudgeDistances = 5;
+
+         public static int NumberOfPasses { get => NumberOfNudgeDistances * 8 + 1; }
+
+         private static readonly double OneMilliter = 1.0 / 304.8;
+      };
+      
       /// <summary>
       /// Execute a Boolean operation, and catch the exception.
       /// </summary>
@@ -678,8 +789,6 @@ namespace Revit.IFC.Import.Geometry
       /// <returns>The result of the Boolean operation, or the first solid if the operation fails.</returns>
       public static Solid ExecuteSafeBooleanOperation(int id, int secondId, Solid firstSolid, Solid secondSolid, BooleanOperationsType opType, XYZ suggestedShiftDirection)
       {
-         const double footToMillimeter = 1.0 / 304.8;
-
          // Perform default operations if one of the arguments is null.
          if (firstSolid == null || secondSolid == null)
          {
@@ -715,13 +824,13 @@ namespace Revit.IFC.Import.Geometry
          // In the first pass, we will try to do the Boolean operation as-is.
          // For subsequent passes, we will shift the second operand by a small distance in 
          // a given direction, using the following formula:
-         // We start with a 1mm shift, and try each of (up to 4) shift directions given by
+         // We start with a 0.1mm shift, and try each of (up to 5) shift directions given by
          // the shiftDirections list below, in alternating positive and negative directions.
          // In none of these succeed, we will increment the distance by 1mm and try again
          // until we reach numPasses.
          // Boolean operations are expensive, and as such we want to limit the number of
          // attempts we make here to balance fidelity and performance.  Initial experimentation
-         // suggests that a maximum 3mm shift is a good first start for this balance.
+         // suggests that a maximum 1mm shift is a good first start for this balance.
          IList<XYZ> shiftDirections = new List<XYZ>()
          {
             suggestedShiftDirection,
@@ -730,10 +839,10 @@ namespace Revit.IFC.Import.Geometry
             XYZ.BasisY
          };
 
-         const int numberOfNudges = 4;
-         const int numPasses = numberOfNudges * 8 + 1; // 1 base, 8 possible nudges up to 0.75mm.
+         // 1 base, 8 possible nudges up to 1mm.
+         int numPasses = ShiftDistance.NumberOfPasses;
          double currentShiftFactor = 0.0;
-
+         
          for (int ii = 0; ii < numPasses; ii++)
          {
             try
@@ -748,10 +857,8 @@ namespace Revit.IFC.Import.Geometry
                   if (shiftDirectionToUse == null)
                      continue;
 
-                  // ((ii + 3) >> 3) * 0.25mm shift.  Basically, a 0.25mm shift for every 8 attempts.
-                  currentShiftFactor = ((ii + 1) >> 3) * 0.25;
-                  int posOrNegDirection = (ii % 2 == 1) ? 1 : -1;
-                  double scale = currentShiftFactor * posOrNegDirection * footToMillimeter;
+                  // Increase the shift distance after every 8 attempts.
+                  double scale = ShiftDistance.GetScaledShiftDistance(ii, out currentShiftFactor);
                   Transform secondSolidShift = Transform.CreateTranslation(scale * shiftDirectionToUse);
                   secondOperand = SolidUtils.CreateTransformed(secondOperand, secondSolidShift);
                }

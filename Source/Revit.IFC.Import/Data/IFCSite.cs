@@ -36,67 +36,37 @@ namespace Revit.IFC.Import.Data
       // TODO: handle SiteAddress.
 
       /// <summary>
-      /// A helper class that checks object placement, intended to be used within a "using" scope.
+      /// Check if an object placement is relative to the site's placement, and fix it if necessary.
       /// </summary>
-      public class ActiveSiteSetter : IDisposable
+      /// <param name="productEntity">The entity being checked.</param>
+      /// <param name="productStepId">The id of the entity being checked.</param>
+      /// <param name="objectPlacement">The object placement handle.</param>
+      public static void CheckObjectPlacementIsRelativeToSite(IFCProduct productEntity, int productStepId,
+         IFCAnyHandle objectPlacement)
       {
-         /// <summary>
-         /// The constuctor.
-         /// </summary>
-         /// <param name="ifcSite">The current IFCSite being processed.</param>
-         public ActiveSiteSetter(IFCSite ifcSite)
-         {
-            ActiveSite = ifcSite;
-         }
+         if (BaseSiteOffset == null)
+            return;
 
-         /// <summary>
-         /// The active site within this scope.
-         /// </summary>
-         public static IFCSite ActiveSite { get; private set; }
-
-         /// <summary>
-         /// Check if an object placement is relative to the site's placement, and fix it if necessary.
-         /// </summary>
-         /// <param name="productEntity">The entity being checked.</param>
-         /// <param name="productStepId">The id of the entity being checked.</param>
-         /// <param name="objectPlacement">The object placement handle.</param>
-         public static void CheckObjectPlacementIsRelativeToSite(IFCProduct productEntity, int productStepId,
-            IFCAnyHandle objectPlacement)
+         IFCLocation productEntityLocation = productEntity.ObjectLocation;
+         if (productEntityLocation != null && productEntityLocation.RelativeToSite == false)
          {
-            IFCLocation productEntityLocation = productEntity.ObjectLocation;
-            if (ActiveSite != null && productEntityLocation != null && productEntityLocation.RelativeToSite == false)
+            if (!(productEntity is IFCSite))
             {
-               if (!(productEntity is IFCSite))
+               if (!IFCAnyHandleUtil.IsSubTypeOf(objectPlacement, IFCEntityType.IfcGridPlacement))
                {
-                  IFCLocation activeSiteLocation = ActiveSite.ObjectLocation;
-                  if (activeSiteLocation != null)
-                  {
-                     if (!IFCAnyHandleUtil.IsSubTypeOf(objectPlacement, IFCEntityType.IfcGridPlacement))
-                     {
-                        Importer.TheLog.LogWarning(productStepId, "The local placement (#" + objectPlacement.StepId + ") of this entity was not relative to the IfcSite's local placement, patching.", false);
-                     }
-
-                     Transform siteTransform = activeSiteLocation.TotalTransform;
-                     if (siteTransform != null)
-                     {
-                        Transform siteTransformInverse = siteTransform.Inverse;
-                        Transform originalTotalTransform = productEntityLocation.TotalTransform;
-                        if (originalTotalTransform == null)
-                           productEntityLocation.RelativeTransform = siteTransformInverse;
-                        else
-                           productEntityLocation.RelativeTransform = originalTotalTransform.Multiply(siteTransformInverse);
-                     }
-
-                     productEntityLocation.RelativeTo = activeSiteLocation;
-                  }
+                  Importer.TheLog.LogWarning(productStepId, "The local placement (#" + objectPlacement.StepId + ") of this entity was not relative to the IfcSite's local placement, patching.", false);
                }
-               productEntityLocation.RelativeToSite = true;
-            }
-         }
 
-         public void Dispose()
-         {
-            ActiveSite = null;
+               if (productEntityLocation.RelativeTransform == null)
+               {
+                  productEntityLocation.RelativeTransform = Transform.CreateTranslation(-BaseSiteOffset);
+               }
+               else
+               {
+                  productEntityLocation.RelativeTransform.Origin -= BaseSiteOffset;
+               }
+            }
+            productEntityLocation.RelativeToSite = true;
          }
       }
 
@@ -132,11 +102,8 @@ namespace Revit.IFC.Import.Data
       /// <param name="ifcIFCSite">The IfcSite handle.</param>
       protected override void Process(IFCAnyHandle ifcIFCSite)
       {
-         using (ActiveSiteSetter setter = new ActiveSiteSetter(this))
-         {
-            base.Process(ifcIFCSite);
-         }
-
+         base.Process(ifcIFCSite);
+         
          RefElevation = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcIFCSite, "RefElevation", 0.0);
 
          IList<int> refLatitudeList = IFCAnyHandleUtil.GetAggregateIntAttribute<List<int>>(ifcIFCSite, "RefLatitude");
@@ -247,85 +214,189 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
-         // Only set the project location for the site that contains the building.
-         // NOTE: The file isn't required to have an IfcBuilding, even though it generally does.
-         // Furthermore, it generally only has one ifcSite.  As such, we may want to rethink
-         // which the "main" IfcSite is.
-         bool hasBuilding = false;
+         base.Create(doc);
 
+         // TODO: Reconsider this for multiple sites.
          foreach (IFCObjectDefinition objectDefinition in ComposedObjectDefinitions)
          {
             if (objectDefinition is IFCBuilding)
             {
-               hasBuilding = true;
+               // There should only be one IfcSite in the file, but in case there are multiple, we want to make sure 
+               // that the one containing the IfcBuilding has its parameters stored somewhere.
+               // In the case where we didn't create an element above, use the ProjectInfo element in the 
+               // document to store its parameters.
+               if (CreatedElementId == ElementId.InvalidElementId)
+                  CreatedElementId = Importer.TheCache.ProjectInformationId;
                break;
             }
          }
+      }
 
-         if (hasBuilding)
+      /// <summary>
+      /// The base site offset for this file.
+      /// </summary>
+      /// <remarks>This corresponds to the ProjectPosition, and should be
+      /// used to offset objects placed not relative to a site.</remarks>
+      public static XYZ BaseSiteOffset { get; set; } = null;
+
+      public static void ProcessSiteLocations(Document doc, IList<IFCSite> sites)
+      {
+         BaseSiteOffset = null;
+
+         // Ideally, in most cases, this routine will do nothing.  In particular, that is 
+         // true if the project has an arbitrary number of sites that are "close" to the
+         // origin.
+
+         if (sites == null || sites.Count == 0)
+            return;
+
+         ProjectLocation projectLocation = doc.ActiveProjectLocation;
+         if (projectLocation == null)
+            return;
+
+         // If there is one site, and it is far from the origin, then we will move the site
+         // close to the origin, give a warning, and set the shared coordinates in the file.
+
+         // If there is more than one site, and at least one site is far from the origin:
+         // 1. If all of the sites have an origin close to one another, then we will move the 
+         // site close to the origin based on the first site encountered, give a warning, 
+         // and set the shared coordinates in the file and the rest of the sites relative to
+         // the first site.
+         // 2. If the sites do not have origins close to one another, then we will do nothing
+         // and give an error that the site is far from the origin and may have poor
+         // performance and appearance.
+         int numSites = sites.Count;
+         bool hasSiteLocation = false;
+
+         // First pass: deal with latitude and longitude.
+         for (int ii = 0; ii < numSites; ii++)
          {
-            ProjectLocation projectLocation = doc.ActiveProjectLocation;
-            if (projectLocation != null)
+            IFCSite currSite = sites[ii];
+
+            // Set the project latitude and longitude if the information is available, and
+            // it hasn't already been set.
+            SiteLocation siteLocation = projectLocation.GetSiteLocation();
+            if (siteLocation != null)
             {
-               SiteLocation siteLocation = projectLocation.GetSiteLocation();
-               if (siteLocation != null)
+               // Some Tekla files may have invalid information here that would otherwise cause the
+               // link to fail.  Recover with a warning.
+               try
                {
-                  // Some Tekla files may have invalid information here that would otherwise cause the
-                  // link to fail.  Recover with a warning.
-                  try
+                  bool foundSiteLocation = (currSite.RefLatitude.HasValue && currSite.RefLongitude.HasValue);
+                  if (foundSiteLocation)
                   {
-                     if (RefLatitude.HasValue)
-                        siteLocation.Latitude = RefLatitude.Value * Math.PI / 180.0;
-                     if (RefLongitude.HasValue)
-                        siteLocation.Longitude = RefLongitude.Value * Math.PI / 180.0;
-                  }
-                  catch (Exception ex)
-                  {
-                     Importer.TheLog.LogWarning(Id, "Invalid latitude or longitude value supplied for IFCSITE: " + ex.Message, false);
+                     if (hasSiteLocation)
+                     {
+                        Importer.TheLog.LogWarning(currSite.Id, "Duplicate latitude or longitude value supplied for IFCSITE, ignoring.", false);
+                     }
+                     else
+                     {
+                        hasSiteLocation = true;
+                        siteLocation.Latitude = currSite.RefLatitude.Value * Math.PI / 180.0;
+                        siteLocation.Longitude = currSite.RefLongitude.Value * Math.PI / 180.0;
+                     }
                   }
                }
-
-               if (ObjectLocation != null)
+               catch (Exception ex)
                {
-                  XYZ projectLoc = (ObjectLocation.RelativeTransform != null) ? ObjectLocation.RelativeTransform.Origin : XYZ.Zero;
-                  if (!MathUtil.IsAlmostZero(projectLoc.Z))
-                     Importer.TheLog.LogError(Id, "The Z-value of the IfcSite object placement relative transform should be 0.  This will be ignored in favor of the RefElevation value.", false);
+                  Importer.TheLog.LogWarning(currSite.Id, "Invalid latitude or longitude value supplied for IFCSITE: " + ex.Message, false);
+               }
+            }
+         }
 
-                  // Get true north from IFCProject.
-                  double trueNorth = 0.0;
-                  UV trueNorthUV = IFCImportFile.TheFile.IFCProject.TrueNorthDirection;
-                  if (trueNorthUV != null)
+         int? distantOriginFirstSiteId = null;
+
+         for (int ii = 0; ii < numSites; ii++)
+         {
+            IFCSite currSite = sites[ii];
+
+            // This is effectively no offset.  This is good, as long as we don't have
+            // a distance origin.  In that case, we will warn and not do any special offsets.
+            if (currSite.ObjectLocation?.RelativeTransform == null)
+            {
+               if (distantOriginFirstSiteId.HasValue)
+               {
+                  BaseSiteOffset = null;
+                  break;
+               }
+               continue;
+            }
+
+            XYZ projectLoc = currSite.ObjectLocation.RelativeTransform.Origin;
+            XYZ offset = new XYZ(projectLoc.X, projectLoc.Y, projectLoc.Z);
+            if (XYZ.IsWithinLengthLimits(offset))
+            {
+               if (distantOriginFirstSiteId.HasValue)
+               {
+                  BaseSiteOffset = null;
+                  break;
+               }
+               continue;
+            }
+
+            if (BaseSiteOffset == null)
+            {
+               distantOriginFirstSiteId = currSite.Id;
+
+               // If the index is greater than 0, then we have found some sites close to the
+               // origin.  That means we have incompatible origins which is an issue.
+               if (ii == 0)
+                  BaseSiteOffset = offset;
+               else
+                  break;
+            }
+         }
+
+         if (BaseSiteOffset != null)
+         {
+            // Modify the RelativeTransforms for each of these sites.
+            // Note that the RelativeTransform must be defined to have gotten here.
+            for (int ii = 0; ii < numSites; ii++)
+            {
+               XYZ currentOffset =
+                  new XYZ(-BaseSiteOffset.X, -BaseSiteOffset.Y, -BaseSiteOffset.Z /*+ sites[ii].RefElevation*/);
+               Transform newSiteTransform = sites[ii].ObjectLocation.TotalTransform;
+               newSiteTransform.Origin += currentOffset;
+               sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(newSiteTransform);
+            }
+
+            // Register the offset by moving the Shared Coordinates away
+            ProjectPosition pPos = projectLocation.GetProjectPosition(XYZ.Zero);
+            pPos.EastWest += BaseSiteOffset.X;
+            pPos.NorthSouth += BaseSiteOffset.Y;
+            pPos.Elevation += BaseSiteOffset.Z;
+            projectLocation.SetProjectPosition(XYZ.Zero, pPos);
+         }
+         else
+         {
+            // In this case, we just have to make sure that the RefElevation is included in
+            // the site transform.
+            for (int ii = 0; ii < numSites; ii++)
+            {
+               if (MathUtil.IsAlmostZero(sites[ii].RefElevation))
+                  continue;
+
+               if (sites[ii].ObjectLocation == null || sites[ii].ObjectLocation.RelativeTransform == null)
+               {
+                  XYZ currentOffset = XYZ.Zero;
+                  sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(Transform.CreateTranslation(currentOffset));
+               }
+               else
+               {
+                  double currRefElevation = sites[ii].RefElevation;
+                  double currZOffset = sites[ii].ObjectLocation.RelativeTransform.Origin.Z;
+                  if (!MathUtil.IsAlmostEqual(currZOffset, currRefElevation))
                   {
-                     double geometricAngle = Math.Atan2(trueNorthUV.V, trueNorthUV.U);
-                     // Convert from geometric angle to compass direction.
-                     // This involves two steps: (1) subtract PI/2 from the angle, staying in (-PI, PI], then (2) reversing the result.
-                     trueNorth = (geometricAngle > -Math.PI / 2.0) ? geometricAngle - Math.PI / 2.0 : geometricAngle + Math.PI * 1.5;
-                     trueNorth = -trueNorth;
-                  }
-
-                  XYZ offset = new XYZ(projectLoc.X, projectLoc.Y, RefElevation);
-                  if (!XYZ.IsWithinLengthLimits(offset))
-                  {
-                     ProjectPosition projectPosition = new ProjectPosition(projectLoc.X, projectLoc.Y, RefElevation, trueNorth);
-                     projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
-
-                     // Now that we've set the project position, remove the site relative transform, if the file is created correctly (that is, all entities contained in the site
-                     // have the local placements relative to the site.
-                     IFCLocation.RemoveRelativeTransformForSite(this);
+                     Transform newSiteTransform = sites[ii].ObjectLocation.TotalTransform;
+                     sites[ii].ObjectLocation = IFCLocation.CreateDummyLocation(newSiteTransform);
                   }
                }
             }
          }
 
-         base.Create(doc);
-
-         if (hasBuilding)
+         if (BaseSiteOffset == null && distantOriginFirstSiteId.HasValue)
          {
-            // There should only be one IfcSite in the file, but in case there are multiple, we want to make sure that the one
-            // containing the IfcBuilding has its parameters stored somewhere.
-            // In the case where we didn't create an element above, use the ProjectInfo element in the document to store its parameters.
-            if (CreatedElementId == ElementId.InvalidElementId)
-               CreatedElementId = Importer.TheCache.ProjectInformationId;
+            Importer.TheLog.LogError(distantOriginFirstSiteId.Value, "There are multiple sites in the file that are located far away from each other.  This may result in poor visualization of the data.", false);
          }
       }
 
@@ -351,9 +422,19 @@ namespace Revit.IFC.Import.Data
             if (!string.IsNullOrWhiteSpace(landTitleNumber))
             {
                Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, parameterName, landTitleNumber, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, landTitleNumber, Id);
             }
          }
+
+         ForgeTypeId lengthUnits = null;
+         if (!Importer.TheProcessor.ScaleValues)
+         {
+            lengthUnits = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length)?.Unit;
+         }
+         
+         Importer.TheProcessor.PostProcessSite(Id, RefLatitude,
+            RefLongitude, RefElevation, LandTitleNumber, lengthUnits,
+            ObjectLocation?.TotalTransform);
       }
    }
 }

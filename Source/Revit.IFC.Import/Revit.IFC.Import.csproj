@@ -38,18 +38,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>bin\Debugx64\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Slow_Debug|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;IFC_OPENSOURCE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <DefineConstants>TRACE;IFC_OPENSOURCE</DefineConstants>
+    <OutputPath>bin\Releasex64\</OutputPath>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=9ea901ae1ee158aa, processorArchitecture=MSIL">
@@ -57,13 +52,13 @@
       <HintPath>..\ThirdParty\ICSharpCode\ICSharpCode.SharpZipLib.DLL</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="RevitAPI, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPI, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPIIFC, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -75,6 +70,7 @@
     <Compile Include="Data\IFCAdvancedBrep.cs" />
     <Compile Include="Data\IFCAdvancedFace.cs" />
     <Compile Include="Data\IFCApplication.cs" />
+    <Compile Include="Data\IFCBlock.cs" />
     <Compile Include="Data\IFCBooleanOperand.cs" />
     <Compile Include="Data\IFCBooleanResult.cs" />
     <Compile Include="Data\IFCBoundedCurve.cs" />
@@ -96,6 +92,7 @@
     <Compile Include="Data\IFCCompositeCurve.cs" />
     <Compile Include="Data\IFCConic.cs" />
     <Compile Include="Data\IFCConnectedFaceSet.cs" />
+    <Compile Include="Data\IFCCsgPrimitive3D.cs" />
     <Compile Include="Data\IFCCSGSolid.cs" />
     <Compile Include="Data\IFCCurve.cs" />
     <Compile Include="Data\IFCCylindricalSurface.cs" />
@@ -227,6 +224,7 @@
     <Compile Include="Geometry\IFCVirtualGridIntersection.cs" />
     <Compile Include="Geometry\IIFCBooleanOperand.cs" />
     <Compile Include="Importer.cs" />
+    <Compile Include="Processors\IFCDefaultProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <AppDesigner Include="Properties\" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -283,6 +281,10 @@
       <Name>Revit.IFC.Common</Name>
       <Private>False</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Revit.IFC.Import.Core\Revit.IFC.Import.Core.csproj">
+      <Project>{b1e159b7-4b12-45a9-b83f-159e37798d44}</Project>
+      <Name>Revit.IFC.Import.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -298,7 +300,7 @@
     -->
   <Import Project=".\Revit.IFC.Import.props" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "H:\Temp\IFC master\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

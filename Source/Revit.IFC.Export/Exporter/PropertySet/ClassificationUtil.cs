@@ -273,36 +273,27 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          IFCAnyHandle classificationReferenceAssociation = ExporterCacheManager.ClassificationReferenceCache.GetClassificationReferenceAssociation(classificationKeyString, classificationCode);
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(classificationReferenceAssociation))
          {
-         IFCAnyHandle classificationReference = CreateClassificationReference(file, classificationKeyString, classificationCode, classificationDescription, location);
+            IFCAnyHandle classificationReference = CreateClassificationReference(file, classificationKeyString, classificationCode, classificationDescription, location);
 
-         HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
-         relatedObjects.Add(elemHnd);
+            HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
+            relatedObjects.Add(elemHnd);
 
-         IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-            ExporterCacheManager.OwnerHistoryHandle, classificationKeyString + " Classification", "", relatedObjects, classificationReference);
+            string relName = classificationKeyString + " " + classificationCode;
+            string relDescription = string.Empty;
+
+            // This will create the same GUID across products for the same classification
+            // key and code pair.  But this should be consistent across products.
+            string relGuid = GUIDUtil.GenerateIFCGuidFrom(Common.Enums.IFCEntityType.IfcRelAssociatesClassification,
+               relName, classificationReference);
+
+            IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, relGuid,
+               ExporterCacheManager.OwnerHistoryHandle, relName, relDescription, relatedObjects, classificationReference);
             ExporterCacheManager.ClassificationReferenceCache.AddClassificationReferenceAssociation(classificationKeyString, classificationCode, relAssociates);
          }
          else
          {
             IFCAnyHandleUtil.AssociatesAddRelated(classificationReferenceAssociation, elemHnd);
          }
-      }
-
-      /// <summary>
-      /// Create association (IfcRelAssociatesClassification) between the Element (ElemHnd) and specified classification reference
-      /// </summary>
-      /// <param name="exporterIFC">The exporterIFC class.</param>
-      /// <param name="file">The IFC file class.</param>
-      /// <param name="elemHnd">The corresponding IFC entity handle.</param>
-      /// <param name="classificationReference">The classification reference to be associated with</param>
-      public static void AssociateClassificationReference(ExporterIFC exporterIFC, IFCFile file, IFCAnyHandle elemHnd, IFCAnyHandle classificationReference)
-      {
-         HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
-         relatedObjects.Add(elemHnd);
-
-         IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-            ExporterCacheManager.OwnerHistoryHandle, classificationReference.GetAttribute("ReferencedSource").ToString() + " Classification", "", relatedObjects, classificationReference);
-
       }
 
       /// <summary>

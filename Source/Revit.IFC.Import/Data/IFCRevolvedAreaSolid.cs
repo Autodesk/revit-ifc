@@ -139,20 +139,18 @@ namespace Revit.IFC.Import.Data
 
          foreach (IList<CurveLoop> loops in disjointLoops)
          {
-            XYZ frameXVec = null;
-
-            frameXVec = GetValidXVectorFromLoop(loops[0], frameZVec, frameOrigin);
+            XYZ frameXVec = GetValidXVectorFromLoop(loops[0], frameZVec, frameOrigin);
             if (frameXVec == null)
             {
                Importer.TheLog.LogError(Id, "Couldn't generate valid frame for IfcRevolvedAreaSolid.", false);
                return null;
             }
+
             XYZ frameYVec = frameZVec.CrossProduct(frameXVec);
             Frame coordinateFrame = new Frame(frameOrigin, frameXVec, frameYVec, frameZVec);
 
             GeometryObject myObj = GeometryCreationUtilities.CreateRevolvedGeometry(coordinateFrame, loops, 0, Angle, solidOptions);
-            if (myObj != null)
-               myObjs.Add(myObj);
+            myObjs?.Add(myObj);
          }
 
          return myObjs;

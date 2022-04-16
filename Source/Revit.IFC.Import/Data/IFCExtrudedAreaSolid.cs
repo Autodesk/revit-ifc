@@ -527,7 +527,8 @@ namespace Revit.IFC.Import.Data
 
                // Create the extrusion for the material layer.
                GeometryObject extrusionSolid = GeometryCreationUtilities.CreateExtrusionGeometry(
-                   currLoops, materialExtrusionDirection, extrusionDistance, solidOptions);
+                      currLoops, materialExtrusionDirection, extrusionDistance, solidOptions);
+
                if (extrusionSolid == null)
                   return null;
 
@@ -624,16 +625,31 @@ namespace Revit.IFC.Import.Data
          return extrusionSolid;
       }
 
-      /// <summary>
-      /// Return geometry for a particular representation item.
-      /// </summary>
-      /// <param name="shapeEditScope">The shape edit scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry.</param>
-      /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      /// <returns>One or more created geometries.</returns>
-      /// <remarks>The scaledLcs is only partially supported in this routine; it allows scaling the depth of the extrusion,
-      /// which is commonly found in ACA files.</remarks>
-      protected override IList<GeometryObject> CreateGeometryInternal(
+      private Mesh GetMeshBackup(IFCImportShapeEditScope shapeEditScope, IList<CurveLoop> loops,
+         XYZ scaledExtrusionDirection, double currDepth)
+      {
+         if (shapeEditScope.MustCreateSolid())
+            return null;
+            
+         Importer.TheLog.LogError(Id, "Extrusion has an invalid definition for a solid; reverting to mesh.", false);
+
+         MeshFromGeometryOperationResult meshResult = TessellatedShapeBuilder.CreateMeshByExtrusion(
+            loops, scaledExtrusionDirection, currDepth, GetMaterialElementId(shapeEditScope));
+
+         // will throw if mesh is not available
+         return meshResult.GetMesh();
+      }
+
+   /// <summary>
+   /// Return geometry for a particular representation item.
+   /// </summary>
+   /// <param name="shapeEditScope">The shape edit scope.</param>
+   /// <param name="lcs">Local coordinate system for the geometry.</param>
+   /// <param name="guid">The guid of an element for which represntation is being created.</param>
+   /// <returns>One or more created geometries.</returns>
+   /// <remarks>The scaledLcs is only partially supported in this routine; it allows scaling the depth of the extrusion,
+   /// which is commonly found in ACA files.</remarks>
+   protected override IList<GeometryObject> CreateGeometryInternal(
             IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
       {
          if (Direction == null)
@@ -656,11 +672,45 @@ namespace Revit.IFC.Import.Data
 
          IList<GeometryObject> extrusions = new List<GeometryObject>();
 
-         foreach (IList<CurveLoop> loops in disjointLoops)
+         foreach (IList<CurveLoop> originalLoops in disjointLoops)
          {
             SolidOptions solidOptions = new SolidOptions(GetMaterialElementId(shapeEditScope), shapeEditScope.GraphicsStyleId);
             XYZ scaledDirection = scaledExtrusionPosition.OfVector(Direction);
             double currDepth = Depth * scaledDirection.GetLength();
+
+            IList<CurveLoop> loops = new List<CurveLoop>();
+            foreach (CurveLoop originalLoop in originalLoops)
+            {
+               if (!originalLoop.IsOpen())
+               {
+                  loops.Add(originalLoop);
+                  continue;
+               }
+
+               if (originalLoop.Count() > 0)
+               {
+                  try
+                  {
+                     // We will attempt to close the loop to make it usable.
+                     XYZ startPoint = originalLoop.First().GetEndPoint(0);
+                     XYZ endPoint = originalLoop.Last().GetEndPoint(1);
+                     Line closingLine = Line.CreateBound(endPoint, startPoint);
+                     CurveLoop healedCurveLoop = CurveLoop.CreateViaCopy(originalLoop);
+                     healedCurveLoop.Append(closingLine);
+                     loops.Add(healedCurveLoop);
+                     Importer.TheLog.LogWarning(Id, "Extrusion has an open profile loop, fixing.", false);
+                     continue;
+                  }
+                  catch
+                  {
+                  }
+               }
+
+               Importer.TheLog.LogError(Id, "Extrusion has an open profile loop, ignoring.", false);
+            }
+
+            if (loops.Count == 0)
+               continue;
 
             GeometryObject extrusionObject = null;
             try
@@ -707,20 +757,24 @@ namespace Revit.IFC.Import.Data
             }
             catch (Exception ex)
             {
-               if (shapeEditScope.MustCreateSolid())
+               extrusionObject = GetMeshBackup(shapeEditScope, loops, scaledExtrusionDirection, currDepth);
+               if (extrusionObject == null)
                   throw ex;
-
-               Importer.TheLog.LogError(Id, "Extrusion has an invalid definition for a solid; reverting to mesh.", false);
-
-               MeshFromGeometryOperationResult meshResult = TessellatedShapeBuilder.CreateMeshByExtrusion(
-                  loops, scaledExtrusionDirection, currDepth, GetMaterialElementId(shapeEditScope));
-
-               // will throw if mesh is not available
-               extrusionObject = meshResult.GetMesh();
             }
 
             if (extrusionObject != null)
-               extrusions.Add(extrusionObject);
+            {
+               if (!(extrusionObject is Solid) || IFCGeometryUtil.ValidateGeometry(extrusionObject as Solid))
+               {
+                  extrusions.Add(extrusionObject);
+               }
+               else
+               {
+                  Mesh meshBackup = GetMeshBackup(shapeEditScope, loops, scaledExtrusionDirection, currDepth);
+                  if (meshBackup != null)
+                     extrusions.Add(meshBackup);
+               }
+            }
          }
 
          return extrusions;

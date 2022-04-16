@@ -184,13 +184,14 @@ namespace Revit.IFC.Import.Data
 
          if (shapeType == null)
          {
-            shapeType = IFCElementUtil.CreateElementType(doc, GetVisibleName(), CategoryId, Id);
+            shapeType = IFCElementUtil.CreateElementType(doc, GetVisibleName(), CategoryId, Id, GlobalId, EntityType);
          }
          else
          {
             // If we used the element from the cache, we want to make sure that the IFCRepresentationMap can access it
             // instead of creating a new element.
             Importer.TheCache.CreatedDirectShapeTypes[Id] = shapeType.Id;
+            shapeType.SetShape(new List<GeometryObject>());
          }
 
          if (shapeType == null)

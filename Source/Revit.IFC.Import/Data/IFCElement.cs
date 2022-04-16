@@ -181,7 +181,7 @@ namespace Revit.IFC.Import.Data
             // Set "Tag" parameter.
             string ifcTag = Tag;
             if (!string.IsNullOrWhiteSpace(ifcTag))
-               IFCPropertySet.AddParameterString(doc, element, category, "IfcTag", ifcTag, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcTag", ifcTag, Id);
 
             IFCFeatureElementSubtraction ifcFeatureElementSubtraction = FillsOpening;
             if (ifcFeatureElementSubtraction != null)
@@ -189,8 +189,8 @@ namespace Revit.IFC.Import.Data
                IFCElement ifcElement = ifcFeatureElementSubtraction.VoidsElement;
                if (ifcElement != null)
                {
-                  string ifcContainerName = ifcElement.Name;
-                  IFCPropertySet.AddParameterString(doc, element, category, "IfcContainedInHost", ifcContainerName, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcContainedInHost", ifcElement.Name, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcContainedInHostGUID", ifcElement.GlobalId, Id);
                }
             }
 
@@ -205,13 +205,13 @@ namespace Revit.IFC.Import.Data
                if (!string.IsNullOrWhiteSpace(name))
                {
                   string parameterName = "IfcElement HasPorts Name " + ((numPorts == 0) ? "" : (numPorts + 1).ToString());
-                  IFCPropertySet.AddParameterString(doc, element, category, parameterName, name, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, name, Id);
                }
 
                if (!string.IsNullOrWhiteSpace(guid))
                {
                   string parameterName = "IfcElement HasPorts IfcGUID " + ((numPorts == 0) ? "" : (numPorts + 1).ToString());
-                  IFCPropertySet.AddParameterString(doc, element, category, parameterName, guid, Id);
+                  IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, guid, Id);
                }
 
                numPorts++;
@@ -231,8 +231,7 @@ namespace Revit.IFC.Import.Data
       {
          using (TemporaryDisableLogging disableLogging = new TemporaryDisableLogging())
          {
-            IFCElement clone = new IFCElement();
-
+            var clone = Activator.CreateInstance(original.GetType(), true) as IFCElement ?? new IFCElement();
             // Note that the GlobalId is left to null here; this allows us to later decide not to create a DirectShape for the result.
 
             // Get the ObjectLocation and ProductRepresentation from the original entity, which is all we need to create geometry.
@@ -293,22 +292,30 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         IFCEntity cachedIFCElement;
-         IFCImportFile.TheFile.EntityMap.TryGetValue(ifcElement.StepId, out cachedIFCElement);
-         if (cachedIFCElement != null)
-            return (cachedIFCElement as IFCElement);
+         try
+         {
+            IFCEntity cachedIFCElement;
+            IFCImportFile.TheFile.EntityMap.TryGetValue(ifcElement.StepId, out cachedIFCElement);
+            if (cachedIFCElement != null)
+               return (cachedIFCElement as IFCElement);
 
-         // other subclasses not handled yet.
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcBuildingElement))
-            return IFCBuildingElement.ProcessIFCBuildingElement(ifcElement);
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcFeatureElement))
-            return IFCFeatureElement.ProcessIFCFeatureElement(ifcElement);
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementAssembly))
-            return IFCElementAssembly.ProcessIFCElementAssembly(ifcElement);
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementComponent))
-            return IFCElementComponent.ProcessIFCElementComponent(ifcElement);
-         
-         return new IFCElement(ifcElement);
+            // other subclasses not handled yet.
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcBuildingElement))
+               return IFCBuildingElement.ProcessIFCBuildingElement(ifcElement);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcFeatureElement))
+               return IFCFeatureElement.ProcessIFCFeatureElement(ifcElement);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementAssembly))
+               return IFCElementAssembly.ProcessIFCElementAssembly(ifcElement);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementComponent))
+               return IFCElementComponent.ProcessIFCElementComponent(ifcElement);
+
+            return new IFCElement(ifcElement);
+         }
+         catch (Exception ex)
+         {
+            HandleError(ex.Message, ifcElement, true);
+            return null;
+         }
       }
    }
 }

@@ -20,22 +20,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Reflection;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Forms;
 using System.IO;
-using Revit.IFC.Common.Utility;
-using System.Xml.Linq;
 using RevitIFCTools.PropertySet;
 
 namespace RevitIFCTools
@@ -47,9 +34,7 @@ namespace RevitIFCTools
    {
       string outputFilename = "";
       string sourceFolder = "";
-#if DEBUG
       StreamWriter logF;
-#endif
 
       public GeneratePsetDefWin()
       {
@@ -85,17 +70,13 @@ namespace RevitIFCTools
 
          if (!string.IsNullOrEmpty(textBox_PSDSourceDir.Text) && !string.IsNullOrEmpty(textBox_OutputFile.Text) && !string.IsNullOrEmpty(textBox_SharedParFile.Text))
             button_Go.IsEnabled = true;
-#if DEBUG
          logF = new StreamWriter(outputFilename + ".log");
-#endif
       }
 
       private void button_Go_Click(object sender, RoutedEventArgs e)
       {
-#if DEBUG
          string tempFolder = System.IO.Path.GetTempPath();
          logF = new StreamWriter(Path.Combine(tempFolder, "GeneratePsetDefWin.log"));
-#endif
          textBox_OutputMsg.Clear();
 
          string parFileNameOut = Path.Combine(Path.GetDirectoryName(SharedParFileName), Path.GetFileNameWithoutExtension(SharedParFileName) + "_out.txt");
@@ -114,11 +95,7 @@ namespace RevitIFCTools
             stSharedParType = File.CreateText(SharedParFileNameType);
          }
 
-#if DEBUG
          ProcessPsetDefinition procPsetDef = new ProcessPsetDefinition(logF);
-#else
-         ProcessPsetDefinition procPsetDef = new ProcessPsetDefinition(null);
-#endif
 
          if (string.IsNullOrEmpty(textBox_PSDSourceDir.Text) || string.IsNullOrEmpty(textBox_OutputFile.Text))
             return;
@@ -137,9 +114,7 @@ namespace RevitIFCTools
          {
             string schemaFolder = psd.FullName.Remove(0, textBox_PSDSourceDir.Text.Length + 1).Split('\\')[0];
 
-#if DEBUG
             logF.WriteLine("\r\n*** Processing " + schemaFolder);
-#endif
             foreach (DirectoryInfo subDir in psd.GetDirectories())
             {
                procPsetDef.ProcessSchemaPsetDef(schemaFolder, subDir, keywordsToProcess);
@@ -154,9 +129,7 @@ namespace RevitIFCTools
          {
             string schemaFolder = qto.FullName.Remove(0, textBox_PSDSourceDir.Text.Length + 1).Split('\\')[0];
 
-#if DEBUG
             logF.WriteLine("\r\n*** Processing " + schemaFolder);
-#endif
             foreach (DirectoryInfo subDir in qto.GetDirectories())
             {
                procPsetDef.ProcessSchemaPsetDef(schemaFolder, subDir, keywordsToProcess);
@@ -167,9 +140,7 @@ namespace RevitIFCTools
          // Process predefined properties
          foreach (string schemaName in IfcSchemaProcessed)
          {
-#if DEBUG
             logF.WriteLine("\r\n*** Processing " + schemaName);
-#endif
             procPsetDef.ProcessPredefinedPsets(schemaName);
          }
 
@@ -234,9 +205,7 @@ namespace RevitIFCTools
          WriteRevitSharedParam(stSharedParType, existingTypeParDict, groupParamDict, true, out IList<string> deferredParTypeList);
          AppendDeferredParamList(stSharedParType, deferredParTypeList);
          stSharedParType.Close();
-#if DEBUG
          logF.Close();
-#endif
       }
 
       void WriteRevitSharedParam(StreamWriter stSharedPar, IDictionary<string, SharedParameterDef> existingParDict, 
@@ -558,9 +527,7 @@ namespace RevitIFCTools
                }
                else
                {
-#if DEBUG
                   logF.WriteLine("%Error - Unrecognized schema version : " + vspecPDef.SchemaFileVersion);
-#endif
                }
                //}
 

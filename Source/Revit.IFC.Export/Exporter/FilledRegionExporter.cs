@@ -87,8 +87,11 @@ namespace Revit.IFC.Export.Exporter
 
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, filledRegion, null, orientTrf, overrideContainerId, overrideContainerHnd))
             {
-               foreach (IList<CurveLoop> curveLoopList in sortedLoops)
+               IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+               int loopCount = sortedLoops.Count;
+               for (int loopIndex = 0; loopIndex < loopCount; loopIndex++)
                {
+                  IList<CurveLoop> curveLoopList = sortedLoops[loopIndex];
                   IFCAnyHandle outerCurve = null;
                   HashSet<IFCAnyHandle> innerCurves = null;
                   for (int ii = 0; ii < curveLoopList.Count; ii++)
@@ -104,23 +107,26 @@ namespace Revit.IFC.Export.Exporter
                      }
                   }
 
-                  IFCAnyHandle representItem = IFCInstanceExporter.CreateAnnotationFillArea(file, outerCurve, innerCurves);
+                  IFCAnyHandle representItem = IFCInstanceExporter.CreateAnnotationFillArea(file,
+                     outerCurve, innerCurves);
                   file.CreateStyle(exporterIFC, representItem, color, foregroundPatternId);
 
-                  HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
-                  bodyItems.Add(representItem);
+                  HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { representItem };
                   IFCAnyHandle bodyRepHnd = RepresentationUtil.CreateAnnotationSetRep(exporterIFC, filledRegion, categoryId,
-                      exporterIFC.Get2DContextHandle(), bodyItems);
+                     exporterIFC.Get2DContextHandle(), bodyItems);
 
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
                      return;
 
-                  List<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
-                  shapeReps.Add(bodyRepHnd);
+                  List<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>() { bodyRepHnd };
 
-                  IFCAnyHandle productShape = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
-                  IFCAnyHandle annotation = IFCInstanceExporter.CreateAnnotation(exporterIFC, filledRegion, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
-                       setter.LocalPlacement, productShape);
+                  string index = (loopIndex + 1).ToString();
+                  string annotationGuid = GUIDUtil.GenerateIFCGuidFrom(filledRegion, index);
+                  IFCAnyHandle productShape = IFCInstanceExporter.CreateProductDefinitionShape(file, 
+                     null, null, shapeReps);
+                  IFCAnyHandle annotation = IFCInstanceExporter.CreateAnnotation(exporterIFC, 
+                     filledRegion, annotationGuid, ownerHistory, setter.LocalPlacement, 
+                     productShape);
 
                   productWrapper.AddAnnotation(annotation, setter.LevelInfo, true);
                }

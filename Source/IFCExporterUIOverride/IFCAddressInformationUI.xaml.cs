@@ -61,34 +61,32 @@ namespace BIM.IFC.Export.UI
       /// initialization of IFCAssignemt class
       /// </summary>
       /// <param name="document"></param>
-      public IFCAddressInformation()
+      public IFCAddressInformation(IFCExportConfiguration configuration)
       {
          InitializeComponent();
 
-         RestorePreviousWindow();
+         m_newAddressItem = configuration.ProjectAddress;
 
-         bool hasSavedItem = m_newAddress.GetSavedAddress(IFCCommandOverrideApplication.TheDocument, out m_newAddressItem);
-         if (hasSavedItem == true)
+         // This is a short list, so we just do an O(n) search.
+         int numItems = ifcPurposeList.Count();
+         for (int ii = 0; ii < numItems; ii++)
          {
-            //keep a copy of the original saved items for checking for any value changed later on
-            m_savedAddressItem = m_newAddressItem.Clone();
-
-            // We won't initialize PurposeComboBox.SelectedIndex, as otherwise that will change the value
-            // of m_newAddressItem.Purpose to the first item in the list, which we don't want.   It is
-            // OK for this to be "uninitialized".
-
-            // This is a short list, so we just do an O(n) search.
-            int numItems = ifcPurposeList.Count();
-            for (int ii = 0; ii < numItems; ii++)
+            if (m_newAddressItem.Purpose == ifcPurposeList[ii])
             {
-               if (m_newAddressItem.Purpose == ifcPurposeList[ii])
-               {
-                  PurposeComboBox.SelectedIndex = ii;
-                  break;
-               }
+               PurposeComboBox.SelectedIndex = ii;
+               break;
             }
          }
 
+         // Initialize options from the m_newAddressItem
+         Checkbox_AssignToBuilding.IsChecked = m_newAddressItem.AssignAddressToBuilding;
+         Checkbox_AssignToSite.IsChecked = m_newAddressItem.AssignAddressToSite;
+         UpdateProjInfocheckBox.IsChecked = m_newAddressItem.UpdateProjectInformation;
+
+      }
+
+      private void OnInit(object sender, RoutedEventArgs e)
+      {
          DataContext = m_newAddressItem;
       }
 
@@ -101,22 +99,6 @@ namespace BIM.IFC.Export.UI
       {
          // Save restore bounds for the next time this window is opened
          IFCUISettings.SaveWindowBounds(m_SettingFile, this.RestoreBounds);
-      }
-
-      /// <summary>
-      /// Restores the previous window. If no previous window found, place on the left top.
-      /// </summary>
-      private void RestorePreviousWindow()
-      {
-         // Refresh restore bounds from previous window opening
-         Rect restoreBounds = IFCUISettings.LoadWindowBounds(m_SettingFile);
-         if (restoreBounds != new Rect())
-         {
-            this.Left = restoreBounds.Left;
-            this.Top = restoreBounds.Top;
-            this.Width = restoreBounds.Width;
-            this.Height = restoreBounds.Height;
-         }
       }
 
       /// <summary>
@@ -141,7 +123,14 @@ namespace BIM.IFC.Export.UI
       {
          m_newAddressItem.Purpose = ifcPurposeList[PurposeComboBox.SelectedIndex];
          if (String.Compare(m_newAddressItem.Purpose, getUserDefinedStringFromIFCPurposeList()) != 0) // ifcPurposeList == "USERDEFINED"
+         {
             m_newAddressItem.UserDefinedPurpose = "";         // Set User Defined Purpose field to empty if the Purpose is changed to other values
+            UserDefinedPurposeTextBox.IsEnabled = false;
+         }
+         else
+         {
+            UserDefinedPurposeTextBox.IsEnabled = true;
+         }
       }
 
       /// <summary>

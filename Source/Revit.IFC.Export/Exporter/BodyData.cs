@@ -150,20 +150,15 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Add the pair of component category name and material id pair
-      /// This function also does AddMaterial(). Only use either AddMaterial if no component category needed, or this is Component Category is needed
       /// </summary>
-      /// <param name="componentCategory">The Component Category name</param>
       /// <param name="materialId">The material id</param>
-      public void AddRepresentationItemInfo(Document document, GeometryObject geomObject, ElementId materialId, IFCAnyHandle repItem)
+      public void AddRepresentationItemInfo(Document document, GraphicsStyle style, ElementId materialId,
+         IFCAnyHandle repItem)
       {
-         GraphicsStyle graphicsStyle = document.GetElement(geomObject.GraphicsStyleId) as GraphicsStyle;
-         string catName = null;
-         if (graphicsStyle != null && graphicsStyle.GraphicsStyleCategory != null)
-         {
-            catName = graphicsStyle.GraphicsStyleCategory.Name;            // set with the proper category name if any
-         }
-         else
+         // Set with the proper category name if any
+         string catName = style?.GraphicsStyleCategory?.Name;         
+
+         if (catName == null)
          {
             Material material = document.GetElement(materialId) as Material;
             catName = (material != null) ? NamingUtil.GetMaterialName(material) : "<Unnamed>";    // Default name to the Material name if not null or <Unnamed>

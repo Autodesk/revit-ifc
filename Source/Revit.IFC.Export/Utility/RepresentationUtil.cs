@@ -125,15 +125,13 @@ namespace Revit.IFC.Export.Utility
             // IfcPresentationLayerAsssignment, if it is not overridden.
             if (string.IsNullOrWhiteSpace(ifcCADLayer))
             {
-               ifcCADLayer = GetPresentationLayerOverride(element);
+               ifcCADLayer = exporterIFC.GetLayerNameForPresentationLayer(element, categoryId);
             }
 
             if (!string.IsNullOrWhiteSpace(ifcCADLayer))
             {
                ExporterCacheManager.PresentationLayerSetCache.AddRepresentationToLayer(ifcCADLayer, newShapeRepresentation);
             }
-            else
-               exporterIFC.RegisterShapeForPresentationLayer(element, categoryId, newShapeRepresentation);
          }
 
          return newShapeRepresentation;
@@ -202,13 +200,17 @@ namespace Revit.IFC.Export.Utility
       /// Creates an IfcFacetedBrep handle.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="document">The document being exported.</param>
+      /// <param name="isVoid">True is the geometry is void (vs. solid) geometry.</param>
       /// <param name="shell">The closed shell handle.</param>
+      /// <param name="overrideMaterialId">Material id to use instead of calculated value.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateFacetedBRep(ExporterIFC exporterIFC, Document document, IFCAnyHandle shell, ElementId overrideMaterialId)
+      public static IFCAnyHandle CreateFacetedBRep(ExporterIFC exporterIFC, Document document, bool isVoid,
+         IFCAnyHandle shell, ElementId overrideMaterialId)
       {
          IFCFile file = exporterIFC.GetFile();
          IFCAnyHandle brep = IFCInstanceExporter.CreateFacetedBrep(file, shell);
-         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, brep, overrideMaterialId);
+         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, document, isVoid, brep, overrideMaterialId);
          return brep;
       }
 
@@ -589,7 +591,9 @@ namespace Revit.IFC.Export.Utility
                //}
                geometryList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref solidList, ref meshes);
                if (geometryList.Count == 0 && !skipBody)
-                  return null;
+                  // If element does not has own geometry but contains sub components as family instance we export it to save parameter data.
+                  if (!(element is FamilyInstance familyInstance && familyInstance.GetSubComponentIds().Any()))
+                     return null;
             }
          }
 
@@ -604,6 +608,8 @@ namespace Revit.IFC.Export.Utility
          if (!skipBody)
          {
             ElementId matId = ExporterUtil.GetSingleMaterial(element);
+            if (matId == ElementId.InvalidElementId)
+               matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
 
             bodyData = BodyExporter.ExportBody(exporterIFC, element, categoryId, matId, geometryList,
                 bodyExporterOptions, extrusionCreationData);
@@ -946,7 +952,7 @@ namespace Revit.IFC.Export.Utility
          if (IFCAnyHandleUtil.IsSubTypeOf(hostProdDefShape, IFCEntityType.IfcProductRepresentation))
          {
             IFCAnyHandle representationOfItem = RepresentationUtil.CreateShapeRepresentation(exporterIFC, hostElement, catId, contextOfItems, shapeIdent, repType, itemRepSet);
-            IFCAnyHandle shapeAspect = IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
+            IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(hostProdDefShape, IFCEntityType.IfcRepresentationMap))
          {
@@ -954,7 +960,7 @@ namespace Revit.IFC.Export.Utility
             string representationType = IFCAnyHandleUtil.GetRepresentationType(representation);
             IFCAnyHandle representationOfItem = RepresentationUtil.CreateShapeRepresentation(exporterIFC, hostElement, catId, contextOfItems, shapeIdent,
                representationType, itemRepSet);
-            IFCAnyHandle shapeAspect = IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
+            IFCInstanceExporter.CreateShapeAspect(exporterIFC.GetFile(), new List<IFCAnyHandle>() { representationOfItem }, aspectName, null, null, hostProdDefShape);
          }
       }
 

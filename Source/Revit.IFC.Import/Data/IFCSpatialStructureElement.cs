@@ -132,7 +132,7 @@ namespace Revit.IFC.Import.Data
                   parameterName = EntityType.ToString() + " " + parameterName;
 
                Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, parameterName, longName, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, longName, Id);
             }
          }
       }
@@ -219,6 +219,34 @@ namespace Revit.IFC.Import.Data
          IFCSystem system = IFCSystem.ProcessIFCSystem(relatingSystem);
          if (system != null)
             Systems.Add(system);
+      }
+
+      protected void TryToFixFarawayOrigin()
+      {
+         if (!(ProjectScope?.IsSet ?? false))
+            return;
+
+         // It is amazing that this works at all, but basically if we set the ProjectScope,
+         // and it has a reasonable bounding box size that is far from the origin, and
+         // the relative (non-shared) portion of this spatial element (building or
+         // building storey only) is also far from the origin and close to the bounding box,
+         // then we move it closer to the origin by subtracting the min corner of the
+         // bounding box.
+         // This fixes some cases where we have buildings or building stories that are really
+         // far from the origin but aren't all over the place.
+         // Real solution: don't create this data.
+         // There may be some better solution, but this is a compromise between not doing
+         // anything at all and not having a regression in old code that just moved stuff
+         // back to the origin.
+         XYZ relativeOrigin = ObjectLocation?.RelativeTransform?.Origin;
+         if (relativeOrigin != null && !XYZ.IsWithinLengthLimits(relativeOrigin))
+         {
+            if (XYZ.IsWithinLengthLimits(ProjectScope.Max - ProjectScope.Min) &&
+               XYZ.IsWithinLengthLimits(relativeOrigin - ProjectScope.Min))
+            {
+               ObjectLocation.RelativeTransform.Origin -= ProjectScope.Min;
+            }
+         }
       }
 
       /// <summary>

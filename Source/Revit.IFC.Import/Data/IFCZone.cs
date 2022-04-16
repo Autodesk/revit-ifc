@@ -100,7 +100,7 @@ namespace Revit.IFC.Import.Data
             }
          }
 
-         DirectShape zoneElement = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, geomObjs, Id);
+         DirectShape zoneElement = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, geomObjs, Id, EntityType);
          if (zoneElement != null)
          {
             CreatedElementId = zoneElement.Id;

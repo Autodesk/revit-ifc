@@ -92,33 +92,23 @@ namespace Revit.IFC.Common.Extensions
          {
             m_schema = Schema.Lookup(s_schemaId);
          }
+
          if (m_schema != null)
          {
+            Transaction transaction = new Transaction(document, "Update saved IFC Address");
+            transaction.Start();
+
             IList<DataStorage> oldSavedAddress = GetAddressInStorage(document, m_schema);
             if (oldSavedAddress.Count > 0)
             {
-               Transaction deleteTransaction = new Transaction(document, "Delete old IFC address");
-               deleteTransaction.Start();
                List<ElementId> dataStorageToDelete = new List<ElementId>();
                foreach (DataStorage dataStorage in oldSavedAddress)
                {
                   dataStorageToDelete.Add(dataStorage.Id);
                }
                document.Delete(dataStorageToDelete);
-               deleteTransaction.Commit();
             }
-         }
-
-         // Update the address using the new information
-         if (m_schema == null)
-         {
-            m_schema = Schema.Lookup(s_schemaId);
-         }
-         if (m_schema != null)
-         {
-            Transaction transaction = new Transaction(document, "Update saved IFC Address");
-            transaction.Start();
-
+         
             DataStorage addressStorage = DataStorage.Create(document);
 
             Entity mapEntity = new Entity(m_schema);

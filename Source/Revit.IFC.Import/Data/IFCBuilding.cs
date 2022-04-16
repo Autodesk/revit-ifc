@@ -17,15 +17,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Import.Enums;
+using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
@@ -44,14 +42,28 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// The base elevation of the building.
+      /// </summary>
+      public double ElevationOfRefHeight { get; protected set; } = 0.0;
+
+      /// <summary>
       /// Processes IfcBuilding attributes.
       /// </summary>
       /// <param name="ifcBuilding">The IfcBuilding handle.</param>
       protected override void Process(IFCAnyHandle ifcBuilding)
       {
          // TODO: process IfcBuilding specific data.
+         ElevationOfRefHeight = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcBuilding, "ElevationOfRefHeight", 0.0);
+
          base.Process(ifcBuilding);
       }
+
+      public override void PostProcess()
+      {
+         TryToFixFarawayOrigin();
+         base.PostProcess();
+      }
+
 
       /// <summary>
       /// Allow for override of IfcObjectDefinition shared parameter names.
@@ -96,6 +108,8 @@ namespace Revit.IFC.Import.Data
       protected override void Create(Document doc)
       {
          base.Create(doc);
+
+         IFCLocation.WarnIfFaraway(this);
 
          // IfcBuilding usually won't create an element, as it contains no geometry.
          // If it doesn't, use the ProjectInfo element in the document to store its parameters.

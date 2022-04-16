@@ -12,9 +12,49 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Enums;
 
-namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X3TC1
+namespace Revit.IFC.Export.Exporter.PropertySet.IFC2X3
 {
 
+
+   public enum IFCDoorPanelOperation {
+      Swinging,
+      Double_Acting,
+      Sliding,
+      Folding,
+      Revolving,
+      RollingUp,
+      UserDefined,
+      NotDefined}
+
+   public enum IFCDoorPanelPosition {
+      Left,
+      Middle,
+      Right,
+      NotDefined}
+
+   public enum IFCWindowPanelOperation {
+      SideHungRightHand,
+      SideHungLeftHand,
+      TiltAndTurnRightHand,
+      TiltAndTurnLeftHand,
+      TopHung,
+      BottomHung,
+      PivotHorizontal,
+      PivotVertical,
+      SlidingHorizontal,
+      SlidingVertical,
+      RemovableCasement,
+      FixedCasement,
+      OtherOperation,
+      NotDefined}
+
+   public enum IFCWindowPanelPosition {
+      Left,
+      Middle,
+      Right,
+      Bottom,
+      Top,
+      NotDefined}
 
    public enum PEnum_RequestSourceType {
       Email,

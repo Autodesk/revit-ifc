@@ -19,16 +19,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Data;
-using UnitSystem = Autodesk.Revit.DB.DisplayUnit;
 using Revit.IFC.Import.Enums;
+using Revit.IFC.Import.Geometry;
 
 namespace Revit.IFC.Import.Utility
 {
@@ -309,11 +304,11 @@ namespace Revit.IFC.Import.Utility
       public double GetShortSegmentTolerance()
       {
          if (BuilderType != IFCShapeBuilderType.TessellatedShapeBuilder)
-            return Document.Application.ShortCurveTolerance;
+            return IFCImportFile.TheFile.ShortCurveTolerance;
 
          TessellatedShapeBuilderScope bs = BuilderScope as TessellatedShapeBuilderScope;
          return (bs.TargetGeometry == TessellatedShapeBuilderTarget.Mesh) ?
-            MathUtil.Eps() : Document.Application.ShortCurveTolerance;
+            MathUtil.Eps() : IFCImportFile.TheFile.ShortCurveTolerance;
       }
 
       /// <summary>
@@ -329,6 +324,8 @@ namespace Revit.IFC.Import.Utility
          if (numCurves > 0)
          {
             ViewShapeBuilder = new ViewShapeBuilder(DirectShapeTargetViewType.Plan);
+
+            IFCGeometryUtil.SplitUnboundCyclicCurves(curves);
 
             // Ideally we'd form these curves into a CurveLoop and get the Plane of the CurveLoop.  However, there is no requirement
             // that the plan view curves form one contiguous loop.

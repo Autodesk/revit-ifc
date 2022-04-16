@@ -36,6 +36,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// A length quantity.
       /// </summary>
+      Length,
       PositiveLength,
       /// <summary>
       /// An area quantity.
@@ -48,7 +49,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// A Weight quantity
       /// </summary>
-      Weight
+      Weight,
+      /// <summary>
+      /// A Count quantity
+      /// </summary>
+      Count,
+      /// <summary>
+      /// A time duration quantity
+      /// </summary>
+      Time,
+      Mass
    }
 
    /// <summary>
@@ -68,18 +78,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
 
       }
-      public QuantityEntry(string propertyName, string revitParameterName)
-          : base(propertyName, new QuantityEntryMap(revitParameterName))
+      public QuantityEntry(string revitParameterName, string propertyName)
+          : base(propertyName, new QuantityEntryMap(revitParameterName, propertyName))
       {
 
       }
       public QuantityEntry(string propertyName, BuiltInParameter builtInParameter)
-          : base(propertyName, new QuantityEntryMap(propertyName) { RevitBuiltInParameter = builtInParameter })
+          : base(propertyName, new QuantityEntryMap(propertyName, null) { RevitBuiltInParameter = builtInParameter })
       {
 
       }
       public QuantityEntry(string propertyName, PropertyCalculator calculator)
-          : base(propertyName, new QuantityEntryMap(propertyName) { PropertyCalculator = calculator })
+          : base(propertyName, new QuantityEntryMap(propertyName, null) { PropertyCalculator = calculator })
       {
 
       }
@@ -121,7 +131,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC,
          IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
       {
-         foreach (QuantityEntryMap entry in m_Entries)
+         foreach (QuantityEntryMap entry in Entries)
          {
             IFCAnyHandle result = entry.ProcessEntry(file, exporterIFC, extrusionCreationData, element, 
                elementType, this);

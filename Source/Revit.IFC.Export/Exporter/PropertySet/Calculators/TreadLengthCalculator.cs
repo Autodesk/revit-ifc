@@ -70,7 +70,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          bool valid = true;
          if (StairsExporter.IsLegacyStairs(element))
@@ -102,7 +102,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 
          // Get override from parameter
          double treadLengthOverride = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "TreadLength", out treadLengthOverride) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out treadLengthOverride) != null
+            || ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out treadLengthOverride) != null)
          {
             m_TreadLength = UnitUtil.ScaleArea(treadLengthOverride);
          }

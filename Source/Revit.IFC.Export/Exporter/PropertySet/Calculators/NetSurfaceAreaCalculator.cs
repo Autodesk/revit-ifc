@@ -47,12 +47,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeeded, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          double areaEps = MathUtil.Eps() * MathUtil.Eps();
 
-         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyNetSurfaceArea", out m_Area) != null) ||
-            (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "NetSurfaceArea", out m_Area) != null))
+         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area) != null)
+               || (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out m_Area) != null)
+               || (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyNetSurfaceArea", out m_Area) != null))
          {
             m_Area = UnitUtil.ScaleArea(m_Area);
             if (m_Area > areaEps)

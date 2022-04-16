@@ -70,7 +70,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          bool valid = true;
 
@@ -111,7 +111,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 
          // Get override from parameter
          double treadLengthAtInnerSideOverride = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "TreadLengthAtInnerSide", out treadLengthAtInnerSideOverride) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out treadLengthAtInnerSideOverride) != null
+            || ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out treadLengthAtInnerSideOverride) != null)
          {
             m_TreadLengthAtInnerSide = UnitUtil.ScaleArea(treadLengthAtInnerSideOverride);
          }

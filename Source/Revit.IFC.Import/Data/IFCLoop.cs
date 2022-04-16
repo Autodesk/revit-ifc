@@ -49,6 +49,15 @@ namespace Revit.IFC.Import.Data
          }
       }
 
+      /// <summary>
+      /// Checks if the Loop definition represents a non-empty boundary.
+      /// </summary>
+      /// <returns>True if the FaceBound contains any information.</returns>
+      virtual public bool IsEmpty()
+      {
+         return false;
+      }
+
       protected IFCLoop()
       {
       }

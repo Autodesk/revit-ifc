@@ -315,8 +315,8 @@ namespace Revit.IFC.Common.Utility
                }
                else if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("Axis", StringComparison.InvariantCultureIgnoreCase))
                {
-                  uom = reader.GetAttribute("uom");
-                  uom = uom.Replace("Meter", "Metre");
+                  uom = reader.GetAttribute("uom").ToUpper();
+                  uom = uom.Replace("METER", "METRE");
                }
             }
          }
@@ -331,15 +331,80 @@ namespace Revit.IFC.Common.Utility
       /// <param name="doc">The document</param>
       /// <param name="wcsBasis">The selected coordinate base</param>
       /// <returns>A Tuple of scaled values for Eastings, Northings, and OrthogonalHeight</returns>
-      public static (double eastings, double northings, double orthogonalHeight) ScaledGeoReferenceInformation(Document doc, SiteTransformBasis wcsBasis)
+      public static (double eastings, double northings, double orthogonalHeight, double angleTN, double origAngleTN) ScaledGeoReferenceInformation
+         (Document doc, SiteTransformBasis wcsBasis, ProjectLocation projLocation = null)
       {
-         (double eastings, double northings, double orthogonalHeight) geoRef = GeoReferenceInformation(doc, wcsBasis);
+         (double eastings, double northings, double orthogonalHeight, double angleTN, double origAngleTN) geoRef = GeoReferenceInformation(doc, wcsBasis, projLocation);
          FormatOptions lenFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Length);
          ForgeTypeId lengthUnit = lenFormatOptions.GetUnitTypeId();
          geoRef.eastings = UnitUtils.ConvertFromInternalUnits(geoRef.eastings, lengthUnit);
          geoRef.northings = UnitUtils.ConvertFromInternalUnits(geoRef.northings, lengthUnit);
          geoRef.orthogonalHeight = UnitUtils.ConvertFromInternalUnits(geoRef.orthogonalHeight, lengthUnit);
+
+         FormatOptions angleFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Angle);
+         ForgeTypeId angleUnit = angleFormatOptions.GetUnitTypeId();
+         geoRef.angleTN = UnitUtils.ConvertFromInternalUnits(geoRef.angleTN, angleUnit);
          return (geoRef);
+      }
+
+      /// <summary>
+      /// Get ProjectLocation details for both Survey Point and Project Base Point
+      /// It will try to duplicate a SiteLocation if it is not good (e.g. NonConformal) in some of the old data
+      /// </summary>
+      /// <param name="doc"></param>
+      /// <param name="svPosition"></param>
+      /// <param name="pbPosition"></param>
+      /// <returns></returns>
+      public static (double svNorthings, double svEastings, double svElevation, double svAngle, double pbNorthings, double pbEastings, double pbElevation, double pbAngle) ProjectLocationInfo 
+         (Document doc, XYZ svPosition, XYZ pbPosition)
+      {
+         double svNorthings = 0.0;
+         double svEastings = 0.0;
+         double svAngle = 0.0;
+         double svElevation = 0.0;
+         double pbNorthings = 0.0;
+         double pbEastings = 0.0;
+         double pbElevation = 0.0;
+         double pbAngle = 0.0;
+
+         try
+         {
+            ProjectPosition surveyPos = doc.ActiveProjectLocation.GetProjectPosition(svPosition);
+            svNorthings = surveyPos.NorthSouth;
+            svEastings = surveyPos.EastWest;
+            svElevation = surveyPos.Elevation;
+            svAngle = surveyPos.Angle;
+
+            ProjectPosition projectBasePos = doc.ActiveProjectLocation.GetProjectPosition(pbPosition);
+            pbNorthings = projectBasePos.NorthSouth;
+            pbEastings = projectBasePos.EastWest;
+            pbElevation = projectBasePos.Elevation;
+            pbAngle = projectBasePos.Angle;
+         }
+         catch (Autodesk.Revit.Exceptions.InvalidOperationException)
+         {
+            // If the exception is due to not good data that causes Transform not formed correctly, duplicating it may actually solve the problem
+            try
+            {
+               ProjectLocation duplProjectLocation = doc.ActiveProjectLocation.Duplicate(doc.ActiveProjectLocation.Name + "-Copy");
+               doc.ActiveProjectLocation = duplProjectLocation;
+
+               ProjectPosition surveyPos = doc.ActiveProjectLocation.GetProjectPosition(svPosition);
+               svNorthings = surveyPos.NorthSouth;
+               svEastings = surveyPos.EastWest;
+               svAngle = surveyPos.Angle;
+               svElevation = surveyPos.Elevation;
+
+               ProjectPosition projectBasePos = doc.ActiveProjectLocation.GetProjectPosition(pbPosition);
+               pbNorthings = projectBasePos.NorthSouth;
+               pbEastings = projectBasePos.EastWest;
+               pbAngle = projectBasePos.Angle;
+               pbElevation = projectBasePos.Elevation;
+            }
+            catch { }
+         }
+
+         return (svNorthings, svEastings, svElevation, svAngle, pbNorthings, pbEastings, pbElevation, pbAngle);
       }
 
       /// <summary>
@@ -348,44 +413,89 @@ namespace Revit.IFC.Common.Utility
       /// <param name="doc">The document</param>
       /// <param name="wcsBasis">The selected coordinate base</param>
       /// <returns>A Tuple for Eastings, Northings, and OrthogonalHeight</returns>
-      public static (double eastings, double northings, double orthogonalHeight) GeoReferenceInformation(Document doc, SiteTransformBasis wcsBasis)
+      public static (double eastings, double northings, double orthogonalHeight, double angleTN, double origAngleTN) GeoReferenceInformation
+         (Document doc, SiteTransformBasis wcsBasis, ProjectLocation projLocation = null)
       {
          double eastings = 0.0;
          double northings = 0.0;
          double orthogonalHeight = 0.0;
+         double angleTN = 0.0;
+         double origAngleTN = 0.0;
 
-         BasePoint surveyPoint = BasePoint.GetSurveyPoint(doc);
-         BasePoint projectBasePoint = BasePoint.GetProjectBasePoint(doc);
-         switch (wcsBasis)
+         using (Transaction tr = new Transaction(doc))
          {
-            case SiteTransformBasis.Internal:
-               northings = surveyPoint.SharedPosition.Y - surveyPoint.Position.Y;
-               eastings = surveyPoint.SharedPosition.X - surveyPoint.Position.X;
-               orthogonalHeight = surveyPoint.SharedPosition.Z - surveyPoint.Position.Z;
-               break;
-            case SiteTransformBasis.Project:
-               northings = projectBasePoint.SharedPosition.Y;
-               eastings = projectBasePoint.SharedPosition.X;
-               orthogonalHeight = projectBasePoint.SharedPosition.Z;
-               break;
-            case SiteTransformBasis.Shared:
-               northings = 0.0;
-               eastings = 0.0;
-               orthogonalHeight = 0.0;
-               break;
-            case SiteTransformBasis.Site:
-               northings = surveyPoint.SharedPosition.Y;
-               eastings = surveyPoint.SharedPosition.X;
-               orthogonalHeight = surveyPoint.SharedPosition.Z;
-               break;
-            default:
-               northings = 0.0;
-               eastings = 0.0;
-               orthogonalHeight = 0.0;
-               break;
+            try
+            {
+               tr.Start("Temp Project Location change");
+            }
+            catch { }
+
+            using (SubTransaction tempSiteLocTr = new SubTransaction(doc))
+            {
+               tempSiteLocTr.Start();
+               if (projLocation != null)
+                  doc.ActiveProjectLocation = projLocation;
+
+               BasePoint surveyPoint = BasePoint.GetSurveyPoint(doc);
+               BasePoint projectBasePoint = BasePoint.GetProjectBasePoint(doc);
+               (double svNorthings, double svEastings, double svElevation, double svAngle, double pbNorthings, 
+                  double pbEastings, double pbElevation, double pbAngle) = ProjectLocationInfo(doc, surveyPoint.Position, projectBasePoint.Position);
+               origAngleTN = pbAngle;
+
+               switch (wcsBasis)
+               {
+                  case SiteTransformBasis.Internal:
+                     Transform rotationTrfAtInternal = Transform.CreateRotationAtPoint(new XYZ(0, 0, 1), svAngle, XYZ.Zero);
+                     XYZ intPointOffset = rotationTrfAtInternal.OfPoint(surveyPoint.Position);
+                     northings = svNorthings - intPointOffset.Y;
+                     eastings = svEastings - intPointOffset.X;
+                     orthogonalHeight = surveyPoint.SharedPosition.Z - surveyPoint.Position.Z;
+                     angleTN = -svAngle;
+                     break;
+                  case SiteTransformBasis.InternalInTN:
+                     rotationTrfAtInternal = Transform.CreateRotationAtPoint(new XYZ(0, 0, 1), svAngle, XYZ.Zero);
+                     intPointOffset = rotationTrfAtInternal.OfPoint(surveyPoint.Position);
+                     northings = svNorthings - intPointOffset.Y;
+                     eastings = svEastings - intPointOffset.X;
+                     orthogonalHeight = surveyPoint.SharedPosition.Z - surveyPoint.Position.Z;
+                     angleTN = 0.0;
+                     break;
+                  case SiteTransformBasis.Project:
+                     northings = pbNorthings;
+                     eastings = pbEastings;
+                     orthogonalHeight = pbElevation;
+                     angleTN = -pbAngle;
+                     break;
+                  case SiteTransformBasis.ProjectInTN:
+                     northings = pbNorthings;
+                     eastings = pbEastings;
+                     orthogonalHeight = pbElevation;
+                     angleTN = 0.0;
+                     break;
+                  case SiteTransformBasis.Shared:
+                     northings = 0.0;
+                     eastings = 0.0;
+                     orthogonalHeight = 0.0;
+                     angleTN = 0.0;
+                     break;
+                  case SiteTransformBasis.Site:
+                     northings = svNorthings;
+                     eastings = svEastings;
+                     orthogonalHeight = svElevation;
+                     angleTN = 0.0;
+                     break;
+                  default:
+                     northings = 0.0;
+                     eastings = 0.0;
+                     orthogonalHeight = 0.0;
+                     angleTN = 0.0;
+                     break;
+               }
+               tempSiteLocTr.RollBack();
+            }
          }
 
-         return (eastings, northings, orthogonalHeight);
+         return (eastings, northings, orthogonalHeight, angleTN, origAngleTN);
       }
 
       /// <summary>

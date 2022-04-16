@@ -116,6 +116,36 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Converts a sound power value in Revit internal units to IFC units.
+      /// </summary>
+      /// <param name="unscaledPower">The power value in Revit internal units.</param>
+      /// <returns>The power in IFC units.</returns>
+      static public double ScaleSoundPower(double unscaledPower)
+      {
+         return ScaleDouble(SpecTypeId.Wattage, unscaledPower);
+      }
+
+      /// <summary>
+      /// Converts a sound pressure value in Revit internal units to IFC units.
+      /// </summary>
+      /// <param name="unscaledPressure">The pressure value in Revit internal units.</param>
+      /// <returns>The pressure in IFC units.</returns>
+      static public double ScaleSoundPressure(double unscaledPressure)
+      {
+         return ScaleDouble(SpecTypeId.HvacPressure, unscaledPressure);
+      }
+
+      /// <summary>
+      /// Converts a thermal transmittance value in Revit internal units to IFC units.
+      /// </summary>
+      /// <param name="unscaledThermalTransmittance">The thermal transmittance value in Revit internal units.</param>
+      /// <returns>The thermal transmittance in IFC units.</returns>
+      static public double ScaleThermalTransmittance(double unscaledThermalTransmittance)
+      {
+         return ScaleDouble(SpecTypeId.HeatTransferCoefficient, unscaledThermalTransmittance);
+      }
+
+      /// <summary>
       /// Converts an area in Revit internal units to IFC units.
       /// </summary>
       /// <param name="unscaledArea">The area in Revit internal units.</param>

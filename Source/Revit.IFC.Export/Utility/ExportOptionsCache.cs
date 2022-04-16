@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.Globalization;
-
+using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
@@ -139,10 +139,10 @@ namespace Revit.IFC.Export.Utility
 
       private static ElementId ParseElementId(String singleElementValue)
       {
-         int elementIdAsInt;
-         if (Int32.TryParse(singleElementValue, out elementIdAsInt))
+         ElementId elementId;
+         if (ElementId.TryParse(singleElementValue, out elementId))
          {
-            return new ElementId(elementIdAsInt);
+            return elementId;
          }
          else
          {
@@ -158,10 +158,10 @@ namespace Revit.IFC.Export.Utility
          List<ElementId> ids = new List<ElementId>();
          foreach (String element in elements)
          {
-            int elementIdAsInt;
-            if (Int32.TryParse(element, out elementIdAsInt))
+            ElementId elementId;
+            if (ElementId.TryParse(element, out elementId))
             {
-               ids.Add(new ElementId(elementIdAsInt));
+               ids.Add(elementId);
             }
             else
             {
@@ -272,7 +272,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          // "ExportAnnotations" override
-         cache.ExportAnnotationsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportAnnotations");
+         cache.ExportAnnotationsOverride = OptionsUtil.GetNamedBooleanOption(options, "Export2DElements");
 
          // "ExportSeparateParts" override
          cache.ExportPartsAsBuildingElementsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportPartsAsBuildingElements");
@@ -332,7 +332,7 @@ namespace Revit.IFC.Export.Utility
          cache.ActivePhaseId = ElementId.InvalidElementId;
 
          String activePhaseElementValue;
-         if (options.TryGetValue("ActivePhase", out activePhaseElementValue))
+         if (options.TryGetValue("ActivePhaseId", out activePhaseElementValue))
             cache.ActivePhaseId = ParseElementId(activePhaseElementValue);
 
          if ((cache.ActivePhaseId == ElementId.InvalidElementId) && (cache.FilterViewForExport != null))
@@ -360,11 +360,11 @@ namespace Revit.IFC.Export.Utility
          if (cache.UseActiveViewGeometry)
          {
             int? viewId = OptionsUtil.GetNamedIntOption(options, "ActiveViewId");
-            int activeViewId = viewId.HasValue ? viewId.Value : -1;
+            ElementId activeViewId = viewId.HasValue ? new ElementId(viewId.Value) : ElementId.InvalidElementId;
             View activeView = null;
             try
             {
-               activeView = document.GetElement(new ElementId(activeViewId)) as View;
+               activeView = document.GetElement(activeViewId) as View;
             }
             catch
             {
@@ -428,8 +428,22 @@ namespace Revit.IFC.Export.Utility
          }
 
          cache.ExcludeFilter = OptionsUtil.GetNamedStringOption(options, "ExcludeFilter");
-         
+
          // Geo Reference info
+         ExporterCacheManager.SelectedSiteProjectLocation = null;
+         string selSite = OptionsUtil.GetNamedStringOption(options, "SelectedSite");
+         foreach (ProjectLocation pLoc in document.ProjectLocations.Cast<ProjectLocation>().ToList())
+         {
+            if (pLoc.Name.Equals(selSite))
+            {
+               ExporterCacheManager.SelectedSiteProjectLocation = pLoc;
+               break;
+            }
+         }
+         // Ensure the cache is set to the default (ActiveProjectLocation) if not set
+         if (ExporterCacheManager.SelectedSiteProjectLocation == null)
+            ExporterCacheManager.SelectedSiteProjectLocation = document.ActiveProjectLocation;
+
          cache.GeoRefCRSName = OptionsUtil.GetNamedStringOption(options, "GeoRefCRSName");
          cache.GeoRefCRSDesc = OptionsUtil.GetNamedStringOption(options, "GeoRefCRSDesc");
          cache.GeoRefEPSGCode = OptionsUtil.GetNamedStringOption(options, "GeoRefEPSGCode");
@@ -450,7 +464,7 @@ namespace Revit.IFC.Export.Utility
       private static void ParseFileType(IDictionary<String, String> options, ExportOptionsCache cache)
       {
          String fileTypeString;
-         if (options.TryGetValue("FileType", out fileTypeString))
+         if (options.TryGetValue("IFCFileType", out fileTypeString))
          {
             IFCFileFormat fileType;
             if (Enum.TryParse<IFCFileFormat>(fileTypeString, true, out fileType))

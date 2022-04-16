@@ -17,13 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 using Autodesk.Revit.DB;
-using BIM.IFC.Export.UI.Properties;
 
 namespace BIM.IFC.Export.UI
 {
@@ -50,32 +44,6 @@ namespace BIM.IFC.Export.UI
       /// Converts the IFCVersion to string.
       /// </summary>
       /// <returns>The string of IFCVersion.</returns>
-      public override String ToString()
-      {
-         switch (Version)
-         {
-            case IFCVersion.IFC2x2:
-               return Resources.IFCVersion2x2;
-            case IFCVersion.IFC2x3:
-               return Resources.IFCVersion2x3;
-            case IFCVersion.IFCBCA:
-            case IFCVersion.IFC2x3CV2:
-               return Resources.IFCMVD2x3CV2;
-            case IFCVersion.IFC4:
-               return Resources.IFC4;
-            case IFCVersion.IFCCOBIE:
-               return Resources.IFCMVDGSA;
-            case IFCVersion.IFC2x3FM:
-               return Resources.IFC2x3FM;
-            case IFCVersion.IFC4DTV:
-               return Resources.IFC4DTV;
-            case IFCVersion.IFC4RV:
-               return Resources.IFC4RV;
-            case IFCVersion.IFC2x3BFM:
-               return Resources.IFCMVDFMHandOver;
-            default:
-               return Resources.IFCVersionUnrecognized;
-         }
-      }
+      public override string ToString() => Version.ToLabel();
    }
 }

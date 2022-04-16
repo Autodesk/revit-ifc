@@ -130,12 +130,23 @@ namespace Revit.IFC.Import.Data
             }
          }
 
+         var application = IFCImportFile.TheFile.Document.Application;
+         var projectUnits = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length);
+
+         IFCImportFile.TheFile.VertexTolerance = application.VertexTolerance;
+         IFCImportFile.TheFile.ShortCurveTolerance = application.ShortCurveTolerance;
+         Importer.TheProcessor.PostProcessProject(projectUnits?.ScaleFactor, projectUnits?.Unit);
+
          // We need to process the units before we process the rest of the file, since we will scale values as we go along.
          base.Process(ifcProjectHandle);
 
          // process true north - take the first valid representation context that has a true north value.
          HashSet<IFCAnyHandle> repContexts = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcProjectHandle, "RepresentationContexts");
 
+         bool hasMapConv = false;
+         XYZ geoRef = XYZ.Zero;
+         string geoRefName = null;
+         double trueNorth = 0.0;
          if (repContexts != null)
          {
             foreach (IFCAnyHandle geomRepContextHandle in repContexts)
@@ -154,6 +165,136 @@ namespace Revit.IFC.Import.Data
                   {
                      WorldCoordinateSystem = context.WorldCoordinateSystem;
                   }
+
+                  // Process Map Conversion if any
+                  HashSet<IFCAnyHandle> coordOperation = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(geomRepContextHandle, "HasCoordinateOperation");
+                  if (coordOperation != null)
+                  {
+                     if (coordOperation.Count > 0)
+                     {
+                        if (IFCAnyHandleUtil.IsSubTypeOf(coordOperation.FirstOrDefault(), IFCEntityType.IfcMapConversion))
+                        {
+                           hasMapConv = true;
+                           IFCAnyHandle mapConv = coordOperation.FirstOrDefault();
+                           bool found = false;
+                           double eastings = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(mapConv, "Eastings", out found);
+                           if (!found)
+                              eastings = 0.0;
+                           double northings = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(mapConv, "Northings", out found);
+                           if (!found)
+                              northings = 0.0;
+                           double orthogonalHeight = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(mapConv, "OrthogonalHeight", out found);
+                           if (!found)
+                              orthogonalHeight = 0.0;
+                           double xAxisAbs = IFCImportHandleUtil.GetOptionalRealAttribute(mapConv, "XAxisAbscissa", 1.0);
+                           double xAxisOrd = IFCImportHandleUtil.GetOptionalRealAttribute(mapConv, "XAxisOrdinate", 0.0);
+                           trueNorth = Math.Atan2(xAxisOrd, xAxisAbs);
+                           //angleToNorth = -((xAxisAngle > -Math.PI / 2.0) ? xAxisAngle - Math.PI / 2.0 : xAxisAngle + Math.PI * 1.5);
+                           double scale = IFCImportHandleUtil.GetOptionalRealAttribute(mapConv, "Scale", 1.0);
+                           geoRef = new XYZ(scale * eastings, scale * northings, scale * orthogonalHeight);
+
+                           // Process the IfcProjectedCRS
+                           IFCAnyHandle projCRS = IFCAnyHandleUtil.GetInstanceAttribute(mapConv, "TargetCRS");
+                           if (projCRS != null && IFCAnyHandleUtil.IsSubTypeOf(projCRS, IFCEntityType.IfcProjectedCRS))
+                           {
+                              geoRefName = IFCImportHandleUtil.GetRequiredStringAttribute(projCRS, "Name", false);
+                              string desc = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "Description", null);
+                              string geodeticDatum = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "GeodeticDatum", null);
+                              string verticalDatum = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "VerticalDatum", null);
+                              string mapProj = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "MapProjection", null);
+                              string mapZone = IFCImportHandleUtil.GetOptionalStringAttribute(projCRS, "MapZone", null);
+                              IFCAnyHandle mapUnit = IFCImportHandleUtil.GetOptionalInstanceAttribute(projCRS, "MapUnit");
+
+                              Document doc = IFCImportFile.TheFile.Document;
+                              ProjectInfo projectInfo = doc.ProjectInformation;
+
+                              // We add this here because we want to make sure that external processors (e.g., Navisworks)
+                              // get a chance to add a container for the parameters that get added below.  In general,
+                              // we should probably augment Processor.AddParameter to ensure that CreateOrUpdateElement
+                              // is called before anything is attempted to be added.  This is a special case, though,
+                              // as in Revit we don't actually create an element for the IfcProject.
+                              Importer.TheProcessor.CreateOrUpdateElement(Id, GlobalId, EntityType.ToString(), CategoryId.IntegerValue, null);
+
+                              Category category = IFCPropertySet.GetCategoryForParameterIfValid(projectInfo, Id);
+                              IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.Name", geoRefName, Id);
+                              if (!string.IsNullOrEmpty(desc))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.Description", desc, Id);
+                              if (!string.IsNullOrEmpty(geodeticDatum))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.GeodeticDatum", geodeticDatum, Id);
+                              if (!string.IsNullOrEmpty(verticalDatum))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.VerticalDatum", verticalDatum, Id);
+                              if (!string.IsNullOrEmpty(mapProj))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapProjection", mapProj, Id);
+                              if (!string.IsNullOrEmpty(mapZone))
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapZone", mapZone, Id);
+                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(mapUnit))
+                              {
+                                 IFCUnit mapUnitIfc = IFCUnit.ProcessIFCUnit(mapUnit);
+                                 string unitStr = UnitUtils.GetTypeCatalogStringForUnit(mapUnitIfc.Unit);
+                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapUnit", unitStr, Id);
+                                 double convFactor = UnitUtils.Convert(1.0, mapUnitIfc.Unit, IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length).Unit);
+                                 eastings = convFactor * eastings;
+                                 northings = convFactor * northings;
+                                 orthogonalHeight = convFactor * orthogonalHeight;
+                                 geoRef = new XYZ(eastings, northings, orthogonalHeight);
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+
+            ProjectLocation projectLocation = IFCImportFile.TheFile.Document.ActiveProjectLocation;
+            ProjectPosition projectPosition;
+            if (projectLocation != null)
+            {
+               if (hasMapConv)
+               {
+                  projectPosition = new ProjectPosition(geoRef.X, geoRef.Y, geoRef.Z, trueNorth);
+                  projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
+
+                  if (!string.IsNullOrEmpty(geoRefName))
+                     IFCImportFile.TheFile.Document.SiteLocation.SetGeoCoordinateSystem(geoRefName);
+               }
+               else
+               {
+                  // Set initial project location based on the information above.
+                  // This may be further modified by the site.
+                  trueNorth = 0.0;
+                  if (TrueNorthDirection != null)
+                  {
+                     trueNorth = -Math.Atan2(-TrueNorthDirection.U, TrueNorthDirection.V);
+                  }
+
+                  // TODO: Extend this to work properly if the world coordinate system
+                  // isn't a simple translation.
+                  XYZ origin = XYZ.Zero;
+                  if (WorldCoordinateSystem != null)
+                  {
+                     geoRef = WorldCoordinateSystem.Origin;
+                     double angleRot = Math.Atan2(WorldCoordinateSystem.BasisX.Y, WorldCoordinateSystem.BasisX.X);
+
+                     // If it is translation only, or if the WCS rotation is equal to trueNorth, we assume they are the same
+                     if (WorldCoordinateSystem.IsTranslation
+                        || MathUtil.IsAlmostEqual(angleRot, trueNorth))
+                     {
+                        WorldCoordinateSystem = null;
+                     }
+                     else
+                     {
+                        // If the trueNorth is not set (=0), set the trueNorth by the rotation of the WCS, otherwise add the angle                       
+                        if (MathUtil.IsAlmostZero(trueNorth))
+                           trueNorth = angleRot;
+                        else
+                           trueNorth += angleRot;
+
+                        WorldCoordinateSystem = null;
+                     }
+                  }
+
+                  projectPosition = new ProjectPosition(geoRef.X, geoRef.Y, geoRef.Z, trueNorth);
+                  projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
                }
             }
          }
@@ -214,25 +355,29 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
-         Units documentUnits = new Units(doc.DisplayUnitSystem == DisplayUnit.METRIC ?
-             UnitSystem.Metric : UnitSystem.Imperial);
-         foreach (IFCUnit unit in UnitsInContext)
+         if (UnitsInContext != null)
          {
-            if (!IFCUnit.IsNullOrInvalid(unit))
+            Units documentUnits = new Units(doc.DisplayUnitSystem == DisplayUnit.METRIC ?
+                UnitSystem.Metric : UnitSystem.Imperial);
+
+            foreach (IFCUnit unit in UnitsInContext)
             {
-               try
+               if (!IFCUnit.IsNullOrInvalid(unit))
                {
-                  FormatOptions formatOptions = new FormatOptions(unit.Unit);
-                  formatOptions.SetSymbolTypeId(unit.Symbol);
-                  documentUnits.SetFormatOptions(unit.Spec, formatOptions);
-               }
-               catch (Exception ex)
-               {
-                  Importer.TheLog.LogError(unit.Id, ex.Message, false);
+                  try
+                  {
+                     FormatOptions formatOptions = new FormatOptions(unit.Unit);
+                     formatOptions.SetSymbolTypeId(unit.Symbol);
+                     documentUnits.SetFormatOptions(unit.Spec, formatOptions);
+                  }
+                  catch (Exception ex)
+                  {
+                     Importer.TheLog.LogError(unit.Id, ex.Message, false);
+                  }
                }
             }
+            doc.SetUnits(documentUnits);
          }
-         doc.SetUnits(documentUnits);
 
          // We will randomize unused grid names so that they don't conflict with new entries with the same name.
          // This is only for relink.
@@ -246,6 +391,17 @@ namespace Revit.IFC.Import.Data
             grid.Name = Guid.NewGuid().ToString();
          }
 
+         // Pre-process sites to orient them properly.
+         IList<IFCSite> sites = new List<IFCSite>();
+         foreach (IFCObjectDefinition objectDefinition in ComposedObjectDefinitions)
+         {
+            if (objectDefinition is IFCSite)
+            {
+               sites.Add(objectDefinition as IFCSite);
+            }
+         }
+         IFCSite.ProcessSiteLocations(doc, sites);
+               
          base.Create(doc);
 
          // IfcProject usually won't create an element, as it contains no geometry.

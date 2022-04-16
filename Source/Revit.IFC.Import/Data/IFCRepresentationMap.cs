@@ -166,25 +166,32 @@ namespace Revit.IFC.Import.Data
                   DirectShapeType directShapeType = null;
 
                   IFCTypeProduct typeProduct = null;
+                  int typeId = -1;
                   if (Importer.TheCache.RepMapToTypeProduct.TryGetValue(Id, out typeProduct) && typeProduct != null)
                   {
                      ElementId directShapeTypeId = ElementId.InvalidElementId;
                      if (Importer.TheCache.CreatedDirectShapeTypes.TryGetValue(typeProduct.Id, out directShapeTypeId))
                      {
                         directShapeType = doc.GetElement(directShapeTypeId) as DirectShapeType;
+                        typeId = typeProduct.Id;
                      }
                   }
 
                   if (directShapeType == null)
                   {
                      string directShapeTypeName = Id.ToString();
-                     directShapeType = IFCElementUtil.CreateElementType(doc, directShapeTypeName, shapeEditScope.CategoryId, Id);
+                     directShapeType = IFCElementUtil.CreateElementType(doc, directShapeTypeName, shapeEditScope.CategoryId, Id, null, EntityType);
+                     typeId = Id;
                   }
 
-                  // Note that this assumes that there is only one 2D rep per DirectShapeType.
-                  directShapeType.AppendShape(mappedSolids);
-                  if (mappedCurves.Count != 0)
-                     shapeEditScope.SetPlanViewRep(directShapeType);
+                  if (!Importer.TheProcessor.PostProcessRepresentationMap(typeId, mappedCurves, mappedSolids))
+                  {
+                     // Do the "default" here instead of the processor, since we don't want the processor
+                     // to know about Revit.IFC.Import stuff.
+                     directShapeType.AppendShape(mappedSolids);
+                     if (mappedCurves.Count != 0)
+                        shapeEditScope.SetPlanViewRep(directShapeType);
+                  }
 
                   IFCImportFile.TheFile.ShapeLibrary.AddDefinitionType(Id.ToString(), directShapeType.Id);
                }

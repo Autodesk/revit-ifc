@@ -265,8 +265,8 @@ namespace Revit.IFC.Import.Data
       protected class IFCProfileXYEllipseSegment : IFCProfileXYArcSegment
       {
          private double RadiusY { get; set; } = 0.0;
-         
-         public IFCProfileXYEllipseSegment(XYZ center, double radiusX, double radiusY, double startAngle, double endAngle):
+
+         public IFCProfileXYEllipseSegment(XYZ center, double radiusX, double radiusY, double startAngle, double endAngle) :
             base(center, radiusX, startAngle, endAngle, false)
          {
             RadiusY = radiusY;
@@ -278,6 +278,12 @@ namespace Revit.IFC.Import.Data
          }
       }
 
+      private void AddValidLineSegment(IList<IIFCProfileSegment> segments, XYZ startPoint, XYZ endPoint)
+      {
+         if (endPoint.DistanceTo(startPoint) > IFCImportFile.TheFile.ShortCurveTolerance - MathUtil.Eps())
+            segments.Add(new IFCProfileLineSegment(startPoint, endPoint));
+      }
+   
       private CurveLoop CreateProfilePolyCurveLoop(XYZ[] corners)
       {
          int sz = corners.Count();
@@ -324,7 +330,8 @@ namespace Revit.IFC.Import.Data
          IList<IIFCProfileSegment> segments = new List<IIFCProfileSegment>();
          for (int ii = 0; ii < 4; ii++)
          {
-            segments.Add(new IFCProfileLineSegment(fillets[ii * 2 + 1], fillets[(ii * 2 + 2) % 8]));
+            // It is legal for a rounded rectangular profile def to have no straight parts.
+            AddValidLineSegment(segments, fillets[ii * 2 + 1], fillets[(ii * 2 + 2) % 8]);
             
             double startAngle = Math.PI * ((ii + 3) % 4) / 2;
             segments.Add(new IFCProfileXYArcSegment(radii[(ii + 1) % 4], filletRadius, startAngle, startAngle + Math.PI / 2, false));
@@ -433,8 +440,8 @@ namespace Revit.IFC.Import.Data
 
          if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcRoundedRectangleProfileDef))
          {
-            double roundedRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "RoundedRadius", 0.0);
-            if ((roundedRadius > MathUtil.Eps()) && (roundedRadius < ((Math.Min(xDim, yDim) / 2.0) - MathUtil.Eps())))
+            double roundedRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "RoundingRadius", 0.0);
+            if ((roundedRadius > MathUtil.Eps()) && (roundedRadius <= ((Math.Min(xDim, yDim) / 2.0) + MathUtil.Eps())))
             {
                ProcessIFCRoundedRectangleProfileDef(profileDef, xDim, yDim, roundedRadius);
                return;
@@ -602,7 +609,7 @@ namespace Revit.IFC.Import.Data
                segments.Add(new IFCProfileLineSegment(cShapePoints[5], cShapePoints[6]));
                segments.Add(new IFCProfileLineSegment(cShapePoints[6], cFilletPoints[8]));
                
-               for (int jj = 0; jj < 3; ii++)
+               for (int jj = 0; jj < 3; jj++)
                {
                   segments.Add(new IFCProfileXYArcSegment(cFilletCenters[3 - jj], innerRadius, cRange[3 - jj][0], cRange[3 - jj][1], false));
                   segments.Add(new IFCProfileLineSegment(cFilletPoints[2 * jj + 9], cFilletPoints[2 * jj + 10]));

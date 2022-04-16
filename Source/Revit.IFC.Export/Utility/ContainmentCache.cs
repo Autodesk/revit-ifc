@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Enums;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Toolkit;
 
@@ -31,22 +32,13 @@ namespace Revit.IFC.Export.Utility
    /// Used to keep a cache of the elements contained in another element.
    /// For example, by default, IFCPROJECT would have one item, IFCSITE.
    /// </summary>
-   public class ContainmentCache : Dictionary<IFCAnyHandle, ICollection<IFCAnyHandle>>
+   public class ContainmentCache 
    {
-      Dictionary<IFCAnyHandle, string> m_ContainerGUIDs = new Dictionary<IFCAnyHandle, string>();
+      public Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> Cache { get; set; } = 
+         new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
 
-      /// <summary>
-      /// Define the GUID for the IFCRELAGGREGATES.
-      /// </summary>
-      /// <param name="container">The container.</param>
-      /// <param name="guid">The guid.</param>
-      public void SetGUIDForRelation(IFCAnyHandle container, string guid)
-      {
-         string existingGUID;
-         if (m_ContainerGUIDs.TryGetValue(container, out existingGUID))
-            throw new InvalidOperationException("GUID is already set.");
-         m_ContainerGUIDs[container] = guid;
-      }
+      Dictionary<IFCAnyHandle, string> ContainerGUIDs { get; set; }  = 
+         new Dictionary<IFCAnyHandle, string>();
 
       /// <summary>
       /// Get the GUID for the IFCRELAGGREGATES.
@@ -55,9 +47,19 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The GUID, if it exists.</returns>
       public string GetGUIDForRelation(IFCAnyHandle container)
       {
-         string existingGUID = null;
-         m_ContainerGUIDs.TryGetValue(container, out existingGUID);
-         return existingGUID;
+         return ContainerGUIDs.TryGetValue(container, out string existingGUID) ? existingGUID : null;
+      }
+
+      private HashSet<IFCAnyHandle> GetContainedItemsForHandle(IFCAnyHandle container, string guid)
+      {
+         if (!Cache.TryGetValue(container, out HashSet<IFCAnyHandle> containedItems))
+         {
+            ContainerGUIDs[container] = guid ?? 
+               GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelContainedInSpatialStructure, container);
+            containedItems = new HashSet<IFCAnyHandle>();
+            Cache[container] = containedItems;
+         }
+         return containedItems;
       }
 
       /// <summary>
@@ -67,12 +69,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="objectHnd">The object to add.</param>
       public void AddRelation(IFCAnyHandle container, IFCAnyHandle objectHnd)
       {
-         ICollection<IFCAnyHandle> containedItems;
-         if (!TryGetValue(container, out containedItems))
-         {
-            containedItems = new HashSet<IFCAnyHandle>();
-            this[container] = containedItems;
-         }
+         HashSet<IFCAnyHandle> containedItems = GetContainedItemsForHandle(container, null);
          containedItems.Add(objectHnd);
       }
 
@@ -81,10 +78,10 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="container">The container.</param>
       /// <param name="objectHnds">The objects to add.</param>
-      public void AddRelations(IFCAnyHandle container, ICollection<IFCAnyHandle> objectHnds)
+      public void AddRelations(IFCAnyHandle container, string guid, ICollection<IFCAnyHandle> objectHnds)
       {
-         foreach (IFCAnyHandle objectHnd in objectHnds)
-            AddRelation(container, objectHnd);
+         HashSet<IFCAnyHandle> containedItems = GetContainedItemsForHandle(container, guid);
+         containedItems.UnionWith(objectHnds);
       }
    }
 }

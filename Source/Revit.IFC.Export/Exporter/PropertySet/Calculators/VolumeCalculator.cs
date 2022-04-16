@@ -51,11 +51,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          double volumeEps = MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps();
-         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyVolume", out m_Volume) != null) ||
-               (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "QtyVolume", out m_Volume) != null))
+         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Volume) != null)
+               || (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out m_Volume) != null)
+               || (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyVolume", out m_Volume) != null))
          {
             m_Volume = UnitUtil.ScaleArea(m_Volume);
             if (m_Volume > volumeEps)

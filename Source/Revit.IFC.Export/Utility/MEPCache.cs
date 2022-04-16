@@ -17,19 +17,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Diagnostics;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Autodesk.Revit.DB.Mechanical;
 using Autodesk.Revit.DB.Electrical;
-using Autodesk.Revit.DB.Plumbing;
-using Autodesk.Revit.DB.Structure;
-using Revit.IFC.Common.Enums;
-using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -41,7 +32,8 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The dictionary mapping from a MEP element elementId to an Ifc handle. 
       /// </summary>
-      private Dictionary<ElementId, IFCAnyHandle> m_MEPElementHandleDictionary = new Dictionary<ElementId, IFCAnyHandle>();
+      /// <remarks>ElementId can't be used as a key for a SortedDictionary.</remarks>
+      private IDictionary<long, IFCAnyHandle> m_MEPElementHandleDictionary = new SortedDictionary<long, IFCAnyHandle>();
 
       /// <summary>
       /// A list of connectors
@@ -52,6 +44,21 @@ namespace Revit.IFC.Export.Utility
       /// A cache of elements (Ducts and Pipes) that may have coverings (Linings and/or Insulations).
       /// </summary>
       public HashSet<ElementId> CoveredElementsCache = new HashSet<ElementId>();
+
+      /// <summary>
+      /// A cache of elements (Cable Trays and Conduits) that may be assigned to systems
+      /// </summary>
+      public HashSet<ElementId> CableElementsCache = new HashSet<ElementId>();
+
+      /// <summary>
+      /// The dictionary mapping from an exported connector to an Ifc handle. 
+      /// </summary>
+      public IDictionary<Connector, IFCAnyHandle> ConnectorCache = new Dictionary<Connector, IFCAnyHandle>();
+
+      /// <summary>
+      /// The dictionary mapping from an exported connector to its description string. 
+      /// </summary>
+      public IDictionary<Connector, string> ConnectorDescriptionCache = new Dictionary<Connector, string>();
 
       /// <summary>
       /// Finds the Ifc handle from the dictionary.
@@ -65,7 +72,7 @@ namespace Revit.IFC.Export.Utility
       public IFCAnyHandle Find(ElementId elementId)
       {
          IFCAnyHandle handle;
-         if (m_MEPElementHandleDictionary.TryGetValue(elementId, out handle))
+         if (m_MEPElementHandleDictionary.TryGetValue(elementId.IntegerValue, out handle))
          {
             return handle;
          }
@@ -83,10 +90,11 @@ namespace Revit.IFC.Export.Utility
       /// </param>
       public void Register(Element element, IFCAnyHandle handle)
       {
-         if (m_MEPElementHandleDictionary.ContainsKey(element.Id))
+         int idVal = element.Id.IntegerValue;
+         if (m_MEPElementHandleDictionary.ContainsKey(idVal))
             return;
 
-         m_MEPElementHandleDictionary[element.Id] = handle;
+         m_MEPElementHandleDictionary[idVal] = handle;
 
          ConnectorSet connectorts = GetConnectors(element);
          if (connectorts != null)
@@ -140,6 +148,14 @@ namespace Revit.IFC.Export.Utility
          }
 
          return connectors;
+      }
+
+      public void CacheConnectorHandle(Connector connector, IFCAnyHandle handle)
+      {
+         if (!ConnectorCache.ContainsKey(connector) && handle != null)
+         {
+            ConnectorCache.Add(connector, handle);
+         }
       }
    }
 }

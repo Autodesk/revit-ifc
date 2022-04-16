@@ -36,14 +36,14 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The dictionary mapping from a text element type to an IfcPresentationStyleAssignment handle. 
       /// </summary>
-      private Dictionary<int, IFCAnyHandle> m_Styles;
+      private Dictionary<ElementId, IFCAnyHandle> m_Styles;
 
       /// <summary>
       /// Constructs a default PresentationStyleAssignmentCache object.
       /// </summary>
       public PresentationStyleAssignmentCache()
       {
-         m_Styles = new Dictionary<int, IFCAnyHandle>();
+         m_Styles = new Dictionary<ElementId, IFCAnyHandle>();
       }
 
       /// <summary>
@@ -53,9 +53,8 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The IfcPresentationStyleAssignment handle.</returns>
       public IFCAnyHandle Find(ElementId materialId)
       {
-         int materialIdAsInt = materialId.IntegerValue;
          IFCAnyHandle presentationStyleAssignment;
-         if (m_Styles.TryGetValue(materialIdAsInt, out presentationStyleAssignment))
+         if (m_Styles.TryGetValue(materialId, out presentationStyleAssignment))
          {
             // Make sure the handle isn't stale.
             try
@@ -68,7 +67,7 @@ namespace Revit.IFC.Export.Utility
             {
             }
 
-            m_Styles.Remove(materialIdAsInt);
+            m_Styles.Remove(materialId);
          }
 
          return null;
@@ -81,11 +80,11 @@ namespace Revit.IFC.Export.Utility
       /// <param name="handle">The IfcPresentationStyleAssignment handle.</param>
       public void Register(ElementId elementId, IFCAnyHandle handle)
       {
-         if (m_Styles.ContainsKey(elementId.IntegerValue))
-            throw new Exception("TextStyleCache already contains handle for elementId " + elementId.IntegerValue);
+         if (m_Styles.ContainsKey(elementId))
+            throw new Exception("TextStyleCache already contains handle for elementId " + elementId);
 
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
-            m_Styles[elementId.IntegerValue] = handle;
+            m_Styles[elementId] = handle;
          else
             throw new Exception("Invalid Handle.");
       }

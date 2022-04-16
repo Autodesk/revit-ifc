@@ -98,10 +98,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public static IFCAnyHandle CreateElectricVoltageMeasurePropertyFromElement(IFCFile file, Element elem, string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue);
+         if ( param != null)
          {
-            propertyValue = UnitUtil.ScaleElectricVoltage(propertyValue);
-            return CreateElectricalVoltageMeasurePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+               propertyValue = UnitUtil.ScaleElectricVoltage(propertyValue);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.ElectricalPotential, "IfcElectricVoltageMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateElectricalVoltageMeasurePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
          }
 
          return null;

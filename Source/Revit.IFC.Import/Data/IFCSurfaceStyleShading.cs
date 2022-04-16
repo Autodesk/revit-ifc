@@ -244,9 +244,9 @@ namespace Revit.IFC.Import.Data
                m_TransmissionColourFactor = transmissionColour.AsDouble();
 
             IFCData diffuseTransmissionColour = item.GetAttribute("DiffuseTransmissionColour");
-            if (transmissionColour.PrimitiveType == IFCDataPrimitiveType.Instance)
+            if (diffuseTransmissionColour.PrimitiveType == IFCDataPrimitiveType.Instance)
                m_DiffuseTransmissionColour = IFCColourRgb.ProcessIFCColourRgb(diffuseTransmissionColour.AsInstance());
-            else if (transmissionColour.PrimitiveType == IFCDataPrimitiveType.Double)
+            else if (diffuseTransmissionColour.PrimitiveType == IFCDataPrimitiveType.Double)
                m_DiffuseTransmissionColourFactor = diffuseTransmissionColour.AsDouble();
 
             IFCData reflectionColour = item.GetAttribute("ReflectionColour");

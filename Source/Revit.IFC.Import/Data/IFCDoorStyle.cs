@@ -116,15 +116,11 @@ namespace Revit.IFC.Import.Data
             Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
             if (category != null)
             {
-               Parameter operationTypeParameter = element.get_Parameter(BuiltInParameter.DOOR_OPERATION_TYPE);
-               if (operationTypeParameter != null)
-                  operationTypeParameter.Set(OperationType.ToString());
-               IFCPropertySet.AddParameterString(doc, element, category, "IfcOperationType", OperationType.ToString(), Id);
+               Importer.TheProcessor.SetStringParameter(element, Id, BuiltInParameter.DOOR_OPERATION_TYPE, OperationType.ToString(), false);
+               Importer.TheProcessor.SetStringParameter(element, Id, BuiltInParameter.DOOR_CONSTRUCTION_TYPE, ConstructionType.ToString(), false);
 
-               Parameter constructionTypeParameter = element.get_Parameter(BuiltInParameter.DOOR_CONSTRUCTION_TYPE);
-               if (constructionTypeParameter != null)
-                  constructionTypeParameter.Set(ConstructionType.ToString());
-               IFCPropertySet.AddParameterString(doc, element, category, "IfcConstructionType", ConstructionType.ToString(), Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcOperationType", OperationType.ToString(), Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcConstructionType", ConstructionType.ToString(), Id);
             }
          }
       }

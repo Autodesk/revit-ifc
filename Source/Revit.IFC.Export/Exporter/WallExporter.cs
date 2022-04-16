@@ -68,7 +68,7 @@ namespace Revit.IFC.Export.Exporter
                   continue;
 
                Element otherElem = doc.GetElement(otherWallId);
-               GeometryElement otherGeomElem = (otherElem != null) ? otherElem.get_Geometry(options) : null;
+               GeometryElement otherGeomElem = otherElem?.get_Geometry(options);
                if (otherGeomElem == null)
                   continue;
 
@@ -320,8 +320,25 @@ namespace Revit.IFC.Export.Exporter
          return true;
       }
 
+      private static bool HasUnsupportedCutsWallSweeps(Wall wallElement, bool hasCutsWallSweep)
+      {
+         if (!hasCutsWallSweep)
+            return false;
+
+         Parameter topExtensionDistParam = wallElement.GetParameter(ParameterTypeId.WallTopExtensionDistParam);
+         if (topExtensionDistParam != null)
+         {
+            double? topDistValue = topExtensionDistParam.AsDouble();
+            if (topDistValue != null && topDistValue.HasValue && !MathUtil.IsAlmostZero(topDistValue.Value))
+               return true;
+         }
+
+         return false;
+      }
+
       private static IFCAnyHandle TryToCreateAsExtrusion(ExporterIFC exporterIFC,
           Wall wallElement,
+          IFCExportInfoPair exportType,
           IList<IList<IFCConnectedWallData>> connectedWalls,
           IList<Solid> solids,
           IList<Mesh> meshes,
@@ -340,7 +357,6 @@ namespace Revit.IFC.Export.Exporter
           out double scaledLength)
       {
          cutPairOpenings = new List<IFCExtrusionData>();
-
          IFCAnyHandle bodyRep;
          scaledFootprintArea = 0;
 
@@ -355,7 +371,7 @@ namespace Revit.IFC.Export.Exporter
 
          // This is our major check here that goes into internal code.  If we have enough information to faithfully reproduce
          // the wall as an extrusion with clippings and openings, we will continue.  Otherwise, export it as a BRep.
-         if (!CanExportWallGeometryAsExtrusion(wallElement, range))
+         if (!CanExportWallGeometryAsExtrusion(wallElement, range, trimmedCurve))
             return null;
 
          // extrusion direction.
@@ -364,11 +380,16 @@ namespace Revit.IFC.Export.Exporter
             return null;
 
          // create extrusion boundary.
-         bool alwaysThickenCurve = IsWallBaseRectangular(wallElement, trimmedCurve);
+         bool alwaysThickenCurve = IsWallBaseRectangular(wallElement, trimmedCurve) && !ExporterCacheManager.ExportOptionsCache.WallAndColumnSplitting;
 
          double unscaledWidth = wallElement.Width;
          IList<CurveLoop> originalBoundaryLoops = GetBoundaryLoopsFromWall(exporterIFC, wallElement, alwaysThickenCurve, trimmedCurve, unscaledWidth);
          if (originalBoundaryLoops == null || originalBoundaryLoops.Count == 0)
+            return null;
+
+         // If the wall is connected to a non-vertical wall, in which case the shape of the wall may have extensions or cuts 
+         // that do not allow to export it correctly as an extrusion. In this case, export it as BRep.
+         if (IsConnectedWithNonVerticalWall(connectedWalls, wallElement))
             return null;
 
          double fullUnscaledLength = baseCurve.Length;
@@ -388,6 +409,16 @@ namespace Revit.IFC.Export.Exporter
          // to the next heuristic in the calling function.
          double approximateUnscaledBaseArea = unscaledWidth * fullUnscaledLength;
          bool expandedWallExtrusion = false;
+
+         // Check whether wall has opening. If it has, exporting it in the Reference View will need to be in a tessellated geometry that includes the opening cut
+         IList<IFCOpeningData> openingDataList = ExporterIFCUtils.GetOpeningData(exporterIFC, wallElement, wallLCS, range);
+         bool wallHasOpening = openingDataList.Count > 0;
+         
+         // IfcRelVoidsElement only works for subtypes of IfcElement.  In this case, we can't
+         // use this function.
+         if (wallHasOpening && !ExporterUtil.IsSubTypeOf(exportType.ExportInstance, IFCEntityType.IfcElement))
+            return null;
+
          IList<CurveLoop> boundaryLoops = null;
 
          if (unscaledFootprintArea < (approximateUnscaledBaseArea * .95 - 2 * unscaledWidth))
@@ -403,7 +434,21 @@ namespace Revit.IFC.Export.Exporter
             expandedWallExtrusion = true;
          }
          else
-            boundaryLoops = originalBoundaryLoops;
+         {
+            if (wallElement.HasPhases() && wallHasOpening)
+            {
+               boundaryLoops = GetLoopsFromTopBottomFace(wallElement, exporterIFC);
+
+               // Can't handle the case where we have openings that are unhandledElementCutouts in ExtrusionExporter,
+               // it uses try/catch blocks and thows exception for unhandled openings, in WallExporter it produces incorrect boundaryLoops
+               if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView &&
+                  boundaryLoops != null && boundaryLoops.Count == 0)
+                  return null;
+            }
+
+            if (boundaryLoops == null || boundaryLoops.Count == 0)
+               boundaryLoops = originalBoundaryLoops;
+         }
 
          // origin gets scaled later.
          double baseWallZOffset = localOrig[2] - ((range == null) ? baseWallElevation : Math.Min(range.Start, baseWallElevation));
@@ -442,19 +487,21 @@ namespace Revit.IFC.Export.Exporter
          // We created an extrusion, but we determined that it was too big (there were no cutouts).  So try again with our first guess.
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyItemHnd))
          {
-            baseBodyItemHnd = bodyItemHnd = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, originalBoundaryLoops, wallLCS,
-                 extrusionDir, scaledDepth, false);
+            IList<CurveLoop> tempCurveLoop = originalBoundaryLoops;
+            // If wall is "infill" use boundary curve instead of original
+            if (wallElement.HasPhases())
+               tempCurveLoop = boundaryLoops;
+
+            baseBodyItemHnd = bodyItemHnd = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, tempCurveLoop, wallLCS,
+               extrusionDir, scaledDepth, false);
          }
 
          ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(wallElement);
-         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, wallElement.Document, baseBodyItemHnd, matId);
+         BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, wallElement.Document, false, baseBodyItemHnd, matId);
 
          HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
          bodyItems.Add(bodyItemHnd);
 
-         // Check whether wall has opening. If it has, exporting it in the Reference View will need to be in a tessellated geometry that includes the opening cut
-         IList<IFCOpeningData> openingDataList = ExporterIFCUtils.GetOpeningData(exporterIFC, wallElement, wallLCS, range);
-         bool wallHasOpening = openingDataList.Count > 0;
          BodyExporterOptions options = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
 
          IFCAnyHandle contextOfItemsBody = exporterIFC.Get3DContextHandle("Body");
@@ -526,8 +573,10 @@ namespace Revit.IFC.Export.Exporter
       }
 
       // Get a list of solids and meshes, but only if we haven't already done so.
-      private static void GetSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, GeometryElement geometryElement, IFCRange range, ref IList<Solid> solids, ref IList<Mesh> meshes)
+      private static void GetSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, GeometryElement geometryElement, IFCRange range, ref IList<Solid> solids, ref IList<Mesh> meshes, out bool hasCutsWallSweep)
       {
+         hasCutsWallSweep = false;
+
          if (solids.Count > 0 || meshes.Count > 0)
             return;
 
@@ -542,7 +591,16 @@ namespace Revit.IFC.Export.Exporter
             // here, it will affect our bounding box calculations and potentially create
             // a base extrusion that is too high.
             if (solidInfo.OwnerElement is WallSweep)
+            {
+               WallSweep wallSweepItem = solidInfo.OwnerElement as WallSweep;
+               if (wallSweepItem != null && !hasCutsWallSweep)
+               {
+                  WallSweepInfo info = wallSweepItem.GetWallSweepInfo();
+                  if (info != null && info.CutsWall)
+                     hasCutsWallSweep = true;
+               }
                continue;
+            }
 
             solids.Add(solidInfo.Solid);
          }
@@ -550,7 +608,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       // Get List of Solids that are from Wall Sweep
-      private static IList<Solid> GetSolidOfWallSweep(Document doc, ExporterIFC exporterIFC, GeometryElement geometryElement, IFCRange range)
+      private static IList<Solid> GetSolidOfWallSweep(GeometryElement geometryElement, IFCRange range)
       {
          IList<Solid> solids = new List<Solid>();
 
@@ -645,6 +703,80 @@ namespace Revit.IFC.Export.Exporter
          return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
       }
 
+      private static bool CanTryToCreateAsExtrusion(Wall wallElement, bool exportParts, bool exportByComponents, bool exportingWallElement,
+         bool exportingAxis, Curve trimmedCurve, bool isCurtainPanel, bool hasCutsWallSweep)
+      {
+         return (!exportParts && !exportByComponents && exportingWallElement && exportingAxis &&
+            trimmedCurve != null && !isCurtainPanel &&
+            !HasUnsupportedStackWallOpenings(wallElement) &&
+            !HasUnsupportedCutsWallSweeps(wallElement, hasCutsWallSweep));
+      }
+ 
+      private static bool HasUnsupportedStackWallOpenings(Wall wallElement)
+      {
+         if (wallElement == null)
+            return false;
+
+         ElementId stackedWallId = wallElement.StackedWallOwnerId;
+         if (stackedWallId == ElementId.InvalidElementId)
+            return false;
+
+         Document document = wallElement.Document;
+         Wall stackedWall = document.GetElement(stackedWallId) as Wall;
+         if (stackedWall == null)
+            return false;
+
+         ElementFilter openingFilter = new ElementClassFilter(typeof(Opening));
+         IList<ElementId> openingElements = stackedWall.GetDependentElements(openingFilter);
+         return (openingElements != null && openingElements.Count > 0);
+      }
+
+      private static void ConditionallyAddRepresentation(bool condition, 
+         IList<IFCAnyHandle> representationList, IFCAnyHandle representation)
+      {
+         if (condition && !IFCAnyHandleUtil.IsNullOrHasNoValue(representation))
+            representationList.Add(representation);
+      }
+
+      private static string CalculateElementGUID(Element element)
+      {
+         // The first part maintains GUID compatibility with previous versions,
+         // while still allowing for unlimited subelements.
+         int subElementIndex = ExporterStateManager.GetCurrentRangeIndex();
+         if (subElementIndex > 0 && subElementIndex <= ExporterStateManager.RangeIndexSetter.GetMaxStableGUIDs())
+            return GUIDUtil.CreateSubElementGUID(element, subElementIndex + (int)IFCGenericSubElements.SplitInstanceStart - 1);
+         
+         if (subElementIndex != 0)
+            return GUIDUtil.GenerateIFCGuidFrom(element, subElementIndex.ToString());
+
+         return GUIDUtil.CreateGUID(element);
+      }
+
+      private static IFCExportInfoPair CalculateExportType(ExporterIFC exporterIFC, 
+         Element element, Wall wallElement, out string ifcEnumType)
+      {
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, element, out ifcEnumType);
+         IFCExportInfoPair genericExportType = new IFCExportInfoPair(exportType.ExportInstance, exportType.ExportType, ifcEnumType);
+
+         genericExportType.SetValueWithPair(exportType.ExportInstance, ifcEnumType);
+
+         if (wallElement != null && ExporterUtil.IsNotDefined(ifcEnumType)
+            && (exportType.ExportInstance == IFCEntityType.IfcWall || exportType.ExportInstance == IFCEntityType.IfcWallStandardCase))
+         {
+            WallType wallType = wallElement.WallType;
+
+            if (wallType != null)
+            {
+               if (wallType.Kind == WallKind.Basic)
+               {
+                  ifcEnumType = "STANDARD";
+               }
+            }
+         }
+
+         return exportType;
+      }
+
       /// <summary>
       /// Main implementation to export walls.
       /// </summary>
@@ -690,7 +822,7 @@ namespace Revit.IFC.Export.Exporter
          Document doc = element.Document;
          // Collect solids of Wall Sweep first before attempting to split into Parts because once it is split, we cannot get the information
          // the owner being Wall Sweep
-         IList<Solid> solidsOfWallSweep = GetSolidOfWallSweep(doc, exporterIFC, geometryElement, range);
+         IList<Solid> solidsOfWallSweep = GetSolidOfWallSweep(geometryElement, range);
          using (SubTransaction tempPartTransaction = new SubTransaction(doc))
          {
             bool exportByComponents = false;
@@ -713,6 +845,8 @@ namespace Revit.IFC.Export.Exporter
 
             IList<Solid> solids = new List<Solid>();
             IList<Mesh> meshes = new List<Mesh>();
+            bool hasCutsWallSweep = false;
+            bool isCurtainPanel = (element.Category.BuiltInCategory == BuiltInCategory.OST_CurtainWallPanels);
             bool exportingInplaceOpenings = false;
 
             if (!exportParts)
@@ -722,11 +856,11 @@ namespace Revit.IFC.Export.Exporter
                   // For IFC4 RV, only collect the solid and mesh here. Split Wall will be handled when processing individual parts later
                   if (exportByComponents)
                   {
-                     GetSolidsAndMeshes(element.Document, exporterIFC, geometryElement, null, ref solids, ref meshes);
+                     GetSolidsAndMeshes(element.Document, exporterIFC, geometryElement, null, ref solids, ref meshes, out hasCutsWallSweep);
                   }
                   else
                   {
-                     GetSolidsAndMeshes(element.Document, exporterIFC, geometryElement, range, ref solids, ref meshes);
+                     GetSolidsAndMeshes(element.Document, exporterIFC, geometryElement, range, ref solids, ref meshes, out hasCutsWallSweep);
                   }
                   if (solids.Count == 0 && meshes.Count == 0)
                      return null;
@@ -815,7 +949,6 @@ namespace Revit.IFC.Export.Exporter
 
                   bool exportedAsWallWithAxis = false;
                   bool exportedBodyDirectly = false;
-
                   Curve centerCurve = GetWallAxis(wallElement);
 
                   XYZ localXDir = new XYZ(1, 0, 0);
@@ -842,7 +975,9 @@ namespace Revit.IFC.Export.Exporter
                      double zDiff = localOrig[2] - oldOrig[2];
                      if (!MathUtil.IsAlmostZero(zDiff))
                      {
-                        double wallSlantAngle = GetWallSlantAngle(wallElement);
+                        // TODO: Determine what to do for tapered walls.
+                        double? optWallSlantAngle = ExporterCacheManager.WallCrossSectionCache.GetUniformSlantAngle(wallElement);
+                        double wallSlantAngle = optWallSlantAngle.GetValueOrDefault(0.0);
                         if (!MathUtil.IsAlmostZero(wallSlantAngle))
                         {
                            // If the wall is slanted and localOrig does not lie on the base curve (zDiff != 0), move 
@@ -978,14 +1113,23 @@ namespace Revit.IFC.Export.Exporter
                         }
                      }
 
-                     IList<IFCExtrusionData> cutPairOpenings = new List<IFCExtrusionData>();
+                     exportType = CalculateExportType(exporterIFC, element, wallElement, out ifcEnumType);
 
-                     if (!exportParts && exportingWallElement && exportingAxis && trimmedCurve != null && !exportByComponents)
+                     IList<IFCExtrusionData> cutPairOpenings = new List<IFCExtrusionData>();
+                     // We only try to export by extrusion using this function if:
+                     // 1. We aren't trying to create parts or components.
+                     // 2. We have a native Revit wall whose non-trimmed axis we are exporting.
+                     // 3. We don't have a wall that's part of a stacked wall, if the stacked wall has openings.
+                     // Any of the cases above could mean that the internal API function would return
+                     // incorrect results (generally, missing openings or clippings).
+                     if (CanTryToCreateAsExtrusion(wallElement, exportParts, exportByComponents, exportingWallElement,
+                        exportingAxis, trimmedCurve, isCurtainPanel, hasCutsWallSweep))
                      {
                         bool isCompletelyClipped;
-                        bodyRep = TryToCreateAsExtrusion(exporterIFC, wallElement, connectedWalls, solids, meshes, baseWallElevation,
-                            catId, centerCurve, trimmedCurve, orientationTrf, depth, zSpan, range, setter,
-                            out cutPairOpenings, out isCompletelyClipped, out scaledFootprintArea, out scaledLength);
+                        bodyRep = TryToCreateAsExtrusion(exporterIFC, wallElement, exportType,
+                           connectedWalls, solids, meshes, baseWallElevation, catId,
+                           centerCurve, trimmedCurve, orientationTrf, depth, zSpan, range, setter,
+                           out cutPairOpenings, out isCompletelyClipped, out scaledFootprintArea, out scaledLength);
                         if (isCompletelyClipped)
                            return null;
 
@@ -1000,10 +1144,18 @@ namespace Revit.IFC.Export.Exporter
                         // If it is not a Wall object (FamilyInstance) then this part needs to run even for IFC4RV
                         if (!exportedAsWallWithAxis && (!exportByComponents || !exportingWallElement))
                         {
-                           extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;   // only allow vertical extrusions!
-                           extraParams.AreInnerRegionsOpenings = true;
-
                            BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+
+                           if (isCurtainPanel)
+                           {
+                              bodyExporterOptions.ExtrusionLocalCoordinateSystem = orientationTrf;
+                              bodyExporterOptions.TryToExportAsExtrusion = true;
+                              extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXYZ;
+                           }
+                           else
+                              extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;   // only allow vertical extrusions!
+
+                           extraParams.AreInnerRegionsOpenings = true;
 
                            // Swept solids are not natively exported as part of CV2.0.  
                            // We have removed the UI toggle for this, so that it is by default false, but keep for possible future use.
@@ -1055,20 +1207,15 @@ namespace Revit.IFC.Export.Exporter
                         if (!exportParts)
                         {
                            IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
-                           if (exportingAxis)
-                              representations.Add(axisRep);
-
-                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
-                              representations.Add(bodyRep);
-
+                           ConditionallyAddRepresentation(exportingAxis, representations, axisRep);
+                           ConditionallyAddRepresentation(true, representations, bodyRep);
+                           
                            IFCAnyHandle boundingBoxRep = null;
                            if ((solids.Count > 0) || (meshes.Count > 0))
                               boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, solids, meshes, Transform.Identity);
                            else
                               boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, Transform.Identity);
-
-                           if (boundingBoxRep != null)
-                              representations.Add(boundingBoxRep);
+                           ConditionallyAddRepresentation(true, representations, boundingBoxRep);
 
                            prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
                         }
@@ -1077,33 +1224,8 @@ namespace Revit.IFC.Export.Exporter
                         string objectType = NamingUtil.CreateIFCObjectName(exporterIFC, element);
                         IFCAnyHandle wallHnd = null;
 
-                        string elemGUID = null;
-                        int subElementIndex = ExporterStateManager.GetCurrentRangeIndex();
-                        if (subElementIndex == 0)
-                           elemGUID = GUIDUtil.CreateGUID(element);
-                        else if (subElementIndex <= ExporterStateManager.RangeIndexSetter.GetMaxStableGUIDs())
-                           elemGUID = GUIDUtil.CreateSubElementGUID(element, subElementIndex + (int)IFCGenericSubElements.SplitInstanceStart - 1);
-                        else
-                           elemGUID = GUIDUtil.CreateGUID();
-
-                        //string ifcType = IFCValidateEntry.GetValidIFCPredefinedType(/*element,*/ null);
-
-                        exportType = ExporterUtil.GetExportType(exporterIFC, element, out ifcEnumType);
-
-                        if (exportingWallElement && ExporterUtil.IsNotDefined(ifcEnumType)
-                           && (exportType.ExportInstance == IFCEntityType.IfcWall || exportType.ExportInstance == IFCEntityType.IfcWallStandardCase))
-                        {
-                           WallType wallType = wallElement.WallType;
-
-                           if (wallType != null)
-                           {
-                              if (wallType.Kind == WallKind.Basic)
-                              {
-                                 ifcEnumType = "STANDARD";
-                              }
-                           }
-                        }
-
+                        string elemGUID = CalculateElementGUID(element);
+                        
                         if (exportedAsWallWithAxis && CanExportAsWallStandardCase(wallElement, exportParts)
                            && (exportType.ExportInstance == IFCEntityType.IfcWall || exportType.ExportInstance == IFCEntityType.IfcWallStandardCase))
                         {
@@ -1160,7 +1282,7 @@ namespace Revit.IFC.Export.Exporter
                            }
 
                            // export Base Quantities
-                           if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+                           if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities && exportType.ExportType == IFCEntityType.IfcWallType)
                            {
                               scaledFootprintArea = MathUtil.AreaIsAlmostZero(scaledFootprintArea) ? extraParams.ScaledArea : scaledFootprintArea;
                               scaledLength = MathUtil.IsAlmostZero(scaledLength) ? extraParams.ScaledLength : scaledLength;
@@ -1263,10 +1385,9 @@ namespace Revit.IFC.Export.Exporter
          bool splitWall = ExporterCacheManager.ExportOptionsCache.WallAndColumnSplitting && (element.AssemblyInstanceId == ElementId.InvalidElementId);
          if (splitWall)
          {
-            Wall wallElement = element as Wall;
             IList<ElementId> levels = new List<ElementId>();
             IList<IFCRange> ranges = new List<IFCRange>();
-            if (wallElement != null && geometryElement != null)
+            if (element is Wall && geometryElement != null)
             {
                IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcWall, ifcEnumType);
                LevelUtil.CreateSplitLevelRangesForElement(exporterIFC, exportInfo, element, out levels, out ranges);
@@ -1442,7 +1563,7 @@ namespace Revit.IFC.Export.Exporter
             else if (subElementIndex <= ExporterStateManager.RangeIndexSetter.GetMaxStableGUIDs())
                elemGUID = GUIDUtil.CreateSubElementGUID(element, subElementIndex + (int)IFCGenericSubElements.SplitInstanceStart - 1);
             else
-               elemGUID = GUIDUtil.CreateGUID();
+               elemGUID = GUIDUtil.GenerateIFCGuidFrom(element, subElementIndex.ToString());
 
             Transform orientationTrf = Transform.Identity;
 
@@ -1484,8 +1605,8 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="elementHandle">The element handle.</param>
       /// <param name="element">The element.</param>
       /// <param name="overrideMaterialId">The material id used for the element type.</param>
-      public static void ExportGenericType(ExporterIFC exporterIFC, ProductWrapper wrapper, IFCAnyHandle elementHandle, Element element, ElementId overrideMaterialId,
-          string ifcTypeEnum)
+      public static void ExportGenericType(ExporterIFC exporterIFC, ProductWrapper wrapper, 
+         IFCAnyHandle elementHandle, Element element, ElementId overrideMaterialId, string ifcTypeEnum)
       {
          if (elementHandle == null || element == null)
             return;
@@ -1496,7 +1617,7 @@ namespace Revit.IFC.Export.Exporter
          if (elementType == null)
             return;
 
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, element, out _);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, element, out _);
          exportType.ValidatedPredefinedType = ifcTypeEnum;
 
          IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
@@ -1506,7 +1627,9 @@ namespace Revit.IFC.Export.Exporter
             return;
          }
 
-         wallType = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, exportType.ValidatedPredefinedType, null, null, element, elementType);
+         string guid = GUIDUtil.CreateGUID(elementType);
+         wallType = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, 
+            exportType.ValidatedPredefinedType, null, null, element, elementType, guid);
 
          wrapper.RegisterHandleWithElementType(elementType, exportType, wallType, null);
 
@@ -1519,7 +1642,7 @@ namespace Revit.IFC.Export.Exporter
             // try to get material set from the cache
             IFCAnyHandle materialLayerSet = ExporterCacheManager.MaterialSetCache.FindLayerSet(typeElemId);
             if (materialLayerSet != null && wallType != null)
-               ExporterCacheManager.MaterialLayerRelationsCache.Add(materialLayerSet, wallType);
+               ExporterCacheManager.MaterialRelationsCache.Add(materialLayerSet, wallType);
          }
 
          ExporterCacheManager.TypeRelationsCache.Add(wallType, elementHandle);
@@ -1642,13 +1765,15 @@ namespace Revit.IFC.Export.Exporter
       /// The range. This consists of two double values representing the height in Z at the start and the end
       /// of the range.  If the values are identical the entire wall is used.
       /// </param>
+      /// <param name="curve">
+      /// The wall's base curve.
       /// <returns>
       /// True if the wall export can be made in the form of an extrusion, false if the
       /// geometry cannot be assigned to an extrusion.
       /// </returns>
-      static bool CanExportWallGeometryAsExtrusion(Element element, IFCRange range)
+      static bool CanExportWallGeometryAsExtrusion(Element element, IFCRange range, Curve curve)
       {
-         return ExporterIFCUtils.CanExportWallGeometryAsExtrusion(element, range);
+         return ExporterIFCUtils.CanExportWallGeometryAsExtrusion(element, range, curve);
       }
 
       /// <summary>
@@ -1680,11 +1805,11 @@ namespace Revit.IFC.Export.Exporter
       /// </remarks>
       public static XYZ GetWallExtrusionDirection(Wall wallElement)
       {
-         Parameter angleParam = wallElement.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         if (angleParam == null || !angleParam.HasValue || angleParam.StorageType != StorageType.Double)
-            return new XYZ(0, 0, 1);
+         double? optWallSlantedAngle = ExporterCacheManager.WallCrossSectionCache.GetUniformSlantAngle(wallElement);
+         if (optWallSlantedAngle == null)
+            return null;
 
-         double slantAngle = angleParam.AsDouble();
+         double slantAngle = optWallSlantedAngle.Value;
          if (MathUtil.IsAlmostZero(slantAngle))
             return XYZ.BasisZ;
 
@@ -1711,20 +1836,6 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Returns the slant angle for a wall if it is slanted, zero otherwise
-      /// </summary>
-      /// <param name="wallElement">The wall.</param>
-      /// <returns>The slant angle of the wall, or zero if it is not slanted.</returns>
-      public static double GetWallSlantAngle(Wall wallElement)
-      {
-         Parameter wallSlant = wallElement.get_Parameter(BuiltInParameter.WALL_SINGLE_SLANT_ANGLE_FROM_VERTICAL);
-         if (wallSlant != null && wallSlant.HasValue && wallSlant.StorageType == StorageType.Double && !MathUtil.IsAlmostEqual(wallSlant.AsDouble(), 0.0))
-            return wallSlant.AsDouble();
-         else
-            return 0.0;
-      }
-
-      /// <summary>
       /// Identifies if the wall's base can be represented by a direct thickening of the wall's base curve.
       /// </summary>
       /// <param name="wallElement">
@@ -1741,6 +1852,36 @@ namespace Revit.IFC.Export.Exporter
       static bool IsWallBaseRectangular(Wall wallElement, Curve curve)
       {
          return ExporterIFCUtils.IsWallBaseRectangular(wallElement, curve);
+      }
+
+      /// <summary>
+      /// Identifies if the wall is connected to another non-vertical wall.
+      /// </summary>
+      /// <param name="connectedWalls">Information about walls joined to this wall.</param>
+      /// <param name="wallElement">The wall.</param>
+      /// <returns>True if there is at least one non-vertical wall among the <paramref name="connectedWalls"/> 
+      /// that are connected to <paramref name="wallElement"/>. Otherwise return false.</returns>
+      static bool IsConnectedWithNonVerticalWall(IList<IList<IFCConnectedWallData>> connectedWalls, Wall wallElement)
+      {
+         Wall connectedWall;
+
+         if (connectedWalls == null)
+            return false;
+
+         foreach (var connectedWallsList in connectedWalls)
+         {
+            foreach (var wall in connectedWallsList)
+            {
+               if (wall.ElementId == wallElement.Id)
+                  continue;
+
+               connectedWall = ExporterCacheManager.Document.GetElement(wall.ElementId) as Wall;
+               if (connectedWall.CrossSection != WallCrossSection.Vertical)
+                  return true;
+            }
+         }
+
+         return false;
       }
 
       /// <summary>

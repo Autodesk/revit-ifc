@@ -38,35 +38,30 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>bin\Debugx64\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Slow_Debug|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;IFC_OPENSOURCE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <DefineConstants>TRACE;IFC_OPENSOURCE</DefineConstants>
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>bin\Releasex64\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Autodesk.UI.Windows, Version=2.16.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\Autodesk.UI.Windows.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\Autodesk.UI.Windows.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPI, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPI, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPIIFC, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPIIFC.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIUI, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPIUI, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPIUI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -82,9 +77,9 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
-    <Reference Include="UserInterfaceUtility, Version=21.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="UserInterfaceUtility, Version=22.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\UserInterfaceUtility.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\UserInterfaceUtility.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
@@ -104,6 +99,10 @@
     <Compile Include="IFCClassificationUI.xaml.cs">
       <DependentUpon>IFCClassificationUI.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IFCEntityTree\BrowseIFCEntityServer.cs" />
+    <Compile Include="IFCEntityTree\EntityTree.xaml.cs" />
+    <Compile Include="IFCEntityTree\PredefinedTypeSelection.xaml.cs" />
+    <Compile Include="IFCEnumExtensions.cs" />
     <Compile Include="IFCExchangeRequirements.cs" />
     <Compile Include="IFCFileHeaderInformationUI.xaml.cs">
       <DependentUpon>IFCFileHeaderInformationUI.xaml</DependentUpon>
@@ -203,6 +202,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="IFCEntityTree\EntityTree.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="IFCEntityTree\PredefinedTypeSelection.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="IFCFileHeaderInformationUI.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -243,7 +250,7 @@
   <PropertyGroup>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "H:\Temp\IFC master\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

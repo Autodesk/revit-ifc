@@ -20,11 +20,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Export.Toolkit;
-using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -46,6 +44,8 @@ namespace Revit.IFC.Export.Utility
       };
 
       static string s_ConversionTable_2X = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$";
+
+      private static System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
 
       static private string ConvertToIFCGuid(System.Guid guid)
       {
@@ -117,7 +117,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The IFC GUID value.</returns>
       /// <remarks>For Sites, the user should only use this routine if there is no Site element in the file.  Otherwise, they
       /// should use CreateSiteGUID below, which takes an Element pointer.</remarks>
-      static public string CreateProjectLevelGUID(Document document, IFCProjectLevelGUIDType guidType)
+      static public string CreateProjectLevelGUID(Document document, ProjectLevelGUIDType guidType)
       {
          string parameterName = "Ifc" + guidType.ToString() + " GUID";
          ProjectInfo projectInfo = document.ProjectInformation;
@@ -125,13 +125,13 @@ namespace Revit.IFC.Export.Utility
          BuiltInParameter parameterId = BuiltInParameter.INVALID;
          switch (guidType)
          {
-            case IFCProjectLevelGUIDType.Building:
+            case ProjectLevelGUIDType.Building:
                parameterId = BuiltInParameter.IFC_BUILDING_GUID;
                break;
-            case IFCProjectLevelGUIDType.Project:
+            case ProjectLevelGUIDType.Project:
                parameterId = BuiltInParameter.IFC_PROJECT_GUID;
                break;
-            case IFCProjectLevelGUIDType.Site:
+            case ProjectLevelGUIDType.Site:
                parameterId = BuiltInParameter.IFC_SITE_GUID;
                break;
             default:
@@ -150,11 +150,9 @@ namespace Revit.IFC.Export.Utility
                return paramValue;
          }
 
-         // Only for 2022
-         //ElementId projectLevelElementId = new ElementId((int)guidType);
-         //System.Guid guid = ExportUtils.GetExportId(document, projectLevelElementId);
-         //string ifcGUID = ConvertToIFCGuid(guid);
-         string ifcGUID = ExporterIFCUtils.CreateProjectLevelGUID(document, guidType);
+         ElementId projectLevelElementId = new ElementId((int)guidType);
+         Guid guid = ExportUtils.GetExportId(document, projectLevelElementId);
+         string ifcGUID = ConvertToIFCGuid(guid);
 
          if ((projectInfo != null) && ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID)
          {
@@ -176,25 +174,19 @@ namespace Revit.IFC.Export.Utility
       {
          if (element != null)
          {
-            string paramValue = null;
-            ParameterUtil.GetStringValueFromElement(element, "IfcSiteGUID", out paramValue);
+            ParameterUtil.GetStringValueFromElement(element, "IfcSiteGUID", out string paramValue);
             if (IsValidIFCGUID(paramValue))
                return paramValue;
          }
 
-         //return CreateProjectLevelGUID(document, GUIDUtil.ProjectLevelGUIDType.Site);
-         return CreateProjectLevelGUID(document, IFCProjectLevelGUIDType.Site);
+         return CreateProjectLevelGUID(document, ProjectLevelGUIDType.Site);
       }
 
       /// <summary>
       /// Returns the GUID for a storey level, depending on whether we are using R2009 GUIDs or current GUIDs.
       /// </summary>
-      /// <param name="level">
-      /// The level.
-      /// </param>
-      /// <returns>
-      /// The GUID.
-      /// </returns>
+      /// <param name="level">The level.</param>
+      /// <returns>The GUID.</returns>
       public static string GetLevelGUID(Level level)
       {
          if (!ExporterCacheManager.ExportOptionsCache.GUIDOptions.Use2009BuildingStoreyGUIDs)
@@ -215,7 +207,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="element">The element - null allowed.</param>
       /// <param name="subIndex">The index value - should be greater than 0.</param>
-      /// <returns></returns>
+      /// <returns>The GUID.</returns>
       static public string CreateSubElementGUID(Element element, int subIndex)
       {
          if (element == null || subIndex <= 0)
@@ -224,29 +216,170 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Thin wrapper for the CreateGUID Revit API function.
+      /// Generates IFC GUID from not empty string.
       /// </summary>
-      /// <returns>A random GUID.</returns>
-      static public string CreateGUID()
+      /// <param name="uniqueString">String which should uniquely identify IFC entity.</param>
+      /// <returns>String in IFC GUID format. Uniqueness is highly likely, but not guaranteed even
+      /// if input string is unique.</returns>
+      private static string GenerateIFCGuidFrom(string uniqueString)
       {
-         return ExporterIFCUtils.CreateGUID();
+         byte[] hash = md5.ComputeHash(Encoding.Default.GetBytes(uniqueString));
+         return ConvertToIFCGuid(new Guid(hash));
+      }
+
+      /// <summary>
+      /// Generates IFC GUID from an IFC entity type, an identifier and a handle.
+      /// </summary>
+      /// <param name="type">The IFC entity type.</param>
+      /// <param name="name">The name of the object, unique to this handle.</param>
+      /// <param name="handle">The primary handle.</param>
+      /// <returns>String in IFC GUID format. Uniqueness is highly likely, but not guaranteed even
+      /// if input string is unique.</returns>
+      public static string GenerateIFCGuidFrom(IFCEntityType type, string name, IFCAnyHandle handle)
+      {
+         return GenerateIFCGuidFrom(type.ToString() + ":" + name + ":" + ExporterUtil.GetGlobalId(handle));
+      }
+
+      /// <summary>
+      /// Generates IFC GUID from an IFC entity type and a handle.
+      /// </summary>
+      /// <param name="type">The IFC entity type.</param>
+      /// <param name="handle">The primary handle.</param>
+      /// <returns>String in IFC GUID format. Uniqueness is highly likely, but not guaranteed even
+      /// if input string is unique.</returns>
+      public static string GenerateIFCGuidFrom(IFCEntityType type, IFCAnyHandle handle)
+      {
+         return GenerateIFCGuidFrom(type.ToString() + ":" + ExporterUtil.GetGlobalId(handle));
+      }
+
+      /// <summary>
+      /// Generates IFC GUID from an element and an integer.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="index">The sub-element index as a string.</param>
+      /// <returns>String in IFC GUID format. Uniqueness is highly likely, but not guaranteed even
+      /// if input string is unique.</returns>
+      public static string GenerateIFCGuidFrom(string index, Element firstElement, Element secondElement)
+      {
+         string firstBaseGuid = CreateSimpleGUID(firstElement);
+         string secondBaseGuid = CreateSimpleGUID(secondElement);
+         return GenerateIFCGuidFrom(index + firstBaseGuid + secondBaseGuid);
+      }
+      
+      /// <summary>
+      /// Generates IFC GUID from an element and an integer.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="index">The sub-element index as a string.</param>
+      /// <returns>String in IFC GUID format. Uniqueness is highly likely, but not guaranteed even
+      /// if input string is unique.</returns>
+      public static string GenerateIFCGuidFrom(Element element, string index)
+      {
+         string baseGuid = CreateSimpleGUID(element);
+         return GenerateIFCGuidFrom(baseGuid + "Sub-element:" + index);
+      }
+
+      /// <summary>
+      /// Generates IFC GUID from an IFC entity type and a collection of handles.
+      /// </summary>
+      /// <param name="type">The ifc entity type.</param>
+      /// <param name="handle">The primary handle.</param>
+      /// <param name="relatedHandles">A collection of handles related to the primary handle.</param>
+      /// <returns>String in IFC GUID format. Uniqueness is highly likely, but not guaranteed even
+      /// if input string is unique.</returns>
+      public static string GenerateIFCGuidFrom(IFCEntityType type, IFCAnyHandle firstHandle,
+         IFCAnyHandle secondHandle)
+      {
+         string guidString = type.ToString() + ":" + ExporterUtil.GetGlobalId(firstHandle) +
+            ExporterUtil.GetGlobalId(secondHandle);
+         return GenerateIFCGuidFrom(guidString);
+      }
+
+      /// <summary>
+      /// Generates IFC GUID from an IFC entity type and a string unique to this project.
+      /// </summary>
+      /// <param name="type">The ifc entity type.</param>
+      /// <param name="uniqueKey">The key unique to this project.</param>
+      /// <returns>String in IFC GUID format. Uniqueness is highly likely, but not guaranteed even
+      /// if input string is unique.</returns>
+      public static string GenerateProjectIFCGuidFrom(IFCEntityType type, string uniqueKey)
+      {
+         string guidString = ExporterUtil.GetGlobalId(ExporterCacheManager.ProjectHandle) + 
+            type.ToString() + ":" + uniqueKey;
+         return GenerateIFCGuidFrom(guidString);
+      }
+
+      static private string CreateSimpleGUID(Element element)
+      {
+         Guid guid = ExportUtils.GetExportId(element.Document, element.Id);
+         return ConvertToIFCGuid(guid);
       }
 
       static private string CreateGUIDBase(Element element, BuiltInParameter parameterName, out bool shouldStore)
       {
-         shouldStore = false;
          string ifcGUID = null;
+         shouldStore = CanStoreGUID(element);
 
-         if (ExporterCacheManager.ExportOptionsCache.GUIDOptions.AllowGUIDParameterOverride)
+         // Avoid getting into an object if the object is part of the Group. It may cause regrenerate that invalidate other ElementIds
+         if (shouldStore && ExporterCacheManager.ExportOptionsCache.GUIDOptions.AllowGUIDParameterOverride)
             ParameterUtil.GetStringValueFromElement(element, parameterName, out ifcGUID);
+
          if (!IsValidIFCGUID(ifcGUID))
-         {
-            System.Guid guid = ExportUtils.GetExportId(element.Document, element.Id);
-            ifcGUID = ConvertToIFCGuid(guid);
-            shouldStore = true;
-         }
+            ifcGUID = CreateSimpleGUID(element);
 
          return ifcGUID;
+      }
+
+      static private bool CanStoreGUID(Element element)
+      {
+         bool isCurtainElement = false;
+
+         // Cannot set IfcGUID to curtain wall because doing so will potentially invalidate other element/delete the insert (even in interactive mode)
+         if (element is Wall)
+         {
+            Wall wallElem = element as Wall;
+            isCurtainElement = wallElem.CurtainGrid != null;
+         }
+         return !isCurtainElement;
+      }
+
+      /// <summary>
+      /// Updates IfcGUID value
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="guid">New GUID for the element.</param>
+      static public void UpdateIFCGUIDValue(Element element, string guid)
+      {
+         if ((element != null) && CanStoreGUID(element) && ExporterCacheManager.ExportOptionsCache.GUIDOptions.AllowGUIDParameterOverride)
+         {
+            BuiltInParameter parameterName = (element is ElementType) ? BuiltInParameter.IFC_TYPE_GUID : BuiltInParameter.IFC_GUID;
+            ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(element.Id, parameterName)] = guid;
+         }
+      }
+
+      public static string RegisterGUID(Element element, string guid)
+      {
+         // We want to make sure that we don't write out duplicate GUIDs to the file.  As such, we will check the GUID against
+         // already created guids, and export a random GUID if necessary.
+         // TODO: log message to user.
+         if (ExporterCacheManager.GUIDCache.Contains(guid))
+         {
+            guid = CreateGUID();
+            UpdateIFCGUIDValue(element, guid);
+         }
+         else
+            ExporterCacheManager.GUIDCache.Add(guid);
+
+         return guid;
+      }
+
+      /// <summary>
+      /// Thin wrapper for the CreateGUID() Revit API function.
+      /// </summary>
+      /// <returns>A random GUID.</returns>
+      static private string CreateGUID()
+      {
+         return ExporterIFCUtils.CreateGUID();
       }
 
       /// <summary>
@@ -256,6 +389,9 @@ namespace Revit.IFC.Export.Utility
       /// <returns>A consistent GUID for the element.</returns>
       static public string CreateGUID(Element element)
       {
+         if (element == null)
+            return CreateGUID();
+
          bool shouldStore;
          BuiltInParameter parameterName = (element is ElementType) ? BuiltInParameter.IFC_TYPE_GUID : BuiltInParameter.IFC_GUID;
 
@@ -272,13 +408,12 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="element">The element.</param>
       /// <param name="elementGUID">The GUID to check</param>
-      /// <returns></returns>
+      /// <returns>True if elementGUID == CreateGUID(element)</returns>
       static public bool IsGUIDFor(Element element, string elementGUID)
       {
-         bool shouldStore;   // not used.
          BuiltInParameter parameterName = (element is ElementType) ? BuiltInParameter.IFC_TYPE_GUID : BuiltInParameter.IFC_GUID;
 
-         return (string.Compare(elementGUID, CreateGUIDBase(element, parameterName, out shouldStore)) == 0);
+         return (string.Compare(elementGUID, CreateGUIDBase(element, parameterName, out _)) == 0);
       }
    }
 }

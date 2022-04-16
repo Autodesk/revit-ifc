@@ -32,6 +32,22 @@ namespace Revit.IFC.Export.Toolkit
    class IFCDataUtil
    {
       /// <summary>
+      /// Event is fired when code reduces length of string to maximal allowed size.
+      /// It sends information string which can be logged or shown to user.
+      /// </summary>
+      /// /// <param name="warnText">Infromation string with diangostic info about truncation happened.</param>
+      public delegate void Notify(string warnText);
+      public static event Notify IFCStringTooLongWarn;
+      private static void OnIFCStringTooLongWarn(string val, int reducedToSize)
+      {
+         string warnMsg = String.Format("IFC warning: Size of string \"{0}\" was reduced to {1}", val, reducedToSize);
+         IFCStringTooLongWarn?.Invoke(warnMsg);
+      }
+      public static void EventClear()
+      {
+         IFCStringTooLongWarn = null;
+      }
+      /// <summary>
       /// Creates an IFCData object as IfcLabel.
       /// </summary>
       /// <param name="value">The string value.</param>
@@ -40,7 +56,13 @@ namespace Revit.IFC.Export.Toolkit
       {
          if (value == null)
             return null;
-         return IFCData.CreateStringOfType(value.Length > 255 ? value.Remove(255) : value, "IfcLabel");
+
+         if(value.Length > IFCLimits.MAX_IFCLABEL_STR_LEN)
+         {
+            OnIFCStringTooLongWarn(value, IFCLimits.MAX_IFCLABEL_STR_LEN);
+            value = value.Remove(IFCLimits.MAX_IFCLABEL_STR_LEN);
+         }
+         return IFCData.CreateStringOfType(value, "IfcLabel");
       }
 
       /// <summary>
@@ -52,6 +74,13 @@ namespace Revit.IFC.Export.Toolkit
       {
          if (value == null)
             return null;
+
+         int maxStrLen = IFCLimits.CalculateMaxAllowedSize(value);
+         if (value.Length > maxStrLen)
+         {
+            OnIFCStringTooLongWarn(value, maxStrLen);
+            value = value.Remove(maxStrLen);
+         }
          return IFCData.CreateStringOfType(value, "IfcText");
       }
 
@@ -64,7 +93,13 @@ namespace Revit.IFC.Export.Toolkit
       {
          if (value == null)
             return null;
-         return IFCData.CreateStringOfType(value.Length > 255 ? value.Remove(255) : value, "IfcIdentifier");
+
+         if (value.Length > IFCLimits.MAX_IFCIDENTIFIER_STR_LEN)
+         {
+            OnIFCStringTooLongWarn(value, IFCLimits.MAX_IFCIDENTIFIER_STR_LEN);
+            value = value.Remove(IFCLimits.MAX_IFCIDENTIFIER_STR_LEN);
+         }
+         return IFCData.CreateStringOfType(value, "IfcIdentifier");
       }
 
       /// <summary>
@@ -105,6 +140,16 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateAsReal(double value)
       {
          return CreateAsMeasure(value, "IfcReal");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcNumericMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsNumeric(double value)
+      {
+         return CreateAsMeasure(value, "IfcNumericMeasure");
       }
 
       /// <summary>
@@ -224,11 +269,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsCountMeasure(double value)
       {
-         int valueAsInt = Convert.ToInt32(value);
-         if (MathUtil.IsAlmostZero(value - valueAsInt))
-            return IFCData.CreateIntegerOfType(valueAsInt, "IfcCountMeasure");
-         else
-            return CreateAsMeasure(value, "IfcCountMeasure");
+         return CreateAsMeasure(value, "IfcCountMeasure");
       }
 
       /// <summary>
@@ -249,6 +290,26 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateAsPowerMeasure(double value)
       {
          return CreateAsMeasure(value, "IfcPowerMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcSoundPowerMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsSoundPowerMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcSoundPowerMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcSoundPressureMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsSoundPressureMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcSoundPressureMeasure");
       }
 
       /// <summary>

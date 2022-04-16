@@ -27,6 +27,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Import.Data;
 using Revit.IFC.Import.Utility;
 using IFCImportOptions = Revit.IFC.Import.Utility.IFCImportOptions;
+using Revit.IFC.Import.Core;
 
 namespace Revit.IFC.Import
 {
@@ -151,6 +152,9 @@ namespace Revit.IFC.Import
          protected set { TheImporter.m_ImportCache = value; }
       }
 
+      static public IIFCFileProcessor TheProcessor { get => TheOptions?.Processor; }
+
+
       /// <summary>
       /// The log file used for this import process.
       /// </summary>
@@ -160,16 +164,10 @@ namespace Revit.IFC.Import
          protected set { TheImporter.m_ImportLog = value; }
       }
 
-      static IFCImportOptions m_TheOptions = null;
-
       /// <summary>
       /// The IFC import options used for this import process.
       /// </summary>
-      public static IFCImportOptions TheOptions
-      {
-         get { return m_TheOptions; }
-         protected set { m_TheOptions = value; }
-      }
+      public static IFCImportOptions TheOptions { get; protected set;  }
 
       /// <summary>
       /// Allow for the creation of an Importer class for external API use.

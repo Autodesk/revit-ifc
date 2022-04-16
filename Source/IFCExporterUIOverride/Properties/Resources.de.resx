@@ -583,13 +583,13 @@
     <value>Speichern und Schließen</value>
   </data>
   <data name="General" xml:space="preserve">
-    <value>Allgemeine Einstellungen</value>
+    <value>Allgemeine IFC-Eigenschaftensätze exportieren</value>
   </data>
   <data name="ExportRoomsInView" xml:space="preserve">
     <value>Räume in 3D-Ansichten exportieren</value>
   </data>
   <data name="UseActiveViewForGeometry" xml:space="preserve">
-    <value>Aktive Ansicht beim Erstellen von Geometrie verwenden</value>
+    <value>Aktive Ansicht beim Erstellen von Geomatrie verwenden</value>
   </data>
   <data name="MultipleFiles" xml:space="preserve">
     <value>Mehrere Dateien</value>
@@ -736,7 +736,7 @@
     <value>Interne Koordinaten</value>
   </data>
   <data name="KeepTessellatedAsTriangulation" xml:space="preserve">
-    <value>Tesselierte Geometrie als Triangulation beibehalten</value>
+    <value>Tesselierte Geomatrie als Triangulation beibehalten</value>
   </data>
   <data name="LoadSetup" xml:space="preserve">
     <value>Einstellungen importieren…</value>
@@ -786,37 +786,13 @@
   <data name="UseOnlyTriangulation" xml:space="preserve">
     <value>Triangulation erzwingen</value>
   </data>
-  <data name="Eastings" xml:space="preserve">
-    <value>Ostwert</value>
+  <data name="ER_ArchitectureShort" xml:space="preserve">
+    <value>Architecture</value>
   </data>
-  <data name="EPSGCode" xml:space="preserve">
-    <value>EPSG Code</value>
+  <data name="ER_BuildingServiceShort" xml:space="preserve">
+    <value>BuildingService</value>
   </data>
-  <data name="GeodeticDatum" xml:space="preserve">
-    <value>Geodätisches Datum</value>
-  </data>
-  <data name="Northings" xml:space="preserve">
-    <value>Nordwert</value>
-  </data>
-  <data name="OffsetDistanceTooLarge" xml:space="preserve">
-    <value>Die Modellelemente sind sehr weit vom Ursprung der exportierten Datei entfernt, was zu Problemen in der Empfängersoftware führen kann. Erwägen Sie die Nutzung des Projektbasispunkts bzw. des Vermessungspunkts als Projektursprung für den Export.</value>
-  </data>
-  <data name="ProjectedCRS" xml:space="preserve">
-    <value>Bezugskoordinatensystem</value>
-  </data>
-  <data name="ProjectedCRSDesc" xml:space="preserve">
-    <value>Beschreibung</value>
-  </data>
-  <data name="ProjectedCRSName" xml:space="preserve">
-    <value>Name</value>
-  </data>
-  <data name="ReservedDeviceName" xml:space="preserve">
-    <value>{0} ist ein von Windows reservierter Name. Bitte wählen Sie einen anderen Namen.</value>
-  </data>
-  <data name="Reset" xml:space="preserve">
-    <value>Zurücksetzen</value>
-  </data>
-  <data name="ResetToOriginals" xml:space="preserve">
-    <value>Zurücksetzen</value>
+  <data name="ER_StructuralShort" xml:space="preserve">
+    <value>Structural</value>
   </data>
 </root>

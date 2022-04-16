@@ -39,6 +39,7 @@ namespace Revit.IFC.Import.Data
       FootPrint,
       Style,
       CoG,  // Center of gravity
+      BodyFallback,
       Unhandled
    }
 
@@ -129,7 +130,9 @@ namespace Revit.IFC.Import.Data
       private IFCRepresentationIdentifier GetRepresentationIdentifier(string identifier, IFCAnyHandle ifcRepresentation)
       {
          // Sorted by order of expected occurences.
+         // NOTE: This list includes invalid or obsolete identifiers found in real IFC files. 
          if ((string.Compare(identifier, "Body", true) == 0) ||
+             (string.Compare(identifier, "Facetation", true) == 0) ||
              string.IsNullOrWhiteSpace(identifier))
             return IFCRepresentationIdentifier.Body;
          if (string.Compare(identifier, "Axis", true) == 0)
@@ -147,6 +150,8 @@ namespace Revit.IFC.Import.Data
             return IFCRepresentationIdentifier.Style;
          if (string.Compare(identifier, "CoG", true) == 0)
             return IFCRepresentationIdentifier.CoG;
+         if (string.Compare(identifier, "Body-Fallback", true) == 0)
+            return IFCRepresentationIdentifier.BodyFallback;
 
          Importer.TheLog.LogWarning(ifcRepresentation.StepId, "Found unknown representation type: " + identifier, false);
 

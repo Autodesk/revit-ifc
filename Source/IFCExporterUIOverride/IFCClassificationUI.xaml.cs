@@ -40,9 +40,11 @@ namespace BIM.IFC.Export.UI
       /// initialization of IFCAssignemt class
       /// </summary>
       /// <param name="document"></param>
-      public IFCClassificationWindow()
+      public IFCClassificationWindow(IFCExportConfiguration configuration)
       {
          InitializeComponent();
+         m_newClassification = configuration.ClassificationSettings;
+         datePicker1.SelectedDate = DateTime.Today;
       }
 
       /// <summary>

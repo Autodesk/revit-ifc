@@ -40,27 +40,22 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>bin\Debugx64\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Slow_Debug|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;IFC_OPENSOURCE;</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <DefineConstants>TRACE;IFC_OPENSOURCE;</DefineConstants>
+    <OutputPath>bin\Releasex64\</OutputPath>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="RevitAPI, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPI, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPIIFC, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Web.Extensions" />
@@ -80,7 +75,9 @@
     <Compile Include="Exporter\DoorWindowExporter.cs" />
     <Compile Include="Exporter\DuctInsulationExporter.cs" />
     <Compile Include="Exporter\DuctLiningExporter.cs" />
+    <Compile Include="Exporter\ExporterInitializer_PredefPset.cs" />
     <Compile Include="Exporter\ExporterInitializer_PsetDef.cs" />
+    <Compile Include="Exporter\ExporterInitializer_QsetDef.cs" />
     <Compile Include="Exporter\GenericElementExporter.cs" />
     <Compile Include="Exporter\ExtrusionExporter.cs" />
     <Compile Include="Exporter\FabricSheetExporter.cs" />
@@ -101,8 +98,15 @@
     <Compile Include="Exporter\PropertySet\AttributeEntry.cs" />
     <Compile Include="Exporter\PropertySet\AttributeEntryMap.cs" />
     <Compile Include="Exporter\PropertySet\AttributeSetDescription.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedCeiling.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedCeilingOffset.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedFlooring.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedFlooringOffset.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FireRatingCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\GrossCrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\IsExternalCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NetCrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NosingLengthCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfRiserCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfTreadsCalculator.cs" />
@@ -138,7 +142,6 @@
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfStoreysCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\HeightCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ProjectedAreaCalculator.cs" />
-    <Compile Include="Exporter\PropertySet\Calculators\ConcealCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\TemperatureCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\SpecificZoneCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\TreadLengthAtInnerSideCalculator.cs" />
@@ -151,7 +154,7 @@
     <Compile Include="Exporter\PropertySet\ElectricalVoltagePropertyUtil.cs" />
     <Compile Include="Exporter\PropertySet\EntryMap.cs" />
     <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X2Enum.cs" />
-    <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X3TC1Enum.cs" />
+    <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X3Enum.cs" />
     <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC4Enum.cs" />
     <Compile Include="Exporter\PropertySet\FrequencyPropertyUtil.cs" />
     <Compile Include="Exporter\PropertySet\PositivePlaneAnglePropertyUtil.cs" />
@@ -207,6 +210,7 @@
     <Compile Include="Utility\AllocatedGeometryObjectCache.cs" />
     <Compile Include="Utility\AssemblyInstanceCache.cs" />
     <Compile Include="Utility\AttributeCache.cs" />
+    <Compile Include="Utility\BaseRelationsCache.cs" />
     <Compile Include="Utility\BooleanPropertyInfoCache.cs" />
     <Compile Include="Utility\CategoryUtil.cs" />
     <Compile Include="Utility\ClassificationLocationCache.cs" />
@@ -232,6 +236,7 @@
     <Compile Include="Utility\DoublePropertyInfoCache.cs" />
     <Compile Include="Utility\DummyHostCache.cs" />
     <Compile Include="Utility\ElementFilteringUtil.cs" />
+    <Compile Include="Utility\ElementOrConnector.cs" />
     <Compile Include="Utility\ElementToHandleCache.cs" />
     <Compile Include="Utility\ElementTypeToHandleCache.cs" />
     <Compile Include="Utility\ExporterCacheManager.cs" />
@@ -257,6 +262,7 @@
     <Compile Include="Utility\MaterialConstituentCache.cs" />
     <Compile Include="Utility\MaterialConstituentSetCache.cs" />
     <Compile Include="Utility\MaterialLayerSetInfo.cs" />
+    <Compile Include="Utility\MaterialSetUsageCache.cs" />
     <Compile Include="Utility\MEPCache.cs" />
     <Compile Include="Utility\NamingOptions.cs" />
     <Compile Include="Utility\NamingUtil.cs" />
@@ -287,8 +293,8 @@
     <Compile Include="Utility\UnitsCache.cs" />
     <Compile Include="Utility\UnitUtil.cs" />
     <Compile Include="Utility\WallConnectionDataCache.cs" />
+    <Compile Include="Utility\WallCrossSectionCache.cs" />
     <Compile Include="Utility\ZoneInfoCache.cs" />
-    <Compile Include="Utility\MaterialLayerRelationsCache.cs" />
     <Compile Include="Utility\MaterialLayerSetCache.cs" />
     <Compile Include="Utility\MaterialRelationsCache.cs" />
     <Compile Include="Utility\ParameterCache.cs" />
@@ -352,7 +358,7 @@
       <Version>4.6.6</Version>
     </PackageReference>
     <PackageReference Include="GeometryGymIFC">
-      <Version>0.0.20</Version>
+      <Version>0.1.22</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>10.0.3</Version>
@@ -365,8 +371,8 @@
     -->
   <Import Project=".\Revit.IFC.Export.props" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "H:\Temp\IFC master\" /F /R /Y /I 
-xcopy "$(TargetDir)GeometryGymIFC.dll" "H:\Temp\IFC master\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I 
+xcopy "$(TargetDir)GeometryGymIFC.dll" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -23,10 +23,12 @@ using System.IO;
 using System.Reflection;
 
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
 using Revit.IFC.Common.Extensions;
 using Revit.IFC.Common.Utility;
+using Autodesk.Revit.DB.ExternalService;
 
 
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
@@ -81,7 +83,27 @@ namespace BIM.IFC.Export.UI
          }
 
          m_ifcCommandBinding.Executed += OnIFCExport;
+
+         // Register IFCEntityTreeUI server
+         application.ControlledApplication.ApplicationInitialized += ApplicationInitialized;
+
          return Result.Succeeded;
+      }
+
+      private void ApplicationInitialized(object sender, ApplicationInitializedEventArgs e)
+      {
+         // Register the IFC Entity selection server
+         SingleServerService entUIService = ExternalServiceRegistry.GetService(ExternalServices.BuiltInExternalServices.IFCEntityTreeUIService) as SingleServerService;
+         if (entUIService != null)
+         {
+            try
+            {
+               IFCEntityTree.BrowseIFCEntityServer browseIFCEntityServer = new IFCEntityTree.BrowseIFCEntityServer();
+               entUIService.AddServer(browseIFCEntityServer);
+               entUIService.SetActiveServer(browseIFCEntityServer.GetServerId());
+            }
+            catch {}
+         }
       }
 
       /// <summary>
@@ -182,7 +204,7 @@ namespace BIM.IFC.Export.UI
             // Note that when exporting multiple documents, we are still going to use the configurations from the
             // active document.  
             IFCExportConfigurationsMap configurationsMap = new IFCExportConfigurationsMap();
-            configurationsMap.Add(IFCExportConfiguration.GetInSession());
+            configurationsMap.AddOrReplace(IFCExportConfiguration.GetInSession());
             configurationsMap.AddBuiltInConfigurations();
             configurationsMap.AddSavedConfigurations();
 
@@ -261,7 +283,7 @@ namespace BIM.IFC.Export.UI
                   IFCExportOptions exportOptions = new IFCExportOptions();
 
                   ElementId activeViewId = GenerateActiveViewIdFromDocument(document);
-                  selectedConfig.ActiveViewId = selectedConfig.UseActiveViewGeometry ? activeViewId.IntegerValue : -1;
+                  selectedConfig.ActiveViewId = selectedConfig.UseActiveViewGeometry ? activeViewId : ElementId.InvalidElementId;
                   selectedConfig.UpdateOptions(exportOptions, activeViewId);
 
                   bool result = document.Export(path, fileName, exportOptions);
@@ -330,13 +352,6 @@ namespace BIM.IFC.Export.UI
             // The cancel button should cancel the export, not any "OK"ed setup changes.
             if (mainWindow.Result == IFCExportResult.ExportAndSaveSettings || mainWindow.Result == IFCExportResult.Cancel)
             {
-               if (PotentiallyUpdatedConfigurations)
-               {
-                  configurationsMap = mainWindow.GetModifiedConfigurations();
-                  configurationsMap.UpdateSavedConfigurations();
-               }
-
-               // Remember last selected configuration
                m_mruConfiguration = mainWindow.GetSelectedConfiguration().Name;
             }
          }
@@ -371,7 +386,7 @@ namespace BIM.IFC.Export.UI
          {
             if (elementString != "")
                elementString += ", ";
-            elementString += elementId.IntegerValue.ToString();
+            elementString += elementId.ToString();
          }
          return elementString;
       }
@@ -394,6 +409,20 @@ namespace BIM.IFC.Export.UI
 
          if (items.Count > 0)
             messageString += string.Format(formatString, ElementIdListToString(items));
+      }
+
+      private string GetLinkFileName(Document linkDocument, string linkPathName)
+      {
+         int index = linkPathName.LastIndexOf("\\");
+         if (index <= 0)
+            return linkDocument.Title;
+
+         string linkFileName = linkPathName.Substring(index + 1);
+         // remove the extension
+         index = linkFileName.LastIndexOf('.');
+         if (index > 0)
+            linkFileName = linkFileName.Substring(0, index);
+         return linkFileName;
       }
 
       public void ExportLinkedDocuments(Autodesk.Revit.DB.Document document, string fileName, Dictionary<ElementId, string> linksGUIDsCache, IFCExportOptions exportOptions)
@@ -440,17 +469,7 @@ namespace BIM.IFC.Export.UI
                   linkPathName = linkDocument.PathName;
 
                // get the link file name
-               String linkFileName = "";
-               index = linkPathName.LastIndexOf("\\");
-               if (index > 0)
-                  linkFileName = linkPathName.Substring(index + 1);
-               else
-                  linkFileName = linkDocument.Title;
-
-               // remove the extension
-               index = linkFileName.LastIndexOf('.');
-               if (index > 0)
-                  linkFileName = linkFileName.Substring(0, index);
+               string linkFileName = GetLinkFileName(linkDocument, linkPathName);
 
                // add to names count dictionary
                if (!rvtLinkNamesDict.Keys.Contains(linkFileName))
@@ -481,62 +500,17 @@ namespace BIM.IFC.Export.UI
          IList<ElementId> scaledInst = new List<ElementId>();
          IList<ElementId> instHasReflection = new List<ElementId>();
 
-         foreach (String linkPathName in rvtLinkNamesToInstancesDict.Keys)
+         foreach (KeyValuePair<string, List<RevitLinkInstance>> linkPathNames in rvtLinkNamesToInstancesDict)
          {
-            // get the name of the copy
-            String linkPathNameCopy = System.IO.Path.GetTempPath();
-            index = linkPathName.LastIndexOf("\\");
-            if (index > 0)
-               linkPathNameCopy += linkPathName.Substring(index + 1);
-            else
-               linkPathNameCopy += linkPathName;
-            index = linkPathNameCopy.LastIndexOf('.');
-            if (index <= 0)
-               index = linkPathNameCopy.Length;
-            linkPathNameCopy = linkPathNameCopy.Insert(index, " - Copy");
-            int ii = 1;
-            while (File.Exists(linkPathNameCopy))
-               linkPathNameCopy = linkPathNameCopy.Insert(index, "(" + (++ii).ToString() + ")");
-
-            // copy the file
-            File.Copy(linkPathName, linkPathNameCopy);
-            if (!File.Exists(linkPathNameCopy))
-            {
-               pathDoesntExist.Add(linkPathName);
-               continue;
-            }
-
-            // open the document
-            Document documentCopy = null;
-            try
-            {
-               if ((linkPathName.Length >= 4 && linkPathName.Substring(linkPathName.Length - 4).ToLower() == ".ifc") ||
-                   (linkPathName.Length >= 7 && linkPathName.Substring(linkPathName.Length - 7).ToLower() == ".ifcxml") ||
-                   (linkPathName.Length >= 7 && linkPathName.Substring(linkPathName.Length - 7).ToLower() == ".ifczip"))
-                  documentCopy = document.Application.OpenIFCDocument(linkPathNameCopy);
-               else
-                  documentCopy = document.Application.OpenDocumentFile(linkPathNameCopy);
-            }
-            catch
-            {
-               documentCopy = null;
-            }
-
-            if (documentCopy == null)
-            {
-               noTempDoc.Add(linkPathName);
-               continue;
-            }
-
-            // get the link document unit scale
-            double lengthScaleFactorLink = UnitUtils.ConvertFromInternalUnits(
-               1.0,
-               documentCopy.GetUnits().GetFormatOptions(SpecTypeId.Length).GetUnitTypeId());
+            string linkPathName = linkPathNames.Key;
 
             // get the link instances
             List<RevitLinkInstance> currRvtLinkInstances = rvtLinkNamesToInstancesDict[linkPathName];
             IList<string> serTransforms = new List<string>();
             IList<string> linkFileNames = new List<string>();
+
+            Document linkDocument = null;
+            double lengthScaleFactorLink = 1.0;
 
             foreach (RevitLinkInstance currRvtLinkInstance in currRvtLinkInstances)
             {
@@ -544,8 +518,16 @@ namespace BIM.IFC.Export.UI
                if (currRvtLinkInstance == null)
                   continue;
 
-               // get the link document
-               Document linkDocument = currRvtLinkInstance.GetLinkDocument();
+               // get the link document and the unit scale
+               if (linkDocument == null)
+               {
+                  linkDocument = currRvtLinkInstance.GetLinkDocument();
+                  
+                  lengthScaleFactorLink = UnitUtils.ConvertFromInternalUnits(
+                     1.0,
+                     linkDocument.GetUnits().GetFormatOptions(SpecTypeId.Length).GetUnitTypeId());
+               }
+
                if (linkDocument == null)
                {
                   cantFindDoc.Add(currRvtLinkInstance.Id);
@@ -575,17 +557,7 @@ namespace BIM.IFC.Export.UI
                }
 
                // get the link file path and name
-               String linkFileName = "";
-               index = linkPathName.LastIndexOf("\\");
-               if (index > 0)
-                  linkFileName = linkPathName.Substring(index + 1);
-               else
-                  linkFileName = linkDocument.Title;
-
-               // remove the extension
-               index = linkFileName.LastIndexOf('.');
-               if (index > 0)
-                  linkFileName = linkFileName.Substring(0, index);
+               String linkFileName = GetLinkFileName(linkDocument, linkPathName);
 
                //if link was an IFC file then make a different formating to the file name
                if ((linkPathName.Length >= 4 && linkPathName.Substring(linkPathName.Length - 4).ToLower() == ".ifc") ||
@@ -636,53 +608,44 @@ namespace BIM.IFC.Export.UI
             }
 
             // IFC export requires an open transaction, although no changes should be made
-            Transaction transaction = new Transaction(documentCopy, "Export IFC Link");
-            transaction.Start();
-            FailureHandlingOptions failureOptions = transaction.GetFailureHandlingOptions();
-            failureOptions.SetClearAfterRollback(false);
-            transaction.SetFailureHandlingOptions(failureOptions);
-
-            // export
-            try
+            if (linkDocument != null)
             {
-               int numLinkInstancesToExport = linkFileNames.Count;
-               exportOptions.AddOption("NumberOfExportedLinkInstances", numLinkInstancesToExport.ToString());
+               Transaction transaction = new Transaction(linkDocument, "Export IFC Link");
+               transaction.Start();
+               FailureHandlingOptions failureOptions = transaction.GetFailureHandlingOptions();
+               failureOptions.SetClearAfterRollback(false);
+               transaction.SetFailureHandlingOptions(failureOptions);
 
-               for (int ind = 0; ind < numLinkInstancesToExport; ind++)
+               // export
+               try
                {
-                  string optionName = (ind == 0) ? "ExportLinkInstanceTransform" : "ExportLinkInstanceTransform" + (ind + 1).ToString();
-                  exportOptions.AddOption(optionName, serTransforms[ind]);
+                  int numLinkInstancesToExport = linkFileNames.Count;
+                  exportOptions.AddOption("NumberOfExportedLinkInstances", numLinkInstancesToExport.ToString());
 
-                  // Don't pass in file name for the first link instance.
-                  if (ind == 0)
-                     continue;
+                  for (int ind = 0; ind < numLinkInstancesToExport; ind++)
+                  {
+                     string optionName = (ind == 0) ? "ExportLinkInstanceTransform" : "ExportLinkInstanceTransform" + (ind + 1).ToString();
+                     exportOptions.AddOption(optionName, serTransforms[ind]);
 
-                  optionName = "ExportLinkInstanceFileName" + (ind + 1).ToString();
-                  exportOptions.AddOption(optionName, linkFileNames[ind]);
+                     // Don't pass in file name for the first link instance.
+                     if (ind == 0)
+                        continue;
+
+                     optionName = "ExportLinkInstanceFileName" + (ind + 1).ToString();
+                     exportOptions.AddOption(optionName, linkFileNames[ind]);
+                  }
+
+                  // Pass in the first value; the rest will  be in the options.
+                  String path_ = Path.GetDirectoryName(linkFileNames[0]);
+                  String fileName_ = Path.GetFileName(linkFileNames[0]);
+                  bool result = linkDocument.Export(path_, fileName_, exportOptions); // pass in the options here
+               }
+               catch
+               {
                }
 
-               // Pass in the first value; the rest will  be in the options.
-               String path_ = Path.GetDirectoryName(linkFileNames[0]);
-               String fileName_ = Path.GetFileName(linkFileNames[0]);
-               bool result = documentCopy.Export(path_, fileName_, exportOptions); // pass in the options here
-            }
-            catch
-            {
-            }
-
-            // rollback the transaction
-            transaction.RollBack();
-
-            // close the document
-            documentCopy.Close(false);
-
-            // delete the copy
-            try
-            {
-               File.Delete(linkPathNameCopy);
-            }
-            catch
-            {
+               // rollback the transaction
+               transaction.RollBack();
             }
 
             // Show user errors, if any.

@@ -51,7 +51,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          bool valid = true;
          if (StairsExporter.IsLegacyStairs(element))
@@ -81,7 +81,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // Get override from parameter
-         int? noOfTreadsOverride = ParameterUtil.GetIntValueFromElementOrSymbol(element, "NumberOfTreads");
+         int? noOfTreadsOverride = ParameterUtil.GetIntValueFromElementOrSymbol(element, entryMap.RevitParameterName);
+         if (!noOfTreadsOverride.HasValue)
+            noOfTreadsOverride = ParameterUtil.GetIntValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName);
          if (noOfTreadsOverride > 0)
          {
             m_NumberOfTreads = noOfTreadsOverride.Value;

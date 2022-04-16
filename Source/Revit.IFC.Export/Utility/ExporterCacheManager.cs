@@ -169,12 +169,7 @@ namespace Revit.IFC.Export.Utility
       static MaterialConstituentSetCache m_MaterialConstituentSetCache;
 
       /// <summary>
-      /// The MaterialLayerRelationsCache object.
-      /// </summary>
-      static MaterialSetUsageCache m_MaterialSetUsageCache;
-
-      /// <summary>
-      /// The MaterialLayerSetCache object.
+      /// The MaterialSetCache object.
       /// </summary>
       static MaterialSetCache m_MaterialSetCache;
 
@@ -182,11 +177,6 @@ namespace Revit.IFC.Export.Utility
       /// The MEPCache object.
       /// </summary>
       static MEPCache m_MEPCache;
-
-      /// <summary>
-      /// The MaterialRelationsCache object.
-      /// </summary>
-      static MaterialRelationsCache m_MaterialRelationsCache;
 
       static AttributeCache m_AttributeCache;
 
@@ -322,7 +312,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The common property sets to be exported for an entity type, regardless of Object Type.
       /// </summary>
-      static IDictionary<IFCEntityType, IList<PropertySetDescription>> m_PropertySetsForTypeCache;
+      static IDictionary<PropertySetKey, IList<PropertySetDescription>> m_PropertySetsForTypeCache;
 
       /// <summary>
       /// The material id to style handle cache.
@@ -402,6 +392,15 @@ namespace Revit.IFC.Export.Utility
       /// Cache for additional Quantities or Properties to be created later with the other quantities
       /// </summary>
       static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> ComplexPropertyCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
+
+      /// <summary>
+      /// Cache for the Project Location that comes from the Selected Site on export option
+      /// </summary>
+      static public ProjectLocation SelectedSiteProjectLocation { get; set; } = null;
+
+      /// Cache for information whether a QuantitySet specified in the Dict. value has been created for the elementHandle
+      /// </summary>
+      static public HashSet<(IFCAnyHandle, string)> QtoSetCreated { get; set; } = new HashSet<(IFCAnyHandle, string)>();
 
       /// <summary>
       /// The ParameterCache object.
@@ -776,28 +775,14 @@ public static ParameterCache ParameterCache
       /// <summary>
       /// The MaterialRelationsCache object.
       /// </summary>
-      public static MaterialRelationsCache MaterialRelationsCache
-      {
-         get
-         {
-            if (m_MaterialRelationsCache == null)
-               m_MaterialRelationsCache = new MaterialRelationsCache();
-            return m_MaterialRelationsCache;
-         }
-      }
-
+      public static MaterialRelationsCache MaterialRelationsCache { get; private set;  } = 
+         new MaterialRelationsCache();
+      
       /// <summary>
       /// The MaterialLayerRelationsCache object.
       /// </summary>
-      public static MaterialSetUsageCache MaterialLayerRelationsCache
-      {
-         get
-         {
-            if (m_MaterialSetUsageCache == null)
-               m_MaterialSetUsageCache = new MaterialSetUsageCache();
-            return m_MaterialSetUsageCache;
-         }
-      }
+      public static MaterialSetUsageCache MaterialSetUsageCache { get; private set; } = 
+         new MaterialSetUsageCache();
 
       /// <summary>
       /// The RailingCache object.
@@ -968,8 +953,7 @@ public static ParameterCache ParameterCache
          }
       }
 
-      // Only for 2022
-      //public static WallCrossSectionCache WallCrossSectionCache { get; set; } = new WallCrossSectionCache();
+      public static WallCrossSectionCache WallCrossSectionCache { get; set; } = new WallCrossSectionCache();
 
       /// <summary>
       /// The ElementToHandleCache object, used to cache Revit element ids to IFC entity handles.
@@ -1110,12 +1094,6 @@ public static ParameterCache ParameterCache
       }
 
       /// <summary>
-      /// Contains transformation which defines World Coordinate System of Host Revit file.
-      /// HostRvtFileWCS.Origin must store unscaled values.
-      /// </summary>
-      public static Transform HostRvtFileWCS { get; set; } = Transform.Identity;
-
-      /// <summary>
       /// The LevelInfoCache object.
       /// </summary>
       public static LevelInfoCache LevelInfoCache
@@ -1155,14 +1133,94 @@ public static ParameterCache ParameterCache
       }
 
       /// <summary>
+      /// This class is used to identify property set in cache.
+      /// Current logic uses a combination of instance type and predefined type
+      /// to uniquely identify relation of ifc object and property set.
+      /// </summary>
+      public class PropertySetKey : IComparable<PropertySetKey>
+      {
+         public PropertySetKey(IFCEntityType entityType, string predefinedType)
+         {
+            EntityType = entityType;
+            PredefinedType = predefinedType;
+         }
+
+         public IFCEntityType EntityType { get; protected set; } = IFCEntityType.UnKnown;
+
+         public string PredefinedType { get; protected set; } = null;
+
+         public int CompareTo(PropertySetKey other)
+         {
+            if (other == null) 
+               return 1;
+
+            if (EntityType < other.EntityType)
+               return -1;
+
+            if (EntityType > other.EntityType)
+               return 1;
+
+            if (PredefinedType == null)
+               return (other.PredefinedType == null ? 0 : -1);
+            
+            if (other.PredefinedType == null)
+               return 1;
+
+            return PredefinedType.CompareTo(other.PredefinedType);
+         }
+
+         static public bool operator ==(PropertySetKey first, PropertySetKey second)
+         {
+            Object lhsObject = first;
+            Object rhsObject = second;
+            if (null == lhsObject)
+            {
+               if (null == rhsObject)
+                  return true;
+               return false;
+            }
+            if (null == rhsObject)
+               return false;
+
+            if (first.EntityType != second.EntityType)
+               return false;
+
+            if (first.PredefinedType != second.PredefinedType)
+               return false;
+
+            return true;
+         }
+
+         static public bool operator !=(PropertySetKey first, PropertySetKey second)
+         {
+            return !(first == second);
+         }
+
+         public override bool Equals(object obj)
+         {
+            if (obj == null)
+               return false;
+
+            PropertySetKey second = obj as PropertySetKey;
+            return (this == second);
+         }
+
+         public override int GetHashCode()
+         {
+            return EntityType.GetHashCode() + 
+               (PredefinedType != null ? PredefinedType.GetHashCode() : 0);
+         }
+      }
+
+      /// <summary>
       /// The common property sets to be exported for an entity type, regardless of Object Type.
       /// </summary>
-      public static IDictionary<IFCEntityType, IList<PropertySetDescription>> PropertySetsForTypeCache
+      public static IDictionary<PropertySetKey, IList<PropertySetDescription>> PropertySetsForTypeCache
       {
          get
          {
             if (m_PropertySetsForTypeCache == null)
-               m_PropertySetsForTypeCache = new Dictionary<IFCEntityType, IList<PropertySetDescription>>();
+               m_PropertySetsForTypeCache = new Dictionary<PropertySetKey, IList<PropertySetDescription>>();
             return m_PropertySetsForTypeCache;
          }
       }
@@ -1311,6 +1369,11 @@ public static ParameterCache ParameterCache
       }
 
       /// <summary>
+      /// A cache of offset applied to the host model (from the shared coords) to be used in the Link file
+      /// </summary>
+      public static Transform ScaledTransformOffsetFromSharedCoords { get; set; } = Transform.Identity;
+
+      /// <summary>
       /// Collection of IFC Handles to delete
       /// </summary>
       public static HashSet<IFCAnyHandle> HandleToDeleteCache
@@ -1384,12 +1447,12 @@ public static ParameterCache ParameterCache
          m_IsExternalParameterValueCache = null;
          m_LevelInfoCache = null;
          m_MaterialIdToStyleHandleCache = null;
-         m_MaterialSetUsageCache = null;
+         MaterialSetUsageCache = new MaterialSetUsageCache();
          m_MaterialSetCache = null;
          m_MaterialConstituentCache = null;
          m_MaterialConstituentSetCache = null;
          m_MaterialHandleCache = null;
-         m_MaterialRelationsCache = null;
+         MaterialRelationsCache = new MaterialRelationsCache();
          m_MEPCache = null;
          m_Object2DCurves = null;
          OwnerHistoryHandle = null;
@@ -1414,11 +1477,11 @@ public static ParameterCache ParameterCache
          m_TypeRelationsCache = null;
          m_ViewScheduleElementCache = null;
          m_WallConnectionDataCache = null;
-         // Only for 2022
-         //WallCrossSectionCache.Clear();
+         WallCrossSectionCache.Clear();
          m_UnitsCache = null;
          m_ZoneCache = null;
          m_ZoneInfoCache = null;
+         QtoSetCreated.Clear();
       }
    }
 }

@@ -28,6 +28,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter.PropertySet;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -280,11 +281,11 @@ namespace Revit.IFC.Export.Exporter
                // We will associate the grid with its level, unless there are no levels in the file, in which case we'll associate it with the building.
                IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, levelId);
                bool useLevelInfo = (levelInfo != null);
+               IFCAnyHandle gridLevelHandle = useLevelInfo ? levelInfo.GetBuildingStorey() : ExporterCacheManager.BuildingHandle;
 
-               string gridGUID = GUIDUtil.CreateGUID();
+               string gridGUID = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcGrid, gridName, gridLevelHandle);
 
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-               IFCAnyHandle gridLevelHandle = useLevelInfo ? levelInfo.GetBuildingStorey() : ExporterCacheManager.BuildingHandle;
                IFCAnyHandle levelObjectPlacement = (gridLevelHandle != null) ? IFCAnyHandleUtil.GetObjectPlacement(gridLevelHandle) : null;
                IFCAnyHandle copyLevelPlacement = (levelObjectPlacement != null) ? ExporterUtil.CopyLocalPlacement(ifcFile, levelObjectPlacement) : null;
                IFCAnyHandle ifcGrid = IFCInstanceExporter.CreateGrid(exporterIFC, gridGUID, ownerHistory, gridName, copyLevelPlacement, productRep, axesU, axesV, axesW);

@@ -55,7 +55,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
         /// <returns>
         /// True if the operation succeed, false otherwise.
         /// </returns>
-        abstract public bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType);
+        abstract public bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, 
+           Element element, ElementType elementType, EntryMap psetOrQtoEntryMap);
 
       /// <summary>
       /// If implemented in derived classes, may retrieve parameter data for a specific IFC handle.

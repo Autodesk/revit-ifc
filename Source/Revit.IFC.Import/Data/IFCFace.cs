@@ -30,21 +30,11 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCFace : IFCTopologicalRepresentationItem
    {
-      ISet<IFCFaceBound> m_Bounds = null;
-
       /// <summary>
       /// Return the bounding loops of the face.
       /// </summary>
-      public ISet<IFCFaceBound> Bounds
-      {
-         get
-         {
-            if (m_Bounds == null)
-               m_Bounds = new HashSet<IFCFaceBound>();
-            return m_Bounds;
-         }
-      }
-
+      public ISet<IFCFaceBound> Bounds { get; set; } = new HashSet<IFCFaceBound>();
+      
       protected IFCFace()
       {
       }
@@ -90,6 +80,77 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Checks if the Face definition represents a non-empty boundary.
+      /// </summary>
+      /// <returns>True if the face contains any information.</returns>
+      public bool IsEmpty()
+      {
+         if (Bounds == null)
+            return true;
+
+         foreach (IFCFaceBound bound in Bounds)
+         {
+            if (!bound.IsEmpty())
+               return false;
+         }
+
+         return true;
+      }
+
+      private IList<List<XYZ>> CreateTriangulation(IList<XYZ> boundary)
+      {
+         if (boundary == null)
+            return null;
+
+         if (boundary.Count != 4)
+            return null;
+
+         IList<List<XYZ>> loops = new List<List<XYZ>>();
+
+         int firstPoint = 0;
+         Func<int, XYZ> boundaryPoint = index => boundary[(firstPoint + index) % 4];
+
+         // Future TODO: replace this very simple method with Delauney triangulation or the
+         // like.  Or better yet, improve the TessellatedShapeBuilder so that it isn't
+         // necessary.
+         // Want to ensure that either (1) the quadrilateral is convex or (2) we split at the
+         // concave point.
+         XYZ referenceCross = null;
+         Tuple<int, int> posNegIndex = Tuple.Create(0, -1);
+         int sum = 1;
+
+         for (int ii = 0; ii < 4; ii++)
+         {
+            XYZ vector1 = (boundaryPoint(ii+3) - boundaryPoint(ii)).Normalize();
+            XYZ vector2 = (boundaryPoint(ii+1) - boundaryPoint(ii)).Normalize();
+            XYZ cross = vector1.CrossProduct(vector2);
+            
+            if (cross.IsZeroLength())
+            {
+               // This is a degenerate quadrilateral; return the triangle.
+               loops.Add(new List<XYZ>() { boundaryPoint(ii+1), boundaryPoint(ii+2), boundaryPoint(ii+3) });
+               return loops;
+            }
+
+            if (referenceCross == null)
+            {
+               referenceCross = cross;
+               continue;
+            }
+
+            double dot = referenceCross.DotProduct(cross);
+            sum += ((dot > 0) ? 1 : -1);
+            posNegIndex = (dot > 0) ? Tuple.Create(ii, posNegIndex.Item2) : Tuple.Create(posNegIndex.Item1, ii);
+         }
+
+         firstPoint = (sum == -3) ? posNegIndex.Item1 : ((sum == 3) ? posNegIndex.Item2 : 0);
+         
+         loops.Add(new List<XYZ>() { boundaryPoint(0), boundaryPoint(1), boundaryPoint(2) });
+         loops.Add(new List<XYZ>() { boundaryPoint(2), boundaryPoint(3), boundaryPoint(0) });
+         return loops;
+      }
+
+      /// <summary>
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
@@ -110,20 +171,48 @@ namespace Revit.IFC.Import.Data
          }
          TessellatedShapeBuilderScope tsBuilderScope = shapeEditScope.BuilderScope as TessellatedShapeBuilderScope;
 
-         tsBuilderScope.StartCollectingFace(GetMaterialElementId(shapeEditScope));
+         bool addFace = true;
+         bool canTriangulate = (Bounds.Count == 1);
+         ElementId materialId = GetMaterialElementId(shapeEditScope);
 
+         // We can only really triangulate faces with one boundary with 4 vertices,
+         // but we don't really know how many vertices the boundary has until later.
+         // So this is just the first block.  Later, we can try to extend to generic
+         // polygons.
+         tsBuilderScope.StartCollectingFace(materialId, canTriangulate);
+         
          foreach (IFCFaceBound faceBound in Bounds)
          {
             faceBound.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
 
-            // If we can't create the outer face boundary, we will abort the creation of this face.  In that case, return.
+            // If we can't create the outer face boundary, we will abort the creation of this face.  
+            // In that case, return, unless we can triangulate it.
             if (!tsBuilderScope.HaveActiveFace())
             {
-               tsBuilderScope.AbortCurrentFace();
-               return;
+               addFace = false;
+               break;
             }
          }
-         tsBuilderScope.StopCollectingFace();
+
+         tsBuilderScope.StopCollectingFace(addFace, false);
+
+         IList<List<XYZ>> delayedFaceBoundaries = CreateTriangulation(tsBuilderScope.DelayedFaceBoundary);
+         if (delayedFaceBoundaries != null)
+         {
+            bool extraFace = false;
+            foreach (List<XYZ> delayedBoundary in delayedFaceBoundaries)
+            {
+               bool addTriangulatedFace = true;
+               tsBuilderScope.StartCollectingFace(GetMaterialElementId(shapeEditScope), false);
+               if (!tsBuilderScope.AddLoopVertices(Id, delayedBoundary))
+               {
+                  Importer.TheLog.LogComment(Id, "Bounded loop plane is slightly non-planar, couldn't triangulate.", false);
+                  addTriangulatedFace = false;
+               }
+               tsBuilderScope.StopCollectingFace(addTriangulatedFace, extraFace);
+               extraFace = true;
+            }
+         }
       }
 
       protected IFCFace(IFCAnyHandle ifcFace)

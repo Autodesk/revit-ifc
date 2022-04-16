@@ -36,165 +36,9 @@ namespace Revit.IFC.Import.Data
    public class IFCPropertySet : IFCPropertySetDefinition
    {
       /// <summary>
-      /// The contained set of IFC properties.
-      /// </summary>
-      IDictionary<string, IFCProperty> m_IFCProperties;
-
-      /// <summary>
       /// The properties.
       /// </summary>
-      public IDictionary<string, IFCProperty> IFCProperties
-      {
-         get { return m_IFCProperties; }
-      }
-
-
-      static IDictionary<ForgeTypeId, ParameterType> m_UnitToParameterType = null;
-
-      static IDictionary<ForgeTypeId, ParameterType> UnitToParameterType
-      {
-         get
-         {
-            if (m_UnitToParameterType == null)
-            {
-               m_UnitToParameterType = new Dictionary<ForgeTypeId, ParameterType>();
-               m_UnitToParameterType[SpecTypeId.Length] = ParameterType.Length;
-               m_UnitToParameterType[SpecTypeId.SheetLength] = ParameterType.Length;
-               m_UnitToParameterType[SpecTypeId.Area] = ParameterType.Area;
-               m_UnitToParameterType[SpecTypeId.Volume] = ParameterType.Volume;
-               m_UnitToParameterType[SpecTypeId.Angle] = ParameterType.Angle;
-               m_UnitToParameterType[SpecTypeId.SiteAngle] = ParameterType.Angle;
-               m_UnitToParameterType[SpecTypeId.Number] = ParameterType.Number;
-               m_UnitToParameterType[SpecTypeId.HvacDensity] = ParameterType.HVACDensity;
-               m_UnitToParameterType[SpecTypeId.HvacEnergy] = ParameterType.HVACEnergy;
-               m_UnitToParameterType[SpecTypeId.HvacFriction] = ParameterType.HVACFriction;
-               m_UnitToParameterType[SpecTypeId.HvacPower] = ParameterType.HVACPower;
-               m_UnitToParameterType[SpecTypeId.HvacPowerDensity] = ParameterType.HVACPower;
-               m_UnitToParameterType[SpecTypeId.HvacPressure] = ParameterType.HVACPressure;
-               m_UnitToParameterType[SpecTypeId.HvacTemperature] = ParameterType.HVACTemperature;
-               m_UnitToParameterType[SpecTypeId.HvacVelocity] = ParameterType.HVACVelocity;
-               m_UnitToParameterType[SpecTypeId.AirFlow] = ParameterType.HVACAirflow;
-               m_UnitToParameterType[SpecTypeId.DuctSize] = ParameterType.HVACDuctSize;
-               m_UnitToParameterType[SpecTypeId.CrossSection] = ParameterType.HVACCrossSection;
-               m_UnitToParameterType[SpecTypeId.HeatGain] = ParameterType.HVACHeatGain;
-               m_UnitToParameterType[SpecTypeId.Current] = ParameterType.ElectricalCurrent;
-               m_UnitToParameterType[SpecTypeId.ElectricalPotential] = ParameterType.ElectricalPotential;
-               m_UnitToParameterType[SpecTypeId.ElectricalFrequency] = ParameterType.ElectricalFrequency;
-               m_UnitToParameterType[SpecTypeId.Illuminance] = ParameterType.ElectricalIlluminance;
-               m_UnitToParameterType[SpecTypeId.LuminousFlux] = ParameterType.ElectricalLuminousFlux;
-               m_UnitToParameterType[SpecTypeId.ElectricalPower] = ParameterType.ElectricalPower;
-               m_UnitToParameterType[SpecTypeId.HvacRoughness] = ParameterType.HVACRoughness;
-               m_UnitToParameterType[SpecTypeId.Force] = ParameterType.Force;
-               m_UnitToParameterType[SpecTypeId.LinearForce] = ParameterType.LinearForce;
-               m_UnitToParameterType[SpecTypeId.AreaForce] = ParameterType.AreaForce;
-               m_UnitToParameterType[SpecTypeId.Moment] = ParameterType.Moment;
-               m_UnitToParameterType[SpecTypeId.ApparentPower] = ParameterType.ElectricalApparentPower;
-               m_UnitToParameterType[SpecTypeId.ElectricalPowerDensity] = ParameterType.ElectricalPowerDensity;
-               m_UnitToParameterType[SpecTypeId.PipingDensity] = ParameterType.PipingDensity;
-               m_UnitToParameterType[SpecTypeId.Flow] = ParameterType.PipingFlow;
-               m_UnitToParameterType[SpecTypeId.PipingFriction] = ParameterType.PipingFriction;
-               m_UnitToParameterType[SpecTypeId.PipingPressure] = ParameterType.PipingPressure;
-               m_UnitToParameterType[SpecTypeId.PipingTemperature] = ParameterType.PipingTemperature;
-               m_UnitToParameterType[SpecTypeId.PipingVelocity] = ParameterType.PipingVelocity;
-               m_UnitToParameterType[SpecTypeId.PipingViscosity] = ParameterType.PipingViscosity;
-               m_UnitToParameterType[SpecTypeId.PipeSize] = ParameterType.PipeSize;
-               m_UnitToParameterType[SpecTypeId.PipingRoughness] = ParameterType.PipingRoughness;
-               m_UnitToParameterType[SpecTypeId.Stress] = ParameterType.Stress;
-               m_UnitToParameterType[SpecTypeId.UnitWeight] = ParameterType.UnitWeight;
-               m_UnitToParameterType[SpecTypeId.ThermalExpansionCoefficient] = ParameterType.ThermalExpansion;
-               m_UnitToParameterType[SpecTypeId.LinearMoment] = ParameterType.LinearMoment;
-               m_UnitToParameterType[SpecTypeId.PointSpringCoefficient] = ParameterType.ForcePerLength;
-               m_UnitToParameterType[SpecTypeId.RotationalPointSpringCoefficient] = ParameterType.ForceLengthPerAngle;
-               m_UnitToParameterType[SpecTypeId.LineSpringCoefficient] = ParameterType.LinearForcePerLength;
-               m_UnitToParameterType[SpecTypeId.RotationalLineSpringCoefficient] = ParameterType.LinearForceLengthPerAngle;
-               m_UnitToParameterType[SpecTypeId.AreaSpringCoefficient] = ParameterType.AreaForcePerLength;
-               m_UnitToParameterType[SpecTypeId.PipingVolume] = ParameterType.PipingVolume;
-               m_UnitToParameterType[SpecTypeId.HvacViscosity] = ParameterType.HVACViscosity;
-               m_UnitToParameterType[SpecTypeId.HeatTransferCoefficient] = ParameterType.HVACCoefficientOfHeatTransfer;
-               m_UnitToParameterType[SpecTypeId.AirFlowDensity] = ParameterType.HVACAirflowDensity;
-               m_UnitToParameterType[SpecTypeId.Slope] = ParameterType.Slope;
-               m_UnitToParameterType[SpecTypeId.CoolingLoad] = ParameterType.HVACCoolingLoad;
-               m_UnitToParameterType[SpecTypeId.CoolingLoadDividedByArea] = ParameterType.HVACCoolingLoadDividedByArea;
-               m_UnitToParameterType[SpecTypeId.CoolingLoadDividedByVolume] = ParameterType.HVACCoolingLoadDividedByVolume;
-               m_UnitToParameterType[SpecTypeId.HeatingLoad] = ParameterType.HVACHeatingLoad;
-               m_UnitToParameterType[SpecTypeId.HeatingLoadDividedByArea] = ParameterType.HVACHeatingLoadDividedByArea;
-               m_UnitToParameterType[SpecTypeId.HeatingLoadDividedByVolume] = ParameterType.HVACHeatingLoadDividedByVolume;
-               m_UnitToParameterType[SpecTypeId.AirFlowDividedByVolume] = ParameterType.HVACAirflowDividedByVolume;
-               m_UnitToParameterType[SpecTypeId.AirFlowDividedByCoolingLoad] = ParameterType.HVACAirflowDividedByCoolingLoad;
-               m_UnitToParameterType[SpecTypeId.AreaDividedByCoolingLoad] = ParameterType.HVACAreaDividedByCoolingLoad;
-               m_UnitToParameterType[SpecTypeId.WireDiameter] = ParameterType.WireSize;
-               m_UnitToParameterType[SpecTypeId.HvacSlope] = ParameterType.HVACSlope;
-               m_UnitToParameterType[SpecTypeId.PipingSlope] = ParameterType.PipingSlope;
-               m_UnitToParameterType[SpecTypeId.Currency] = ParameterType.Currency;
-               m_UnitToParameterType[SpecTypeId.Efficacy] = ParameterType.ElectricalEfficacy;
-               m_UnitToParameterType[SpecTypeId.Wattage] = ParameterType.ElectricalWattage;
-               m_UnitToParameterType[SpecTypeId.ColorTemperature] = ParameterType.ColorTemperature;
-               m_UnitToParameterType[SpecTypeId.DecimalSheetLength] = ParameterType.Length;
-               m_UnitToParameterType[SpecTypeId.LuminousIntensity] = ParameterType.ElectricalLuminousIntensity;
-               m_UnitToParameterType[SpecTypeId.Luminance] = ParameterType.ElectricalLuminance;
-               m_UnitToParameterType[SpecTypeId.AreaDividedByHeatingLoad] = ParameterType.HVACAreaDividedByHeatingLoad;
-               m_UnitToParameterType[SpecTypeId.Factor] = ParameterType.HVACFactor;
-               m_UnitToParameterType[SpecTypeId.ElectricalTemperature] = ParameterType.ElectricalTemperature;
-               m_UnitToParameterType[SpecTypeId.CableTraySize] = ParameterType.ElectricalCableTraySize;
-               m_UnitToParameterType[SpecTypeId.ConduitSize] = ParameterType.ElectricalConduitSize;
-               m_UnitToParameterType[SpecTypeId.ReinforcementVolume] = ParameterType.ReinforcementVolume;
-               m_UnitToParameterType[SpecTypeId.ReinforcementLength] = ParameterType.ReinforcementLength;
-               m_UnitToParameterType[SpecTypeId.DemandFactor] = ParameterType.ElectricalDemandFactor;
-               m_UnitToParameterType[SpecTypeId.DuctInsulationThickness] = ParameterType.HVACDuctInsulationThickness;
-               m_UnitToParameterType[SpecTypeId.DuctLiningThickness] = ParameterType.HVACDuctLiningThickness;
-               m_UnitToParameterType[SpecTypeId.PipeInsulationThickness] = ParameterType.PipeInsulationThickness;
-               m_UnitToParameterType[SpecTypeId.ThermalResistance] = ParameterType.HVACThermalResistance;
-               m_UnitToParameterType[SpecTypeId.ThermalMass] = ParameterType.HVACThermalMass;
-               m_UnitToParameterType[SpecTypeId.Acceleration] = ParameterType.Acceleration;
-               m_UnitToParameterType[SpecTypeId.BarDiameter] = ParameterType.BarDiameter;
-               m_UnitToParameterType[SpecTypeId.CrackWidth] = ParameterType.CrackWidth;
-               m_UnitToParameterType[SpecTypeId.Displacement] = ParameterType.DisplacementDeflection;
-               m_UnitToParameterType[SpecTypeId.Energy] = ParameterType.Energy;
-               m_UnitToParameterType[SpecTypeId.StructuralFrequency] = ParameterType.StructuralFrequency;
-               m_UnitToParameterType[SpecTypeId.Mass] = ParameterType.Mass;
-               m_UnitToParameterType[SpecTypeId.MassPerUnitLength] = ParameterType.MassPerUnitLength;
-               m_UnitToParameterType[SpecTypeId.MomentOfInertia] = ParameterType.MomentOfInertia;
-               m_UnitToParameterType[SpecTypeId.SurfaceAreaPerUnitLength] = ParameterType.SurfaceArea;
-               m_UnitToParameterType[SpecTypeId.Period] = ParameterType.Period;
-               m_UnitToParameterType[SpecTypeId.Pulsation] = ParameterType.Pulsation;
-               m_UnitToParameterType[SpecTypeId.ReinforcementArea] = ParameterType.ReinforcementArea;
-               m_UnitToParameterType[SpecTypeId.ReinforcementAreaPerUnitLength] = ParameterType.ReinforcementAreaPerUnitLength;
-               m_UnitToParameterType[SpecTypeId.ReinforcementCover] = ParameterType.ReinforcementCover;
-               m_UnitToParameterType[SpecTypeId.ReinforcementSpacing] = ParameterType.ReinforcementSpacing;
-               m_UnitToParameterType[SpecTypeId.Rotation] = ParameterType.Rotation;
-               m_UnitToParameterType[SpecTypeId.SectionArea] = ParameterType.SectionArea;
-               m_UnitToParameterType[SpecTypeId.SectionDimension] = ParameterType.SectionDimension;
-               m_UnitToParameterType[SpecTypeId.SectionModulus] = ParameterType.SectionModulus;
-               m_UnitToParameterType[SpecTypeId.SectionProperty] = ParameterType.SectionProperty;
-               m_UnitToParameterType[SpecTypeId.StructuralVelocity] = ParameterType.StructuralVelocity;
-               m_UnitToParameterType[SpecTypeId.WarpingConstant] = ParameterType.WarpingConstant;
-               m_UnitToParameterType[SpecTypeId.Weight] = ParameterType.Weight;
-               m_UnitToParameterType[SpecTypeId.WeightPerUnitLength] = ParameterType.WeightPerUnitLength;
-               m_UnitToParameterType[SpecTypeId.ThermalConductivity] = ParameterType.HVACThermalConductivity;
-               m_UnitToParameterType[SpecTypeId.SpecificHeat] = ParameterType.HVACSpecificHeat;
-               m_UnitToParameterType[SpecTypeId.SpecificHeatOfVaporization] = ParameterType.HVACSpecificHeatOfVaporization;
-               m_UnitToParameterType[SpecTypeId.Permeability] = ParameterType.HVACPermeability;
-               m_UnitToParameterType[SpecTypeId.ElectricalResistivity] = ParameterType.ElectricalResistivity;
-               m_UnitToParameterType[SpecTypeId.MassDensity] = ParameterType.MassDensity;
-               m_UnitToParameterType[SpecTypeId.MassPerUnitArea] = ParameterType.MassPerUnitArea;
-               m_UnitToParameterType[SpecTypeId.PipeDimension] = ParameterType.Length;
-               m_UnitToParameterType[SpecTypeId.PipingMass] = ParameterType.Mass;
-               m_UnitToParameterType[SpecTypeId.PipeMassPerUnitLength] = ParameterType.MassPerUnitLength;
-
-               // TODO: figure out mappings for these types.
-               m_UnitToParameterType[SpecTypeId.ForceScale] = ParameterType.Number;
-               m_UnitToParameterType[SpecTypeId.LinearForceScale] = ParameterType.Number;
-               m_UnitToParameterType[SpecTypeId.AreaForceScale] = ParameterType.Number;
-               m_UnitToParameterType[SpecTypeId.MomentScale] = ParameterType.Number;
-               m_UnitToParameterType[SpecTypeId.LinearMomentScale] = ParameterType.Number;
-
-               m_UnitToParameterType[SpecTypeId.Time] = ParameterType.TimeInterval;
-               m_UnitToParameterType[SpecTypeId.Speed] = ParameterType.Speed;
-            }
-
-            return m_UnitToParameterType;
-         }
-      }
+      public IDictionary<string, IFCProperty> IFCProperties { get; protected set; } = new Dictionary<string, IFCProperty>();
 
       /// <summary>
       /// Processes IfcPropertySet attributes.
@@ -217,13 +61,11 @@ namespace Revit.IFC.Import.Data
 
          if (properties != null)
          {
-            m_IFCProperties = new Dictionary<string, IFCProperty>();
-
             foreach (IFCAnyHandle property in properties)
             {
                IFCProperty ifcProperty = IFCProperty.ProcessIFCProperty(property);
                if (ifcProperty != null)
-                  m_IFCProperties[ifcProperty.Name] = ifcProperty;
+                  IFCProperties[ifcProperty.Name] = ifcProperty;
             }
          }
          else
@@ -256,14 +98,13 @@ namespace Revit.IFC.Import.Data
       {
          if (category == null || category.Parent != null)
             return true;
-         int catId = category.Id.IntegerValue;
-         if ((catId == (int)BuiltInCategory.OST_IOSModelGroups) ||
-             (catId == (int)BuiltInCategory.OST_Curtain_Systems))
+         if ((category.BuiltInCategory == BuiltInCategory.OST_IOSModelGroups) ||
+             (category.BuiltInCategory == BuiltInCategory.OST_Curtain_Systems))
             return true;
          return false;
       }
 
-      private static Parameter AddParameterBase(Document doc, Element element, Category category, string parameterName, int parameterSetId, ParameterType parameterType)
+      public static Parameter AddParameterBase(Document doc, Element element, Category category, string parameterName, int parameterSetId, ForgeTypeId specId)
       {
          bool isElementType = (element is ElementType);
          Definitions definitions = isElementType ? Importer.TheCache.TypeGroupDefinitions : Importer.TheCache.InstanceGroupDefinitions;
@@ -272,7 +113,7 @@ namespace Revit.IFC.Import.Data
          Definition definition = definitions.get_Item(parameterName);
          if (definition == null)
          {
-            ExternalDefinitionCreationOptions option = new ExternalDefinitionCreationOptions(parameterName, parameterType);
+            ExternalDefinitionCreationOptions option = new ExternalDefinitionCreationOptions(parameterName, specId);
             definition = definitions.Create(option);
             if (definition == null)
             {
@@ -287,7 +128,7 @@ namespace Revit.IFC.Import.Data
          Parameter parameter = null;
          ElementBinding binding = null;
          bool reinsert = false;
-         
+
          if (!newlyCreated)
          {
             BindingMap bindingMap = Importer.TheCache.GetParameterBinding(doc);
@@ -309,7 +150,7 @@ namespace Revit.IFC.Import.Data
             if (!reinsert || !binding.Categories.Contains(category))
             {
                binding.Categories.Insert(category);
-      
+
                BindingMap bindingMap = Importer.TheCache.GetParameterBinding(doc);
                if (reinsert)
                   bindingMap.ReInsert(definition, binding, BuiltInParameterGroup.PG_IFC);
@@ -339,7 +180,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterElementId(Document doc, Element element, Category category, string parameterName, ElementId parameterValue, int parameterSetId)
+      public static bool AddParameterElementId(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, ElementId parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
@@ -352,7 +193,11 @@ namespace Revit.IFC.Import.Data
          if (string.IsNullOrEmpty(name))
             return false;
 
-         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Text);
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
+
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, SpecTypeId.String.Text);
          if (parameter == null)
             return false;
 
@@ -370,12 +215,16 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterBoolean(Document doc, Element element, Category category, string parameterName, bool parameterValue, int parameterSetId)
+      public static bool AddParameterBoolean(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, bool parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
 
-         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.YesNo);
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
+
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, SpecTypeId.Boolean.YesNo);
          if (parameter == null)
             return false;
 
@@ -393,12 +242,16 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterInt(Document doc, Element element, Category category, string parameterName, int parameterValue, int parameterSetId)
+      public static bool AddParameterInt(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, int parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
 
-         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Integer);
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
+
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, SpecTypeId.Int.Integer);
          if (parameter == null)
             return false;
 
@@ -406,6 +259,17 @@ namespace Revit.IFC.Import.Data
          return true;
       }
 
+      private static ForgeTypeId CalculateUnitsTypeId(ForgeTypeId unitsTypeId,
+         ForgeTypeId specTypeId)
+      {
+         if (unitsTypeId != null || Importer.TheProcessor.ScaleValues)
+            return unitsTypeId;
+
+         // We can look up the units when the values are not scaled.
+         var units = IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(specTypeId);
+         return (units != null) ? units.Unit : UnitTypeId.General;
+      }
+   
       /// <summary>
       /// Add a double parameter to an element.
       /// </summary>
@@ -414,25 +278,29 @@ namespace Revit.IFC.Import.Data
       /// <param name="category">The category of the element.</param>
       /// <param name="parameterName">The parameter name.</param>
       /// <param name="specTypeId">Identifier of the parameter spec (e.g. length)</param>
-      /// <param name="allowedValues">The allowed values for the parameter (e.g. Nonnegative)</param>
-      /// <param name="parameterValue">The parameter value.</param>
+      /// <param name="unitsTypeId">Identifier of the unscaled parameter units (e.g. mm)</param>
+      /// <param name="parameterValue">The parameter value, scaled into document units.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterDouble(Document doc, Element element, Category category, string parameterName, ForgeTypeId specTypeId, double parameterValue, int parameterSetId)
+      public static bool AddParameterDouble(Document doc, Element element, Category category,
+         IFCObjectDefinition objDef, string parameterName, ForgeTypeId specTypeId, 
+         ForgeTypeId unitsTypeId, double parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
 
-         ParameterType parameterType;
-         if (!UnitToParameterType.TryGetValue(specTypeId, out parameterType))
-            return false;
+         unitsTypeId = CalculateUnitsTypeId(unitsTypeId, specTypeId);
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, 
+            specTypeId, unitsTypeId, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
 
-         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, parameterType);
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, specTypeId);
          if (parameter == null)
             return false;
 
          parameter.Set(parameterValue);
-         return true;
+         return true; 
       }
 
       /// <summary>
@@ -445,12 +313,16 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterValue">The parameter value.</param>
       /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
       /// <returns>True if the parameter was successfully added, false otherwise.</returns>
-      public static bool AddParameterString(Document doc, Element element, Category category, string parameterName, string parameterValue, int parameterSetId)
+      public static bool AddParameterString(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, string parameterValue, int parameterSetId)
       {
          if (doc == null || element == null || category == null)
             return false;
 
-         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Text);
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
+
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, SpecTypeId.String.Text);
          if (parameter == null)
             return false;
 
@@ -476,7 +348,11 @@ namespace Revit.IFC.Import.Data
 
          string parameterName = objDef.GetSharedParameterName(name, element is ElementType);
 
-         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, ParameterType.Text);
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
+
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, SpecTypeId.String.Text);
          if (parameter == null)
             return false;
 
@@ -511,7 +387,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="element">The element being created.</param>
       /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
       /// <returns>The name of the property set created, if it was created, and a Boolean value if it should be added to the property set list.</returns>
-      public override Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCParameterSetByGroup parameterGroupMap)
+      public override Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap)
       {
          Category category = GetCategoryForParameterIfValid(element, Id);
          if (category == null)
@@ -522,10 +398,9 @@ namespace Revit.IFC.Import.Data
          ISet<string> parametersCreated = new HashSet<string>();
          foreach (IFCProperty property in IFCProperties.Values)
          {
-            property.Create(doc, element, category, parameterGroupMap, Name, parametersCreated);
+            property.Create(doc, element, category, objDef, parameterGroupMap, Name, parametersCreated);
          }
 
-         CreateScheduleForPropertySet(doc, element, category, parameterGroupMap, parametersCreated);
          return Tuple.Create(quotedName, true);
       }
    }

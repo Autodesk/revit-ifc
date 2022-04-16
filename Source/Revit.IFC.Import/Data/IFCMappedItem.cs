@@ -77,6 +77,19 @@ namespace Revit.IFC.Import.Data
          MappingSource = IFCRepresentationMap.ProcessIFCRepresentationMap(mappingSource);
       }
 
+      private int FindAlternateGeometrySource(int originalId)
+      {
+         // NAVIS_TODO: Explain this.
+         if (!Importer.TheProcessor.FindAlternateGeometrySource)
+            return originalId;
+
+         // Copy some code from elsewhere to work out what the object was that got the
+         // geometry.
+         IFCTypeProduct typeProduct;
+         Importer.TheCache.RepMapToTypeProduct.TryGetValue(MappingSource.Id, out typeProduct);
+         return typeProduct?.Id ?? originalId;
+      }
+
       /// <summary>
       /// Create geometry for a particular representation item.
       /// </summary>
@@ -99,35 +112,38 @@ namespace Revit.IFC.Import.Data
 
          Transform mappingTransform = MappingTarget.Transform;
 
-         Transform newLcs = null;
-         if (lcs == null)
-            newLcs = mappingTransform;
-         else if (mappingTransform == null)
-            newLcs = lcs;
-         else
-            newLcs = lcs.Multiply(mappingTransform);
+         Transform newLcs = 
+            (mappingTransform == null) ? lcs : (lcs?.Multiply(mappingTransform) ?? mappingTransform);
+         
+         Transform newScaledLcs =
+            (mappingTransform == null) ? scaledLcs : (scaledLcs?.Multiply(mappingTransform) ?? mappingTransform);
 
-         Transform newScaledLcs = null;
-         if (scaledLcs == null)
-            newScaledLcs = mappingTransform;
-         else if (mappingTransform == null)
-            newScaledLcs = scaledLcs;
-         else
-            newScaledLcs = scaledLcs.Multiply(mappingTransform);
-
-         // Pass in newLCS = null, use newLCS for instance.
          bool isFootprint = (shapeEditScope.ContainingRepresentation.Identifier == IFCRepresentationIdentifier.FootPrint);
 
-         bool canCreateType = !shapeEditScope.PreventInstances && 
-            (newLcs != null && newLcs.IsConformal) &&
-         (newScaledLcs != null && newScaledLcs.IsConformal) &&
-         isUnitScale &&
-         (shapeEditScope.ContainingRepresentation != null && !isFootprint);
+         bool canCreateType = !shapeEditScope.PreventInstances && !isFootprint && isUnitScale &&
+            (newLcs?.IsConformal ?? true) &&
+            (newScaledLcs?.IsConformal ?? true) &&
+            (shapeEditScope.ContainingRepresentation != null);
 
          if (canCreateType)
          {
+            int mappingSourceId = MappingSource.Id;
+            int geometrySourceId = FindAlternateGeometrySource(mappingSourceId);
             MappingSource.CreateShape(shapeEditScope, null, null, guid);
-            IList<GeometryObject> instances = DirectShape.CreateGeometryInstance(shapeEditScope.Document, MappingSource.Id.ToString(), newLcs);
+
+            if (shapeEditScope.Creator != null)
+            {
+               Importer.TheProcessor.PostProcessMappedItem(shapeEditScope.Creator.Id,
+                  shapeEditScope.Creator.GlobalId,
+                  shapeEditScope.Creator.EntityType.ToString(),
+                  shapeEditScope.Creator.CategoryId,
+                  geometrySourceId,
+                  newLcs);
+            }
+
+            // NAVIS_TODO: Figure out how not to do this.
+            IList<GeometryObject> instances = DirectShape.CreateGeometryInstance(
+               shapeEditScope.Document, mappingSourceId.ToString(), newLcs);
             foreach (GeometryObject instance in instances)
                shapeEditScope.AddGeometry(IFCSolidInfo.Create(Id, instance));
          }

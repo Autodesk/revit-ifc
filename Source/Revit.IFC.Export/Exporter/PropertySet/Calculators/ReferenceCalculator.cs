@@ -47,9 +47,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetStringValueFromElementOrSymbol(element, "Reference", out m_ReferenceName);
+         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_ReferenceName) == null)
+            ParameterUtil.GetStringValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out m_ReferenceName);
          if (!string.IsNullOrEmpty(m_ReferenceName))
             return true;
 

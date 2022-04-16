@@ -36,27 +36,16 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCOrientedEdge : IFCEdge
    {
-      private IFCEdge m_EdgeElement = null;
-
-      private bool m_Orientation;
-
       /// <summary>
       /// Indicates if the topological orientation as used coincides with the orientation from start vertex to end vertex of the edge element.
       /// </summary>
-      public bool Orientation
-      {
-         get { return m_Orientation; }
-         set { m_Orientation = value; }
-      }
+      public bool Orientation { get; protected set; } = true;
+
 
       /// <summary>
       /// Edge entity used to construct this oriented edge.
       /// </summary>
-      public IFCEdge EdgeElement
-      {
-         get { return m_EdgeElement; }
-         set { m_EdgeElement = value; }
-      }
+      public IFCEdge EdgeElement { get; protected set; } = null;
 
       protected IFCOrientedEdge()
       {
@@ -70,17 +59,36 @@ namespace Revit.IFC.Import.Data
       override protected void Process(IFCAnyHandle ifcOrientedEdge)
       {
          base.Process(ifcOrientedEdge);
+
          IFCAnyHandle edgeElement = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcOrientedEdge, "EdgeElement", true);
          EdgeElement = IFCEdge.ProcessIFCEdge(edgeElement);
 
          bool found = false;
          bool orientation = IFCImportHandleUtil.GetRequiredBooleanAttribute(ifcOrientedEdge, "Orientation", out found);
          if (found)
+         {
             Orientation = orientation;
+         }
          else
          {
             Importer.TheLog.LogWarning(ifcOrientedEdge.StepId, "Cannot find Orientation attribute, defaulting to true", false);
             Orientation = true;
+         }
+
+         // ODA Toolkit doesn't support derived attributes.  Set EdgeStart and EdgeEnd
+         // if they haven't been set.
+         if (EdgeStart == null)
+         {
+            EdgeStart = Orientation ? EdgeElement.EdgeStart : EdgeElement.EdgeEnd;
+            if (EdgeStart == null)
+               Importer.TheLog.LogError(ifcOrientedEdge.StepId, "Cannot find the starting vertex", true);
+         }
+
+         if (EdgeEnd == null)
+         {
+            EdgeEnd = Orientation ? EdgeElement.EdgeEnd : EdgeElement.EdgeStart;
+            if (EdgeEnd == null)
+               Importer.TheLog.LogError(ifcOrientedEdge.StepId, "Cannot find the ending vertex", true);
          }
       }
 

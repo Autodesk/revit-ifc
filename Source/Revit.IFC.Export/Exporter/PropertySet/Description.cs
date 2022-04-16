@@ -38,45 +38,43 @@ namespace Revit.IFC.Export.Exporter.PropertySet
    abstract public class Description
    {
       /// <summary>
-      /// The name to be used to create property set or quantity.
+      /// The name of the property or quantity set.
       /// </summary>
-      string m_Name = String.Empty;
+      public string Name { get; set; } = String.Empty;
 
       /// <summary>
       /// The optional description of the property set or quantity.  Null by default.
       /// </summary>
-      string m_Description = null;
+      public string DescriptionOfSet { get; set; } = null;
 
       /// <summary>
-      /// The element id of the view schedule generating this Description, if appropriate.
+      /// The element id of the ViewSchedule that generatd this description.
       /// </summary>
-      ElementId m_ViewScheduleId = ElementId.InvalidElementId;
+      public ElementId ViewScheduleId { get; set; } = ElementId.InvalidElementId;
 
       /// <summary>
-      /// The types of element appropriate for this property or quantity set.
+      /// The type of element appropriate for this property or quantity set.
       /// </summary>
-      HashSet<IFCEntityType> m_IFCEntityTypes = new HashSet<IFCEntityType>();
+      public HashSet<IFCEntityType> EntityTypes { get; } = new HashSet<IFCEntityType>();
 
       /// <summary>
       /// The object type of element appropriate for this property or quantity set.
+      /// Primarily used for identifying proxies.
       /// </summary>
-      string m_ObjectType = String.Empty;
+      /// <remarks>Currently limited to one entity type.</remarks>
+      public string ObjectType { get; set; } = String.Empty;
 
       /// <summary>
-      /// The predefined or shape type of element appropriate for this property or quantity set.
+      /// The pre-defined type of element appropriate for this property or quantity set.
+      /// Primarily used for identifying sub-types of MEP objects.
       /// </summary>
-      string m_PredefinedType = String.Empty;
-
-      /// <summary>
-      /// The index used to create a consistent GUID for this item.
-      /// It is expected that this index will come from the list in IFCSubElementEnums.cs.
-      /// </summary>
-      int m_SubElementIndex = -1;
+      /// <remarks>Currently limited to one entity type.</remarks>
+      public string PredefinedType { get; set; } = String.Empty;
 
       /// <summary>
       /// The redirect calculator associated with this property or quantity set.
       /// </summary>
-      DescriptionCalculator m_DescriptionCalculator;
+      public DescriptionCalculator DescriptionCalculator { get; set; }
 
       /// <summary>
       /// Identifies if the input handle is sub type of one IFCEntityType in the EntityTypes list.
@@ -101,14 +99,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns></returns>
       public bool IsSubTypeOfEntityTypes(IFCEntityType ifcEntityType)
       {
+         IFCVersion ifcVersion = ExporterCacheManager.ExportOptionsCache.FileVersion;
          var ifcEntitySchemaTree = IfcSchemaEntityTree.GetEntityDictFor(ExporterCacheManager.ExportOptionsCache.FileVersion);
-         if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.Count == 0)
+         if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.IfcEntityDict == null || ifcEntitySchemaTree.IfcEntityDict.Count == 0)
             return false;
 
          // Note that although EntityTypes is represented as a set, we still need to go through each item in the last to check for subtypes.
          foreach (IFCEntityType entityType in EntityTypes)
          {
-            if (IfcSchemaEntityTree.IsSubTypeOf(ifcEntityType.ToString(), entityType.ToString(), strict: false))
+            if (IfcSchemaEntityTree.IsSubTypeOf(ifcVersion, ifcEntityType.ToString(), entityType.ToString(), strict: false))
                return true;
          }
          return false;
@@ -127,7 +126,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (ObjectType == "")
             return true;
 
-         string objectType = IFCAnyHandleUtil.GetObjectType(handle);
+         string objectType = IFCAnyHandleUtil.GetEntityType(handle).ToString();
          return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
       }
 
@@ -216,110 +215,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          //string objectType = IFCAnyHandleUtil.GetObjectType(handle);
          //return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
-      }
-
-      /// <summary>
-      /// The name of the property or quantity set.
-      /// </summary>
-      public string Name
-      {
-         get { return m_Name; }
-         set
-         {
-            m_Name = value;
-
-            // We will try to set the SubElementIndex based on the name of the PSet.  Only a few have entries.
-            IFCCommonPSets psetName;
-            if (Enum.TryParse<IFCCommonPSets>(m_Name, out psetName))
-               SubElementIndex = (int)psetName;
-            else
-               SubElementIndex = -1;
-         }
-      }
-
-      public string DescriptionOfSet
-      {
-         get { return m_Description; }
-         set { m_Description = value; }
-      }
-
-      /// <summary>
-      /// The element id of the ViewSchedule that generatd this description.
-      /// </summary>
-      public ElementId ViewScheduleId
-      {
-         get { return m_ViewScheduleId; }
-         set { m_ViewScheduleId = value; }
-      }
-
-      /// <summary>
-      /// The type of element appropriate for this property or quantity set.
-      /// </summary>
-      public HashSet<IFCEntityType> EntityTypes
-      {
-         get
-         {
-            return m_IFCEntityTypes;
-         }
-      }
-
-      /// <summary>
-      /// The object type of element appropriate for this property or quantity set.
-      /// Primarily used for identifying proxies.
-      /// </summary>
-      /// <remarks>Currently limited to one entity type.</remarks>
-      public string ObjectType
-      {
-         get
-         {
-            return m_ObjectType;
-         }
-         set
-         {
-            m_ObjectType = value;
-         }
-      }
-
-      /// <summary>
-      /// The pre-defined type of element appropriate for this property or quantity set.
-      /// Primarily used for identifying sub-types of MEP objects.
-      /// </summary>
-      /// <remarks>Currently limited to one entity type.</remarks>
-      public string PredefinedType
-      {
-         get
-         {
-            return m_PredefinedType;
-         }
-         set
-         {
-            m_PredefinedType = value;
-         }
-      }
-
-      /// <summary>
-      /// The index used to create a consistent GUID for this item.
-      /// It is expected that this index will come from the list in IFCSubElementEnums.cs.
-      /// </summary>
-      public int SubElementIndex
-      {
-         get { return m_SubElementIndex; }
-         set { m_SubElementIndex = value; }
-      }
-
-      /// <summary>
-      /// The redirect calculator associated with this property or quantity set.
-      /// </summary>
-      public DescriptionCalculator DescriptionCalculator
-      {
-         get
-         {
-            return m_DescriptionCalculator;
-         }
-         set
-         {
-            m_DescriptionCalculator = value;
-         }
       }
    }
 }

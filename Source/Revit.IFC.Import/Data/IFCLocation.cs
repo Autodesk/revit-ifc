@@ -33,43 +33,6 @@ namespace Revit.IFC.Import.Data
    public class IFCLocation : IFCEntity
    {
       /// <summary>
-      /// Determines whether we should fix the origin of the IFCLocation
-      /// if it is too far from the origin for Revit's standards.
-      /// </summary>
-      private static bool FixFarawayLocationOrigin { get; set; } = false;
-
-      /// <summary>
-      /// A class that controls whether or not we should correct the IFCLocation
-      /// relative transform if it is too far from the origin for Revit's standards.
-      /// </summary>
-      /// <remarks>This class should be used with the 'using' keyword to scope
-      /// its effects.  In general, we shouldn't ever have to use this; IFC files
-      /// shouldn't be far from the origin, as CAD systems can have issues with
-      /// large coordinates.  Also, specifically for IfcSite, we set shared coordinates
-      /// based on the offset to avoid the issue.  For other containers, it is
-      /// more difficult to determine what to do.  So we will limit this to buildings
-      /// and building stories.</remarks>
-      public class IFCLocationChecker : IDisposable
-      {
-         /// <summary>
-         /// The constructor.
-         /// </summary>
-         public IFCLocationChecker(IFCProduct product)
-         {
-            LastFixFarawayLocationOrigin = FixFarawayLocationOrigin;
-            FixFarawayLocationOrigin = (product != null) &&
-               ((product is IFCBuilding) || (product is IFCBuildingStorey));
-         }
-
-         public void Dispose()
-         {
-            FixFarawayLocationOrigin = LastFixFarawayLocationOrigin;
-         }
-
-         private bool LastFixFarawayLocationOrigin { get; set; } = false;
-      }
-
-      /// <summary>
       /// The IFCLocation that this IFCLocation is relative to. 
       /// </summary>
       public IFCLocation RelativeTo { get; set; } = null;
@@ -107,6 +70,22 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Create a dummy IFCLocation that contains only a relative transform.
+      /// </summary>
+      /// <param name="relativeTransform">The transform associated with the location.</param>
+      /// <returns>The new IFCLocation.</returns>
+      /// <remarks>
+      /// This is intended for use for IFCSites, whose location has either been modified
+      /// by the RefElevation parameter, or by being moved far from the origin.
+      /// </remarks>
+      static public IFCLocation CreateDummyLocation(Transform relativeTransform)
+      {
+         IFCLocation dummyLocation = new IFCLocation();
+         dummyLocation.RelativeTransform = relativeTransform;
+         return dummyLocation;
+      }
+
+      /// <summary>
       /// Constructs an IFCLocation from the IfcObjectPlacement handle.
       /// </summary>
       /// <param name="ifcObjectPlacement">The IfcObjectPlacement handle.</param>
@@ -122,11 +101,6 @@ namespace Revit.IFC.Import.Data
          if (origin == null)
          {
             Importer.TheLog.LogError(placement.StepId, "Missing or invalid location attribute.", false);
-            origin = XYZ.Zero;
-         }
-         else if (FixFarawayLocationOrigin && !XYZ.IsWithinLengthLimits(origin))
-         {
-            Importer.TheLog.LogError(placement.StepId, "The local placement has an origin that is outside of Revit's creation limits.  Moving to the internal origin.", false);
             origin = XYZ.Zero;
          }
          return Transform.CreateTranslation(origin);
@@ -251,20 +225,16 @@ namespace Revit.IFC.Import.Data
          IFCAnyHandle placementRelTo = IFCAnyHandleUtil.GetInstanceAttribute(objectPlacement, "PlacementRelTo");
          IFCAnyHandle relativePlacement = IFCAnyHandleUtil.GetInstanceAttribute(objectPlacement, "RelativePlacement");
 
-         // We don't want to fix any previous object placement that we either already fixed,
-         // or decided not to fix.
-         using (IFCLocationChecker dontFix = new IFCLocationChecker(null))
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(placementRelTo))
          {
-            RelativeTo =
-                IFCAnyHandleUtil.IsNullOrHasNoValue(placementRelTo) ? null : ProcessIFCObjectPlacement(placementRelTo);
+            RelativeTo = ProcessIFCObjectPlacement(placementRelTo);
+            // If the location that this is relative to is relative to the site location, then
+            // so is this.  This relies on RelativeToSite for the IfcSite local placement to be
+            // set to true before any other entities are processed.
+            RelativeToSite = RelativeTo.RelativeToSite;
          }
 
          RelativeTransform = ProcessIFCAxis2Placement(relativePlacement);
-
-         // If the location that this is relative to is relative to the site location, then so is this.
-         // This relies on RelativeToSite for the IfcSite local placement to be set to true before any other entities are processed.
-         if (RelativeTo != null)
-            RelativeToSite = RelativeTo.RelativeToSite;
       }
 
       protected void ProcessGridPlacement(IFCAnyHandle gridPlacement)
@@ -323,14 +293,13 @@ namespace Revit.IFC.Import.Data
          return new IFCLocation(ifcObjectPlacement);
       }
 
-      /// <summary>
-      /// Removes the relative transform for a site.
-      /// </summary>
-      public static void RemoveRelativeTransformForSite(IFCSite site)
+      public static void WarnIfFaraway(IFCProduct product)
       {
-         if (site == null || site.ObjectLocation == null || site.ObjectLocation.RelativeTransform == null)
-            return;
-         site.ObjectLocation.RelativeTransform = Transform.Identity;
+         XYZ origin = product?.ObjectLocation?.TotalTransform?.Origin;
+         if (origin != null && !XYZ.IsWithinLengthLimits(origin))
+         {
+            Importer.TheLog.LogWarning(product.Id, "This entity has an origin that is outside of Revit's creation limits.  This could result in bad graphical display of geometry.", false);
+         }
       }
-   }
+}
 }

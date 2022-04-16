@@ -557,18 +557,22 @@ namespace Revit.IFC.Import.Utility
                string originalLogFileName = LogFileName.Substring(0, LogFileName.Length - 5);
                try
                {
-                  StreamReader originalLogFile = new StreamReader(originalLogFileName);
-                  if (originalLogFile != null)
+                  // ODA_TODO: Remove this when we remove the EDM toolkit.
+                  if (File.Exists(originalLogFileName))
                   {
-                     WriteLineNoBreak("<A NAME=\"ToolkitMessage\"></A>");
-                     WriteLineNoBreak("Toolkit Log");
-                     WriteLine("");
+                     StreamReader originalLogFile = new StreamReader(originalLogFileName);
+                     if (originalLogFile != null)
+                     {
+                        WriteLineNoBreak("<A NAME=\"ToolkitMessage\"></A>");
+                        WriteLineNoBreak("Toolkit Log");
+                        WriteLine("");
 
-                     string originalLogContents = null;
-                     while ((originalLogContents = originalLogFile.ReadLine()) != null)
-                        WriteLine(originalLogContents);
-                     originalLogFile.Close();
-                     File.Delete(originalLogFileName);
+                        string originalLogContents = null;
+                        while ((originalLogContents = originalLogFile.ReadLine()) != null)
+                           WriteLine(originalLogContents);
+                        originalLogFile.Close();
+                        File.Delete(originalLogFileName);
+                     }
                   }
                }
                catch

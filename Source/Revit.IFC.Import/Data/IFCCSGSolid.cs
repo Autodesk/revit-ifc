@@ -17,29 +17,19 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
    public class IFCCSGSolid : IFCSolidModel
    {
-      IFCBooleanResult m_TreeRootExpression = null;
-
-      public IFCBooleanResult BooleanResult
-      {
-         get { return m_TreeRootExpression; }
-         protected set { m_TreeRootExpression = value; }
-      }
-
+      public IFCBooleanResult TreeRootExpression { get; protected set; } = null;
+      
       protected IFCCSGSolid()
       {
       }
@@ -47,8 +37,8 @@ namespace Revit.IFC.Import.Data
       protected override IList<GeometryObject> CreateGeometryInternal(
          IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
       {
-         if (BooleanResult != null)
-            return BooleanResult.CreateGeometry(shapeEditScope, lcs, scaledLcs, guid);
+         if (TreeRootExpression != null)
+            return TreeRootExpression.CreateGeometry(shapeEditScope, lcs, scaledLcs, guid);
          return null;
       }
 
@@ -81,7 +71,7 @@ namespace Revit.IFC.Import.Data
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(treeRootExpression))
          {
             if (IFCAnyHandleUtil.IsValidSubTypeOf(treeRootExpression, IFCEntityType.IfcBooleanResult))
-               BooleanResult = IFCBooleanResult.ProcessIFCBooleanResult(treeRootExpression);
+               TreeRootExpression = IFCBooleanResult.ProcessIFCBooleanResult(treeRootExpression);
             else
                Importer.TheLog.LogUnhandledSubTypeError(treeRootExpression, "IfcCsgSelect", false);
          }

@@ -43,6 +43,10 @@ namespace BIM.IFC.Export.UI
                return Resources.SiteSurveyPoint;
             case SiteTransformBasis.Project:
                return Resources.ProjectBasePoint;
+            case SiteTransformBasis.ProjectInTN:
+               return Resources.ProjectInTN;
+            case SiteTransformBasis.InternalInTN:
+               return Resources.InternalCoordinatesInTN;
             default:
                return Resources.InternalCoordinates;
          }

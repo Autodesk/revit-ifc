@@ -24,6 +24,7 @@ using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
+using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Toolkit;
 
@@ -70,7 +71,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          ShapeCalculator shapeCalculator = ShapeCalculator.Instance;
          if (shapeCalculator != null && shapeCalculator.GetCurrentElement() == element)
@@ -89,18 +90,28 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             }
          }
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyWidth", out m_Width) == null)
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Width", out m_Width);
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Width) == null)
+            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out m_Width) == null)
+               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyWidth", out m_Width);
 
-         m_Width = UnitUtil.ScaleArea(m_Width);
+         m_Width = UnitUtil.ScaleLength(m_Width);
          if (m_Width > MathUtil.Eps())
             return true;
 
          if (extrusionCreationData == null)
             return false;
 
-         // Currently used for Slab Width
-         m_Width = extrusionCreationData.ScaledLength;
+         // For Slab width is the lesser edge of the rectangle area profile (get it from ScaledHeight)
+         IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
+         if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcSlab))
+         {
+            m_Width = extrusionCreationData.ScaledHeight;
+         }
+         else
+         {
+            m_Width = extrusionCreationData.ScaledWidth;
+         }
+
          return m_Width > MathUtil.Eps();
       }
 

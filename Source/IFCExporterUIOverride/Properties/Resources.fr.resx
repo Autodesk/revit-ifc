@@ -790,37 +790,13 @@
   <data name="UseOnlyTriangulation" xml:space="preserve">
     <value>Garder la tessellation de la géométrie en tant que triangulation</value>
   </data>
-  <data name="Eastings" xml:space="preserve">
-    <value>Abscisses</value>
+  <data name="ER_ArchitectureShort" xml:space="preserve">
+    <value>Architecture</value>
   </data>
-  <data name="EPSGCode" xml:space="preserve">
-    <value>Code EPSG</value>
+  <data name="ER_BuildingServiceShort" xml:space="preserve">
+    <value>BuildingService</value>
   </data>
-  <data name="GeodeticDatum" xml:space="preserve">
-    <value>Données Géodésique</value>
-  </data>
-  <data name="Northings" xml:space="preserve">
-    <value>Ordonnées</value>
-  </data>
-  <data name="OffsetDistanceTooLarge" xml:space="preserve">
-    <value>Les éléments de ce modèle sont très éloignés de l'origine de ce fichier exporté, ce qui pourrait entraîner des problèmes d'affichage dans le logiciel de destination. Veuillez envisager d'utiliser le point de base du projet ou le point de topographie du site comme base de coordonnées.</value>
-  </data>
-  <data name="ProjectedCRS" xml:space="preserve">
-    <value>Référence du système de coordonnées projeté</value>
-  </data>
-  <data name="ProjectedCRSDesc" xml:space="preserve">
-    <value>Description</value>
-  </data>
-  <data name="ProjectedCRSName" xml:space="preserve">
-    <value>Nom</value>
-  </data>
-  <data name="ReservedDeviceName" xml:space="preserve">
-    <value>{0} est un nom de périphérique Windows réservé. Choisissez un autre nom et réessayez.</value>
-  </data>
-  <data name="Reset" xml:space="preserve">
-    <value>Réinitialiser</value>
-  </data>
-  <data name="ResetToOriginals" xml:space="preserve">
-    <value>Réinitialiser</value>
+  <data name="ER_StructuralShort" xml:space="preserve">
+    <value>Structural</value>
   </data>
 </root>

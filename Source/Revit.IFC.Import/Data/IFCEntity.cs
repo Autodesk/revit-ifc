@@ -78,7 +78,24 @@ namespace Revit.IFC.Import.Data
          Id = item.StepId;
          EntityType = IFCAnyHandleUtil.GetEntityType(item);
          IFCImportFile.TheFile.EntityMap.Add(Id, this);
+      
+         // Note that we will log processing entities even if they are later deleted.
          Importer.TheLog.AddProcessedEntity(EntityType);
+      }
+
+      static public void HandleError(string message, IFCAnyHandle item, bool warn)
+      {
+         if (message != "Don't Import")
+         {
+            if (warn)
+            {
+               Importer.TheLog.LogError(item.StepId, message, false);
+            }
+         }
+         else
+         {
+            IFCImportFile.TheFile.EntityMap[item.Id] = null;
+         }
       }
 
       /// <summary>

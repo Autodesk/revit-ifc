@@ -38,7 +38,7 @@ namespace Revit.IFC.Export.Utility
    {
       private static ProjectPosition GetSafeProjectPosition(Document doc)
       {
-         ProjectLocation projLoc = doc.ActiveProjectLocation;
+         ProjectLocation projLoc = ExporterCacheManager.SelectedSiteProjectLocation;
          try
          {
             return projLoc.GetProjectPosition(XYZ.Zero);
@@ -47,6 +47,16 @@ namespace Revit.IFC.Export.Utility
          {
             return null;
          }
+      }
+      private static void Union<T>(ref IList<T> lList, IList<T> rList)
+      {
+         if (rList == null || rList.Count() == 0)
+            return;
+
+         if (lList.Count() == 0)
+            lList = rList;
+         else
+            lList = lList.Union(rList).ToList();
       }
 
       /// <summary>
@@ -71,23 +81,17 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="handle">The IFC entity.</param>
       /// <param name="guid">The GUID value.</param>
-      public static void SetGlobalId(IFCAnyHandle handle, string guid)
+      public static void SetGlobalId(IFCAnyHandle handle, string guid, Element element = null)
       {
          try
          {
-            // We want to make sure that we don't write out duplicate GUIDs to the file.  As such, we will check the GUID against
-            // already created guids, and export a random GUID if necessary.
-            // TODO: log message to user.
-            if (ExporterCacheManager.GUIDCache.Contains(guid))
-               guid = GUIDUtil.CreateGUID();
-            else
-               ExporterCacheManager.GUIDCache.Add(guid);
-
+            guid = GUIDUtil.RegisterGUID(element, guid);
             IFCAnyHandleUtil.SetAttribute(handle, "GlobalId", guid);
          }
          catch
          {
          }
+         
       }
 
       /// <summary>
@@ -180,7 +184,7 @@ namespace Revit.IFC.Export.Utility
       /// </param>
       public static void RelateObjects(ExporterIFC exporterIFC, string optionalGUID, IFCAnyHandle relatingObject, ICollection<IFCAnyHandle> relatedObjects)
       {
-         string guid = (optionalGUID != null) ? optionalGUID : GUIDUtil.CreateGUID();
+         string guid = optionalGUID ?? GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAggregates, relatingObject);
          IFCInstanceExporter.CreateRelAggregates(exporterIFC.GetFile(), guid, ExporterCacheManager.OwnerHistoryHandle, null, null, relatingObject, new HashSet<IFCAnyHandle>(relatedObjects));
       }
 
@@ -936,6 +940,30 @@ namespace Revit.IFC.Export.Utility
          return GetIFCTypeFromExportTable(exporterIFC, element, categoryId, -1);
       }
 
+      private class ApplicablePsets
+      {
+         public class PsetsByTypeAndPredefinedType
+         {
+            public IList<PropertySetDescription> ByType { get; set; }
+            public IList<PropertySetDescription> ByPredefinedType { get; set; }
+         }
+         public PsetsByTypeAndPredefinedType ByIfcEntity { get; set; } = new PsetsByTypeAndPredefinedType();
+         public PsetsByTypeAndPredefinedType ByIfcEntityType { get; set; } = new PsetsByTypeAndPredefinedType();
+      }
+
+      /// <summary>
+      /// Determines if an IFCEntityType is a non-strict sub-type of another IFCEntityType for the
+      /// current IFC schema.
+      /// </summary>
+      /// <param name="entityType">The child entity type.</param>
+      /// <param name="parentType">The parent entity type.</param>
+      /// <returns>True if the child is a non-strict sub-type.</returns>
+      public static bool IsSubTypeOf(IFCEntityType entityType, IFCEntityType parentType)
+      {
+         return IfcSchemaEntityTree.IsSubTypeOf(ExporterCacheManager.ExportOptionsCache.FileVersion,
+            entityType.ToString(), parentType.ToString(), strict: false);
+      }
+
       /// <summary>
       /// Gets the list of common property sets appropriate to this handle.
       /// </summary>
@@ -945,7 +973,6 @@ namespace Revit.IFC.Export.Utility
       public static IList<PropertySetDescription> GetCurrPSetsToCreate(IFCAnyHandle prodHnd,
           IList<IList<PropertySetDescription>> psetsToCreate)
       {
-         IEnumerable<PropertySetDescription> currPsetsToCreate = new List<PropertySetDescription>();
          IFCEntityType prodHndType = IFCAnyHandleUtil.GetEntityType(prodHnd);
          string hndTypeStr = prodHndType.ToString();
 
@@ -957,7 +984,7 @@ namespace Revit.IFC.Export.Utility
             ElementId elemId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
             if (elemId != ElementId.InvalidElementId)
             {
-               exportInfo = ExporterCacheManager.ElementToHandleCache.FindPredefinedType(elemId);
+               exportInfo = ExporterCacheManager.ElementToHandleCache.FindPredefinedType(prodHnd, elemId);
             }
 
             if (exportInfo == null)
@@ -1003,38 +1030,62 @@ namespace Revit.IFC.Export.Utility
          }
 
          // Find existing Psets list for the given type in the cache
-         HashSet<PropertySetDescription> cachedPsets = new HashSet<PropertySetDescription>();
-         IList<PropertySetDescription> tmpCachedPsets = null;
-         if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(exportInfo.ExportInstance, out tmpCachedPsets))
-         {
-            cachedPsets.UnionWith(tmpCachedPsets);
-         }
-         if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(exportInfo.ExportType, out tmpCachedPsets))
-         {
-            cachedPsets.UnionWith(tmpCachedPsets);
-         }
+         var cachedPsets = GetCachedPropertySets(exportInfo);
+         //Set bool variables to true below to search for property sets If they were not found in cache 
+         bool searchPsetsByEntity                     = cachedPsets.ByIfcEntity.ByType == null;
+         bool searchPsetsByEntityPredefinedType       = cachedPsets.ByIfcEntity.ByPredefinedType == null;
+         bool searchPsetsByEntityType                 = cachedPsets.ByIfcEntityType.ByType == null;
+         bool searchPsetsByEntityTypePredefinedType   = cachedPsets.ByIfcEntityType.ByPredefinedType == null;
 
-         if (cachedPsets == null || cachedPsets.Count == 0)
+         IList<PropertySetDescription> currPsetsForEntity                     = new List<PropertySetDescription>();
+         IList<PropertySetDescription> currPsetsForEntityPredefinedType       = new List<PropertySetDescription>();
+         IList<PropertySetDescription> currPsetsForEntityType                 = new List<PropertySetDescription>();
+         IList<PropertySetDescription> currPsetsForEntityTypePredefinedType   = new List<PropertySetDescription>();
+         if (searchPsetsByEntity || searchPsetsByEntityPredefinedType || searchPsetsByEntityType || searchPsetsByEntityTypePredefinedType)
          {
             foreach (IList<PropertySetDescription> currStandard in psetsToCreate)
             {
-               IList<PropertySetDescription> filteredList = GetApplicablePropertySets(exportInfo, currStandard);
-               if (filteredList.Count > 0)
-               {
-                  if (currPsetsToCreate.Count() == 0)
-                     currPsetsToCreate = filteredList;
-                  else
-                     currPsetsToCreate = currPsetsToCreate.Union(filteredList);
-               }               
+               var applicablePsets = GetApplicablePropertySets(exportInfo, currStandard);
+               if (searchPsetsByEntity)
+                  Union(ref currPsetsForEntity, applicablePsets.ByIfcEntity.ByType);
+               if (searchPsetsByEntityPredefinedType)
+                  Union(ref currPsetsForEntityPredefinedType, applicablePsets.ByIfcEntity.ByPredefinedType);
+               if (searchPsetsByEntityType)
+                  Union(ref currPsetsForEntityType, applicablePsets.ByIfcEntityType.ByType);
+               if (searchPsetsByEntityTypePredefinedType)
+                  Union(ref currPsetsForEntityTypePredefinedType, applicablePsets.ByIfcEntityType.ByPredefinedType);
             }
-            ExporterCacheManager.PropertySetsForTypeCache[prodHndType] = currPsetsToCreate.ToList();
-         }
-         else
-         {
-            currPsetsToCreate = GetApplicablePropertySets(exportInfo, cachedPsets);
+
+            if (searchPsetsByEntity)
+               ExporterCacheManager.PropertySetsForTypeCache[new ExporterCacheManager.PropertySetKey(exportInfo.ExportInstance, null)] = currPsetsForEntity;
+
+            if (searchPsetsByEntityPredefinedType)
+               ExporterCacheManager.PropertySetsForTypeCache[new ExporterCacheManager.PropertySetKey(exportInfo.ExportInstance, exportInfo.ValidatedPredefinedType)] = currPsetsForEntityPredefinedType;
+
+            if (searchPsetsByEntityType)
+               ExporterCacheManager.PropertySetsForTypeCache[new ExporterCacheManager.PropertySetKey(exportInfo.ExportType, null)] = currPsetsForEntityType;
+
+            if (searchPsetsByEntityTypePredefinedType)
+               ExporterCacheManager.PropertySetsForTypeCache[new ExporterCacheManager.PropertySetKey(exportInfo.ExportType, exportInfo.ValidatedPredefinedType)] = currPsetsForEntityTypePredefinedType;
          }
 
-         return currPsetsToCreate.ToList();
+         if (!searchPsetsByEntity)
+            currPsetsForEntity = cachedPsets.ByIfcEntity.ByType;
+
+         if (!searchPsetsByEntityPredefinedType)
+            currPsetsForEntityPredefinedType = cachedPsets.ByIfcEntity.ByPredefinedType;
+
+         if (!searchPsetsByEntityType)
+            currPsetsForEntityType = cachedPsets.ByIfcEntityType.ByType;
+
+         if (!searchPsetsByEntityTypePredefinedType)
+            currPsetsForEntityTypePredefinedType = cachedPsets.ByIfcEntityType.ByPredefinedType;
+
+         var currPsets = currPsetsForEntity.ToList();//make independent copy. Without this we will have a bug.
+         currPsets.AddRange(currPsetsForEntityPredefinedType);
+         currPsets.AddRange(currPsetsForEntityType);
+         currPsets.AddRange(currPsetsForEntityTypePredefinedType);
+         return currPsets;
       }
 
       /// <summary>
@@ -1046,38 +1097,47 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="exportInfo">the export infor pair</param>
       /// <param name="psetList">the pset list to iterate</param>
-      /// <returns>filtered results of the applicable Psets</returns>
-      static IList<PropertySetDescription> GetApplicablePropertySets(IFCExportInfoPair exportInfo, IEnumerable<PropertySetDescription> psetList)
+      /// <returns>filtered results of the applicable Psets. Output psets are grouped by type they relate to.</returns>
+      static ApplicablePsets GetApplicablePropertySets(IFCExportInfoPair exportInfo, IEnumerable<PropertySetDescription> psetList)
       {
-         IList<PropertySetDescription> applicablePsets = new List<PropertySetDescription>();
-
+         IList<PropertySetDescription> applicablePsetsByType = null;
+         IList<PropertySetDescription> applicablePsetsByPredefinedType = null;
+         ApplicablePsets applicablePsets = new ApplicablePsets();
+         applicablePsets.ByIfcEntity.ByType = new List<PropertySetDescription>();
+         applicablePsets.ByIfcEntity.ByPredefinedType = new List<PropertySetDescription>();
+         applicablePsets.ByIfcEntityType.ByType = new List<PropertySetDescription>();
+         applicablePsets.ByIfcEntityType.ByPredefinedType = new List<PropertySetDescription>();
          foreach (PropertySetDescription currDesc in psetList)
          {
             bool toAdd = false;
-            if (currDesc.IsAppropriateEntityType(exportInfo.ExportInstance) || currDesc.IsAppropriateEntityType(exportInfo.ExportType))
+            if (currDesc.IsAppropriateEntityType(exportInfo.ExportInstance) || currDesc.IsAppropriateObjectType(exportInfo.ExportInstance))
             {
                toAdd = true;
+               applicablePsetsByType = applicablePsets.ByIfcEntity.ByType;
+               applicablePsetsByPredefinedType = applicablePsets.ByIfcEntity.ByPredefinedType;
             }
             // ObjectType if the Applicable type is missing
-            else if (currDesc.IsAppropriateObjectType(exportInfo.ExportInstance) || currDesc.IsAppropriateObjectType(exportInfo.ExportType))
+            else if (currDesc.IsAppropriateEntityType(exportInfo.ExportType) || currDesc.IsAppropriateObjectType(exportInfo.ExportType))
             {
                toAdd = true;
+               applicablePsetsByType = applicablePsets.ByIfcEntityType.ByType;
+               applicablePsetsByPredefinedType = applicablePsets.ByIfcEntityType.ByPredefinedType;
             }
 
             if (toAdd)
             {
                if (string.IsNullOrEmpty(currDesc.PredefinedType))
                {
-                  applicablePsets.Add(currDesc);
+                  applicablePsetsByType.Add(currDesc);
                }
                else if (!string.IsNullOrEmpty(currDesc.PredefinedType) && currDesc.PredefinedType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase))
                {
-                  applicablePsets.Add(currDesc);
+                  applicablePsetsByPredefinedType.Add(currDesc);
                }
                // Also check ObjectType since the predefinedType seems to go here for the earlier versions of IFC
                else if (!string.IsNullOrEmpty(currDesc.ObjectType) && currDesc.ObjectType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase))
                {
-                  applicablePsets.Add(currDesc);
+                  applicablePsetsByType.Add(currDesc);
                }
             }
          }
@@ -1085,22 +1145,52 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Some elements may not have the right structure to support stable GUIDs for some property sets.  Ignore the index for these cases.
+      /// Get PropertySets from cache.
+      /// Current logic searches psets by 4 different PropertySet keys:
+      ///   1)IfcEntity,
+      ///   2)IfcEntity + PredefinedType,
+      ///   3)IfcEntityType,
+      ///   4)IfcEntityType + PredefinedType.
+      /// Found psets are stored separately in ApplicablePsets object.
       /// </summary>
-      private static int CheckElementTypeValidityForSubIndex(PropertySetDescription currDesc, IFCAnyHandle handle, Element element)
+      /// <param name="exportInfo">the export infor pair</param>
+      /// <returns>ApplicablePsets object with 4 containers which store 4 different groups of psets.
+      /// If size of container is 0 then this means that search hasn't found any Psets associated with this type 
+      /// which is why empty container was cached. This function finds it and returns.
+      /// If container is null then this means that info for this type is not cached because search has never been performed for it.
+      /// </returns>
+      private static ApplicablePsets GetCachedPropertySets(IFCExportInfoPair exportInfo)
       {
-         int originalIndex = currDesc.SubElementIndex;
-         if (originalIndex > 0)
+         ApplicablePsets applicablePsets = new ApplicablePsets();
+         IList<PropertySetDescription> tmpCachedPsets = null;
+
+         if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(new ExporterCacheManager.PropertySetKey(exportInfo.ExportInstance, null), out tmpCachedPsets))
          {
-            if (IFCAnyHandleUtil.IsSubTypeOf(handle, IFCEntityType.IfcSlab) || IFCAnyHandleUtil.IsSubTypeOf(handle, IFCEntityType.IfcStairFlight))
+            applicablePsets.ByIfcEntity.ByType = tmpCachedPsets;
+         }
+         if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(new ExporterCacheManager.PropertySetKey(exportInfo.ExportType, null), out tmpCachedPsets))
+         {
+            applicablePsets.ByIfcEntityType.ByType = tmpCachedPsets;
+         }
+
+         if (string.IsNullOrEmpty(exportInfo.ValidatedPredefinedType))
+         {
+            applicablePsets.ByIfcEntity.ByPredefinedType = new List<PropertySetDescription>();
+            applicablePsets.ByIfcEntityType.ByPredefinedType = new List<PropertySetDescription>();
+         }
+         else
+         {
+            if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(new ExporterCacheManager.PropertySetKey(exportInfo.ExportInstance, exportInfo.ValidatedPredefinedType), out tmpCachedPsets))
             {
-               if (StairsExporter.IsLegacyStairs(element))
-               {
-                  return 0;
-               }
+               applicablePsets.ByIfcEntity.ByPredefinedType = tmpCachedPsets;
+            }
+            if (ExporterCacheManager.PropertySetsForTypeCache.TryGetValue(new ExporterCacheManager.PropertySetKey(exportInfo.ExportType, exportInfo.ValidatedPredefinedType), out tmpCachedPsets))
+            {
+               applicablePsets.ByIfcEntityType.ByPredefinedType = tmpCachedPsets;
             }
          }
-         return originalIndex;
+
+         return applicablePsets;
       }
 
       /// <summary>
@@ -1118,8 +1208,6 @@ namespace Revit.IFC.Export.Utility
 
             string catName = CategoryUtil.GetCategoryName(element);
             Color color = CategoryUtil.GetElementColor(element);
-
-
             HashSet<IFCAnyHandle> nameAndColorProps = new HashSet<IFCAnyHandle>();
 
             nameAndColorProps.Add(PropertyUtil.CreateLabelPropertyFromCache(file, null, "Layername", catName, PropertyValueType.SingleValue, true, null));
@@ -1136,10 +1224,11 @@ namespace Revit.IFC.Export.Utility
             }
 
             string name = "Pset_Draughting";   // IFC 2x2 standard
-            IFCAnyHandle propertySet2 = IFCInstanceExporter.CreatePropertySet(file, GUIDUtil.CreateGUID(), ownerHistory, name, null, nameAndColorProps);
+            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(element, name);
+            IFCAnyHandle propertySet2 = IFCInstanceExporter.CreatePropertySet(file, psetGuid, ownerHistory, name, null, nameAndColorProps);
 
             HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>(productWrapper.GetAllObjects());
-            ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(), ownerHistory, null, null, relatedObjects, propertySet2);
+            CreateRelDefinesByProperties(file, ownerHistory, null, null, relatedObjects, propertySet2);
 
             transaction.Commit();
          }
@@ -1170,7 +1259,6 @@ namespace Revit.IFC.Export.Utility
 
             // In some cases, like multi-story stairs and ramps, we may have the same Pset used for multiple levels.
             // If ifcParams is null, re-use the property set.
-            ISet<string> locallyUsedGUIDs = new HashSet<string>();
             IDictionary<Tuple<Element, Element, string>, IFCAnyHandle> createdPropertySets =
                 new Dictionary<Tuple<Element, Element, string>, IFCAnyHandle>();
             IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> relDefinesByPropertiesMap =
@@ -1179,7 +1267,7 @@ namespace Revit.IFC.Export.Utility
             foreach (IFCAnyHandle prodHnd in productSet)
             {
                // Need to check whether the handle is valid. In some cases object that has parts may not be complete and may have orphaned handles that are not valid
-               if (!IFCAnyHandleUtil.IsValidHandle(prodHnd))
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodHnd))
                   continue;
 
                IList<PropertySetDescription> currPsetsToCreate = GetCurrPSetsToCreate(prodHnd, psetsToCreate);
@@ -1197,26 +1285,21 @@ namespace Revit.IFC.Export.Utility
                foreach (PropertySetDescription currDesc in currPsetsToCreate)
                {
                   // Last conditional check: if the property set comes from a ViewSchedule, check if the element is in the schedule.
-                  if (currDesc.ViewScheduleId != ElementId.InvalidElementId)
-                     if (!ExporterCacheManager.ViewScheduleElementCache[currDesc.ViewScheduleId].Contains(elementToUse.Id))
-                        continue;
+                  if ((currDesc.ViewScheduleId != ElementId.InvalidElementId) &&
+                     (!ExporterCacheManager.ViewScheduleElementCache[currDesc.ViewScheduleId].Contains(elementToUse.Id)))
+                     continue;
 
                   Tuple<Element, Element, string> propertySetKey = new Tuple<Element, Element, string>(elementToUse, elemTypeToUse, currDesc.Name);
                   IFCAnyHandle propertySet = null;
                   if ((ifcParams != null) || (!createdPropertySets.TryGetValue(propertySetKey, out propertySet)))
                   {
-                     ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, ifcParams, elementToUse, elemTypeToUse, prodHnd);
+                     ElementOrConnector elementOrConnector = new ElementOrConnector(elementToUse);
+                     ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, ifcParams, elementOrConnector, elemTypeToUse, prodHnd);
                      if (props.Count > 0)
                      {
-                        int subElementIndex = CheckElementTypeValidityForSubIndex(currDesc, prodHnd, element);
-
-                        string guid = GUIDUtil.CreateSubElementGUID(elementToUse, subElementIndex);
-                        if (locallyUsedGUIDs.Contains(guid))
-                           guid = GUIDUtil.CreateGUID();
-                        else
-                           locallyUsedGUIDs.Add(guid);
-
                         string paramSetName = currDesc.Name;
+                        string guid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcPropertySet, paramSetName, prodHnd);
+
                         propertySet = IFCInstanceExporter.CreatePropertySet(file, guid, ownerHistory, paramSetName, currDesc.DescriptionOfSet, props);
                         if (ifcParams == null)
                            createdPropertySets[propertySetKey] = propertySet;
@@ -1247,7 +1330,7 @@ namespace Revit.IFC.Export.Utility
 
             foreach (KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>> relDefinesByProperties in relDefinesByPropertiesMap)
             {
-               ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(), ownerHistory, null, null, relDefinesByProperties.Value, relDefinesByProperties.Key);
+               CreateRelDefinesByProperties(file, ownerHistory, null, null, relDefinesByProperties.Value, relDefinesByProperties.Key);
             }
 
             transaction.Commit();
@@ -1271,7 +1354,6 @@ namespace Revit.IFC.Export.Utility
 
             IList<IList<PropertySetDescription>> psetsToCreate = ExporterCacheManager.ParameterCache.PropertySets;
 
-            ISet<string> locallyUsedGUIDs = new HashSet<string>();
             IDictionary<Tuple<ElementType, string>, IFCAnyHandle> createdPropertySets =
                 new Dictionary<Tuple<ElementType, string>, IFCAnyHandle>();
             IList<PropertySetDescription> currPsetsToCreate = GetCurrPSetsToCreate(typeHnd, psetsToCreate);
@@ -1289,18 +1371,13 @@ namespace Revit.IFC.Export.Utility
                IFCAnyHandle propertySet = null;
                if (!createdPropertySets.TryGetValue(propertySetKey, out propertySet))
                {
-                  ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementType, null, typeHnd);
+                  ElementOrConnector elementOrConnector = new ElementOrConnector(elementType);
+                  ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementOrConnector, null, typeHnd);
                   if (props.Count > 0)
                   {
-                     int subElementIndex = CheckElementTypeValidityForSubIndex(currDesc, typeHnd, elementType);
-
-                     string guid = GUIDUtil.CreateSubElementGUID(elementType, subElementIndex);
-                     if (locallyUsedGUIDs.Contains(guid))
-                        guid = GUIDUtil.CreateGUID();
-                     else
-                        locallyUsedGUIDs.Add(guid);
-
                      string paramSetName = currDesc.Name;
+                     string guid = GUIDUtil.GenerateIFCGuidFrom(elementType, "PropertySet: " + paramSetName);
+
                      propertySet = IFCInstanceExporter.CreatePropertySet(file, guid, ownerHistory, paramSetName, currDesc.DescriptionOfSet, props);
                      createdPropertySets[propertySetKey] = propertySet;
                   }
@@ -1354,7 +1431,7 @@ namespace Revit.IFC.Export.Utility
                      if (elemTypeToUse == null)
                         elemTypeToUse = elemType;
 
-                     if (currDesc.IsAppropriateType(prodHnd))
+                     if (currDesc.IsAppropriateType(prodHnd) && !ExporterCacheManager.QtoSetCreated.Contains((prodHnd, currDesc.Name)))
                      {
                         HashSet<string> uniqueQuantityNames = new HashSet<string>();
                         HashSet<IFCAnyHandle> quantities = new HashSet<IFCAnyHandle>();
@@ -1375,7 +1452,7 @@ namespace Revit.IFC.Export.Utility
                         HashSet<IFCAnyHandle> qtyFromInit = currDesc.ProcessEntries(file, exporterIFC, ifcParams, elementToUse, elemTypeToUse);
                         foreach (IFCAnyHandle qty in qtyFromInit)
                         {
-                           if (IFCAnyHandleUtil.IsNullOrHasNoValue(qty) || !IFCAnyHandleUtil.IsValidHandle(qty))
+                           if (IFCAnyHandleUtil.IsNullOrHasNoValue(qty) || IFCAnyHandleUtil.IsNullOrHasNoValue(qty))
                               continue;
 
                            string qtyName = IFCAnyHandleUtil.GetStringAttribute(qty, "Name");
@@ -1393,18 +1470,26 @@ namespace Revit.IFC.Export.Utility
                            string methodName = currDesc.MethodOfMeasurement;
                            string description = currDesc.DescriptionOfSet;
 
-                           IFCAnyHandle propertySet = IFCInstanceExporter.CreateElementQuantity(file, GUIDUtil.CreateGUID(), ownerHistory, paramSetName, description, methodName, quantities);
-                           IFCAnyHandle prodHndToUse = prodHnd;
-                           DescriptionCalculator ifcRDC = currDesc.DescriptionCalculator;
-                           if (ifcRDC != null)
+
+                           // Skip if the elementHandle has the associated QuantitySet has been created before
+                           if (!ExporterCacheManager.QtoSetCreated.Contains((prodHnd, paramSetName)))
                            {
-                              IFCAnyHandle overrideHnd = ifcRDC.RedirectDescription(exporterIFC, element);
-                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(overrideHnd))
-                                 prodHndToUse = overrideHnd;
+                              string guid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcElementQuantity, "QuantitySet: " + paramSetName, prodHnd);
+                              IFCAnyHandle quantity = IFCInstanceExporter.CreateElementQuantity(file, 
+                                 prodHnd, guid, ownerHistory, paramSetName, description, 
+                                 methodName, quantities);
+                              IFCAnyHandle prodHndToUse = prodHnd;
+                              DescriptionCalculator ifcRDC = currDesc.DescriptionCalculator;
+                              if (ifcRDC != null)
+                              {
+                                 IFCAnyHandle overrideHnd = ifcRDC.RedirectDescription(exporterIFC, element);
+                                 if (!IFCAnyHandleUtil.IsNullOrHasNoValue(overrideHnd))
+                                    prodHndToUse = overrideHnd;
+                              }
+                              HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
+                              relatedObjects.Add(prodHndToUse);
+                              CreateRelDefinesByProperties(file, ownerHistory, null, null, relatedObjects, quantity);
                            }
-                           HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
-                           relatedObjects.Add(prodHndToUse);
-                           ExporterUtil.CreateRelDefinesByProperties(file, GUIDUtil.CreateGUID(), ownerHistory, null, null, relatedObjects, propertySet);
                         }
                      }
                   }
@@ -1480,157 +1565,270 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Get the string value from IFC_EXPORT_PREDEFINEDTYPE* built-in parameters.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="elementType">The optional element type.</param>
+      /// <returns>The string value of IFC_EXPORT_PREDEFINEDTYPE if assigned, or 
+      /// IFC_EXPORT_PREDEFINEDTYPE_TYPE if not.</returns>
+      public static string GetExportTypeFromTypeParameter(Element element, Element elementType)
+      {
+         BuiltInParameter paramId = (element is ElementType) ? BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE_TYPE :
+            BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE;
+         Parameter exportElementParameter = element.get_Parameter(paramId);
+         string pdefFromParam = exportElementParameter?.AsString();
+         if (string.IsNullOrEmpty(pdefFromParam) && (paramId == BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE))
+         {
+            if (elementType == null)
+               elementType = element.Document.GetElement(element.GetTypeId());
+            exportElementParameter = elementType?.get_Parameter(BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE_TYPE);
+            pdefFromParam = exportElementParameter?.AsString();
+         }
+
+         return pdefFromParam;
+      }
+
+      /// <summary>
+      /// Gets the export entity and predefined type information as reported by the
+      /// IFC_EXPORT_ELEMENT*_AS parameter.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="restrictedGroup">The subset of IFC entities allowed.</param>
+      /// <returns>The IFC entity/predefined type pair.</returns>
+      public static IFCExportInfoPair GetIFCExportElementParameterInfo(Element element, 
+         IFCEntityType restrictedGroup)
+      {
+         if (element == null)
+            return IFCExportInfoPair.UnKnown;
+
+         BuiltInParameter paramId = (element is ElementType) ? BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE_AS :
+            BuiltInParameter.IFC_EXPORT_ELEMENT_AS;
+         Parameter exportElementParameter = element.get_Parameter(paramId);
+         string symbolClassName = exportElementParameter?.AsString();
+         if (string.IsNullOrEmpty(symbolClassName) && (paramId == BuiltInParameter.IFC_EXPORT_ELEMENT_AS))
+         {
+            Element elementType = element.Document.GetElement(element.GetTypeId());
+            exportElementParameter = elementType?.get_Parameter(BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE_AS);
+            symbolClassName = exportElementParameter?.AsString();
+         }
+
+         IFCExportInfoPair exportType = IFCExportInfoPair.UnKnown;
+
+         string predefType = null;
+         if (!string.IsNullOrEmpty(symbolClassName))
+         {
+            ExportEntityAndPredefinedType(symbolClassName, out symbolClassName, out predefType);
+
+            // Ignore the value if we can't process it.
+            IFCExportInfoPair overrideExportType = ElementFilteringUtil.GetExportTypeFromClassName(symbolClassName);
+            if (!overrideExportType.IsUnKnown && 
+               IfcSchemaEntityTree.IsSubTypeOf(ExporterCacheManager.ExportOptionsCache.FileVersion, overrideExportType.ExportInstance, restrictedGroup))
+            { 
+               exportType = overrideExportType;
+            }
+         }
+
+         if (!string.IsNullOrEmpty(predefType))
+         {
+            exportType.ValidatedPredefinedType = predefType;
+         }
+
+         return exportType;
+      }
+
+      private static IFCExportInfoPair GetExportTypeForFurniture(ExporterIFC exporterIFC, Element element)
+      {
+         if (element.GroupId == null || element.GroupId == ElementId.InvalidElementId)
+            return IFCExportInfoPair.UnKnown;
+
+         IFCExportInfoPair groupType;
+         if (ExporterCacheManager.GroupCache.TryGetValue(element.GroupId, out GroupInfo groupInfo) && groupInfo.GroupType.ExportInstance != IFCEntityType.UnKnown)
+         {
+            groupType = groupInfo.GroupType;
+         }
+         else
+         {
+            Element groupElement = element.Document.GetElement(element.GroupId);
+            IFCExportInfoPair exportGroupAs = GetObjectExportType(exporterIFC, groupElement, out _);
+            ExporterCacheManager.GroupCache.RegisterOrUpdateGroupType(element.GroupId, exportGroupAs);
+            groupType = exportGroupAs;
+         }
+
+         if (groupType.ExportInstance == IFCEntityType.IfcFurniture)
+         {
+            return new IFCExportInfoPair(IFCEntityType.IfcSystemFurnitureElement, "NOTDEFINED");
+         }
+
+         return IFCExportInfoPair.UnKnown;
+      }
+
+      private static IFCExportInfoPair OverrideExportTypeForStructuralFamilies(Element element,
+         IFCExportInfoPair originalExportInfoPair)
+      {
+         if ((!originalExportInfoPair.IsUnKnown) && 
+            (originalExportInfoPair.ExportInstance != IFCEntityType.IfcBuildingElementProxy) && 
+            (originalExportInfoPair.ExportType != IFCEntityType.IfcBuildingElementProxyType))
+            return originalExportInfoPair;
+
+         FamilyInstance familyInstance = element as FamilyInstance;
+         if (familyInstance == null)
+            return originalExportInfoPair;
+
+         string enumTypeValue = originalExportInfoPair.ValidatedPredefinedType;
+
+         switch (familyInstance.StructuralType)
+         {
+            case Autodesk.Revit.DB.Structure.StructuralType.Beam:
+               if (string.IsNullOrEmpty(enumTypeValue))
+                  enumTypeValue = "BEAM";
+               return new IFCExportInfoPair(IFCEntityType.IfcBeam, enumTypeValue);
+            case Autodesk.Revit.DB.Structure.StructuralType.Brace:
+               if (string.IsNullOrEmpty(enumTypeValue))
+                  enumTypeValue = "BRACE";
+               return new IFCExportInfoPair(IFCEntityType.IfcMember, enumTypeValue);
+            case Autodesk.Revit.DB.Structure.StructuralType.Footing:
+               return new IFCExportInfoPair(IFCEntityType.IfcFooting, enumTypeValue);
+            case Autodesk.Revit.DB.Structure.StructuralType.Column:
+               if (string.IsNullOrEmpty(enumTypeValue))
+                  enumTypeValue = "COLUMN";
+               return new IFCExportInfoPair(IFCEntityType.IfcColumn, enumTypeValue);
+         }
+
+         return originalExportInfoPair;
+      }
+
+      /// <summary>
       /// Gets export type for an element in pair information of the IfcEntity and its type.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="element">The element.</param>
+      /// <param name="restrictedGroup">The base class of the allowed entity instances.</param>
       /// <param name="enumTypeValue">The output string value represents the enum type.</param>
       /// <returns>The IFCExportInfoPair.</returns>
-      public static IFCExportInfoPair GetExportType(ExporterIFC exporterIFC, Element element,
-         out string enumTypeValue)
+      /// <remarks>If restrictedGroup is null, GetExportType will return any legal IFC entity.
+      /// However, most uses of this function should have some restriction.</remarks>
+      private static IFCExportInfoPair GetExportType(ExporterIFC exporterIFC, Element element,
+         IFCEntityType restrictedGroup, out string enumTypeValue)
       {
-         enumTypeValue = "";
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
+         enumTypeValue = null;
 
-         // First, check to see if we have decided not to export that category at all in
-         // the export options table.
-         // This will also return the ifcClassName, which will be checked later.
+         // Overall outline of this function.  We do the checks in order so that if an earlier
+         // check finds an acceptable value, we won't do the later ones.
+         // 1. Check specifically to see if the user has marked the category as "Not exported"
+         // in the IFC Export Options table.  If so, this overrides all other settings.
+         // 2. For the special case of an element in a group, check if it in an IfcFurniture group.
+         // 3. Check the parameters IFC_EXPORT_ELEMENT*_AS.
+         // 4. Look at class specified by the IFC Export Options table in step 1, if set.
+         // 5. Check at a pre-defined mapping from Revit category to IFC entity and pre-defined type.
+         // 6. Check whether the intended Entity type is inside the export exclusion set.
+         // 7. Check whether we override IfcBuildingElementProxy/Unknown values with structural known values.
+         // 8. Check to see if we should override the ValidatedPredefinedType from IFC_EXPORT_PREDEFINEDTYPE*.
+
+         // Steps start below.
+
+         // 1. Check specifically to see if the user has marked the category as "Not exported"
+         // in the IFC Export Options table.  If so, this overrides all other settings.
+         // This will also return the ifcClassName, which will be checked later (if it isn't
+         // set to "Not exported".
+         // Note that this means that if the Walls category is not exported, but a wall is set to be
+         // exported as, e.g., an IfcCeilingType, it won't be exported.  We may want to reconsider this
+         // in the future based on customer feedback.
          ElementId categoryId;
          string ifcClassName = GetIFCClassNameFromExportTable(exporterIFC, element, out categoryId);
          if (categoryId == ElementId.InvalidElementId)
             return IFCExportInfoPair.UnKnown;
 
-         // Get potential override value.
-         {
-            string symbolClassName;
+         // 2. If Element is contained within a Group that is exported as IfcFurniture, it should be 
+         // exported as an IfcSystemFurnitureElement, regardless of other settings.
+         IFCExportInfoPair exportType = GetExportTypeForFurniture(exporterIFC, element);
 
-            string exportAsEntity = "IFCExportAs";
-            string exportAsType = "IFCExportType";
-
-            ParameterUtil.GetStringValueFromElementOrSymbol(element, exportAsEntity, out symbolClassName);
-
-            string predefType = null;
-            if (!String.IsNullOrEmpty(symbolClassName))
-            {
-               ExportEntityAndPredefinedType(symbolClassName, out symbolClassName, out predefType);
-
-               // Ignore the value if we can't process it.
-               IFCExportInfoPair overrideExportType = ElementFilteringUtil.GetExportTypeFromClassName(symbolClassName);
-               if (!overrideExportType.IsUnKnown)
-                  exportType = overrideExportType;
-            }
-
-            string pdefFromParam = null;
-            ParameterUtil.GetStringValueFromElementOrSymbol(element, exportAsType, out pdefFromParam);
-            if (!string.IsNullOrEmpty(pdefFromParam))
-               enumTypeValue = pdefFromParam;
-            else
-            {
-               // To support old parameter
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcType", out pdefFromParam);
-               if (!string.IsNullOrEmpty(pdefFromParam))
-                  enumTypeValue = pdefFromParam;
-               else if (!string.IsNullOrEmpty(predefType))
-                  enumTypeValue = predefType;
-            }
-         }
-
-         if (exportType.IsUnKnown && !string.IsNullOrEmpty(ifcClassName))
-         {
-            enumTypeValue = GetIFCTypeFromExportTable(exporterIFC, element);
-            // if using name, override category id if match is found.
-            if (!ifcClassName.Equals("Default", StringComparison.OrdinalIgnoreCase))
-               exportType = ElementFilteringUtil.GetExportTypeFromClassName(ifcClassName);
-         }
-
-         // if not set, fall back on category id.
+         // 3. Check the parameters IFC_EXPORT_ELEMENT*_AS.
          if (exportType.IsUnKnown)
          {
-            //bool exportSeparately = true;
-            exportType = ElementFilteringUtil.GetExportTypeFromCategoryId(categoryId, out enumTypeValue /*, out bool exportSeparately*/);
+            exportType = GetIFCExportElementParameterInfo(element, restrictedGroup);
          }
 
-         // If Element is contained within a Group that is exported as IfcFurniture, it should be exported as an IfcSystemFurnitureElement
-         if (element.GroupId != null && element.GroupId.IntegerValue != -1)
+         // 4. Look at class specified by the IFC Export Options table in step 1.
+         if (exportType.IsUnKnown && !string.IsNullOrEmpty(ifcClassName))
          {
-            IFCExportInfoPair groupType;
-            if (ExporterCacheManager.GroupCache.TryGetValue(element.GroupId, out GroupInfo groupInfo) && groupInfo.GroupType.ExportInstance != IFCEntityType.UnKnown)
+            if (string.IsNullOrEmpty(enumTypeValue))
+               enumTypeValue = GetIFCTypeFromExportTable(exporterIFC, element);
+            // if using name, override category id if match is found.
+            if (!ifcClassName.Equals("Default", StringComparison.OrdinalIgnoreCase))
             {
-               groupType = groupInfo.GroupType;
-            }
-            else
-            {
-               Element groupElement = element.Document.GetElement(element.GroupId);
-               IFCExportInfoPair exportGroupAs = GetExportType(exporterIFC, groupElement, out _);
-               ExporterCacheManager.GroupCache.RegisterGroupType(element.GroupId, exportGroupAs);
-               groupType = exportGroupAs;
-            }
-
-            if (groupType.ExportInstance == IFCEntityType.IfcFurniture)
-            {
-               exportType.SetValueWithPair(IFCEntityType.IfcSystemFurnitureElement);
-               enumTypeValue = "NOTDEFINED";
+               exportType = ElementFilteringUtil.GetExportTypeFromClassName(ifcClassName);
+               exportType.ValidatedPredefinedType = enumTypeValue;
             }
          }
+         
+         // 5. Check at a pre-defined mapping from Revit category to IFC entity and pre-defined type.
+         if (exportType.IsUnKnown)
+         {
+            exportType = ElementFilteringUtil.GetExportTypeFromCategoryId(categoryId);
+            if (string.IsNullOrEmpty(enumTypeValue))
+               enumTypeValue = exportType.ValidatedPredefinedType;
+         }
+
+         // 6. Check whether the intended Entity type is inside the export exclusion set.  If it is,
+         // we are done - we won't export it.
+         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
+            return IFCExportInfoPair.UnKnown;
+
+         // 7. Check whether we override IfcBuildingElementProxy/Unknown values with 
+         // structural known values.
+         exportType = OverrideExportTypeForStructuralFamilies(element, exportType);
+
+         // 8. Check to see if we should override the ValidatedPredefinedType from
+         // IFC_EXPORT_PREDEFINEDTYPE*.
+         string pdefFromParam = GetExportTypeFromTypeParameter(element, null);
+         if (!string.IsNullOrEmpty(pdefFromParam))
+            enumTypeValue = pdefFromParam;
+         
+         if (!string.IsNullOrEmpty(enumTypeValue))
+            exportType.ValidatedPredefinedType = enumTypeValue;
+
+         // Set the out parameter here.
+         enumTypeValue = exportType.ValidatedPredefinedType;
 
          if (string.IsNullOrEmpty(enumTypeValue))
             enumTypeValue = "NOTDEFINED";
 
-         // Check whether the intended Entity type is inside the export exclusion set
-         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
-            return IFCExportInfoPair.UnKnown;
-
-         // if not set, fall back on symbol functions.
-         // allow override of IfcBuildingElementProxy.
-         if ((exportType.IsUnKnown) || (exportType.ExportInstance == IFCEntityType.IfcBuildingElementProxy) || (exportType.ExportType == IFCEntityType.IfcBuildingElementProxyType))
-         {
-            FamilyInstance familyInstance = element as FamilyInstance;
-            if (familyInstance != null)
-            {
-               switch (familyInstance.StructuralType)
-               {
-                  case Autodesk.Revit.DB.Structure.StructuralType.Beam:
-                     if (string.IsNullOrEmpty(enumTypeValue))
-                        enumTypeValue = "BEAM";
-                     exportType.SetValueWithPair(IFCEntityType.IfcBeam, enumTypeValue);
-                     break;
-                  case Autodesk.Revit.DB.Structure.StructuralType.Brace:
-                     if (string.IsNullOrEmpty(enumTypeValue))
-                        enumTypeValue = "BRACE";
-                     exportType.SetValueWithPair(IFCEntityType.IfcMember, enumTypeValue);
-                     break;
-                  case Autodesk.Revit.DB.Structure.StructuralType.Footing:
-                     exportType.SetValueWithPair(IFCEntityType.IfcFooting, enumTypeValue);
-                     break;
-                  case Autodesk.Revit.DB.Structure.StructuralType.Column:
-                     if (string.IsNullOrEmpty(enumTypeValue))
-                        enumTypeValue = "COLUMN";
-                     exportType.SetValueWithPair(IFCEntityType.IfcColumn, enumTypeValue);
-                     break;
-               }
-            }
-         }
-         if (!string.IsNullOrEmpty(enumTypeValue))
-         {
-            string newEnumTypeValue = IFCValidateEntry.GetValidIFCPredefinedTypeType(enumTypeValue, "NOTDEFINED", exportType.ExportInstance.ToString());
-            if (IsNotDefined(newEnumTypeValue))
-            {
-               // if the ExportType is unknown, i.e. Entity without type (e.g. IfcGrid), must try the enum type from the instance type + "Type"
-               if (exportType.ExportType == IFCEntityType.UnKnown)
-                  newEnumTypeValue = IFCValidateEntry.GetValidIFCPredefinedTypeType(enumTypeValue, "NOTDEFINED", exportType.ExportInstance.ToString() + "Type");
-               else
-                  newEnumTypeValue = IFCValidateEntry.GetValidIFCPredefinedTypeType(enumTypeValue, "NOTDEFINED", exportType.ExportType.ToString());
-            }
-            enumTypeValue = newEnumTypeValue;
-         }
-         exportType.ValidatedPredefinedType = enumTypeValue;
          return exportType;
       }
 
       /// <summary>
-      /// Get export entity and predefinedType from symbolClassName. Generally it should come from IfcExportAs parameter (for symbolClassName)
+      /// Gets export type for an element in pair information of the IfcEntity and its type.
+      /// Restricted to sub-types of IfcProduct.
       /// </summary>
-      /// <param name="symbolClassName">the IfcExportAs parameter value</param>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="element">The element.</param>
+      /// <param name="enumTypeValue">The output string value represents the enum type.</param>
+      /// <returns>The IFCExportInfoPair.</returns>
+      public static IFCExportInfoPair GetProductExportType(ExporterIFC exporterIFC, Element element,
+        out string enumTypeValue)
+      {
+         return GetExportType(exporterIFC, element, IFCEntityType.IfcProduct, out enumTypeValue);
+      }
+
+      /// <summary>
+      /// Gets export type for an element in pair information of the IfcEntity and its type.
+      /// Restricted to sub-types of IfcObject.
+      /// </summary>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="element">The element.</param>
+      /// <param name="enumTypeValue">The output string value represents the enum type.</param>
+      /// <returns>The IFCExportInfoPair.</returns>
+      public static IFCExportInfoPair GetObjectExportType(ExporterIFC exporterIFC, Element element,
+        out string enumTypeValue)
+      {
+         return GetExportType(exporterIFC, element, IFCEntityType.IfcObject, out enumTypeValue);
+      }
+
+      /// <summary>
+      /// Get export entity and predefinedType from symbolClassName. Generally it should come from
+      /// the built-in parameters (for symbolClassName)
+      /// </summary>
+      /// <param name="symbolClassName">the IFC_EXPORT_ELEMENT_AS parameter value</param>
       /// <param name="exportEntity">output export entity string</param>
       /// <param name="predefinedTypeStr">output predefinedType string</param>
       public static void ExportEntityAndPredefinedType(string symbolClassName, out string exportEntity, out string predefinedTypeStr)
@@ -1640,8 +1838,9 @@ namespace Revit.IFC.Export.Utility
 
          if (!string.IsNullOrEmpty(symbolClassName))
          {
-            // We are expanding IfcExportAs format to support also format: <IfcTypeEntity>.<predefinedType>. Therefore we need to parse here. This format will override value in
-            // IFCExportType if any
+            // We are expanding the format to also support: <IfcTypeEntity>.<predefinedType>.
+            // Therefore we need to parse here. This format will override value in IFCExportType
+            // if any.
             string[] splitResult = symbolClassName.Split(new Char[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
             if (splitResult.Length > 1)
             {
@@ -1661,21 +1860,30 @@ namespace Revit.IFC.Export.Utility
       /// <param name="ownerHistory">the OwnerHistory</param>
       /// <param name="predefinedType">PredefinedType</param>
       /// <returns>IFCAnyHandle if successful, null otherwise</returns>
-      public static IFCAnyHandle CreateGenericTypeFromElement(Element element, IFCExportInfoPair exportType, IFCFile file, IFCAnyHandle ownerHistory, string predefinedType, ProductWrapper productWrapper)
+      public static IFCAnyHandle CreateGenericTypeFromElement(Element element, 
+         IFCExportInfoPair exportType, IFCFile file, IFCAnyHandle ownerHistory, 
+         string predefinedType, ProductWrapper productWrapper)
       {
          Document doc = element.Document;
          ElementId typeElemId = element.GetTypeId();
          ElementType elementType = doc.GetElement(typeElemId) as ElementType;
+
          IFCAnyHandle entType = null;
 
          if (elementType != null)
          {
-            entType = IFCInstanceExporter.CreateGenericIFCType(exportType, elementType, file, null, null);
-            productWrapper.RegisterHandleWithElementType(elementType as ElementType, exportType, entType, null);
+            entType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
+            if (entType != null)
+               return entType;
+
+            string typeGuid = GUIDUtil.CreateGUID(elementType);
+            entType = IFCInstanceExporter.CreateGenericIFCType(exportType, elementType, typeGuid, file, null, null);
+            productWrapper.RegisterHandleWithElementType(elementType, exportType, entType, null);
          }
          else
          {
-            entType = IFCInstanceExporter.CreateGenericIFCType(exportType, element, file, null, null);
+            string typeGuid = GUIDUtil.CreateSubElementGUID(element, (int)IFCFamilyInstanceSubElements.InstanceAsType);
+            entType = IFCInstanceExporter.CreateGenericIFCType(exportType, element, typeGuid, file, null, null);
          }
          return entType;
       }
@@ -1729,12 +1937,33 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Create an IfcCreateCurveBoundedPlane given a polygonal outer boundary and 0 or more polygonal inner boundaries.
+      /// Call the correct CreateRelDefinesByProperties depending on the schema to create one or more IFC entites.
       /// </summary>
-      /// <param name="file">The IFCFile.</param>
-      /// <param name="newOuterLoopPoints">The list of points representating the outer boundary of the plane.</param>
-      /// <param name="innerLoopPoints">The list of inner boundaries of the plane.  This list can be null.</param>
-      /// <returns>The IfcCreateCurveBoundedPlane.</returns>
+      /// <param name="file">The file.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="relatedObjects">The related objects, required to be only 1 for IFC4.</param>
+      /// <param name="relatingPropertyDefinition">The property definition to relate to the IFC object entity/entities.</param>
+      public static void CreateRelDefinesByProperties(IFCFile file, IFCAnyHandle ownerHistory,
+          string name, string description, ISet<IFCAnyHandle> relatedObjects, IFCAnyHandle relatingPropertyDefinition)
+      {
+         if (relatedObjects == null)
+            return;
+
+         string guid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelDefinesByProperties, 
+            name, relatingPropertyDefinition);
+         CreateRelDefinesByProperties(file, guid, ownerHistory, name, description, relatedObjects, 
+            relatingPropertyDefinition);
+      }
+      
+      /// <summary>
+       /// Create an IfcCreateCurveBoundedPlane given a polygonal outer boundary and 0 or more polygonal inner boundaries.
+       /// </summary>
+       /// <param name="file">The IFCFile.</param>
+       /// <param name="newOuterLoopPoints">The list of points representating the outer boundary of the plane.</param>
+       /// <param name="innerLoopPoints">The list of inner boundaries of the plane.  This list can be null.</param>
+       /// <returns>The IfcCreateCurveBoundedPlane.</returns>
       public static IFCAnyHandle CreateCurveBoundedPlane(IFCFile file, IList<XYZ> newOuterLoopPoints, IList<IList<XYZ>> innerLoopPoints)
       {
          if (newOuterLoopPoints == null)
@@ -1925,7 +2154,7 @@ namespace Revit.IFC.Export.Utility
             Family family = symbol.Family;
             if (family != null)
             {
-               Parameter para = family.LookupParameter("Part Type");
+               Parameter para = family.GetParameter(ParameterTypeId.FamilyContentPartType);
                if (para != null)
                {
                   if (element as DuctInsulation != null)
@@ -2131,234 +2360,6 @@ namespace Revit.IFC.Export.Utility
             }
          }
          return controls;
-      }
-
-      /// <summary>
-      /// Collect information about material layer.
-      ///   For IFC4RV Architectural exchange, it will generate IfcMatrialConstituentSet along with the relevant IfcShapeAspect and the width in the quantityset
-      ///   For IFC4RV Structural exchange, it will generate multiple components as IfcBuildingElementPart for each layer
-      ///   For others IfcMaterialLayer will be created
-      /// </summary>
-      /// <param name="exporterIFC">the exporter IFC</param>
-      /// <param name="element">the element</param>
-      /// <param name="productWrapper">the product wrapper</param>
-      /// <param name="matIds">material ids (out)</param>
-      /// <param name="primaryMaterialHnd">primary material handle (out)</param>
-      /// <returns>the handle</returns>
-      public static IFCAnyHandle CollectMaterialLayerSet(ExporterIFC exporterIFC, Element element, ProductWrapper productWrapper, out List<ElementId> matIds, out IFCAnyHandle primaryMaterialHnd)
-      {
-         ElementId typeElemId = element.GetTypeId();
-         matIds = new List<ElementId>();
-         IFCAnyHandle materialLayerSet = ExporterCacheManager.MaterialSetCache.FindLayerSet(typeElemId);
-         // Roofs with no components are only allowed one material.  We will arbitrarily choose the thickest material.
-         primaryMaterialHnd = ExporterCacheManager.MaterialSetCache.FindPrimaryMaterialHnd(typeElemId);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet))
-         {
-            List<double> widths = new List<double>();
-            List<MaterialFunctionAssignment> functions = new List<MaterialFunctionAssignment>();
-
-            HostObjAttributes hostObjAttr = element.Document.GetElement(typeElemId) as HostObjAttributes;
-            if (hostObjAttr == null)
-            {
-               // It does not have the HostObjAttribute (where we will get the compound structure for material layer set.
-               // We will define a single material instead and create the material layer set of this single material if there is enough information (At least Material id and thickness) 
-               FamilyInstance familyInstance = element as FamilyInstance;
-               if (familyInstance == null)
-                  return null;
-               FamilySymbol familySymbol = familyInstance.Symbol;
-               ICollection<ElementId> famMatIds = familySymbol.GetMaterialIds(false);
-               if (famMatIds.Count == 0)
-               {
-                  // For some reason Plate type may not return any Material id
-                  ElementId baseMatId = CategoryUtil.GetBaseMaterialIdForElement(element);
-                  if (baseMatId != ElementId.InvalidElementId)
-                     matIds.Add(baseMatId);
-                  // How to get the thickness? For CurtainWall Panel (PanelType), there is a builtin parameter CURTAINWALL_SYSPANEL_THICKNESS
-                  Parameter thicknessPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_THICKNESS);
-                  if (thicknessPar != null)
-                     widths.Add(thicknessPar.AsDouble());
-                  else
-                     widths.Add(0.0);
-                  functions.Add(MaterialFunctionAssignment.None);
-               }
-               else
-               {
-                  foreach (ElementId matid in famMatIds)
-                  {
-                     if (matid != ElementId.InvalidElementId)
-                        matIds.Add(matid);
-                     // How to get the thickness? For CurtainWall Panel (PanelType), there is a builtin parameter CURTAINWALL_SYSPANEL_THICKNESS
-                     Parameter thicknessPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_THICKNESS);
-                     if (thicknessPar == null)
-                     {
-                        widths.Add(ParameterUtil.GetSpecialThicknessParameter(familySymbol));
-                     }
-                     else
-                        widths.Add(thicknessPar.AsDouble());
-
-                     functions.Add(MaterialFunctionAssignment.None);
-                  }
-               }
-            }
-            else
-            {
-               ElementId baseMatId = CategoryUtil.GetBaseMaterialIdForElement(element);
-               CompoundStructure cs = hostObjAttr.GetCompoundStructure();
-               if (cs != null)
-               {
-                  double scaledOffset = 0.0, scaledWallWidth = 0.0, wallHeight = 0.0;
-                  Wall wall = element as Wall;
-                  if (wall != null)
-                  {
-                     scaledWallWidth = UnitUtil.ScaleLength(wall.Width);
-                     scaledOffset = -scaledWallWidth / 2.0;
-                     BoundingBoxXYZ boundingBox = wall.get_BoundingBox(null);
-                     if (boundingBox != null)
-                        wallHeight = boundingBox.Max.Z - boundingBox.Min.Z;
-                  }
-
-                  //TODO: Vertically compound structures are not yet supported by export.
-                  if (!cs.IsVerticallyHomogeneous() && !MathUtil.IsAlmostZero(wallHeight))
-                     cs = cs.GetSimpleCompoundStructure(wallHeight, wallHeight / 2.0);
-
-                  for (int ii = 0; ii < cs.LayerCount; ++ii)
-                  {
-                     ElementId matId = cs.GetMaterialId(ii);
-                     if (matId != ElementId.InvalidElementId)
-                     {
-                        matIds.Add(matId);
-                     }
-                     else
-                     {
-                        matIds.Add(baseMatId);
-                     }
-                     widths.Add(cs.GetLayerWidth(ii));
-                     // save layer function into ProductWrapper, 
-                     // it's used while exporting "Function" of Pset_CoveringCommon
-                     functions.Add(cs.GetLayerFunction(ii));
-                  }
-               }
-
-               if (matIds.Count == 0)
-               {
-                  if (baseMatId != ElementId.InvalidElementId)
-                     matIds.Add(baseMatId);
-                  widths.Add(cs != null ? cs.GetWidth() : 0);
-                  functions.Add(MaterialFunctionAssignment.None);
-               }
-            }
-
-            if (productWrapper != null)
-               productWrapper.ClearFinishMaterials();
-
-            // We can't create IfcMaterialLayers without creating an IfcMaterialLayerSet.  So we will simply collate here.
-            IList<IFCAnyHandle> materialHnds = new List<IFCAnyHandle>();
-            IList<int> widthIndices = new List<int>();
-            double thickestLayer = 0.0;
-            for (int ii = 0; ii < matIds.Count; ++ii)
-            {
-               // Require positive width for IFC2x3 and before, and non-negative width for IFC4.
-               if (widths[ii] < -MathUtil.Eps())
-                  continue;
-
-               bool almostZeroWidth = MathUtil.IsAlmostZero(widths[ii]);
-               if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 && almostZeroWidth)
-                  continue;
-
-               if (almostZeroWidth)
-                  widths[ii] = 0.0;
-
-               IFCAnyHandle materialHnd = CategoryUtil.GetOrCreateMaterialHandle(exporterIFC, matIds[ii]);
-               if (primaryMaterialHnd == null || (widths[ii] > thickestLayer))
-               {
-                  primaryMaterialHnd = materialHnd;
-                  thickestLayer = widths[ii];
-               }
-
-               widthIndices.Add(ii);
-               materialHnds.Add(materialHnd);
-
-               if ((productWrapper != null) && (functions[ii] == MaterialFunctionAssignment.Finish1 || functions[ii] == MaterialFunctionAssignment.Finish2))
-               {
-                  productWrapper.AddFinishMaterial(materialHnd);
-               }
-            }
-
-            int numLayersToCreate = widthIndices.Count;
-            if (numLayersToCreate == 0)
-               return materialLayerSet;
-
-            // If it is a single material, check single material override (only IfcMaterial without IfcMaterialLayerSet with only 1 member)
-            if (numLayersToCreate == 1 && ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-            {
-               IFCAnyHandle singleMaterialOverrideHnd = GetSingleMaterial(exporterIFC, element, matIds[0]);
-               if(singleMaterialOverrideHnd != null)
-                  return singleMaterialOverrideHnd;
-            }
-
-            IFCFile file = exporterIFC.GetFile();
-            Document document = ExporterCacheManager.Document;
-
-            IList<IFCAnyHandle> layers = new List<IFCAnyHandle>(numLayersToCreate);
-
-            // TODO: To handle materiallayer differently for RV1.2
-            for (int ii = 0; ii < numLayersToCreate; ii++)
-            {
-               // This might be null.
-               if (matIds[ii] == ElementId.InvalidElementId)
-                  continue;
-
-               Material material = document.GetElement(matIds[ii]) as Material;
-
-               int widthIndex = widthIndices[ii];
-               double scaledWidth = UnitUtil.ScaleLength(widths[widthIndex]);
-
-               string layerName = null;
-               string description = null;
-               string category = null;
-               int? priority = null;
-
-               IFCLogical? isVentilated = null;
-               int isVentilatedValue;
-               if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.IsVentilated", out isVentilatedValue) != null)
-               {
-                  if (isVentilatedValue == 0)
-                     isVentilated = IFCLogical.False;
-                  else if (isVentilatedValue == 1)
-                     isVentilated = IFCLogical.True;
-               }
-
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-               {
-                  layerName = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Name",
-                     IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Name"));
-                  description = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Description",
-                     IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Description"));
-                  category = NamingUtil.GetOverrideStringValue(material, "IfcMaterialLayer.Category",
-                     IFCAnyHandleUtil.GetStringAttribute(materialHnds[ii], "Category"));
-                  int priorityValue;
-                  if (ParameterUtil.GetIntValueFromElement(material, "IfcMaterialLayer.Priority", out priorityValue) != null)
-                     priority = priorityValue;
-               }
-               IFCAnyHandle materialLayer = IFCInstanceExporter.CreateMaterialLayer(file, materialHnds[ii], scaledWidth, isVentilated,
-                                                                  name: layerName, description: description, category: category, priority: priority);
-               layers.Add(materialLayer);
-            }
-
-            if (layers.Count > 0)
-            {
-               Element type = document.GetElement(typeElemId);
-               string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", exporterIFC.GetFamilyName());
-               string layerSetDesc = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Description", null);
-               materialLayerSet = IFCInstanceExporter.CreateMaterialLayerSet(file, layers, layerSetName, layerSetDesc);
-
-               ExporterCacheManager.MaterialSetCache.RegisterLayerSet(typeElemId, materialLayerSet);
-            }
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(primaryMaterialHnd))
-               ExporterCacheManager.MaterialSetCache.RegisterPrimaryMaterialHnd(typeElemId, primaryMaterialHnd);
-         }
-
-         return materialLayerSet;
       }
 
       /// <summary>
@@ -2622,9 +2623,9 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="id">the element id</param>
       /// <returns>true - if id is built in or invalid, false - otherwise</returns>
-      public static bool isElementIdBuiltInOrInvalid(ElementId id)
+      public static bool IsElementIdBuiltInOrInvalid(ElementId id)
       {
-         return id.IntegerValue < 0;
+         return id <= ElementId.InvalidElementId;
       }
    }
 }

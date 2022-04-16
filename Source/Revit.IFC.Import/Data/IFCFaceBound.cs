@@ -34,37 +34,28 @@ namespace Revit.IFC.Import.Data
 {
    public class IFCFaceBound : IFCRepresentationItem
    {
-      IFCLoop m_Bound = null;
-
-      bool m_Orientation = true;
-
-      bool m_IsOuter = false;
-
       /// <summary>
       /// Return the defining loop of the face boundary.
       /// </summary>
-      public IFCLoop Bound
-      {
-         get { return m_Bound; }
-         protected set { m_Bound = value; }
-      }
+      public IFCLoop Bound { get; protected set; } = null;
 
       /// <summary>
       /// Return the orientation of the defining loop of the face boundary.
       /// </summary>
-      public bool Orientation
-      {
-         get { return m_Orientation; }
-         protected set { m_Orientation = value; }
-      }
+      public bool Orientation { get; protected set; } = true;
 
       /// <summary>
       /// Returns whether this is an outer boundary (TRUE) or an inner boundary (FALSE).
       /// </summary>
-      public bool IsOuter
+      public bool IsOuter { get; protected set; } = false;
+
+      /// <summary>
+      /// Checks if the FaceBound definition represents a non-empty boundary.
+      /// </summary>
+      /// <returns>True if the FaceBound contains any information.</returns>
+      public bool IsEmpty()
       {
-         get { return m_IsOuter; }
-         protected set { m_IsOuter = value; }
+         return Bound?.IsEmpty() ?? true;
       }
 
       protected IFCFaceBound()
@@ -112,7 +103,6 @@ namespace Revit.IFC.Import.Data
          // Check that the loop vertices don't contain points that are very close to one another;
          // if so, throw the point away and hope that the TessellatedShapeBuilder can repair the result.
          // Warn in this case.  If the entire boundary is bad, report an error and don't add the loop vertices.
-
          List<XYZ> validVertices = null;
          for (int pass = 0; pass < 2; pass++)
          {
@@ -135,26 +125,34 @@ namespace Revit.IFC.Import.Data
          }
          else
          {
-            // Last check: check to see if the vertices are actually planar.  If not, for the vertices to be planar.	            if (!tsBuilderScope.AddLoopVertices(Id, validVertices))
+            bool maybeTryToTriangulate = tsBuilderScope.CanProcessDelayedFaceBoundary && (count == 4);
+            bool tryToTriangulate = false;
+
+            // Last check: check to see if the vertices are actually planar.  
             // We are not going to be particularly fancy about how we pick the plane.	
             if (count > 3)
             {
                XYZ planeNormal = null;
-               bool foundGoodNormal = false;
 
                XYZ firstPoint = validVertices[0];
                XYZ secondPoint = validVertices[1];
                XYZ firstDir = secondPoint - firstPoint;
+               double bestLength = 0;
 
                for (int index = 2; index <= count; index++)
                {
                   XYZ thirdPoint = validVertices[(index % count)];
-                  planeNormal = firstDir.CrossProduct(thirdPoint - firstPoint);
-                  if (planeNormal.GetLength() > 0.01)
+                  XYZ currentPlaneNormal = firstDir.CrossProduct(thirdPoint - firstPoint);
+                  double planeNormalLength = currentPlaneNormal.GetLength();
+                  if (planeNormalLength > 0.01)
                   {
-                     planeNormal = planeNormal.Normalize();
-                     foundGoodNormal = true;
+                     planeNormal = currentPlaneNormal.Normalize();
                      break;
+                  }
+                  else if (maybeTryToTriangulate && (planeNormalLength > bestLength))
+                  {
+                     planeNormal = currentPlaneNormal.Normalize();
+                     bestLength = planeNormalLength;
                   }
 
                   firstPoint = secondPoint;
@@ -162,14 +160,14 @@ namespace Revit.IFC.Import.Data
                   firstDir = secondPoint - firstPoint;
                }
 
-               if (!foundGoodNormal)
+               if (planeNormal == null)
                {
                   // Even if we don't find a good normal, we will still see if the internal function can make sense of it.
-                  Importer.TheLog.LogComment(Id, "Bounded loop plane is likely non-planar, won't try to correct.", false);
+                  Importer.TheLog.LogComment(Id, "Bounded loop plane is likely non-planar, may triangulate.", false);
                }
                else
                {
-                  double vertexEps = IFCImportFile.TheFile.Document.Application.VertexTolerance;
+                  double vertexEps = IFCImportFile.TheFile.VertexTolerance;
 
                   for (int index = 0; index < count; index++)
                   {
@@ -178,21 +176,39 @@ namespace Revit.IFC.Import.Data
                      double distance = pointOnPlane.DistanceTo(validVertices[index]);
                      if (distance > vertexEps * 10.0)
                      {
-                        Importer.TheLog.LogComment(Id, "Bounded loop plane is non-planar, can't correct.", false);
-                        bPotentiallyAbortFace = true;
+                        Importer.TheLog.LogComment(Id, "Bounded loop plane is non-planar, may triangulate.", false);
+                        tryToTriangulate = maybeTryToTriangulate;
+                        bPotentiallyAbortFace = !tryToTriangulate;
                         break;
                      }
                      else if (distance > vertexEps)
                      {
-                        Importer.TheLog.LogComment(Id, "Bounded loop plane is slightly non-planar, correcting.", false);
-                        validVertices[index] = pointOnPlane;
+                        if (!maybeTryToTriangulate)
+                        {
+                           Importer.TheLog.LogComment(Id, "Bounded loop plane is slightly non-planar, correcting.", false);
+                           validVertices[index] = pointOnPlane;
+                        }
+                        else
+                        {
+                           Importer.TheLog.LogComment(Id, "Bounded loop plane is slightly non-planar, will triangulate.", false);
+                           tryToTriangulate = maybeTryToTriangulate;
+                        }
                      }
                   }
                }
             }
 
             if (!bPotentiallyAbortFace)
-               bPotentiallyAbortFace = !tsBuilderScope.AddLoopVertices(Id, validVertices);
+            {
+               if (tryToTriangulate)
+               {
+                  tsBuilderScope.DelayedFaceBoundary = validVertices;      
+               }
+               else
+               {
+                  bPotentiallyAbortFace = !tsBuilderScope.AddLoopVertices(Id, validVertices);
+               }
+            }
          }
 
          if (bPotentiallyAbortFace && IsOuter)

@@ -20,12 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Windows;
-using System.Windows.Forms;
 using System.IO;
-using Revit.IFC.Common.Utility;
 using System.Xml.Linq;
 using RevitIFCTools.PropertySet;
 
@@ -72,18 +68,14 @@ namespace RevitIFCTools
       IDictionary<string, StreamWriter> enumFileDict;
       IDictionary<string, IList<string>> enumDict;
       public SortedDictionary<string, IList<VersionSpecificPropertyDef>> allPDefDict { get; private set; } = new SortedDictionary<string, IList<VersionSpecificPropertyDef>>();
-#if DEBUG
       StreamWriter logF;
-#endif
 
       public static SortedDictionary<string, SharedParameterDef> SharedParamFileDict  { get; set; } = new SortedDictionary<string, SharedParameterDef>();
       public static SortedDictionary<string, SharedParameterDef> SharedParamFileTypeDict { get; set; } = new SortedDictionary<string, SharedParameterDef>();
 
       public ProcessPsetDefinition(StreamWriter logfile)
       {
-#if DEBUG
          logF = logfile;
-#endif
          enumFileDict = new Dictionary<string, StreamWriter>();
          enumDict = new Dictionary<string, IList<string>>();
       }
@@ -396,10 +388,8 @@ namespace RevitIFCTools
                (prop.PropertyType as PropertySingleValue).DataType = "IfcIdentifier";
             else
                (prop.PropertyType as PropertySingleValue).DataType = "IfcLabel";
-#if DEBUG
             logF.WriteLine("%Warning: " + prop.Name + " from " + vSpecPDef.PropertySetDef.Name + "(" + vSpecPDef.SchemaFileVersion + ") is missing PropertyType/datatype. Set to default "
                   + (prop.PropertyType as PropertySingleValue).DataType);
-#endif
          }
 
          // Append new definition to the Shared parameter file
@@ -424,9 +414,7 @@ namespace RevitIFCTools
             newPar.Description = prop.PropertyType.ToString().Split(' ', '\t')[0].Trim();     // Put the original IFC datatype in the description
          else
          {
-#if DEBUG
             logF.WriteLine("%Warning: " + newPar.Name + " from " + vSpecPDef.PropertySetDef.Name + "(" + vSpecPDef.SchemaFileVersion + ") is missing PropertyType/datatype.");
-#endif
          }
 
          if (prop.PropertyType is PropertyEnumeratedValue)
@@ -717,9 +705,7 @@ namespace RevitIFCTools
             XElement propDatType = propType.Elements().FirstOrDefault();
             if (propDatType == null)
             {
-#if DEBUG
                logF.WriteLine("%Warning: Missing PropertyType for {0}.{1}", pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
-#endif
                return prop;
             }
 
@@ -733,9 +719,7 @@ namespace RevitIFCTools
                }
                else
                {
-#if DEBUG
                   logF.WriteLine("%Warning: Missing TypePropertySingleValue for {0}.{1}", pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
-#endif
                   // Hndle a known issue of missing data type for a specific property
                   if (prop.Name.Equals("Reference", StringComparison.InvariantCultureIgnoreCase))
                      sv.DataType = "IfcIdentifier";
@@ -783,11 +767,9 @@ namespace RevitIFCTools
                         var consList = propDatType.Element(ns + "ConstantList").Elements(ns + "ConstantDef");
                         if (consList != null && consList.Count() != enumItems.Count())
                         {
-#if DEBUG
                            logF.WriteLine("%Warning: EnumList (" + enumItems.Count().ToString() + ") is not consistent with the ConstantList ("
                               + consList.Count().ToString() + ") for: {0}.{1}",
                               pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
-#endif
                         }
                      }
 
@@ -824,9 +806,7 @@ namespace RevitIFCTools
                else
                {
                   {
-#if DEBUG
                      logF.WriteLine("%Warning: EnumList {0}.{1} is empty!", pDef.Parent.Parent.Element(ns + "Name").Value, prop.Name);
-#endif
                   }
                   // If EnumList is empty, try to see whether ConstantDef has values. The Enum item name will be taken from the ConstantDef.Name
                   pev.Name = "PEnum_" + prop.Name;
@@ -902,10 +882,8 @@ namespace RevitIFCTools
                   PsetProperty pr = getPropertyDef(ns, cpPropDef, psetOrQtoSet);
                   if (pr == null)
                   {
-#if DEBUG
                      logF.WriteLine("%Error: Mising PropertyType data in complex property {0}.{1}.{2}", propDatType.Parent.Parent.Element(ns + "Name").Value,
                         prop.Name, cpPropDef.Element(ns + "Name").Value);
-#endif
                   }
                   else
                      compProp.Properties.Add(pr);
@@ -995,9 +973,7 @@ namespace RevitIFCTools
          // Shouldn't be here, but some time the IFC documentation is not good
          if (pset.ApplicableClasses.Count == 0)
          {
-#if DEBUG
             logF.WriteLine("%Error - This pset is missing applicable class information: " + pset.IfcVersion + " " + pset.Name);
-#endif
             // Special handling of problematic issue
             #region IFCSpecialHandling
             if (pset.IfcVersion.Equals("IFC4", StringComparison.InvariantCultureIgnoreCase))
@@ -1115,9 +1091,7 @@ namespace RevitIFCTools
             SharedParameterDef shPar = new SharedParameterDef();
             if (prop == null)
             {
-#if DEBUG
                logF.WriteLine("%Error: Mising PropertyType data for {0}.{1}", pset.Name, pDef.Element(ns + "Name").Value);
-#endif
             }
             else
             {

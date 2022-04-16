@@ -48,12 +48,13 @@ namespace Revit.IFC.Export.Exporter
          if (coupler == null)
             return;
 
-         FamilySymbol familySymbol = ExporterCacheManager.Document.GetElement(coupler.GetTypeId()) as FamilySymbol;
+         ElementId typeId = coupler.GetTypeId();
+         FamilySymbol familySymbol = ExporterCacheManager.Document.GetElement(typeId) as FamilySymbol;
          if (familySymbol == null)
             return;
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcMechanicalFastener;
+         IFCEntityType elementClassTypeEnum = IFCEntityType.IfcMechanicalFastener;
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return;
 
@@ -63,11 +64,11 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
          Options options = GeometryUtil.GetIFCExportGeometryOptions(); ;
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, coupler, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, coupler, out ifcEnumType);
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(coupler.GetTypeId(), false, exportType);
+            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeId, false, exportType);
             bool found = currentTypeInfo.IsValid();
             if (!found)
             {
@@ -85,13 +86,15 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle origin = ExporterUtil.CreateAxis2Placement3D(file); ;
                repMap.Add(IFCInstanceExporter.CreateRepresentationMap(file, origin, bodyData.RepresentationHnd));
 
-               IFCAnyHandle styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, ifcEnumType, propertySetsOpt, repMap, coupler, familySymbol);
+               string typeGuid = GUIDUtil.CreateGUID(familySymbol);
+               IFCAnyHandle styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType,
+                  ifcEnumType, propertySetsOpt, repMap, coupler, familySymbol, typeGuid);
                productWrapper.RegisterHandleWithElementType(familySymbol, exportType, styleHandle, propertySetsOpt);
 
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                {
                   currentTypeInfo.Style = styleHandle;
-                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(coupler.GetTypeId(), false, exportType, currentTypeInfo);
+                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeId, false, exportType, currentTypeInfo);
                }
             }
 
@@ -139,7 +142,7 @@ namespace Revit.IFC.Export.Exporter
                   if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
                   {
                      // In IFC4 NominalDiameter and NominalLength attributes have been deprecated. PredefinedType attribute was added.
-                     IFCAnyHandleUtil.SetAttribute(instanceHandle, "PredefinedType", Revit.IFC.Export.Toolkit.IFC4.IFCMechanicalFastenerType.USERDEFINED);
+                     IFCAnyHandleUtil.SetAttribute(instanceHandle, "PredefinedType", Toolkit.IFC4.IFCMechanicalFastenerType.USERDEFINED);
                   }
                   else
                   {
@@ -171,7 +174,9 @@ namespace Revit.IFC.Export.Exporter
 
                   productWrapper.AddElement(coupler, rebarGroup, exportType);
 
-                  IFCInstanceExporter.CreateRelAssignsToGroup(file, GUIDUtil.CreateGUID(), ownerHistory,
+                  string groupGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssignsToGroup,
+                     string.Empty, rebarGroup);
+                  IFCInstanceExporter.CreateRelAssignsToGroup(file, groupGuid, ownerHistory,
                       null, null, createdRebarCouplerHandles, null, rebarGroup);
                }
             }
@@ -179,7 +184,7 @@ namespace Revit.IFC.Export.Exporter
             {
                // We will update the GUID of the one created element to be the element GUID.
                // This will allow the IfcGUID parameter to be use/set if appropriate.
-               ExporterUtil.SetGlobalId(createdRebarCouplerHandles.ElementAt(0), couplerGUID);
+               ExporterUtil.SetGlobalId(createdRebarCouplerHandles.ElementAt(0), couplerGUID, coupler);
             }
 
             tr.Commit();

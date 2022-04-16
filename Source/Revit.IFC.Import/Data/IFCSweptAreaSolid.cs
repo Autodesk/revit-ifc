@@ -94,12 +94,16 @@ namespace Revit.IFC.Import.Data
             Importer.TheLog.LogError(simpleSweptArea.Id, "No outer curve loop for profile, ignoring.", false);
             return null;
          }
+
+         currLoop = IFCGeometryUtil.SplitUnboundCyclicCurves(currLoop);
          loops.Add(IFCGeometryUtil.CreateTransformed(currLoop, Id, unscaledSweptAreaPosition, scaledSweptAreaPosition));
 
          if (simpleSweptArea.InnerCurves != null)
          {
             foreach (CurveLoop innerCurveLoop in simpleSweptArea.InnerCurves)
-               loops.Add(IFCGeometryUtil.CreateTransformed(innerCurveLoop, Id, unscaledSweptAreaPosition, scaledSweptAreaPosition));
+            {
+               loops.Add(IFCGeometryUtil.CreateTransformed(IFCGeometryUtil.SplitUnboundCyclicCurves(innerCurveLoop), Id, unscaledSweptAreaPosition, scaledSweptAreaPosition));
+            }
          }
 
          return loops;

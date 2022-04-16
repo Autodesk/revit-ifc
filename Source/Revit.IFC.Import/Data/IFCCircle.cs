@@ -57,6 +57,12 @@ namespace Revit.IFC.Import.Data
             return;
          }
 
+         if (!IFCGeometryUtil.IsValidRadius(radius))
+         {
+            Importer.TheLog.LogError(ifcCurve.StepId, "Invalid radius for this circle: " + radius, false);
+            return;
+         }
+
          try
          {
             SetCurve(Arc.Create(Position.Origin, radius, 0, 2.0 * Math.PI, Position.BasisX, Position.BasisY));

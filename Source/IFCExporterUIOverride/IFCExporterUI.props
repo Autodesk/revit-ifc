@@ -20,6 +20,11 @@
       <HintPath>$(RevitExePath)\Revit.IFC.Common.dll</HintPath>
 	  <Private>False</Private>
     </Reference>
+    <Reference Include="Revit.IFC.Export">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(RevitExePath)\Revit.IFC.Export.dll</HintPath>
+	  <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup />
     <!--

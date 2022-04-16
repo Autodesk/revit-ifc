@@ -25,6 +25,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Toolkit;
 
@@ -123,6 +124,39 @@ namespace Revit.IFC.Export.Utility
          return new Color(0x7f, 0x7f, 0x7f);
       }
 
+      public static IFCAnyHandle CreateMaterialList(IFCFile file, IList<IFCAnyHandle> materials)
+      {
+         string hash = string.Empty;
+         foreach (IFCAnyHandle material in materials)
+         {
+            string matName = IFCAnyHandleUtil.GetStringAttribute(material, "Name");
+            hash += "Material:" + matName + ",";
+         }
+         IFCAnyHandle matList = ExporterCacheManager.MaterialSetUsageCache.GetHandle(hash);
+         if (matList == null)
+         {
+            matList = IFCInstanceExporter.CreateMaterialList(file, materials);
+            ExporterCacheManager.MaterialSetUsageCache.AddHash(matList, hash);
+         }
+         return matList;
+      }
+
+      public static IFCAnyHandle CreateMaterialLayerSetUsage(IFCFile file, IFCAnyHandle materialLayerSet, IFCLayerSetDirection direction,
+          IFCDirectionSense directionSense, double offset)
+      {
+         string materialLayerSetName = IFCAnyHandleUtil.GetStringAttribute(materialLayerSet, "LayerSetName");
+         string hash = materialLayerSetName + ":" + direction.ToString() + ":" +
+            directionSense.ToString() + ":" + offset.ToString();
+         IFCAnyHandle matSetUsage = ExporterCacheManager.MaterialSetUsageCache.GetHandle(hash);
+         if (matSetUsage == null)
+         {
+            matSetUsage = IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet,
+               direction, directionSense, offset);
+            ExporterCacheManager.MaterialSetUsageCache.AddHash(matSetUsage, hash);
+         }
+         return matSetUsage;
+      }
+
       /// <summary>
       /// Gets the color of the material of the category of an element.
       /// </summary>
@@ -163,7 +197,13 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
-      public static Autodesk.Revit.DB.Color GetElementColorAndTransparency(Element element, out double opacity)
+      /// <summary>
+      /// Get the element color and opacity from the material associated to an element's category, if any.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="opacity">The return opacity value.</param>
+      /// <returns>The material color.</returns>
+      public static Color GetElementColorAndOpacityFromCategory(Element element, out double opacity)
       {
          opacity = 1.0;
          Category category = element.Category;
@@ -309,15 +349,17 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Create material association with inputs of 2 IFCAnyHandle. It is used for example to create material relation between an instance and its material set usage
       /// </summary>
-      /// <param name="exporterIFC">the exporter IFC</param>
       /// <param name="instanceHnd">the instance handle</param>
       /// <param name="materialSetHnd">the material usage handle, e.g. material set usage</param>
-      public static void CreateMaterialAssociation(ExporterIFC exporterIFC, IFCAnyHandle instanceHnd, IFCAnyHandle materialSetHnd)
+      /// <returns>True if added, false otherwise.</returns>
+      public static bool CreateMaterialAssociation(IFCAnyHandle instanceHnd, IFCAnyHandle materialSetHnd)
       {
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(materialSetHnd) && !IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHnd))
-         {
-            ExporterCacheManager.MaterialRelationsCache.Add(materialSetHnd, instanceHnd);
-         }
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(materialSetHnd) ||
+             IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHnd))
+            return false;
+         
+         ExporterCacheManager.MaterialRelationsCache.Add(materialSetHnd, instanceHnd);
+         return true;
       }
 
       /// <summary>
@@ -413,10 +455,10 @@ namespace Revit.IFC.Export.Utility
          }
          else
          {
-            materialContainerHnd = IFCInstanceExporter.CreateMaterialList(file, materials.ToList());
+            materialContainerHnd = CreateMaterialList(file, materials.ToList());
          }
 
-         ExporterCacheManager.MaterialRelationsCache.Add(materialContainerHnd, instanceHandle);
+         ExporterCacheManager.MaterialSetUsageCache.Add(materialContainerHnd, instanceHandle);
       }
 
       /// <summary>
@@ -547,9 +589,40 @@ namespace Revit.IFC.Export.Utility
          }
          else
          {
-            materialContainerHnd = IFCInstanceExporter.CreateMaterialList(file, materials);
-            ExporterCacheManager.MaterialRelationsCache.Add(materialContainerHnd, instanceHandle);
+            materialContainerHnd = CreateMaterialList(file, materials);
+            ExporterCacheManager.MaterialSetUsageCache.Add(materialContainerHnd, instanceHandle);
          }
+      }
+
+      public static void TryToCreateMaterialAssocation(ExporterIFC exporterIFC, BodyData bodyData,
+         Element elementType, Element element, GeometryElement exportGeometry, IFCAnyHandle typeStyle,
+         FamilyTypeInfo typeInfo)
+      {
+         if (bodyData != null && bodyData.RepresentationItemInfo != null &&
+            bodyData.RepresentationItemInfo.Count > 0)
+         {
+            CreateMaterialAssociationWithShapeAspect(exporterIFC,
+               elementType, typeStyle, bodyData.RepresentationItemInfo);
+            return;
+         }
+
+         bool addedMaterialAssociation = false;
+
+         IList<ElementId> matIds = BodyExporter.GetMaterialIdsFromGeometryOrParameters(exportGeometry,
+            elementType, element);
+         if (matIds.Count > 0)
+         {
+            CreateMaterialAssociation(exporterIFC, typeStyle, matIds);
+            addedMaterialAssociation = true;
+
+            if (typeInfo.MaterialIdList.Count == 0)
+               typeInfo.MaterialIdList = matIds;
+         }
+
+         if (!addedMaterialAssociation)
+            CreateMaterialAssociation(exporterIFC, typeStyle, typeInfo.MaterialIdList);
+
+         return;
       }
 
       public static IFCAnyHandle GetOrCreateMaterialStyle(Document document, IFCFile file, ElementId materialId)

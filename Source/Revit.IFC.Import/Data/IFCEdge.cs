@@ -30,27 +30,15 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCEdge : IFCTopologicalRepresentationItem
    {
-      private IFCVertex m_EdgeStart;
-
-      private IFCVertex m_EdgeEnd;
-
       /// <summary>
       /// Start point of the edge
       /// </summary>
-      public IFCVertex EdgeStart
-      {
-         get { return m_EdgeStart; }
-         set { m_EdgeStart = value; }
-      }
+      public IFCVertex EdgeStart { get; protected set; } = null;
 
       /// <summary>
       /// End point of the edge
       /// </summary>
-      public IFCVertex EdgeEnd
-      {
-         get { return m_EdgeEnd; }
-         set { m_EdgeEnd = value; }
-      }
+      public IFCVertex EdgeEnd { get; protected set; } = null;
 
       protected IFCEdge()
       {
@@ -65,22 +53,35 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcEdge);
 
-         IFCAnyHandle edgeStart = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcEdge, "EdgeStart", false);
+         // The ODA toolkit doesn't support derived attributes.  As such, we will
+         // let IfcOrientedEdge compute them.
+         IFCAnyHandle edgeStart = IFCImportHandleUtil.GetOptionalInstanceAttribute(ifcEdge, "EdgeStart");
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(edgeStart))
          {
-            Importer.TheLog.LogError(ifcEdge.StepId, "Cannot find the starting vertex", true);
-            return;
+            if (!(this is IFCOrientedEdge))
+            {
+               Importer.TheLog.LogError(ifcEdge.StepId, "Cannot find the starting vertex", true);
+               return;
+            }
+         }
+         else
+         {
+            EdgeStart = IFCVertex.ProcessIFCVertex(edgeStart);
          }
 
-         IFCAnyHandle edgeEnd = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcEdge, "EdgeEnd", false);
+         IFCAnyHandle edgeEnd = IFCImportHandleUtil.GetOptionalInstanceAttribute(ifcEdge, "EdgeEnd");
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(edgeEnd))
          {
-            Importer.TheLog.LogError(ifcEdge.StepId, "Cannot find the ending vertex", true);
-            return;
+            if (!(this is IFCOrientedEdge))
+            {
+               Importer.TheLog.LogError(ifcEdge.StepId, "Cannot find the ending vertex", true);
+               return;
+            }
          }
-
-         EdgeStart = IFCVertex.ProcessIFCVertex(edgeStart);
-         EdgeEnd = IFCVertex.ProcessIFCVertex(edgeEnd);
+         else
+         {
+            EdgeEnd = IFCVertex.ProcessIFCVertex(edgeEnd);
+         }
       }
 
       /// <summary>
