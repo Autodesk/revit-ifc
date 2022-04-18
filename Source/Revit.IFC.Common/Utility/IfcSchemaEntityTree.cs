@@ -379,7 +379,7 @@ namespace Revit.IFC.Common.Utility
       static public IfcSchemaEntityNode FindNonAbsInstanceSuperType(IFCVersion context, string typeName)
       {
          string contextName = SchemaName(context);
-         return FindNonAbsInstanceSuperType(context, typeName);
+         return FindNonAbsInstanceSuperType(contextName, typeName);
       }
 
       /// <summary>
@@ -490,8 +490,8 @@ namespace Revit.IFC.Common.Utility
       /// <returns>List of the supertypes</returns>
       static public IList<IfcSchemaEntityNode> FindAllSuperTypes(IFCVersion context, string entityName, params string[] stopNode)
       {
-         string schemaName = SchemaName(context);
-         return FindAllSuperTypes(schemaName, entityName, stopNode);
+         string contextName = SchemaName(context);
+         return FindAllSuperTypes(contextName, entityName, stopNode);
       }
 
       static public IList<IfcSchemaEntityNode> FindAllSuperTypes(string context, string entityName, params string[] stopNode)
@@ -555,8 +555,8 @@ namespace Revit.IFC.Common.Utility
       /// <returns>true if it is subtype</returns>
       static public bool IsSubTypeOf(IFCVersion context, string subTypeName, string superTypeName, bool strict = true)
       {
-         string schemaName = SchemaName(context);
-         return IsSubTypeOf(schemaName, subTypeName, superTypeName, strict);
+         string contextName = SchemaName(context);
+         return IsSubTypeOf(contextName, subTypeName, superTypeName, strict);
       }
 
       /// <summary>
@@ -596,8 +596,8 @@ namespace Revit.IFC.Common.Utility
       /// <returns>true if it is supertype</returns>
       static public bool IsSuperTypeOf(IFCVersion context, string superTypeName, string subTypeName, bool strict = true)
       {
-         string schemaName = SchemaName(context);
-         return IsSuperTypeOf(schemaName, subTypeName, superTypeName, strict);
+         string contextName = SchemaName(context);
+         return IsSuperTypeOf(contextName, subTypeName, superTypeName, strict);
       }
 
       /// <summary>
