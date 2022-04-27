@@ -1937,7 +1937,21 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if it is null or has no value, false otherwise.</returns>
       public static bool IsNullOrHasNoValue(IFCAnyHandle handle)
       {
-         return handle == null || !handle.HasValue;
+         if (handle == null || !handle.HasValue)
+            return true;
+
+         // Temporary code for 2022 until HasValue is set propertly when handle has become invalid
+         bool staleHandle = false;
+         try
+         {
+            string entityTypeName = handle.TypeName;
+         }
+         catch
+         {
+            staleHandle = true;
+         }
+
+         return staleHandle;
       }
 
       /// <summary>
