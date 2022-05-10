@@ -165,6 +165,8 @@ namespace Revit.IFC.Export.Utility
                ifcClassName = "IfcGroup";
             else if (element is ElectricalSystem)
                ifcClassName = "IfcSystem";
+            else if (element is Grid)
+               ifcClassName = "IfcGrid";     // In the German template somehow the Grid does not show up in the mapping table
             else
                return false;
          }

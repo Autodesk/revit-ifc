@@ -375,8 +375,10 @@ namespace Revit.IFC.Export.Utility
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && leftPosYArcCount == 0 )
             return "DOUBLE_SWING_RIGHT";
 
-         if (leftPosYArcCount > 0 && rightPosYArcCount > 0
+         if ((leftPosYArcCount > 0 && rightPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightNegYArcCount == 0)
+            || (leftNegYArcCount > 0 && rightNegYArcCount > 0
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftPosYArcCount == 0 && rightPosYArcCount == 0))
             return "DOUBLE_DOOR_SINGLE_SWING";
 
          if (leftPosYArcCount > 0 && rightPosYArcCount > 0 && leftNegYArcCount > 0 && rightNegYArcCount > 0
