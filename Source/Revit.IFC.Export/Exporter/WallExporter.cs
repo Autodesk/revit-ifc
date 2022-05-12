@@ -436,15 +436,7 @@ namespace Revit.IFC.Export.Exporter
          else
          {
             if (wallElement.HasPhases() && wallHasOpening)
-            {
                boundaryLoops = GetLoopsFromTopBottomFace(wallElement, exporterIFC);
-
-               // Can't handle the case where we have openings that are unhandledElementCutouts in ExtrusionExporter,
-               // it uses try/catch blocks and thows exception for unhandled openings, in WallExporter it produces incorrect boundaryLoops
-               if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView &&
-                  boundaryLoops != null && boundaryLoops.Count == 0)
-                  return null;
-            }
 
             if (boundaryLoops == null || boundaryLoops.Count == 0)
                boundaryLoops = originalBoundaryLoops;

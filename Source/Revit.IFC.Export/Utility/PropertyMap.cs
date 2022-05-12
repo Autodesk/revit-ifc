@@ -182,7 +182,7 @@ namespace Revit.IFC.Export.Utility
                {
                   string line;
 
-                  DatabaseIfc db = new DatabaseIfc(ReleaseVersion.IFC4A2);
+                  DatabaseIfc db = new DatabaseIfc(false, ReleaseVersion.IFC4);
                   IfcPropertySetTemplate userDefinedPset = null;
                   while ((line = sr.ReadLine()) != null)
                   {
