@@ -81,6 +81,14 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+	<ProjectReference Include="..\..\Source\Revit.IFC.Import.Core\Revit.IFC.Import.Core.csproj">
+      <Name>Revit.IFC.Import.Core</Name>
+      <Project>{C0B3C0DC-58EE-4876-9ACD-A0A8C82E92B4}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
   <PropertyGroup>

@@ -4,7 +4,7 @@
   <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2023" SeriesMax="R2023" />
   <Components Description="2023">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2023" SeriesMax="R2023" />
-    <ComponentEntry AppName="IFC For Revit 2023" Version="23.2.0" ModuleName="./Contents/2023/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2023" />
-    <ComponentEntry AppName="IFC For Revit 2023" Version="23.2.0" ModuleName="./Contents/2023/Revit.IFC.addin" AppDescription="IFC For Revit 2023" />
+    <ComponentEntry AppName="IFC For Revit 2023" Version="23.1.0" ModuleName="./Contents/2023/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2023" />
+    <ComponentEntry AppName="IFC For Revit 2023" Version="23.1.0" ModuleName="./Contents/2023/Revit.IFC.addin" AppDescription="IFC For Revit 2023" />
   </Components>
 </ApplicationPackage>
