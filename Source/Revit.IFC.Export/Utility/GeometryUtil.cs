@@ -4655,7 +4655,7 @@ namespace Revit.IFC.Export.Utility
                      trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
                      break;
                   case SiteTransformBasis.Site:
-                     xyz = surveyPoint.Position;
+                     xyz = rotationTrfAtInternal.OfPoint(surveyPoint.Position);
                      xyz = new XYZ(-xyz.X, -xyz.Y, -xyz.Z);
                      trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
                      break;
@@ -4665,7 +4665,7 @@ namespace Revit.IFC.Export.Utility
                      trf = CreateTransformFromVectorsAndOrigin(Transform.Identity.BasisX, Transform.Identity.BasisY, Transform.Identity.BasisZ, xyz);
                      break;
                   case SiteTransformBasis.ProjectInTN:
-                     xyz = projectBasePoint.Position;
+                     xyz = rotationTrfAtInternal.OfPoint(projectBasePoint.Position);
                      xyz = new XYZ(-xyz.X, -xyz.Y, -xyz.Z);
                      trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
                      break;
@@ -4674,7 +4674,7 @@ namespace Revit.IFC.Export.Utility
                      trf = CreateTransformFromVectorsAndOrigin(Transform.Identity.BasisX, Transform.Identity.BasisY, Transform.Identity.BasisZ, xyz);
                      break;
                   case SiteTransformBasis.InternalInTN:
-                     xyz = new XYZ(0.0, 0.0, 0.0);
+                     xyz = rotationTrfAtInternal.OfPoint(new XYZ(0.0, 0.0, 0.0));
                      trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
                      break;
                   default:
