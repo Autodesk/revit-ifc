@@ -1288,6 +1288,9 @@ namespace Revit.IFC.Export.Exporter
                      IFCAnyHandle flightHnd;
                      string stairName = NamingUtil.GetNameOverride(legacyStair, NamingUtil.GetIFCNamePlusIndex(legacyStair, ii + 1));
                      string ifcType = "NOTDEFINED";
+                     IFCExportInfoPair exportTypePair = ExporterUtil.GetExportType(exporterIFC, legacyStair, out ifcType);
+                     if (string.IsNullOrEmpty(ifcEnumType))
+                        ifcEnumType = ifcType;
 
                      string flightGUID = GUIDUtil.CreateSubElementGUID(legacyStair, ii + (int) IFCStairSubElements.FlightIdOffset);
                      if (isRamp)
@@ -1461,6 +1464,11 @@ namespace Revit.IFC.Export.Exporter
                   }
 
                   List<IFCAnyHandle> createdStairs = new List<IFCAnyHandle>();
+                  if (!string.IsNullOrEmpty(ifcEnumType))
+                  {
+                     IFCExportInfoPair exportTypePair = ExporterUtil.GetExportType(exporterIFC, legacyStair, out ifcEnumType);
+                  }
+
                   if (isRamp)
                   {
                      string rampType = RampExporter.GetIFCRampType(ifcEnumType);

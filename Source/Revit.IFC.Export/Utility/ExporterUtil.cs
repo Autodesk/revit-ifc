@@ -1560,17 +1560,23 @@ namespace Revit.IFC.Export.Utility
 
          if (exportType.IsUnKnown && !string.IsNullOrEmpty(ifcClassName))
          {
-            enumTypeValue = GetIFCTypeFromExportTable(exporterIFC, element);
+            if (string.IsNullOrEmpty(enumTypeValue))
+               enumTypeValue = GetIFCTypeFromExportTable(exporterIFC, element);
             // if using name, override category id if match is found.
             if (!ifcClassName.Equals("Default", StringComparison.OrdinalIgnoreCase))
+            {
                exportType = ElementFilteringUtil.GetExportTypeFromClassName(ifcClassName);
+               exportType.ValidatedPredefinedType = enumTypeValue;
+            }
          }
 
          // if not set, fall back on category id.
          if (exportType.IsUnKnown)
          {
             //bool exportSeparately = true;
-            exportType = ElementFilteringUtil.GetExportTypeFromCategoryId(categoryId, out enumTypeValue /*, out bool exportSeparately*/);
+            exportType = ElementFilteringUtil.GetExportTypeFromCategoryId(categoryId, out string enumType /*, out bool exportSeparately*/);
+            if (string.IsNullOrEmpty(enumTypeValue))
+               enumTypeValue = enumType;
          }
 
          // If Element is contained within a Group that is exported as IfcFurniture, it should be exported as an IfcSystemFurnitureElement

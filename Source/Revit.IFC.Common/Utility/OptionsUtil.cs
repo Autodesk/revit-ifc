@@ -319,8 +319,8 @@ namespace Revit.IFC.Common.Utility
                }
                else if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("Axis", StringComparison.InvariantCultureIgnoreCase))
                {
-                  uom = reader.GetAttribute("uom");
-                  uom = uom.Replace("Meter", "Metre");
+                  uom = reader.GetAttribute("uom").ToUpper();
+                  uom = uom.Replace("METER", "METRE");
                }
             }
          }

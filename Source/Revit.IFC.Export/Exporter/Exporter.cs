@@ -4007,16 +4007,35 @@ namespace Revit.IFC.Export.Exporter
 
          // Handle map unit
          IFCAnyHandle crsMapUnit = null;
+         ForgeTypeId utId = UnitTypeId.Meters;
          if (!string.IsNullOrEmpty(crsMapUnitStr))
          {
-            if (crsMapUnitStr.EndsWith("Metre", StringComparison.InvariantCultureIgnoreCase))
+            if (crsMapUnitStr.EndsWith("Metre", StringComparison.InvariantCultureIgnoreCase) || crsMapUnitStr.EndsWith("Meter", StringComparison.InvariantCultureIgnoreCase))
             {
                IFCSIPrefix? prefix = null;
                if (crsMapUnitStr.Length > 5)
                {
                   string prefixStr = crsMapUnitStr.Substring(0, crsMapUnitStr.Length - 5);
                   if (Enum.TryParse(prefixStr, true, out IFCSIPrefix prefixEnum))
+                  {
                      prefix = prefixEnum;
+                     switch (prefix)
+                     {
+                        // Handle SI Units from MM to M. Somehow UnitTypeId does not have larger than M units (It is unlikely to have it in the EPSG anyway)
+                        case IFCSIPrefix.Deci:
+                           utId = UnitTypeId.Decimeters;
+                           break;
+                        case IFCSIPrefix.Centi:
+                           utId = UnitTypeId.Centimeters;
+                           break;
+                        case IFCSIPrefix.Milli:
+                           utId = UnitTypeId.Millimeters;
+                           break;
+                        default:
+                           utId = UnitTypeId.Meters;
+                           break;
+                     }
+                  }
                }
                crsMapUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.LengthUnit, prefix, IFCSIUnitName.Metre);
             }
@@ -4054,9 +4073,9 @@ namespace Revit.IFC.Export.Exporter
          projectedCRS = IFCInstanceExporter.CreateProjectedCRS(file, epsgCode, crsDescription, crsGeodeticDatum, crsVerticalDatum, crsMapProjection, crsMapZone, crsMapUnit);
 
          // Only eastings, northings, and orthogonalHeight are mandatory beside the CRSSource (GeometricRepresentationContext) and CRSTarget (ProjectedCRS)
-         double eastings = UnitUtil.ScaleLength(geoRefInfo.eastings);
-         double northings = UnitUtil.ScaleLength(geoRefInfo.northings);
-         double orthogonalHeight = UnitUtil.ScaleLength(geoRefInfo.orthogonalHeight);
+         double eastings = UnitUtils.ConvertFromInternalUnits(geoRefInfo.eastings, utId);
+         double northings = UnitUtils.ConvertFromInternalUnits(geoRefInfo.northings, utId);
+         double orthogonalHeight = UnitUtils.ConvertFromInternalUnits(geoRefInfo.orthogonalHeight, utId);
          IFCAnyHandle mapConversionHnd = IFCInstanceExporter.CreateMapConversion(file, geomRepContext, projectedCRS, eastings, northings, orthogonalHeight, xAxisAbscissa, xAxisOrdinate, scale);
 
          return true;
