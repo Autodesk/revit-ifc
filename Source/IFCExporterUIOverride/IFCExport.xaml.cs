@@ -244,12 +244,11 @@ namespace BIM.IFC.Export.UI
          UpdateCurrentSelectedSetupCombo(selectedConfigName);
          UpdateOpenedProjectsListView(app);
 
-#if IFC_OPENSOURCE
-         Title = Properties.Resources.ExportIFC + " (" + IFCUISettings.GetAssemblyVersionForUI() + ")";
-#else
          Title = Properties.Resources.ExportIFC;
+#if IFC_OPENSOURCE
+         versionLabel.Content = IFCUISettings.GetAssemblyVersionForUI();
 #endif
-         
+
          TheDocument = UpdateOpenedProject(app);
 
          int docToExport = GetDocumentExportCount();

@@ -1254,6 +1254,7 @@ namespace Revit.IFC.Common.Utility
          }
          catch
          {
+            return default(T);
          }
 
          T aggregateAttribute = default(T);

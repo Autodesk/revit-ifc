@@ -213,11 +213,11 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
-xcopy "$(TargetDir)IFC*.xsd" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
-xcopy "$(TargetDir)IFC*.exp" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
-xcopy "$(TargetDir)IFC Shared Parameters*.txt" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
-xcopy "$(TargetDir)IFCCertifiedEntitiesAndPSets.json" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2021.bundle\Contents\2021\" /F /R /Y /I
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2022.bundle\Contents\2022\" /F /R /Y /I
+xcopy "$(TargetDir)IFC*.xsd" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2022.bundle\Contents\2022\" /F /R /Y /I
+xcopy "$(TargetDir)IFC*.exp" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2022.bundle\Contents\2022\" /F /R /Y /I
+xcopy "$(TargetDir)IFC Shared Parameters*.txt" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2022.bundle\Contents\2022\" /F /R /Y /I
+xcopy "$(TargetDir)IFCCertifiedEntitiesAndPSets.json" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2022.bundle\Contents\2022\" /F /R /Y /I
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
