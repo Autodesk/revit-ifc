@@ -241,7 +241,14 @@ namespace Revit.IFC.Import.Data
          Parameter existingParameter = null;
          bool elementIsType = (element is ElementType);
          string typeString = elementIsType ? " " + Resources.IFCTypeSchedule : string.Empty;
-         string originalParameterName = Name + "(" + propertySetName + typeString + ")";
+
+         // Navisworks uses this engine and needs support for the old naming.
+         // We use the API-only UseStreamlinedOptions as a proxy for knowing this.
+         string originalParameterName =
+            IFCImportFile.TheFile.Options.UseStreamlinedOptions ?
+            Name + "(" + propertySetName + typeString + ")" :
+            propertySetName + "." + Name + typeString;
+
          string parameterName = originalParameterName;
 
          if (parameterGroupMap.TryFindParameter(parameterName, out existingParameter))

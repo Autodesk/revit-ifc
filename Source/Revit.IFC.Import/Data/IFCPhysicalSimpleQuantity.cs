@@ -165,7 +165,14 @@ namespace Revit.IFC.Import.Data
             baseValue;
          
          Parameter existingParameter = null;
-         string originalParameterName = Name + "(" + propertySetName + ")";
+
+         // Navisworks uses this engine and needs support for the old naming.
+         // We use the API-only UseStreamlinedOptions as a proxy for knowing this.
+         string originalParameterName =
+            IFCImportFile.TheFile.Options.UseStreamlinedOptions ?
+            Name + "(" + propertySetName + ")" :
+            propertySetName + "." + Name;
+
          string parameterName = originalParameterName;
 
          if (!parameterGroupMap.TryFindParameter(parameterName, out existingParameter))

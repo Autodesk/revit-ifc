@@ -1150,7 +1150,6 @@ namespace Revit.IFC.Export.Exporter
 
                            if (isCurtainPanel)
                            {
-                              bodyExporterOptions.ExtrusionLocalCoordinateSystem = orientationTrf;
                               bodyExporterOptions.TryToExportAsExtrusion = true;
                               extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXYZ;
                            }

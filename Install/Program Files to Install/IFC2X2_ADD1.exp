@@ -4064,12 +4064,8 @@ ENTITY IfcElement
  INVERSE
 	FillsVoids : SET [0:1] OF IfcRelFillsElement FOR RelatedBuildingElement;
 	ConnectedTo : SET [0:?] OF IfcRelConnectsElements FOR RelatingElement;
-	HasCoverings : SET [0:?] OF IfcRelCoversBldgElements FOR RelatingBuildingElement;
-	HasProjections : SET [0:?] OF IfcRelProjectsElement FOR RelatingElement;
 	HasPorts : SET [0:?] OF IfcRelConnectsPortToElement FOR RelatedElement;
 	HasOpenings : SET [0:?] OF IfcRelVoidsElement FOR RelatingBuildingElement;
-	IsConnectionRealization : SET [0:?] OF IfcRelConnectsWithRealizingElements FOR RealizingElements;
-	ProvidesBoundaries : SET [0:?] OF IfcRelSpaceBoundary FOR RelatedBuildingElement;
 	ConnectedFrom : SET [0:?] OF IfcRelConnectsElements FOR RelatedElement;
 	ContainedInStructure : SET [0:1] OF IfcRelContainedInSpatialStructure FOR RelatedElements;
 END_ENTITY;
@@ -5110,7 +5106,6 @@ ENTITY IfcObject
  INVERSE
 	IsDefinedBy : SET [0:?] OF IfcRelDefines FOR RelatedObjects;
 	HasAssociations : SET [0:?] OF IfcRelAssociates FOR RelatedObjects;
-	HasAssignments : SET [0:?] OF IfcRelAssigns FOR RelatedObjects;
 	Decomposes : SET [0:1] OF IfcRelDecomposes FOR RelatedObjects;
 	IsDecomposedBy : SET [0:?] OF IfcRelDecomposes FOR RelatingObject;
  WHERE
@@ -5122,6 +5117,7 @@ ENTITY IfcObjectPlacement
 	(IfcGridPlacement
 	,IfcLocalPlacement));
  INVERSE
+	PlacesObject : SET [0:?] OF IfcProduct FOR ObjectPlacement;
 	ReferencedByPlacements : SET [0:?] OF IfcLocalPlacement FOR PlacementRelTo;
 END_ENTITY;
 
@@ -5709,10 +5705,6 @@ ENTITY IfcProperty
 	,IfcSimpleProperty));
 	Name : IfcIdentifier;
 	Description : OPTIONAL IfcText;
- INVERSE
-	PropertyForDependance : SET [0:?] OF IfcPropertyDependencyRelationship FOR DependingProperty;
-	PropertyDependsOn : SET [0:?] OF IfcPropertyDependencyRelationship FOR DependantProperty;
-	PartOfComplex : SET [0:1] OF IfcComplexProperty FOR HasProperties;
 END_ENTITY;
 
 ENTITY IfcPropertyBoundedValue
@@ -6446,8 +6438,6 @@ ENTITY IfcRepresentation
 	RepresentationIdentifier : OPTIONAL IfcLabel;
 	RepresentationType : OPTIONAL IfcLabel;
 	Items : SET [1:?] OF IfcRepresentationItem;
- INVERSE
-	OfProductRepresentation : SET [0:1] OF IfcProductRepresentation FOR Representations;
 END_ENTITY;
 
 ENTITY IfcRepresentationContext
@@ -6465,6 +6455,8 @@ ENTITY IfcRepresentationItem
 	,IfcMappedItem
 	,IfcStyledItem
 	,IfcTopologicalRepresentationItem));
+ INVERSE
+	StyledByItem : SET [0:1] OF IfcStyledItem FOR Item;
 END_ENTITY;
 
 ENTITY IfcRepresentationMap;
@@ -6634,8 +6626,6 @@ END_ENTITY;
 
 ENTITY IfcShapeRepresentation
  SUBTYPE OF (IfcRepresentation);
- INVERSE
-	OfShapeAspect : SET [0:1] OF IfcShapeAspect FOR ShapeRepresentations;
  WHERE
 	WR21 : 'IFC2X2_FINAL.IFCGEOMETRICREPRESENTATIONCONTEXT' 
              IN TYPEOF(SELF\IfcRepresentation.ContextOfItems);
