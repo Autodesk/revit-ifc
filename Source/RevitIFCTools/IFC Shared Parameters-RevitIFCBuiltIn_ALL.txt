@@ -5353,8 +5353,8 @@ PARAM	87adba3c-673d-472e-b079-8e4c5caa1436	Qto_BuildingBaseQuantities.NetVolume	
 GROUP	520	Qto_BuildingElementProxyQuantities
 *PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE
 #
-PARAM	71acb583-df81-4514-a1d4-20d4644654d9	Qto_BuildingElementProxyQuantities.NetSurfaceArea	INTEGER		520	1	IfcCountMeasure	1
-PARAM	c4b592a7-d56c-4a4d-96aa-0ead3ae7205d	Qto_BuildingElementProxyQuantities.NetVolume	INTEGER		520	1	IfcCountMeasure	1
+PARAM	71acb583-df81-4514-a1d4-20d4644654d9	Qto_BuildingElementProxyQuantities.NetSurfaceArea	AREA		520	1	IfcAreaMeasure	1
+PARAM	c4b592a7-d56c-4a4d-96aa-0ead3ae7205d	Qto_BuildingElementProxyQuantities.NetVolume	VOLUME		520	1	IfcVolumeMeasure	1
 #
 GROUP	521	Qto_BuildingStoreyBaseQuantities
 *PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE
@@ -5931,14 +5931,13 @@ PARAM	88125f36-db46-4998-a16d-605bf75cb83f	ClassificationCode(9)	TEXT		2	1		1
 PARAM	0a531080-2060-4bc6-802b-9230d35ac14d	ClassificationCode(10)	TEXT		2	1		1
 PARAM	26f1bba3-a3cb-4fbc-ba29-d7650f1bcb4b	Assembly Code	TEXT		2	1	Uniformat Classification	1
 PARAM	b623d495-dc76-46cb-ac7b-bfe126728bf2	Assembly Description	TEXT		2	1	Uniformat Classification	1
-PARAM	33c16c61-6659-4117-9de9-61841142aa81	ProjectGlobalPositioning.Scale	NUMBER		2	1		1
-PARAM	9ed03820-7425-4d90-868e-2ab0f5319495	ProjectGlobalPositioning.CRSName	TEXT		2	1		1
-PARAM	e4090d66-012c-45fe-9ac9-4cfe51c0dd29	ProjectGlobalPositioning.CRSDescription	TEXT		2	1		1
-PARAM	e66c0e06-0383-480f-854e-950bb0d435f8	ProjectGlobalPositioning.CRSGeodeticDatum	TEXT		2	1		1
-PARAM	bc47059f-e418-41f2-85b9-8b556dacae5e	ProjectGlobalPositioning.CRSVerticalDatum	TEXT		2	1		1
-PARAM	b1d60aea-e267-4ca1-b899-cb06d5eaa9c8	ProjectGlobalPositioning.CRSMapProjection	TEXT		2	1		1
-PARAM	91150f20-dc6c-4691-be1e-fe0ed0dfae6f	ProjectGlobalPositioning.CRSMapZone	TEXT		2	1		1
-PARAM	093a80c9-4a77-4076-a71c-041e3521608c	ProjectGlobalPositioning.CRSMapUnit	TEXT		2	1		1
+PARAM	9ed03820-7425-4d90-868e-2ab0f5319495	IfcProjectedCRS.Name	TEXT		2	1		1
+PARAM	e4090d66-012c-45fe-9ac9-4cfe51c0dd29	IfcProjectedCRS.Description	TEXT		2	1		1
+PARAM	e66c0e06-0383-480f-854e-950bb0d435f8	IfcProjectedCRS.GeodeticDatum	TEXT		2	1		1
+PARAM	bc47059f-e418-41f2-85b9-8b556dacae5e	IfcProjectedCRS.VerticalDatum	TEXT		2	1		1
+PARAM	b1d60aea-e267-4ca1-b899-cb06d5eaa9c8	IfcProjectedCRS.MapProjection	TEXT		2	1		1
+PARAM	91150f20-dc6c-4691-be1e-fe0ed0dfae6f	IfcProjectedCRS.MapZone	TEXT		2	1		1
+PARAM	093a80c9-4a77-4076-a71c-041e3521608c	IfcProjectedCRS.MapUnit	TEXT		2	1		1
 PARAM	9c5ad3aa-75d4-448a-a75c-db72ae2139f8	IfcQtyDepth	LENGTH		2	1		1
 PARAM	90d03a57-2f8c-4c2f-b478-4c43c164e8d2	IfcQtyLength	LENGTH		2	1		1
 PARAM	7da39469-0a4a-4e77-8ddd-f4204f1a4001	IfcQtyWidth	LENGTH		2	1		1
@@ -6064,3 +6063,8 @@ PARAM	9fa581b0-bab3-4926-9dce-f01cd8326b95	SecondTransomOffset	LENGTH		2	1		1
 PARAM	5d4d24aa-2147-40fb-b5f8-cae80691dfec	MullionThickness	LENGTH		2	1		1
 PARAM	97385d06-1f09-43f4-8d0d-d41809c2df9c	FirstMullionOffset	LENGTH		2	1		1
 PARAM	a766f4c3-f32f-4c85-b750-0cd593d23ad7	SecondMullionOffset	LENGTH		2	1		1
+PARAM	ceb8fb2c-b22c-4165-925a-cac1d338cc4e	IfcDistributionSystem	TEXT		2	1		1
+PARAM	1134e004-9d8d-4a61-b471-a259078b4efd	IfcDistributionSystemPredefinedType	TEXT		2	1		1
+PARAM	b4e68375-fcc3-48f1-bc62-f6b913b20061	IfcSystem	TEXT		2	1		1
+PARAM	5ab20e24-77de-4128-98ea-1107031a2824	IfcWindowStyle.ConstructionType	TEXT		2	1		1
+PARAM	18f02068-e293-4868-bf1f-90deae7ae32b	IfcDoorStyle.ConstructionType	TEXT		2	1		1

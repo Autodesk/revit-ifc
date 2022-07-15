@@ -5353,8 +5353,8 @@ PARAM	6322d776-637e-47a8-9e90-8920d8687b69	Qto_BuildingBaseQuantities.NetVolume[
 GROUP	520	Qto_BuildingElementProxyQuantities
 *PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE
 #
-PARAM	7ef9b8da-44fd-462a-8fb2-e1c7edab441c	Qto_BuildingElementProxyQuantities.NetSurfaceArea[Type]	INTEGER		520	1	IfcCountMeasure	1
-PARAM	42e3720b-ed21-4b81-8dab-da55ea64f1f6	Qto_BuildingElementProxyQuantities.NetVolume[Type]	INTEGER		520	1	IfcCountMeasure	1
+PARAM	7ef9b8da-44fd-462a-8fb2-e1c7edab441c	Qto_BuildingElementProxyQuantities.NetSurfaceArea[Type]	AREA		520	1	IfcAreaMeasure	1
+PARAM	42e3720b-ed21-4b81-8dab-da55ea64f1f6	Qto_BuildingElementProxyQuantities.NetVolume[Type]	VOLUME		520	1	IfcVolumeMeasure	1
 #
 GROUP	521	Qto_BuildingStoreyBaseQuantities
 *PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE
@@ -5985,3 +5985,5 @@ PARAM	93ade552-8d24-473c-a7f0-48b2ddaf1588	FirstMullionOffset[Type]	LENGTH		2	1	
 PARAM	1ea5ba6d-0447-43a5-8f5c-8a905c42ffb0	SecondMullionOffset[Type]	LENGTH		2	1		1
 PARAM	4a37833e-59c1-4532-8fe0-2a0f5214c2ad	FrameDepth[Type]	LENGTH		2	1		1
 PARAM	b552f0e3-1bc1-496b-a001-08b1f4a9a251	FrameThickness[Type]	LENGTH		2	1		1
+PARAM	d130bd1c-b24f-4d51-af57-a87514c2b47d	IfcWindowStyle.ConstructionType[Type]	TEXT		2	1		1
+PARAM	57ce242a-2907-4224-a400-e2e03c6a647d	IfcDoorStyle.ConstructionType[Type]	TEXT		2	1		1
