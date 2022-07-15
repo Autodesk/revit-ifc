@@ -121,6 +121,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                if (standardPass > 1)
                   classificationCodeFieldName += "(" + standardPass + ")";
                standardPass++;
+
+               // The FieldName could already be processed during custom passes
+               if (ExporterCacheManager.ClassificationCache.CustomClassificationCodeNames.Contains(classificationCodeFieldName))
+                  continue;
             }
 
             if (ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, classificationCodeFieldName,
