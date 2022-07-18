@@ -6,7 +6,7 @@ using System.Reflection;
 [assembly: AssemblyTitle("IFC Import for Revit")]
 [assembly: AssemblyDescription("IFC Exporter for Revit Project")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Autodesk, Inc.")]
+[assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("Autodesk.IFC.Export.UI")]
 [assembly: AssemblyCopyright("© 2012-2021 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]

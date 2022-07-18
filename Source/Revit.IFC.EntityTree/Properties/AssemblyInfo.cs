@@ -27,7 +27,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 
 // Company, Product and Copyright info can now be found in Foundation\RevitENU\Version.cs
-[assembly: AssemblyCompany("Autodesk, Inc.")]
+[assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("Autodesk.IFC.Export.UI")]
 [assembly: AssemblyCopyright("© 2012-2021 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
