@@ -7,7 +7,7 @@ using System.Reflection;
 [assembly: AssemblyTitle("IFC Common for Revit")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Autodesk, Inc.")]
+[assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("IFC Import/Exporter for Revit")]
 [assembly: AssemblyCopyright("© 2012-2022 Autodesk, Inc.All rights reserved.")]
 [assembly: AssemblyTrademark("")]

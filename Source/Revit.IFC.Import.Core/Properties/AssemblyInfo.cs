@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: Guid("b1e159b7-4b12-45a9-b83f-159e37798d44")]
 [assembly: AssemblyTitle("Revit.IFC.Import.Core")]
 [assembly: AssemblyDescription("Revit.IFC.Import.Core")]
-[assembly: AssemblyCompany("Autodesk, Inc.")]
+[assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyCopyright("@2012-2023 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyVersion("23.1.0.0")]
 [assembly: AssemblyFileVersion("23.1.0.0")]

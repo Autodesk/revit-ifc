@@ -30,7 +30,7 @@ using System.Windows;
 
 // Company, Product and Copyright info can now be found in Foundation\RevitENU\Version.cs
 #if IFC_OPENSOURCE
-[assembly: AssemblyCompany("Autodesk, Inc.")]
+[assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("Autodesk.IFC.Export.UI")]
 [assembly: AssemblyCopyright("© 2012-2022 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]

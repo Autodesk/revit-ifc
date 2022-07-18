@@ -10,7 +10,7 @@ using System.Windows;
 [assembly: AssemblyTitle("RevitIFCTools")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Autodesk Inc.")]
+[assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("RevitIFCTools")]
 [assembly: AssemblyCopyright("Copyright ©  2012-2022")]
 [assembly: AssemblyTrademark("")]
