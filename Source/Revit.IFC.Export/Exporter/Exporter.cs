@@ -3274,7 +3274,7 @@ namespace Revit.IFC.Export.Exporter
             double volumetricFlowRateFactor = UnitUtils.ConvertFromInternalUnits(1.0, forgeTypeId);
 
             ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, 3));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, volumetricFlowRateLenUnit, 3));
             elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, timeSIUnit, -1));
 
             IFCAnyHandle volumetricFlowRateUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
