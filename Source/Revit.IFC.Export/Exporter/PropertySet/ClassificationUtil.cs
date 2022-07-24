@@ -28,6 +28,7 @@ using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using System.Text.RegularExpressions;
 using Revit.IFC.Common.Extensions;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
@@ -42,13 +43,30 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
+      /// Creates uniformat classification for a single element handle
+      /// </summary>
+      /// <param name="exporterIFC">The ExporterIFC</param>
+      /// <param name="file">the file</param>
+      /// <param name="element">the element</param>
+      /// <param name="elemHnd">the element handle</param>
+      public static void CreateUniformatClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IFCAnyHandle elemHnd)
+      {
+         IFCEntityType entType = IFCEntityType.IfcObjectDefinition;
+         if (!Enum.TryParse<IFCEntityType>(elemHnd.TypeName, out IFCEntityType hndEntType))
+            entType = hndEntType;
+         IList<IFCAnyHandle> elemHnds = new List<IFCAnyHandle>() { elemHnd };
+         CreateUniformatClassification(exporterIFC, file, element, elemHnds, entType);
+      }
+
+      /// <summary>
       /// Creates uniformat classification.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC.</param>
       /// <param name="file">The file.</param>
       /// <param name="element">The element.</param>
-      /// <param name="elemHnd">The element handle.</param>
-      public static void CreateUniformatClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IFCAnyHandle elemHnd)
+      /// <param name="elemHnds">The list of element handles that are part of the aggregate of the element.</param>
+      /// <param name="constraintEntType">The IFC entity of which type the classification to be considered</param>
+      public static void CreateUniformatClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IList<IFCAnyHandle> elemHnds, IFCEntityType constraintEntType)
       {
          if (ExporterCacheManager.ClassificationCache.UniformatOverriden)
             return;
@@ -73,8 +91,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          }
 
          if (!String.IsNullOrEmpty(uniformatCode))
-            InsertClassificationReference(exporterIFC, file, elemHnd, uniformatKeyString, uniformatCode, uniformatDescription, GetUniformatURL());
-
+         {
+            foreach (IFCAnyHandle elemHnd in elemHnds)
+            {
+               if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
+                  InsertClassificationReference(exporterIFC, file, elemHnd, uniformatKeyString, uniformatCode, uniformatDescription, GetUniformatURL());
+            }
+         }
       }
 
       /// <summary>
@@ -129,7 +152,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                continue;
             }
 
-            parseClassificationCode(paramClassificationCode, classificationCodeFieldName, out classificationName, out classificationCode, out classificationDescription);
+            ParseClassificationCode(paramClassificationCode, classificationCodeFieldName, out classificationName, out classificationCode, out classificationDescription);
 
             if (String.IsNullOrEmpty(classificationDescription))
             {
@@ -197,8 +220,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="classificationName">the classificationName alwayws return something, default will be: "Default Classification"</param>
       /// <param name="classificationCode"></param>
       /// <param name="classificationDescription"></param>
-      /// <returns></returns>
-      public static int parseClassificationCode(string paramClassificationCode, string classificationCodeFieldName, out string classificationName, out string classificationCode, out string classificationDescription)
+      /// <returns>True if any classification was found.</returns>
+      public static bool ParseClassificationCode(string paramClassificationCode, string classificationCodeFieldName, out string classificationName, out string classificationCode, out string classificationDescription)
       {
          // Processing the following format: [<classification name>] <classification code> | <classification description>
          // Partial format will also be supported as long as it follows: (following existing OmniClass style for COBIe, using :)
@@ -212,11 +235,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          classificationName = null;
          classificationCode = null;
          classificationDescription = null;
-         int numCodeparts = 0;
-
+         
          if (string.IsNullOrWhiteSpace(paramClassificationCode))
-            return numCodeparts;     // do nothing if it is empty
+            return false;     // do nothing if it is empty
 
+         int numCodeparts = 0;
          // Only remove the left bracket if it is the first non-empty character in the string, and if there is a corresponding right bracket.
          string parsedParamClassificationCode = paramClassificationCode.Trim();
          if (parsedParamClassificationCode[0] == '[')
@@ -247,7 +270,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          classificationCode = parsedParamClassificationCode.Trim();
          numCodeparts++;
 
-         if (String.IsNullOrEmpty(classificationName))
+         if (string.IsNullOrEmpty(classificationName))
          {
             // No Classification Name specified, look for Classification Name assignment from the cache (from UI)
             if (string.IsNullOrEmpty(classificationCodeFieldName)
@@ -255,7 +278,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                classificationName = "Default Classification";
          }
 
-         return numCodeparts;
+         return numCodeparts > 0;
       }
 
       /// <summary>
@@ -273,36 +296,22 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          IFCAnyHandle classificationReferenceAssociation = ExporterCacheManager.ClassificationReferenceCache.GetClassificationReferenceAssociation(classificationKeyString, classificationCode);
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(classificationReferenceAssociation))
          {
-         IFCAnyHandle classificationReference = CreateClassificationReference(file, classificationKeyString, classificationCode, classificationDescription, location);
+            IFCAnyHandle classificationReference = CreateClassificationReference(file, classificationKeyString, classificationCode, classificationDescription, location);
 
-         HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
-         relatedObjects.Add(elemHnd);
+            HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
+            relatedObjects.Add(elemHnd);
 
-         IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-            ExporterCacheManager.OwnerHistoryHandle, classificationKeyString + " Classification", "", relatedObjects, classificationReference);
+            string relName = classificationKeyString + " " + classificationCode;
+            string relDescription = string.Empty;
+
+            IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
+               ExporterCacheManager.OwnerHistoryHandle, relName, relDescription, relatedObjects, classificationReference);
             ExporterCacheManager.ClassificationReferenceCache.AddClassificationReferenceAssociation(classificationKeyString, classificationCode, relAssociates);
          }
          else
          {
             IFCAnyHandleUtil.AssociatesAddRelated(classificationReferenceAssociation, elemHnd);
          }
-      }
-
-      /// <summary>
-      /// Create association (IfcRelAssociatesClassification) between the Element (ElemHnd) and specified classification reference
-      /// </summary>
-      /// <param name="exporterIFC">The exporterIFC class.</param>
-      /// <param name="file">The IFC file class.</param>
-      /// <param name="elemHnd">The corresponding IFC entity handle.</param>
-      /// <param name="classificationReference">The classification reference to be associated with</param>
-      public static void AssociateClassificationReference(ExporterIFC exporterIFC, IFCFile file, IFCAnyHandle elemHnd, IFCAnyHandle classificationReference)
-      {
-         HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
-         relatedObjects.Add(elemHnd);
-
-         IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-            ExporterCacheManager.OwnerHistoryHandle, classificationReference.GetAttribute("ReferencedSource").ToString() + " Classification", "", relatedObjects, classificationReference);
-
       }
 
       /// <summary>

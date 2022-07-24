@@ -12,7 +12,6 @@
                   WindowStyle="SingleBorderWindow" 
                   ContentRendered="ChildWindow_ContentRendered"
                   SaveWindowSettings="True"
-                  Closing="Window_Closing" 
                   Height="390" 
                   Width="730" MinWidth="550" MinHeight="305">
    <Grid Margin="10,0" RenderTransformOrigin="0,0">

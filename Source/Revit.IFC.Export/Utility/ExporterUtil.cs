@@ -1520,11 +1520,7 @@ namespace Revit.IFC.Export.Utility
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
             ICollection<IFCAnyHandle> productSet = productWrapper.GetAllObjects();
-            foreach (IFCAnyHandle prodHnd in productSet)
-            {
-               if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcElement))
-                  ClassificationUtil.CreateUniformatClassification(exporterIFC, file, element, prodHnd);
-            }
+            ClassificationUtil.CreateUniformatClassification(exporterIFC, file, element, productSet.ToList(), IFCEntityType.IfcElement);
             transaction.Commit();
          }
       }

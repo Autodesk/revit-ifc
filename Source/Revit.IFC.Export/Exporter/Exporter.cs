@@ -20,8 +20,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
-using System.Xml.Schema;
-using System.Text;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
@@ -311,7 +309,7 @@ namespace Revit.IFC.Export.Exporter
             LocationPoint locationPoint = element.Location as LocationPoint;
             if (locationPoint == null)
                return false;
-          
+
             elementBBox = new BoundingBoxXYZ();
             elementBBox.set_Bounds(0, locationPoint.Point);
             elementBBox.set_Bounds(1, locationPoint.Point);
@@ -730,29 +728,14 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper object.</param>
       public virtual void ExportElementImpl(ExporterIFC exporterIFC, Element element, ProductWrapper productWrapper)
       {
-         Options options;
-         View ownerView = null;
+         View ownerView = ExporterCacheManager.ExportOptionsCache.UseActiveViewGeometry ?
+            ExporterCacheManager.ExportOptionsCache.ActiveView :
+            element.Document.GetElement(element.OwnerViewId) as View;
 
-         ownerView = element.Document.GetElement(element.OwnerViewId) as View;
-
-         if (ExporterCacheManager.ExportOptionsCache.UseActiveViewGeometry)
-         {
-            ownerView = ExporterCacheManager.ExportOptionsCache.ActiveView;
-         }
-         else
-         {
-            ownerView = element.Document.GetElement(element.OwnerViewId) as View;
-         }
-
-         if (ownerView == null)
-         {
-            options = GeometryUtil.GetIFCExportGeometryOptions();
-         }
-         else
-         {
-            options = new Options();
-            options.View = ownerView;
-         }
+         Options options = (ownerView == null) ?
+            GeometryUtil.GetIFCExportGeometryOptions() :
+            new Options() { View = ownerView };
+         
          GeometryElement geomElem = element.get_Geometry(options);
 
          // Default: we don't preserve the element parameter cache after export.
@@ -1275,8 +1258,7 @@ namespace Revit.IFC.Export.Exporter
       private static IFCAnyHandle CreateRelServicesBuildings(IFCAnyHandle buildingHandle, IFCFile file,
          IFCAnyHandle ownerHistory, IFCAnyHandle systemHandle)
       {
-         HashSet<IFCAnyHandle> relatedBuildings = new HashSet<IFCAnyHandle>();
-         relatedBuildings.Add(buildingHandle);
+         HashSet<IFCAnyHandle> relatedBuildings = new HashSet<IFCAnyHandle>() { buildingHandle };
          return IFCInstanceExporter.CreateRelServicesBuildings(file, GUIDUtil.CreateGUID(),
             ownerHistory, null, null, systemHandle, relatedBuildings);
       }
@@ -3052,7 +3034,7 @@ namespace Revit.IFC.Export.Exporter
             if (volumeConversionBased)
             {
                double volumeSIScaleFactor = volumeScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.CubicMeters);
-               IFCAnyHandle volumeDims = IFCInstanceExporter.CreateDimensionalExponents(file, 3, 0, 0, 0, 0, 0, 0); // area
+               IFCAnyHandle volumeDims = IFCInstanceExporter.CreateDimensionalExponents(file, 3, 0, 0, 0, 0, 0, 0); // volume
                IFCAnyHandle volumeConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsRatioMeasure(volumeSIScaleFactor), volumeSiUnit);
                volumeSiUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, volumeDims, volumeUnitType, volumeConvName, volumeConvFactor);
             }
@@ -3863,15 +3845,14 @@ namespace Revit.IFC.Export.Exporter
             string classificationItemCode;
             string classificationItemName;
             string classificationParamValue = cobieProjectInfo.BuildingType;
-            int numRefItem = ClassificationUtil.parseClassificationCode(classificationParamValue, "dummy", out classificationName, out classificationItemCode, out classificationItemName);
-            if (numRefItem > 0 && !string.IsNullOrEmpty(classificationItemCode))
+            bool ret = ClassificationUtil.ParseClassificationCode(classificationParamValue, "dummy", out classificationName, out classificationItemCode, out classificationItemName);
+            if (!ret && !string.IsNullOrEmpty(classificationItemCode))
             {
                IFCAnyHandle classifRef = IFCInstanceExporter.CreateClassificationReference(file, null, classificationItemCode, classificationItemName, null);
                IFCAnyHandle relClassif = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
                                           ownerHistory, "BuildingType", null, new HashSet<IFCAnyHandle>() { buildingHandle }, classifRef);
             }
          }
-
          return buildingHandle;
       }
 
@@ -4255,6 +4236,7 @@ namespace Revit.IFC.Export.Exporter
                        ownerHistory, system.Key, null, null, null, system.Value.Item1);
             if (systemHandle == null)
                continue;
+            
             if (projectHasBuilding)
                CreateRelServicesBuildings(buildingHandle, file, ownerHistory, systemHandle);
 

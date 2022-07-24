@@ -53,11 +53,6 @@ namespace BIM.IFC.Export.UI
       IFCExportResult m_Result = IFCExportResult.Invalid;
 
       /// <summary>
-      /// The file to store the previous window bounds.
-      /// </summary>
-      string m_SettingFile = "IFCExportSettings_v36.txt";  // update the file when resize window bounds.
-
-      /// <summary>
       /// The list of documents to export as chosen by the user.
       /// </summary>
       private IList<Document> m_DocumentsToExport = null;
@@ -725,18 +720,6 @@ namespace BIM.IFC.Export.UI
                prevConfig = m_configMap[args.RemovedItems[0].ToString()];
          }
       }
-
-      /// <summary>
-      /// Saves the window bounds when close the window.
-      /// </summary>
-      /// <param name="sender">The source of the event.</param>
-      /// <param name="e">Event arguments that contains the event data.</param>
-      private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-      {
-         // Save restore bounds for the next time this window is opened
-         IFCUISettings.SaveWindowBounds(m_SettingFile, this.RestoreBounds);
-      }
-
 
       /// <summary>
       /// Changes the name of the IFC files to be exported on clicking the checkboxes.

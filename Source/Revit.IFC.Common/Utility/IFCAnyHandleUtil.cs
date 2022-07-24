@@ -256,19 +256,12 @@ namespace Revit.IFC.Common.Utility
       public static string GetIFCEntityTypeName(IFCEntityType entityType)
       {
          string entityTypeName;
-         try
+         if (!m_sIFCEntityTypeToNames.TryGetValue(entityType, out entityTypeName))
          {
-            if (!m_sIFCEntityTypeToNames.TryGetValue(entityType, out entityTypeName))
-            {
-               entityTypeName = entityType.ToString();
-               m_sIFCEntityTypeToNames[entityType] = entityTypeName;
-            }
-            return entityTypeName;
+            entityTypeName = entityType.ToString();
+            m_sIFCEntityTypeToNames[entityType] = entityTypeName;
          }
-         catch
-         {
-            return null;
-         }
+         return entityTypeName;
       }
 
       /// <summary>
@@ -445,7 +438,6 @@ namespace Revit.IFC.Common.Utility
          // This allows you to set empty strings, which may not always be intended, but should be allowed.
          if (value != null)
          {
-            value = new string(value.Where(c => !char.IsControl(c)).ToArray());
             int maxStrLen = IFCLimits.CalculateMaxAllowedSize(value);
             if (value.Length > maxStrLen)
             {
@@ -1247,15 +1239,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of attribute values.</returns>
       public static T GetValidAggregateInstanceAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<IFCAnyHandle>, new()
       {
-         IFCData ifcData = null;
-         try
-         {
-            ifcData = handle.GetAttribute(name);
-         }
-         catch
-         {
-            return default(T);
-         }
+         IFCData ifcData = handle.GetAttribute(name);
 
          T aggregateAttribute = default(T);
 
@@ -1718,6 +1702,44 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Get the base representation in case of MappedItem
+      /// </summary>
+      /// <param name="representation">the representation</param>
+      /// <returns>the base representation type</returns>
+      /// <exception cref="ArgumentException"></exception>
+      public static string GetBaseRepresentationType(IFCAnyHandle representation)
+      {
+         if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
+            throw new ArgumentException("The operation is not valid for this handle.");
+
+         IFCData ifcData = representation.GetAttribute("RepresentationType");
+         if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
+         {
+            string repType = ifcData.AsString();
+            if (repType.Equals("MappedRepresentation", StringComparison.InvariantCultureIgnoreCase))
+            {
+               HashSet<IFCAnyHandle> mapItems = GetItems(representation);
+               if (mapItems.Count > 0)
+               {
+                  // The mapped representation should be of the same type. Use the first one will suffice
+                  IFCAnyHandle mapSrc = GetInstanceAttribute(mapItems.First(), "MappingSource");
+                  if (!IsNullOrHasNoValue(mapSrc))
+                  {
+                     IFCAnyHandle mapRep = GetInstanceAttribute(mapSrc, "MappedRepresentation");
+                     if (!IsNullOrHasNoValue(mapRep))
+                     {
+                        repType = GetRepresentationType(mapRep);
+                     }
+                  }
+               }
+            }
+            return repType;
+         }
+
+         return null;
+      }
+
+      /// <summary>
       /// Gets set of Items of a representation handle.
       /// </summary>
       /// <param name="representation">The representation handle.</param>
@@ -1853,7 +1875,13 @@ namespace Revit.IFC.Common.Utility
          }
          else
          {
-            aggregate.Add(IFCData.CreateIFCAnyHandle(related));
+            IFCData newData = IFCData.CreateIFCAnyHandle(related);
+            try
+            {
+               //if (!aggregate.Contains(newData))
+               aggregate.Add(newData);
+            }
+            catch { }
          }
       }
 
@@ -1938,21 +1966,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if it is null or has no value, false otherwise.</returns>
       public static bool IsNullOrHasNoValue(IFCAnyHandle handle)
       {
-         if (handle == null || !handle.HasValue)
-            return true;
-
-         // Temporary code for 2022 until HasValue is set propertly when handle has become invalid
-         bool staleHandle = false;
-         try
-         {
-            string entityTypeName = handle.TypeName;
-         }
-         catch
-         {
-            staleHandle = true;
-         }
-
-         return staleHandle;
+         return handle == null || !handle.HasValue;
       }
 
       /// <summary>
@@ -1991,14 +2005,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if the handle entity is an entity of either the given type or one of its sub-types.</returns>
       public static bool IsValidSubTypeOf(IFCAnyHandle handle, IFCEntityType type)
       {
-         try
-         {
-            return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
-         }
-         catch
-         {
-            return false;
-         }
+         return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
       }
 
       /// <summary>

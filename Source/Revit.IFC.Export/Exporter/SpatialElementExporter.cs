@@ -190,7 +190,6 @@ namespace Revit.IFC.Export.Exporter
                         if (trimmedCurve == null)
                            continue;
 
-                        //trimmedCurve.Visibility = Visibility.Visible; readonly
                         IFCAnyHandle connectionGeometry = ExtrusionExporter.CreateConnectionSurfaceGeometry(
                            exporterIFC, trimmedCurve, lcs, scaledRoomHeight, baseHeightNonScaled);
 
@@ -779,16 +778,14 @@ namespace Revit.IFC.Export.Exporter
       private static void CreateCOBIESpaceClassifications(IFCFile file, IFCAnyHandle spaceHnd,
           ProjectInfo projectInfo, SpatialElement spatialElement)
       {
-         HashSet<IFCAnyHandle> spaceHnds = new HashSet<IFCAnyHandle>();
-         spaceHnds.Add(spaceHnd);
+         HashSet<IFCAnyHandle> spaceHnds = new HashSet<IFCAnyHandle>() { spaceHnd };
 
          string bimStandardsLocation = null;
          if (projectInfo != null)
             ParameterUtil.GetStringValueFromElement(projectInfo, "BIM Standards URL", out bimStandardsLocation);
 
          // OCCS - Space by Function.
-         string itemReference = "";
-         if (ParameterUtil.GetStringValueFromElement(spatialElement, "OmniClass Number", out itemReference) != null)
+         if (ParameterUtil.GetStringValueFromElement(spatialElement, "OmniClass Number", out string itemReference) != null)
          {
             string itemName;
             ParameterUtil.GetStringValueFromElement(spatialElement, "OmniClass Title", out itemName);
@@ -1481,8 +1478,24 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
-      static private bool CreateGSAInformation(ExporterIFC exporterIFC, Element element, string zoneObjectType,
-          Dictionary<string, IFCAnyHandle> classificationHandles)
+      static private void CreateOneGSAClassification(IFCFile file, ZoneInfo zoneInfo, 
+         string name, string location, Element element)
+      {
+         if (!zoneInfo.ClassificationReferences.ContainsKey(name))
+         {
+            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, name + " Reference", out string itemReference) != null)
+            {
+               ParameterUtil.GetStringValueFromElementOrSymbol(element, name + " Name", out string itemName);
+
+               IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
+                 location, itemReference, itemName, null);
+               zoneInfo.ClassificationReferences[name] = classificationReference;
+            }
+         }
+      }
+
+      static private void CreateGSAInformation(ExporterIFC exporterIFC, Element element, ZoneInfo zoneInfo,
+         string zoneObjectType)
       {
          IFCFile file = exporterIFC.GetFile();
 
@@ -1497,48 +1510,30 @@ namespace Revit.IFC.Export.Exporter
             if (projectInfo != null)
                ParameterUtil.GetStringValueFromElement(projectInfo, "BIM Standards URL", out location);
 
-            string itemReference;
-            string itemName;
-
             // Spatial Zone Type (Owner)
-            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "Spatial Zone Type (Owner) Reference", out itemReference) != null)
-            {
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, "Spatial Zone Type (Owner) Name", out itemName);
-
-               IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-                 location, itemReference, itemName, null);
-               classificationHandles["Spatial Zone Type (Owner)"] = classificationReference;
-            }
+            CreateOneGSAClassification(file, zoneInfo, "Spatial Zone Type (Owner)", location, element);
 
             // Spatial Zone Security Level (Owner)
-            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "Spatial Zone Security Level (Owner) Reference", out itemReference) != null)
-            {
-               itemName = "";
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, "Spatial Zone Security Level (Owner) Name", out itemName);
-
-               IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-                 location, itemReference, itemName, null);
-               classificationHandles["Spatial Zone Security Level (Owner)"] = classificationReference;
-            }
+            CreateOneGSAClassification(file, zoneInfo, "Spatial Zone Security Level (Owner)", location, element);
 
             // Spatial Zone Type (Energy Analysis)
-            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "ASHRAE Zone Type", out itemName) != null)
-            {
-               IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-                 "ASHRAE 90.1", "Common Space Type", itemName, null);
-               classificationHandles["ASHRAE Zone Type"] = classificationReference;
+            if (!zoneInfo.ClassificationReferences.ContainsKey("ASHRAE Zone Type"))
+            { 
+               if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "ASHRAE Zone Type", 
+                  out string itemName) != null)
+               {
+                  IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
+                    "ASHRAE 90.1", "Common Space Type", itemName, null);
+                  zoneInfo.ClassificationReferences["ASHRAE Zone Type"] = classificationReference;
+               }
             }
          }
 
          if (isSpatialZone || NamingUtil.IsEqualIgnoringCaseAndSpaces(zoneObjectType, "EnergyAnalysisZone"))
          {
             // Property Sets.  We don't use the generic Property Set mechanism because Zones aren't "real" elements.
-            IFCAnyHandle energyAnalysisPSetHnd = CreateSpatialZoneEnergyAnalysisPSet(file, element);
-
-            if (classificationHandles.Count > 0 || energyAnalysisPSetHnd != null)
-               return true;
+            CreateSpatialZoneEnergyAnalysisPSet(file, element);
          }
-         return false;
       }
 
       /// <summary>
@@ -1555,14 +1550,8 @@ namespace Revit.IFC.Export.Exporter
          // Extra zone information, since Revit doesn't have architectural zones.
          ZoneInfoFinder zoneInfoFinder = new ZoneInfoFinder();
 
-         // While a room may contain multiple zones, only one can have the extra parameters.  We will allow the first zone encountered
-         // to be defined by them. If we require defining multiple zones in one room, then the code below should be modified to modify the 
-         // names of the shared parameters to include the index of the appropriate room.
-         bool exportedExtraZoneInformation = false;
-
          do
          {
-            string propZoneClassificationCode = null;
             bool hasZoneValues = zoneInfoFinder.SetPropZoneValues(element);
             if (!hasZoneValues)
                break;
@@ -1572,61 +1561,33 @@ namespace Revit.IFC.Export.Exporter
             if (string.IsNullOrWhiteSpace(zoneName))
                continue;
 
-            Dictionary<string, IFCAnyHandle> classificationHandles = new Dictionary<string, IFCAnyHandle>();
-
-            string classificationName, classificationCode, classificationDescription;
-
             string zoneClassificationCode = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.ClassificationCode);
-            if (!String.IsNullOrEmpty(zoneClassificationCode))
-            {
-               ClassificationUtil.parseClassificationCode(zoneClassificationCode, propZoneClassificationCode, out classificationName, out classificationCode, out classificationDescription);
-               string location = null;
-               ExporterCacheManager.ClassificationLocationCache.TryGetValue(classificationName, out location);
-               IFCAnyHandle zoneClassificationReference = ClassificationUtil.CreateClassificationReference(file, classificationName, classificationCode, classificationDescription, location);
-               classificationHandles.Add(classificationName, zoneClassificationReference);
-            }
-
+            
             IFCAnyHandle roomHandle = productWrapper.GetElementOfType(IFCEntityType.IfcSpace);
-
-            IFCAnyHandle energyAnalysisPSetHnd = null;
-
-            if (exportToCOBIE && !exportedExtraZoneInformation)
-            {
-               string zoneObjectType = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.ObjectType);
-               exportedExtraZoneInformation = CreateGSAInformation(exporterIFC, element, zoneObjectType,
-                   classificationHandles);
-            }
 
             ZoneInfo zoneInfo = ExporterCacheManager.ZoneInfoCache.Find(zoneName);
             if (zoneInfo == null)
             {
                IFCAnyHandle zoneCommonPropertySetHandle = CreateZoneCommonPSet(exporterIFC, file, element);
-               zoneInfo = new ZoneInfo(zoneInfoFinder, roomHandle, classificationHandles, energyAnalysisPSetHnd, zoneCommonPropertySetHandle);
+               zoneInfo = new ZoneInfo(zoneInfoFinder, roomHandle, zoneCommonPropertySetHandle);
+               zoneInfo.ConditionalAddClassification(file, zoneClassificationCode);
                ExporterCacheManager.ZoneInfoCache.Register(zoneName, zoneInfo);
             }
             else
             {
-               // if description, long name or object type were empty, overwrite.
+               // If description, long name or object type were empty, overwrite.
                zoneInfo.UpdateZoneInfo(zoneInfoFinder);
                zoneInfo.RoomHandles.Add(roomHandle);
-               foreach (KeyValuePair<string, IFCAnyHandle> classificationReference in classificationHandles)
-               {
-                  if (!zoneInfo.ClassificationReferences[classificationReference.Key].HasValue)
-                     zoneInfo.ClassificationReferences[classificationReference.Key] = classificationReference.Value;
-                  else
-                  {
-                     // Delete redundant IfcClassificationReference from file.
-                     IFCAnyHandleUtil.Delete(classificationReference.Value);
-                  }
-               }
-
-               if (IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.EnergyAnalysisProperySetHandle))
-                  zoneInfo.EnergyAnalysisProperySetHandle = energyAnalysisPSetHnd;
-               else if (energyAnalysisPSetHnd.HasValue)
-                  IFCAnyHandleUtil.Delete(energyAnalysisPSetHnd);
+               zoneInfo.ConditionalAddClassification(file, zoneClassificationCode);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.ZoneCommonProperySetHandle))
                   zoneInfo.ZoneCommonProperySetHandle = CreateZoneCommonPSet(exporterIFC, file, element);
+            }
+
+            if (exportToCOBIE)
+            {
+               string zoneObjectType = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.ObjectType);
+               CreateGSAInformation(exporterIFC, element, zoneInfo, zoneObjectType);
             }
          } while (zoneInfoFinder.IncrementCount()); // prevent infinite loop.
       }
