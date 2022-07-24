@@ -1833,15 +1833,8 @@ namespace Revit.IFC.Export.Exporter
                   {
                      string relGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssociatesClassification,
                         classificationReference.Key, zoneHandle);
-                     IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file,
-                        relGuid, ownerHistory, classificationReference.Key, "", zoneHnds, 
-                        classificationReference.Value);
-                  }
-
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.EnergyAnalysisProperySetHandle))
-                  {
-                     ExporterUtil.CreateRelDefinesByProperties(file,
-                        ownerHistory, null, null, zoneHnds, zoneInfo.EnergyAnalysisProperySetHandle);
+                     ExporterCacheManager.ClassificationCache.AddRelation(classificationReference.Value, 
+                        relGuid, classificationReference.Key, zoneHnds);
                   }
 
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.ZoneCommonProperySetHandle))
@@ -1861,6 +1854,17 @@ namespace Revit.IFC.Export.Exporter
                      }
                      currentGroup.Add(zoneHandle);
                   }
+               }
+
+               // Create RelAssociatesClassifications.
+               foreach (var relAssociatesInfo in ExporterCacheManager.ClassificationCache.ClassificationRelations)
+               {
+                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(relAssociatesInfo.Key))
+                     continue;
+
+                  IFCInstanceExporter.CreateRelAssociatesClassification(file,
+                     relAssociatesInfo.Value.Item1, ownerHistory, relAssociatesInfo.Value.Item2, null,
+                     relAssociatesInfo.Value.Item3, relAssociatesInfo.Key);
                }
 
                // now create any zone groups.
@@ -1904,9 +1908,8 @@ namespace Revit.IFC.Export.Exporter
                      {
                         string relGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssociatesClassification,
                            classificationReference.Key, spaceOccupantHandle);
-                        IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file,
-                           relGuid, ownerHistory, classificationReference.Key, "", 
-                           spaceOccupantHandles, classificationReference.Value);
+                        ExporterCacheManager.ClassificationCache.AddRelation(classificationReference.Value,
+                           relGuid, classificationReference.Key, spaceOccupantHandles);
                      }
 
                      if (spaceOccupantInfo.SpaceOccupantProperySetHandle != null && spaceOccupantInfo.SpaceOccupantProperySetHandle.HasValue)
@@ -3922,7 +3925,6 @@ namespace Revit.IFC.Export.Exporter
             if (levelInfo == null)
                continue;
 
-            // remove products that are aggregated (e.g., railings in stairs).
             Element level = document.GetElement(levelId);
             if (NeverExportLevel(level))
             {
@@ -4002,7 +4004,6 @@ namespace Revit.IFC.Export.Exporter
                IFCInstanceExporter.CreateRelContainedInSpatialStructure(file, guid, ExporterCacheManager.OwnerHistoryHandle, null, null, relatedElements, levelInfo.GetBuildingStorey());
             }
 
-            // skip coincident levels, if any.
             ii = nextLevelIdx - 1;
          }
 
@@ -4078,21 +4079,19 @@ namespace Revit.IFC.Export.Exporter
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3COBIE24DesignDeliverable && cobieProjectInfo != null)
          {
-            string classificationName;
-            string classificationItemCode;
-            string classificationItemName;
             string classificationParamValue = cobieProjectInfo.BuildingType;
-            int numRefItem = ClassificationUtil.parseClassificationCode(classificationParamValue, "dummy", out classificationName, out classificationItemCode, out classificationItemName);
-            if (numRefItem > 0 && !string.IsNullOrEmpty(classificationItemCode))
-            {
-               IFCAnyHandle classifRef = IFCInstanceExporter.CreateClassificationReference(file, 
-                  null, classificationItemCode, classificationItemName, null);
 
-               string relGuidString = classificationItemCode + ":" + classificationItemName;
+            if (ClassificationUtil.ParseClassificationCode(classificationParamValue, "dummy",
+               out _, out string classificationItemCode, out string classificationItemName) &&
+               !string.IsNullOrEmpty(classificationItemCode))
+            {
+               string relGuidName = classificationItemCode + ":" + classificationItemName;
                string relGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssociatesClassification,
-                  relGuidString, buildingHandle);
-               IFCInstanceExporter.CreateRelAssociatesClassification(file, relGuid, ownerHistory, 
-                  "BuildingType", null, new HashSet<IFCAnyHandle>() { buildingHandle }, classifRef);
+                  relGuidName, buildingHandle);
+               ClassificationReferenceKey key = new ClassificationReferenceKey(null, 
+                  classificationItemCode, classificationItemName, null, null);
+               ExporterCacheManager.ClassificationCache.AddRelation(file, key, relGuid, 
+                  "BuildingType", buildingHandle);
             }
          }
 

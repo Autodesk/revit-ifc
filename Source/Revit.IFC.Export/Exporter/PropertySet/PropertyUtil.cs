@@ -1100,7 +1100,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>The created property handle.</returns>
       public static IFCAnyHandle CreateClassificationReferenceProperty(IFCFile file, string propertyName, string value)
       {
-         IFCAnyHandle classificationReferenceHandle = IFCInstanceExporter.CreateClassificationReference(file, null, value, null, null);
+         IFCAnyHandle classificationReferenceHandle = 
+            IFCInstanceExporter.CreateClassificationReference(file, null, value, null, null, null);
          return IFCInstanceExporter.CreatePropertyReferenceValue(file, propertyName, null, null, classificationReferenceHandle);
       }
 

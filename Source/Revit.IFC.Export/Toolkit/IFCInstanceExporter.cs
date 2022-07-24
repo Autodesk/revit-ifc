@@ -2018,7 +2018,8 @@ namespace Revit.IFC.Export.Toolkit
          //ValidateElement(guid, ownerHistory, objectPlacement, representation);
 
          IFCAnyHandle curtainWall = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcCurtainWall, element);
-         SetSpecificEnumAttr(curtainWall, "PredefinedType", predefinedType, "IfcCurtainWallType");
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            SetSpecificEnumAttr(curtainWall, "PredefinedType", predefinedType, "IfcCurtainWallType");
 
          SetElement(curtainWall, element, guid, ownerHistory, null, null, null, objectPlacement, representation, null);
          return curtainWall;
@@ -2743,10 +2744,20 @@ namespace Revit.IFC.Export.Toolkit
           string name, string description, ISet<IFCAnyHandle> relatedObjects, IFCAnyHandle relatingMaterial)
       {
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-            IFCAnyHandleUtil.ValidateSubTypeOf(relatingMaterial, false, IFCEntityType.IfcMaterialDefinition, IFCEntityType.IfcMaterialList, IFCEntityType.IfcMaterialUsageDefinition);
+         {
+            IFCAnyHandleUtil.ValidateSubTypeOf(relatingMaterial, false,
+               IFCEntityType.IfcMaterialDefinition,
+               IFCEntityType.IfcMaterialList,
+               IFCEntityType.IfcMaterialUsageDefinition);
+         }
          else
-            IFCAnyHandleUtil.ValidateSubTypeOf(relatingMaterial, false, IFCEntityType.IfcMaterial, IFCEntityType.IfcMaterialList, IFCEntityType.IfcMaterialLayerSetUsage
-              , IFCEntityType.IfcMaterialLayerSet);
+         {
+            IFCAnyHandleUtil.ValidateSubTypeOf(relatingMaterial, false,
+               IFCEntityType.IfcMaterial,
+               IFCEntityType.IfcMaterialList,
+               IFCEntityType.IfcMaterialLayerSetUsage,
+               IFCEntityType.IfcMaterialLayerSet);
+         }
 
          ValidateRelAssociates(guid, ownerHistory, name, description, relatedObjects);
 
@@ -7034,7 +7045,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="referencedSource">The referenced classification.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateClassificationReference(IFCFile file, string location,
-         string itemReference, string name, IFCAnyHandle referencedSource)
+         string itemReference, string name, string description, IFCAnyHandle referencedSource)
       {
          // All IfcExternalReference arguments are optional.
          IFCAnyHandleUtil.ValidateSubTypeOf(referencedSource, true, IFCEntityType.IfcClassification);
@@ -7042,6 +7053,10 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle classificationReference = CreateInstance(file, IFCEntityType.IfcClassificationReference, null);
          SetExternalReference(classificationReference, location, itemReference, name);
          IFCAnyHandleUtil.SetAttribute(classificationReference, "ReferencedSource", referencedSource);
+
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            IFCAnyHandleUtil.SetAttribute(classificationReference, "Description", description);
+         
          return classificationReference;
       }
 

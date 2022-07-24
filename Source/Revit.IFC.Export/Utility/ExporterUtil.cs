@@ -1222,7 +1222,6 @@ namespace Revit.IFC.Export.Utility
                string propertyName = "Color";
                nameAndColorProps.Add(IFCInstanceExporter.CreateComplexProperty(file, propertyName, null, propertyName, colorProps));
             }
-
             string name = "Pset_Draughting";   // IFC 2x2 standard
             string psetGuid = GUIDUtil.GenerateIFCGuidFrom(element, name);
             IFCAnyHandle propertySet2 = IFCInstanceExporter.CreatePropertySet(file, psetGuid, ownerHistory, name, null, nameAndColorProps);
@@ -1339,58 +1338,6 @@ namespace Revit.IFC.Export.Utility
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
             ExportPsetDraughtingFor2x2(exporterIFC, element, productWrapper);
       }
-      internal static HashSet<IFCAnyHandle> ExtractElementTypeProperties(ExporterIFC exporterIFC, ElementType elementType, IFCAnyHandle typeHnd)
-      {
-         if (elementType == null)
-            return null;
-
-         IFCFile file = exporterIFC.GetFile();
-         HashSet<IFCAnyHandle> propertySets = new HashSet<IFCAnyHandle>();
-         using (IFCTransaction transaction = new IFCTransaction(file))
-         {
-            Document doc = elementType.Document;
-
-            IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-
-            IList<IList<PropertySetDescription>> psetsToCreate = ExporterCacheManager.ParameterCache.PropertySets;
-
-            IDictionary<Tuple<ElementType, string>, IFCAnyHandle> createdPropertySets =
-                new Dictionary<Tuple<ElementType, string>, IFCAnyHandle>();
-            IList<PropertySetDescription> currPsetsToCreate = GetCurrPSetsToCreate(typeHnd, psetsToCreate);
-            if (currPsetsToCreate.Count == 0)
-               return null;
-
-            foreach (PropertySetDescription currDesc in currPsetsToCreate)
-            {
-               // Last conditional check: if the property set comes from a ViewSchedule, check if the element is in the schedule.
-               if (currDesc.ViewScheduleId != ElementId.InvalidElementId)
-                  if (!ExporterCacheManager.ViewScheduleElementCache[currDesc.ViewScheduleId].Contains(elementType.Id))
-                     continue;
-
-               Tuple<ElementType, string> propertySetKey = new Tuple<ElementType, string>(elementType, currDesc.Name);
-               IFCAnyHandle propertySet = null;
-               if (!createdPropertySets.TryGetValue(propertySetKey, out propertySet))
-               {
-                  ElementOrConnector elementOrConnector = new ElementOrConnector(elementType);
-                  ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementOrConnector, null, typeHnd);
-                  if (props.Count > 0)
-                  {
-                     string paramSetName = currDesc.Name;
-                     string guid = GUIDUtil.GenerateIFCGuidFrom(elementType, "PropertySet: " + paramSetName);
-
-                     propertySet = IFCInstanceExporter.CreatePropertySet(file, guid, ownerHistory, paramSetName, currDesc.DescriptionOfSet, props);
-                     createdPropertySets[propertySetKey] = propertySet;
-                  }
-                  if (propertySet != null)
-                  {
-                     propertySets.Add(propertySet);
-                  }
-               }
-            }
-            transaction.Commit();
-         }
-         return propertySets;
-      }
 
       /// <summary>
       /// Exports the IFC element quantities.
@@ -1503,7 +1450,8 @@ namespace Revit.IFC.Export.Utility
       /// <param name="exporterIFC">The IFC exporter object.</param>
       /// <param name="element">The element whose classifications are exported.</param>
       /// <param name="productWrapper">The ProductWrapper object.</param>
-      private static void ExportElementUniformatClassifications(ExporterIFC exporterIFC, Element element, ProductWrapper productWrapper)
+      private static void ExportElementUniformatClassifications(ExporterIFC exporterIFC, 
+         Element element, ProductWrapper productWrapper)
       {
          if (productWrapper.IsEmpty())
             return;
@@ -1512,11 +1460,7 @@ namespace Revit.IFC.Export.Utility
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
             ICollection<IFCAnyHandle> productSet = productWrapper.GetAllObjects();
-            foreach (IFCAnyHandle prodHnd in productSet)
-            {
-               if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcElement))
-                  ClassificationUtil.CreateUniformatClassification(exporterIFC, file, element, prodHnd);
-            }
+            ClassificationUtil.CreateUniformatClassification(exporterIFC, file, element, productSet.ToList(), IFCEntityType.IfcElement);
             transaction.Commit();
          }
       }
@@ -2520,6 +2464,37 @@ namespace Revit.IFC.Export.Utility
          Transform scaledTrf = new Transform(unscaledTrf);
          scaledTrf.Origin = UnitUtil.ScaleLength(unscaledTrf.Origin);
          return scaledTrf;
+      }
+
+      public static ISet<IFCAnyHandle> CleanRefObjects(ISet<IFCAnyHandle> cacheHandles)
+      {
+         if (cacheHandles == null)
+            return null;
+
+         IList<IFCAnyHandle> refObjToDel = new List<IFCAnyHandle>();
+         foreach (IFCAnyHandle cacheHandle in cacheHandles)
+         {
+            if (ExporterCacheManager.HandleToDeleteCache.Contains(cacheHandle))
+            {
+               refObjToDel.Add(cacheHandle);
+            }
+            else if (IFCAnyHandleUtil.IsNullOrHasNoValue(cacheHandle))
+            {
+               // If we get to these lines of code, then there is an error somewhere
+               // where we deleted a handle but didn't properly mark it as deleted.
+               // This should be investigated, but this will at least not prevent
+               // the export.
+               ExporterCacheManager.HandleToDeleteCache.Add(cacheHandle);
+               refObjToDel.Add(cacheHandle);
+            }
+         }
+
+         foreach (IFCAnyHandle refObjHandle in refObjToDel)
+         {
+            cacheHandles.Remove(refObjHandle);
+         }
+
+         return cacheHandles;
       }
 
       /// <summary>

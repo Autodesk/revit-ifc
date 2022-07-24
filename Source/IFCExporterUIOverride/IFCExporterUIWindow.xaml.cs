@@ -52,11 +52,6 @@ namespace BIM.IFC.Export.UI
       IDictionary<string, ProjectLocation> m_SiteLocations = new Dictionary<string, ProjectLocation>();
       IList<string> m_SiteNames = new List<string>();
 
-      /// <summary>
-      /// The file to store the previous window bounds.
-      /// </summary>
-      string m_SettingFile = "IFCExporterUIWindowSettings_v36.txt";    // update the file when resize window bounds.
-
       IDictionary<string, TreeViewItem> m_TreeViewItemDict = new Dictionary<string, TreeViewItem>();
 
       /// <summary>
@@ -1202,17 +1197,6 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ActivePhaseId = attributes.PhaseId.IntegerValue;
          }
-      }
-
-      /// <summary>
-      /// Saves the window bounds when close the window.
-      /// </summary>
-      /// <param name="sender">The source of the event.</param>
-      /// <param name="e">Event arguments that contains the event data.</param>
-      private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-      {
-         // Save restore bounds for the next time this window is opened
-         IFCUISettings.SaveWindowBounds(m_SettingFile, this.RestoreBounds);
       }
 
       /// <summary>

@@ -10,8 +10,7 @@
                   Height="560"
                   Width="887" 
                   WindowStyle="SingleBorderWindow" 
-                  ResizeMode="NoResize" 
-                  Closing="Window_Closing">
+                  ResizeMode="NoResize">
    <Grid Margin="4,4,4,4">
       <Grid.RowDefinitions>
          <RowDefinition Height="479*"/>

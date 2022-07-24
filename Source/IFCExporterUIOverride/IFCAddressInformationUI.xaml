@@ -8,7 +8,6 @@
                    Title="{x:Static p:Resources.AddressInformation}" 
                    ResizeMode ="NoResize" 
                    Name="AddressTab" 
-                   Closing="Window_Closing" 
                    SaveWindowSettings="True"
                    mc:Ignorable="d" 
                    Initialized="AddressTab_Initialized" 
