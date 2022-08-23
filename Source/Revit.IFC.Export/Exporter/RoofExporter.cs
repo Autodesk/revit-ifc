@@ -509,7 +509,7 @@ namespace Revit.IFC.Export.Exporter
 
                            ExporterUtil.RelateObjects(exporterIFC, null, hostObjectHandle, slabHandles);
 
-                           OpeningUtil.AddOpeningsToElement(exporterIFC, elementHandles, hostObjectOpeningLoops, element, null, maximumScaledDepth,
+                           int noOpening = OpeningUtil.AddOpeningsToElement(exporterIFC, elementHandles, hostObjectOpeningLoops, element, null, maximumScaledDepth,
                                null, setter, localPlacement, productWrapper);
 
                            transaction.Commit();

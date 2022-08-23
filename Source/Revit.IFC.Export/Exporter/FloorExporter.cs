@@ -132,6 +132,9 @@ namespace Revit.IFC.Export.Exporter
 
                         OpeningUtil.CreateOpeningsIfNecessary(slabHnd, slabElement, ecData, null,
                             exporterIFC, ecData.GetLocalPlacement(), placementSetter, productWrapper);
+
+                        if (ecData.GetOpenings().Count == 0)
+                           OpeningUtil.AddOpeningsToElement(exporterIFC, slabHnd, slabElement, null, ecData.ScaledHeight, null, placementSetter, localPlacement, productWrapper);
                      }
                   }
                }
@@ -443,6 +446,7 @@ namespace Revit.IFC.Export.Exporter
 #pragma warning restore CS0612, CS0618
                      }
 
+                     int openingCreatedCount = 0;
                      for (int ii = 0; ii < numReps; ii++)
                      {
                         string ifcName = NamingUtil.GetNameOverride(floorElement, NamingUtil.GetIFCNamePlusIndex(floorElement, ii == 0 ? -1 : ii + 1));
@@ -487,6 +491,10 @@ namespace Revit.IFC.Export.Exporter
 
                         OpeningUtil.CreateOpeningsIfNecessary(slabHnd, floorElement, ecData, null,
                            exporterIFC, localPlacement, placementSetter, productWrapper);
+
+                        // Try get openings using OpeningUtil if ecData.GetOpening() used in the above call is 0
+                        if (ecData.GetOpenings().Count == 0)
+                           openingCreatedCount = OpeningUtil.AddOpeningsToElement(exporterIFC, slabHnd, floorElement, null, ecData.ScaledHeight, null, placementSetter, localPlacement, productWrapper);
                      }
 
                      for (int ii = 0; ii < numReps; ii++)
@@ -502,7 +510,8 @@ namespace Revit.IFC.Export.Exporter
 
                      // This call to the native function appears to create Brep opening also when appropriate. But the creation of the IFC instances is not
                      //   controllable from the managed code. Therefore in some cases BRep geometry for Opening will still be exported even in the Reference View
-                     if (exportedAsInternalExtrusion)
+                     // Call this only if no opening created
+                     if (exportedAsInternalExtrusion && openingCreatedCount == 0)
                      {
                         ISet<IFCAnyHandle> oldCreatedObjects = productWrapper.GetAllObjects();
                         ExporterIFCUtils.ExportExtrudedSlabOpenings(exporterIFC, floorElement, placementSetter.LevelInfo,

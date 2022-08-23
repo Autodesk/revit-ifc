@@ -214,10 +214,11 @@ namespace Revit.IFC.Export.Utility
       /// <param name="setter">The placement setter.</param>
       /// <param name="localPlacement">The local placement.</param>
       /// <param name="localWrapper">The wrapper.</param>
-      public static void AddOpeningsToElement(ExporterIFC exporterIFC, IList<IFCAnyHandle> elementHandles,
+      public static int AddOpeningsToElement(ExporterIFC exporterIFC, IList<IFCAnyHandle> elementHandles,
          IList<CurveLoop> curveLoops, Element element, Transform lcs, double scaledWidth,
          IFCRange range, PlacementSetter setter, IFCAnyHandle localPlacement, ProductWrapper localWrapper)
       {
+         int createdOpeningCount = 0;
          if (lcs == null && curveLoops != null && curveLoops.Count > 0)
          {
             Plane hostObjPlane = null;
@@ -313,6 +314,7 @@ namespace Revit.IFC.Export.Utility
 
                   CreateOpening(exporterIFC, parentHandle, element, openingElem, openingGUID, solid, scaledWidth, openingData.IsRecess, extrusionCreationData,
                       setter, localWrapper);
+                  createdOpeningCount++;
                }
             }
 
@@ -326,8 +328,10 @@ namespace Revit.IFC.Export.Utility
 
                CreateOpening(exporterIFC, parentHandle, localPlacement, element, openingElem, openingGUID, extrusionData, lcs, openingData.IsRecess,
                    setter, localWrapper);
+               createdOpeningCount++;
             }
          }
+         return createdOpeningCount;
       }
 
       /// <summary>
@@ -342,12 +346,12 @@ namespace Revit.IFC.Export.Utility
       /// <param name="setter">The placement setter.</param>
       /// <param name="localPlacement">The local placement.</param>
       /// <param name="localWrapper">The wrapper.</param>
-      public static void AddOpeningsToElement(ExporterIFC exporterIFC, IFCAnyHandle elementHandle, Element element, Transform lcs, double scaledWidth,
+      public static int AddOpeningsToElement(ExporterIFC exporterIFC, IFCAnyHandle elementHandle, Element element, Transform lcs, double scaledWidth,
           IFCRange range, PlacementSetter setter, IFCAnyHandle localPlacement, ProductWrapper localWrapper)
       {
          IList<IFCAnyHandle> elementHandles = new List<IFCAnyHandle>();
          elementHandles.Add(elementHandle);
-         AddOpeningsToElement(exporterIFC, elementHandles, null, element, lcs, scaledWidth, range, setter, localPlacement, localWrapper);
+         return AddOpeningsToElement(exporterIFC, elementHandles, null, element, lcs, scaledWidth, range, setter, localPlacement, localWrapper);
       }
 
       /// <summary>
