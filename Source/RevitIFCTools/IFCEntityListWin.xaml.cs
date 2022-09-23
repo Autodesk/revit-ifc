@@ -135,12 +135,12 @@ namespace RevitIFCTools
          foreach (string fileName in listBox_schemaList.SelectedItems)
          {
             FileInfo f = dInfo.GetFiles(fileName).First();
-            processSchema(f);
+            //processSchema(f);
 
             ProcessPsetDefinition procPdef = new ProcessPsetDefinition(logF);
 
             string schemaName = f.Name.Replace(".xsd", "");
-            IfcSchemaEntityTree entityTree = IfcSchemaEntityTree.GetEntityDictFor(schemaName);
+            IfcSchemaEntityTree entityTree = IfcSchemaEntityTree.GetEntityDictFor(schemaName, dInfo.FullName);
             IDictionary<string, IfcSchemaEntityNode> entDict = entityTree.IfcEntityDict;
             IFCEntityAndPsetList schemaEntities = new IFCEntityAndPsetList();
             schemaEntities.Version = schemaName;
@@ -164,6 +164,9 @@ namespace RevitIFCTools
 
             keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.QTOSET];
             DirectoryInfo[] qtoFolders = new DirectoryInfo(Path.Combine(textBox_folderLocation.Text, schemaName)).GetDirectories("qto", SearchOption.AllDirectories);
+            if (qtoFolders.Count() == 0)
+               qtoFolders = new DirectoryInfo(Path.Combine(textBox_folderLocation.Text, schemaName)).GetDirectories("psd", SearchOption.AllDirectories);
+
             if (qtoFolders.Count() > 0)
             {
                DirectoryInfo[] underqtoFolders = qtoFolders[0].GetDirectories();

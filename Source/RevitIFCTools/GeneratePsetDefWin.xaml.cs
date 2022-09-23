@@ -102,6 +102,7 @@ namespace RevitIFCTools
 
          var psdFolders = new DirectoryInfo(textBox_PSDSourceDir.Text).GetDirectories("psd", SearchOption.AllDirectories);
          var qtoFolders = new DirectoryInfo(textBox_PSDSourceDir.Text).GetDirectories("qto", SearchOption.AllDirectories);
+         var combinedFolders = psdFolders.Concat(qtoFolders);
 
          string dirName = Path.GetDirectoryName(textBox_OutputFile.Text);
          string outFileName = Path.GetFileNameWithoutExtension(textBox_OutputFile.Text);
@@ -110,7 +111,7 @@ namespace RevitIFCTools
          // Collect all Pset definition for psd folders
          Dictionary<ItemsInPsetQtoDefs, string> keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.PROPERTYSET];
          HashSet<string> IfcSchemaProcessed = new HashSet<string>();
-         foreach (DirectoryInfo psd in psdFolders)
+         foreach (DirectoryInfo psd in combinedFolders)
          {
             string schemaFolder = psd.FullName.Remove(0, textBox_PSDSourceDir.Text.Length + 1).Split('\\')[0];
 
@@ -125,7 +126,7 @@ namespace RevitIFCTools
 
          // Collect all QtoSet definition for qto folders
          keywordsToProcess = PsetOrQto.PsetOrQtoDefItems[PsetOrQtoSetEnum.QTOSET];
-         foreach (DirectoryInfo qto in qtoFolders)
+         foreach (DirectoryInfo qto in combinedFolders)
          {
             string schemaFolder = qto.FullName.Remove(0, textBox_PSDSourceDir.Text.Length + 1).Split('\\')[0];
 
@@ -440,6 +441,7 @@ namespace RevitIFCTools
 
             outF.WriteLine("         Type calcType = null;");
 
+            bool okToWrite = true;
             foreach (VersionSpecificPropertyDef vspecPDef in psetDefEntry.Value)
             {
                PsetDefinition pDef = vspecPDef.PropertySetDef;
@@ -448,71 +450,96 @@ namespace RevitIFCTools
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
-                  foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
-                  {
-                     string applEnt2 = applEnt;
-                     if (string.IsNullOrEmpty(applEnt))
-                        applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                     outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
-                  }
-                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
-                     outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
-                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                  //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
+                  //{
+                  //   string applEnt2 = applEnt;
+                  //   if (string.IsNullOrEmpty(applEnt))
+                  //      applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
+                  //   outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                  //}
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
+                  //   outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
+                  //   outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                else if (vspecPDef.IfcVersion.StartsWith("IFC2X3", StringComparison.CurrentCultureIgnoreCase)
                   || vspecPDef.IfcVersion.Equals("IFC2X3_TC1", StringComparison.CurrentCultureIgnoreCase))
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
-                  foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
-                  {
-                     string applEnt2 = applEnt;
-                     if (string.IsNullOrEmpty(applEnt))
-                        applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                     outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
-                  }
-                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
-                     outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
-                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                  //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
+                  //{
+                  //   string applEnt2 = applEnt;
+                  //   if (string.IsNullOrEmpty(applEnt))
+                  //      applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
+                  //   outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                  //}
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
+                  //   outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
+                  //   outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD1", StringComparison.CurrentCultureIgnoreCase))
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
-                  foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
-                  {
-                     string applEnt2 = applEnt;
-                     if (string.IsNullOrEmpty(applEnt))
-                        applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                     outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
-                  }
-                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
-                     outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
-                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                  //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
+                  //{
+                  //   string applEnt2 = applEnt;
+                  //   if (string.IsNullOrEmpty(applEnt))
+                  //      applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
+                  //   outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                  //}
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
+                  //   outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
+                  //   outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD2", StringComparison.CurrentCultureIgnoreCase))
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
-                  foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
-                  {
-                     string applEnt2 = applEnt;
-                     if (string.IsNullOrEmpty(applEnt))
-                        applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
-                     outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
-                  }
-                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
-                     outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
-                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                  //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
+                  //{
+                  //   string applEnt2 = applEnt;
+                  //   if (string.IsNullOrEmpty(applEnt))
+                  //      applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
+                  //   outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                  //}
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
+                  //   outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
+                  //   outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4", StringComparison.CurrentCultureIgnoreCase))
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
+                  //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
+                  //{
+                  //   string applEnt2 = applEnt;
+                  //   if (string.IsNullOrEmpty(applEnt))
+                  //      applEnt2 = "IfcBuildingElementProxy";     // Default if somehow the data is empty
+                  //   outF.WriteLine("            {0}.EntityTypes.Add(IFCEntityType.{1});", varName, applEnt2);
+                  //}
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
+                  //   outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
+                  //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
+                  //   outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+               }
+               else if (vspecPDef.SchemaFileVersion.Equals("IFC4x3", StringComparison.CurrentCultureIgnoreCase))
+               {
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         {");
+               }
+               else
+               {
+                  logF.WriteLine("%Error - Unrecognized schema version : " + vspecPDef.SchemaFileVersion);
+                  okToWrite = false;
+               }
+
+               if (okToWrite)
+               {
                   foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   {
                      string applEnt2 = applEnt;
@@ -524,10 +551,6 @@ namespace RevitIFCTools
                      outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
                      outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
-               }
-               else
-               {
-                  logF.WriteLine("%Error - Unrecognized schema version : " + vspecPDef.SchemaFileVersion);
                }
                //}
 

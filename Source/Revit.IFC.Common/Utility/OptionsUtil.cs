@@ -244,6 +244,11 @@ namespace Revit.IFC.Common.Utility
          return (fileVersion == IFCVersion.IFC4);
       }
 
+      public static bool ExportAs4x3(IFCVersion fileVersion)
+      {
+         return (fileVersion == IFCVersion.IFC4x3);
+      }
+
       /// <summary>
       /// Identifies if the schema and MVD used is the IFC 2x3 COBie 2.4 Design Deliverable.
       /// </summary>

@@ -665,6 +665,17 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Option for IFC4x3 schema option
+      /// </summary>
+      public bool ExportAs4x3
+      {
+         get
+         {
+            return OptionsUtil.ExportAs4x3(FileVersion);
+         }
+      }
+
+      /// <summary>
       /// Identifies if the schema and MVD used is the IFC 2x3 COBie 2.4 Design Deliverable.
       /// </summary>
       public bool ExportAs2x3COBIE24DesignDeliverable
