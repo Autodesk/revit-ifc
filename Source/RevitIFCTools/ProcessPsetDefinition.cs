@@ -70,7 +70,7 @@ namespace RevitIFCTools
       public SortedDictionary<string, IList<VersionSpecificPropertyDef>> allPDefDict { get; private set; } = new SortedDictionary<string, IList<VersionSpecificPropertyDef>>();
       StreamWriter logF;
 
-      public static SortedDictionary<string, SharedParameterDef> SharedParamFileDict  { get; set; } = new SortedDictionary<string, SharedParameterDef>();
+      public static SortedDictionary<string, SharedParameterDef> SharedParamFileDict { get; set; } = new SortedDictionary<string, SharedParameterDef>();
       public static SortedDictionary<string, SharedParameterDef> SharedParamFileTypeDict { get; set; } = new SortedDictionary<string, SharedParameterDef>();
 
       public ProcessPsetDefinition(StreamWriter logfile)
@@ -264,7 +264,7 @@ namespace RevitIFCTools
          return null;
       }
 
-      public void processSimpleProperty(StreamWriter outF, string psetName, PsetProperty prop, string propNamePrefix, string IfcVersion, string schemaVersion, 
+      public void processSimpleProperty(StreamWriter outF, string psetName, PsetProperty prop, string propNamePrefix, string IfcVersion, string schemaVersion,
          string varName, VersionSpecificPropertyDef vSpecPDef, string outputFile)
       {
          string propTypeStr = "PropertyType";
@@ -282,7 +282,7 @@ namespace RevitIFCTools
          else if (vSpecPDef.PropertySetDef.Name.StartsWith("Ifc", StringComparison.InvariantCultureIgnoreCase))
          {
             newParamName = vSpecPDef.PropertySetDef.Name + "." + propNameToUse;
-            outF.WriteLine("            ifcPSE = new PropertySetEntry(\"{0}\", \"{1}\");", newParamName, propNameToUse);
+            outF.WriteLine("            ifcPSE = new PreDefinedPropertySetEntry(\"{0}\", \"{1}\");", newParamName, propNameToUse);
          }
          else
          {
@@ -331,7 +331,7 @@ namespace RevitIFCTools
                   outF.WriteLine("            ifcPSE.PropertyArgumentType = {0}.{1};", propTypeStr, propTab.DefiningValueType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
                else
                   outF.WriteLine("            ifcPSE.PropertyArgumentType = {0}.Label;", propTypeStr);    // default to Label if missing
-			  
+
                if (propTab.DefinedValueType != null)
                   outF.WriteLine("            ifcPSE.{0} = {0}.{1};", propTypeStr, propTab.DefinedValueType.ToString().Replace("Ifc", "").Replace("Measure", "").Trim());
                else
@@ -1131,6 +1131,21 @@ namespace RevitIFCTools
          AddPsetDefToDict(schemaName, IfcReinforcementDefinitionProperties(schemaName));
          AddPsetDefToDict(schemaName, IfcWindowLiningProperties(schemaName));
          AddPsetDefToDict(schemaName, IfcWindowPanelProperties(schemaName));
+         if (schemaName.StartsWith("ifc2x2", StringComparison.InvariantCultureIgnoreCase)
+            || schemaName.StartsWith("ifc2x3", StringComparison.InvariantCultureIgnoreCase))
+         {
+            AddPsetDefToDict(schemaName, IfcMechanicalMaterialProperties(schemaName));
+            AddPsetDefToDict(schemaName, IfcMechanicalSteelMaterialProperties(schemaName));
+            AddPsetDefToDict(schemaName, IfcMechanicalConcreteMaterialProperties(schemaName));
+            AddPsetDefToDict(schemaName, IfcThermalMaterialProperties(schemaName));
+            AddPsetDefToDict(schemaName, IfcHygroscopicMaterialProperties(schemaName));
+            AddPsetDefToDict(schemaName, IfcGeneralMaterialProperties(schemaName));
+            AddPsetDefToDict(schemaName, IfcOpticalMaterialProperties(schemaName));
+            AddPsetDefToDict(schemaName, IfcWaterProperties(schemaName));
+            AddPsetDefToDict(schemaName, IfcFuelProperties(schemaName));
+            AddPsetDefToDict(schemaName, IfcProductsOfCombustionProperties(schemaName));
+         }
+
       }
 
       private PsetDefinition IfcDoorLiningProperties(string schemaName)
@@ -1284,7 +1299,7 @@ namespace RevitIFCTools
             Name = "PanelOperation",
             PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },
             PropertyValueType = "PropertyValueType.EnumeratedValue"
-         }) ;
+         });
 
          psetD.properties.Add(new PsetProperty()
          {
@@ -1567,5 +1582,443 @@ namespace RevitIFCTools
 
          return psetD;
       }
+
+      private PsetDefinition IfcMechanicalMaterialProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcMechanicalMaterialProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "DynamicViscosity",
+            PropertyType = new PropertySingleValue() { DataType = "IfcDynamicViscosityMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "YoungModulus",
+            PropertyType = new PropertySingleValue() { DataType = "IfcModulusOfElasticityMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "ShearModulus",
+            PropertyType = new PropertySingleValue() { DataType = "IfcModulusOfElasticityMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "PoissonRatio",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "ThermalExpansionCoefficient",
+            PropertyType = new PropertySingleValue() { DataType = "IfcThermalExpansionCoefficientMeasure" }
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition IfcMechanicalSteelMaterialProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcMechanicalSteelMaterialProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "YieldStress",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPressureMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "UltimateStress",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPressureMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "UltimateStrain",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "HardeningModule",
+            PropertyType = new PropertySingleValue() { DataType = "IfcModulusOfElasticityMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "ProportionalStress",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPressureMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "PlasticStrain",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "Relaxations",
+            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },  // Not the correct one actually since it is actually a class that is not supported here directly (similar to IfcReinforcementDefinitionProperties.ReinforcementSectionDefinitions)
+            PropertyValueType = "PropertyValueType.ListValue"
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition IfcMechanicalConcreteMaterialProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcMechanicalConcreteMaterialProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "CompressiveStrength",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPressureMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "MaxAggregateSize",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveLengthMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "AdmixturesDescription",
+            PropertyType = new PropertySingleValue() { DataType = "IfcText" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "Workability",
+            PropertyType = new PropertySingleValue() { DataType = "IfcText" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "ProtectivePoreRatio",
+            PropertyType = new PropertySingleValue() { DataType = "IfcNormalisedRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "WaterImpermeability",
+            PropertyType = new PropertySingleValue() { DataType = "IfcText" }
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition IfcThermalMaterialProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcThermalMaterialProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "SpecificHeatCapacity",
+            PropertyType = new PropertySingleValue() { DataType = "IfcSpecificHeatCapacityMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "BoilingPoint",
+            PropertyType = new PropertySingleValue() { DataType = "IfcThermodynamicTemperatureMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "FreezingPoint",
+            PropertyType = new PropertySingleValue() { DataType = "IfcThermodynamicTemperatureMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "ThermalConductivity",
+            PropertyType = new PropertySingleValue() { DataType = "IfcThermalConductivityMeasure" }
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition IfcHygroscopicMaterialProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcHygroscopicMaterialProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "UpperVaporResistanceFactor",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "LowerVaporResistanceFactor",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "IsothermalMoistureCapacity",
+            PropertyType = new PropertySingleValue() { DataType = "IfcIsothermalMoistureCapacityMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "VaporPermeability",
+            PropertyType = new PropertySingleValue() { DataType = "IfcVaporPermeabilityMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "MoistureDiffusivity",
+            PropertyType = new PropertySingleValue() { DataType = "IfcMoistureDiffusivityMeasure" }
+         });
+
+         return psetD;
+      }
+
+
+      private PsetDefinition IfcGeneralMaterialProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcGeneralMaterialProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "MolecularWeight",
+            PropertyType = new PropertySingleValue() { DataType = "IfcMolecularWeightMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "Porosity",
+            PropertyType = new PropertySingleValue() { DataType = "IfcNormalisedRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "MassDensity",
+            PropertyType = new PropertySingleValue() { DataType = "IfcMassDensityMeasure" }
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition IfcOpticalMaterialProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcOpticalMaterialProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "VisibleTransmittance",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "SolarTransmittance",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "ThermalIrTransmittance",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "ThermalIrEmissivityBack",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "ThermalIrEmissivityFront",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "VisibleReflectanceBack",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "VisibleReflectanceFront",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "SolarReflectanceFront",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "SolarReflectanceBack",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         return psetD;
+      }
+
+
+      private PsetDefinition IfcWaterProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcWaterProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "IsPotable",
+            PropertyType = new PropertySingleValue() { DataType = "Boolean" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "Hardness",
+            PropertyType = new PropertySingleValue() { DataType = "IfcIonConcentrationMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "AlkalinityConcentration",
+            PropertyType = new PropertySingleValue() { DataType = "IfcIonConcentrationMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "AcidityConcentration",
+            PropertyType = new PropertySingleValue() { DataType = "IfcIonConcentrationMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "ImpuritiesContent",
+            PropertyType = new PropertySingleValue() { DataType = "IfcNormalisedRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "PHLevel",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPHMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "DissolvedSolidsContent",
+            PropertyType = new PropertySingleValue() { DataType = "IfcNormalisedRatioMeasure" },
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition IfcFuelProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcFuelProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "CombustionTemperature",
+            PropertyType = new PropertySingleValue() { DataType = "IfcThermodynamicTemperatureMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "CarbonContent",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "LowerHeatingValue",
+            PropertyType = new PropertySingleValue() { DataType = "IfcHeatingValueMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "HigherHeatingValue",
+            PropertyType = new PropertySingleValue() { DataType = "IfcHeatingValueMeasure" },
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition IfcProductsOfCombustionProperties(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "IfcProductsOfCombustionProperties";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMaterial" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "SpecificHeatCapacity",
+            PropertyType = new PropertySingleValue() { DataType = "IfcSpecificHeatCapacityMeasure" },
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "N20Content",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "COContent",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "CO2Content",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveRatioMeasure" },
+         });
+
+         return psetD;
+      }
+
    }
 }

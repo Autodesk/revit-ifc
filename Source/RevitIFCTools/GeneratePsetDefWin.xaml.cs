@@ -360,8 +360,8 @@ namespace RevitIFCTools
                setDescription = "PropertySetDescription";
                break;
             case "Ifc":
-               initPsetOrQsets = "InitPredefinedPropertySets";
-               setDescription = "PropertySetDescription";
+               initPsetOrQsets = "InitPreDefinedPropertySets";
+               setDescription = "PreDefinedPropertySetDescription";
                break;
             case "Qto":
                initPsetOrQsets = "InitQtoSets";
@@ -405,10 +405,12 @@ namespace RevitIFCTools
             string varName = null;
             string setsName = null;
             string psetName = psetDefEntry.Key;
+            string certificationCheckName = null;
             switch (whichCat)
             {
                case "Pset":
                   setsName = "commonPropertySets";
+                  certificationCheckName = "AllowPsetToBeCreated";
                   outF.WriteLine("      private static void Init" + psetName + "(IList<{0}> {1})", setDescription, setsName);
                   varName = psetDefEntry.Key.Replace("Pset_", "propertySet");
                   outF.WriteLine("      {");
@@ -418,15 +420,17 @@ namespace RevitIFCTools
                   break;
                case "Ifc":
                   setsName = "commonPropertySets";
+                  certificationCheckName = "AllowPredefPsetToBeCreated";
                   outF.WriteLine("      private static void Init" + psetName + "(IList<{0}> {1})", setDescription, setsName);
                   varName = psetDefEntry.Key.Replace("Pset_", "propertySet");
                   outF.WriteLine("      {");
                   outF.WriteLine("         {0} {1} = new {0}();", setDescription, varName);
                   outF.WriteLine("         {0}.Name = \"{1}\";", varName, psetName);
-                  outF.WriteLine("         PropertySetEntry ifcPSE = null;");
+                  outF.WriteLine("         PreDefinedPropertySetEntry ifcPSE = null;");
                   break;
                case "Qto":
                   setsName = "quantitySets";
+                  certificationCheckName = "AllowPsetToBeCreated";
                   outF.WriteLine("      private static void Init" + psetName + "(IList<{0}> {1})", setDescription, setsName);
                   varName = psetDefEntry.Key.Replace("Qto_", "qtoSet");
                   outF.WriteLine("      {");
@@ -448,7 +452,7 @@ namespace RevitIFCTools
 
                if (vspecPDef.IfcVersion.StartsWith("IFC2X2", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
@@ -465,7 +469,7 @@ namespace RevitIFCTools
                else if (vspecPDef.IfcVersion.StartsWith("IFC2X3", StringComparison.CurrentCultureIgnoreCase)
                   || vspecPDef.IfcVersion.Equals("IFC2X3_TC1", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
@@ -481,7 +485,7 @@ namespace RevitIFCTools
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD1", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
@@ -497,7 +501,7 @@ namespace RevitIFCTools
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD2", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
@@ -513,7 +517,7 @@ namespace RevitIFCTools
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
@@ -529,7 +533,7 @@ namespace RevitIFCTools
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4x3", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                }
                else
