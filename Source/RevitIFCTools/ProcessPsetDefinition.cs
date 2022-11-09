@@ -954,8 +954,6 @@ namespace RevitIFCTools
                string[] applTypeStr = applicableType.Split('/', '.', '=');
                pset.ApplicableType = applTypeStr[0];
                pset.PredefinedType = GetApplicablePredefinedType(applTypeStr);
-               //if (applTypeStr.Count() > 1 && !pset.ApplicableType.Equals("IfcMaterial", StringComparison.InvariantCultureIgnoreCase))
-                 // pset.PredefinedType = applTypeStr[applTypeStr.Count() - 1].Replace("\"", "").TrimEnd(',');
 
                // If the applicable type contains more than 1 entry, add them into the applicable classes
                string[] addClasses = pset.ApplicableType.Split(',');
