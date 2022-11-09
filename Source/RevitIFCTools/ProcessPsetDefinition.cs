@@ -953,7 +953,7 @@ namespace RevitIFCTools
 
                string[] applTypeStr = applicableType.Split('/', '.', '=');
                pset.ApplicableType = applTypeStr[0];
-               if (applTypeStr.Count() > 1)
+               if (applTypeStr.Count() > 1 && !pset.ApplicableType.Equals("IfcMaterial", StringComparison.InvariantCultureIgnoreCase))
                   pset.PredefinedType = applTypeStr[applTypeStr.Count() - 1].Replace("\"", "").TrimEnd(',');
 
                // If the applicable type contains more than 1 entry, add them into the applicable classes
@@ -1671,7 +1671,7 @@ namespace RevitIFCTools
          psetD.properties.Add(new PsetProperty()
          {
             Name = "Relaxations",
-            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },  // Not the correct one actually since it is actually a class that is not supported here directly (similar to IfcReinforcementDefinitionProperties.ReinforcementSectionDefinitions)
+            PropertyType = new PropertySingleValue() { DataType = "IfcRelaxation" },
             PropertyValueType = "PropertyValueType.ListValue"
          });
 
