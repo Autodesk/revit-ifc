@@ -953,8 +953,7 @@ namespace RevitIFCTools
 
                string[] applTypeStr = applicableType.Split('/', '.', '=');
                pset.ApplicableType = applTypeStr[0];
-               if (applTypeStr.Count() > 1)
-                  pset.PredefinedType = applTypeStr[applTypeStr.Count() - 1].Replace("\"", "").TrimEnd(',');
+               pset.PredefinedType = GetApplicablePredefinedType(applTypeStr);
 
                // If the applicable type contains more than 1 entry, add them into the applicable classes
                string[] addClasses = pset.ApplicableType.Split(',');
@@ -1101,6 +1100,25 @@ namespace RevitIFCTools
          pset.properties = propSet;
 
          return pset;
+      }
+
+      private string GetApplicablePredefinedType(string[] applTypeStr)
+      {
+         // Applicable type is a single entity name
+         if (applTypeStr.Count() < 2)
+            return null;
+
+         // Do not fill the predefinedType for IfcMaterial applicable type
+         // For example in ifc4 the applicable type of Pset_MaterialConcrete is 'IfcMaterial/Concrete'
+         // I don't see any reasons to restrict the material properties export for material because:
+         // 1. These properties are exported only if the customer add and fill the corresponding SharedParameter
+         // 2. In fact IfcMaterial's don't have PredefinedType
+         // 3. The Applicable type string was fixed in ifc4x3 schema (removed predefined type name)
+         // 4. In Revit materials can be Basic, Generic or without Type at all if the 'Physical' assert isn't added
+         if (applTypeStr[0].Equals("IfcMaterial", StringComparison.InvariantCultureIgnoreCase))         
+            return null;
+            
+         return applTypeStr[applTypeStr.Count() - 1].Replace("\"", "").TrimEnd(',');
       }
 
       public void ProcessSchemaPsetDef(string schemaName, DirectoryInfo psdFolder, Dictionary<ItemsInPsetQtoDefs, string> psetOrQtoSet)
@@ -1671,7 +1689,7 @@ namespace RevitIFCTools
          psetD.properties.Add(new PsetProperty()
          {
             Name = "Relaxations",
-            PropertyType = new PropertySingleValue() { DataType = "IfcLabel" },  // Not the correct one actually since it is actually a class that is not supported here directly (similar to IfcReinforcementDefinitionProperties.ReinforcementSectionDefinitions)
+            PropertyType = new PropertySingleValue() { DataType = "IfcRelaxation" },
             PropertyValueType = "PropertyValueType.ListValue"
          });
 
