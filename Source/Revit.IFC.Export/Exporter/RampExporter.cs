@@ -132,7 +132,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="placementSetter">The placement setter.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
       public static void ExportMultistoryRamp(ExporterIFC exporterIFC, Element ramp, int numFlights,
-          IFCAnyHandle rampHnd, IList<IFCAnyHandle> components, IList<IFCExtrusionCreationData> componentECData,
+          IFCAnyHandle rampHnd, IList<IFCAnyHandle> components, IList<IFCExportBodyParams> componentECData,
           PlacementSetter placementSetter, ProductWrapper productWrapper)
       {
          if (numFlights < 2)
@@ -308,7 +308,8 @@ namespace Revit.IFC.Export.Exporter
             
             string containerRampName = 
                IFCAnyHandleUtil.GetStringAttribute(rampHnd, "Name") + ":" + (ii + 2);
-            string containerGuid = GUIDUtil.GenerateIFCGuidFrom(ramp, containerRampName);
+            string containerGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(ramp, containerRampName));
             IFCAnyHandle rampCopyHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp,
                containerGuid, ownerHistory, rampLocalPlacementHnds[ii], null, rampType);
 
@@ -399,7 +400,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      foreach ((Solid body, Face topFace) flightItem in rampFlight.Value)
                      {
-                        using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+                        using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                         {
                            ecData.AllowVerticalOffsetOfBReps = false;
                            ecData.SetLocalPlacement(ExporterUtil.CreateLocalPlacement(file, placementSetter.LocalPlacement, null));
@@ -476,7 +477,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      foreach ((Solid body, Face topFace) landingItem in landing.Value)
                      {
-                        using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+                        using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                         {
                            ecData.AllowVerticalOffsetOfBReps = false;
                            ecData.SetLocalPlacement(ExporterUtil.CreateLocalPlacement(file, placementSetter.LocalPlacement, null));
@@ -541,13 +542,14 @@ namespace Revit.IFC.Export.Exporter
 
                   if (rampComponents.Count > 0)
                   {
-                     string relGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAggregates, rampContainerHnd);
+                     string relGuid = GUIDUtil.GenerateIFCGuidFrom(
+                        GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelAggregates, rampContainerHnd));
                      IFCInstanceExporter.CreateRelAggregates(file, relGuid, ownerHistory, null, null, rampContainerHnd, rampComponents);
                   }
                }
                else
                {
-                  using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+                  using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                   {
                      ecData.SetLocalPlacement(placementSetter.LocalPlacement);
                      ecData.ReuseLocalPlacement = false;
@@ -589,7 +591,7 @@ namespace Revit.IFC.Export.Exporter
                      else
                      {
                         List<IFCAnyHandle> components = new List<IFCAnyHandle>();
-                        IList<IFCExtrusionCreationData> componentExtrusionData = new List<IFCExtrusionCreationData>();
+                        IList<IFCExportBodyParams> componentExtrusionData = new List<IFCExportBodyParams>();
                         IFCAnyHandle containedRampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, containedRampGuid, ownerHistory,
                                   containedRampLocalPlacement, representation, exportTypePair.ValidatedPredefinedType);
                         components.Add(containedRampHnd);
@@ -713,7 +715,7 @@ namespace Revit.IFC.Export.Exporter
       {
          // For IFC4 and Structural Exchange Requirement export, ramps will be exported as IFCSlab type
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && 
-            (ExporterCacheManager.ExportOptionsCache.GetExchangeRequirement == KnownERNames.Structural))
+            (ExporterCacheManager.ExportOptionsCache.ExchangeRequirement == KnownERNames.Structural))
          {
             entityName = IFCEntityType.IfcSlab;
             entityType = IFCEntityType.IfcSlabType;
@@ -797,8 +799,8 @@ namespace Revit.IFC.Export.Exporter
 
          if (properties.Count > 0)
          {
-            string guid = GUIDUtil.GenerateIFCGuidFrom(element, 
-               paramSetName + ": " + flightIndex.ToString());
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, paramSetName + ": " + flightIndex.ToString()));
             return IFCInstanceExporter.CreatePropertySet(file,
                guid, ExporterCacheManager.OwnerHistoryHandle, paramSetName, null, properties);
          }
@@ -896,8 +898,9 @@ namespace Revit.IFC.Export.Exporter
 
          if (properties.Count > 0)
          {
-            string guid = GUIDUtil.GenerateIFCGuidFrom(element, 
-               "Landing " + psetName + ": " + landingIndex.ToString());
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, 
+               "Landing " + psetName + ": " + landingIndex.ToString()));
             return IFCInstanceExporter.CreatePropertySet(file, guid,
                ExporterCacheManager.OwnerHistoryHandle, psetName, null, properties);
          }

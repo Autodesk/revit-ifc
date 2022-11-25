@@ -55,11 +55,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// Calculates load bearing value for a wall.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
-      /// <param name="calcValues">The IFCExtrusionCreationData.</param>
+      /// <param name="calcValues">The IFCExportBodyParams.</param>
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeeded, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          Wall wall = element as Wall;
          if (wall != null)
@@ -88,9 +88,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // If other entities, look for the parameter value for Load Bearing
-         int? intLoadBearing = ParameterUtil.GetIntValueFromElementOrSymbol(element, entryMap.RevitParameterName);
-         if (!intLoadBearing.HasValue)
-            ParameterUtil.GetIntValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName);
+         int? intLoadBearing = ParameterUtil.GetIntValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName);
 
          if (!intLoadBearing.HasValue)
             return false;

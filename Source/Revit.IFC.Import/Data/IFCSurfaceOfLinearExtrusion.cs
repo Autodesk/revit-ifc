@@ -63,8 +63,8 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         CurveLoop outerCurveLoop = (SweptCurve as IFCSimpleProfile).OuterCurve;
-         if (outerCurveLoop == null || outerCurveLoop.Count() != 1)
+         CurveLoop outerCurveLoop = (SweptCurve as IFCSimpleProfile).GetTheOuterCurveLoop();
+         if (outerCurveLoop?.Count() != 1)
          {
             // LOG: ERROR
             return null;
@@ -158,7 +158,7 @@ namespace Revit.IFC.Import.Data
             // the SweptCurve is an IFCSimpleProfile and its outer curve only contains one curve, which is the 
             // profile curve that we want
             IFCSimpleProfile simpleSweptCurve = SweptCurve as IFCSimpleProfile;
-            CurveLoop outerCurve = simpleSweptCurve.OuterCurve;
+            CurveLoop outerCurve = simpleSweptCurve.GetTheOuterCurveLoop();
             if (outerCurve == null)
             {
                return null;

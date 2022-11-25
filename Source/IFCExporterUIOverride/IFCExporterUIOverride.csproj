@@ -245,6 +245,10 @@
       <Name>Revit.IFC.Common</Name>
       <Private>False</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Revit.IFC.Export\Revit.IFC.Export.csproj">
+      <Project>{bce5141a-291b-4cd8-a69b-7b9345aa00e9}</Project>
+      <Name>Revit.IFC.Export</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project=".\IFCExporterUIOverride.props" />
   <PropertyGroup>

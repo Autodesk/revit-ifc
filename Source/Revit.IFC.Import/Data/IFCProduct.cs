@@ -268,13 +268,16 @@ namespace Revit.IFC.Import.Data
                continue;
             }
 
-            var voidTransform = voidInfo.TotalTransform;
+            Transform voidTransform = voidInfo.TotalTransform;
 
-            if (voidTransform != null && voidTransform.IsIdentity == false)
+            if (voidTransform != null)
             {
                // Transform the void into the space of the solid.
-               var t = ObjectLocation.TotalTransform.Inverse.Multiply(voidTransform);
-               voidObject = SolidUtils.CreateTransformed(voidObject, t);
+               Transform voidToSolidTrf = ObjectLocation.TotalTransform.Inverse.Multiply(voidTransform);
+               if (voidToSolidTrf.IsIdentity == false)
+               {
+                  voidObject = SolidUtils.CreateTransformed(voidObject, voidToSolidTrf);
+               }
             }
 
             solidInfo.GeometryObject = IFCGeometryUtil.ExecuteSafeBooleanOperation(solidInfo.Id, voidInfo.Id,
@@ -354,7 +357,7 @@ namespace Revit.IFC.Import.Data
                // Lower down this method we then pass lcs to the consumer element, so that it can apply
                // the transform as required.
                Transform transformToUse = Importer.TheProcessor.ApplyTransforms ? lcs : Transform.Identity;
-               ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, transformToUse, myId);
+               ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, myId);
 
                int numSolids = Solids.Count;
                // Attempt to cut each solid with each void.
@@ -499,6 +502,9 @@ namespace Revit.IFC.Import.Data
 
             if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcDistributionPort))
                return IFCDistributionPort.ProcessIFCDistributionPort(ifcProduct);
+
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcAnnotation))
+               return IFCAnnotation.ProcessIFCAnnotation(ifcProduct);
          }
          catch (Exception ex)
          {

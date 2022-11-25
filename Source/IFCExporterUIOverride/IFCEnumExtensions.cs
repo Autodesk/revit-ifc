@@ -20,6 +20,7 @@
 using Autodesk.Revit.DB;
 using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.Common.Utility;
 
 namespace BIM.IFC.Export.UI
 {
@@ -53,7 +54,11 @@ namespace BIM.IFC.Export.UI
             case IFCVersion.IFC2x3BFM:
                return Resources.IFCMVDFMHandOver;
             default:
-               return Resources.IFCVersionUnrecognized;
+               //Handling the IFC4x3 format for using the IFC Extension with Revit versions older than 2023.1 which does not support IFC4x3.
+               if (version == OptionsUtil.GetIFCVersionByName("IFC4x3"))
+                  return Resources.IFCVersion4x3;
+               else
+                  return Resources.IFCVersionUnrecognized;
          }
       }
 

@@ -2143,7 +2143,7 @@ namespace Revit.IFC.Export.Utility
 
          double scaledPlanesDistance = UnitUtil.ScaleLength(planesDistance);
          Transform plane1LCS = GeometryUtil.CreateTransformFromPlane(plane1);
-         IFCAnyHandle extrusionHandle = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, origCurveLoops, plane1LCS, extDir, scaledPlanesDistance, false);
+         IFCAnyHandle extrusionHandle = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, origCurveLoops, plane1LCS, extDir, scaledPlanesDistance, false, out _);
 
          IFCAnyHandle booleanBodyItemHnd = IFCInstanceExporter.CreateBooleanResult(exporterIFC.GetFile(), IFCBooleanOperator.Difference,
              origBodyRepHnd, extrusionHandle);
@@ -2671,16 +2671,24 @@ namespace Revit.IFC.Export.Utility
       /// <param name="height">The height.</param>
       /// <param name="width">The width.</param>
       /// <returns>True if gets the values successfully.</returns>
-      public static bool ComputeHeightWidthOfCurveLoop(CurveLoop curveLoop, out double height, out double width)
+      public static bool ComputeHeightWidthOfCurveLoop(CurveLoop curveLoop, XYZ expectedWidthDir, out double height, out double width)
       {
+         bool result = false;
          height = width = 0;
 
          if (!curveLoop.HasPlane())
-            return false;
+            return result;
 
          Plane plane = curveLoop.GetPlane();
          Transform lcs = CreateTransformFromPlane(plane);
-         return ComputeHeightWidthOfCurveLoop(curveLoop, lcs, out height, out width);
+
+         result = ComputeHeightWidthOfCurveLoop(curveLoop, lcs, out height, out width);
+
+         // The plane might be flipped. Swap height and width in this case
+         if (expectedWidthDir != null && MathUtil.VectorsAreParallel(expectedWidthDir, plane.YVec))
+            (height, width) = (width, height);
+
+         return result;
       }
 
       /// <summary>

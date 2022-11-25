@@ -117,9 +117,8 @@ namespace Revit.IFC.Import.Data
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>The created geometry.</returns>
       protected override IList<GeometryObject> CreateGeometryInternal(
-            IFCImportShapeEditScope shapeEditScope, Transform unscaledLcs, Transform scaledLcs, string guid)
+         IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
-         Transform unscaledObjectPosition = (unscaledLcs == null) ? Position : unscaledLcs.Multiply(Position);
          Transform scaledObjectPosition = (scaledLcs == null) ? Position : scaledLcs.Multiply(Position);
 
          IList<CurveLoop> trimmedDirectrices = IFCGeometryUtil.TrimCurveLoops(Id, Directrix, StartParameter, EndParameter);
@@ -144,7 +143,7 @@ namespace Revit.IFC.Import.Data
 
             Transform referenceSurfaceLocalTransform = ReferenceSurface.GetTransformAtPoint(originTrf0.Origin);
 
-            CurveLoop trimmedDirectrixInLCS = IFCGeometryUtil.CreateTransformed(trimmedDirectrix, Id, unscaledObjectPosition, scaledObjectPosition);
+            CurveLoop trimmedDirectrixInLCS = IFCGeometryUtil.CreateTransformed(trimmedDirectrix, Id, scaledObjectPosition);
 
             // Create the sweep.
             Transform originTrf = null;
@@ -153,7 +152,6 @@ namespace Revit.IFC.Import.Data
             //    startParam = firstCurve.GetEndParameter(0);
             originTrf = firstCurve.ComputeDerivatives(startParam, false);
 
-            Transform unscaledReferenceSurfaceTransform = unscaledObjectPosition.Multiply(referenceSurfaceLocalTransform);
             Transform scaledReferenceSurfaceTransform = scaledObjectPosition.Multiply(referenceSurfaceLocalTransform);
 
             Transform profileCurveLoopsTransform = Transform.CreateTranslation(originTrf.Origin);
@@ -161,7 +159,7 @@ namespace Revit.IFC.Import.Data
             profileCurveLoopsTransform.BasisZ = originTrf.BasisX.Normalize();
             profileCurveLoopsTransform.BasisY = profileCurveLoopsTransform.BasisZ.CrossProduct(profileCurveLoopsTransform.BasisX);
 
-            ISet<IList<CurveLoop>> profileCurveLoops = GetTransformedCurveLoops(profileCurveLoopsTransform, profileCurveLoopsTransform);
+            ISet<IList<CurveLoop>> profileCurveLoops = GetTransformedCurveLoops(profileCurveLoopsTransform);
             if (profileCurveLoops == null || profileCurveLoops.Count == 0)
                return null;
 
@@ -182,14 +180,14 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       // <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
-         IList<GeometryObject> sweptAreaGeometries = CreateGeometryInternal(shapeEditScope, lcs, scaledLcs, guid);
+         IList<GeometryObject> sweptAreaGeometries = CreateGeometryInternal(shapeEditScope, scaledLcs, guid);
          if (sweptAreaGeometries != null)
          {
             foreach (GeometryObject sweptAreaGeometry in sweptAreaGeometries)

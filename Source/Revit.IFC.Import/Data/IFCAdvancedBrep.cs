@@ -54,24 +54,22 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, scaledLcs, lcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
       }
 
       /// <summary>
       /// Return geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The shape edit scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>The created geometry.</returns>
       protected override IList<GeometryObject> CreateGeometryInternal(
-         IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+         IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
          // since IFCAdvancedBrep must contain a closed shell, we set the BuildPreferenceType to be solid for now
          for (int pass = 0; pass < 2; pass++)
@@ -84,7 +82,7 @@ namespace Revit.IFC.Import.Data
                brepBuilderScope.StartCollectingFaceSet(brepType);
 
                Outer.AllowInvalidFace = (pass == 0);
-               Outer.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+               Outer.CreateShape(shapeEditScope, scaledLcs, guid);
 
                IList<GeometryObject> geomObjs = null;
                geomObjs = brepBuilderScope.CreateGeometry();

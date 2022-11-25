@@ -31,22 +31,39 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class LevelInfoCache
    {
+      class DuplicateKeyComparer : IComparer<double>
+      {
+         public int Compare(double key1, double key2)
+         {
+            if (MathComparisonUtils.IsAlmostEqual(key1, key2))
+            {
+               if (key1 < key2)
+                  return -1;
+               else
+                  return 1;
+            }
+            else
+               return key1.CompareTo(key2);
+         }
+      }  
+      
       /// <summary>
       /// The dictionary mapping from an ElementId to a level height.
       /// </summary>
-      private Dictionary<ElementId, KeyValuePair<ElementId, double>> elementIdToLevelHeight = new Dictionary<ElementId, KeyValuePair<ElementId, double>>();
+      private IDictionary<long, KeyValuePair<ElementId, double>> m_ElementIdToLevelHeight = 
+         new SortedDictionary<long, KeyValuePair<ElementId, double>>();
 
       /// <summary>
       /// A list of building storeys (that is, levels that are being exported), sorted by elevation.  
       /// The user is expected to create the list in the proper order; this is done in Exporter.cs.
       /// </summary>
-      private List<ElementId> m_BuildingStoriesByElevation;
+      private SortedList<double, ElementId> m_BuildingStoriesByElevation = new SortedList<double, ElementId>(new DuplicateKeyComparer());
 
       /// <summary>
       /// A list of levels, sorted by elevation.  
       /// The user is expected to create the list in the proper order; this is done in Exporter.cs.
       /// </summary>
-      private List<ElementId> m_LevelsByElevation;
+      private SortedList<double, ElementId> m_LevelsByElevation = new SortedList<double, ElementId>(new DuplicateKeyComparer());
 
       /// <summary>
       /// A set of IFC entities that should be associated to a level, but there is no level to associate them to.  These are buliding element related.
@@ -66,7 +83,7 @@ namespace Revit.IFC.Export.Utility
       public double FindHeight(ElementId elementId)
       {
          KeyValuePair<ElementId, double> info;
-         if (elementIdToLevelHeight.TryGetValue(elementId, out info))
+         if (m_ElementIdToLevelHeight.TryGetValue(elementId.IntegerValue, out info))
          {
             return info.Value;
          }
@@ -81,7 +98,7 @@ namespace Revit.IFC.Export.Utility
       public ElementId FindNextLevel(ElementId elementId)
       {
          KeyValuePair<ElementId, double> info;
-         if (elementIdToLevelHeight.TryGetValue(elementId, out info))
+         if (m_ElementIdToLevelHeight.TryGetValue(elementId.IntegerValue, out info))
          {
             return info.Key;
          }
@@ -96,10 +113,10 @@ namespace Revit.IFC.Export.Utility
       /// <param name="height">The height.</param>
       public void Register(ElementId elementId, ElementId nextLevelId, double height)
       {
-         if (elementIdToLevelHeight.ContainsKey(elementId))
+         if (m_ElementIdToLevelHeight.ContainsKey(elementId.IntegerValue))
             return;
 
-         elementIdToLevelHeight[elementId] = new KeyValuePair<ElementId, double>(nextLevelId, height);
+         m_ElementIdToLevelHeight[elementId.IntegerValue] = new KeyValuePair<ElementId, double>(nextLevelId, height);
       }
 
       /// <summary>
@@ -110,9 +127,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            if (m_BuildingStoriesByElevation == null)
-               m_BuildingStoriesByElevation = new List<ElementId>();
-            return m_BuildingStoriesByElevation;
+            return m_BuildingStoriesByElevation.Where(k => k.Value != ElementId.InvalidElementId).Select(x => x.Value).ToList();
          }
       }
 
@@ -124,9 +139,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            if (m_LevelsByElevation == null)
-               m_LevelsByElevation = new List<ElementId>();
-            return m_LevelsByElevation;
+            return m_LevelsByElevation.Where(k => k.Value != ElementId.InvalidElementId).Select(x => x.Value).ToList();
          }
       }
 
@@ -165,9 +178,26 @@ namespace Revit.IFC.Export.Utility
       /// <param name="isBaseBuildingStorey">True if it is the levelId associated with the building storey.</param>
       public void AddLevelInfo(ExporterIFC exporterIFC, ElementId levelId, IFCLevelInfo info, bool isBaseBuildingStorey)
       {
-         LevelsByElevation.Add(levelId);
+         if (m_LevelsByElevation.Count == 0)
+         {
+            m_LevelsByElevation.Add(double.MinValue, ElementId.InvalidElementId);
+            m_LevelsByElevation.Add(double.MaxValue, ElementId.InvalidElementId);
+         }
+         Level level = ExporterCacheManager.Document.GetElement(levelId) as Level;
+         if (level != null)
+            m_LevelsByElevation.Add(level.Elevation, levelId);
+         else
+            m_LevelsByElevation.Add(info.Elevation, levelId);
+
          if (isBaseBuildingStorey)
-            BuildingStoriesByElevation.Add(levelId);
+         {
+            if (m_BuildingStoriesByElevation.Count == 0)
+            {
+               m_BuildingStoriesByElevation.Add(double.MinValue, ElementId.InvalidElementId);
+               m_BuildingStoriesByElevation.Add(double.MaxValue, ElementId.InvalidElementId);
+            }
+            m_BuildingStoriesByElevation.Add(info.Elevation, levelId);
+         }
          exporterIFC.AddBuildingStorey(levelId, info);
       }
 
@@ -184,6 +214,58 @@ namespace Revit.IFC.Export.Utility
          if (!exporterIFC.GetLevelInfos().TryGetValue(levelId, out levelInfo))
             return null;
          return levelInfo;
+      }
+
+      /// <summary>
+      /// Get the appropriate levelid for an object. This function will try to get the dependent objects to form
+      ///   the overall bounding box to find the right level
+      /// </summary>
+      /// <param name="element">the element</param>
+      /// <returns>return the level id</returns>
+      public ElementId GetLevelIdOfObject(Element element)
+      {
+         ElementId levelId = ElementId.InvalidElementId;
+         double lowestPosition = double.MaxValue;
+
+         if (element.LevelId != ElementId.InvalidElementId)
+            return element.LevelId;
+
+         BoundingBoxXYZ bbox = element.get_BoundingBox(null);
+         if (bbox == null)
+         {
+            Document doc = ExporterCacheManager.Document;
+            IList<ElementId> dependentElements = element.GetDependentElements(null);
+            if (dependentElements != null && dependentElements.Count > 0)
+            {
+               foreach (ElementId elemid in dependentElements)
+               {
+                  Element depElem = doc.GetElement(elemid);
+                  BoundingBoxXYZ bboxElem = depElem.get_BoundingBox(null);
+                  if (bboxElem != null && bboxElem.Min.Z < lowestPosition)
+                     lowestPosition = bboxElem.Min.Z;
+               }
+            }
+         }
+         else
+         {
+            lowestPosition = bbox.Min.Z;
+         }
+
+         if (lowestPosition > double.MinValue)
+         {
+            for (int ii = 0; ii < m_BuildingStoriesByElevation.Count - 2; ++ii)
+            {
+               if (lowestPosition >= (m_BuildingStoriesByElevation.Keys[ii] - LevelUtil.LevelExtension) && lowestPosition < m_BuildingStoriesByElevation.Keys[ii + 1])
+               {
+                  if (ii == 0)
+                     levelId = m_BuildingStoriesByElevation.Values[ii + 1];
+                  else
+                     levelId = m_BuildingStoriesByElevation.Values[ii];
+                  break;
+               }
+            }
+         }
+         return levelId;
       }
    }
 }

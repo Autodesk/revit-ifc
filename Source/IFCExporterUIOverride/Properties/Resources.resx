@@ -191,7 +191,7 @@
     <value>Export schedules as property sets</value>
   </data>
   <data name="IncludeIfcSiteElevation" xml:space="preserve">
-    <value>Include IFCSITE elevation in the site local placement origin</value>
+    <value>Include IFCSite elevation in the site local placement origin</value>
   </data>
   <data name="UseCoarseTessellation" xml:space="preserve">
     <value>Use coarse tessellation for some BReps</value>
@@ -275,32 +275,38 @@
     <value>Custom parameter sets</value>
     <comment>User Defined Parameter Sets</comment>
   </data>
-  <data name="IFCExportProcessError" xml:space="preserve">
-    <value>The IFC export process encountered an error for: {0}.</value>
-  </data>
   <data name="LinkInstanceExportCantCreateDoc" xml:space="preserve">
     <value>Could not create a temporary document for exporting the linked instance(s) for ids: {0}</value>
   </data>
   <data name="LinkInstanceExportCantFindDoc" xml:space="preserve">
-    <value>The document for the linked instance(s) could not be found for ids: {0}.</value>
+    <value>The document for the linked instance(s) could not be found for id(s): {0}.</value>
   </data>
   <data name="LinkInstanceExportErrorMain" xml:space="preserve">
     <value>{0} linked instance(s) could not be exported.</value>
   </data>
   <data name="LinkInstanceExportErrorPath" xml:space="preserve">
-    <value>The path for the linked instance(s) did not exist for ids: {0}.</value>
+    <value>The path for the linked instance(s) did not exist for id(s): {0}.</value>
   </data>
   <data name="LinkInstanceExportNonConformal" xml:space="preserve">
-    <value>The linked instance(s) were non-conformal for ids: {0}.</value>
+    <value>The linked instance(s) were non-conformal for id(s): {0}.</value>
   </data>
   <data name="LinkInstanceExportHasReflection" xml:space="preserve">
-    <value>The linked instance(s) were mirrored for ids: {0}.  To export a mirrored linked instance, mirror the linked geometry and link in the new document.</value>
+    <value>The linked instance(s) were mirrored for id(s): {0}.  To export a mirrored linked instance, mirror the linked geometry and link in the new document.</value>
   </data>
   <data name="LinkInstanceExportScaled" xml:space="preserve">
-    <value>The linked instance(s) were scaled for ids: {0}.</value>
+    <value>The linked instance(s) were scaled for id(s): {0}.</value>
   </data>
   <data name="IFCExport" xml:space="preserve">
     <value>IFC export</value>
+  </data>
+  <data name="IFCExportProcessError" xml:space="preserve">
+    <value>The IFC export process encountered an error for: {0}.</value>
+  </data>
+  <data name="IFCExportProcessGenericError" xml:space="preserve">
+    <value>The IFC export process encountered an error.</value>
+  </data>
+  <data name="IFCExportGenericWarning" xml:space="preserve">
+    <value>IFC Export Warning</value>
   </data>
   <data name="Address" xml:space="preserve">
     <value>Project Address...</value>
@@ -614,9 +620,6 @@
   <data name="SelectOneOrMoreProjects" xml:space="preserve">
     <value>Please select at least one project to export.</value>
   </data>
-  <data name="IFCExportProcessGenericError" xml:space="preserve">
-    <value>The IFC export process encountered an error.</value>
-  </data>
   <data name="Use2DRoomBoundariesForRoomVolume" xml:space="preserve">
     <value>Use 2D room boundaries for room volume</value>
   </data>
@@ -639,7 +642,10 @@
     <value>IFC2x3 COBie 2.4 Design Deliverable View</value>
   </data>
   <data name="IFC4DTV" xml:space="preserve">
-    <value>IFC4 Design Transfer View</value>
+    <value>IFC4 Design Transfer View [Unofficial]</value>
+  </data>
+  <data name="IFC4DTVWarning" xml:space="preserve">
+    <value>The selected export setup is not supported by buildingSMART International. Files created using this setup may not be usable by other software.</value>
   </data>
   <data name="IFC4RV" xml:space="preserve">
     <value>IFC4 Reference View</value>
@@ -897,7 +903,7 @@
     <value>Error</value>
   </data>
   <data name="MultipleAssignments" xml:space="preserve">
-    <value>Multiple assignments found in the selected objects !</value>
+    <value>Multiple assignments found in the selected objects.</value>
   </data>
   <data name="Search" xml:space="preserve">
     <value>Search</value>
@@ -928,5 +934,11 @@
   </data>
   <data name="Show" xml:space="preserve">
     <value>Show</value>
+  </data>
+  <data name="IFCVersion4x3" xml:space="preserve">
+    <value>IFC4x3 [Experimental]</value>
+  </data>
+  <data name="ExportMaterialPropertySets" xml:space="preserve">
+    <value>Export material property sets</value>
   </data>
 </root>

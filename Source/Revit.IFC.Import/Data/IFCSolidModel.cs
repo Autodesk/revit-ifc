@@ -43,24 +43,24 @@ namespace Revit.IFC.Import.Data
       }
 
       protected abstract IList<GeometryObject> CreateGeometryInternal(
-         IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid);
+         IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid);
 
       /// <summary>
       /// Return geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The shape edit scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>Zero or more created geometries.</returns>
-      public IList<GeometryObject> CreateGeometry(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      public IList<GeometryObject> CreateGeometry(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          if (StyledByItem != null)
             StyledByItem.Create(shapeEditScope);
 
          using (IFCImportShapeEditScope.IFCMaterialStack stack = new IFCImportShapeEditScope.IFCMaterialStack(shapeEditScope, StyledByItem, null))
          {
-            return CreateGeometryInternal(shapeEditScope, lcs, scaledLcs, guid);
+            return CreateGeometryInternal(shapeEditScope, scaledLcs, guid);
          }
       }
 
@@ -102,6 +102,8 @@ namespace Revit.IFC.Import.Data
             return IFCSweptAreaSolid.ProcessIFCSweptAreaSolid(ifcSolidModel);
          if (IFCAnyHandleUtil.IsSubTypeOf(ifcSolidModel, IFCEntityType.IfcSweptDiskSolid))
             return IFCSweptDiskSolid.ProcessIFCSweptDiskSolid(ifcSolidModel);
+         if (IFCAnyHandleUtil.IsSubTypeOf(ifcSolidModel, IFCEntityType.IfcSectionedSolid))
+            return IFCSectionedSolid.ProcessIFCSectionedSolid(ifcSolidModel);
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcSolidModel, IFCEntityType.IfcSolidModel, false);
          return null;

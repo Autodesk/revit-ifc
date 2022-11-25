@@ -59,17 +59,23 @@ namespace Revit.IFC.Import.Data
 
          if (m_DoorLiningPropertyDescs == null)
          {
+            bool atLeastIfc4 = IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete);
             m_DoorLiningPropertyDescs = new List<Tuple<string, ForgeTypeId, AllowedValues>>();
             m_DoorLiningPropertyDescs.Add(Tuple.Create("LiningDepth", SpecTypeId.Length, AllowedValues.Positive));
-            m_DoorLiningPropertyDescs.Add(Tuple.Create("LiningThickness", SpecTypeId.Length, AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("LiningThickness", SpecTypeId.Length, atLeastIfc4 ? AllowedValues.NonNegative: AllowedValues.Positive));
             m_DoorLiningPropertyDescs.Add(Tuple.Create("ThresholdDepth", SpecTypeId.Length, AllowedValues.Positive));
-            m_DoorLiningPropertyDescs.Add(Tuple.Create("ThresholdThickness", SpecTypeId.Length, AllowedValues.Positive));
-            m_DoorLiningPropertyDescs.Add(Tuple.Create("TransomThickness", SpecTypeId.Length, AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("ThresholdThickness", SpecTypeId.Length, atLeastIfc4 ? AllowedValues.NonNegative : AllowedValues.Positive));
+            m_DoorLiningPropertyDescs.Add(Tuple.Create("TransomThickness", SpecTypeId.Length, atLeastIfc4 ? AllowedValues.NonNegative : AllowedValues.Positive));
             m_DoorLiningPropertyDescs.Add(Tuple.Create("TransomOffset", SpecTypeId.Length, AllowedValues.All));
             m_DoorLiningPropertyDescs.Add(Tuple.Create("LiningOffset", SpecTypeId.Length, AllowedValues.All));
             m_DoorLiningPropertyDescs.Add(Tuple.Create("ThresholdOffset", SpecTypeId.Length, AllowedValues.All));
             m_DoorLiningPropertyDescs.Add(Tuple.Create("CasingThickness", SpecTypeId.Length, AllowedValues.Positive));
             m_DoorLiningPropertyDescs.Add(Tuple.Create("CasingDepth", SpecTypeId.Length, AllowedValues.Positive));
+            if (atLeastIfc4)
+            {
+               m_DoorLiningPropertyDescs.Add(Tuple.Create("LiningToPanelOffsetX", SpecTypeId.Length, AllowedValues.All));
+               m_DoorLiningPropertyDescs.Add(Tuple.Create("LiningToPanelOffsetY", SpecTypeId.Length, AllowedValues.All));
+            }
          }
 
          foreach (Tuple<string, ForgeTypeId, AllowedValues> propertyDesc in m_DoorLiningPropertyDescs)

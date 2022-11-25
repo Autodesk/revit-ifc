@@ -99,7 +99,8 @@ namespace Revit.IFC.Export.Exporter
             ICollection<IFCAnyHandle> relatedElementIds = subWrapper.GetAllObjects();
             if (relatedElementIds.Count > 0)
             {
-               string guid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAggregates, hostHandle);
+               string guid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelAggregates, hostHandle));
                HashSet<IFCAnyHandle> relatedElementIdSet = new HashSet<IFCAnyHandle>(relatedElementIds);
                IFCInstanceExporter.CreateRelAggregates(exporterIFC.GetFile(), guid, ExporterCacheManager.OwnerHistoryHandle, null, null, hostHandle, relatedElementIdSet);
             }
@@ -282,30 +283,30 @@ namespace Revit.IFC.Export.Exporter
          switch (exportMode)
          {
             case PartExportMode.Standard:
-            {
-               // Check the intended IFC entity or type name is in the exclude list specified in the UI
-               IFCEntityType elementClassTypeEnum = IFCEntityType.IfcBuildingElementPart;
-               if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
-                        return null;
-                     break;
-            }
+               {
+                  // Check the intended IFC entity or type name is in the exclude list specified in the UI
+                  IFCEntityType elementClassTypeEnum = IFCEntityType.IfcBuildingElementPart;
+                  if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
+                     return null;
+                  break;
+               }
             case PartExportMode.AsBuildingElement:
             case PartExportMode.ShapeRepresentationOnly:
-            {
-               string ifcEnumType = null;
-               IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, hostElement, out ifcEnumType);
+               {
+                  string ifcEnumType = null;
+                  IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, hostElement, out ifcEnumType);
 
-               // Check the intended IFC entity or type name is in the exclude list specified in the UI
-               IFCEntityType elementClassTypeEnum;
-               if (Enum.TryParse(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
-                  || Enum.TryParse(exportType.ExportType.ToString(), out elementClassTypeEnum))
-                  if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
-                           return null;
-               break;
-            }
+                  // Check the intended IFC entity or type name is in the exclude list specified in the UI
+                  IFCEntityType elementClassTypeEnum;
+                  if (Enum.TryParse(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
+                     || Enum.TryParse(exportType.ExportType.ToString(), out elementClassTypeEnum))
+                     if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
+                        return null;
+                  break;
+               }
          }
 
-         PlacementSetter standalonePlacementSetter = null;
+         PlacementSetter partPlacementSetter = null;
          bool standaloneExport = (hostElement == null) || (exportMode == PartExportMode.AsBuildingElement);
 
          ElementId partExportLevelId = (overrideLevelId != null) ? overrideLevelId : null;
@@ -313,7 +314,7 @@ namespace Revit.IFC.Export.Exporter
          if (partExportLevelId == null && standaloneExport)
             partExportLevelId = partElement.LevelId;
 
-         if (partExportLevelId == null)
+         if (partExportLevelId == null || partExportLevelId == ElementId.InvalidElementId)
          {
             if (hostElement == null || (part.OriginalCategoryId != hostElement.Category.Id))
                return null;
@@ -338,16 +339,22 @@ namespace Revit.IFC.Export.Exporter
             using (IFCTransaction transaction = new IFCTransaction(file))
             {
                IFCAnyHandle partPlacement = null;
+               Transform hostTrf = Transform.Identity;
                if (standaloneExport)
                {
                   Transform orientationTrf = Transform.Identity;
+                  BoundingBoxXYZ partBbox = partElement.get_BoundingBox(null);
+                  
+                  if (partBbox != null)
+                     orientationTrf.Origin = new XYZ( 0, 0, partBbox.Min.Z);
+
                   IFCAnyHandle overrideContainerHnd = null;
                   ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, partElement, out overrideContainerHnd);
                   if (overrideContainerId != ElementId.InvalidElementId && (partExportLevelId == null || partExportLevelId == ElementId.InvalidElementId))
                      partExportLevelId = overrideContainerId;
 
-                  standalonePlacementSetter = PlacementSetter.Create(exporterIFC, partElement, null, orientationTrf, partExportLevelId, overrideContainerHnd);
-                  partPlacement = standalonePlacementSetter.LocalPlacement;
+                  partPlacementSetter = PlacementSetter.Create(exporterIFC, partElement, null, orientationTrf, partExportLevelId, overrideContainerHnd);
+                  partPlacement = partPlacementSetter.LocalPlacement;
                }
                else
                {
@@ -361,9 +368,15 @@ namespace Revit.IFC.Export.Exporter
                      {
                         originalPlacement = IFCAnyHandleUtil.GetObjectPlacement(hostHandle);
                      }
-                     Transform hostTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(originalPlacement);
+                     hostTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(originalPlacement);
                      hostTrf = ExporterUtil.UnscaleTransformOrigin(hostTrf);
                      geometryElement = GeometryUtil.GetTransformedGeometry(geometryElement, hostTrf.Inverse);
+                  }
+                  // The host placement setter has registered the transform. Since the part geometry is transformed relative to the host, 
+                  //   the placement for the part needs to be inversed
+                  if (hostElement is FamilyInstance)
+                  {
+                     partPlacementSetter = PlacementSetter.Create(exporterIFC, partElement, hostTrf.Inverse, Transform.Identity, partExportLevelId, null);
                   }
                   partPlacement = ExporterUtil.CreateLocalPlacement(file, originalPlacement, null);
                }
@@ -382,7 +395,7 @@ namespace Revit.IFC.Export.Exporter
                   solidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(geometryElement);
                }
 
-               using (IFCExtrusionCreationData extrusionCreationData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams extrusionCreationData = new IFCExportBodyParams())
                {
                   extrusionCreationData.SetLocalPlacement(partPlacement);
                   extrusionCreationData.ReuseLocalPlacement = false;
@@ -397,6 +410,7 @@ namespace Revit.IFC.Export.Exporter
 
                   BodyData bodyData = null;
                   BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+                  bodyExporterOptions.ExtrusionLocalCoordinateSystem = Transform.Identity;
                   if (solids.Count > 0 || meshes.Count > 0)
                   {
                      bodyData = BodyExporter.ExportBody(exporterIFC, partElement, catId, ElementId.InvalidElementId, solids, meshes,
@@ -412,82 +426,82 @@ namespace Revit.IFC.Export.Exporter
 
                   if (exportMode != PartExportMode.ShapeRepresentationOnly)
                   {
-	                  IFCAnyHandle bodyRep = bodyData.RepresentationHnd;
-	                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
-	                  {
-	                     extrusionCreationData.ClearOpenings();
-	                        return null;
-	                  }
-	
-	                  IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
-	                  representations.Add(bodyRep);
-	
-	                  IFCAnyHandle boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, Transform.Identity);
-	                  if (boundingBoxRep != null)
-	                     representations.Add(boundingBoxRep);
-	
-	                  IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
-	
-	                  IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-	
-	                  string partGUID = GUIDUtil.CreateGUID(partElement);
-	                  string ifcEnumType = null;
-	                  IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, (hostElement!=null)? hostElement : partElement, out ifcEnumType);
-	                  IFCAnyHandle ifcPart = null;
-	                  if (exportMode != PartExportMode.AsBuildingElement)
-	                  {
-	                     ifcPart = IFCInstanceExporter.CreateBuildingElementPart(exporterIFC, partElement, partGUID, ownerHistory,
-	                         extrusionCreationData.GetLocalPlacement(), prodRep);
-	                  }
-	                  else
-	                  {
-	                     switch (exportType.ExportInstance)
-	                     {
-	                        case IFCEntityType.IfcColumn:
-	                           ifcPart = IFCInstanceExporter.CreateColumn(exporterIFC, partElement, partGUID, ownerHistory,
-	                               extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
-	                           break;
-	                        case IFCEntityType.IfcCovering:
-	                           ifcPart = IFCInstanceExporter.CreateCovering(exporterIFC, partElement, partGUID, ownerHistory,
-	                               extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
-	                           break;
-	                        case IFCEntityType.IfcFooting:
-	                           ifcPart = IFCInstanceExporter.CreateFooting(exporterIFC, partElement, partGUID, ownerHistory,
-	                               extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
-	                           break;
-	                        case IFCEntityType.IfcPile:
-	                           ifcPart = IFCInstanceExporter.CreatePile(exporterIFC, partElement, partGUID, ownerHistory,
-	                               extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType, null);
-	                           break;
-	                        case IFCEntityType.IfcRoof:
-	                           ifcPart = IFCInstanceExporter.CreateRoof(exporterIFC, partElement, partGUID, ownerHistory,
-	                               extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
-	                           break;
-	                        case IFCEntityType.IfcSlab:
-	                           {
-	                              // TODO: fix this elsewhere.
-	                              if (ExporterUtil.IsNotDefined(ifcEnumType))
-	                              {
-	                                 if (hostCatId == new ElementId(BuiltInCategory.OST_Floors))
-	                                    ifcEnumType = "FLOOR";
-	                                 else if (hostCatId == new ElementId(BuiltInCategory.OST_Roofs))
-	                                    ifcEnumType = "ROOF";
-	                              }
-	
-	                              ifcPart = IFCInstanceExporter.CreateSlab(exporterIFC, partElement, partGUID, ownerHistory,
-	                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
-	                           }
-	                           break;
-	                        case IFCEntityType.IfcWall:
-	                           ifcPart = IFCInstanceExporter.CreateWall(exporterIFC, partElement, partGUID, ownerHistory,
-	                           extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
-	                           break;
-	                        default:
-	                           ifcPart = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, partElement, partGUID, ownerHistory,
-	                           extrusionCreationData.GetLocalPlacement(), prodRep, exportType.ValidatedPredefinedType);
-	                           break;
-	                     }
-	                  }
+                     IFCAnyHandle bodyRep = bodyData.RepresentationHnd;
+                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
+                     {
+                        extrusionCreationData.ClearOpenings();
+                        return null;
+                     }
+
+                     IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
+                     representations.Add(bodyRep);
+
+                     IFCAnyHandle boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, Transform.Identity);
+                     if (boundingBoxRep != null)
+                        representations.Add(boundingBoxRep);
+
+                     IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
+
+                     IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+
+                     string ifcEnumType = null;
+                     IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, (hostElement != null) ? hostElement : partElement, out ifcEnumType);
+                     string partGUID = GUIDUtil.GenerateIFCGuidFrom(partElement, exportType);
+                     IFCAnyHandle ifcPart = null;
+                     if (exportMode != PartExportMode.AsBuildingElement)
+                     {
+                        ifcPart = IFCInstanceExporter.CreateBuildingElementPart(exporterIFC, partElement, partGUID, ownerHistory,
+                            extrusionCreationData.GetLocalPlacement(), prodRep);
+                     }
+                     else
+                     {
+                        switch (exportType.ExportInstance)
+                        {
+                           case IFCEntityType.IfcColumn:
+                              ifcPart = IFCInstanceExporter.CreateColumn(exporterIFC, partElement, partGUID, ownerHistory,
+                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
+                              break;
+                           case IFCEntityType.IfcCovering:
+                              ifcPart = IFCInstanceExporter.CreateCovering(exporterIFC, partElement, partGUID, ownerHistory,
+                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
+                              break;
+                           case IFCEntityType.IfcFooting:
+                              ifcPart = IFCInstanceExporter.CreateFooting(exporterIFC, partElement, partGUID, ownerHistory,
+                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
+                              break;
+                           case IFCEntityType.IfcPile:
+                              ifcPart = IFCInstanceExporter.CreatePile(exporterIFC, partElement, partGUID, ownerHistory,
+                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType, null);
+                              break;
+                           case IFCEntityType.IfcRoof:
+                              ifcPart = IFCInstanceExporter.CreateRoof(exporterIFC, partElement, partGUID, ownerHistory,
+                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
+                              break;
+                           case IFCEntityType.IfcSlab:
+                              {
+                                 // TODO: fix this elsewhere.
+                                 if (ExporterUtil.IsNotDefined(ifcEnumType))
+                                 {
+                                    if (hostCatId == new ElementId(BuiltInCategory.OST_Floors))
+                                       ifcEnumType = "FLOOR";
+                                    else if (hostCatId == new ElementId(BuiltInCategory.OST_Roofs))
+                                       ifcEnumType = "ROOF";
+                                 }
+
+                                 ifcPart = IFCInstanceExporter.CreateSlab(exporterIFC, partElement, partGUID, ownerHistory,
+                                     extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
+                              }
+                              break;
+                           case IFCEntityType.IfcWall:
+                              ifcPart = IFCInstanceExporter.CreateWall(exporterIFC, partElement, partGUID, ownerHistory,
+                              extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
+                              break;
+                           default:
+                              ifcPart = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, partElement, partGUID, ownerHistory,
+                              extrusionCreationData.GetLocalPlacement(), prodRep, exportType.ValidatedPredefinedType);
+                              break;
+                        }
+                     }
 
                      if (setMaterialNameToPartName)
                      {
@@ -499,17 +513,17 @@ namespace Revit.IFC.Export.Exporter
                      }
 
                      bool containedInLevel = standaloneExport;
-	                  PlacementSetter whichPlacementSetter = containedInLevel ? standalonePlacementSetter : placementSetter;
-	                  productWrapper.AddElement(partElement, ifcPart, whichPlacementSetter, extrusionCreationData, containedInLevel, exportType);
-	
-	                  OpeningUtil.CreateOpeningsIfNecessary(ifcPart, partElement, extrusionCreationData, bodyData.OffsetTransform, exporterIFC,
-	                      extrusionCreationData.GetLocalPlacement(), whichPlacementSetter, productWrapper);
-	
-	                  //Add the exported part to exported cache.
-	                  TraceExportedParts(partElement, partExportLevelId, standaloneExport ? ElementId.InvalidElementId : hostElement.Id);
-	
-	                  CategoryUtil.CreateMaterialAssociation(exporterIFC, ifcPart, bodyData.MaterialIds);
-	               }
+                     PlacementSetter whichPlacementSetter = containedInLevel ? partPlacementSetter : placementSetter;
+                     productWrapper.AddElement(partElement, ifcPart, whichPlacementSetter, extrusionCreationData, containedInLevel, exportType);
+
+                     OpeningUtil.CreateOpeningsIfNecessary(ifcPart, partElement, extrusionCreationData, bodyData.OffsetTransform, exporterIFC,
+                         extrusionCreationData.GetLocalPlacement(), whichPlacementSetter, productWrapper);
+
+                     //Add the exported part to exported cache.
+                     TraceExportedParts(partElement, partExportLevelId, standaloneExport ? ElementId.InvalidElementId : hostElement.Id);
+
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, ifcPart, bodyData.MaterialIds);
+                  }
                   else
                   {
                      // Special case for IFC4RV to export Element with material layer on its layer components as separate items
@@ -522,8 +536,8 @@ namespace Revit.IFC.Export.Exporter
          }
          finally
          {
-            if (standalonePlacementSetter != null)
-               standalonePlacementSetter.Dispose();
+            if (partPlacementSetter != null)
+               partPlacementSetter.Dispose();
          }
 
          return shapeRepresentation;
@@ -578,7 +592,7 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>the host shape representation with multiple items from its parts</returns>
       public static IFCAnyHandle ExportHostPartAsShapeAspects(ExporterIFC exporterIFC, Element hostElement, IFCAnyHandle hostProdDefShape,
           ProductWrapper originalWrapper, PlacementSetter placementSetter, IFCAnyHandle originalPlacement, ElementId overrideLevelId,
-          MaterialLayerSetInfo layersetInfo, IFCExtrusionCreationData extrusionCreationData, IList<Solid> solidsToExclude = null) 
+          MaterialLayerSetInfo layersetInfo, IFCExportBodyParams extrusionCreationData, IList<Solid> solidsToExclude = null)
       {
          IFCAnyHandle hostShapeRep = null;
          IList<ElementId> materialIdsFromBodyData = new List<ElementId>();
@@ -809,7 +823,8 @@ namespace Revit.IFC.Export.Exporter
             XYZ rightLineOrigin = derivs.Origin;
 
             // Faces (and their widths) sorted by the parameter on the line that intersects them perpendicularly from left to right
-            SortedList<double, Tuple<double, Face>> sortedFaces = new SortedList<double, Tuple<double, Face>>(Comparer<double>.Create((x, y) => {
+            SortedList<double, Tuple<double, Face>> sortedFaces = new SortedList<double, Tuple<double, Face>>(Comparer<double>.Create((x, y) =>
+            {
                if (MathUtil.IsAlmostEqual(x, y))
                   return 0;
                else if (x < y)
@@ -954,11 +969,10 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>True if host element should be exported as parts, false otherwise.</returns>
       public static bool ShouldExportParts(Element hostElement, int layersCount)
       {
-
          return hostElement != null && (ExporterCacheManager.ExportOptionsCache.ExportParts ||
-                                        (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && ExporterCacheManager.ExportOptionsCache.GetExchangeRequirement == KnownERNames.Structural
-                                                                                                        && layersCount > 1)
-                                       );
+            (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView &&
+            ExporterCacheManager.ExportOptionsCache.ExchangeRequirement == KnownERNames.Structural &&
+            layersCount > 1));
       }
       /// <summary>
       /// Checks if elemnt has associated parts and all conditions are met for exporting it as Parts.
@@ -1295,7 +1309,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       private static IFCAnyHandle ShapeRepFromListOfGeomObjects(ExporterIFC exporterIFC, Element hostElement, List<GeometryObject> geometryObjects,
-         ref BodyData bodyData, ref IList<ElementId> materialIds, IFCExtrusionCreationData extrusionCreationData)
+         ref BodyData bodyData, ref IList<ElementId> materialIds, IFCExportBodyParams extrusionCreationData)
       {
          IFCAnyHandle hostShapeRep = null;
          Options options = GeometryUtil.GetIFCExportGeometryOptions();

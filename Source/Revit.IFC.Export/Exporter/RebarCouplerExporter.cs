@@ -68,7 +68,10 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeId, false, exportType);
+            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType);
+            
+            FamilyTypeInfo currentTypeInfo = 
+               ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
             bool found = currentTypeInfo.IsValid();
             if (!found)
             {
@@ -83,10 +86,10 @@ namespace Revit.IFC.Export.Exporter
                bodyData = BodyExporter.ExportBody(exporterIFC, coupler, categoryId, ElementId.InvalidElementId, exportGeometry, bodyExporterOptions, null);
 
                List<IFCAnyHandle> repMap = new List<IFCAnyHandle>();
-               IFCAnyHandle origin = ExporterUtil.CreateAxis2Placement3D(file); ;
+               IFCAnyHandle origin = ExporterUtil.CreateAxis2Placement3D(file);
                repMap.Add(IFCInstanceExporter.CreateRepresentationMap(file, origin, bodyData.RepresentationHnd));
 
-               string typeGuid = GUIDUtil.CreateGUID(familySymbol);
+               string typeGuid = GUIDUtil.GenerateIFCGuidFrom(familySymbol, exportType);
                IFCAnyHandle styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType,
                   ifcEnumType, propertySetsOpt, repMap, coupler, familySymbol, typeGuid);
                productWrapper.RegisterHandleWithElementType(familySymbol, exportType, styleHandle, propertySetsOpt);
@@ -94,7 +97,7 @@ namespace Revit.IFC.Export.Exporter
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                {
                   currentTypeInfo.Style = styleHandle;
-                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeId, false, exportType, currentTypeInfo);
+                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeKey, currentTypeInfo, false);
                }
             }
 
@@ -107,7 +110,8 @@ namespace Revit.IFC.Export.Exporter
 
             for (int idx = 0; idx < nCouplerQuantity; idx++)
             {
-               string instanceGUID = GUIDUtil.CreateSubElementGUID(coupler, idx);
+               string instanceGUID = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(coupler, "Fastener:" + (idx + 1).ToString()));
 
                IFCAnyHandle style = currentTypeInfo.Style;
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(style))
@@ -174,8 +178,8 @@ namespace Revit.IFC.Export.Exporter
 
                   productWrapper.AddElement(coupler, rebarGroup, exportType);
 
-                  string groupGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssignsToGroup,
-                     string.Empty, rebarGroup);
+                  string groupGuid = GUIDUtil.GenerateIFCGuidFrom(
+                     GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelAssignsToGroup, string.Empty, rebarGroup));
                   IFCInstanceExporter.CreateRelAssignsToGroup(file, groupGuid, ownerHistory,
                       null, null, createdRebarCouplerHandles, null, rebarGroup);
                }

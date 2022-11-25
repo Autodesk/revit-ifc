@@ -101,17 +101,17 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item, and add to scope.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <remarks>This currently assumes that we are creating plan view curves.</remarks>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
          foreach (IFCCurve curve in Curves)
          {
-            curve.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+            curve.CreateShape(shapeEditScope, scaledLcs, guid);
          }
       }
    }

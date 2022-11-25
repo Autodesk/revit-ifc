@@ -35,6 +35,8 @@ namespace Revit.IFC.Common.Utility
       static string Ifc2x2Schema = "IFC2X2_ADD1";
       static string Ifc2x3Schema = "IFC2X3_TC1";
       static string Ifc4Schema = "IFC4";
+      static string Ifc4RV = "IFC4RV";
+      static string Ifc4x3Schema = "IFC4X3";
 
       /// <summary>
       /// Reset the static Dictionary and Set. To be done before parsing another IFC schema
@@ -220,10 +222,19 @@ namespace Revit.IFC.Common.Utility
                break;
             case IFCVersion.IFC4:
             case IFCVersion.IFC4DTV:
-            case IFCVersion.IFC4RV:
                schemaFile = Ifc4Schema;
                break;
+            case IFCVersion.IFC4RV:
+               schemaFile = Ifc4RV;
+               break;
+            //case ifc4x3Version:
+            //   schemaFile = Ifc4x3Schema;
+            //   break;
             default:
+               //Handling the IFC4x3 format for using the IFC Extension with Revit versions older than 2023.1 which does not support IFC4x3.
+               if(ifcFileVersion == OptionsUtil.GetIFCVersionByName("IFC4x3"))
+                  schemaFile = Ifc4x3Schema;
+               else
                schemaFile = Ifc4Schema;
                break;
          }
@@ -262,11 +273,32 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Get the IFC Entity Dictionary for the given IFC version specified by the schema file name (without extension)
+      /// </summary>
+      /// <param name="schemaFile">the IFC schema file name (without extension). Caller must make sure it is the supported schema file</param>
+      /// <returns>the tree, or null if the schema file is not found</returns>
+      static public IfcSchemaEntityTree GetEntityDictFor(string schemaFile, string schemaLoc = null)
+      {
+         schemaFile = schemaFile.ToUpper();
+         if (m_IFCSchemaDict.ContainsKey(schemaFile))
+            return m_IFCSchemaDict[schemaFile];
+
+         // if not found, process the file and add into the static dictionary
+         IfcSchemaEntityTree entityTree = PopulateEntityDictFor(schemaFile, schemaLoc);
+         if (entityTree == null)
+            return null;
+
+         m_IFCSchemaDict.Add(schemaFile, entityTree);
+         m_IFCEntityPredefTypeDict.Add(schemaFile, entityTree.PredefinedTypeEnumDict);
+         return entityTree;
+      }
+
+      /// <summary>
       /// Get the IFC entity Dictionary for a particular IFC version from the schema file
       /// </summary>
       /// <param name="schemaFile">the schema file name</param>
       /// <returns>the entity Dictionary</returns>
-      static IfcSchemaEntityTree PopulateEntityDictFor(string schemaFile)
+      static IfcSchemaEntityTree PopulateEntityDictFor(string schemaFile, string schemaLoc = null)
       {
          IfcSchemaEntityTree entityTree = null;
 
@@ -274,7 +306,8 @@ namespace Revit.IFC.Common.Utility
          string schemaFilePath;
          FileInfo schemaFileInfo;
 
-         string schemaLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
+         if (string.IsNullOrEmpty(schemaLoc))
+            schemaLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
          schemaFilePath = Path.Combine(schemaLoc, schemaFile + ".xsd");
          schemaFileInfo = new FileInfo(schemaFilePath);
          if (!schemaFileInfo.Exists)
@@ -312,7 +345,7 @@ namespace Revit.IFC.Common.Utility
 
          foreach (FileInfo fileInfo in dirInfo.GetFiles("*.xsd"))
          {
-            string schemaId = Path.GetFileNameWithoutExtension(fileInfo.Name);
+            string schemaId = Path.GetFileNameWithoutExtension(fileInfo.Name).ToUpper();
             if (!schemaProcessed.Contains(fileInfo.Name) && !m_IFCSchemaDict.ContainsKey(schemaId))
             {
                IfcSchemaEntityTree entityTree = new IfcSchemaEntityTree();

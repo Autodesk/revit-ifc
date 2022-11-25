@@ -154,11 +154,15 @@ namespace Revit.IFC.Export.Exporter
 
                            foreach (IFCAnyHandle surfaceHnd in info.GetSurfaces())
                            {
-                              IFCAnyHandle connectionGeometry = IFCInstanceExporter.CreateConnectionSurfaceGeometry(file, surfaceHnd, null);
+                              IFCAnyHandle connectionGeometry = IFCInstanceExporter.CreateConnectionSurfaceGeometry(file, 
+                                 surfaceHnd, null);
 
-                              SpaceBoundary spaceBoundary = new SpaceBoundary(null, spatialElement.Id, 
-                                 boundingElement.Id, setter.LevelId, connectionGeometry, IFCPhysicalOrVirtual.Physical,
-                                  isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
+                              SpaceBoundary spaceBoundary = new SpaceBoundary(null, 
+                                 spatialElement.Id, 
+                                 boundingElement.Id, setter.LevelId, 
+                                 connectionGeometry, 
+                                 IFCPhysicalOrVirtual.Physical,
+                                 isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
 
                               if (!ProcessIFCSpaceBoundary(exporterIFC, spaceBoundary, file))
                                  ExporterCacheManager.SpaceBoundaryCache.Add(spaceBoundary);
@@ -185,7 +189,7 @@ namespace Revit.IFC.Export.Exporter
                         if (boundingElement == null)
                            continue;
 
-                        ElementId buildingElemId = boundingElement.Id;
+                        ElementId boundingElementId = boundingElement.Id;
                         Curve trimmedCurve = roomBoundary.GetCurve();
 
                         if (trimmedCurve == null)
@@ -203,10 +207,10 @@ namespace Revit.IFC.Export.Exporter
                         bool isObjectExt = CategoryUtil.IsElementExternal(boundingElement);
                         bool isObjectPhys = (physOrVirt == IFCPhysicalOrVirtual.Physical);
 
-                        ElementId actualBuildingElemId = isObjectPhys ? buildingElemId : ElementId.InvalidElementId;
-
-                        SpaceBoundary spaceBoundary = new SpaceBoundary(null, spatialElement.Id,
-                           actualBuildingElemId, setter.LevelId, 
+                        SpaceBoundary spaceBoundary = new SpaceBoundary(null, 
+                           spatialElement.Id,
+                           boundingElement.Id,
+                           setter.LevelId, 
                            !IFCAnyHandleUtil.IsNullOrHasNoValue(connectionGeometry) ? connectionGeometry : null,
                            physOrVirt, 
                            isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
@@ -500,8 +504,8 @@ namespace Revit.IFC.Export.Exporter
 
          bool isObjectExt = CategoryUtil.IsElementExternal(boundingElement);
 
-         SpaceBoundary spaceBoundary = new SpaceBoundary(name, spatialElement.Id, 
-            boundingElement != null ? boundingElement.Id : ElementId.InvalidElementId,
+         SpaceBoundary spaceBoundary = new SpaceBoundary(name, spatialElement.Id,
+            boundingElement?.Id ?? ElementId.InvalidElementId,
             levelId, connectionGeometry, physOrVirt,
             isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
 
@@ -742,15 +746,14 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle buildingElemHnd = null;
          if (boundaryType == IFCPhysicalOrVirtual.Physical)
          {
-            buildingElemHnd = exporterIFC.FindSpaceBoundingElementHandle(boundary.BuildingElementId, boundary.LevelId);
+            buildingElemHnd = exporterIFC.FindSpaceBoundingElementHandle(boundary.NonSpatialElementId, boundary.LevelId);
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(buildingElemHnd))
                return false;
          }
 
-         string boundaryName = boundary.Name;
-         string guid = !string.IsNullOrEmpty(boundaryName) ?
-            GUIDUtil.GenerateProjectIFCGuidFrom(IFCEntityType.IfcRelSpaceBoundary, boundaryName) : 
-            GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelSpaceBoundary, spatialElemHnd, buildingElemHnd);
+         string hashCode = boundary.GetBoundaryHashCode();
+         string guid = GUIDUtil.GenerateIFCGuidFrom(
+            GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelSpaceBoundary, hashCode));
 
          IFCInstanceExporter.CreateRelSpaceBoundary(file, guid,
             ExporterCacheManager.OwnerHistoryHandle, ifcSpaceBoundaryName, null,
@@ -785,7 +788,8 @@ namespace Revit.IFC.Export.Exporter
                ExporterCacheManager.ClassificationCache.ClassificationHandles.Add("OmniClass", classification);
             }
 
-            string guid = GUIDUtil.GenerateIFCGuidFrom(spatialElement, "IfcRelAssociatesClassification: OmniClass");
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(spatialElement, "IfcRelAssociatesClassification: OmniClass"));
             ClassificationReferenceKey key = new ClassificationReferenceKey(
                "http://www.omniclass.org/tables/OmniClass_13_2006-03-28.pdf", itemReference,
                itemName, null, classification);
@@ -873,7 +877,7 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
 
          IFCAnyHandle spaceHnd = null;
-         using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
+         using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
          {
             IFCAnyHandle localPlacement = setter.LocalPlacement;
 
@@ -919,7 +923,7 @@ namespace Revit.IFC.Export.Exporter
                   XYZ orig = new XYZ(0, 0, elevation + bottomOffset);
                   Transform lcs = Transform.CreateTranslation(orig); // room calculated as level offset.
 
-                  IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, XYZ.BasisZ, scaledRoomHeight, true);
+                  IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, XYZ.BasisZ, scaledRoomHeight, true, out _);
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
                      return false;
 
@@ -1161,7 +1165,8 @@ namespace Revit.IFC.Export.Exporter
 
          if (properties.Count > 0)
          {
-            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(element, "ePset_SpatialZoneEnergyAnalysis");
+            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, "ePset_SpatialZoneEnergyAnalysis"));
             return IFCInstanceExporter.CreatePropertySet(file, psetGuid, 
                ExporterCacheManager.OwnerHistoryHandle, "ePset_SpatialZoneEnergyAnalysis", null, properties);
          }
@@ -1285,7 +1290,8 @@ namespace Revit.IFC.Export.Exporter
 
          if (properties.Count > 0)
          {
-            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(element, "Pset_ZoneCommon");
+            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, "Pset_ZoneCommon"));
             return IFCInstanceExporter.CreatePropertySet(file, psetGuid, 
                ExporterCacheManager.OwnerHistoryHandle, "Pset_ZoneCommon", null, properties);
          }
@@ -1321,7 +1327,8 @@ namespace Revit.IFC.Export.Exporter
 
          if (properties.Count > 0)
          {
-            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(element, "ePset_SpaceOccupant");
+            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, "ePset_SpaceOccupant"));
             return IFCInstanceExporter.CreatePropertySet(file, psetGuid, 
                ExporterCacheManager.OwnerHistoryHandle, "ePset_SpaceOccupant", null, properties);
          }
@@ -1333,7 +1340,8 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle spaceHnd, IDictionary<string, IFCAnyHandle> classificationHandles,
          string name, string location)
       {
-         if (classificationHandles?.TryGetValue(name, out IFCAnyHandle handle) ?? false)
+         IFCAnyHandle handle = null;
+         if (classificationHandles?.TryGetValue(name, out handle) ?? false)
          {
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
                return;
@@ -1347,7 +1355,8 @@ namespace Revit.IFC.Export.Exporter
 
             ClassificationReferenceKey key = new ClassificationReferenceKey(location, 
                itemReference, itemName, null, null);
-            string guid = GUIDUtil.GenerateIFCGuidFrom(element, "IfcRelAssociatesClassification: " + name);
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, "IfcRelAssociatesClassification: " + name));
             IFCAnyHandle classificationReference = ExporterCacheManager.ClassificationCache.AddRelation(
                file, key, guid, null, spaceHnd);
 

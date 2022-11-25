@@ -56,7 +56,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// The ExporterIFC object.
       /// </param>
       /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
+      /// The IFCExportBodyParams.
       /// </param>
       /// <param name="element">
       /// The element to calculate the value.
@@ -67,12 +67,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_FireRating) == null)
-            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out m_FireRating) == null)
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, "Fire Rating", out m_FireRating);
-         if (!string.IsNullOrEmpty(m_FireRating))
+         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_FireRating, entryMap.CompatibleRevitParameterName, "Fire Rating") != null
+            && !string.IsNullOrEmpty(m_FireRating))
             return true;
 
          return false;

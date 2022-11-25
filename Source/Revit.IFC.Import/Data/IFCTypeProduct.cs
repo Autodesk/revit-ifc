@@ -24,6 +24,7 @@ using System.Text;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Import.Enums;
 
 namespace Revit.IFC.Import.Data
 {
@@ -150,6 +151,10 @@ namespace Revit.IFC.Import.Data
          IFCEntity typeProduct;
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcTypeProduct.StepId, out typeProduct))
             return (typeProduct as IFCTypeProduct);
+
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && 
+            IFCAnyHandleUtil.IsValidSubTypeOf(ifcTypeProduct, IFCEntityType.IfcDoorType))
+               return IFCDoorType.ProcessIFCDoorType(ifcTypeProduct);
 
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTypeProduct, IFCEntityType.IfcDoorStyle))
             return IFCDoorStyle.ProcessIFCDoorStyle(ifcTypeProduct);

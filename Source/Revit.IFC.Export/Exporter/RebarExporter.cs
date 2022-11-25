@@ -87,8 +87,8 @@ namespace Revit.IFC.Export.Exporter
                IFCExportInfoPair exportInfo = new IFCExportInfoPair(elementClassTypeEnum);
                productWrapper.AddElement(element, rebarGroup, exportInfo);
 
-               string groupGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssignsToGroup,
-                  rebarGroup);
+               string groupGuid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelAssignsToGroup, rebarGroup));
                IFCInstanceExporter.CreateRelAssignsToGroup(file, groupGuid, ownerHistory,
                   null, null, createdRebarHandles, null, rebarGroup);
                tr.Commit();
@@ -148,7 +148,7 @@ namespace Revit.IFC.Export.Exporter
                ISet<DelayedProductWrapper> newlyCreatedRebars = ExportRebar(exporterIFC, rebarContainerItem, rebarContainer, itemIndex, productWrapper);
                if (newlyCreatedRebars != null)
                {
-                  itemIndex += createdRebars.Count;
+                  itemIndex += newlyCreatedRebars.Count;
                   createdRebars.UnionWith(newlyCreatedRebars);
                }
             }
@@ -228,7 +228,8 @@ namespace Revit.IFC.Export.Exporter
                else if (createdRebarHandles.Count > 1)
                {
                   // Check the intended IFC entity or type name is in the exclude list specified in the UI
-                  string rebarGUID = guid ?? GUIDUtil.GenerateIFCGuidFrom(element, "Rebar Group" + ii.ToString());
+                  string rebarGUID = guid ?? GUIDUtil.GenerateIFCGuidFrom(
+                     GUIDUtil.CreateGUIDString(element, "Rebar Group" + ii.ToString()));
                   CreateRebarGroup(exporterIFC, element, rebarGUID, productWrapper, createdRebarHandles);
                   guid = null;
                }
@@ -301,7 +302,7 @@ namespace Revit.IFC.Export.Exporter
 
             using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
             {
-               using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
                   ecData.SetLocalPlacement(placementSetter.LocalPlacement);
 
@@ -381,7 +382,7 @@ namespace Revit.IFC.Export.Exporter
       private static ISet<DelayedProductWrapper> ExportRebar(ExporterIFC exporterIFC, object rebarItem, Element rebarElement, int itemIndex, ProductWrapper productWrapper)
       {
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcReinforcingBar;
+         IFCEntityType elementClassTypeEnum = IFCEntityType.IfcReinforcingBar;
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return null;
 
@@ -476,7 +477,7 @@ namespace Revit.IFC.Export.Exporter
                      }
                   }
 
-                  int indexForNamingAndGUID = (itemIndex > 0) ? ii + itemIndex : ii + 1;
+                  int indexForNamingAndGUID = ii + itemIndex;
 
                   string rebarName = NamingUtil.GetNameOverride(rebarElement, rebarNameFormated + ": " + indexForNamingAndGUID);
 
@@ -515,7 +516,8 @@ namespace Revit.IFC.Export.Exporter
 
                   string rebarGUID = (indexForNamingAndGUID < maxBarGUIDS) ?
                       GUIDUtil.CreateSubElementGUID(rebarElement, indexForNamingAndGUID + (int)IFCReinforcingBarSubElements.BarStart - 1) :
-                      GUIDUtil.GenerateIFCGuidFrom(rebarElement, indexForNamingAndGUID.ToString());
+                      GUIDUtil.GenerateIFCGuidFrom(
+                         GUIDUtil.CreateGUIDString(rebarElement, indexForNamingAndGUID.ToString()));
                   IFCAnyHandle elemHnd = IFCInstanceExporter.CreateReinforcingBar(exporterIFC, rebarElement, rebarGUID, ExporterCacheManager.OwnerHistoryHandle,
                      copyLevelPlacement, prodRep, steelGrade, longitudinalBarNominalDiameter, longitudinalBarCrossSectionArea, barLength, role, null);
                   IFCAnyHandleUtil.OverrideNameAttribute(elemHnd, rebarName);
@@ -546,7 +548,7 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>The list of IfcReinforcingBar handles created.</returns>
       private static ISet<DelayedProductWrapper> ExportRebar(ExporterIFC exporterIFC, Element rebarElement, ProductWrapper productWrapper)
       {
-         return ExportRebar(exporterIFC, rebarElement, rebarElement, 0, productWrapper);
+         return ExportRebar(exporterIFC, rebarElement, rebarElement, 1, productWrapper);
       }
 
       /// <summary>

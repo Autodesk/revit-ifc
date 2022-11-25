@@ -19,7 +19,7 @@ namespace BIM.IFC.Export.UI.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
@@ -772,6 +772,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Export material property sets.
+        /// </summary>
+        public static string ExportMaterialPropertySets {
+            get {
+                return ResourceManager.GetString("ExportMaterialPropertySets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export parts as building elements.
         /// </summary>
         public static string ExportPartsAsBuildingElements {
@@ -1051,11 +1060,20 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IFC4 Design Transfer View.
+        ///   Looks up a localized string similar to IFC4 Design Transfer View [Unofficial].
         /// </summary>
         public static string IFC4DTV {
             get {
                 return ResourceManager.GetString("IFC4DTV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The selected export setup is not supported by buildingSMART International. Files created using this setup may not be usable by other software..
+        /// </summary>
+        public static string IFC4DTVWarning {
+            get {
+                return ResourceManager.GetString("IFC4DTVWarning", resourceCulture);
             }
         }
         
@@ -1092,6 +1110,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCExport {
             get {
                 return ResourceManager.GetString("IFCExport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC Export Warning.
+        /// </summary>
+        public static string IFCExportGenericWarning {
+            get {
+                return ResourceManager.GetString("IFCExportGenericWarning", resourceCulture);
             }
         }
         
@@ -1222,6 +1249,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IFC4x3 [Experimental].
+        /// </summary>
+        public static string IFCVersion4x3 {
+            get {
+                return ResourceManager.GetString("IFCVersion4x3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IFC Version: .
         /// </summary>
         public static string IFCVersionSelected {
@@ -1321,7 +1357,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Include IFCSITE elevation in the site local placement origin.
+        ///   Looks up a localized string similar to Include IFCSite elevation in the site local placement origin.
         /// </summary>
         public static string IncludeIfcSiteElevation {
             get {
@@ -1420,7 +1456,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The document for the linked instance(s) could not be found for ids: {0}..
+        ///   Looks up a localized string similar to The document for the linked instance(s) could not be found for id(s): {0}..
         /// </summary>
         public static string LinkInstanceExportCantFindDoc {
             get {
@@ -1438,7 +1474,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The path for the linked instance(s) did not exist for ids: {0}..
+        ///   Looks up a localized string similar to The path for the linked instance(s) did not exist for id(s): {0}..
         /// </summary>
         public static string LinkInstanceExportErrorPath {
             get {
@@ -1447,7 +1483,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The linked instance(s) were mirrored for ids: {0}.  To export a mirrored linked instance, mirror the linked geometry and link in the new document..
+        ///   Looks up a localized string similar to The linked instance(s) were mirrored for id(s): {0}.  To export a mirrored linked instance, mirror the linked geometry and link in the new document..
         /// </summary>
         public static string LinkInstanceExportHasReflection {
             get {
@@ -1456,7 +1492,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The linked instance(s) were non-conformal for ids: {0}..
+        ///   Looks up a localized string similar to The linked instance(s) were non-conformal for id(s): {0}..
         /// </summary>
         public static string LinkInstanceExportNonConformal {
             get {
@@ -1465,7 +1501,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The linked instance(s) were scaled for ids: {0}..
+        ///   Looks up a localized string similar to The linked instance(s) were scaled for id(s): {0}..
         /// </summary>
         public static string LinkInstanceExportScaled {
             get {
@@ -1510,7 +1546,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Multiple assignments found in the selected objects !.
+        ///   Looks up a localized string similar to Multiple assignments found in the selected objects..
         /// </summary>
         public static string MultipleAssignments {
             get {

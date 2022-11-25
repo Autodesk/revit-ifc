@@ -11,7 +11,7 @@
                   Title="{x:Static p:Resources.IFCExport}" 
                   WindowStyle="SingleBorderWindow" 
                   ContentRendered="ChildWindow_ContentRendered"
-                  SaveWindowSettings="True"
+                  SaveWindowSettings="True" 
                   Height="438" 
                   Width="730" MinWidth="550" MinHeight="305">
    <Grid Margin="10,0" RenderTransformOrigin="0,0">

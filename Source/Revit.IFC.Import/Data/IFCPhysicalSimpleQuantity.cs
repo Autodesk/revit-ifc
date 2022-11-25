@@ -62,7 +62,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// Processes an IFC physical simple quantity.
       /// </summary>
-      /// <param name="ifcPhysicalQuantity">The IfcPhysicalSimpleQuantity object.</param>
+      /// <param name="ifcPhysicalSimpleQuantity">The IfcPhysicalSimpleQuantity object.</param>
       /// <returns>The IFCPhysicalSimpleQuantity object.</returns>
       override protected void Process(IFCAnyHandle ifcPhysicalSimpleQuantity)
       {
@@ -138,10 +138,10 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       /// <param name="element">The element being created.</param>
       /// <param name="category">The element's category.</param>
-      /// <param name="parameterMap">The parameters of the element.  Cached for performance.</param>
-      /// <param name="propertySetName">The name of the containing property set.</param>
+      /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
+      /// <param name="quantityFullName">The name of the containing quantity set with quantity name.</param>
       /// <param name="createdParameters">The names of the created parameters.</param>
-      public override void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
+      public override void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap, string quantityFullName, ISet<string> createdParameters)
       {
          double baseValue = 0.0;
          IFCDataPrimitiveType type = Value.PrimitiveType;
@@ -160,31 +160,23 @@ namespace Revit.IFC.Import.Data
                return;
          }
 
-         double doubleValueToUse = Importer.TheProcessor.ScaleValues ? 
+         double doubleValueToUse = Importer.TheProcessor.ScaleValues ?
             IFCUnit?.Convert(baseValue) ?? baseValue :
             baseValue;
-         
+
          Parameter existingParameter = null;
-
-         // Navisworks uses this engine and needs support for the old naming.
-         // We use the API-only UseStreamlinedOptions as a proxy for knowing this.
-         string originalParameterName =
-            IFCImportFile.TheFile.Options.UseStreamlinedOptions ?
-            Name + "(" + propertySetName + ")" :
-            propertySetName + "." + Name;
-
-         string parameterName = originalParameterName;
+         string parameterName = quantityFullName;
 
          if (!parameterGroupMap.TryFindParameter(parameterName, out existingParameter))
          {
             int parameterNameCount = 2;
             while (createdParameters.Contains(parameterName))
             {
-               parameterName = originalParameterName + " " + parameterNameCount;
+               parameterName = quantityFullName + " " + parameterNameCount;
                parameterNameCount++;
             }
             if (parameterNameCount > 2)
-               Importer.TheLog.LogWarning(Id, "Renamed parameter: " + originalParameterName + " to: " + parameterName, false);
+               Importer.TheLog.LogWarning(Id, "Renamed parameter: " + quantityFullName + " to: " + parameterName, false);
 
             if (existingParameter == null)
             {
@@ -198,7 +190,7 @@ namespace Revit.IFC.Import.Data
                }
                else
                {
-                  specTypeId = IFCDataUtil.GetUnitTypeFromData(Value, SpecTypeId.Number);                  
+                  specTypeId = IFCDataUtil.GetUnitTypeFromData(Value, SpecTypeId.Number);
                }
 
                bool created = IFCPropertySet.AddParameterDouble(doc, element, category, objDef, parameterName, specTypeId, unitsTypeId, doubleValueToUse, Id);

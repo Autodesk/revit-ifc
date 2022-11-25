@@ -94,7 +94,7 @@ namespace BIM.IFC.Export.UI
          }
 
          // File Description and Source File name are assigned by exporter later on and therefore needs to be set to null for the UI for the null value text to be displayed
-         m_newFileHeaderItem.FileDescription = null;
+         m_newFileHeaderItem.FileDescriptions = new List<string>();
          m_newFileHeaderItem.SourceFileName = null;
          m_newFileHeaderItem.FileSchema = null;
 

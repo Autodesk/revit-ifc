@@ -26,6 +26,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Enums;
+using Revit.IFC.Import.Properties;
 using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
@@ -331,6 +332,33 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Add a multistring parameter to an element.
+      /// </summary>
+      /// <param name="doc">The document.</param>
+      /// <param name="element">The element.</param>
+      /// <param name="category">The category of the element.</param>
+      /// <param name="parameterName">The parameter name.</param>
+      /// <param name="parameterValue">The parameter value.</param>
+      /// <param name="parameterSetId">The id of the containing parameter set, for reporting errors.</param>
+      /// <returns>True if the parameter was successfully added, false otherwise.</returns>
+      public static bool AddParameterMultilineString(Document doc, Element element, Category category, IFCObjectDefinition objDef, string parameterName, string parameterValue, int parameterSetId)
+      {
+         if (doc == null || element == null || category == null)
+            return false;
+
+         bool? processedParameter = Importer.TheProcessor.ProcessParameter(objDef.Id, parameterSetId, parameterName, parameterValue);
+         if (processedParameter.HasValue)
+            return processedParameter.Value;
+
+         Parameter parameter = AddParameterBase(doc, element, category, parameterName, parameterSetId, SpecTypeId.String.MultilineText);
+         if (parameter == null)
+            return false;
+
+         parameter.Set(parameterValue);
+         return true;
+      }
+
+      /// <summary>
       /// Add a string parameter to an element.
       /// </summary>
       /// <param name="doc">The document.</param>
@@ -398,7 +426,10 @@ namespace Revit.IFC.Import.Data
          ISet<string> parametersCreated = new HashSet<string>();
          foreach (IFCProperty property in IFCProperties.Values)
          {
-            property.Create(doc, element, category, objDef, parameterGroupMap, Name, parametersCreated);
+            bool elementIsType = (element is ElementType);
+            string typeString = elementIsType ? " " + Resources.IFCTypeSchedule : string.Empty;
+            string fullName = CreatePropertyName(property.Name, typeString);
+            property.Create(doc, element, category, objDef, parameterGroupMap, fullName, parametersCreated);
          }
 
          return Tuple.Create(quotedName, true);

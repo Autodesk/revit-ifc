@@ -37,6 +37,11 @@ namespace Revit.IFC.Export.Utility
       private List<IList<PropertySetDescription>> m_PropertySets;
 
       /// <summary>
+      /// List of predefined property sets.
+      /// </summary>
+      private List<IList<PreDefinedPropertySetDescription>> m_PreDefinedPropertySets;
+
+      /// <summary>
       /// List of quantities.
       /// </summary>
       private List<IList<QuantityDescription>> m_Quantities;
@@ -47,7 +52,19 @@ namespace Revit.IFC.Export.Utility
       public ParameterCache()
       {
          m_PropertySets = new List<IList<PropertySetDescription>>();
+         m_PreDefinedPropertySets = new List<IList<PreDefinedPropertySetDescription>>();
          m_Quantities = new List<IList<QuantityDescription>>();
+      }
+
+      /// <summary>
+      /// The list of predefined property sets.
+      /// </summary>
+      public IList<IList<PreDefinedPropertySetDescription>> PreDefinedPropertySets
+      {
+         get
+         {
+            return m_PreDefinedPropertySets;
+         }
       }
 
       /// <summary>

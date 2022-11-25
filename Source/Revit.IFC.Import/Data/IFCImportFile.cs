@@ -1104,6 +1104,10 @@ namespace Revit.IFC.Import.Data
          {
             schemaVersion = IFCSchemaVersion.IFC4x3_RC4;
          }
+         else if (schemaName.Equals("IFC4X3", StringComparison.OrdinalIgnoreCase))
+         {
+            schemaVersion = IFCSchemaVersion.IFC4x3;
+         }
          else
             throw new ArgumentException("Invalid or unsupported schema: " + schemaName);
 

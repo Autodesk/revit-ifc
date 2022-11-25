@@ -64,11 +64,11 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcWindowPanelProperties);
 
-         string currPropertyValueString = IFCImportHandleUtil.GetOptionalStringAttribute(ifcWindowPanelProperties, "OperationType", null);
+         string currPropertyValueString = IFCAnyHandleUtil.GetEnumerationAttribute(ifcWindowPanelProperties, "OperationType");
          if (!string.IsNullOrEmpty(currPropertyValueString))
             StringProperties[GeneratePropertyName("OperationType")] = currPropertyValueString;
 
-         currPropertyValueString = IFCImportHandleUtil.GetOptionalStringAttribute(ifcWindowPanelProperties, "PanelPosition", null);
+         currPropertyValueString = IFCAnyHandleUtil.GetEnumerationAttribute(ifcWindowPanelProperties, "PanelPosition");
          if (!string.IsNullOrEmpty(currPropertyValueString))
             StringProperties[GeneratePropertyName("PanelPosition")] = currPropertyValueString;
 

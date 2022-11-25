@@ -35,10 +35,10 @@ namespace Revit.IFC.Import.Data
       }
 
       protected override IList<GeometryObject> CreateGeometryInternal(
-         IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+         IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
          if (TreeRootExpression != null)
-            return TreeRootExpression.CreateGeometry(shapeEditScope, lcs, scaledLcs, guid);
+            return TreeRootExpression.CreateGeometry(shapeEditScope, scaledLcs, guid);
          return null;
       }
 
@@ -46,14 +46,14 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
-         IList<GeometryObject> csgGeometries = CreateGeometryInternal(shapeEditScope, lcs, scaledLcs, guid);
+         IList<GeometryObject> csgGeometries = CreateGeometryInternal(shapeEditScope, scaledLcs, guid);
          if (csgGeometries != null)
          {
             foreach (GeometryObject csgGeometry in csgGeometries)

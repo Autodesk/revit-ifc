@@ -23,6 +23,7 @@ using System.Xml;
 using System.IO;
 using Autodesk.Revit.DB;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.Common.Extensions;
 
 namespace Revit.IFC.Common.Utility
 {
@@ -189,6 +190,15 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Identifies if the IFC schema version is older than IFC 4x3
+      /// </summary>
+      /// <param name="fileVersion">The file version</param>
+      public static bool ExportAsOlderThanIFC4x3(IFCVersion fileVersion)
+      {
+         return ExportAs2x2(fileVersion) || ExportAs2x3(fileVersion) || ExportAs4(fileVersion);
+      }
+
+      /// <summary>
       /// Identifies if the IFC schema version being exported is IFC 4.
       /// </summary>
       /// <param name="fileVersion">The file version</param>
@@ -245,12 +255,50 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Option to export to IFC4x3 schema
+      /// </summary>
+      /// <param name="fileVersion">the file version</param>
+      /// <returns></returns>
+      public static bool ExportAs4x3(IFCVersion fileVersion)
+      {
+         return (fileVersion == GetIFCVersionByName("IFC4x3"));
+      }
+
+      /// <summary>
       /// Identifies if the schema and MVD used is the IFC 2x3 COBie 2.4 Design Deliverable.
       /// </summary>
       /// <param name="fileVersion">The file version</param>
       public static bool ExportAs2x3COBIE24DesignDeliverable (IFCVersion fileVersion)
       {
          return (fileVersion == IFCVersion.IFC2x3FM);
+      }
+
+      /// <summary>
+      /// Gets IFCVersion by string name.
+      /// Handling the IFC4x3 format for using the IFC Extension with Revit versions older than 2023.1 which does not support IFC4x3.
+      /// </summary>
+      /// <param name="fileVersionName">IFCVersion string name.</param>
+      /// <returns>IFCVersion</returns>
+      public static IFCVersion GetIFCVersionByName (string fileVersionName)
+      {
+         IFCVersion ifcVersion = IFCVersion.Default;
+         try
+         {
+            ifcVersion = (IFCVersion)Enum.Parse(typeof(IFCVersion), fileVersionName);
+         }
+         catch (Exception) { }
+         
+         return ifcVersion;
+      }
+
+      /// <summary>
+      /// Checks is the IFC4x3 schema available in Autodesk.Revit.DB.IFCVersion. (since Revit 2023.1)
+      /// Handling the IFC4x3 format for using the IFC Extension with Revit versions older than 2023.1 which does not support IFC4x3.
+      /// </summary>
+      /// <returns>Returns true if the IFC4x3 schema available</returns>
+      public static bool IsIFC4x3Supported()
+      {
+         return Enum.TryParse("IFC4x3", out IFCVersion result);
       }
       #endregion
 
@@ -513,5 +561,10 @@ namespace Revit.IFC.Common.Utility
             || ifcVersion == IFCVersion.IFCBCA
             || ifcVersion == IFCVersion.IFCCOBIE);
       }
+
+      /// <summary>
+      /// IFC File header using Options instead of Extensible Storage
+      /// </summary>
+      public static IFCFileHeaderItem FileHeaderIFC { get; set; } = new IFCFileHeaderItem();
    }
 }
