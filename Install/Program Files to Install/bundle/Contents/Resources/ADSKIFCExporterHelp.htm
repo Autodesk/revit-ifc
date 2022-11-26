@@ -238,6 +238,58 @@ working on expanding and eventually removing this limit, and we will be tracking
 
 <div class="versionset">
 		  
+  <div class="version">23.2.3.0</div><div class="versioninfo-bullet">
+      <br><p>
+         General:
+			<ul>
+				<li>This is the official release of IFC Extension 23.2.3
+				<li>It contains a various improvements and bug fixes for the previous 23.1.1 version. 
+			</ul>	
+       </p>
+	   <br>
+	   <p>
+         Improvements:
+			<ul>
+				<li>Added known IFC MVDs in the Entity selection UI
+				<li>Added information in the IFC Header description for the selected CoordinateReference on export following this format: 'CoordinateReference [CoordinateBase: <coord. base selected>, ProjectSite: <project site selected>]'. ProjectSite may not be present if it is not specified.
+				<li>Added new parameters to support IFC certification for various types of data that are needed to map into Revit
+				<li>Added Revit Version Identifiers to IFC export
+				<li>Implemented mapping specific built-in material properties to the right place in IFC
+				<li>Implemented support of IfcBuildingElementProxy.COMPLEX in link IFC
+				<li>Implemented import of IfcGroup assignment information
+				<li>Improved export of levels marked as building stories to IFC, regardless of whether they contained elements based on them or not.
+				<li>Improved creation of classifications
+				<li>Material properties export implemented.
+				<li>Optimized LinearForce and PlanarForce unit import/export
+				<li>Various improvement for IFC4 RV Import Certification
+				<li>Various improvements for GUID consistency in exported entities.
+			</ul>
+		</p>
+		<br>
+		<p>
+         Bug Fixes:
+			<ul>
+				<li>Added IfcDoorType support on import
+				<li>Added support of IfcAdvancedFace in IfcFaceBasedSurfaceModel
+				<li>Added support for IfcGeometricSet entities when reading Axis representations of non-standard IFC files.
+				<li>Improved link of IFC files with unrecognized coordinate systems.
+				<li>Fixed preserving of original entity information when opening IFC file to preserve entity type on re-export.
+				<li>Fixed Navisworks IFC import positioning issue.
+				<li>Fixed linking of profiles with tiny gaps/segments between arcs.
+				<li>Fixed exporting parts in assembly with the wrong elevation.
+				<li>Fixed the overall height and width values when exporting certain door families with voids instead of host openings to IFC.
+				<li>Fixed missing properties of structural framing elements exported to IFC as base quantities.
+				<li>Fixed duplicated DerivedUnitElements
+				<li>Fixed "There has been an unrecoverable error during export Revit." when exporting certain files to IFC containing classification codes.
+				<li>Fixed export of slab with separate pieces that exported as one object to IFC
+				<li>Modified some button sizes to fix GLOB truncation issue 
+				<li>Provide user visible warning when exporting to IFC4 DTV
+				<li>Removed "IFC override -" prefix in export dialogs
+			</ul>
+		</p>
+		<br>
+	</div>
+	<br>
   <div class="version">23.1.1.0</div><div class="versioninfo-bullet">
 
       <br><p>
