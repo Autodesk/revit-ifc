@@ -39,7 +39,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The optional tag for this grid line.
       /// </summary>
-      public string AxisTag { get; protected set; } = null;
+      public string AxisTag { get; set; } = null;
 
       /// <summary>
       /// The underlying curve for the grid line.
@@ -57,6 +57,11 @@ namespace Revit.IFC.Import.Data
       /// axis.  Use the original axis instead.
       /// </summary>
       public long DuplicateAxisId { get; protected set; } = -1;
+
+      /// <summary>
+      /// If true - the unique tag must be created
+      /// </summary>
+      public bool AutoTag { get; protected set; } = false;
 
       /// <summary>
       /// Returns the main element id associated with this object.  Only valid after the call to Create(Document).
@@ -221,16 +226,19 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcGridAxis);
 
-         AxisTag = IFCImportHandleUtil.GetOptionalStringAttribute(ifcGridAxis, "AxisTag", null);
-         if (AxisTag == null)
-            AxisTag = "Z";    // arbitrary; all Revit Grids have names.
-
          IFCAnyHandle axisCurve = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcGridAxis, "AxisCurve", true);
          AxisCurve = IFCCurve.ProcessIFCCurve(axisCurve);
 
          bool found = false;
          bool sameSense = IFCImportHandleUtil.GetRequiredBooleanAttribute(ifcGridAxis, "SameSense", out found);
          SameSense = found ? sameSense : true;
+
+         AxisTag = IFCImportHandleUtil.GetOptionalStringAttribute(ifcGridAxis, "AxisTag", null);
+         if (String.IsNullOrEmpty(AxisTag))
+         {
+            AutoTag = true;
+            return;
+         }
 
          // We are going to check if this grid axis is a vertical duplicate of any existing axis.
          // If so, we will throw an exception so that we don't create duplicate grids.
@@ -346,7 +354,7 @@ namespace Revit.IFC.Import.Data
       /// <returns>The first curve, or null if there isn't one.</returns>
       /// <remarks>This expected IfcGridAxis to have only one associated curve, but
       /// will warn and return the first curve if there is more than one.</remarks>
-      private Curve GetAxisCurve()
+      public Curve GetAxisCurve()
       {
          if (!IsValidForCreation)
             return null;

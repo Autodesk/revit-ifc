@@ -45,6 +45,20 @@ namespace Revit.IFC.Import.Data
 
       private IDictionary<ElementId, IFCPresentationLayerAssignment> m_PresentationLayerAssignmentsForAxes = null;
 
+      private enum IFCAxesType
+      {
+         UAxes,
+         VAxes,
+         WAxes
+      }
+
+      private enum IFCAxesTagType
+      {
+         Digit,
+         UpperCase,
+         LowerCase
+      }
+
       /// <summary>
       /// The required list of U Axes.
       /// </summary>
@@ -120,11 +134,11 @@ namespace Revit.IFC.Import.Data
          Process(ifcGrid);
       }
 
-      private IList<IFCGridAxis> ProcessOneAxis(IFCAnyHandle ifcGrid, string axisName)
+      private IList<IFCGridAxis> ProcessOneAxis(IFCAnyHandle ifcGrid, IFCAxesType axisType)
       {
          IList<IFCGridAxis> gridAxes = new List<IFCGridAxis>();
 
-         List<IFCAnyHandle> ifcAxes = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcGrid, axisName);
+         List<IFCAnyHandle> ifcAxes = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcGrid, axisType.ToString());
          if (ifcAxes != null)
          {
             foreach (IFCAnyHandle axis in ifcAxes)
@@ -149,9 +163,191 @@ namespace Revit.IFC.Import.Data
                   }
                }
             }
+            CreateAutoTags(gridAxes, axisType);
          }
 
          return gridAxes;
+      }
+
+      /// <summary>
+      /// Creates unique tag for unnamed axes
+      /// </summary>
+      /// <param name="gridAxes"> The axes without tag.</param>
+      /// <param name="axisType"> The axes type.</param>
+      /// <returns>True if success.</returns>
+      private bool CreateAutoTags(IList<IFCGridAxis> gridAxes, IFCAxesType axisType)
+      {
+         if (gridAxes == null || gridAxes.Count < 1)
+            return false;
+
+         IList<IFCGridAxis> unnamedAxes = gridAxes.Where(x => x.AutoTag).ToList();
+
+         if (unnamedAxes?.Count > 0)
+         {
+            // Define tag style
+            IFCAxesTagType tagType = IFCAxesTagType.Digit;
+            if (unnamedAxes.Count == gridAxes.Count)
+            { 
+               tagType = (axisType == IFCAxesType.UAxes) ? IFCAxesTagType.Digit :
+                        ((axisType == IFCAxesType.VAxes) ? IFCAxesTagType.UpperCase : IFCAxesTagType.LowerCase);
+            }
+            else
+            {
+               string anyTag = gridAxes.First(x => (!x.AutoTag && !string.IsNullOrEmpty(x.AxisTag))).AxisTag;
+               tagType = char.IsDigit(anyTag[0]) ? IFCAxesTagType.Digit :
+                        (char.IsUpper(anyTag[0]) ? IFCAxesTagType.UpperCase : IFCAxesTagType.LowerCase);
+            }
+
+            // Sort axes
+            SortUnnamedAxes(ref unnamedAxes, axisType);
+
+            // Create auto tags
+            IDictionary<string, IFCGridAxis> projectAxis = IFCImportFile.TheFile.IFCProject.GridAxes;
+            foreach (IFCGridAxis axis in unnamedAxes)
+            {
+               axis.AxisTag = CreateAxisTagUnique(tagType);
+               projectAxis.Add(new KeyValuePair<string, IFCGridAxis>(axis.AxisTag, axis));
+            }
+         }
+         return true;
+      }
+
+      /// <summary>
+      /// Sort the list of axis without tag
+      /// </summary>
+      /// <param name="unnamedAxes"> The axes without tag.</param>
+      /// <param name="axesType"> The axes type.</param>
+      /// <returns>True if success.</returns>
+      private bool SortUnnamedAxes(ref IList<IFCGridAxis> unnamedAxes, IFCAxesType axesType)
+      {
+         if (unnamedAxes == null || unnamedAxes.Count < 2)
+            return false;
+
+         IDictionary<IFCGridAxis, double> axesDict = new Dictionary<IFCGridAxis, double>();
+         
+         Curve firstCurve = unnamedAxes.First()?.GetAxisCurve();
+         if (firstCurve is Arc)
+         {
+            // Sorting cretaria is acr radius
+            foreach (IFCGridAxis gridAxis in unnamedAxes)
+            {
+               Arc arc = gridAxis.GetAxisCurve() as Arc;
+               if (arc == null)
+                  break;
+
+               axesDict.Add(gridAxis, arc.Radius);
+            }
+         }
+         else if (firstCurve is Line)
+         {
+            // Create sorting line
+            Line sortDir = null;
+            
+            Line firstLine = (firstCurve as Line);
+            XYZ axisDirection = firstLine.Direction;
+
+            if (MathUtil.VectorsAreParallel(axisDirection, XYZ.BasisX))
+            {
+               sortDir = Line.CreateUnbound(firstLine.Origin, XYZ.BasisY);
+            }
+            else if (MathUtil.VectorsAreParallel(axisDirection, XYZ.BasisY))
+            {
+               sortDir = Line.CreateUnbound(firstLine.Origin, XYZ.BasisX);
+            }
+            else
+            {
+               // UAxes: bottom -> top
+               // VAxes: left -> right
+               sortDir = Line.CreateUnbound(firstLine.Origin, axisDirection);
+               bool reversed = false;
+               if ((axisDirection.X < 0.0 && axesType == IFCAxesType.UAxes) || axisDirection.Y > 0.0)
+                  reversed = true;
+               double rotationAngle = Math.PI / 2.0 * (reversed ? -1.0 : 1.0);
+
+               sortDir = sortDir?.CreateTransformed(Transform.CreateRotation(XYZ.BasisZ, rotationAngle)) as Line;
+            }
+
+            // Sorting cretaria is parameter of projection to sorting line
+            if (sortDir != null)
+               foreach (IFCGridAxis gridAxis in unnamedAxes)
+               {
+                  Line line = gridAxis.GetAxisCurve() as Line;
+                  if (line == null)
+                     break;
+
+                  axesDict.Add(gridAxis, sortDir.Project(line.GetEndPoint(0)).Parameter);
+               }
+         }
+         
+         // Sort the axes
+         IList<IFCGridAxis> orderedAxes = axesDict.OrderBy(x => x.Value).Select(x => x.Key).ToList();
+         if (orderedAxes.Count == unnamedAxes.Count)
+         {
+            unnamedAxes = orderedAxes;
+            return true;
+         }
+         else
+         {
+            Importer.TheLog.LogWarning(Id, "Couldn't sort unnamed Grid axis.", false);
+            return false;
+         }
+      }
+
+      /// <summary>
+      /// Revit doesn't allow grid lines to have the same name.
+      /// This routine makes a unique variant.
+      /// UAxes: digits
+      /// VAxes: upper case letters
+      /// WAxes: lower case letters
+      /// </summary>
+      /// <param name="axesTagType"> The axes tag type.</param>
+      /// <returns>The unique axis name.</returns>
+      private string CreateAxisTagUnique(IFCAxesTagType axesType)
+      {
+         int lap = 1;
+         int index = axesType == IFCAxesTagType.Digit ? 0 : (axesType == IFCAxesTagType.UpperCase ? 'A' : 'a');
+
+         IDictionary<string, IFCGridAxis> gridAxes = IFCImportFile.TheFile.IFCProject.GridAxes;
+         do
+         {
+            string uniqueAxisTag = String.Empty;
+
+            if (axesType == IFCAxesTagType.Digit)
+            {
+               uniqueAxisTag = (index + 1).ToString();
+            }
+            else 
+            {
+               if (axesType == IFCAxesTagType.UpperCase)
+               {
+                  if (index == 'Z')
+                  {
+                     index = 'A';
+                     lap++;
+                  }
+               }
+               else
+               {
+                  if (index == 'z')
+                  {
+                     index = 'a';
+                     lap++;
+                  }
+               }
+
+               for (int ii = 0; ii < lap; ++ii)
+                  uniqueAxisTag += (char)index;
+            }
+
+            if (!gridAxes.ContainsKey(uniqueAxisTag))
+               return uniqueAxisTag;
+
+            index++;
+         }
+         while (index < 1000);
+
+         Importer.TheLog.LogWarning(Id, "Couldn't set name for Grid axis, reverting to default.", false);
+         return "def";
       }
 
       /// <summary>
@@ -191,9 +387,9 @@ namespace Revit.IFC.Import.Data
          base.Process(ifcGrid);
 
          // We will be lenient and allow for missing U and V axes.
-         UAxes = ProcessOneAxis(ifcGrid, "UAxes");
-         VAxes = ProcessOneAxis(ifcGrid, "VAxes");
-         WAxes = ProcessOneAxis(ifcGrid, "WAxes");
+         UAxes = ProcessOneAxis(ifcGrid, IFCAxesType.UAxes);
+         VAxes = ProcessOneAxis(ifcGrid, IFCAxesType.VAxes);
+         WAxes = ProcessOneAxis(ifcGrid, IFCAxesType.WAxes);
       }
 
       /// <summary>

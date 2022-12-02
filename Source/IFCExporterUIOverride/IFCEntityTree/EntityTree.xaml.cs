@@ -18,7 +18,7 @@ namespace BIM.IFC.Export.UI
    {
       TreeView m_TreeView = new TreeView();
       TreeViewItem PrevSelPDefItem = null;
-      IDictionary<string, TreeViewItem> m_TreeViewItemDict = new Dictionary<string, TreeViewItem>();
+      IDictionary<string, TreeViewItem> m_TreeViewItemDict = new Dictionary<string, TreeViewItem>(StringComparer.OrdinalIgnoreCase);
       IFCEntityTrie m_EntityTrie = new IFCEntityTrie();
       string m_IfcVersion = null;
       bool m_SingleNodeSelection = false;

@@ -168,7 +168,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elemTypeToUse">The base element type.</param>
       /// <param name="handle">The handle for which we process the entries.</param>
       /// <returns>A set of property handles.</returns>
-      public ISet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData ifcParams, 
+      public ISet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams ifcParams, 
          ElementOrConnector elementOrConnectorToUse, ElementType elemTypeToUse, IFCAnyHandle handle)
       {
          // We need to ensure that we don't have the same property name twice in the same property set.
@@ -184,6 +184,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             try
             {
                IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle, fromSchedule);
+
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportMaterialPsets)
+                  propHnd = MaterialBuildInParameterUtil.CreateMaterialPropertyIfBuildIn(Name, entry.PropertyName, entry.PropertyType, elementOrConnectorToUse?.Element, file);
+
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
                   continue;
 
@@ -191,7 +195,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                if (currPropertyName != null)
                   propertiesByName[currPropertyName] = propHnd;
             }
-            catch(Exception) { }
+            catch (Exception) { }
          }
 
          ISet<IFCAnyHandle> props = new HashSet<IFCAnyHandle>(propertiesByName.Values);

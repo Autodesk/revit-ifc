@@ -475,28 +475,27 @@ namespace Revit.IFC.Export.Exporter
             }
             else
             {
-               IFCAnyHandle styleItemHnd = IFCInstanceExporter.CreateStyledItem(file, repItemHnd, styles as HashSet<IFCAnyHandle>, null);
-               ExporterCacheManager.PresentationStyleAssignmentCache.Register(materialId, styleItemHnd);
+               // IFC4: Using IfcPresentationStyleAssignment is deprecated, use the direct assignment of a subtype of IfcPresentationStyle instead.
+               presStyleHnd = surfStyleHnd;
+               ExporterCacheManager.PresentationStyleAssignmentCache.Register(materialId, surfStyleHnd);
             }
          }
 
-         // Check if the IfcStyledItem has already been set for this representation item.  If so, don't set it
-         // again.  This can happen in BodyExporter in certain cases where we call CreateSurfaceStyleForRepItem twice.
          if (presStyleHnd != null)
          {
+            // WR11: Restricts the number of styles to 1, so create new HashSet with the last one.
+            HashSet<IFCAnyHandle> presStyleSet = new HashSet<IFCAnyHandle>() { presStyleHnd };
+
+            // Check if the IfcStyledItem has already been set for this representation item.  If so, don't set it
+            // again.  This can happen in BodyExporter in certain cases where we call CreateSurfaceStyleForRepItem twice.
             HashSet<IFCAnyHandle> styledByItemHandles = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(repItemHnd, "StyledByItem");
             if (styledByItemHandles == null || styledByItemHandles.Count == 0)
             {
-               HashSet<IFCAnyHandle> presStyleSet = new HashSet<IFCAnyHandle>() { presStyleHnd };
-               IFCAnyHandle styledItem = IFCInstanceExporter.CreateStyledItem(file, repItemHnd, presStyleSet, null);
+               IFCInstanceExporter.CreateStyledItem(file, repItemHnd, presStyleSet, null);
             }
             else
             {
                IFCAnyHandle styledItem = styledByItemHandles.First();
-               HashSet<IFCAnyHandle> presStyleSet = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(styledItem, "Styles");
-               if (presStyleSet == null)
-                  presStyleSet = new HashSet<IFCAnyHandle>();
-               presStyleSet.Add(presStyleHnd);
                IFCAnyHandleUtil.SetAttribute(styledItem, "Styles", presStyleSet);
             }
          }
@@ -1161,7 +1160,7 @@ namespace Revit.IFC.Export.Exporter
       private static IFCAnyHandle CreateEdgeCurveFromCurve(IFCFile file, ExporterIFC exporterIFC, Curve curve, IFCAnyHandle edgeStart, IFCAnyHandle edgeEnd,
          bool sameSense, IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints)
       {
-         bool allowAdvancedCurve = ExporterCacheManager.ExportOptionsCache.ExportAs4;
+         bool allowAdvancedCurve = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
          IFCAnyHandle baseCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC, curve, allowAdvancedCurve, cartesianPoints);
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(baseCurve))
@@ -1174,7 +1173,7 @@ namespace Revit.IFC.Export.Exporter
       private static IFCAnyHandle CreateProfileCurveFromCurve(IFCFile file, ExporterIFC exporterIFC, Curve curve, string profileName,
          IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints, Transform additionalTrf = null)
       {
-         bool allowAdvancedCurve = ExporterCacheManager.ExportOptionsCache.ExportAs4;
+         bool allowAdvancedCurve = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
          IFCAnyHandle ifcCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC, curve, allowAdvancedCurve, cartesianPoints, additionalTrf);
          IFCAnyHandle sweptCurve = null;
 
@@ -2422,7 +2421,7 @@ namespace Revit.IFC.Export.Exporter
       {
          IList<IFCAnyHandle> tessellatedBodyList = null;
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && !ExporterCacheManager.ExportOptionsCache.UseOnlyTriangulation)
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && !ExporterCacheManager.ExportOptionsCache.UseOnlyTriangulation)
          {
             tessellatedBodyList = ExportBodyAsPolygonalFaceSet(exporterIFC, element, options, geomObject, lcs);
          }
@@ -2786,7 +2785,9 @@ namespace Revit.IFC.Export.Exporter
 
             // If the above options do not generate any body, do the traditional step for Brep
             if (!alreadyExported && (exportAsBReps || isCoarse))
+            {
                alreadyExported = ExportBodyAsSolid(exporterIFC, element, options, currentFaceHashSetList, geomObject);
+            }
 
             // If all else fails, use the internal routine to go through the faces.  This will likely create a surface model.
             if (!alreadyExported)
@@ -3072,7 +3073,7 @@ namespace Revit.IFC.Export.Exporter
          ElementId overrideMaterialId,
          IList<GeometryObject> geometryList,
          BodyExporterOptions options,
-         IFCExtrusionCreationData exportBodyParams,
+         IFCExportBodyParams exportBodyParams,
          GeometryObject potentialPathGeom = null,
          string profileName = null)
       {
@@ -3088,7 +3089,7 @@ namespace Revit.IFC.Export.Exporter
          // we will try to see if we can use an optimized BRep created from a swept solid.
          bool allowExportAsOptimizedBRep = (options.TessellationLevel == BodyExporterOptions.BodyTessellationLevel.Coarse ||
             ExporterCacheManager.ExportOptionsCache.LevelOfDetail < ExportOptionsCache.ExportTessellationLevel.High);
-         bool allowAdvancedBReps = ExporterCacheManager.ExportOptionsCache.ExportAs4
+         bool allowAdvancedBReps = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4
                                     && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView
                                     && !ExporterCacheManager.ExportOptionsCache.ExportAs4General;
 
@@ -3141,6 +3142,7 @@ namespace Revit.IFC.Export.Exporter
          MaterialAndProfile materialAndProfile = null;
          HashSet<FootPrintInfo> footprintInfoSet = new HashSet<FootPrintInfo>();
          Plane extrusionBasePlane = null;
+         XYZ extrusionDirection = XYZ.BasisX;
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
@@ -3162,11 +3164,30 @@ namespace Revit.IFC.Export.Exporter
                   {
                      using (IFCTransaction extrusionTransaction = new IFCTransaction(file))
                      {
-                        XYZ planeXVec = options.ExtrusionLocalCoordinateSystem.BasisY.Normalize();
-                        XYZ planeYVec = options.ExtrusionLocalCoordinateSystem.BasisZ.Normalize();
+                        if (exportBodyParams != null && exportBodyParams.PossibleExtrusionAxes == IFCExtrusionAxes.TryZ)
+                        {
+                           XYZ planeXVec = options.ExtrusionLocalCoordinateSystem.BasisX.Normalize();
+                           XYZ planeYVec = options.ExtrusionLocalCoordinateSystem.BasisY.Normalize();
 
-                        extrusionBasePlane = GeometryUtil.CreatePlaneByXYVectorsAtOrigin(planeXVec, planeYVec);
-                        XYZ extrusionDirection = options.ExtrusionLocalCoordinateSystem.BasisX;
+                           extrusionBasePlane = GeometryUtil.CreatePlaneByXYVectorsAtOrigin(planeXVec, planeYVec);
+                           extrusionDirection = options.ExtrusionLocalCoordinateSystem.BasisZ;
+                        }
+                        else if (exportBodyParams != null && exportBodyParams.PossibleExtrusionAxes == IFCExtrusionAxes.TryY)
+                        {
+                           XYZ planeXVec = options.ExtrusionLocalCoordinateSystem.BasisX.Normalize();
+                           XYZ planeYVec = options.ExtrusionLocalCoordinateSystem.BasisZ.Normalize();
+
+                           extrusionBasePlane = GeometryUtil.CreatePlaneByXYVectorsAtOrigin(planeXVec, planeYVec);
+                           extrusionDirection = options.ExtrusionLocalCoordinateSystem.BasisY;
+                        }
+                        else
+                        {
+                           XYZ planeXVec = options.ExtrusionLocalCoordinateSystem.BasisY.Normalize();
+                           XYZ planeYVec = options.ExtrusionLocalCoordinateSystem.BasisZ.Normalize();
+
+                           extrusionBasePlane = GeometryUtil.CreatePlaneByXYVectorsAtOrigin(planeXVec, planeYVec);
+                           extrusionDirection = options.ExtrusionLocalCoordinateSystem.BasisX;
+                        }
 
                         GenerateAdditionalInfo footprintOrProfile = GenerateAdditionalInfo.GenerateBody;
                         if (options.CollectFootprintHandle)
@@ -3333,7 +3354,7 @@ namespace Revit.IFC.Export.Exporter
                               materialIdsForExtrusions.Add(exporterIFC.GetMaterialIdForCurrentExportState());
 
                               IList<CurveLoop> curveLoops = extrusionLists[ii][0].GetLoops();
-                              XYZ extrusionDirection = extrusionLists[ii][0].ExtrusionDirection;
+                              extrusionDirection = extrusionLists[ii][0].ExtrusionDirection;
                               if (options.CollectFootprintHandle)
                               {
                                  FootPrintInfo fInfo = new FootPrintInfo(curveLoops, lcs);
@@ -3359,7 +3380,7 @@ namespace Revit.IFC.Export.Exporter
                                  }
 
                                  double height = 0.0, width = 0.0;
-                                 if (GeometryUtil.ComputeHeightWidthOfCurveLoop(curveLoops[0], out height, out width))
+                                 if (GeometryUtil.ComputeHeightWidthOfCurveLoop(curveLoops[0], exportBodyParams.PreferredWidthDirection, out height, out width))
                                  {
                                     exportBodyParams.ScaledHeight = UnitUtil.ScaleLength(height);
                                     exportBodyParams.ScaledWidth = UnitUtil.ScaleLength(width);
@@ -3611,7 +3632,7 @@ namespace Revit.IFC.Export.Exporter
           IList<Solid> solids,
           IList<Mesh> meshes,
           BodyExporterOptions options,
-          IFCExtrusionCreationData exportBodyParams)
+          IFCExportBodyParams exportBodyParams)
       {
          IList<GeometryObject> objects = new List<GeometryObject>();
          foreach (Solid solid in solids)
@@ -3634,7 +3655,7 @@ namespace Revit.IFC.Export.Exporter
       public static BodyData ExportBody(ExporterIFC exporterIFC,
          Element element, ElementId categoryId, ElementId overrideMaterialId,
          GeometryObject geometryObject, BodyExporterOptions options,
-         IFCExtrusionCreationData exportBodyParams)
+         IFCExportBodyParams exportBodyParams)
       {
          IList<GeometryObject> geomList = new List<GeometryObject>();
          if (geometryObject is Solid)
@@ -3661,7 +3682,7 @@ namespace Revit.IFC.Export.Exporter
       public static BodyData ExportBody(ExporterIFC exporterIFC,
          Element element, ElementId categoryId, ElementId overrideMaterialId,
          GeometryElement geometryElement, BodyExporterOptions options,
-         IFCExtrusionCreationData exportBodyParams)
+         IFCExportBodyParams exportBodyParams)
       {
          SolidMeshGeometryInfo info = null;
          IList<GeometryObject> geomList = new List<GeometryObject>();
@@ -3689,7 +3710,7 @@ namespace Revit.IFC.Export.Exporter
          if (materialAndProfile != null)
             bodyData.MaterialAndProfile = materialAndProfile;
          // Export of item with Footprint identifier only in IFC4
-         if ((ExporterCacheManager.ExportOptionsCache.ExportAs4) && (footprintInfoSet.Count > 0 && collectFootprintOption))
+         if ((!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4) && (footprintInfoSet.Count > 0 && collectFootprintOption))
          {
             List<CurveLoop> footprintCurveLoops = new List<CurveLoop>();
             foreach (FootPrintInfo finfo in footprintInfoSet)

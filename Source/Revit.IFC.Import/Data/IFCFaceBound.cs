@@ -219,17 +219,17 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          if (shapeEditScope.BuilderScope == null)
          {
             throw new InvalidOperationException("BuilderScope has not been initialised");
          }
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
-         Bound.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
+         Bound.CreateShape(shapeEditScope, scaledLcs, guid);
          IsValidForCreation = Bound.IsValidForCreation;
 
          if (shapeEditScope.BuilderType == IFCShapeBuilderType.TessellatedShapeBuilder)

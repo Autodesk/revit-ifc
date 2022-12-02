@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
@@ -40,6 +41,26 @@ namespace Revit.IFC.Import.Data
       private bool m_TheMaterialIsSet = false;
 
       private IDictionary<string, object> m_AdditionalIntParameters = null;
+
+      private IFCAnyHandle m_NestsHandle = null;
+
+      private IFCObjectDefinition m_Nests = null;
+
+      /// <summary>
+      /// The IFCObjectDefinition that is nested by this.
+      /// </summary>
+      public IFCObjectDefinition NestsWhole
+      {
+         get
+         {
+            if (m_Nests == null && m_NestsHandle != null)
+            {
+               m_Nests = ProcessIFCRelation.ProcessRelatingObject(m_NestsHandle);
+               m_NestsHandle = null;
+            }
+            return m_Nests;
+         }
+      }
 
       /// <summary>
       /// The category id corresponding to the element created for this IFCObjectDefinition.
@@ -462,6 +483,10 @@ namespace Revit.IFC.Import.Data
          if (!IFCCategoryUtil.CanImport(EntityType, PredefinedType))
             throw new InvalidOperationException("Don't Import");
 
+         HashSet<IFCAnyHandle> nests = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcObjectDefinition, "Nests");
+         if (nests != null && nests.Count != 0)
+            m_NestsHandle = nests.First();
+
          // Before IFC2x3, IfcTypeObject did not have IsDecomposedBy.
          HashSet<IFCAnyHandle> elemSet = null;
          if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x3) || !IFCAnyHandleUtil.IsSubTypeOf(ifcObjectDefinition, IFCEntityType.IfcTypeObject))
@@ -796,36 +821,61 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Add parameter "IfcSystem" to an element containing the name(s) of the system(s) of the generating entity. 
+      /// Add "IfcSystem" and "IfcGroup" parameter to an element containing the name(s) of the system(s) and of the group(s) of the generating entity. 
       /// </summary>
       /// <param name="doc">The document.</param>
       /// <param name="element">The created element.</param>
       /// <param name="category">The element's category.</param>
       /// <remarks>Note that this field contains the names of the systems, and as such is not parametric in any way.</remarks>
-      private void SetSystemParameter(Document doc, Element element, Category category)
+      private void SetSystemAndGroupParameter(Document doc, Element element, Category category)
       {
          if (category == null)
             return;
 
-         string systemNames = null;
+         IList<IFCGroup> groups = new List<IFCGroup>();
+         IList<IFCGroup> systems = new List<IFCGroup>();
 
          foreach (IFCGroup assignmentGroup in AssignmentGroups)
          {
-            if (!(assignmentGroup is IFCSystem))
-               continue;
+            if (assignmentGroup is IFCSystem)
+               systems.Add(assignmentGroup);
+            else if (assignmentGroup.GetType() == typeof(IFCGroup))
+               groups.Add(assignmentGroup);
+         }
 
-            string name = assignmentGroup.Name;
+         SetGroupsParameter(groups, "IfcGroup", doc, element, category);
+         SetGroupsParameter(systems, "IfcSystem", doc, element, category);
+      }
+
+      /// <summary>
+      /// Add the parameter that contains all the names from input group list
+      /// </summary>
+      /// <param name="groups">The group list.</param>
+      /// <param name="parameterName">The parameter name.</param>
+      /// <param name="doc">The document.</param>
+      /// <param name="element">The created element.</param>
+      /// <param name="category">The element's category.</param>
+      private void SetGroupsParameter(IList<IFCGroup> groups, string parameterName, Document doc, Element element, Category category)
+      {
+         if (category == null)
+            return;
+
+         string groupNames = String.Empty;
+
+         foreach (IFCGroup group in groups)
+         {
+            string name = group.Name;
             if (string.IsNullOrWhiteSpace(name))
                continue;
 
-            if (systemNames == null)
-               systemNames = name;
-            else
-               systemNames += ";" + name;
+            if (!String.IsNullOrEmpty(groupNames))
+               groupNames += ";";
+            
+            groupNames += name;
          }
 
-         if (systemNames != null)
-            IFCPropertySet.AddParameterString(doc, element, category, this, "IfcSystem", systemNames, Id);
+         if (!String.IsNullOrEmpty(groupNames))
+            IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, groupNames, Id);
       }
 
       /// <summary>
@@ -836,6 +886,18 @@ namespace Revit.IFC.Import.Data
       /// <param name="propertySetsCreated">A concatenated string of property sets created, used to filter schedules.</returns>
       public virtual void CreatePropertySets(Document doc, Element element, string propertySetsCreated)
       {
+      }
+
+      /// <summary>
+      /// This is to allow IFCObjectDefinition's to dictate what their own Category should be.
+      /// Rather than listing all the combinations in one file, this encapsulates the behavior into the specific entity.
+      /// If unable to find a category, or if this is not implemented in a subclass, ElementId.invalidElementId is used to indicate no
+      /// Category is found.
+      /// </summary>
+      /// <returns>ElementId representing Category, or ElementId.InvalidElementId if not category found.</returns>
+      public virtual ElementId GetCategoryElementId()
+      {
+         return ElementId.InvalidElementId;
       }
 
       private BuiltInParameter GetGUIDParameter(Element element, bool elementIsType)
@@ -870,8 +932,8 @@ namespace Revit.IFC.Import.Data
             // The list of materials.
             SetMaterialParameter(doc, element, category);
 
-            // Set the "IfcSystem" parameter.
-            SetSystemParameter(doc, element, category);
+            // Set the "IfcSystem" and "IfcGroup" parameters.
+            SetSystemAndGroupParameter(doc, element, category);
 
             bool elementIsType = (element is ElementType);
             if (!string.IsNullOrWhiteSpace(GlobalId))
@@ -1025,6 +1087,15 @@ namespace Revit.IFC.Import.Data
          // We are going to create this "fake" parameter so that we can filter elements in schedules based on their property sets.
          Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
          IFCPropertySet.AddParameterString(doc, element, category, this, propertySetListName, propertySetsCreated, Id);
+      }
+
+      /// <summary>
+      /// Post-process IFCObjectDefinition attributes.
+      /// </summary>
+      public override void PostProcess()
+      {
+         base.PostProcess();
+         IFCObjectDefinition nestsWhole = NestsWhole;
       }
    }
 }

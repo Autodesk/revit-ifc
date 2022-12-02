@@ -26,6 +26,8 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.DB.ExtensibleStorage;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.Export.Utility;
+using Revit.IFC.Common.Utility;
 
 namespace BIM.IFC.Export.UI
 {
@@ -73,19 +75,22 @@ namespace BIM.IFC.Export.UI
       {
          // These are the built-in configurations.  Provide a more extensible means of storage.
          // Order of construction: name, version, space boundaries, QTO, split walls, internal sets, 2d elems, boundingBox
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3, 1, false, false, true, false, false, false, true, false, false, includeSteelElements: true));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, true, true, false, includeSteelElements: true));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, true, false, false, includeSteelElements: true));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3FM, 1, true, false, false, true, true, false, true, true, false, includeSteelElements: true));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3, 1, false, false, true, false, false, false, false, true, false, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, false, true, true, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, false, true, false, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false, false));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3FM, 1, true, false, false, false, true, true, false, true, true, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, includeSteelElements: true,
             exchangeRequirement:KnownERNames.Architecture));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, includeSteelElements: true,
             exchangeRequirement:KnownERNames.Structural));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, includeSteelElements: true,
             exchangeRequirement:KnownERNames.BuildingService));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         //Handling the IFC4x3 format for using the IFC Extension with Revit versions older than 2023.1 which does not support IFC4x3.
+         if(OptionsUtil.IsIFC4x3Supported())
+            AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(OptionsUtil.GetIFCVersionByName("IFC4x3"), 0, true, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
       }
 
       /// <summary>
@@ -129,6 +134,9 @@ namespace BIM.IFC.Export.UI
                      Field fieldExportSolidModelRep = m_OldSchema.GetField(s_setupExportSolidModelRep);
                      if (fieldExportSolidModelRep != null)
                         configuration.ExportSolidModelRep = configEntity.Get<bool>(s_setupExportSolidModelRep);
+                     Field fieldExportMaterialPsets = m_OldSchema.GetField(s_setupExportMaterialPsets);
+                     if (fieldExportMaterialPsets != null)
+                        configuration.ExportMaterialPsets = configEntity.Get<bool>(s_setupExportMaterialPsets);
                      Field fieldExportSchedulesAsPsets = m_OldSchema.GetField(s_setupExportSchedulesAsPsets);
                      if (fieldExportSchedulesAsPsets != null)
                         configuration.ExportSchedulesAsPsets = configEntity.Get<bool>(s_setupExportSchedulesAsPsets);
@@ -233,6 +241,8 @@ namespace BIM.IFC.Export.UI
                         configuration.ExportBoundingBox = bool.Parse(configMap[s_setupExportBoundingBox]);
                      if (configMap.ContainsKey(s_setupExportSolidModelRep))
                         configuration.ExportSolidModelRep = bool.Parse(configMap[s_setupExportSolidModelRep]);
+                     if (configMap.ContainsKey(s_setupExportMaterialPsets))
+                        configuration.ExportMaterialPsets = bool.Parse(configMap[s_setupExportMaterialPsets]);
                      if (configMap.ContainsKey(s_setupExportSchedulesAsPsets))
                         configuration.ExportSchedulesAsPsets = bool.Parse(configMap[s_setupExportSchedulesAsPsets]);
                      if (configMap.ContainsKey(s_setupExportUserDefinedPsets))
@@ -341,6 +351,7 @@ namespace BIM.IFC.Export.UI
       private const string s_setupExportSpecificSchedules = "ExportSpecificSchedules";
       private const string s_setupExportBoundingBox = "ExportBoundingBox";
       private const string s_setupExportSolidModelRep = "ExportSolidModelRep";
+      private const string s_setupExportMaterialPsets = "ExportMaterialPsets";
       private const string s_setupExportSchedulesAsPsets = "ExportSchedulesAsPsets";
       private const string s_setupExportUserDefinedPsets = "ExportUserDefinedPsets";
       private const string s_setupExportUserDefinedPsetsFileName = "ExportUserDefinedPsetsFileName";

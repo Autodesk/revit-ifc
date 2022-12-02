@@ -108,7 +108,6 @@ namespace Revit.IFC.Export.Exporter
                propertySetsToExport += InitCommonPropertySets;
 
             propertySetsToExport += InitExtraCommonPropertySets;
-            propertySetsToExport += InitPredefinedPropertySets;
          }
 
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportSchedulesAsPsets)
@@ -136,6 +135,25 @@ namespace Revit.IFC.Export.Exporter
          }
 
          propertySetsToExport?.Invoke(cache.PropertySets);
+      }
+
+      /// <summary>
+      /// Initializes predefined property sets.
+      /// </summary>
+      /// <param name="propertySetsToExport">Existing functions to call for property set initialization.</param>
+      public static void InitPreDefinedPropertySets(Exporter.PreDefinedPropertySetsToExport propertySetsToExport)
+      {
+         ParameterCache cache = ExporterCacheManager.ParameterCache;
+
+         if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportIFCCommon)
+         {
+            if (propertySetsToExport == null)
+               propertySetsToExport = InitPreDefinedPropertySets;
+            else
+               propertySetsToExport += InitPreDefinedPropertySets;
+         }
+
+         propertySetsToExport?.Invoke(cache.PreDefinedPropertySets);
       }
 
       /// <summary>

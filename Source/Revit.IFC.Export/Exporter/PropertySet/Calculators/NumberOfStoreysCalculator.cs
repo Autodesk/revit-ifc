@@ -56,7 +56,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// The ExporterIFC object.
       /// </param>
       /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
+      /// The IFCExportBodyParams.
       /// </param>
       /// <param name="element,">
       /// The element to calculate the value.
@@ -67,7 +67,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          m_NumberOfStoreys = ExporterIFCUtils.GetNumBuildingStoreys(exporterIFC);
          return true;
@@ -80,6 +80,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// The integer value.
       /// </returns>
       public override int GetIntValue()
+      {
+         return m_NumberOfStoreys;
+      }
+
+      /// <summary>
+      /// Gets the calculated double value.
+      /// </summary>
+      /// <returns>
+      /// The double value.
+      /// </returns>
+      public override double GetDoubleValue()
       {
          return m_NumberOfStoreys;
       }

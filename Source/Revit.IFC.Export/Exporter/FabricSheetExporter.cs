@@ -78,8 +78,8 @@ namespace Revit.IFC.Export.Exporter
             IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcGroup);
             productWrapper.AddElement(element, fabricArea, exportInfo);
 
-            string groupGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssignsToGroup,
-               fabricArea);
+            string groupGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelAssignsToGroup, fabricArea));
             IFCInstanceExporter.CreateRelAssignsToGroup(file, groupGuid, ownerHistory,
                null, null, fabricSheetHandles, null, fabricArea);
 
@@ -100,7 +100,7 @@ namespace Revit.IFC.Export.Exporter
          public PlacementSetter PlacementSetter { get; set; }
          public ElementId MaterialId { get; set; }
          public ProductWrapper ProductWrapper { get; set; }
-         public IFCExtrusionCreationData EcData { get; set; }
+         public IFCExportBodyParams EcData { get; set; }
       }
 
       /// <summary>
@@ -127,7 +127,7 @@ namespace Revit.IFC.Export.Exporter
 
             using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, sheet, null, null, overrideContainerId, overrideContainerHnd))
             {
-               using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
                   ecData.SetLocalPlacement(placementSetter.LocalPlacement);
 

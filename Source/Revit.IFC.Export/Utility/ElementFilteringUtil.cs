@@ -236,7 +236,7 @@ namespace Revit.IFC.Export.Utility
       public static bool ShouldElementBeExported(ExporterIFC exporterIFC, Element element, bool allowSeparateOpeningExport)
       {
          // Allow the ExporterStateManager to say that an element should be exported regardless of settings.
-         if (ExporterStateManager.CanExportElementOverride())
+         if (ExporterStateManager.CanExportElementOverride)
             return true;
 
          // First, check if the element is set explicitly to be exported or not exported.  This
@@ -616,13 +616,22 @@ namespace Revit.IFC.Export.Utility
          if (category == null || filterView == null)
             return true;
 
-         bool isVisible = false;
+         bool isVisible;
          if (m_CategoryVisibilityCache.TryGetValue(category.Id, out isVisible))
             return isVisible;
 
-         // The category will be visible if either we don't allow visibility controls (default: true), or
-         // we do allow visibility controls and the category is visible in the view.
-         isVisible = (!category.get_AllowsVisibilityControl(filterView) || category.get_Visible(filterView));
+         if (category.Id.IntegerValue > 0 && ExporterCacheManager.ExportOptionsCache.HostViewId != ElementId.InvalidElementId)
+         {
+            // We don't support checking the visibility of link document custom categories
+            // in the host view here.  We will use a different filter for this.
+            isVisible = true;
+         }
+         else
+         {
+            // The category will be visible if either we don't allow visibility controls (default: true), or
+            // we do allow visibility controls and the category is visible in the view.
+            isVisible = (!category.get_AllowsVisibilityControl(filterView) || category.get_Visible(filterView));
+         }
          m_CategoryVisibilityCache[category.Id] = isVisible;
          return isVisible;
       }
@@ -723,7 +732,7 @@ namespace Revit.IFC.Export.Utility
             if ((node.IsSubTypeOf("IfcObject") && 
                      (node.IsSubTypeOf("IfcProduct") || node.IsSubTypeOf("IfcGroup") || node.Name.Equals("IfcGroup", StringComparison.InvariantCultureIgnoreCase)))
                   || node.IsSubTypeOf("IfcProject") || node.Name.Equals("IfcProject", StringComparison.InvariantCultureIgnoreCase)
-                  || node.IsSubTypeOf("IfcTypeObject"))
+                  || node.IsSubTypeOf("IfcTypeObject") || node.Name.Equals("IfcMaterial", StringComparison.InvariantCultureIgnoreCase))
             {
                if (IFCEntityType.TryParse(entityType, true, out ifcType))
                   ret = ifcType;

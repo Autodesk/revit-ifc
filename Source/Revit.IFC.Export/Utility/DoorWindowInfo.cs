@@ -340,31 +340,31 @@ namespace Revit.IFC.Export.Utility
          if (leftPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
          {
-            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
+            if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
             {
-               // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
-               if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
+               if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                   return "NOTDEFINED";
                else
-                  return "SINGLE_SWING_LEFT";
+                  return "SWING_FIXED_LEFT";
             }
-
-            return "SWING_FIXED_LEFT";
+            else
+               return "SINGLE_SWING_LEFT";
          }
 
          if (rightPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && leftPosYArcCount == 0 && rightNegYArcCount == 0)
          {
-            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
+            if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
             {
-               // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
-               if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
+               if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                   return "NOTDEFINED";
                else
-                  return "SINGLE_SWING_RIGHT";
+                  return "SWING_FIXED_RIGHT";
             }
-
-            return "SWING_FIXED_RIGHT";
+            else
+               return "SINGLE_SWING_RIGHT";
          }
 
          if (leftPosYArcCount > 0 && leftNegYArcCount > 0 
@@ -452,7 +452,7 @@ namespace Revit.IFC.Export.Utility
             if (!string.IsNullOrWhiteSpace(doorOperationType))
             {
                Type enumType = null;
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+               if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                   enumType = typeof(Toolkit.IFC4.IFCDoorTypeOperation);
                else
                   enumType = typeof(Toolkit.IFCDoorStyleOperation);

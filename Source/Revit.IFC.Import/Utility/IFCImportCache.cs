@@ -39,7 +39,7 @@ namespace Revit.IFC.Import.Utility
       /// <remarks>
       /// We only really expect one document here, but this is safer.
       /// </remarks>
-      private IDictionary<Document, BindingMap> ParameterBindings { get; set; }  = null;
+      private IDictionary<Document, BindingMap> ParameterBindings { get; set; } = null;
 
       public BindingMap GetParameterBinding(Document doc)
       {
@@ -74,33 +74,43 @@ namespace Revit.IFC.Import.Utility
       /// A mapping of representation items to IfcStyledItems.
       /// </summary>
       public IDictionary<IFCAnyHandle, ICollection<IFCAnyHandle>> StyledByItems { get; } = new Dictionary<IFCAnyHandle, ICollection<IFCAnyHandle>>();
-     
+
       public IDictionary<IFCAnyHandle, IFCAnyHandle> LayerAssignment { get; } = new Dictionary<IFCAnyHandle, IFCAnyHandle>();
-      
+
       /// <summary>
       /// A mapping from an IFCRepresentationMap entity id to an IFCTypeProduct.
       /// If a mapping entry exists here, it means that the IFCRepresentationMap is referenced by exactly 1 IFCTypeProduct.
       /// </summary>
       public IDictionary<int, IFCTypeProduct> RepMapToTypeProduct { get; protected set; } = new Dictionary<int, IFCTypeProduct>();
-      
+
       /// <summary>
       /// A mapping from an IFCTypeProduct entity id to a IFCRepresentation label.
       /// If a mapping entry exists here, it means that the IFCTypeProduct has exactly 1 IFCRepresentation 
       /// of a particular label, accessed via an IFCRepresentationMap.
       /// </summary>
       public IDictionary<int, ISet<string>> TypeProductToRepLabel { get; protected set; } = new Dictionary<int, ISet<string>>();
-      
+
       /// <summary>
       /// A mapping from an IFCTypeProduct entity id to its corresponding DirectShapeType element id.
       /// In conjunction with RepMapToTypeProduct, this allows us to access the parent DirectShapeType to set its geometry
       /// when parsing the IFCRepresentationMap.
       /// </summary>
       public IDictionary<int, ElementId> CreatedDirectShapeTypes { get; protected set; } = new Dictionary<int, ElementId>();
-      
+
+      /// <summary>
+      /// Category class associated with OST_Topography for the document associated with this import.
+      /// </summary>
+      public Category TopographyCategory { get; protected set; } = null;
+
+      /// <summary>
+      /// Category class associated with OST_Topology for the document associated with this import.
+      /// </summary>
+      public Category GenericModelsCategory { get; protected set; } = null;
+
       /// <summary>
       /// The Category class associated with OST_GenericModels for the document associated with this import.
       /// </summary>
-      public Category GenericModelsCategory { get; protected set; } = null;
+      //public Category GenericModelsCategory { get; protected set; } = null;
 
       /// <summary>
       /// The set of GUIDs imported.
@@ -164,6 +174,11 @@ namespace Revit.IFC.Import.Utility
       public IDictionary<string, ElementId> GridNameToElementMap { get; } = new Dictionary<string, ElementId>();
 
       private bool HavePreProcessedGrids { get; set; } = false;
+
+      /// <summary>
+      /// Which Site Id should be Default Side Id. 
+      /// </summary>
+      public int? DefaultSiteId { get; set; } = null;
 
       /// <summary>
       /// Pre-process IfcGrids before processing IfcGridLocation.
@@ -310,7 +325,11 @@ namespace Revit.IFC.Import.Utility
          Settings documentSettings = doc.Settings;
 
          DocumentCategories = documentSettings.Categories;
+
+         // Populate categories cache for creating subcategories.
+         //
          GenericModelsCategory = DocumentCategories.get_Item(BuiltInCategory.OST_GenericModel);
+         TopographyCategory = DocumentCategories.get_Item(BuiltInCategory.OST_Topography);
 
          ProjectInfo projectInfo = doc.ProjectInformation;
          ProjectInformationId = (projectInfo == null) ? ElementId.InvalidElementId : projectInfo.Id;

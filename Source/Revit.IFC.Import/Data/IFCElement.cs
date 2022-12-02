@@ -148,18 +148,47 @@ namespace Revit.IFC.Import.Data
 
          if (checkPorts)
          {
-            ICollection<IFCAnyHandle> hasPorts = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcElement, "HasPorts");
-            if (hasPorts != null)
+            // Since IFC4 the inverse attribute 'HasPorts' is deprecated.
+            // Relationship to ports, contained within the IfcDistributionElement is now realized by the inverse relationship NestedBy referencing IfcRelNests.
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4))
             {
-               foreach (IFCAnyHandle hasPort in hasPorts)
+               ICollection<IFCAnyHandle> isNestedBy = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcElement, "IsNestedBy");
+               if (isNestedBy != null)
                {
-                  IFCAnyHandle relatingPort = IFCAnyHandleUtil.GetInstanceAttribute(hasPort, "RelatingPort");
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(relatingPort))
-                     continue;
+                  foreach (IFCAnyHandle relNests in isNestedBy)
+                  {
+                     ICollection<IFCAnyHandle> relatedObjects = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(relNests, "RelatedObjects");
+                     if (relatedObjects == null)
+                        continue;
 
-                  IFCPort port = IFCPort.ProcessIFCPort(relatingPort);
-                  if (port != null)
-                     Ports.Add(port);
+                     foreach (IFCAnyHandle relatedObject in relatedObjects)
+                     {
+                        if (IFCAnyHandleUtil.IsNullOrHasNoValue(relatedObject) ||
+                            !IFCAnyHandleUtil.IsSubTypeOf(relatedObject, IFCEntityType.IfcDistributionPort))
+                           continue;
+
+                        IFCPort port = IFCPort.ProcessIFCPort(relatedObject);
+                        if (port != null)
+                           Ports.Add(port);
+                     }
+                  }
+               }
+            }
+            else
+            {
+               ICollection<IFCAnyHandle> hasPorts = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcElement, "HasPorts");
+               if (hasPorts != null)
+               {
+                  foreach (IFCAnyHandle hasPort in hasPorts)
+                  {
+                     IFCAnyHandle relatingPort = IFCAnyHandleUtil.GetInstanceAttribute(hasPort, "RelatingPort");
+                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(relatingPort))
+                        continue;
+
+                     IFCPort port = IFCPort.ProcessIFCPort(relatingPort);
+                     if (port != null)
+                        Ports.Add(port);
+                  }
                }
             }
          }
@@ -308,6 +337,8 @@ namespace Revit.IFC.Import.Data
                return IFCElementAssembly.ProcessIFCElementAssembly(ifcElement);
             if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementComponent))
                return IFCElementComponent.ProcessIFCElementComponent(ifcElement);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcGeotechnicalElement))
+               return IFCGeotechnicalElement.ProcessIFCGeotechnicalElement(ifcElement);
 
             return new IFCElement(ifcElement);
          }

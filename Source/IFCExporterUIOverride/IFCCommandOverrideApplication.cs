@@ -28,6 +28,7 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
 using Revit.IFC.Common.Extensions;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Utility;
 using Autodesk.Revit.DB.ExternalService;
 
 
@@ -236,13 +237,12 @@ namespace BIM.IFC.Export.UI
 
                // Prompt the user for the file location and path
                string defaultExt = mainWindow.DefaultExt;
-               String fullName = mainWindow.ExportFilePathName;
-               String path = Path.GetDirectoryName(fullName);
-               String fileName = multipleFiles ? Properties.Resources.MultipleFiles : Path.GetFileName(fullName);
-
+               string fullName = mainWindow.ExportFilePathName;
+               string path = Path.GetDirectoryName(fullName);
+               string fileName = multipleFiles ? Properties.Resources.MultipleFiles : Path.GetFileName(fullName);
 
                // This option should be rarely used, and is only for consistency with old files.  As such, it is set by environment variable only.
-               String use2009GUID = Environment.GetEnvironmentVariable("Assign2009GUIDToBuildingStoriesOnIFCExport");
+               string use2009GUID = Environment.GetEnvironmentVariable("Assign2009GUIDToBuildingStoriesOnIFCExport");
                bool use2009BuildingStoreyGUIDs = (use2009GUID != null && use2009GUID == "1");
 
                string unsuccesfulExports = string.Empty;
@@ -283,7 +283,7 @@ namespace BIM.IFC.Export.UI
                   IFCExportOptions exportOptions = new IFCExportOptions();
 
                   ElementId activeViewId = GenerateActiveViewIdFromDocument(document);
-                  selectedConfig.ActiveViewId = selectedConfig.UseActiveViewGeometry ? activeViewId : ElementId.InvalidElementId;
+                  selectedConfig.ActiveViewId = selectedConfig.UseActiveViewGeometry ? activeViewId.IntegerValue : -1;
                   selectedConfig.UpdateOptions(exportOptions, activeViewId);
 
                   bool result = document.Export(path, fileName, exportOptions);
@@ -506,8 +506,8 @@ namespace BIM.IFC.Export.UI
 
             // get the link instances
             List<RevitLinkInstance> currRvtLinkInstances = rvtLinkNamesToInstancesDict[linkPathName];
-            IList<string> serTransforms = new List<string>();
             IList<string> linkFileNames = new List<string>();
+            IList<Tuple<ElementId, string>> serTransforms = new List<Tuple<ElementId, string>>();
 
             Document linkDocument = null;
             double lengthScaleFactorLink = 1.0;
@@ -557,14 +557,14 @@ namespace BIM.IFC.Export.UI
                }
 
                // get the link file path and name
-               String linkFileName = GetLinkFileName(linkDocument, linkPathName);
+               string linkFileName = GetLinkFileName(linkDocument, linkPathName);
 
                //if link was an IFC file then make a different formating to the file name
                if ((linkPathName.Length >= 4 && linkPathName.Substring(linkPathName.Length - 4).ToLower() == ".ifc") ||
                    (linkPathName.Length >= 7 && linkPathName.Substring(linkPathName.Length - 7).ToLower() == ".ifcxml") ||
                    (linkPathName.Length >= 7 && linkPathName.Substring(linkPathName.Length - 7).ToLower() == ".ifczip"))
                {
-                  String fName = fileName;
+                  string fName = fileName;
 
                   //get output path and add to the new file name 
                   index = fName.LastIndexOf("\\");
@@ -604,7 +604,7 @@ namespace BIM.IFC.Export.UI
                tr.Origin *= lengthScaleFactorLink;
 
                // serialize transform
-               serTransforms.Add(SerializeTransform(tr));
+               serTransforms.Add(Tuple.Create(currRvtLinkInstance.Id, SerializeTransform(tr)));
             }
 
             // IFC export requires an open transaction, although no changes should be made
@@ -624,8 +624,11 @@ namespace BIM.IFC.Export.UI
 
                   for (int ind = 0; ind < numLinkInstancesToExport; ind++)
                   {
-                     string optionName = (ind == 0) ? "ExportLinkInstanceTransform" : "ExportLinkInstanceTransform" + (ind + 1).ToString();
-                     exportOptions.AddOption(optionName, serTransforms[ind]);
+                     string optionName = (ind == 0) ? "ExportLinkId" : "ExportLinkId" + (ind + 1).ToString();
+                     exportOptions.AddOption(optionName, serTransforms[ind].Item1.ToString());
+
+                     optionName = (ind == 0) ? "ExportLinkInstanceTransform" : "ExportLinkInstanceTransform" + (ind + 1).ToString();
+                     exportOptions.AddOption(optionName, serTransforms[ind].Item2);
 
                      // Don't pass in file name for the first link instance.
                      if (ind == 0)
@@ -636,8 +639,8 @@ namespace BIM.IFC.Export.UI
                   }
 
                   // Pass in the first value; the rest will  be in the options.
-                  String path_ = Path.GetDirectoryName(linkFileNames[0]);
-                  String fileName_ = Path.GetFileName(linkFileNames[0]);
+                  string path_ = Path.GetDirectoryName(linkFileNames[0]);
+                  string fileName_ = Path.GetFileName(linkFileNames[0]);
                   bool result = linkDocument.Export(path_, fileName_, exportOptions); // pass in the options here
                }
                catch

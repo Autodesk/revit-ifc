@@ -170,15 +170,16 @@ namespace Revit.IFC.Import.Data
 
          if (element != null)
          {
-            Category category = (ContainedIn != null) || (ConnectedFrom != null) ?
-               IFCPropertySet.GetCategoryForParameterIfValid(element, Id) : null;
-            if (ContainedIn != null)
+            IFCObjectDefinition portOwner = IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4) ? NestsWhole : ContainedIn;
+            Category category = (portOwner != null) || (ConnectedFrom != null) ?
+            IFCPropertySet.GetCategoryForParameterIfValid(element, Id) : null;
+            if (portOwner != null)
             {
-               string guid = ContainedIn.GlobalId;
+               string guid = portOwner.GlobalId;
                if (!string.IsNullOrWhiteSpace(guid))
                   IFCPropertySet.AddParameterString(doc, element, category, this, "IfcElement ContainedIn IfcGUID", guid, Id);
 
-               string name = ContainedIn.Name;
+               string name = portOwner.Name;
                if (!string.IsNullOrWhiteSpace(name))
                   IFCPropertySet.AddParameterString(doc, element, category, this, "IfcElement ContainedIn Name", name, Id);
             }

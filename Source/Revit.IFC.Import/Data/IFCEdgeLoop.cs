@@ -116,72 +116,87 @@ namespace Revit.IFC.Import.Data
          return (edgeLoop as IFCEdgeLoop);
       }
 
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         if (shapeEditScope.BuilderType == IFCShapeBuilderType.BrepBuilder)
+         if (shapeEditScope.BuilderScope == null)
          {
-            if (shapeEditScope.BuilderScope == null)
+            throw new InvalidOperationException("BuilderScope hasn't been initialized yet");
+         }
+
+         BrepBuilderScope brepBuilderScope = null;
+         TessellatedShapeBuilderScope tsbScope = null;
+
+         if (shapeEditScope.BuilderType == IFCShapeBuilderType.BrepBuilder)
+            brepBuilderScope = shapeEditScope.BuilderScope as BrepBuilderScope;
+         else if (shapeEditScope.BuilderType == IFCShapeBuilderType.TessellatedShapeBuilder)
+            tsbScope = shapeEditScope.BuilderScope as TessellatedShapeBuilderScope;
+
+         if (brepBuilderScope == null && tsbScope == null)
+            throw new InvalidOperationException("The wrong BuilderScope is created");
+
+         List<XYZ> vertices = new List<XYZ>();
+
+         foreach (IFCOrientedEdge edge in EdgeList)
+         {
+            if (edge == null || edge.EdgeStart == null || edge.EdgeEnd == null)
             {
-               throw new InvalidOperationException("BuilderScope hasn't been initialized yet");
+               Importer.TheLog.LogError(Id, "Invalid edge loop", true);
+               return;
             }
-            BrepBuilderScope brepBuilderScope = shapeEditScope.BuilderScope as BrepBuilderScope;
 
-            if (brepBuilderScope == null)
+            edge.CreateShape(shapeEditScope, scaledLcs, guid);
+
+            IFCEdge edgeElement = edge.EdgeElement;
+            Curve edgeGeometry = (edgeElement is IFCEdgeCurve) ? edgeElement.GetGeometry() : null;
+
+            if (edgeGeometry == null)
+               Importer.TheLog.LogError(edgeElement.Id, "Cannot get the edge geometry of this edge", true);
+
+            XYZ edgeStart = edgeElement.EdgeStart.GetCoordinate();
+            XYZ edgeEnd = edgeElement.EdgeEnd.GetCoordinate();
+
+            if (edgeStart == null || edgeEnd == null)
+               Importer.TheLog.LogError(Id, "Invalid start or end vertices", true);
+
+            bool orientation = scaledLcs.HasReflection ? !edge.Orientation : edge.Orientation;
+
+            XYZ transformedEdgeStart = scaledLcs.OfPoint(edgeStart);
+            XYZ transformedEdgeEnd = scaledLcs.OfPoint(edgeEnd);
+            Curve transformedEdgeGeometry = edgeGeometry.CreateTransformed(scaledLcs);
+
+            if (brepBuilderScope != null)
             {
-               throw new InvalidOperationException("The wrong BuilderScope is created");
-            }
-
-            foreach (IFCOrientedEdge edge in EdgeList)
-            {
-               if (edge == null || edge.EdgeStart == null || edge.EdgeEnd == null)
-               {
-                  Importer.TheLog.LogError(Id, "Invalid edge loop", true);
-                  return;
-               }
-
-               edge.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
-
-               if (lcs == null)
-                  lcs = Transform.Identity;
-
-               IFCEdge edgeElement = edge.EdgeElement;
-               Curve edgeGeometry = null;
-               if (edgeElement is IFCEdgeCurve)
-               {
-                  edgeGeometry = edgeElement.GetGeometry();
-               }
-               else
-               {
-                  //TODO: find a way to get the edgegeometry here
-                  edgeGeometry = null;
-               }
-
-               if (edgeGeometry == null)
-               {
-                  Importer.TheLog.LogError(edgeElement.Id, "Cannot get the edge geometry of this edge", true);
-               }
-               XYZ edgeStart = edgeElement.EdgeStart.GetCoordinate();
-               XYZ edgeEnd = edgeElement.EdgeEnd.GetCoordinate();
-
-               if (edgeStart == null || edgeEnd == null)
-               {
-                  Importer.TheLog.LogError(Id, "Invalid start or end vertices", true);
-               }
-
-               bool orientation = lcs.HasReflection ? !edge.Orientation : edge.Orientation;
-               if (!brepBuilderScope.AddOrientedEdgeToTheBoundary(edgeElement.Id, edgeGeometry.CreateTransformed(lcs), lcs.OfPoint(edgeStart), lcs.OfPoint(edgeEnd), edge.Orientation))
+               if (!brepBuilderScope.AddOrientedEdgeToTheBoundary(edgeElement.Id,
+                  transformedEdgeGeometry, transformedEdgeStart, transformedEdgeEnd,
+                  orientation))
                {
                   Importer.TheLog.LogWarning(edge.Id, "Cannot add this edge to the edge loop with Id: " + Id, false);
                   IsValidForCreation = false;
                   return;
                }
             }
+            else
+            {
+               bool firstEdge = (vertices.Count == 0);
+               if (edgeGeometry is Line)
+               {
+                  if (firstEdge)
+                     vertices.Add(orientation ? transformedEdgeStart : transformedEdgeEnd);
+                  vertices.Add(orientation ? transformedEdgeEnd : transformedEdgeStart);
+               }
+               else
+               {
+                  IList<XYZ> newPoints = transformedEdgeGeometry.Tessellate();
+                  vertices.AddRange(firstEdge ? newPoints : newPoints.Skip(1));
+               }
+            }
          }
-         else
-         {
-            Importer.TheLog.LogError(Id, "Unsupported IFCEdgeLoop", true);
-         }
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+ 
+         if (vertices.Count > 0)
+            tsbScope.AddLoopVertices(Id, vertices);
+        
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
       }
    }
 }

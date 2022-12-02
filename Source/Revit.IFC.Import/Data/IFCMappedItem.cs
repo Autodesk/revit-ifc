@@ -94,42 +94,43 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
          // Check scale; if it is uniform, create an instance.  If not, create a shape directly.
          // TODO: Instead allow creation of instances based on similar scaling.
          double scaleX = MappingTarget.Scale;
          double scaleY = MappingTarget.ScaleY.HasValue ? MappingTarget.ScaleY.Value : scaleX;
          double scaleZ = MappingTarget.ScaleZ.HasValue ? MappingTarget.ScaleZ.Value : scaleX;
-         bool isUnitScale = (MathUtil.IsAlmostEqual(scaleX, 1.0) &&
-             MathUtil.IsAlmostEqual(scaleY, 1.0) &&
-             MathUtil.IsAlmostEqual(scaleZ, 1.0));
+
+         bool currentIsUnitScale = MathUtil.IsAlmostEqual(scaleX, 1.0) &&
+            MathUtil.IsAlmostEqual(scaleY, 1.0) &&
+            MathUtil.IsAlmostEqual(scaleZ, 1.0);
 
          Transform mappingTransform = MappingTarget.Transform;
 
-         Transform newLcs = 
-            (mappingTransform == null) ? lcs : (lcs?.Multiply(mappingTransform) ?? mappingTransform);
-         
          Transform newScaledLcs =
             (mappingTransform == null) ? scaledLcs : (scaledLcs?.Multiply(mappingTransform) ?? mappingTransform);
 
-         bool isFootprint = (shapeEditScope.ContainingRepresentation.Identifier == IFCRepresentationIdentifier.FootPrint);
+         bool isFootPrint =
+            (shapeEditScope.ContainingRepresentation.Identifier == IFCRepresentationIdentifier.FootPrint);
+         
+         bool isUnitScale = currentIsUnitScale &&
+            ((newScaledLcs?.IsConformal ?? true) ?
+               MathUtil.IsAlmostEqual(newScaledLcs?.Scale ?? 1.0, 1.0) : false);
 
-         bool canCreateType = !shapeEditScope.PreventInstances && !isFootprint && isUnitScale &&
-            (newLcs?.IsConformal ?? true) &&
-            (newScaledLcs?.IsConformal ?? true) &&
+         bool canCreateType = !shapeEditScope.PreventInstances && !isFootPrint && isUnitScale &&
             (shapeEditScope.ContainingRepresentation != null);
 
          if (canCreateType)
          {
             int mappingSourceId = MappingSource.Id;
             int geometrySourceId = FindAlternateGeometrySource(mappingSourceId);
-            MappingSource.CreateShape(shapeEditScope, null, null, guid);
+            MappingSource.CreateShape(shapeEditScope, null, guid);
 
             if (shapeEditScope.Creator != null)
             {
@@ -138,12 +139,12 @@ namespace Revit.IFC.Import.Data
                   shapeEditScope.Creator.EntityType.ToString(),
                   shapeEditScope.Creator.CategoryId,
                   geometrySourceId,
-                  newLcs);
+                  newScaledLcs);
             }
 
             // NAVIS_TODO: Figure out how not to do this.
             IList<GeometryObject> instances = DirectShape.CreateGeometryInstance(
-               shapeEditScope.Document, mappingSourceId.ToString(), newLcs);
+               shapeEditScope.Document, mappingSourceId.ToString(), newScaledLcs);
             foreach (GeometryObject instance in instances)
                shapeEditScope.AddGeometry(IFCSolidInfo.Create(Id, instance));
          }
@@ -161,7 +162,7 @@ namespace Revit.IFC.Import.Data
                newScaledLcs = newScaledLcs.Multiply(scaleTransform);
             }
 
-            MappingSource.CreateShape(shapeEditScope, newLcs, newScaledLcs, guid);
+            MappingSource.CreateShape(shapeEditScope, newScaledLcs, guid);
          }
       }
 

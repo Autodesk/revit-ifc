@@ -42,14 +42,21 @@ namespace Revit.IFC.Import.Data
       IFCSimpleProperty m_IFCSimpleProperty;
 
       /// <summary>
+      /// If the value belongs to Defined values of Table property
+      /// </summary>
+      bool m_isTableDefinedProperty;
+
+      /// <summary>
       /// Constructs a IFCPropertyValue object.
       /// </summary>
       /// <param name="ifcSimpleProperty">The property.</param>
       /// <param name="value">The value.</param>
-      public IFCPropertyValue(IFCSimpleProperty ifcSimpleProperty, IFCData value)
+      /// <param name="isTableDefinedProperty">If defined table value.</param>
+      public IFCPropertyValue(IFCSimpleProperty ifcSimpleProperty, IFCData value, bool isTableDefinedProperty)
       {
          m_IFCSimpleProperty = ifcSimpleProperty;
          m_Value = value;
+         m_isTableDefinedProperty = isTableDefinedProperty;
       }
 
       /// <summary>
@@ -128,7 +135,13 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       public IFCUnit IFCUnit
       {
-         get { return m_IFCSimpleProperty != null ? m_IFCSimpleProperty.IFCUnit : null; }
+         get
+         {
+            if (m_IFCSimpleProperty != null)
+               return m_isTableDefinedProperty ? (m_IFCSimpleProperty as IFCPropertyTableValue)?.IFCDefinedUnit : m_IFCSimpleProperty.IFCUnit;
+            else
+               return null;
+         }
       }
 
       /// <summary>
@@ -142,7 +155,6 @@ namespace Revit.IFC.Import.Data
 
          throw new InvalidOperationException("Not a logical value.");
       }
-
 
       /// <summary>
       /// Returns the value as double, in the original units in the file.

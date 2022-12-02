@@ -64,7 +64,11 @@ namespace Revit.IFC.Export.Exporter
          using (SubTransaction tempPartTransaction = new SubTransaction(doc))
          {
             // For IFC4RV export, Roof will be split into its parts(temporarily) in order to export the roof by its parts
-            ExporterUtil.CreateParts(roof, layersetInfo.MaterialIds.Count, ref geometryElement);
+            if (!exportRoofAsSingleGeometry && layersetInfo.MaterialIds.Count > 1)
+            {
+               ExporterUtil.CreateParts(roof, layersetInfo.MaterialIds.Count, ref geometryElement);
+            }
+
             bool exportByComponents = ExporterUtil.CanExportByComponentsOrParts(roof) == ExporterUtil.ExportPartAs.ShapeAspect;
 
             using (IFCTransaction tr = new IFCTransaction(file))
@@ -75,7 +79,7 @@ namespace Revit.IFC.Export.Exporter
 
                using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, roof, null, null, overrideContainerId, overrideContainerHnd))
                {
-                  using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+                  using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                   {
                      // If the roof is an in-place family, we will allow any arbitrary orientation.  While this may result in some
                      // in-place "cubes" exporting with the wrong direction, it is unlikely that an in-place family would be
@@ -345,7 +349,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle hostObjectHandle = null;
                   try
                   {
-                     using (IFCExtrusionCreationData extrusionCreationData = new IFCExtrusionCreationData())
+                     using (IFCExportBodyParams extrusionCreationData = new IFCExportBodyParams())
                      {
                         IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                         extrusionCreationData.SetLocalPlacement(localPlacement);
@@ -382,7 +386,7 @@ namespace Revit.IFC.Export.Exporter
                            IList<CurveLoop> hostObjectOpeningLoops = new List<CurveLoop>();
                            double maximumScaledDepth = 0.0;
 
-                           using (IFCExtrusionCreationData slabExtrusionCreationData = new IFCExtrusionCreationData())
+                           using (IFCExportBodyParams slabExtrusionCreationData = new IFCExportBodyParams())
                            {
                               slabExtrusionCreationData.SetLocalPlacement(extrusionCreationData.GetLocalPlacement());
                               slabExtrusionCreationData.ReuseLocalPlacement = false;
@@ -415,10 +419,12 @@ namespace Revit.IFC.Export.Exporter
                                  HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
                                  if (!exportByComponents)
                                  {
-                                    IFCAnyHandle itemShapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, extrusionDir, scaledExtrusionDepth, false);
+                                    IFCAnyHandle itemShapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, extrusionDir, scaledExtrusionDepth, false, out IList<CurveLoop> validatedCurveLoops);
                                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(itemShapeRep))
                                     {
                                        productWrapper.ClearInternalHandleWrapperData(element);
+                                       if ((validatedCurveLoops?.Count ?? 0) == 0) continue;
+
                                        return null;
                                     }
                                     ElementId matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
@@ -441,7 +447,7 @@ namespace Revit.IFC.Export.Exporter
                                     {
                                        double itemExtrDepth = matLayerInfo.m_matWidth;
                                        double scaledItemExtrDepth = UnitUtil.ScaleLength(itemExtrDepth) * slope;
-                                       IFCAnyHandle itemShapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, extrusionDir, scaledItemExtrDepth, false);
+                                       IFCAnyHandle itemShapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, extrusionDir, scaledItemExtrDepth, false, out _);
                                        if (IFCAnyHandleUtil.IsNullOrHasNoValue(itemShapeRep))
                                        {
                                           productWrapper.ClearInternalHandleWrapperData(element);
@@ -468,7 +474,8 @@ namespace Revit.IFC.Export.Exporter
                                  // case that we have more than 255 of them).
                                  string slabGUID = (loopNum < 256) ?
                                     GUIDUtil.CreateSubElementGUID(element, subElementStart + loopNum) :
-                                    GUIDUtil.GenerateIFCGuidFrom(element, "Slab: " + loopNum.ToString());
+                                    GUIDUtil.GenerateIFCGuidFrom(
+                                       GUIDUtil.CreateGUIDString(element, "Slab: " + loopNum.ToString()));
 
                                  IFCAnyHandle slabPlacement = ExporterUtil.CreateLocalPlacement(file, slabExtrusionCreationData.GetLocalPlacement(), null);
                                  IFCAnyHandle slabHnd = IFCInstanceExporter.CreateSlab(exporterIFC, element, slabGUID, ownerHistory,
@@ -519,7 +526,11 @@ namespace Revit.IFC.Export.Exporter
                   }
                   catch
                   {
-                     // SOmething wrong with the above process, unable to create the extrusion data. Reset any internal handles that may have been partially created since they are not committed
+                     // Something wrong with the above process, unable to create the
+                     // extrusion data. Reset any internal handles that may have been
+                     // partially created since they are not committed.
+                     // TODO: Clear out any created GUIDs, since doing an alternate approach
+                     // will result in incorrect "reuse" of GUIDs.
                      productWrapper.ClearInternalHandleWrapperData(element);
                      return null;
                   }

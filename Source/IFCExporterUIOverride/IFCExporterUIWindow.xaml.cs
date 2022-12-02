@@ -23,6 +23,7 @@ using Autodesk.Revit.UI;
 using Autodesk.UI.Windows;
 using Microsoft.Win32;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Utility;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -199,6 +200,9 @@ namespace BIM.IFC.Export.UI
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
+            //Handling the IFC4x3 format for using the IFC Extension with Revit versions older than 2023.1 which does not support IFC4x3.
+            if (OptionsUtil.IsIFC4x3Supported())
+               comboboxIfcType.Items.Add(new IFCVersionAttributes(OptionsUtil.GetIFCVersionByName("IFC4x3")));
 
             // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
             string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
@@ -364,6 +368,7 @@ namespace BIM.IFC.Export.UI
          checkBoxUseActiveViewGeometry.IsChecked = configuration.UseActiveViewGeometry;
          checkboxExportBoundingBox.IsChecked = configuration.ExportBoundingBox;
          checkboxExportSolidModelRep.IsChecked = configuration.ExportSolidModelRep;
+         checkboxExportMaterialPsets.IsChecked = configuration.ExportMaterialPsets;
          checkboxExportSchedulesAsPsets.IsChecked = configuration.ExportSchedulesAsPsets;
          checkBoxExportSpecificSchedules.IsChecked = configuration.ExportSpecificSchedules;
          checkboxExportUserDefinedPset.IsChecked = configuration.ExportUserDefinedPsets;
@@ -416,6 +421,7 @@ namespace BIM.IFC.Export.UI
                                                                 checkBoxExportLinkedFiles,
                                                                 checkboxIncludeIfcSiteElevation,
                                                                 checkboxStoreIFCGUID,
+                                                                checkboxExportMaterialPsets,
                                                                 checkboxExportSchedulesAsPsets,
                                                                 checkBoxExportSpecificSchedules,
                                                                 checkBoxExportRoomsInView,
@@ -457,7 +463,9 @@ namespace BIM.IFC.Export.UI
             || (configuration.IFCVersion == IFCVersion.IFC2x3CV2)
             || (configuration.IFCVersion == IFCVersion.IFC4RV)
             || (configuration.IFCVersion == IFCVersion.IFC4DTV)
-            || (configuration.IFCVersion == IFCVersion.IFC4))
+            || (configuration.IFCVersion == IFCVersion.IFC4)
+            //Handling the IFC4x3 format for using the IFC Extension with Revit versions older than 2023.1 which does not support IFC4x3.
+            || (configuration.IFCVersion == OptionsUtil.GetIFCVersionByName("IFC4x3")))
          {
             checkboxIncludeSteelElements.IsChecked = configuration.IncludeSteelElements;
             checkboxIncludeSteelElements.IsEnabled = true;
@@ -1256,6 +1264,21 @@ namespace BIM.IFC.Export.UI
          if (configuration != null)
          {
             configuration.ExportSolidModelRep = GetCheckbuttonChecked(checkBox);
+         }
+      }
+
+      /// <summary>
+      /// Updates the configuration ExportMaterialPsets when the "Export material property sets" option changed in the check box.
+      /// </summary>
+      /// <param name="sender">The source of the event.</param>
+      /// <param name="e">Event arguments that contains the event data.</param>
+      private void checkboxExportMaterialPsets_Checked(object sender, RoutedEventArgs e)
+      {
+         CheckBox checkBox = (CheckBox)sender;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.ExportMaterialPsets = GetCheckbuttonChecked(checkBox);
          }
       }
 

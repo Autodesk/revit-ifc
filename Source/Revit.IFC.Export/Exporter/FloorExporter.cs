@@ -63,7 +63,7 @@ namespace Revit.IFC.Export.Exporter
 
                using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, slabElement, null, null, overrideContainerId, overrideContainerHnd))
                {
-                  using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+                  using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                   {
                      bool exportParts = PartExporter.CanExportParts(slabElement);
 
@@ -142,9 +142,32 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
+      // Patch IfcRoot GUIDs created by internal code.  Currently only some opening
+      // elements, relations and related quantities are created internally, so this code is
+      // written specifically for that case, but could be easily expanded.
+      private static void RegisterHandlesToOverrideGUID(Element element,
+         ICollection<IFCAnyHandle> entityHandles)
+      {
+         int index = 0;
+         foreach (IFCAnyHandle entityHandle in entityHandles)
+         {
+            if (!IFCAnyHandleUtil.IsSubTypeOf(entityHandle, IFCEntityType.IfcRoot))
+               continue;
+
+            // We set the GUIDs of these elements here since we may need them to process
+            // other elements.
+            string globalId = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element,
+               "Internal: " + entityHandle.TypeName + (++index).ToString()));
+            ExporterUtil.SetGlobalId(entityHandle, globalId);
+
+            ExporterCacheManager.InternallyCreatedRootHandles[entityHandle] = element.Id;
+         }
+      }
+
       // Augment the information from the internally created handles.  This includes:
       // 1. Adding material information
-      // 2. Patching the presentation layer assignment.
+      // 2. Patching the presentation layer assignment
       private static void AugmentHandleInformation(ExporterIFC exporterIFC, Element element, 
          GeometryElement geometryElement, ICollection<IFCAnyHandle> entityHandles)
       {
@@ -278,7 +301,6 @@ namespace Revit.IFC.Export.Exporter
 
                      // The routine ExportExtrudedSlabOpenings is called if exportedAsInternalExtrusion is true, and it requires having a valid level association.
                      // Disable calling ExportSlabAsExtrusion if we can't handle potential openings.
-                     bool canExportAsInternalExtrusion = placementSetter.LevelInfo != null && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView;
                      bool exportedAsInternalExtrusion = false;
 
                      ElementId catId = CategoryUtil.GetSafeCategoryId(floorElement);
@@ -286,9 +308,9 @@ namespace Revit.IFC.Export.Exporter
                      IList<IFCAnyHandle> prodReps = new List<IFCAnyHandle>();
                      IList<ShapeRepresentationType> repTypes = new List<ShapeRepresentationType>();
                      IList<IList<CurveLoop>> extrusionLoops = new List<IList<CurveLoop>>();
-                     IList<IFCExtrusionCreationData> loopExtraParams = new List<IFCExtrusionCreationData>();
+                     IList<IFCExportBodyParams> loopExtraParams = new List<IFCExportBodyParams>();
                      Plane floorPlane = GeometryUtil.CreateDefaultPlane();
-                     IFCExtrusionCreationData ecData = new IFCExtrusionCreationData();
+                     IFCExportBodyParams ecData = new IFCExportBodyParams();
 
                      IList<IFCAnyHandle> localPlacements = new List<IFCAnyHandle>();
 
@@ -376,39 +398,56 @@ namespace Revit.IFC.Export.Exporter
                         }
 
                         // Use internal routine as backup that handles openings.
-                        if (prodReps.Count == 0 && canExportAsInternalExtrusion && !exportByComponents)
+                        if (prodReps.Count == 0 && placementSetter.LevelInfo != null && !exportByComponents)
                         {
-                           exportedAsInternalExtrusion = ExporterIFCUtils.ExportSlabAsExtrusion(exporterIFC, floorElement,
-                               geometryElement, transformSetter, localPlacement, out localPlacements, out prodReps,
-                               out extrusionLoops, out loopExtraParams, floorPlane);
-
-                           if (exportedAsInternalExtrusion)
+                           bool canExportAsInternalExtrusion = true;
+                           if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                            {
-                              AugmentHandleInformation(exporterIFC, floorElement, geometryElement, prodReps);
-                              
-                              for (int ii = 0; ii < prodReps.Count; ii++)
+                              IList<IFCOpeningData> openingDataList = ExporterIFCUtils.GetOpeningData(exporterIFC, floorElement, null, null);
+                              canExportAsInternalExtrusion = openingDataList == null || openingDataList.Count == 0;
+                           }
+
+                           if (canExportAsInternalExtrusion)
+                           {
+                              loopExtraParams.Clear();
+                              IList<IFCExtrusionCreationData> extrusionParams = new List<IFCExtrusionCreationData>();
+
+                              exportedAsInternalExtrusion = ExporterIFCUtils.ExportSlabAsExtrusion(exporterIFC, floorElement,
+                                  geometryElement, transformSetter, localPlacement, out localPlacements, out prodReps,
+                                  out extrusionLoops, out extrusionParams, floorPlane);
+
+                              foreach (IFCExtrusionCreationData data in extrusionParams)
+                                 loopExtraParams.Add(new IFCExportBodyParams(data));
+
+                              if (exportedAsInternalExtrusion)
                               {
-                                 // all are extrusions
-                                 repTypes.Add(ShapeRepresentationType.SweptSolid);
+                                 AugmentHandleInformation(exporterIFC, floorElement, 
+                                    geometryElement, prodReps);
 
-                                 // Footprint representation will only be exported in export to IFC4
-                                 if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+                                 for (int ii = 0; ii < prodReps.Count; ii++)
                                  {
-                                    if (extrusionLoops.Count > ii)
-                                    {
-                                       if (extrusionLoops[ii].Count > 0)
-                                       {
-                                          // Get the extrusion footprint using the first Curveloop. Transform needs to be obtained from the returned local placement
-                                          Transform lcs = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, localPlacements[ii]);
-                                          IFCAnyHandle footprintGeomRepItem = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, extrusionLoops[ii][0], lcs, floorPlane.Normal);
+                                    // all are extrusions
+                                    repTypes.Add(ShapeRepresentationType.SweptSolid);
 
-                                          IFCAnyHandle contextOfItemsFootprint = exporterIFC.Get3DContextHandle("FootPrint");
-                                          ISet<IFCAnyHandle> repItem = new HashSet<IFCAnyHandle>();
-                                          repItem.Add(footprintGeomRepItem);
-                                          IFCAnyHandle footprintShapeRepresentation = RepresentationUtil.CreateBaseShapeRepresentation(exporterIFC, contextOfItemsFootprint, "FootPrint", "Curve2D", repItem);
-                                          IList<IFCAnyHandle> reps = new List<IFCAnyHandle>();
-                                          reps.Add(footprintShapeRepresentation);
-                                          IFCAnyHandleUtil.AddRepresentations(prodReps[ii], reps);
+                                    // Footprint representation will only be exported in export to IFC4
+                                    if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                                    {
+                                       if (extrusionLoops.Count > ii)
+                                       {
+                                          if (extrusionLoops[ii].Count > 0)
+                                          {
+                                             // Get the extrusion footprint using the first Curveloop. Transform needs to be obtained from the returned local placement
+                                             Transform lcs = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, localPlacements[ii]);
+                                             IFCAnyHandle footprintGeomRepItem = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, extrusionLoops[ii][0], lcs, floorPlane.Normal);
+
+                                             IFCAnyHandle contextOfItemsFootprint = exporterIFC.Get3DContextHandle("FootPrint");
+                                             ISet<IFCAnyHandle> repItem = new HashSet<IFCAnyHandle>();
+                                             repItem.Add(footprintGeomRepItem);
+                                             IFCAnyHandle footprintShapeRepresentation = RepresentationUtil.CreateBaseShapeRepresentation(exporterIFC, contextOfItemsFootprint, "FootPrint", "Curve2D", repItem);
+                                             IList<IFCAnyHandle> reps = new List<IFCAnyHandle>();
+                                             reps.Add(footprintShapeRepresentation);
+                                             IFCAnyHandleUtil.AddRepresentations(prodReps[ii], reps);
+                                          }
                                        }
                                     }
                                  }
@@ -482,7 +521,8 @@ namespace Revit.IFC.Export.Exporter
                      {
                         string ifcName = NamingUtil.GetNameOverride(floorElement, NamingUtil.GetIFCNamePlusIndex(floorElement, ii == 0 ? -1 : ii + 1));
 
-                        string currentGUID = (ii == 0) ? ifcGUID : GUIDUtil.GenerateIFCGuidFrom(floorElement, "Slab Copy " + ii.ToString());
+                        string currentGUID = (ii == 0) ? ifcGUID : GUIDUtil.GenerateIFCGuidFrom(
+                           GUIDUtil.CreateGUIDString(floorElement, "Slab Copy " + ii.ToString()));
                         IFCAnyHandle localPlacementHnd = exportedAsInternalExtrusion ? localPlacements[ii] : localPlacement;
 
                         IFCAnyHandle slabHnd = null;
@@ -503,7 +543,7 @@ namespace Revit.IFC.Export.Exporter
                         }
                         else if (exportByComponents)
                         {
-                           IFCExtrusionCreationData partECData = new IFCExtrusionCreationData();
+                           IFCExportBodyParams partECData = new IFCExportBodyParams();
                            IFCAnyHandle hostShapeRepFromParts = PartExporter.ExportHostPartAsShapeAspects(exporterIFC, floorElement, prodReps[ii],
                               productWrapper, placementSetter, localPlacement, ElementId.InvalidElementId, layersetInfo, partECData);
                            loopExtraParams.Add(partECData);
@@ -528,7 +568,7 @@ namespace Revit.IFC.Export.Exporter
 
                      for (int ii = 0; ii < numReps; ii++)
                      {
-                        IFCExtrusionCreationData loopExtraParam = ii < loopExtraParams.Count ? loopExtraParams[ii] : null;
+                        IFCExportBodyParams loopExtraParam = ii < loopExtraParams.Count ? loopExtraParams[ii] : null;
                         productWrapper.AddElement(floorElement, slabHnds[ii], placementSetter, loopExtraParam, true, exportType);
 
                         ExporterCacheManager.TypeRelationsCache.Add(typeHandle, slabHnds[ii]);
@@ -545,7 +585,9 @@ namespace Revit.IFC.Export.Exporter
                            localPlacements[0], slabHnds, extrusionLoops, floorPlane, productWrapper.ToNative());
                         ISet<IFCAnyHandle> newCreatedObjects = productWrapper.GetAllObjects();
                         newCreatedObjects.ExceptWith(oldCreatedObjects);
-                        AugmentHandleInformation(exporterIFC, floorElement, geometryElement, newCreatedObjects);
+                        RegisterHandlesToOverrideGUID(floorElement, newCreatedObjects);
+                        AugmentHandleInformation(exporterIFC, floorElement, geometryElement,
+                           newCreatedObjects);
                      }
                   }
 

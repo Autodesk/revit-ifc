@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Toolkit;
@@ -12,7 +10,7 @@ namespace Revit.IFC.Export.Utility
 {
    public class MaterialLayerSetInfo
    {
-      public  class MaterialInfo
+      public class MaterialInfo
       {
          public MaterialInfo(ElementId baseMatId, string layerName, double matWidth, MaterialFunctionAssignment function)
          {
@@ -300,11 +298,10 @@ namespace Revit.IFC.Export.Utility
 
       private void GenerateIFCObjectsIfNeeded()
       {
-         if (m_needToGenerateIFCObjects)
-            m_needToGenerateIFCObjects = false;
-         else
+         if (!m_needToGenerateIFCObjects)
             return;
 
+         m_needToGenerateIFCObjects = false;
          IFCAnyHandle materialLayerSet = null;
 
          if (m_ProductWrapper != null && !m_ProductWrapper.ToNative().IsValidObject)
@@ -323,7 +320,7 @@ namespace Revit.IFC.Export.Utility
                continue;
 
             bool almostZeroWidth = MathUtil.IsAlmostZero(MaterialIds[ii].m_matWidth);
-            if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 && almostZeroWidth)
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && almostZeroWidth)
                continue;
 
             if (almostZeroWidth)
@@ -392,7 +389,7 @@ namespace Revit.IFC.Export.Utility
                      isVentilated = IFCLogical.True;
                }
 
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+               if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                {
                   layerName = MaterialIds[ii].m_layerName;
                   if (string.IsNullOrEmpty(layerName))
@@ -436,14 +433,17 @@ namespace Revit.IFC.Export.Utility
          ElementId typeElemId = m_Element.GetTypeId();
          if (layers.Count > 0)
          {
-            Element type = document.GetElement(typeElemId);
-            string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", m_ExporterIFC.GetFamilyName());
+            ElementType type = document.GetElement(typeElemId) as ElementType;
+            string layerSetBaseName = type.FamilyName + ":" + type.Name;
+            string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", layerSetBaseName);
             string layerSetDesc = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Description", null);
 
             if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             {
                HashSet<IFCAnyHandle> constituents = new HashSet<IFCAnyHandle>(layers);
-               m_MaterialLayerSetHandle = IFCInstanceExporter.CreateMaterialConstituentSet(file, constituents, name: layerSetName, description: layerSetDesc);
+               m_MaterialLayerSetHandle = CategoryUtil.GetOrCreateMaterialConstituentSet(file,
+                  typeElemId, null, constituents, layerSetName, layerSetDesc);
+               
                foreach (Tuple<string, IFCAnyHandle> layerWidthQty in layerWidthQuantities)
                {
                   m_LayerQuantityWidthHnd.Add(IFCInstanceExporter.CreatePhysicalComplexQuantity(file, layerWidthQty.Item1, null,

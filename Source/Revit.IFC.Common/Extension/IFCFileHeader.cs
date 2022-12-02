@@ -107,7 +107,7 @@ namespace Revit.IFC.Common.Extensions
 
             Entity mapEntity = new Entity(m_schema);
             IDictionary<string, string> mapData = new Dictionary<string, string>();
-            if (fileHeaderItem.FileDescription != null) mapData.Add(s_FileDescription, fileHeaderItem.FileDescription.ToString());
+            if (fileHeaderItem.FileDescriptions.Count > 0) mapData.Add(s_FileDescription, string.Join("|", fileHeaderItem.FileDescriptions.ToArray()));
             if (fileHeaderItem.SourceFileName != null) mapData.Add(s_SourceFileName, fileHeaderItem.SourceFileName.ToString());
             if (fileHeaderItem.AuthorName != null) mapData.Add(s_AuthorName, fileHeaderItem.AuthorName.ToString());
             if (fileHeaderItem.AuthorEmail != null) mapData.Add(s_AuthorEmail, fileHeaderItem.AuthorEmail.ToString());
@@ -153,7 +153,7 @@ namespace Revit.IFC.Common.Extensions
          Entity savedFileHeader = fileHeaderStorage[0].GetEntity(m_schema);
          IDictionary<string, string> savedFileHeaderMap = savedFileHeader.Get<IDictionary<string, string>>(s_FileHeaderMapField);
          if (savedFileHeaderMap.ContainsKey(s_FileDescription))
-            fileHeader.FileDescription = savedFileHeaderMap[s_FileDescription];
+            fileHeader.FileDescriptions = savedFileHeaderMap[s_FileDescription].Split('|').ToList();
          if (savedFileHeaderMap.ContainsKey(s_SourceFileName))
             fileHeader.SourceFileName = savedFileHeaderMap[s_SourceFileName];
          if (savedFileHeaderMap.ContainsKey(s_AuthorName))

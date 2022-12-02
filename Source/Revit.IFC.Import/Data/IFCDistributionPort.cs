@@ -39,6 +39,11 @@ namespace Revit.IFC.Import.Data
       public IFCFlowDirection FlowDirection { get; protected set; } = IFCFlowDirection.NotDefined;
 
       /// <summary>
+      /// The system type of this port.
+      /// </summary>
+      public IFCDistributionSystemEnum SystemType { get; protected set; } = IFCDistributionSystemEnum.NotDefined;
+
+      /// <summary>
       /// Default constructor.
       /// </summary>
       protected IFCDistributionPort()
@@ -60,6 +65,7 @@ namespace Revit.IFC.Import.Data
          base.Process(ifcDistributionPort);
 
          FlowDirection = IFCEnums.GetSafeEnumerationAttribute<IFCFlowDirection>(ifcDistributionPort, "FlowDirection", IFCFlowDirection.NotDefined);
+         SystemType = IFCEnums.GetSafeEnumerationAttribute<IFCDistributionSystemEnum>(ifcDistributionPort, "SystemType", IFCDistributionSystemEnum.NotDefined);
       }
 
       /// <summary>
@@ -75,6 +81,7 @@ namespace Revit.IFC.Import.Data
          {
             Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
             IFCPropertySet.AddParameterString(doc, element, category, this, "Flow Direction", FlowDirection.ToString(), Id);
+            IFCPropertySet.AddParameterString(doc, element, category, this, "System Type", SystemType.ToString(), Id);
          }
       }
 
@@ -91,7 +98,13 @@ namespace Revit.IFC.Import.Data
          // 3. Default to the origin.
          Transform lcs = ObjectLocation?.TotalTransform;
          if (lcs == null)
-            lcs = ContainedIn?.ObjectLocation?.TotalTransform;
+         {
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4))
+               lcs = (NestsWhole as IFCProduct)?.ObjectLocation?.TotalTransform;
+            else
+               lcs = ContainedIn?.ObjectLocation?.TotalTransform;
+
+         }
          if (lcs == null)
             lcs = Transform.Identity;
 

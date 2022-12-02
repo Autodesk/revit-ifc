@@ -91,13 +91,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          if (!String.IsNullOrEmpty(uniformatCode))
          {
-            foreach (IFCAnyHandle elemHnd in elemHnds)
             {
-               if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
+               foreach (IFCAnyHandle elemHnd in elemHnds)
                {
-                  ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
-                     uniformatCode, uniformatKeyString, uniformatDescription, classification);
-                  InsertClassificationReference(file, key, elemHnd);
+                  if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
+                  {
+                     ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
+                        uniformatCode, uniformatKeyString, uniformatDescription, classification);
+                     InsertClassificationReference(file, key, elemHnd);
+                  }
                }
             }
          }
@@ -301,8 +303,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          ClassificationReferenceKey key, IFCAnyHandle elemHnd)
       {
          string relName = key.Name + " " + key.ItemReference;
-         string relGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelAssociatesClassification,
-            relName, elemHnd);
+         string relGuid = GUIDUtil.GenerateIFCGuidFrom(
+            GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelAssociatesClassification, relName, elemHnd));
          ExporterCacheManager.ClassificationCache.AddRelation(file, key, relGuid, null, elemHnd);
       }
    }

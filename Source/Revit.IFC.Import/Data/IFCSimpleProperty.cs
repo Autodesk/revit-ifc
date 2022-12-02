@@ -38,20 +38,12 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The property values.
       /// </summary>
-      IList<IFCPropertyValue> m_IFCPropertyValues = new List<IFCPropertyValue>();
+      public IList<IFCPropertyValue> IFCPropertyValues { get; private set; } = new List<IFCPropertyValue>();
 
       /// <summary>
       /// The unit.
       /// </summary>
-      IFCUnit m_IFCUnit = null;
-
-      /// <summary>
-      /// The unit.
-      /// </summary>
-      public IFCUnit IFCUnit
-      {
-         get { return m_IFCUnit; }
-      }
+      public IFCUnit IFCUnit { get; protected set; } = null;
 
       /// <summary>
       /// Returns the property value as a string, for Set().
@@ -74,14 +66,6 @@ namespace Revit.IFC.Import.Data
          return propertyValue;
       }
 
-      /// <summary>
-      /// The property values.
-      /// </summary>
-      public IList<IFCPropertyValue> IFCPropertyValues
-      {
-         get { return m_IFCPropertyValues; }
-      }
-
       protected IFCSimpleProperty()
       {
       }
@@ -102,7 +86,7 @@ namespace Revit.IFC.Import.Data
 
          Name = IFCImportHandleUtil.GetRequiredStringAttribute(simpleProperty, "Name", true);
 
-         // IfcPropertyBoundedValue has already been split off into its own class.  Need to do the same with the rest here.
+         // IfcPropertyBoundedValue and IfcPropertyTableValue has already been split off into their own classes.  Need to do the same with the rest here.
          if (IFCAnyHandleUtil.IsSubTypeOf(simpleProperty, IFCEntityType.IfcPropertySingleValue))
             ProcessIFCPropertySingleValue(simpleProperty);
          else if (IFCAnyHandleUtil.IsSubTypeOf(simpleProperty, IFCEntityType.IfcPropertyEnumeratedValue))
@@ -111,7 +95,8 @@ namespace Revit.IFC.Import.Data
             ProcessIFCPropertyReferenceValue(simpleProperty);
          else if (IFCAnyHandleUtil.IsSubTypeOf(simpleProperty, IFCEntityType.IfcPropertyListValue))
             ProcessIFCPropertyListValue(simpleProperty);
-         else if (!IFCAnyHandleUtil.IsSubTypeOf(simpleProperty, IFCEntityType.IfcPropertyBoundedValue))
+         else if (!IFCAnyHandleUtil.IsSubTypeOf(simpleProperty, IFCEntityType.IfcPropertyBoundedValue) &&
+                  !IFCAnyHandleUtil.IsSubTypeOf(simpleProperty, IFCEntityType.IfcPropertyTableValue))
             Importer.TheLog.LogUnhandledSubTypeError(simpleProperty, "IfcSimpleProperty", true);
       }
 
@@ -130,6 +115,8 @@ namespace Revit.IFC.Import.Data
 
          if (IFCAnyHandleUtil.IsSubTypeOf(ifcSimpleProperty, IFCEntityType.IfcPropertyBoundedValue))
             return IFCPropertyBoundedValue.ProcessIFCPropertyBoundedValue(ifcSimpleProperty);
+         else if (IFCAnyHandleUtil.IsSubTypeOf(ifcSimpleProperty, IFCEntityType.IfcPropertyTableValue))
+            return IFCPropertyTableValue.ProcessIFCPropertyTableValue(ifcSimpleProperty);
 
          // Other subclasses are handled below for now.
          IFCEntity simpleProperty;
@@ -145,7 +132,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="propertySingleValue">The IfcPropertySingleValue object.</param>
       void ProcessIFCPropertySingleValue(IFCAnyHandle propertySingleValue)
       {
-         IFCPropertyValues.Add(new IFCPropertyValue(this, propertySingleValue.GetAttribute("NominalValue")));
+         IFCPropertyValues.Add(new IFCPropertyValue(this, propertySingleValue.GetAttribute("NominalValue"), false));
          ProcessIFCSimplePropertyUnit(this, propertySingleValue);
       }
 
@@ -158,7 +145,7 @@ namespace Revit.IFC.Import.Data
          List<IFCData> listValues = IFCAnyHandleUtil.GetAggregateAttribute<List<IFCData>>(propertyListValue, "ListValues");
          foreach (IFCData value in listValues)
          {
-            IFCPropertyValues.Add(new IFCPropertyValue(this, value));
+            IFCPropertyValues.Add(new IFCPropertyValue(this, value, false));
          }
          ProcessIFCSimplePropertyUnit(this, propertyListValue);
       }
@@ -172,7 +159,7 @@ namespace Revit.IFC.Import.Data
          List<IFCData> enumValues = IFCAnyHandleUtil.GetAggregateAttribute<List<IFCData>>(propertyEnumeratedValue, "EnumerationValues");
          foreach (IFCData value in enumValues)
          {
-            IFCPropertyValues.Add(new IFCPropertyValue(this, value));
+            IFCPropertyValues.Add(new IFCPropertyValue(this, value, false));
          }
       }
 
@@ -183,7 +170,7 @@ namespace Revit.IFC.Import.Data
       void ProcessIFCPropertyReferenceValue(IFCAnyHandle propertyReferenceValue)
       {
          IFCData referenceValue = propertyReferenceValue.GetAttribute("PropertyReference");
-         IFCPropertyValues.Add(new IFCPropertyValue(this, referenceValue));
+         IFCPropertyValues.Add(new IFCPropertyValue(this, referenceValue, false));
       }
 
       /// <summary>
@@ -193,13 +180,24 @@ namespace Revit.IFC.Import.Data
       /// <param name="simplePropertyHandle">The simple property handle.</param>
       static protected void ProcessIFCSimplePropertyUnit(IFCSimpleProperty ifcSimpleProperty, IFCAnyHandle simplePropertyHandle)
       {
-         IFCAnyHandle ifcUnitHandle = IFCImportHandleUtil.GetOptionalInstanceAttribute(simplePropertyHandle, "Unit");
+         IFCPropertyValue firstPropertyValue = (ifcSimpleProperty.IFCPropertyValues.Count > 0) ? ifcSimpleProperty.IFCPropertyValues[0] : null;
+         ifcSimpleProperty.IFCUnit = ProcessUnit(simplePropertyHandle, "Unit", firstPropertyValue);
+      }
+
+      /// <summary>
+      /// Processes an IFC unit.
+      /// </summary>
+      /// <param name="simplePropertyHandle">The simple property.</param>
+      /// <param name="unitAttributeName">The name of unit attribute.</param>
+      /// <param name="propertyValue">The property value.</param>
+      static protected IFCUnit ProcessUnit(IFCAnyHandle simplePropertyHandle, string unitAttributeName, IFCPropertyValue propertyValue)
+      {
+         IFCAnyHandle ifcUnitHandle = IFCImportHandleUtil.GetOptionalInstanceAttribute(simplePropertyHandle, unitAttributeName);
          IFCUnit ifcUnit = (ifcUnitHandle != null) ? IFCUnit.ProcessIFCUnit(ifcUnitHandle) : null;
          if (ifcUnit == null)
          {
-            if (ifcSimpleProperty.IFCPropertyValues.Count > 0)
+            if (propertyValue != null)
             {
-               IFCPropertyValue propertyValue = ifcSimpleProperty.IFCPropertyValues[0];
                if (propertyValue != null && propertyValue.HasValue() &&
                    (propertyValue.Type == IFCDataPrimitiveType.Integer) || (propertyValue.Type == IFCDataPrimitiveType.Double))
                {
@@ -213,7 +211,33 @@ namespace Revit.IFC.Import.Data
             }
          }
 
-         ifcSimpleProperty.m_IFCUnit = ifcUnit;
+         return ifcUnit;
       }
+
+      protected string FormatPropertyValue(IFCPropertyValue propertyValue)
+      {
+         if (propertyValue.IFCUnit != null)
+         {
+            FormatValueOptions formatValueOptions = new FormatValueOptions();
+            FormatOptions specFormatOptions = IFCImportFile.TheFile.Document.GetUnits().GetFormatOptions(propertyValue.IFCUnit.Spec);
+            specFormatOptions.Accuracy = 1e-8;
+            if (specFormatOptions.CanSuppressTrailingZeros())
+               specFormatOptions.SuppressTrailingZeros = true;
+            formatValueOptions.SetFormatOptions(specFormatOptions);
+
+            // If ScaleValues is false, value is in source file units, but 'UnitFormatUtils.Format' expects
+            // it in internal units and it then converts it to display units, which should be the same as
+            // the source file units.
+            double value = Importer.TheProcessor.ScaleValues ?
+               propertyValue.AsDouble() :
+               UnitUtils.ConvertToInternalUnits(propertyValue.AsDouble(), specFormatOptions.GetUnitTypeId());
+
+            return UnitFormatUtils.Format(IFCImportFile.TheFile.Document.GetUnits(), propertyValue.IFCUnit.Spec, value, false, formatValueOptions);
+         }
+         else
+            return propertyValue.ValueAsString();
+      }
+
+
    }
 }

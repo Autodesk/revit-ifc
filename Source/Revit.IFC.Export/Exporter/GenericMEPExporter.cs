@@ -80,7 +80,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      IFCAnyHandle localPlacementToUse = setter.LocalPlacement;
                      BodyData bodyData = null;
-                     using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
+                     using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
                      {
                         extraParams.SetLocalPlacement(localPlacementToUse);
                         IFCAnyHandle productRepresentation =
@@ -92,9 +92,9 @@ namespace Revit.IFC.Export.Exporter
                            return false;
                         }
 
-                        ExportAsMappedItem(exporterIFC, element, exportType, ifcEnumType, extraParams,
-                                           setter, localPlacementToUse, productRepresentation,
-                                           productWrapper);
+                        ExportAsMappedItem(exporterIFC, element, exportType, ifcEnumType, 
+                           extraParams, setter, false, localPlacementToUse,
+                           productRepresentation, productWrapper);
                      }
                   }
                }
@@ -110,7 +110,7 @@ namespace Revit.IFC.Export.Exporter
                      {
                         IFCAnyHandle localPlacementToUse = setter.LocalPlacement;
 
-                        using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
+                        using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
                         {
                            SolidMeshGeometryInfo solidMeshCapsule =
                                GeometryUtil.GetClippedSolidMeshGeometry(geometryElement, ranges[ii]);
@@ -167,8 +167,8 @@ namespace Revit.IFC.Export.Exporter
                            }
 
                            ExportAsMappedItem(exporterIFC, element, exportType, ifcEnumType,
-                                              extraParams, setter, localPlacementToUse,
-                                              productRepresentation, productWrapper);
+                              extraParams, setter, true, localPlacementToUse, 
+                              productRepresentation, productWrapper);
                         }
                      }
                   }
@@ -181,9 +181,9 @@ namespace Revit.IFC.Export.Exporter
       }
 
       private static void ExportAsMappedItem(ExporterIFC exporterIFC, Element element, 
-         IFCExportInfoPair exportType, string ifcEnumType, IFCExtrusionCreationData extraParams,
-          PlacementSetter setter, IFCAnyHandle localPlacementToUse, IFCAnyHandle productRepresentation, 
-          ProductWrapper productWrapper)
+         IFCExportInfoPair exportType, string ifcEnumType, IFCExportBodyParams extraParams,
+         PlacementSetter setter, bool isSplitByLevel, IFCAnyHandle localPlacementToUse, 
+         IFCAnyHandle productRepresentation, ProductWrapper productWrapper)
       {
          IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
          ElementId typeId = element.GetTypeId();
@@ -195,23 +195,24 @@ namespace Revit.IFC.Export.Exporter
 
          if (type != null)
          {
-            FamilyTypeInfo currentTypeInfo = ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeId, false, exportType);
+            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType);
+            
+            FamilyTypeInfo currentTypeInfo = 
+               ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
 
             if (!currentTypeInfo.IsValid())
             {
-               string typeObjectType = NamingUtil.CreateIFCObjectName(exporterIFC, type);
-
                HashSet<IFCAnyHandle> propertySetsOpt = new HashSet<IFCAnyHandle>();
                IList<IFCAnyHandle> repMapListOpt = new List<IFCAnyHandle>();
 
-               string typeGuid = FamilyExporterUtil.GetGUIDForFamilySymbol(element as FamilyInstance, type);
+               string typeGuid = FamilyExporterUtil.GetGUIDForFamilySymbol(element as FamilyInstance, type, exportType);
                styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, ifcEnumType, 
                   propertySetsOpt, repMapListOpt, element, type, typeGuid);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                {
                   productWrapper.RegisterHandleWithElementType(type, exportType, styleHandle, null);
                   currentTypeInfo.Style = styleHandle;
-                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeId, false, exportType, currentTypeInfo);
+                  ExporterCacheManager.FamilySymbolToTypeInfoCache.Register(typeKey, currentTypeInfo, false);
 
                   Element elementType = element.Document.GetElement(element.GetTypeId());
                   matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(element.get_Geometry(geomOptions), elementType, element);
@@ -232,8 +233,16 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
-         string instanceGUID = GUIDUtil.CreateGUID(element);
-
+         string instanceGUID;
+         if (isSplitByLevel)
+         {
+            instanceGUID = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, "Level: " + setter.LevelId.ToString()));
+         }
+         else
+         {
+            instanceGUID = GUIDUtil.CreateGUID(element);
+         }
 
          bool roomRelated = !FamilyExporterUtil.IsDistributionFlowElementSubType(exportType);
 
@@ -243,21 +252,11 @@ namespace Revit.IFC.Export.Exporter
             roomId = setter.UpdateRoomRelativeCoordinates(element, out localPlacementToUse);
          }
 
-         IFCAnyHandle instanceHandle = null;
-
-         // For MEP objects
-         //string exportEntityStr = exportType.ToString();
-         //Common.Enums.IFCEntityType exportEntity;
-
-         //if (String.Compare(exportEntityStr.Substring(exportEntityStr.Length - 4), "Type", true) == 0)
-         //   exportEntityStr = exportEntityStr.Substring(0, (exportEntityStr.Length - 4));
-         //if (Enum.TryParse(exportEntityStr, out exportEntity))
-         //{
-            // For MEP object creation
-            instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, element, instanceGUID, ownerHistory,
-               localPlacementToUse, productRepresentation);
-         //}
-
+         // For MEP object creation
+         IFCAnyHandle instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportType,
+            exporterIFC, element, instanceGUID, ownerHistory, localPlacementToUse, 
+            productRepresentation);
+         
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
             return;
          if (matId == ElementId.InvalidElementId && !hasMaterialAssociatedToType)

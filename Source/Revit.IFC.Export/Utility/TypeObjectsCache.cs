@@ -19,18 +19,36 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Utility
 {
-   public sealed class TypeObjectKey : Tuple<ElementId, bool, IFCEntityType, string>
+   /// <summary>
+   /// TypeObjectKey has five components:
+   /// 1. Symbol id.
+   /// 2. Level id (if we are splitting by level).
+   /// 3. Flipped (true if the symbol is flipped).
+   /// 4. The corresponding IFC entity type.
+   /// 5. The corresponding IFC predefined type.
+   /// </summary>
+   public sealed class TypeObjectKey : Tuple<ElementId, ElementId, bool, IFCEntityType, string>
    {
-      public TypeObjectKey(ElementId elementId, bool flipped, IFCEntityType entType, string preDefinedType) : base(elementId, flipped, entType, preDefinedType) { }
+      public TypeObjectKey(ElementId elementId, ElementId levelId, bool flipped,
+         IFCExportInfoPair exportType) :
+         base(elementId, levelId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType)
+      { }
+
+      public ElementId ElementId { get { return Item1; } }
+
+      public ElementId LevelId { get { return Item2; } }
+
+      public bool IsFlipped { get { return Item3; } }
+      
+      public IFCEntityType EntityType { get { return Item4; } }
+
+      public string PredefinedType { get { return Item5; } }
    }
 
    /// <summary>
@@ -44,41 +62,63 @@ namespace Revit.IFC.Export.Utility
    public class TypeObjectsCache : Dictionary<TypeObjectKey, FamilyTypeInfo>
    {
       /// <summary>
+      /// A dictionary for use for type objects that can't be shared but for whom we want
+      /// stable GUIDS.
+      /// </summary>
+      /// <remarks>GUID_TODO: This is a workaround for types that have opening information,
+      /// which we don't support reuse of.  this allows us to increment a counter when
+      /// we make copies of the original type object.</remarks>
+      IDictionary<TypeObjectKey, int> AlternateGUIDCounter = new Dictionary<TypeObjectKey, int>();
+
+      /// <summary>
       /// Adds the FamilyTypeInfo to the dictionary.
       /// </summary>
-      /// <param name="elementId">The element elementId.</param>
-      /// <param name="flipped">Indicates if the element is flipped.</param>
-      /// <param name="exportType">The export type of the element.</param>
-      public void Register(ElementId elementId, bool flipped, IFCExportInfoPair exportType, FamilyTypeInfo typeInfo)
+      /// <param name="key">The information that identifies the type object.</param>
+      /// <param name="typeInfo">The information that defines the type object.</param>
+      /// <param name="hasOpenings">True if the type object contains openings.</param>
+      /// <remarks>If the type object contains openings, we don't want to re-use it,
+      /// but we do want to avoid having duplicate GUIDs.  This is less stable than
+      /// we'd like to achieve, but requires a re-working of how we compare opening
+      /// information.</remarks>
+      public void Register(TypeObjectKey key, FamilyTypeInfo typeInfo, bool hasOpenings)
       {
-         var key = new TypeObjectKey(elementId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType);
+         if (hasOpenings)
+         {
+            if (AlternateGUIDCounter.ContainsKey(key))
+               AlternateGUIDCounter[key]++; 
+            else
+               AlternateGUIDCounter[key] = 1;
+            return;
+         }
+
          this[key] = typeInfo;
       }
 
       /// <summary>
       /// Finds the FamilyTypeInfo from the dictionary.
       /// </summary>
-      /// <param name="elementId">
-      /// The element elementId.
-      /// </param>
-      /// <param name="flipped">
-      /// Indicates if the element is flipped.
-      /// </param>
-      /// <param name="exportType">
-      /// The export type of the element.
-      /// </param>
-      /// <returns>
-      /// The FamilyTypeInfo object.
-      /// </returns>
-      public FamilyTypeInfo Find(ElementId elementId, bool flipped, IFCExportInfoPair exportType)
+      /// <param name="key">The information that identifies the type object.</param>
+      /// <returns>The FamilyTypeInfo object.</returns>
+      public FamilyTypeInfo Find(TypeObjectKey key)
       {
-         var key = new TypeObjectKey(elementId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType);
          FamilyTypeInfo typeInfo;
 
          if (TryGetValue(key, out typeInfo))
             return typeInfo;
 
          return new FamilyTypeInfo();
+      }
+
+      /// <summary>
+      /// Looks for the current alternate GUID index for a particular key, if it exists.
+      /// </summary>
+      /// <param name="key">The information that identifies the type object.</param>
+      /// <returns>The index, or null if it doesn't exist.</returns>
+      public int? GetAlternateGUIDIndex(TypeObjectKey key)
+      {
+         if (!AlternateGUIDCounter.TryGetValue(key, out int index))
+            return null;
+         return index;
       }
    }
 }

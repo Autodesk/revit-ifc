@@ -19,19 +19,21 @@
 
 using System;
 using System.Collections.Generic;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
 {
    /// <summary>
    /// Class to define the quality comparer for the sets
    /// </summary>
-   public class ConstituentSetComparer : IEqualityComparer<HashSet<IFCAnyHandle>>
+   public class ConstituentSetComparer : IEqualityComparer<ISet<IFCAnyHandle>>
    {
       /// <summary>
       /// Whether the two Sets are equal
       /// </summary>
-      public bool Equals(HashSet<IFCAnyHandle> set1, HashSet<IFCAnyHandle> set2)
+      public bool Equals(ISet<IFCAnyHandle> set1, ISet<IFCAnyHandle> set2)
       {
          return set1.SetEquals(set2);
       }
@@ -39,7 +41,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Return the hash code for this Set.
       /// </summary>
-      public int GetHashCode(HashSet<IFCAnyHandle> theSet)
+      public int GetHashCode(ISet<IFCAnyHandle> theSet)
       {
          // Stores the result.
          int result = 0;
@@ -61,28 +63,47 @@ namespace Revit.IFC.Export.Utility
    }
 
    /// <summary>
-   /// Used to keep a cache of MaterialConstituentSet (new in IFC4). Since objects may be linked to the same set (but not necessarily in the same order), this cache
-   ///    is chiefly responsible to keep the unique set regardless the order inside it
+   /// Used to keep a cache of MaterialConstituentSet (new in IFC4). Since objects may be 
+   /// linked to the same set (but not necessarily in the same order), this cache is chiefly 
+   /// responsible to keep the unique set regardless of the order inside it.
    /// </summary>
-   public class MaterialConstituentSetCache
+   public class MaterialConstituentSetCache : BaseRelationsCache
    {
       /// <summary>
       /// The dictionary mapping the IfcMaterialConstituentSet to its handle. 
       /// </summary>
-      private IDictionary<HashSet<IFCAnyHandle>, IFCAnyHandle> m_MatConstituentSetDictionary = new Dictionary<HashSet<IFCAnyHandle>, IFCAnyHandle>(new ConstituentSetComparer());
+      private IDictionary<ISet<IFCAnyHandle>, IFCAnyHandle> MatConstituentSetDictionary
+      { get; set; } = new Dictionary<ISet<IFCAnyHandle>, IFCAnyHandle>(new ConstituentSetComparer());
+
+      /// <summary>
+      /// The dictionary mapping from an ElementId to an IfcMaterialConstituentSet
+      /// </summary>
+      private IDictionary<long, IFCAnyHandle> ElementIdToHandle
+      { get; set; } = new SortedDictionary<long, IFCAnyHandle>();
 
       /// <summary>
       /// Finds the appopriate Handle for the IfcMaterialConstituentSet from the dictionary.
       /// </summary>
-      /// <param name="id">The element id.</param>
+      /// <param name="constituentSet">The element id.</param>
       /// <returns>The HashSet of the IfcMaterialConstituentSet.</returns>
-      public IFCAnyHandle Find(HashSet<IFCAnyHandle> constituentSet)
+      public IFCAnyHandle Find(ISet<IFCAnyHandle> constituentSet)
       {
-         IFCAnyHandle constituentSetHandle;
-         if (m_MatConstituentSetDictionary.TryGetValue(constituentSet, out constituentSetHandle))
-         {
+         if (MatConstituentSetDictionary.TryGetValue(constituentSet, out IFCAnyHandle constituentSetHandle))
             return constituentSetHandle;
-         }
+         
+         return null;
+      }
+
+      /// <summary>
+      /// Finds the IfcMaterialConstituentSet handle from the dictionary.
+      /// </summary>
+      /// <param name="id">The element id.</param>
+      /// <returns>The IfcMaterial handle.</returns>
+      public IFCAnyHandle Find(ElementId id)
+      {
+         if (ElementIdToHandle.TryGetValue(id.IntegerValue, out IFCAnyHandle handle))
+            return handle;
+
          return null;
       }
 
@@ -90,13 +111,30 @@ namespace Revit.IFC.Export.Utility
       /// Adds the IfcMaterialConstituentSet and its handle to the dictionary.
       /// </summary>
       /// <param name="elementId">The element elementId.</param>
-      /// <param name="handle">The IfcMaterialConstituentSet.</param>
-      public void Register(HashSet<IFCAnyHandle> constituentSet, IFCAnyHandle constituentSetHnd)
+      /// <param name="instanceHandle">The element instance handle.</param>
+      /// <param name="constituentSetHandle">The IfcMaterialConstituentSet.</param>
+      /// <param name="constituents">The set of IfcMaterialConstituents.</param>
+      public void Register(ElementId elementId, IFCAnyHandle instanceHandle,
+         IFCAnyHandle constituentSetHandle, ISet<IFCAnyHandle> constituents)
       {
-         if (m_MatConstituentSetDictionary.ContainsKey(constituentSet))
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(constituentSetHandle))
             return;
 
-         m_MatConstituentSetDictionary[constituentSet] = constituentSetHnd;
+         if (elementId != ElementId.InvalidElementId && !ElementIdToHandle.ContainsKey(elementId.IntegerValue))
+            ElementIdToHandle[elementId.IntegerValue] = constituentSetHandle;
+
+         if (!MatConstituentSetDictionary.ContainsKey(constituents))
+            MatConstituentSetDictionary[constituents] = constituentSetHandle;
+
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
+         {
+            if (!Cache.TryGetValue(constituentSetHandle, out ISet<IFCAnyHandle> relatedObjects))
+            {
+               relatedObjects = new HashSet<IFCAnyHandle>();
+               Cache[constituentSetHandle] = relatedObjects;
+            }
+            relatedObjects.Add(instanceHandle);
+         }
       }
    }
 }
