@@ -114,6 +114,9 @@
             <Component Id = "COMP_IFC_Common_DLL" Guid="C7ED4A2C-DCB1-457E-968F-2DDE9993C1B6">
                <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Common.dll" KeyPath="yes" />
             </Component>
+            <Component Id = "COMP_IFC_Import_Core_DLL" Guid="33DEBE0A-57D1-4BFC-BC99-FDA776B6224E">
+               <File Id ="FILE_Ifc_Import_Core_DLL" Name="Revit.IFC.Import.Core.dll" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Import.Core.dll" KeyPath="yes" />
+            </Component>
          <?else?>
             <Component Id = "COMP_IFC_Export_DLL" Guid="D59E44AA-89A3-4CD7-AD9C-8D4D7AC6026B">
                <File Id ="FILE_Ifc_Export_DLL" Name="Revit.IFC.Export.dll" Source="$(var.Revit.IFC.Export.TargetDir)Revit.IFC.Export.dll" KeyPath="yes" />
