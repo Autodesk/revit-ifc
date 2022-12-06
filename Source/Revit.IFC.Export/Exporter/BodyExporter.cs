@@ -1567,12 +1567,13 @@ namespace Revit.IFC.Export.Exporter
                   {
                      return null;
                   }
-                  Dictionary<EdgeArray, IList<EdgeArray>> sortedEdgeLoop = GeometryUtil.SortEdgeLoop(face.EdgeLoops, face);
+                  var sortedEdgeLoop = GeometryUtil.GetOuterLoopsWithInnerLoops(face);
+
                   // check that we get back the same number of edgeloop
                   int numberOfSortedEdgeLoop = 0;
-                  foreach (KeyValuePair<EdgeArray, IList<EdgeArray>> pair in sortedEdgeLoop)
+                  foreach (var (outerLoop, innerLoops) in sortedEdgeLoop)
                   {
-                     numberOfSortedEdgeLoop += 1 + pair.Value.Count;
+                     numberOfSortedEdgeLoop += 1 + innerLoops.Count;
                   }
 
                   if (numberOfSortedEdgeLoop != face.EdgeLoops.Size)
@@ -1580,18 +1581,18 @@ namespace Revit.IFC.Export.Exporter
                      return null;
                   }
 
-                  foreach (KeyValuePair<EdgeArray, IList<EdgeArray>> pair in sortedEdgeLoop)
+                  foreach (var (outerLoop, loops) in sortedEdgeLoop)
                   {
-                     if (pair.Key == null || pair.Value == null)
+                     if (outerLoop == null || loops == null)
                         return null;
 
                      HashSet<IFCAnyHandle> bounds = new HashSet<IFCAnyHandle>();
 
                      // Append the outerloop at the beginning of the list of inner loop
-                     pair.Value.Insert(0, pair.Key);
+                     loops.Insert(0, outerLoop);
 
                      // Process each inner loop
-                     foreach (EdgeArray edgeArray in pair.Value)
+                     foreach (EdgeArray edgeArray in loops)
                      {
                         // Map each edge in this loop back to its corresponding edge curve and then calculate its orientation to create IfcOrientedEdge
                         foreach (Edge edge in edgeArray)
@@ -1640,7 +1641,14 @@ namespace Revit.IFC.Export.Exporter
                         if (edgeLoopList.Count == 1)
                            faceBound = IFCInstanceExporter.CreateFaceOuterBound(file, edgeLoop, true);
                         else
-                           faceBound = IFCInstanceExporter.CreateFaceBound(file, edgeLoop, false);
+                        {
+                           //Outer loops go CCW around face normal, inner loops CW. Orientation flag on IfcFaceBound
+                           //does not indicate this orientation. Rather, it indicates whether or not the loop is used
+                           //by the face the way it was first created. Since we create a new IfcFaceBound for each revit
+                           //face loop and since each revit loop is oriented w.r.t. the face normal as demanded by IFC,
+                           //this is always the case.
+                           faceBound = IFCInstanceExporter.CreateFaceBound(file, edgeLoop, true);
+                        }
 
                         bounds.Add(faceBound);
 
@@ -1793,9 +1801,11 @@ namespace Revit.IFC.Export.Exporter
 
                         // Set the base plane of the swept curve transform
                         Transform basePlaneTrf = Transform.Identity;
-                        basePlaneTrf.BasisZ = zdir;
-                        basePlaneTrf.BasisX = xDir;
-                        basePlaneTrf.BasisY = zdir.CrossProduct(xDir);
+                        var xDirIFC = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, xDir);
+                        var zDirIFC = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, zdir);
+                        basePlaneTrf.BasisZ = zDirIFC;
+                        basePlaneTrf.BasisX = xDirIFC;
+                        basePlaneTrf.BasisY = zDirIFC.CrossProduct(xDirIFC);
 
                         IList<double> locationOrds = IFCAnyHandleUtil.GetCoordinates(location);
                         basePlaneTrf.Origin = new XYZ(locationOrds[0], locationOrds[1], locationOrds[2]);
@@ -1803,7 +1813,7 @@ namespace Revit.IFC.Export.Exporter
                         // Transform the dir to follow to the face transform
                         XYZ endsDiff = secondProfileCurve.GetEndPoint(0) - firstProfileCurve.GetEndPoint(0);
 
-                        double depth = endsDiff.GetLength();
+                        double depth = UnitUtil.ScaleLength(endsDiff.GetLength());
 
                         XYZ dir = endsDiff.Normalize();
                         if (dir == null || MathUtil.IsAlmostZero(dir.GetLength()))
@@ -1811,9 +1821,10 @@ namespace Revit.IFC.Export.Exporter
                            // The extrusion direction is either null or too small to normalize
                            return null;
                         }
-                        dir = basePlaneTrf.Inverse.OfVector(dir);
+                        var dirIFC = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, dir);
+                        dirIFC = basePlaneTrf.Inverse.OfVector(dirIFC);
 
-                        IFCAnyHandle direction = GeometryUtil.VectorToIfcDirection(exporterIFC, dir);
+                        IFCAnyHandle direction = ExporterUtil.CreateDirection(file, dirIFC);
                         IFCAnyHandle sweptCurve = CreateProfileCurveFromCurve(file, exporterIFC, firstProfileCurve, Resources.RuledFaceProfileCurve, cartesianPoints, basePlaneTrf.Inverse);
 
                         surface = IFCInstanceExporter.CreateSurfaceOfLinearExtrusion(file, sweptCurve, sweptCurvePosition, direction, depth);
