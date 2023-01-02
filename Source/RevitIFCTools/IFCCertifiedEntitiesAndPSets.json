@@ -582,7 +582,24 @@
 			"Pset_WasteTerminalTypeWasteDisposalUnit",
 			"Pset_WasteTerminalTypeWasteTrap",
 			"Pset_WindowCommon",
-			"Pset_ZoneCommon"
+			"Pset_ZoneCommon",
+			"Qto_BeamBaseQuantities",
+			"Qto_BuildingBaseQuantities",
+			"Qto_BuildingStoreyBaseQuantities",
+			"Qto_ColumnBaseQuantities",
+			"Qto_CoveringBaseQuantities",
+			"Qto_CurtainWallQuantities",
+			"Qto_DoorBaseQuantities",
+			"Qto_OpeningElementBaseQuantities",
+			"Qto_RailingBaseQuantities",
+			"Qto_RampFlightBaseQuantities",
+			"Qto_RoofBaseQuantities",
+			"Qto_SiteBaseQuantities",
+			"Qto_SlabBaseQuantities",
+			"Qto_SpaceBaseQuantities",
+			"Qto_StairFlightBaseQuantities",
+			"Qto_WallBaseQuantities",
+			"Qto_WindowBaseQuantities"
 		]
 	},
 	"IFC4RV" : {

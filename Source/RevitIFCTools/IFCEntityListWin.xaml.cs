@@ -53,6 +53,7 @@ namespace RevitIFCTools
       private void button_browse_Click(object sender, RoutedEventArgs e)
       {
          var dialog = new FolderBrowserDialog();
+         dialog.RootFolder = Environment.SpecialFolder.MyComputer;
          dialog.ShowDialog();
          textBox_folderLocation.Text = dialog.SelectedPath;
          if (string.IsNullOrEmpty(textBox_folderLocation.Text))
@@ -182,6 +183,9 @@ namespace RevitIFCTools
                   procPdef.ProcessSchemaPsetDef(schemaName, qtoFolders[0], keywordsToProcess);
                }
             }
+
+            // Process IFC2x3 QTO properties
+            procPdef.Process2x3QtoSets(schemaName);
 
             procPdef.ProcessPredefinedPsets(schemaName);
 

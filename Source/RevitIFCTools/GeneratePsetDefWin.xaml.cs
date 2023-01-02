@@ -47,7 +47,7 @@ namespace RevitIFCTools
       private void button_PSDSourceDir_Click(object sender, RoutedEventArgs e)
       {
          var dialog = new FolderBrowserDialog();
-
+         dialog.RootFolder = Environment.SpecialFolder.MyComputer;
          dialog.ShowDialog();
          textBox_PSDSourceDir.Text = dialog.SelectedPath;
          if (string.IsNullOrEmpty(textBox_PSDSourceDir.Text))
@@ -136,6 +136,12 @@ namespace RevitIFCTools
                procPsetDef.ProcessSchemaPsetDef(schemaFolder, subDir, keywordsToProcess);
             }
             procPsetDef.ProcessSchemaPsetDef(schemaFolder, qto, keywordsToProcess);
+         }
+
+         // Process IFC2x3 QTO properties
+         foreach (string schemaName in IfcSchemaProcessed)
+         {
+            procPsetDef.Process2x3QtoSets(schemaName);
          }
 
          // Process predefined properties
@@ -531,7 +537,8 @@ namespace RevitIFCTools
                   //if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
                   //   outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
-               else if (vspecPDef.SchemaFileVersion.Equals("IFC4x3", StringComparison.CurrentCultureIgnoreCase))
+               else if (vspecPDef.SchemaFileVersion.Equals("IFC4x3", StringComparison.CurrentCultureIgnoreCase)
+                  || vspecPDef.IfcVersion.Equals("IFC4X3_TC1", StringComparison.CurrentCultureIgnoreCase))
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
