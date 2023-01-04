@@ -94,7 +94,7 @@ namespace Revit.IFC.Export.Exporter
 
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
             {
-               using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
                   ecData.SetLocalPlacement(setter.LocalPlacement);
 
@@ -177,7 +177,7 @@ namespace Revit.IFC.Export.Exporter
          if (String.Compare(newValue, "STRIPFOOTING", true) == 0)
             return "STRIP_FOOTING";
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
             if (String.Compare(newValue, "CAISSONFOUNDATION", true) == 0)
                return "CAISSON_FOUNDATION";

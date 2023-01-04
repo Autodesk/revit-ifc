@@ -58,7 +58,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// The ExporterIFC object.
       /// </param>
       /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
+      /// The IFCExportBodyParams.
       /// </param>
       /// <param name="element">
       /// The element to calculate the value.
@@ -69,40 +69,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          bool valid = true;
 
-         // The below code is incorrect (Run width is not the waist thickness)! Waist thickness is a distance from the deep corner of the tread to the bottom face of the stair. Revit does not have this information ready
-         // Need to use geometry to get such information
-
-         //if (StairsExporter.IsLegacyStairs(element))
-         //{
-         //   double riserHeight, treadLength, treadLengthAtInnerSide, nosingLength = 0;
-         //   int numberOfRisers, numberOfTreads = 0;
-         //   ExporterIFCUtils.GetLegacyStairsProperties(exporterIFC, element,
-         //         out numberOfRisers, out numberOfTreads,
-         //         out riserHeight, out treadLength, out treadLengthAtInnerSide,
-         //         out nosingLength, out m_WaistThickness);
-         //}
-         //else if (element is Stairs)
-         //{
-         //   Stairs stairs = element as Stairs;
-         //   m_WaistThickness = ;
-         //}
-         //else if (element is StairsRun)
-         //{
-         //   StairsRun stairsRun = element as StairsRun;
-         //   StairsRunType stairsRunType = stairsRun.Document.GetElement(stairsRun.GetTypeId()) as StairsRunType;
-         //   m_WaistThickness = UnitUtil.ScaleLength(stairsRun.ActualRunWidth);
-         //}
-         //else
-         //{
-         //   valid = false;
-         //}
-
          // Get override from parameter
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "WaistThickness", out m_WaistThickness) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_WaistThickness, entryMap.CompatibleRevitParameterName) != null)
             m_WaistThickness = UnitUtil.ScaleArea(m_WaistThickness);
 
          return valid;

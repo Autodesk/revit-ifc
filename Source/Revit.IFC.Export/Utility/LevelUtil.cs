@@ -417,5 +417,6 @@ namespace Revit.IFC.Export.Utility
 
       }
 
+      public static double LevelExtension { get; set; } = 10.0 / (12.0 * 2.54);
    }
 }

@@ -137,7 +137,8 @@ namespace Revit.IFC.Import.Data
          ISet<string> parametersCreated = new HashSet<string>();
          foreach (IFCPhysicalQuantity quantity in IFCQuantities.Values)
          {
-            quantity.Create(doc, element, category, objDef, parameterGroupMap, Name, parametersCreated);
+            string fullName = CreatePropertyName(quantity.Name);
+            quantity.Create(doc, element, category, objDef, parameterGroupMap, fullName, parametersCreated);
          }
 
          return Tuple.Create(quotedName, true);

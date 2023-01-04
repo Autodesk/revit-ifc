@@ -46,7 +46,7 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// The extra parameters for the extrusion.
       /// </summary>
-      public IFCExtrusionCreationData Data { get; set; } = null;
+      public IFCExportBodyParams Data { get; set; } = null;
 
       /// <summary>
       /// The material ids for the extrusion.

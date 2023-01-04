@@ -27,8 +27,8 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using System.Text.RegularExpressions;
-using Revit.IFC.Common.Extensions;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.Common.Extensions;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
@@ -83,8 +83,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                ParameterUtil.GetStringValueFromElementOrSymbol(element, "Assembly Description", out uniformatDescription);
          }
 
-         IFCAnyHandle classification;
-         if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue(uniformatKeyString, out classification))
+         if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue(uniformatKeyString, out IFCAnyHandle classification))
          {
             classification = IFCInstanceExporter.CreateClassification(file, GetUniformatURL(), "1998", null, uniformatKeyString);
             ExporterCacheManager.ClassificationCache.ClassificationHandles.Add(uniformatKeyString, classification);
@@ -92,10 +91,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          if (!String.IsNullOrEmpty(uniformatCode))
          {
-            foreach (IFCAnyHandle elemHnd in elemHnds)
             {
-               if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
-                  InsertClassificationReference(exporterIFC, file, elemHnd, uniformatKeyString, uniformatCode, uniformatDescription, GetUniformatURL());
+               foreach (IFCAnyHandle elemHnd in elemHnds)
+               {
+                  if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
+                  {
+                     ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
+                        uniformatCode, uniformatKeyString, uniformatDescription, classification);
+                     InsertClassificationReference(file, key, elemHnd);
+                  }
+               }
             }
          }
       }
@@ -108,7 +113,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="element">The element to export.</param>
       /// <param name="elemHnd">The corresponding IFC entity handle.</param>
       /// <returns>True if a classification or classification reference is created.</returns>
-      public static bool CreateClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IFCAnyHandle elemHnd)
+      public static bool CreateClassification(ExporterIFC exporterIFC, IFCFile file, 
+         Element element, IFCAnyHandle elemHnd)
       {
          bool createdClassification = false;
 
@@ -154,7 +160,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
             ParseClassificationCode(paramClassificationCode, classificationCodeFieldName, out classificationName, out classificationCode, out classificationDescription);
 
-            if (String.IsNullOrEmpty(classificationDescription))
+            if (string.IsNullOrEmpty(classificationDescription))
             {
                if (string.Compare(classificationCodeFieldName, "Assembly Code", true) == 0)
                {
@@ -188,7 +194,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                          null, savedClassification.ClassificationName);
                   }
 
-                  if (!String.IsNullOrEmpty(savedClassification.ClassificationLocation))
+                  if (!string.IsNullOrEmpty(savedClassification.ClassificationLocation))
                      ExporterCacheManager.ClassificationLocationCache.Add(classificationName, savedClassification.ClassificationLocation);
                }
                else
@@ -202,9 +208,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
             string location = null;
             ExporterCacheManager.ClassificationLocationCache.TryGetValue(classificationName, out location);
-            if (!String.IsNullOrEmpty(classificationCode))
+            if (!string.IsNullOrEmpty(classificationCode))
             {
-               InsertClassificationReference(exporterIFC, file, elemHnd, classificationName, classificationCode, classificationDescription, location);
+               ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
+                  classificationCode, classificationName, classificationDescription, classification);
+               InsertClassificationReference(file, key, elemHnd);
                createdClassification = true;
             }
          }
@@ -291,53 +299,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="classificationCode">The classification code.</param>
       /// <param name="classificationDescription">The classification description.</param>
       /// <param name="location">The location of the classification.</param>
-      public static void InsertClassificationReference(ExporterIFC exporterIFC, IFCFile file, IFCAnyHandle elemHnd, string classificationKeyString, string classificationCode, string classificationDescription, string location)
+      public static void InsertClassificationReference(IFCFile file,
+         ClassificationReferenceKey key, IFCAnyHandle elemHnd)
       {
-         IFCAnyHandle classificationReferenceAssociation = ExporterCacheManager.ClassificationReferenceCache.GetClassificationReferenceAssociation(classificationKeyString, classificationCode);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(classificationReferenceAssociation))
-         {
-            IFCAnyHandle classificationReference = CreateClassificationReference(file, classificationKeyString, classificationCode, classificationDescription, location);
-
-            HashSet<IFCAnyHandle> relatedObjects = new HashSet<IFCAnyHandle>();
-            relatedObjects.Add(elemHnd);
-
-            string relName = classificationKeyString + " " + classificationCode;
-            string relDescription = string.Empty;
-
-            IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-               ExporterCacheManager.OwnerHistoryHandle, relName, relDescription, relatedObjects, classificationReference);
-            ExporterCacheManager.ClassificationReferenceCache.AddClassificationReferenceAssociation(classificationKeyString, classificationCode, relAssociates);
-         }
-         else
-         {
-            IFCAnyHandleUtil.AssociatesAddRelated(classificationReferenceAssociation, elemHnd);
-         }
-      }
-
-      /// <summary>
-      /// Create classification reference (IfcClassificationReference) entity, and add new classification to cache (if it is new classification)
-      /// </summary>
-      /// <param name="file">The IFC file class.</param>
-      /// <param name="classificationKeyString">The classification name.</param>
-      /// <param name="classificationCode">The classification code.</param>
-      /// <param name="classificationDescription">The classification description.</param>
-      /// <param name="location">The location of the classification.</param>
-      /// <returns></returns>
-      public static IFCAnyHandle CreateClassificationReference(IFCFile file, string classificationKeyString, string classificationCode, string classificationDescription, string location)
-      {
-         IFCAnyHandle classification;
-
-         // Check whether Classification is already defined before
-         if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue(classificationKeyString, out classification))
-         {
-            classification = IFCInstanceExporter.CreateClassification(file, "", "", null, classificationKeyString);
-            ExporterCacheManager.ClassificationCache.ClassificationHandles.Add(classificationKeyString, classification);
-         }
-
-         IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-            location, classificationCode, classificationDescription, classification);
-
-         return classificationReference;
+         string relName = key.Name + " " + key.ItemReference;
+         string relGuid = GUIDUtil.GenerateIFCGuidFrom(
+            GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelAssociatesClassification, relName, elemHnd));
+         ExporterCacheManager.ClassificationCache.AddRelation(file, key, relGuid, null, elemHnd);
       }
    }
 }

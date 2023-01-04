@@ -160,8 +160,6 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCCompositeProfile : IFCProfileDef
    {
-      private IList<IFCProfileDef> m_Profiles = null;
-
       /// <summary>
       /// Default constructor.
       /// </summary>
@@ -218,15 +216,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// Get the list of contained profiles.
       /// </summary>
-      public IList<IFCProfileDef> Profiles
-      {
-         get
-         {
-            if (m_Profiles == null)
-               m_Profiles = new List<IFCProfileDef>();
-            return m_Profiles;
-         }
-      }
+      public IList<IFCProfileDef> Profiles { get; } = new List<IFCProfileDef>();
    }
 
    // We may create more subclasses if we want to preserve the original parametric data.
@@ -265,8 +255,8 @@ namespace Revit.IFC.Import.Data
       protected class IFCProfileXYEllipseSegment : IFCProfileXYArcSegment
       {
          private double RadiusY { get; set; } = 0.0;
-         
-         public IFCProfileXYEllipseSegment(XYZ center, double radiusX, double radiusY, double startAngle, double endAngle):
+
+         public IFCProfileXYEllipseSegment(XYZ center, double radiusX, double radiusY, double startAngle, double endAngle) :
             base(center, radiusX, startAngle, endAngle, false)
          {
             RadiusY = radiusY;
@@ -278,6 +268,12 @@ namespace Revit.IFC.Import.Data
          }
       }
 
+      private void AddValidLineSegment(IList<IIFCProfileSegment> segments, XYZ startPoint, XYZ endPoint)
+      {
+         if (endPoint.DistanceTo(startPoint) > IFCImportFile.TheFile.ShortCurveTolerance - MathUtil.Eps())
+            segments.Add(new IFCProfileLineSegment(startPoint, endPoint));
+      }
+   
       private CurveLoop CreateProfilePolyCurveLoop(XYZ[] corners)
       {
          int sz = corners.Count();
@@ -324,7 +320,8 @@ namespace Revit.IFC.Import.Data
          IList<IIFCProfileSegment> segments = new List<IIFCProfileSegment>();
          for (int ii = 0; ii < 4; ii++)
          {
-            segments.Add(new IFCProfileLineSegment(fillets[ii * 2 + 1], fillets[(ii * 2 + 2) % 8]));
+            // It is legal for a rounded rectangular profile def to have no straight parts.
+            AddValidLineSegment(segments, fillets[ii * 2 + 1], fillets[(ii * 2 + 2) % 8]);
             
             double startAngle = Math.PI * ((ii + 3) % 4) / 2;
             segments.Add(new IFCProfileXYArcSegment(radii[(ii + 1) % 4], filletRadius, startAngle, startAngle + Math.PI / 2, false));
@@ -433,8 +430,8 @@ namespace Revit.IFC.Import.Data
 
          if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcRoundedRectangleProfileDef))
          {
-            double roundedRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "RoundedRadius", 0.0);
-            if ((roundedRadius > MathUtil.Eps()) && (roundedRadius < ((Math.Min(xDim, yDim) / 2.0) - MathUtil.Eps())))
+            double roundedRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "RoundingRadius", 0.0);
+            if ((roundedRadius > MathUtil.Eps()) && (roundedRadius <= ((Math.Min(xDim, yDim) / 2.0) + MathUtil.Eps())))
             {
                ProcessIFCRoundedRectangleProfileDef(profileDef, xDim, yDim, roundedRadius);
                return;
@@ -1289,22 +1286,13 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCSimpleProfile : IFCProfileDef
    {
-      private CurveLoop m_OuterCurve = null;
-
-      private IList<CurveLoop> m_InnerCurves = null;
-
-      // This is only valid for IFCParameterizedProfile.  We place it here to be at the same level as the CurveLoops,
-      // so that they can be transformed in a consisent matter.
-      private Transform m_Position = null;
-
       /// <summary>
       /// The location (origin and rotation) of the parametric profile.
       /// </summary>
-      public Transform Position
-      {
-         get { return m_Position; }
-         protected set { m_Position = value; }
-      }
+      /// <remarks>This is only valid for IFCParameterizedProfile.  We place it here to be at the 
+      /// same level as the CurveLoops, so that they can be transformed in a consisent matter.
+      /// </remarks>
+      public Transform Position { get; protected set; } = null;
 
       private void ProcessIFCArbitraryOpenProfileDef(IFCAnyHandle profileDef)
       {
@@ -1540,25 +1528,19 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Get the one outer curve loop, iff there is only one.
+      /// </summary>
+      /// <returns>The one outer curve loop, or null if there is not exactly 1.</returns>
+      public CurveLoop GetTheOuterCurveLoop() {  return OuterCurve; }
+
+      /// <summary>
       /// Get the outer curve loop.
       /// </summary>
-      public CurveLoop OuterCurve
-      {
-         get { return m_OuterCurve; }
-         protected set { m_OuterCurve = value; }
-      }
+      protected CurveLoop OuterCurve { get; set; } = null;
 
       /// <summary>
       /// Get the list of inner curve loops.
       /// </summary>
-      public IList<CurveLoop> InnerCurves
-      {
-         get
-         {
-            if (m_InnerCurves == null)
-               m_InnerCurves = new List<CurveLoop>();
-            return m_InnerCurves;
-         }
-      }
+      public IList<CurveLoop> InnerCurves { get; } = new List<CurveLoop>();
    }
 }

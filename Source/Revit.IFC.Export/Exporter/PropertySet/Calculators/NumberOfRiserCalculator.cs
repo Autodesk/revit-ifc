@@ -48,11 +48,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// Calculates number of risers for a stair.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          bool valid = true;
          if (StairsExporter.IsLegacyStairs(element))
@@ -82,7 +82,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // Get override from parameter
-         int? noRiserOverride = ParameterUtil.GetIntValueFromElementOrSymbol(element, "NumberOfRiser");
+         int? noRiserOverride = ParameterUtil.GetIntValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName);
+
          if (noRiserOverride.HasValue)
          {
             m_NumberOfRisers = noRiserOverride.Value;
@@ -99,6 +100,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// The int value.
       /// </returns>
       public override int GetIntValue()
+      {
+         return m_NumberOfRisers;
+      }
+
+      /// <summary>
+      /// Gets the calculated double value.
+      /// </summary>
+      /// <returns>
+      /// The double value.
+      /// </returns>
+      public override double GetDoubleValue()
       {
          return m_NumberOfRisers;
       }

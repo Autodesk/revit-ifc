@@ -154,15 +154,15 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          if (shapeEditScope.BuilderType != IFCShapeBuilderType.TessellatedShapeBuilder)
             throw new InvalidOperationException("Currently BrepBuilder is only used to support IFCAdvancedFace");
 
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
          // we would only be in this code if we are not processing and IfcAdvancedBrep, since IfcAdvancedBrep must have IfcAdvancedFace
          if (shapeEditScope.BuilderScope == null)
@@ -183,7 +183,7 @@ namespace Revit.IFC.Import.Data
          
          foreach (IFCFaceBound faceBound in Bounds)
          {
-            faceBound.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+            faceBound.CreateShape(shapeEditScope, scaledLcs, guid);
 
             // If we can't create the outer face boundary, we will abort the creation of this face.  
             // In that case, return, unless we can triangulate it.

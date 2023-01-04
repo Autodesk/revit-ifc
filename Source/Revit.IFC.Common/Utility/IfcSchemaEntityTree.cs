@@ -184,9 +184,25 @@ namespace Revit.IFC.Common.Utility
       }
 
       #region static_functions
+
+      static IDictionary<string, HashSet<string>> DeprecatedOrUnsupportedDict = new Dictionary<string, HashSet<string>>()
+      {
+         { Ifc4Schema, new HashSet<string>() { "IfcAnnotation", "IfcProxy", "IfcOpeningStandardCase", "IfcBeamStandardCase", "IfcColumnStandardCase", "IfcDoorStandardCase",
+            "IfcMemberStandardCase", "IfcPlateStandardCase", "IfcSlabElementedCase", "IfcSlabStandardCase", "IfcWallElementedCase",
+            "IfcWallStandardCase", "IfcWindowStandardCase", "IfcDoorStyle", "IfcWindowStyle", "IfcBuilding", "IfcBuildingStorey" } },
+         { Ifc2x3Schema, new HashSet<string>(){ "IfcAnnotation", "IfcElectricalElement", "IfcEquipmentElement", "IfcBuilding", "IfcBuildingStorey" } },
+         { Ifc2x2Schema, new HashSet<string>(){ "IfcAnnotation", "IfcBuilding", "IfcBuildingStorey" } }
+      };
+
       static IDictionary<string, IfcSchemaEntityTree> m_IFCSchemaDict = new Dictionary<string, IfcSchemaEntityTree>();
+      static IDictionary<string, IFCEntityTrie> m_IFCSchemaTries { get; set; }
       static IDictionary<string, IDictionary<string, IList<string>>> m_IFCEntityPredefTypeDict = new Dictionary<string, IDictionary<string, IList<string>>>();
 
+      /// <summary>
+      /// return the standardized IFC schema name based on the various enumeration of IFCVersion
+      /// </summary>
+      /// <param name="ifcFileVersion">IFCVersion</param>
+      /// <returns>the standardized IFC schema name</returns>
       static public string SchemaName(IFCVersion ifcFileVersion)
       {
          string schemaFile = string.Empty;
@@ -222,11 +238,42 @@ namespace Revit.IFC.Common.Utility
       static public IfcSchemaEntityTree GetEntityDictFor(IFCVersion ifcFileVersion)
       {
          string schemaFile = SchemaName(ifcFileVersion);
+         return GetEntityDictFor(schemaFile);
+      }
+
+      /// <summary>
+      /// Get the IFC Entity Dictionary for the given IFC version specified by the schema file name (without extension)
+      /// </summary>
+      /// <param name="schemaFile">the IFC schema file name (without extension). Caller must make sure it is the supported schema file</param>
+      /// <returns>the tree, or null if the schema file is not found</returns>
+      static public IfcSchemaEntityTree GetEntityDictFor(string schemaFile)
+      {
          if (m_IFCSchemaDict.ContainsKey(schemaFile))
             return m_IFCSchemaDict[schemaFile];
 
          // if not found, process the file and add into the static dictionary
-         IfcSchemaEntityTree entityTree = GetEntityDictFor(schemaFile);
+         IfcSchemaEntityTree entityTree = PopulateEntityDictFor(schemaFile);
+         if (entityTree == null)
+            return null;
+
+         m_IFCSchemaDict.Add(schemaFile, entityTree);
+         m_IFCEntityPredefTypeDict.Add(schemaFile, entityTree.PredefinedTypeEnumDict);
+         return entityTree;
+      }
+
+      /// <summary>
+      /// Get the IFC Entity Dictionary for the given IFC version specified by the schema file name (without extension)
+      /// </summary>
+      /// <param name="schemaFile">the IFC schema file name (without extension). Caller must make sure it is the supported schema file</param>
+      /// <returns>the tree, or null if the schema file is not found</returns>
+      static public IfcSchemaEntityTree GetEntityDictFor(string schemaFile, string schemaLoc = null)
+      {
+         schemaFile = schemaFile.ToUpper();
+         if (m_IFCSchemaDict.ContainsKey(schemaFile))
+            return m_IFCSchemaDict[schemaFile];
+
+         // if not found, process the file and add into the static dictionary
+         IfcSchemaEntityTree entityTree = PopulateEntityDictFor(schemaFile, schemaLoc);
          if (entityTree == null)
             return null;
 
@@ -240,33 +287,43 @@ namespace Revit.IFC.Common.Utility
       /// </summary>
       /// <param name="schemaFile">the schema file name</param>
       /// <returns>the entity Dictionary</returns>
-      static public IfcSchemaEntityTree GetEntityDictFor(string schemaFile)
+      static IfcSchemaEntityTree PopulateEntityDictFor(string schemaFile, string schemaLoc = null)
       {
          IfcSchemaEntityTree entityTree = null;
 
-         //if (string.IsNullOrEmpty(loadedIfcSchemaVersion) || !loadedIfcSchemaVersion.Equals(schemaFile, StringComparison.InvariantCultureIgnoreCase))
+         // Process IFCXml schema here, then search for IfcProduct and build TreeView beginning from that node. Allow checks for the tree nodes. Grey out (and Italic) the abstract entity
+         string schemaFilePath;
+         FileInfo schemaFileInfo;
+
+         if (string.IsNullOrEmpty(schemaLoc))
+            schemaLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
+         schemaFilePath = Path.Combine(schemaLoc, schemaFile + ".xsd");
+         schemaFileInfo = new FileInfo(schemaFilePath);
+         if (!schemaFileInfo.Exists)
          {
-            // Process IFCXml schema here, then search for IfcProduct and build TreeView beginning from that node. Allow checks for the tree nodes. Grey out (and Italic) the abstract entity
-            string schemaFilePath;
-            FileInfo schemaFileInfo;
-
-            string schemaLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
-            schemaFilePath = Path.Combine(schemaLoc, schemaFile + ".xsd");
+            schemaFilePath = Path.Combine(DirectoryUtil.IFCSchemaLocation, schemaFile + ".xsd");
             schemaFileInfo = new FileInfo(schemaFilePath);
-            if (!schemaFileInfo.Exists)
-            {
-               schemaFilePath = Path.Combine(DirectoryUtil.IFCSchemaLocation, schemaFile + ".xsd");
-               schemaFileInfo = new FileInfo(schemaFilePath);
-            }
+         }
 
-            if (schemaFileInfo.Exists)
-            {
-               entityTree = new IfcSchemaEntityTree();
-               bool success = ProcessIFCXMLSchema.ProcessIFCSchema(schemaFileInfo, ref entityTree);
-            }
+         if (schemaFileInfo.Exists)
+         {
+            entityTree = new IfcSchemaEntityTree();
+            bool success = ProcessIFCXMLSchema.ProcessIFCSchema(schemaFileInfo, ref entityTree);
          }
 
          return entityTree;
+      }
+
+      /// <summary>
+      /// Generate the IFC entiry Trie data
+      /// </summary>
+      /// <param name="entityTrie">the IFCEntityTrie</param>
+      public static void GenerateEntityTrie(ref IFCEntityTrie entityTrie)
+      {
+         foreach (KeyValuePair<short, string> entEntry in entityTrie.FilteredIFCEntityDict)
+         {
+            entityTrie.AddEntry(entEntry.Value);
+         }
       }
 
       static void ProcessSchemaFile(string dirLocation, ref HashSet<string> schemaProcessed)
@@ -277,7 +334,7 @@ namespace Revit.IFC.Common.Utility
 
          foreach (FileInfo fileInfo in dirInfo.GetFiles("*.xsd"))
          {
-            string schemaId = Path.GetFileNameWithoutExtension(fileInfo.Name);
+            string schemaId = Path.GetFileNameWithoutExtension(fileInfo.Name).ToUpper();
             if (!schemaProcessed.Contains(fileInfo.Name) && !m_IFCSchemaDict.ContainsKey(schemaId))
             {
                IfcSchemaEntityTree entityTree = new IfcSchemaEntityTree();
@@ -317,7 +374,20 @@ namespace Revit.IFC.Common.Utility
             m_AllIFCSchemaProcessed = true;
       }
 
-      static public IList<string> GetAllCachedSchemaTrees()
+      /// <summary>
+      /// Get all the cached IFC schema trees
+      /// </summary>
+      /// <returns>The list of the schema trees</returns>
+      static public IList<IfcSchemaEntityTree> GetAllCachedSchemaTrees()
+      {
+         return m_IFCSchemaDict.Select(x => x.Value).ToList();
+      }
+
+      /// <summary>
+      /// Get all the names of the cached IFC schema trees
+      /// </summary>
+      /// <returns>the list of IFC schema names</returns>
+      static public IList<string> GetAllCachedSchemaNames()
       {
          return m_IFCSchemaDict.Select(x => x.Key).ToList();
       }
@@ -325,16 +395,28 @@ namespace Revit.IFC.Common.Utility
       /// <summary>
       /// Find a Non ABS supertype entity from the input type name
       /// </summary>
+      /// <param name="context">the IFC schema context</param>
       /// <param name="typeName">the type name</param>
       /// <returns>the non-abs supertype instance node</returns>
       static public IfcSchemaEntityNode FindNonAbsInstanceSuperType(IFCVersion context, string typeName)
+      {
+         string contextName = SchemaName(context);
+         return FindNonAbsInstanceSuperType(contextName, typeName);
+      }
+
+      /// <summary>
+      /// Find a Non ABS supertype entity from the input type name
+      /// </summary>
+      /// <param name="context">the IFC schema context</param>
+      /// <param name="typeName">the type name</param>
+      /// <returns>the non-abs supertype instance node</returns>
+      static public IfcSchemaEntityNode FindNonAbsInstanceSuperType(string context, string typeName)
       {
          IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
          IfcSchemaEntityNode res = null;
 
          // Note: Implementer's agreement #CV-2x3-166 changes IfcSpaceHeaterType from IfcEnergyConversionDevice to IfcFlowTerminal.
-         if ((context == IFCVersion.IFC2x3 || context == IFCVersion.IFC2x3BFM
-               || context == IFCVersion.IFC2x3CV2 || context == IFCVersion.IFC2x3FM || context == IFCVersion.IFCCOBIE)
+         if (context.Equals(Ifc2x3Schema,StringComparison.InvariantCultureIgnoreCase)
              && typeName.Equals("IfcSpaceHeaterType", StringComparison.InvariantCultureIgnoreCase))
          {
             res = ifcEntitySchemaTree.Find("IfcFlowTerminal");
@@ -371,10 +453,24 @@ namespace Revit.IFC.Common.Utility
       /// <summary>
       /// Find a Non-Abstract Super Type in the current IFC Schema
       /// </summary>
+      /// <param name="context">the IFC schema context</param>
       /// <param name="typeName">the entity name</param>
       /// <param name="stopNode">optional list of entity name(s) to stop the search</param>
       /// <returns>the appropriate node or null</returns>
       static public IfcSchemaEntityNode FindNonAbsSuperType(IFCVersion context, string entityName, params string[] stopNode)
+      {
+         string contextName = SchemaName(context);
+         return FindNonAbsSuperType(contextName, entityName, stopNode);
+      }
+
+      /// <summary>
+      /// Find a Non-Abstract Super Type in the current IFC Schema
+      /// </summary>
+      /// <param name="context">the IFC schema context</param>
+      /// <param name="typeName">the entity name</param>
+      /// <param name="stopNode">optional list of entity name(s) to stop the search</param>
+      /// <returns>the appropriate node or null</returns>
+      static public IfcSchemaEntityNode FindNonAbsSuperType(string context, string entityName, params string[] stopNode)
       {
          IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
          IfcSchemaEntityNode res = null;
@@ -415,6 +511,12 @@ namespace Revit.IFC.Common.Utility
       /// <param name="stopNode">array of the stop node(s)</param>
       /// <returns>List of the supertypes</returns>
       static public IList<IfcSchemaEntityNode> FindAllSuperTypes(IFCVersion context, string entityName, params string[] stopNode)
+      {
+         string contextName = SchemaName(context);
+         return FindAllSuperTypes(contextName, entityName, stopNode);
+      }
+
+      static public IList<IfcSchemaEntityNode> FindAllSuperTypes(string context, string entityName, params string[] stopNode)
       {
          IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
          IList<IfcSchemaEntityNode> res = new List<IfcSchemaEntityNode>();
@@ -475,6 +577,20 @@ namespace Revit.IFC.Common.Utility
       /// <returns>true if it is subtype</returns>
       static public bool IsSubTypeOf(IFCVersion context, string subTypeName, string superTypeName, bool strict = true)
       {
+         string contextName = SchemaName(context);
+         return IsSubTypeOf(contextName, subTypeName, superTypeName, strict);
+      }
+
+      /// <summary>
+      /// Check whether an entity (string) is a subtype of another entity
+      /// </summary>
+      /// <param name="context">the IFC version in context for the check</param>
+      /// <param name="subTypeName">the subtype name</param>
+      /// <param name="superTypeName">the supertype name</param>
+      /// <param name="strict">whether the subtype is strictly subtype. Set to false if it "supertype == subtype" is acceptable</param>
+      /// <returns>true if it is subtype</returns>
+      static public bool IsSubTypeOf(string context, string subTypeName, string superTypeName, bool strict = true)
+      {
          IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
          //var ifcEntitySchemaTree = IfcSchemaEntityTree.GetEntityDictFor(context);
          if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.IfcEntityDict == null || ifcEntitySchemaTree.IfcEntityDict.Count == 0)
@@ -502,6 +618,20 @@ namespace Revit.IFC.Common.Utility
       /// <returns>true if it is supertype</returns>
       static public bool IsSuperTypeOf(IFCVersion context, string superTypeName, string subTypeName, bool strict = true)
       {
+         string contextName = SchemaName(context);
+         return IsSuperTypeOf(contextName, subTypeName, superTypeName, strict);
+      }
+
+      /// <summary>
+      /// Check whether an entity (string) is a supertype of another entity
+      /// </summary>
+      /// <param name="context">the IFC version in context for the check</param>
+      /// <param name="superTypeName">the supertype name</param>
+      /// <param name="subTypeName">the subtype name</param>
+      /// <param name="strict">whether the supertype is strictly supertype. Set to false if it "supertype == subtype" is acceptable</param>
+      /// <returns>true if it is supertype</returns>
+      static public bool IsSuperTypeOf(string context, string superTypeName, string subTypeName, bool strict = true)
+      {
          IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
          //var ifcEntitySchemaTree = IfcSchemaEntityTree.GetEntityDictFor(context);
          if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.IfcEntityDict == null || ifcEntitySchemaTree.IfcEntityDict.Count == 0)
@@ -522,15 +652,27 @@ namespace Revit.IFC.Common.Utility
       /// <summary>
       /// Get the PredefinedType list from the processed schema
       /// </summary>
+      /// <param name="context"></param>
+      /// <param name="ifcEntity"></param>
+      /// <returns></returns>
+      static public IList<string> GetPredefinedTypeList(IFCVersion context, string ifcEntity)
+      {
+         IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
+         return GetPredefinedTypeList(ifcEntitySchemaTree, ifcEntity);
+      }
+
+      /// <summary>
+      /// Get the PredefinedType list from the given Ifc Entity tree
+      /// </summary>
       /// <param name="context">The IFC version</param>
       /// <param name="ifcEntity">the specific Entity to get the PredefinedType list from</param>
       /// <returns>List of PredefinedType strings</returns>
-      static public IList<string> GetPredefinedTypeList(IFCVersion context, string ifcEntity)
+      static public IList<string> GetPredefinedTypeList(IfcSchemaEntityTree ifcEntitySchemaTree, string ifcEntity)
       {
          IList<string> predefinedtypeList = new List<string>();
-         IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
+
          if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.IfcEntityDict == null || ifcEntitySchemaTree.IfcEntityDict.Count == 0)
-            throw new Exception("Unable to locate IFC Schema xsd file! Make sure the relevant xsd " + context + " exists.");
+            throw new Exception("Unable to locate IFC Schema xsd file! Make sure the relevant xsd exists.");
 
          if (string.IsNullOrEmpty(ifcEntity))
             return null;
@@ -555,6 +697,20 @@ namespace Revit.IFC.Common.Utility
 
          return null;
       }
+
+      /// <summary>
+      /// Return status whether an entity has been deprecated (according to the IFC documentation)
+      /// </summary>
+      /// <param name="entityName">the entity name to check</param>
+      /// <returns>deprecation status</returns>
+      public static bool IsDeprecatedOrUnsupported(string schemaName, string entityName)
+      {
+         if (DeprecatedOrUnsupportedDict.ContainsKey(schemaName))
+            return DeprecatedOrUnsupportedDict[schemaName].Contains(entityName);
+
+         return false;
+      }
+
       #endregion
    }
 }

@@ -161,10 +161,10 @@ namespace Revit.IFC.Import.Data
       /// Creates or populates Revit elements based on the information contained in this class.
       /// </summary>
       /// <param name="doc">The document.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      public void CreateProductRepresentation(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      public void CreateProductRepresentation(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          // Partially sort the representations so that we create: Body, Box, then the rest of the representations in that order.
          // This allows us to skip Box representations if any of the Body representations create 3D geometry.  Until we have UI in place, 
@@ -215,7 +215,7 @@ namespace Revit.IFC.Import.Data
                shapeEditScope.Creator.Solids.Count > 0)
                continue;
 
-            representation.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+            representation.CreateShape(shapeEditScope, scaledLcs, guid);
          }
       }
 

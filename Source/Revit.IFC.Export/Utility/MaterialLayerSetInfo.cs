@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Toolkit;
@@ -12,7 +10,7 @@ namespace Revit.IFC.Export.Utility
 {
    public class MaterialLayerSetInfo
    {
-      public  class MaterialInfo
+      public class MaterialInfo
       {
          public MaterialInfo(ElementId baseMatId, string layerName, double matWidth, MaterialFunctionAssignment function)
          {
@@ -85,12 +83,12 @@ namespace Revit.IFC.Export.Utility
       ///          Use private members instead.
       /// </summary>
       private IFCAnyHandle m_MaterialLayerSetHandle = null;
+      
       public IFCAnyHandle MaterialLayerSetHandle
       {
          get
          {
             GenerateIFCObjectsIfNeeded();
-
             return m_MaterialLayerSetHandle;
          }
       }
@@ -126,6 +124,7 @@ namespace Revit.IFC.Export.Utility
             return m_LayerQuantityWidthHnd;
          }
       }
+
       /// <summary>
       /// Collect information about material layer.
       ///   For IFC4RV Architectural exchange, it will generate IfcMatrialConstituentSet along with the relevant IfcShapeAspect and the width in the quantityset
@@ -188,15 +187,9 @@ namespace Revit.IFC.Export.Utility
                   foreach (ElementId matid in famMatIds)
                   {
                      // How to get the thickness? For CurtainWall Panel (PanelType), there is a builtin parameter CURTAINWALL_SYSPANEL_THICKNESS
-                     Parameter thicknessPar = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_THICKNESS);
-                     double matWidth = 0.0;
-                     if (thicknessPar == null)
-                     {
-                        matWidth = ParameterUtil.GetSpecialThicknessParameter(familySymbol);
-                     }
-                     else
-                        matWidth = thicknessPar.AsDouble();
-
+                     double matWidth = familySymbol.get_Parameter(BuiltInParameter.CURTAIN_WALL_SYSPANEL_THICKNESS)?.AsDouble() ?? 
+                        ParameterUtil.GetSpecialThicknessParameter(familySymbol);
+                     
                      if (MathUtil.IsAlmostZero(matWidth))
                         continue;
 
@@ -245,9 +238,7 @@ namespace Revit.IFC.Export.Utility
                   for (int ii = 0; ii < cs.LayerCount; ++ii)
                   {
                      double matWidth = cs.GetLayerWidth(ii);
-                     //if (MathUtil.IsAlmostZero(matWidth))
-                     //   continue;
-
+                     
                      ElementId matId = cs.GetMaterialId(ii);
                      widths.Add(matWidth);
                      // save layer function into ProductWrapper, 
@@ -272,7 +263,7 @@ namespace Revit.IFC.Export.Utility
 
                if (MaterialIds.Count == 0)
                {
-                  double matWidth = cs != null ? cs.GetWidth() : 0.0;
+                  double matWidth = cs?.GetWidth() ?? 0.0;
                   widths.Add(matWidth);
                   if (baseMatId != ElementId.InvalidElementId)
                   {
@@ -307,18 +298,16 @@ namespace Revit.IFC.Export.Utility
 
       private void GenerateIFCObjectsIfNeeded()
       {
-         if (m_needToGenerateIFCObjects)
-            m_needToGenerateIFCObjects = false;
-         else
+         if (!m_needToGenerateIFCObjects)
             return;
 
+         m_needToGenerateIFCObjects = false;
          IFCAnyHandle materialLayerSet = null;
 
          if (m_ProductWrapper != null && !m_ProductWrapper.ToNative().IsValidObject)
             m_ProductWrapper = null;
 
-         if(m_ProductWrapper != null)
-            m_ProductWrapper.ClearFinishMaterials();
+         m_ProductWrapper?.ClearFinishMaterials();
 
          // We can't create IfcMaterialLayers without creating an IfcMaterialLayerSet.  So we will simply collate here.
          IList<IFCAnyHandle> materialHnds = new List<IFCAnyHandle>();
@@ -327,12 +316,11 @@ namespace Revit.IFC.Export.Utility
          for (int ii = 0; ii < MaterialIds.Count; ++ii)
          {
             // Require positive width for IFC2x3 and before, and non-negative width for IFC4.
-            double matWidth = MaterialIds[ii].m_matWidth;
             if (MaterialIds[ii].m_matWidth < -MathUtil.Eps())
                continue;
 
             bool almostZeroWidth = MathUtil.IsAlmostZero(MaterialIds[ii].m_matWidth);
-            if (!ExporterCacheManager.ExportOptionsCache.ExportAs4 && almostZeroWidth)
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && almostZeroWidth)
                continue;
 
             if (almostZeroWidth)
@@ -364,15 +352,8 @@ namespace Revit.IFC.Export.Utility
          // If it is a single material, check single material override (only IfcMaterial without IfcMaterialLayerSet with only 1 member)
          if (numLayersToCreate == 1 && ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {
-            IFCAnyHandle singleMaterialOverrideHnd = ExporterUtil.GetSingleMaterial(m_ExporterIFC, m_Element, MaterialIds[0].m_baseMatId);
-            if (singleMaterialOverrideHnd != null)
-            {
-               m_MaterialLayerSetHandle = singleMaterialOverrideHnd;
-            }
-            else
-            {
-               m_MaterialLayerSetHandle = materialHnds[0];
-            }
+            m_MaterialLayerSetHandle = ExporterUtil.GetSingleMaterial(m_ExporterIFC, m_Element,
+               MaterialIds[0].m_baseMatId) ?? materialHnds[0];
             return;
          }
 
@@ -408,7 +389,7 @@ namespace Revit.IFC.Export.Utility
                      isVentilated = IFCLogical.True;
                }
 
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+               if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                {
                   layerName = MaterialIds[ii].m_layerName;
                   if (string.IsNullOrEmpty(layerName))
@@ -452,14 +433,17 @@ namespace Revit.IFC.Export.Utility
          ElementId typeElemId = m_Element.GetTypeId();
          if (layers.Count > 0)
          {
-            Element type = document.GetElement(typeElemId);
-            string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", m_ExporterIFC.GetFamilyName());
+            ElementType type = document.GetElement(typeElemId) as ElementType;
+            string layerSetBaseName = type.FamilyName + ":" + type.Name;
+            string layerSetName = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Name", layerSetBaseName);
             string layerSetDesc = NamingUtil.GetOverrideStringValue(type, "IfcMaterialLayerSet.Description", null);
 
             if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             {
                HashSet<IFCAnyHandle> constituents = new HashSet<IFCAnyHandle>(layers);
-               m_MaterialLayerSetHandle = IFCInstanceExporter.CreateMaterialConstituentSet(file, constituents, name: layerSetName, description: layerSetDesc);
+               m_MaterialLayerSetHandle = CategoryUtil.GetOrCreateMaterialConstituentSet(file,
+                  typeElemId, null, constituents, layerSetName, layerSetDesc);
+               
                foreach (Tuple<string, IFCAnyHandle> layerWidthQty in layerWidthQuantities)
                {
                   m_LayerQuantityWidthHnd.Add(IFCInstanceExporter.CreatePhysicalComplexQuantity(file, layerWidthQty.Item1, null,

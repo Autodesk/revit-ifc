@@ -56,16 +56,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Autodesk.UI.Windows">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\Autodesk.UI.Windows.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\Autodesk.UI.Windows.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIUI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPIUI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -82,7 +82,7 @@
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
     <Reference Include="UserInterfaceUtility">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\UserInterfaceUtility.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\UserInterfaceUtility.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
@@ -102,6 +102,8 @@
     <Compile Include="IFCClassificationUI.xaml.cs">
       <DependentUpon>IFCClassificationUI.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IFCEntityTree\EntityTree.xaml.cs" />
+    <Compile Include="IFCEntityTree\PredefinedTypeSelection.xaml.cs" />
     <Compile Include="IFCEnumExtensions.cs" />
     <Compile Include="IFCExchangeRequirements.cs" />
     <Compile Include="IFCFileHeaderInformationUI.xaml.cs">
@@ -200,6 +202,14 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="IFCClassificationUI.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="IFCEntityTree\EntityTree.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="IFCEntityTree\PredefinedTypeSelection.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

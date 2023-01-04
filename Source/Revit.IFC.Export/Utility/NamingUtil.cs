@@ -246,25 +246,6 @@ namespace Revit.IFC.Export.Utility
          return GetNameOverride(element, originalValue);
       }
 
-      private static System.Text.RegularExpressions.Regex g_rxMixedName = null;
-
-      private static string GetCleanName(string currentName)
-      {
-         if (g_rxMixedName == null)
-         {
-            g_rxMixedName = new System.Text.RegularExpressions.Regex(@"([^:]+)+", System.Text.RegularExpressions.RegexOptions.Compiled);
-         }
-
-         if (string.IsNullOrEmpty(currentName)) return currentName;
-
-         System.Text.RegularExpressions.MatchCollection mc = g_rxMixedName.Matches(currentName);
-         if (mc.Count > 2)
-         {
-            return mc[0].Value + ":" + mc[1].Value;
-         }
-         return currentName;
-      }
-
       /// <summary>
       /// Gets override long name from element.
       /// </summary>
@@ -467,6 +448,9 @@ namespace Revit.IFC.Export.Utility
       /// <returns>the string that contains the ElementType attribute value</returns>
       public static string GetElementTypeOverride(Element element, string originalValue)
       {
+         if (element == null)
+            return null;
+
          string nameOverride = "IfcElementType";
          string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
          if (element is ElementType || element is FamilySymbol)
@@ -601,8 +585,8 @@ namespace Revit.IFC.Export.Utility
                typeMarkParam = elementType.get_Parameter(BuiltInParameter.WINDOW_TYPE_ID);
          }
 
-         string typeMarkValue = (typeMarkParam != null) ? typeMarkParam.AsString() : null;
-         string instanceMarkValue = (instanceMarkParam != null) ? instanceMarkParam.AsString() : null;
+         string typeMarkValue = typeMarkParam?.AsString();
+         string instanceMarkValue = instanceMarkParam?.AsString();
 
          string fullName = null;
          if (string.IsNullOrWhiteSpace(typeMarkValue))

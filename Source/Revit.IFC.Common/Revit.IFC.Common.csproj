@@ -55,10 +55,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Web.Extensions" />
@@ -66,6 +66,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Enums\CommonEnum.cs" />
+    <Compile Include="Enums\IFC2X2_ADD1EntityType.cs" />
+    <Compile Include="Enums\IFC2X3_TC1EntityType.cs" />
     <Compile Include="Enums\IFC2xEntityType.cs" />
     <Compile Include="Enums\IFC4EntityType.cs" />
     <Compile Include="Enums\IFC4x1EntityType.cs" />
@@ -85,8 +87,10 @@
     <Compile Include="Utility\COBieProjectInfo.cs" />
     <Compile Include="Utility\CoordReferenceInfo.cs" />
     <Compile Include="Utility\DirectoryUtil.cs" />
+    <Compile Include="Utility\ElementComparer.cs" />
     <Compile Include="Utility\IFCAnyHandleUtil.cs" />
     <Compile Include="Utility\IFCCompatibilityType.cs" />
+    <Compile Include="Utility\IFCEntityTrie.cs" />
     <Compile Include="Utility\IFCFuzzyXYZ.cs" />
     <Compile Include="Utility\IfcSchemaEntityNode.cs" />
     <Compile Include="Utility\IfcSchemaEntityTree.cs" />

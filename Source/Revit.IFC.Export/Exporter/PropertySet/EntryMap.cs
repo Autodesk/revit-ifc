@@ -53,6 +53,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public string RevitParameterName { get; set; } = string.Empty;
 
       /// <summary>
+      /// The name kept for backward compatibility when the revit parameter name uses the old format, which is equal to the property name 
+      /// </summary>
+      public string CompatibleRevitParameterName { get; set; } = string.Empty;
+
+      /// <summary>
       /// The parameter name to be used to get the parameter value in other locales.
       /// </summary>
       public Dictionary<LanguageType, string> LocalizedRevitParameterNames { get; set; } = null;
@@ -85,9 +90,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="revitParameterName">
       /// The parameter name for this Entry.
       /// </param>
-      public EntryMap(string revitParameterName)
+      public EntryMap(string revitParameterName, string compatibleParamName)
       {
          RevitParameterName = revitParameterName;
+         CompatibleRevitParameterName = compatibleParamName;
       }
 
       public EntryMap(BuiltInParameter builtInParameter)

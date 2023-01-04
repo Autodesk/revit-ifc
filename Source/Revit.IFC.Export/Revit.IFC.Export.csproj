@@ -57,10 +57,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Web.Extensions" />
@@ -80,6 +80,7 @@
     <Compile Include="Exporter\DoorWindowExporter.cs" />
     <Compile Include="Exporter\DuctInsulationExporter.cs" />
     <Compile Include="Exporter\DuctLiningExporter.cs" />
+    <Compile Include="Exporter\ExporterInitializer_PredefPset.cs" />
     <Compile Include="Exporter\ExporterInitializer_PsetDef.cs" />
     <Compile Include="Exporter\ExporterInitializer_QsetDef.cs" />
     <Compile Include="Exporter\ExtrusionExporter.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="Exporter\HostedSweepExporter.cs" />
     <Compile Include="Exporter\HostObjectExporter.cs" />
     <Compile Include="Exporter\IFCEntityAndPsetList.cs" />
+    <Compile Include="Exporter\IFCExportBodyParams.cs" />
     <Compile Include="Exporter\InsulationExporter.cs" />
     <Compile Include="Exporter\PartExporter.cs" />
     <Compile Include="Exporter\PileExporter.cs" />
@@ -102,6 +104,10 @@
     <Compile Include="Exporter\PropertySet\AttributeEntry.cs" />
     <Compile Include="Exporter\PropertySet\AttributeEntryMap.cs" />
     <Compile Include="Exporter\PropertySet\AttributeSetDescription.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedCeilingOffset.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedFlooringOffset.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedCeiling.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedFlooring.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FireRatingCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\GrossCrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\IsExternalCalculator.cs" />
@@ -146,7 +152,7 @@
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfStoreysCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\HeightCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ProjectedAreaCalculator.cs" />
-    <Compile Include="Exporter\PropertySet\Calculators\ConcealCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\ConcealedCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\TemperatureCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\SpecificZoneCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\TransverseBarNominalDiameter.cs" />
@@ -165,6 +171,9 @@
     <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC4Enum.cs" />
     <Compile Include="Exporter\PropertySet\FrequencyPropertyUtil.cs" />
     <Compile Include="Exporter\PropertySet\PositivePlaneAnglePropertyUtil.cs" />
+    <Compile Include="Exporter\PropertySet\PreDefinedPropertySetDescription.cs" />
+    <Compile Include="Exporter\PropertySet\PreDefinedPropertySetEntry.cs" />
+    <Compile Include="Exporter\PropertySet\PreDefinedPropertySetEntryMap.cs" />
     <Compile Include="Exporter\PropertySet\PropertySetDescription.cs" />
     <Compile Include="Exporter\PropertySet\PropertySetEntry.cs" />
     <Compile Include="Exporter\PropertySet\PropertySetEntryMap.cs" />
@@ -222,11 +231,11 @@
     <Compile Include="Utility\CategoryUtil.cs" />
     <Compile Include="Utility\ElementOrConnector.cs" />
     <Compile Include="Utility\FabricParams.cs" />
+    <Compile Include="Utility\LinkedFileExportAs.cs" />
     <Compile Include="Utility\MaterialConstituentCache.cs" />
     <Compile Include="Utility\MaterialLayerSetInfo.cs" />
     <Compile Include="Utility\ClassificationLocationCache.cs" />
     <Compile Include="Utility\ClassificationCache.cs" />
-    <Compile Include="Utility\ClassificationReferenceCache.cs" />
     <Compile Include="Utility\ContainmentCache.cs" />
     <Compile Include="Utility\CurveAnnotationCache.cs" />
     <Compile Include="Exporter\FamilyInstanceExporter.cs" />
@@ -269,6 +278,8 @@
     <Compile Include="Utility\LogicalPropertyInfoCache.cs" />
     <Compile Include="Utility\MaterialAndProfile.cs" />
     <Compile Include="Utility\MaterialConstituentSetCache.cs" />
+    <Compile Include="Utility\MaterialPropertiesUtil.cs" />
+    <Compile Include="Utility\MaterialSetUsageCache.cs" />
     <Compile Include="Utility\MEPCache.cs" />
     <Compile Include="Utility\NamingOptions.cs" />
     <Compile Include="Utility\NamingUtil.cs" />
@@ -284,6 +295,7 @@
     <Compile Include="Utility\ProductWrapper.cs" />
     <Compile Include="Utility\PropertyInfoCache.cs" />
     <Compile Include="Utility\PropertyMap.cs" />
+    <Compile Include="Utility\PropertySetCache.cs" />
     <Compile Include="Utility\PropertySetOptions.cs" />
     <Compile Include="Utility\RepresentationUtil.cs" />
     <Compile Include="Utility\SimpleSweptSolidAnalyzer.cs" />
@@ -301,7 +313,6 @@
     <Compile Include="Utility\WallConnectionDataCache.cs" />
     <Compile Include="Utility\WallCrossSectionCache.cs" />
     <Compile Include="Utility\ZoneInfoCache.cs" />
-    <Compile Include="Utility\MaterialLayerRelationsCache.cs" />
     <Compile Include="Utility\MaterialLayerSetCache.cs" />
     <Compile Include="Utility\MaterialRelationsCache.cs" />
     <Compile Include="Utility\ParameterCache.cs" />

@@ -103,7 +103,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleElectricVoltage(propertyValue);
-            return CreateElectricalVoltageMeasurePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.ElectricalPotential, "IfcElectricVoltageMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateElectricalVoltageMeasurePropertyFromCache(file, ifcPropertyName, propertyValue, valueType);
+            }
          }
 
          return null;

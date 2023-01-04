@@ -549,7 +549,7 @@ namespace Revit.IFC.Export.Utility
       /// there could be an offset between this geometry and the other, non-transformed, geometry.</remarks>
       public static IFCAnyHandle CreateAppropriateProductDefinitionShape(ExporterIFC exporterIFC, Element element, ElementId categoryId,
           GeometryElement geometryElement, BodyExporterOptions bodyExporterOptions, IList<IFCAnyHandle> extraReps,
-          IFCExtrusionCreationData extrusionCreationData, bool allowOffsetTransform)
+          IFCExportBodyParams extrusionCreationData, bool allowOffsetTransform)
       {
          BodyData bodyData;
          BodyExporterOptions newBodyExporterOptions = new BodyExporterOptions(bodyExporterOptions);
@@ -572,7 +572,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateAppropriateProductDefinitionShape(ExporterIFC exporterIFC, Element element, ElementId categoryId,
           GeometryElement geometryElement, BodyExporterOptions bodyExporterOptions, IList<IFCAnyHandle> extraReps,
-          IFCExtrusionCreationData extrusionCreationData, out BodyData bodyData, bool skipBody = false)
+          IFCExportBodyParams extrusionCreationData, out BodyData bodyData, bool skipBody = false)
       {
          bodyData = null;
          SolidMeshGeometryInfo info = null;
@@ -734,7 +734,7 @@ namespace Revit.IFC.Export.Utility
          IFCFile file = exporterIFC.GetFile();
 
          IFCAnyHandle extrusionHnd = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs,
-             extrDirVec, extrusionSize, false);
+             extrDirVec, extrusionSize, false, out _);
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionHnd))
             return null;

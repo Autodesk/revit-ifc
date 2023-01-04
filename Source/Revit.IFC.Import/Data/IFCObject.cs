@@ -146,17 +146,16 @@ namespace Revit.IFC.Import.Data
          // "PredefinedType" is the default name of the field.
          // For IFC2x3, some entities have a "ShapeType" instead of a "PredefinedType", which we will check below.
          string predefinedTypeName = "PredefinedType";
-
-         if (EntityType == IFCEntityType.IfcDistributionPort)
-            predefinedTypeName = "FlowDirection";
-         else if (!IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
+         if (!IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
          {
             // The following have "PredefinedType", but are out of scope for now:
             // IfcCostSchedule, IfcOccupant, IfcProjectOrder, IfcProjectOrderRecord, IfcServiceLifeFactor
             // IfcStructuralAnalysisModel, IfcStructuralCurveMember, IfcStructuralLoadGroup, IfcStructuralSurfaceMember
-            if ((EntityType == IFCEntityType.IfcRamp) ||
-                (EntityType == IFCEntityType.IfcRoof) ||
-                (EntityType == IFCEntityType.IfcStair))
+            if (EntityType == IFCEntityType.IfcDistributionPort)
+               predefinedTypeName = "FlowDirection";
+            else if ((EntityType == IFCEntityType.IfcRamp) ||
+                     (EntityType == IFCEntityType.IfcRoof) ||
+                     (EntityType == IFCEntityType.IfcStair))
                predefinedTypeName = "ShapeType";
          }
 

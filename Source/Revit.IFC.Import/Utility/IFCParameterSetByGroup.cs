@@ -26,15 +26,24 @@ using Autodesk.Revit.DB;
 namespace Revit.IFC.Import.Utility
 {
    /// <summary>
-   /// A class to sort element parameters by group and name.
+   /// A class to sort element parameters by name.
    /// </summary>
+   /// <remarks>The name is obsolete, as it was previously also sorted by parameter group.</remarks>
    public class IFCParameterSetByGroup
    {
-      IDictionary<BuiltInParameterGroup, IDictionary<string, Parameter>> m_ParameterByGroup = null;
+      IDictionary<string, (Parameter, bool)> ParameterCache { get; set; } = null;
 
+      private static bool IsAllowedParameterToSet(BuiltInParameter parameterId)
+      {
+         // DATUM_TEXT is the Level name.  We don't want to overwrite that with a property,
+         // at least not by default.
+         return parameterId != BuiltInParameter.DATUM_TEXT &&
+            parameterId != BuiltInParameter.FUNCTION_PARAM;
+      }
+      
       protected IFCParameterSetByGroup(Element element)
       {
-         m_ParameterByGroup = new SortedDictionary<BuiltInParameterGroup, IDictionary<string, Parameter>>();
+         ParameterCache = new SortedDictionary<string, (Parameter, bool)>();
 
          ParameterSet parameterSet = element.Parameters;
          foreach (Parameter parameter in parameterSet)
@@ -44,10 +53,10 @@ namespace Revit.IFC.Import.Utility
                continue;
 
             string parameterName = parameterDefinition.Name;
-            BuiltInParameterGroup parameterGroup = parameterDefinition.ParameterGroup;
 
-            IDictionary<string, Parameter> parameterGroupSet = Find(parameterGroup);
-            parameterGroupSet[parameterName] = parameter;
+            BuiltInParameter parameterId = ((InternalDefinition)parameter.Definition).BuiltInParameter;
+            bool allowedToSet = IsAllowedParameterToSet(parameterId);
+            ParameterCache[parameterName] = (parameter, allowedToSet);
          }
       }
 
@@ -62,60 +71,21 @@ namespace Revit.IFC.Import.Utility
       }
 
       /// <summary>
-      /// Find, or create, the map of parameter name to parameter for a parameter group.
-      /// </summary>
-      /// <param name="key">The parameter group.</param>
-      /// <returns>The map of parameter name to parameter for the parameter group.</returns>
-      private IDictionary<string, Parameter> Find(BuiltInParameterGroup key)
-      {
-         IDictionary<string, Parameter> value = null;
-         if (!m_ParameterByGroup.TryGetValue(key, out value))
-         {
-            value = new SortedDictionary<string, Parameter>();
-            m_ParameterByGroup[key] = value;
-         }
-         return value;
-      }
-
-      private static bool IsAllowedParameterToSet(Parameter parameter)
-      {
-         // Not allow to set read-only parameters.
-         if (parameter.IsReadOnly)
-            return false;
-
-         // DATUM_TEXT is the Level name.  We don't want to overwrite that with a property, at least not by default.
-         int parameterId = parameter.Id.IntegerValue;
-         if (parameterId == (int)BuiltInParameter.DATUM_TEXT ||
-             parameterId == (int)BuiltInParameter.FUNCTION_PARAM)
-            return false;
-
-         return true;
-      }
-
-      /// <summary>
       /// Tries to find a parameter corresponding to an IFC property in a property set, given a parameter group value.
       /// If the found parameter can't be modified, the out value will be null, but the return value will be true.
       /// </summary>
       /// <param name="propertyName">The name of the IFC property.</param>
       /// <param name="parameter">The Revit parameter, if found and allowed to be set.</param>
       /// <returns>True if found, false otherwise.</returns>
-      /// <remarks>There are a list of parameters that are not allowed to be set by properties.  This will weed out those parameters.</remarks>
+      /// <remarks>There are a list of parameters that are not allowed to be set by properties.  
+      /// This will weed out those parameters.</remarks>
       public bool TryFindParameter(string parameterName, out Parameter parameter)
       {
-         bool found = false;
-         foreach (IDictionary<string, Parameter> parameterGroupMap in m_ParameterByGroup.Values)
-         {
-            bool foundHere = parameterGroupMap.TryGetValue(parameterName, out parameter);
-            if (foundHere)
-            {
-               found = true;
-               foundHere = IsAllowedParameterToSet(parameter);
-               if (foundHere)
-                  return true;
-            }
-         }
-
-         parameter = null;
+         bool found = ParameterCache.TryGetValue(parameterName, out (Parameter, bool) parameterInfo);
+         if (found && parameterInfo.Item2 && !parameterInfo.Item1.IsReadOnly)
+            parameter = parameterInfo.Item1;
+         else
+            parameter = null;
          return found;
       }
    }

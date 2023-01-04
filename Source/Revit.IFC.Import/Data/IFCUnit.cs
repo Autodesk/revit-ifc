@@ -456,7 +456,7 @@ namespace Revit.IFC.Import.Data
             ExpectedTypes.Add(Tuple.Create(exponent, SpecTypeId.Custom, unitName));
          }
 
-         public bool Matches(IList<Tuple<IFCUnit, int>> derivedElementUnitHnds, out double scaleFactor)
+         public bool Matches(IDictionary<IFCUnit, int> derivedElementUnitHnds, out double scaleFactor)
          {
             scaleFactor = 1.0;
 
@@ -465,14 +465,14 @@ namespace Revit.IFC.Import.Data
 
             ISet<Tuple<int, ForgeTypeId, string>> expectedTypes = ExpectedTypesCopy();
 
-            foreach (Tuple<IFCUnit, int> derivedElementUnitHnd in derivedElementUnitHnds)
+            foreach (KeyValuePair<IFCUnit, int> derivedElementUnitHnd in derivedElementUnitHnds)
             {
-               int dimensionality = derivedElementUnitHnd.Item2;
-               Tuple<int, ForgeTypeId, string> currKey = Tuple.Create(dimensionality, derivedElementUnitHnd.Item1.Spec, derivedElementUnitHnd.Item1.CustomSpec);
+               int dimensionality = derivedElementUnitHnd.Value;
+               Tuple<int, ForgeTypeId, string> currKey = Tuple.Create(dimensionality, derivedElementUnitHnd.Key.Spec, derivedElementUnitHnd.Key.CustomSpec);
                if (expectedTypes.Contains(currKey))
                {
                   expectedTypes.Remove(currKey);
-                  scaleFactor *= Math.Pow(derivedElementUnitHnd.Item1.ScaleFactor, dimensionality);
+                  scaleFactor *= Math.Pow(derivedElementUnitHnd.Key.ScaleFactor, dimensionality);
                }
                else
                   break;
@@ -489,6 +489,29 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// The comparer for comparing IFCUnit.
+      /// </summary>
+      private class UnitCompare : IComparer<IFCUnit>
+      {
+         /// <summary>
+         /// A comparison for two IFCUnit by Spec and CustomSpec
+         /// </summary>
+         /// <param name="unit1">The first unit.</param>
+         /// <param name="unit2">The second unit.</param>
+         /// <returns>-1 if the first unit1 is smaller, 1 if larger, 0 if equal.</returns>
+         public int Compare(IFCUnit unit1, IFCUnit unit2)
+         {
+            ForgeTypeId spec1 = unit1?.Spec;
+            ForgeTypeId spec2 = unit2?.Spec;
+
+            if (spec1 != spec2)
+               return (spec1 < spec2) ? -1 : 1;
+            else
+               return string.Compare(unit1?.CustomSpec, unit2?.CustomSpec);
+         }
+      }
+
+      /// <summary>
       /// Processes an IfcDerivedUnit.
       /// </summary>
       /// <param name="unitHnd">The unit handle.</param>
@@ -497,7 +520,7 @@ namespace Revit.IFC.Import.Data
          List<IFCAnyHandle> elements =
              IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(unitHnd, "Elements");
 
-         IList<Tuple<IFCUnit, int>> derivedElementUnitHnds = new List<Tuple<IFCUnit, int>>();
+         SortedDictionary<IFCUnit, int> derivedElementUnitHnds = new SortedDictionary<IFCUnit, int>(new UnitCompare());
          foreach (IFCAnyHandle subElement in elements)
          {
             IFCAnyHandle derivedElementUnitHnd = IFCImportHandleUtil.GetRequiredInstanceAttribute(subElement, "Unit", false);
@@ -507,7 +530,18 @@ namespace Revit.IFC.Import.Data
                bool found;
                int exponent = IFCImportHandleUtil.GetRequiredIntegerAttribute(subElement, "Exponent", out found);
                if (found)
-                  derivedElementUnitHnds.Add(Tuple.Create(subUnit, exponent));
+               {
+                  if (!derivedElementUnitHnds.ContainsKey(subUnit))
+                  {
+                     derivedElementUnitHnds.Add(subUnit, exponent);
+                  }
+                  else
+                  {
+                     derivedElementUnitHnds[subUnit] += exponent;
+                     if (derivedElementUnitHnds[subUnit] == 0)
+                        derivedElementUnitHnds.Remove(subUnit);
+                  }
+               }
             }
          }
 
@@ -596,9 +630,7 @@ namespace Revit.IFC.Import.Data
             // Support N / m in basic units
             DerivedUnitExpectedTypes expectedTypes2 = new DerivedUnitExpectedTypes(UnitTypeId.NewtonsPerMeter, SymbolTypeId.NPerM);
             expectedTypes2.AddExpectedType(1, SpecTypeId.Mass);
-            expectedTypes2.AddExpectedType(1, SpecTypeId.Length);
             expectedTypes2.AddCustomExpectedType(-2, "TIMEUNIT");
-            expectedTypes2.AddExpectedType(-1, SpecTypeId.Length);
             expectedTypesList.Add(expectedTypes2);
          }
          else if (string.Compare(unitType, "PLANARFORCEUNIT", true) == 0)
@@ -611,12 +643,11 @@ namespace Revit.IFC.Import.Data
             expectedTypes.AddExpectedType(1, SpecTypeId.AreaForce);
             expectedTypesList.Add(expectedTypes);
 
-            // Support N / m in basic units
+            // Support N / m^2 in basic units
             DerivedUnitExpectedTypes expectedTypes2 = new DerivedUnitExpectedTypes(UnitTypeId.NewtonsPerSquareMeter, SymbolTypeId.NPerMSup2);
             expectedTypes2.AddExpectedType(1, SpecTypeId.Mass);
-            expectedTypes2.AddExpectedType(1, SpecTypeId.Length);
             expectedTypes2.AddCustomExpectedType(-2, "TIMEUNIT");
-            expectedTypes2.AddExpectedType(-2, SpecTypeId.Length);
+            expectedTypes2.AddExpectedType(-1, SpecTypeId.Length);
             expectedTypesList.Add(expectedTypes2);
          }
          else if (string.Compare(unitType, "MASSFLOWRATEUNIT", true) == 0)
@@ -658,6 +689,148 @@ namespace Revit.IFC.Import.Data
             expectedTypesW.AddCustomExpectedType(-3, "TIMEUNIT");
             expectedTypesList.Add(expectedTypesW);
          }
+         else if (string.Compare(unitType, "SOUNDPRESSUREUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.HvacPressure;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support kg / (m * c^2) in the IFC file.
+
+            // kg / (m * c^2)
+            DerivedUnitExpectedTypes expectedTypesPa = new DerivedUnitExpectedTypes(UnitTypeId.Pascals, SymbolTypeId.Pa);
+            expectedTypesPa.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypesPa.AddExpectedType(-1, SpecTypeId.Length);
+            expectedTypesPa.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypesPa);
+         }
+         else if (string.Compare(unitType, "DYNAMICVISCOSITYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.HvacViscosity;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only kg / (m * s).
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.KilogramsPerMeterSecond, SymbolTypeId.KgPerMS);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddExpectedType(-1, SpecTypeId.Length);
+            expectedTypes.AddCustomExpectedType(-1, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "SPECIFICHEATCAPACITYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.SpecificHeat;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only J/(kg * K) = m^2/(s^2 * K).
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.JoulesPerKilogramDegreeCelsius, SymbolTypeId.JPerKgDegreeC);
+            expectedTypes.AddExpectedType(2, SpecTypeId.Length);
+            expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypes.AddExpectedType(-1, SpecTypeId.HvacTemperature);
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "HEATINGVALUEUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.SpecificHeatOfVaporization;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only J/kg = m^2/s^2.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.JoulesPerGram, SymbolTypeId.JPerG);
+            expectedTypes.AddExpectedType(2, SpecTypeId.Length);
+            expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "VAPORPERMEABILITYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.Permeability;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only kg/(Pa * s * m^2) = s/m.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.NanogramsPerPascalSecondSquareMeter, SymbolTypeId.NgPerPaSMSup2);
+            expectedTypes.AddCustomExpectedType(1, "TIMEUNIT");
+            expectedTypes.AddExpectedType(-1, SpecTypeId.Length);
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "THERMALEXPANSIONCOEFFICIENTUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.ThermalExpansionCoefficient;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only 1/K.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.InverseDegreesCelsius, SymbolTypeId.InvDegreeC);
+            expectedTypes.AddExpectedType(-1, SpecTypeId.HvacTemperature);
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "THERMALCONDUCTANCEUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.ThermalConductivity;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only  W/(m * K) = (kg * m)/(K * s^3).
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.WattsPerMeterKelvin, SymbolTypeId.WPerMK);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Length);
+            expectedTypes.AddExpectedType(-1, SpecTypeId.HvacTemperature);
+            expectedTypes.AddCustomExpectedType(-3, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "MODULUSOFELASTICITYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.Stress;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only Pa.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.Pascals, SymbolTypeId.Pa);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddExpectedType(-1, SpecTypeId.Length);
+            expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "ISOTHERMALMOISTURECAPACITYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.IsothermalMoistureCapacity;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only m3 / kg.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.CubicMetersPerKilogram, SymbolTypeId.MSup3PerKg);
+            expectedTypes.AddExpectedType(3, SpecTypeId.Length);
+            expectedTypes.AddExpectedType(-1, SpecTypeId.Mass);
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "MOISTUREDIFFUSIVITYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.Diffusivity;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only m2 / s.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.SquareMetersPerSecond, SymbolTypeId.MSup2PerS);
+            expectedTypes.AddExpectedType(2, SpecTypeId.Length);
+            expectedTypes.AddCustomExpectedType(-1, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "IONCONCENTRATIONUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.MassDensity;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support kg / m^3 in the IFC file.
+
+            // kg / m^3.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.KilogramsPerCubicMeter, SymbolTypeId.KgPerMSup3);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddExpectedType(-3, SpecTypeId.Length);
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "MOMENTOFINERTIAUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.MomentOfInertia;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support m^4 in the IFC file.
+
+            // m^4.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.MetersToTheFourthPower, SymbolTypeId.MSup4);
+            expectedTypes.AddExpectedType(4, SpecTypeId.Length);
+            expectedTypesList.Add(expectedTypes);
+         }
          else if (string.Compare(unitType, "USERDEFINED", true) == 0)
          {
             // Look at the sub-types to see what we support.
@@ -687,6 +860,19 @@ namespace Revit.IFC.Import.Data
                   expectedTypes.AddExpectedType(-2, SpecTypeId.Length);
                   expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
                   expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+                  expectedTypesList.Add(expectedTypes);
+               }
+               else if (string.Compare(userDefinedType, "Electrical Resistivity", true) == 0)
+               {
+                  Spec = SpecTypeId.ElectricalResistivity;
+                  UnitSystem = UnitSystem.Metric;
+
+                  // Support only Ohm * M = (kg * m^3)/(s^3 * A^2)
+                  DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.OhmMeters, SymbolTypeId.OhmM);
+                  expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+                  expectedTypes.AddExpectedType(3, SpecTypeId.Length);
+                  expectedTypes.AddCustomExpectedType(-3, "TIMEUNIT");
+                  expectedTypes.AddExpectedType(-2, SpecTypeId.Current);
                   expectedTypesList.Add(expectedTypes);
                }
             }

@@ -51,20 +51,20 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-	<Reference Include="Autodesk.UI.Windows">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\Autodesk.UI.Windows.dll</HintPath>
-    </Reference>
-    <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
-    </Reference>
-    <Reference Include="RevitAPIIFC">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
-    </Reference>
-    <Reference Include="RevitAPIUI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll</HintPath>
+    <Reference Include="Autodesk.UI.Windows">
+      <HintPath>..\..\..\..\2022_Revit_API\Autodesk.UI.Windows.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPIIFC.dll</HintPath>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPIUI.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xaml" />

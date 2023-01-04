@@ -124,9 +124,10 @@ namespace Revit.IFC.Import.Data
             return null;
       }
 
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
       }
    }
 }

@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="8F2DD21F-AD8B-4421-9BD4-BF7C702D1DA4" Name="Revit IFC 2022" Language="1033" Version="22.5.2.0" Manufacturer="Autodesk" UpgradeCode="254F4C8A-9ECA-4690-A718-21ACD3849485">
+   <Product Id="90EB043D-D4E7-4D0E-B4DE-33C9D103EB25" Name="Revit IFC 2022" Language="1033" Version="22.6.0.0" Manufacturer="Autodesk" UpgradeCode="254F4C8A-9ECA-4690-A718-21ACD3849485">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -159,9 +159,12 @@
          <Component Id = "COMP_Antlr4Runtime_DLL" Guid="EA19D64B-491C-47AD-A019-57E581734481">
             <File Id ="FILE_Antlr4Runtime_DLL" Name="Antlr4.Runtime.dll" Source="$(var.Revit.IFC.Export.TargetDir)Antlr4.Runtime.dll" KeyPath="yes" />
          </Component>
-        <Component Id = "COMP_GeometryGymIFC_DLL" Guid="467589B7-945B-4B06-89D1-668DFFAFD074">
+         <Component Id = "COMP_GeometryGymIFC_DLL" Guid="467589B7-945B-4B06-89D1-668DFFAFD074">
           <File Id ="FILE_GeometryGymIFC_DLL" Name="GeometryGymIFC.dll" Source="$(var.Revit.IFC.Export.TargetDir)GeometryGymIFC.dll" KeyPath="yes" />
-        </Component>
+         </Component>
+         <Component Id = "COMP_ICSharpCode_SharpZipLib_DLL" Guid="B5E27E3B-E9AC-42D6-BFED-55C999B773B8">
+            <File Id ="FILE_ICSharpCode_SharpZipLib_DLL" Name="ICSharpCode.SharpZipLib.dll" Source="$(var.Revit.IFC.Import.TargetDir)ICSharpCode.SharpZipLib.DLL" KeyPath="yes" />
+         </Component>
          <Component Id = "COMP_IFC2X2ADD1_EXP" Guid="03084C2B-FD44-48C8-AA91-71A9EB199181">
             <File Id ="FILE_IFC2X2ADD1_EXP" Name="IFC2X2_ADD1.exp" Source="$(var.ProjectDir)..\Program Files to Install\IFC2X2_ADD1.exp" KeyPath="yes" />
          </Component>

@@ -32,12 +32,11 @@ namespace Revit.IFC.Import.Geometry
       /// Return geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>Zero or more created Solids.</returns>
       IList<GeometryObject> CreateGeometry(
-            IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid);
+            IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid);
 
       /// <summary>
       /// In case of a Boolean operation failure, provide a recommended direction to shift the geometry in for a second attempt.

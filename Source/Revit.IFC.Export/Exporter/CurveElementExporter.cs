@@ -106,7 +106,7 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcAnnotation;
+         IFCEntityType elementClassTypeEnum = IFCEntityType.IfcAnnotation;
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return;
 
@@ -255,7 +255,8 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle relativePlacement = ExporterUtil.CreateAxis(file, origin, zDir, xDir);
          GeometryUtil.SetRelativePlacement(localPlacement, relativePlacement);
 
-         IFCAnyHandle annotation = IFCInstanceExporter.CreateAnnotation(exporterIFC, curveElement, GUIDUtil.CreateGUID(),
+         string guid = GUIDUtil.CreateGUID(curveElement);
+         IFCAnyHandle annotation = IFCInstanceExporter.CreateAnnotation(exporterIFC, curveElement, guid,
             ExporterCacheManager.OwnerHistoryHandle, localPlacement, prodShapeHnd);
 
          return annotation;

@@ -105,7 +105,8 @@ namespace Revit.IFC.Import.Data
          }
       }
 
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          if (CoordIndex == null)
          {
@@ -115,11 +116,13 @@ namespace Revit.IFC.Import.Data
 
          using (BuilderScope bs = shapeEditScope.InitializeBuilder(IFCShapeBuilderType.TessellatedShapeBuilder))
          {
-            base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+            base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
             TessellatedShapeBuilderScope tsBuilderScope = bs as TessellatedShapeBuilderScope;
 
             tsBuilderScope.StartCollectingFaceSet();
+
+            ElementId materialElementId = GetMaterialElementId(shapeEditScope);
 
             // Create triangle face set from CoordIndex. We do not support the Normals yet at this point
             foreach (List<int> triIndex in CoordIndex)
@@ -131,7 +134,7 @@ namespace Revit.IFC.Import.Data
                }
 
                // This is already triangulated, so no need to attempt triangulation here.
-               tsBuilderScope.StartCollectingFace(GetMaterialElementId(shapeEditScope), false);
+               tsBuilderScope.StartCollectingFace(materialElementId, false);
 
                IList<XYZ> loopVertices = new List<XYZ>();
 

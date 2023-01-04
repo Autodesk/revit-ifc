@@ -33,7 +33,7 @@ namespace Revit.IFC.Common.Utility
       {
          get
          {
-            return System.IO.Path.GetDirectoryName(typeof(Autodesk.Revit.ApplicationServices.Application).Assembly.Location);
+            return Path.GetDirectoryName(typeof(Autodesk.Revit.ApplicationServices.Application).Assembly.Location);
          }
       }
 
@@ -41,7 +41,15 @@ namespace Revit.IFC.Common.Utility
       {
          get
          {
-            return Path.Combine(RevitProgramPath, "EDM");
+#if IFC_OPENSOURCE
+            // For the open source code, search it from the IfcExporter install folder
+            string schemaLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
+            if (!string.IsNullOrEmpty(schemaLoc))
+            {
+               return schemaLoc;
+            }
+#endif
+            return Path.Combine(RevitProgramPath, "IFC");
          }
       }
    }

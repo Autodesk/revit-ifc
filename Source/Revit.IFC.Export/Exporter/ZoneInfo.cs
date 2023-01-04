@@ -23,6 +23,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter.PropertySet;
+using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Utility;
 
 namespace Revit.IFC.Export.Exporter
@@ -239,20 +240,15 @@ namespace Revit.IFC.Export.Exporter
             GroupName = newGroupName;
       }
 
-      static private IFCAnyHandle CreateZoneClassificationReference(IFCFile file, string code)
-      {
-         if (string.IsNullOrEmpty(code))
-            return null;
-
-         ClassificationUtil.ParseClassificationCode(code, null,
-            out string classificationName, out string classificationCode,
-            out string classificationDescription);
-         ExporterCacheManager.ClassificationLocationCache.TryGetValue(classificationName,
-            out string location);
-         return ClassificationUtil.CreateClassificationReference(file, classificationName,
-            classificationCode, classificationDescription, location);
-      }
-
+      /// <summary>
+      /// Create classification reference (IfcClassificationReference) entity, and add new classification to cache (if it is new classification)
+      /// </summary>
+      /// <param name="file">The IFC file class.</param>
+      /// <param name="classificationKeyString">The classification name.</param>
+      /// <param name="classificationCode">The classification code.</param>
+      /// <param name="classificationDescription">The classification description.</param>
+      /// <param name="location">The location of the classification.</param>
+      /// <returns></returns>
       /// <summary>
       /// Creates and add a classification reference to the zone info if it doesn't already exist. 
       /// </summary>
@@ -263,11 +259,30 @@ namespace Revit.IFC.Export.Exporter
          if (string.IsNullOrEmpty(zoneClassificationCode))
             return;
 
-         if (ClassificationReferences.TryGetValue(zoneClassificationCode, out _))
+         if (ClassificationReferences.ContainsKey(zoneClassificationCode))
             return;
-         
-         IFCAnyHandle zoneClassificationReference = CreateZoneClassificationReference(file, zoneClassificationCode);
-         ClassificationReferences[zoneClassificationCode] = zoneClassificationReference;
+
+         ClassificationUtil.ParseClassificationCode(zoneClassificationCode, null,
+            out string classificationName, out string classificationCode,
+            out string classificationDescription);
+         ExporterCacheManager.ClassificationLocationCache.TryGetValue(classificationName,
+            out string location);
+
+         IFCAnyHandle classification;
+
+         // Check whether Classification is already defined before
+         if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue(
+            classificationName, out classification))
+         {
+            classification = IFCInstanceExporter.CreateClassification(file, "", "", null,
+               classificationName);
+            ExporterCacheManager.ClassificationCache.ClassificationHandles.Add(classificationName, classification);
+         }
+
+         ClassificationReferenceKey key = new ClassificationReferenceKey(location, 
+            classificationName, classificationCode, classificationDescription, classification);
+         ClassificationReferences[zoneClassificationCode] =
+            ExporterCacheManager.ClassificationCache.FindOrCreateClassificationReference(file, key);
       }
 
       /// <summary>
@@ -281,15 +296,11 @@ namespace Revit.IFC.Export.Exporter
       public HashSet<IFCAnyHandle> RoomHandles { get; } = new HashSet<IFCAnyHandle>();
 
       /// <summary>
-      /// The associated IfcClassificationReference handles.
+      /// A list of the names of already created IfcClassificationReferences.
       /// </summary>
-      public Dictionary<string, IFCAnyHandle> ClassificationReferences { get; set; } = new Dictionary<string, IFCAnyHandle>();
+      public IDictionary<string, IFCAnyHandle> ClassificationReferences { get; set; } = 
+         new Dictionary<string, IFCAnyHandle>();
 
-      /// <summary>
-      /// The associated ePset_SpatialZoneEnergyAnalysis handle, if any.
-      /// </summary>
-      public IFCAnyHandle EnergyAnalysisProperySetHandle { get; set; } = null;
-      
       /// <summary>
       /// The associated Pset_ZoneCommon handle, if any.
       /// </summary>

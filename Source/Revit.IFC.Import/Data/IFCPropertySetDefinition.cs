@@ -130,5 +130,14 @@ namespace Revit.IFC.Import.Data
       {
          return new Tuple<string, bool>(null, false);
       }
+
+      protected string CreatePropertyName(string propertyName, string typeString = "")
+      {
+         // Navisworks uses this engine and needs support for the old naming.
+         // We use the API-only UseStreamlinedOptions as a proxy for knowing this.
+         return IFCImportFile.TheFile.Options.UseStreamlinedOptions ?
+            propertyName + "(" + Name + typeString +  ")" :
+            Name + "." + propertyName + typeString;
+      }
    }
 }

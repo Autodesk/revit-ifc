@@ -197,6 +197,58 @@ namespace Revit.IFC.Import.Enums
       UserDefined,
       NotDefined
    }
+
+   /// <summary>
+   /// Defines Predefined Type for IFCDistributionSystems.
+   /// </summary>
+   public enum IFCDistributionSystemEnum
+   {
+      AirConditioning,
+      Audiovisual,
+      Chemical,
+      ChilledWater,
+      Communication,
+      Compressedair,
+      CondenserWater,
+      Control,
+      Conveying,
+      Data,
+      Disposal,
+      DomesticcoldWater,
+      DomestichotWater,
+      Drainage,
+      Earthing,
+      Electrical,
+      Electroacoustic,
+      Exhaust,
+      Fireprotection,
+      Fuel,
+      Gas,
+      Hazardous,
+      Heating,
+      Lighting,
+      LightningProtection,
+      MunicipalSolidWaste,
+      Oil,
+      Operational,
+      PowerGeneration,
+      RainWater,
+      Refrigeration,
+      Security,
+      Sewage,
+      Signal,
+      Stormwater,
+      Telephone,
+      Tv,
+      Vacuum,
+      Vent,
+      Ventilation,
+      WasteWater,
+      WaterSupply,
+      UserDefined,
+      NotDefined
+   }
+
    /// <summary>
    /// Defines the different types of space boundaries in terms of its physical manifestation.
    /// </summary>
@@ -292,6 +344,45 @@ namespace Revit.IFC.Import.Enums
       Double_Door_Folding,
       Revolving,
       RollingUp,
+      UserDefined,
+      NotDefined
+   }
+
+   /// <summary>
+   /// Defines the different predefined types of an IfcDoor or IfcDoorType object.
+   /// </summary>
+   public enum IFCDoorTypeEnum
+   {
+      Door,
+      Gate,
+      TrapDoor,
+      UserDefined,
+      NotDefined
+   }
+
+   /// <summary>
+   /// Defines the basic ways to describe how doors operate. 
+   /// </summary>
+   public enum IFCDoorTypeOperation
+   {
+      Single_Swing_Left,
+      Single_Swing_Right,
+      Double_Door_Single_Swing,
+      Double_Door_Single_Swing_Opposite_Left,
+      Double_Door_Single_Swing_Opposite_Right,
+      Double_Swing_Left,
+      Double_Swing_Right,
+      Double_Door_Double_Swing,
+      Sliding_To_Left,
+      Sliding_To_Right,
+      Double_Door_Sliding,
+      Folding_To_Left,
+      Folding_To_Right,
+      Double_Door_Folding,
+      Revolving,
+      RollingUp,
+      Swing_Fixed_Left,
+      Swing_Fixed_Right,
       UserDefined,
       NotDefined
    }

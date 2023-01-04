@@ -94,12 +94,12 @@ namespace Revit.IFC.Export.Exporter
                {
                   if (typeHnd != null)
                   {
-                     CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
+                     CategoryUtil.CreateMaterialAssociation(typeHnd, materialLayerSet);
                   }
 
                   foreach (IFCAnyHandle elemHnd in elemHnds)
                   {
-                     CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                     CategoryUtil.CreateMaterialAssociation(elemHnd, materialLayerSet);
                   }
                }
                else
@@ -138,14 +138,14 @@ namespace Revit.IFC.Export.Exporter
                         bool materialAlreadyAssoc = false;
                         if (typeHnd != null)
                         {
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
+                           CategoryUtil.CreateMaterialAssociation(typeHnd, materialLayerSet);
                         }
 
                         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                         {
                            if (!materialAlreadyAssoc)
                            {
-                              CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                              CategoryUtil.CreateMaterialAssociation(elemHnd, materialLayerSet);
                            }
                         }
                         else
@@ -174,9 +174,9 @@ namespace Revit.IFC.Export.Exporter
                               double offsetFromReferenceLine = flipDirSense ? -scaledOffset : scaledOffset;
                               IFCDirectionSense sense = flipDirSense ? IFCDirectionSense.Negative : IFCDirectionSense.Positive;
 
-                              layerSetUsage = IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet, direction, sense, offsetFromReferenceLine);
+                              layerSetUsage = CategoryUtil.CreateMaterialLayerSetUsage(file, materialLayerSet, direction, sense, offsetFromReferenceLine);
                            }
-                           ExporterCacheManager.MaterialLayerRelationsCache.Add(layerSetUsage, elemHnd);
+                           ExporterCacheManager.MaterialSetUsageCache.Add(layerSetUsage, elemHnd);
                         }
                      }
                      else
@@ -189,7 +189,7 @@ namespace Revit.IFC.Export.Exporter
                               //    the Revit Element to get the type, other information for name, GUID, etc.
                               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(subElemHnd))
                               {
-                                 CategoryUtil.CreateMaterialAssociation(exporterIFC, subElemHnd, materialLayerSet);
+                                 CategoryUtil.CreateMaterialAssociation(subElemHnd, materialLayerSet);
                               }
                            }
                         }
@@ -197,22 +197,22 @@ namespace Revit.IFC.Export.Exporter
                         {
                            if (typeHnd != null)
                            {
-                              CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
+                              CategoryUtil.CreateMaterialAssociation(typeHnd, materialLayerSet);
                            }
                            else
                            {
-                              CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                              CategoryUtil.CreateMaterialAssociation(elemHnd, materialLayerSet);
                            }
                         }
                         else if (mlsInfo.PrimaryMaterialHandle != null)
                         {
                            if (typeHnd != null)
                            {
-                              CategoryUtil.CreateMaterialAssociation(exporterIFC, typeHnd, materialLayerSet);
+                              CategoryUtil.CreateMaterialAssociation(typeHnd, materialLayerSet);
                            }
                            else
                            {
-                              CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialLayerSet);
+                              CategoryUtil.CreateMaterialAssociation(elemHnd, materialLayerSet);
                            }
                         }
                      }

@@ -11,15 +11,15 @@
                   Height="649"
                   Width="750"
                   MinHeight="600" 
-                  MinWidth="550"
+                  MinWidth="650"
                   ResizeMode="CanResize"
                   WindowStyle="SingleBorderWindow"
                   SaveWindowSettings="True">
    <Grid x:Name="Grid_Main" Margin="0,0,2,0">
       <Grid.ColumnDefinitions>
-         <ColumnDefinition Width="150"/>
-         <ColumnDefinition MinWidth="200" Width="314*"/>
-         <ColumnDefinition Width="265*"/>
+         <ColumnDefinition Width="248"/>
+         <ColumnDefinition MinWidth="200" Width="2*"/>
+         <ColumnDefinition MinWidth="300" Width="3*"/>
       </Grid.ColumnDefinitions>
       <Grid.RowDefinitions>
          <RowDefinition Height="0"/>
@@ -29,46 +29,36 @@
          <RowDefinition MinHeight="400" Height="400*"/>
          <RowDefinition MinHeight="40" Height="Auto"/>
       </Grid.RowDefinitions>
-      <GridSplitter VerticalAlignment="Stretch" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="4" Background="Gainsboro" Margin="-1,0,0,3" Width="2" />
-      <StackPanel Margin="0,13,10,11" Orientation="Horizontal" Grid.Row="5" HorizontalAlignment="Right" Width="260" Grid.Column="0" Grid.ColumnSpan="3" >
-         <Button x:Name="button_Reset" Content="{x:Static p:Resources.Reset}" HorizontalAlignment="Left" Width="80" Click="button_Reset_Click" Margin="0,0,10,0" />
-         <Button x:Name="Button_OK" Content="{x:Static p:Resources.OK}" HorizontalAlignment="Left" Width="80" Click="Button_OK_Click" Padding="1" Margin="0,0,10,0"/>
-         <Button x:Name="Button_Cancel" Content="{x:Static p:Resources.Cancel}" HorizontalAlignment="Left" Width="80" Click="Button_Cancel_Click" Padding="1"/>
-      </StackPanel>
-      <Label x:Name="Label_IFCSchema" Content="{x:Static p:Resources.IFCSchemaVersion}" Margin="10,10,0,5" Grid.Row="1" HorizontalAlignment="Left" Width="140"/>
+      <GridSplitter HorizontalAlignment="Left" Grid.Column="2" Grid.Row="4" Background="Gainsboro" Margin="44,0,0,3" Width="2" />
+      <Label x:Name="Label_IFCSchema" Content="{x:Static p:Resources.IFCSchemaVersion}" Margin="0,10,0,5" Grid.Row="1" HorizontalAlignment="Center" MinWidth="140" Width="228"/>
       <ComboBox x:Name="ComboBox_IFCSchema" Margin="10,10,10,5" SelectionChanged="ComboBox_IFCSchema_SelectionChanged" Grid.Column="1" Grid.Row="1"/>
       <Border BorderBrush="Gainsboro" BorderThickness="1" Grid.Row="4" Grid.ColumnSpan="2" Margin="5,3,1,3" >
          <TreeView x:Name="IFCEntityTreeView" Background="White" BorderBrush="White" SelectedItemChanged="IFCEntityTreeView_SelectedItemChanged" Margin="0,0,0,0" />
       </Border>
-      <Border BorderBrush="Gainsboro" BorderThickness="1" Grid.Row="4" Grid.Column="2" Margin="1,3,5,3" MinWidth="200">
+      <Border BorderBrush="Gainsboro" BorderThickness="1" Grid.Row="4" Grid.Column="2" Margin="1,3,5,3" MinWidth="200" >
          <TreeView x:Name="PredefinedTypeTreeView" Background="White" BorderBrush="White" Margin="0,0,0,0" />
       </Border>
-      <Label x:Name="Label_Search" Content="{x:Static p:Resources.Search}" Margin="10,6,0,0" Grid.Row="2" HorizontalAlignment="Left" Width="140" Height="25" VerticalAlignment="Top"/>
-      <TextBox x:Name="textBox_Search" Grid.Column="1" Height="26" Margin="10,6,10,0" Grid.Row="2" VerticalAlignment="Top" VerticalContentAlignment="Center" TextChanged="textBox_Search_TextChanged" />
-      <Button x:Name="button_ExpandAll" HorizontalAlignment="Left" Margin="5,5,0,0" Grid.Row="3" Width="30" Height="30" VerticalAlignment="Top" ToolTip="{x:Static p:Resources.ExpandAll}" BorderThickness="0" 
-              Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Click="button_ExpandAll_Click">
-         <Image x:Name="ExpandAll" HorizontalAlignment="Left" Margin="0,0,0,0" Grid.Row="3" VerticalAlignment="Top" Source="../icons/Expand.ico" Stretch="Fill" />
-      </Button>
-      <Button x:Name="button_CollapseAll" HorizontalAlignment="Left" Margin="40,5,0,0" Grid.Row="3" Width="30" Height="30" VerticalAlignment="Top" ToolTip="{x:Static p:Resources.CollapseAll}" BorderThickness="0" 
-              Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Click="button_CollapseAll_Click">
-         <Image x:Name="CollapseAll" HorizontalAlignment="Left" Margin="0,0,0,0" Grid.Row="3" VerticalAlignment="Top" Source="../icons/Collapse.ico" Stretch="Fill" />
-      </Button>
-      <Button x:Name="button_ShowChecked" HorizontalAlignment="Left" Margin="75,5,0,0" Grid.Row="3" Width="30" Height="30" VerticalAlignment="Top" ToolTip="{x:Static p:Resources.ShowChecked}" BorderThickness="0" 
-              Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Click="button_ShowChecked_Click">
-         <Image x:Name="AllChecked" HorizontalAlignment="Left" Margin="0,0,0,0" Grid.Row="3" VerticalAlignment="Top" Source="../icons/AllChecked.ico" Stretch="Fill" />
-      </Button>
-      <Button x:Name="button_ShowUnchecked" HorizontalAlignment="Left" Margin="110,5,0,0" Grid.Row="3" Width="30" Height="30" VerticalAlignment="Top" ToolTip="{x:Static p:Resources.ShowUnchecked}" BorderThickness="0" 
-              Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Click="button_ShowUnchecked_Click">
-         <Image x:Name="AllUnChecked" HorizontalAlignment="Left" Margin="0,0,0,0" Grid.Row="3" VerticalAlignment="Top" Source="../icons/AllUnChecked.ico" Stretch="Fill" />
-      </Button>
-      <Button x:Name="button_ShowAll" HorizontalAlignment="Left" Margin="145,5,0,0" Grid.Row="3" Width="30" Height="30" VerticalAlignment="Top" ToolTip="{x:Static p:Resources.ShowAll}" BorderThickness="0" 
-              Background="Transparent" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Click="button_ShowAll_Click" Grid.ColumnSpan="2">
-         <Image x:Name="ShowAll" HorizontalAlignment="Left" Margin="0,0,0,0" Grid.Row="3" VerticalAlignment="Top" Source="../icons/ShowAll.ico" Stretch="Fill" />
-      </Button>
-      <TextBlock Name="textBlock_Help" VerticalAlignment="Bottom" Grid.Row="5" Margin="5,0,0,10" Height="23" HorizontalAlignment="Left" Width="466" Grid.ColumnSpan="2">
+      <Label x:Name="Label_Search" Content="{x:Static p:Resources.Search}" Margin="10,0,0,0" Grid.Row="2" HorizontalAlignment="Left" Width="140" Height="25" VerticalAlignment="Center"/>
+      <TextBox x:Name="textBox_Search" Grid.Column="1" Height="26" Margin="10,0,10,0" Grid.Row="2" VerticalAlignment="Center" VerticalContentAlignment="Center" TextChanged="textBox_Search_TextChanged" />
+      <TextBlock Name="textBlock_Help" VerticalAlignment="Center" Grid.Row="5" Margin="5,0,0,0" Height="23" Grid.ColumnSpan="2" HorizontalAlignment="Left" MinWidth="259">
          <Hyperlink Click="OnHelpClick">
             <Run Name="HelpRun" Text="{x:Static p:Resources.HelpAssignIfcEntity}" x:Uid="LearnMoreHyperlink" />
          </Hyperlink>
       </TextBlock>
+      <StackPanel Grid.ColumnSpan="3" Margin="5,5,0,0" Orientation="Horizontal" Grid.Row="3" HorizontalAlignment="Left" Width="730" Height="26" VerticalAlignment="Top">
+         <Button x:Name="button_ExpandAll" HorizontalAlignment="Left" Margin="0,2,0,0" MinWidth="80" Padding="1" VerticalAlignment="Top" ToolTip="{x:Static p:Resources.ExpandAll}" 
+            Click="button_ExpandAll_Click" Content="{x:Static p:Resources.ExpandAll}" UseLayoutRounding="False" Height="24" >
+         </Button>
+         <Button x:Name="button_CollapseAll" HorizontalAlignment="Left" Margin="5,2,0,0" MinWidth="82" Padding="1" VerticalAlignment="Top" ToolTip="{x:Static p:Resources.CollapseAll}" 
+            Click="button_CollapseAll_Click" Content="{x:Static p:Resources.CollapseAll}" Height="24">
+         </Button>
+         <Label x:Name="label_Show" Content="{x:Static p:Resources.Show}" VerticalAlignment="Top" Margin="20,2,0,0"/>
+         <ComboBox x:Name="comboBox_ShowItems" Margin="15,2,0,0" VerticalAlignment="Top" Width="150" Height="24" SelectionChanged="comboBox_ShowItems_SelectionChanged" />
+      </StackPanel>
+      <StackPanel Name="Action_buttons" Margin="30,8,20,10" Orientation="Horizontal" Grid.Row="5" HorizontalAlignment="Right" MinWidth="260" Grid.Column="0" Grid.ColumnSpan="3">
+         <Button x:Name="button_Reset" Content="{x:Static p:Resources.Reset}" HorizontalAlignment="Left" Width="80" Click="button_Reset_Click" Margin="0,0,10,0" />
+         <Button x:Name="Button_OK" Content="{x:Static p:Resources.OK}" HorizontalAlignment="Left" Width="80" Click="Button_OK_Click" Padding="1" Margin="0,0,10,0"/>
+         <Button x:Name="Button_Cancel" Content="{x:Static p:Resources.Cancel}" HorizontalAlignment="Left" Width="80" Click="Button_Cancel_Click" Padding="1"/>
+      </StackPanel>
    </Grid>
 </auiw:ChildWindow>
