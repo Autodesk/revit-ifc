@@ -29,7 +29,8 @@ An archive of the original SourceForge forums can be found [here](https://source
 - Export 
 - Import 
 - Documentation
-- IFC Mapping 
+- IFC Mapping
+- Coordinate system
 - Geometry 
 - Parameters-properties 
 - Performance
@@ -45,13 +46,13 @@ More Labels of this type can be added as needed/requested by users and developer
 - 2023
 - ... *(will expand as more versions are released)*
 
-In addition to Label, please indicate at beginning of Issue text the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.3.0.0)
+In addition to Label, please indicate at beginning of Issue text the exact incremental versions of Revit (e.g. 2022.1) and open source IFC Addin (e.g. 22.3.0.0)
 
 **Issue Status** (set by Autodesk Developers) 
 - Rejected 
 - In Progress (a formal bug has been filed internally. No formal commitment on when/how)
-- Cannot Duplicate 
-- Duplicate 
+- Cannot Reproduce (unable to reproduce the error on our side)
+- Duplicate (will try to link to similar Issues)
 - Fixed 
 - Triage (initial state of labeling and determining priority)
 
