@@ -387,6 +387,7 @@ namespace RevitIFCTools
       private void button_browseOutputFolder_Click(object sender, RoutedEventArgs e)
       {
          var dialog = new FolderBrowserDialog();
+         dialog.RootFolder = Environment.SpecialFolder.MyComputer;
          dialog.ShowDialog();
          textBox_outputFolder.Text = dialog.SelectedPath;
          outputFolder = dialog.SelectedPath;

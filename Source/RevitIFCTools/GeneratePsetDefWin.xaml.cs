@@ -477,6 +477,12 @@ namespace RevitIFCTools
                {
                   outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
                   outF.WriteLine("         {");
+                  if (varName.StartsWith("Qto", StringComparison.InvariantCultureIgnoreCase))
+                  {
+                     // In IFC2x3, Qto set names are only BaseQuantities
+                     outF.WriteLine("            {0}.Name = \"{1}\";", varName, "BaseQuantities");
+                     outF.WriteLine();
+                  }
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
                   //   string applEnt2 = applEnt;

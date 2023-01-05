@@ -1162,6 +1162,9 @@ namespace RevitIFCTools
             AddPsetDefToDict(schemaName, Qto_SpaceBaseQuantitiesIFC2x3(schemaName));
             AddPsetDefToDict(schemaName, Qto_BeamBaseQuantitiesIFC2x3(schemaName));
             AddPsetDefToDict(schemaName, Qto_ColumnBaseQuantitiesIFC2x3(schemaName));
+            AddPsetDefToDict(schemaName, Qto_MemberBaseQuantitiesIFC2x3(schemaName));
+            AddPsetDefToDict(schemaName, Qto_PileBaseQuantitiesIFC2x3(schemaName));
+            AddPsetDefToDict(schemaName, Qto_PlateBaseQuantitiesIFC2x3(schemaName));
             AddPsetDefToDict(schemaName, Qto_CoveringBaseQuantitiesIFC2x3(schemaName));
             AddPsetDefToDict(schemaName, Qto_CurtainWallQuantitiesIFC2x3(schemaName));
             AddPsetDefToDict(schemaName, Qto_DoorBaseQuantitiesIFC2x3(schemaName));
@@ -1173,6 +1176,13 @@ namespace RevitIFCTools
             AddPsetDefToDict(schemaName, Qto_StairFlightBaseQuantitiesIFC2x3(schemaName));
             AddPsetDefToDict(schemaName, Qto_WallBaseQuantitiesIFC2x3(schemaName));
             AddPsetDefToDict(schemaName, Qto_WindowBaseQuantitiesIFC2x3(schemaName));
+
+            // MEP
+            AddPsetDefToDict(schemaName, Qto_DuctFittingBaseQuantitiesIFC2x3(schemaName));
+            AddPsetDefToDict(schemaName, Qto_ElectricApplianceBaseQuantitiesIFC2x3(schemaName));
+            AddPsetDefToDict(schemaName, Qto_CableCarrierFittingBaseQuantitiesIFC2x3(schemaName));
+            AddPsetDefToDict(schemaName, Qto_CableCarrierSegmentBaseQuantitiesIFC2x3(schemaName));
+            AddPsetDefToDict(schemaName, Qto_CableSegmentBaseQuantitiesIFC2x3(schemaName));
          }
       }
 
@@ -1484,6 +1494,53 @@ namespace RevitIFCTools
          return psetD;
       }
 
+      private PsetDefinition Qto_MemberBaseQuantitiesIFC2x3(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "Qto_MemberBaseQuantities";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcMember" };
+         psetD.properties = new HashSet<PsetProperty>();
+         AddQuantitiesForStructuralElement(ref psetD);
+
+         return psetD;
+      }
+
+      private PsetDefinition Qto_PileBaseQuantitiesIFC2x3(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "Qto_PileBaseQuantities";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcPile" };
+         psetD.properties = new HashSet<PsetProperty>();
+         AddQuantitiesForStructuralElement(ref psetD);
+
+         return psetD;
+      }
+
+      private PsetDefinition Qto_PlateBaseQuantitiesIFC2x3(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "Qto_PlateBaseQuantities";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcPlate" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "GrossVolume",
+            PropertyType = new PropertySingleValue() { DataType = "IfcVolumeMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "NetVolume",
+            PropertyType = new PropertySingleValue() { DataType = "IfcVolumeMeasure" }
+         });
+
+         return psetD;
+      }
+
       private PsetDefinition Qto_CurtainWallQuantitiesIFC2x3(string schemaName)
       {
          PsetDefinition psetD = new PsetDefinition();
@@ -1721,6 +1778,152 @@ namespace RevitIFCTools
 
          return psetD;
       }
+
+      private PsetDefinition Qto_DuctFittingBaseQuantitiesIFC2x3(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "Qto_DuctFittingBaseQuantities";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcDuctFitting" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "Length",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveLengthMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "GrossCrossSectionArea",
+            PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "NetCrossSectionArea",
+            PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "OuterSurfaceArea",
+            PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "GrossWeight",
+            PropertyType = new PropertySingleValue() { DataType = "IfcMassMeasure" }
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition Qto_ElectricApplianceBaseQuantitiesIFC2x3(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "Qto_ElectricApplianceBaseQuantities";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcElectricAppliance" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "GrossWeight",
+            PropertyType = new PropertySingleValue() { DataType = "IfcMassMeasure" }
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition Qto_CableCarrierFittingBaseQuantitiesIFC2x3(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "Qto_CableCarrierFittingBaseQuantities";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcCableCarrierFitting" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "GrossWeight",
+            PropertyType = new PropertySingleValue() { DataType = "IfcMassMeasure" }
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition Qto_CableCarrierSegmentBaseQuantitiesIFC2x3(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "Qto_CableCarrierSegmentBaseQuantities";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcCableCarrierSegment" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "Length",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveLengthMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "CrossSectionArea",
+            PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "OuterSurfaceArea",
+            PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "GrossWeight",
+            PropertyType = new PropertySingleValue() { DataType = "IfcMassMeasure" }
+         });
+
+         return psetD;
+      }
+
+      private PsetDefinition Qto_CableSegmentBaseQuantitiesIFC2x3(string schemaName)
+      {
+         PsetDefinition psetD = new PsetDefinition();
+         psetD.Name = "Qto_CableSegmentBaseQuantities";
+         psetD.IfcVersion = schemaName;
+         psetD.ApplicableClasses = new List<string>() { "IfcCableSegment" };
+         psetD.properties = new HashSet<PsetProperty>();
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "Length",
+            PropertyType = new PropertySingleValue() { DataType = "IfcPositiveLengthMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "CrossSectionArea",
+            PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "OuterSurfaceArea",
+            PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
+         });
+
+         psetD.properties.Add(new PsetProperty()
+         {
+            Name = "GrossWeight",
+            PropertyType = new PropertySingleValue() { DataType = "IfcMassMeasure" }
+         });
+
+         return psetD;
+      }
+
 
       public void ProcessPredefinedPsets(string schemaName)
       {
