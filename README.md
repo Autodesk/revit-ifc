@@ -28,7 +28,9 @@ An archive of the original SourceForge forums can be found [here](https://source
 - UI/UX 
 - Export 
 - Import 
-- Documentation 
+- Documentation
+- IFC Mapping
+- Coordinate system
 - Geometry 
 - Parameters-properties 
 - Performance
@@ -41,17 +43,18 @@ More Labels of this type can be added as needed/requested by users and developer
 - 2020
 - 2021
 - 2022
+- 2023
 - ... *(will expand as more versions are released)*
 
-In addition to Label, please indicate at beginning of Issue text the exact incremental versions of Revit (e.g. 2022.1) and open source IFC tool (e.g. 22.3.0.0)
+In addition to Label, please indicate at beginning of Issue text the exact incremental versions of Revit (e.g. 2022.1) and open source IFC Addin (e.g. 22.3.0.0)
 
 **Issue Status** (set by Autodesk Developers) 
 - Rejected 
-- In Progress 
-- Cannot Duplicate 
-- Duplicate 
+- In Progress (a formal bug has been filed internally. No formal commitment on when/how)
+- Cannot Reproduce (unable to reproduce the error on our side)
+- Duplicate (will try to link to similar Issues)
 - Fixed 
-- Triage
+- Triage (initial state of labeling and determining priority)
 
 Ideally, each Issue should include a Type, Component, and Version Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. Later, the developer will add the Issue to a Milestone to indicate the version it was addressed/fixed. These Labels and Milestones will make it easier to track Issues and their resolutions from both end user and developer sides. Developers may also add an internal Autodesk Jira number/link to an Issue, but this is for internal reference and tracking only and not accessible to the general public.
 
