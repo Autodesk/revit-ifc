@@ -183,11 +183,11 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
-      private static IList<ElementId> ParseElementIds(string elementsToExportValue)
+      private static IList<ElementId> ParseElementIds(String elementsToExportValue)
       {
-         string[] elements = elementsToExportValue.Split(';');
+         String[] elements = elementsToExportValue.Split(';');
          List<ElementId> ids = new List<ElementId>();
-         foreach (string element in elements)
+         foreach (String element in elements)
          {
             int elementIdAsInt;
             if (Int32.TryParse(element, out elementIdAsInt))
@@ -211,7 +211,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The new cache.</returns>
       public static ExportOptionsCache Create(ExporterIFC exporterIFC, Document document, Autodesk.Revit.DB.View filterView)
       {
-         IDictionary<string, string> options = exporterIFC.GetOptions();
+         IDictionary<String, String> options = exporterIFC.GetOptions();
 
          ExportOptionsCache cache = new ExportOptionsCache();
          cache.FileVersion = exporterIFC.FileVersion;
@@ -240,7 +240,7 @@ namespace Revit.IFC.Export.Utility
 
          cache.PropertySetOptions = PropertySetOptions.Create(exporterIFC, cache);
 
-         string use2DRoomBoundary = Environment.GetEnvironmentVariable("Use2DRoomBoundaryForRoomVolumeCalculationOnIFCExport");
+         String use2DRoomBoundary = Environment.GetEnvironmentVariable("Use2DRoomBoundaryForRoomVolumeCalculationOnIFCExport");
          bool? use2DRoomBoundaryOption = OptionsUtil.GetNamedBooleanOption(options, "Use2DRoomBoundaryForVolume");
          cache.Use2DRoomBoundaryForRoomVolumeCreation =
              ((use2DRoomBoundary != null && use2DRoomBoundary == "1") ||
@@ -253,7 +253,7 @@ namespace Revit.IFC.Export.Utility
          // Set GUIDOptions here.
          {
             // This option should be rarely used, and is only for consistency with old files.  As such, it is set by environment variable only.
-            string use2009GUID = Environment.GetEnvironmentVariable("Assign2009GUIDToBuildingStoriesOnIFCExport");
+            String use2009GUID = Environment.GetEnvironmentVariable("Assign2009GUIDToBuildingStoriesOnIFCExport");
             cache.GUIDOptions.Use2009BuildingStoreyGUIDs = (use2009GUID != null && use2009GUID == "1");
 
             bool? allowGUIDParameterOverride = OptionsUtil.GetNamedBooleanOption(options, "AllowGUIDParameterOverride");
@@ -419,7 +419,7 @@ namespace Revit.IFC.Export.Utility
                String aLinkInstanceTransform = OptionsUtil.GetNamedStringOption(options, optionName);
 
                Transform currTransform = null;
-               if (!string.IsNullOrEmpty(aLinkInstanceTransform))
+               if (!String.IsNullOrEmpty(aLinkInstanceTransform))
                {
                   //reconstruct transform
                   Transform tr = ParseTransform(aLinkInstanceTransform);
