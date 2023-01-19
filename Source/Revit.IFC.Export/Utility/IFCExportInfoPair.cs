@@ -42,7 +42,8 @@ namespace Revit.IFC.Export.Utility
 
       private string m_ValidatedPredefinedType;
       /// <summary>
-      /// Validated PredefinedType from IfcExportType (or IfcType for the old param), or from IfcExportAs
+      /// Validated PredefinedType from IfcExportType (or IfcType for the old param), 
+      /// or from IFC_EXPORT_ELEMENT*_AS
       /// </summary>
       public string ValidatedPredefinedType
       {

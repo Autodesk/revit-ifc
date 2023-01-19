@@ -56,10 +56,11 @@ namespace BIM.IFC.Export.UI
       /// <returns>True if it is valid, false otherwise.</returns>
       static public bool Validate(int phaseId)
       {
-         if (phaseId == ElementId.InvalidElementId.IntegerValue)
+         ElementId checkPhaseId = new ElementId(phaseId);
+         if (checkPhaseId == ElementId.InvalidElementId)
             return false;
 
-         Element checkPhase = IFCCommandOverrideApplication.TheDocument.GetElement(new ElementId(phaseId));
+         Element checkPhase = IFCCommandOverrideApplication.TheDocument.GetElement(checkPhaseId);
          return (checkPhase != null && (checkPhase is Phase));
       }
 

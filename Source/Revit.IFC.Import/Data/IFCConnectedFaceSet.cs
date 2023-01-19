@@ -71,8 +71,11 @@ namespace Revit.IFC.Import.Data
 
          HashSet<IFCAnyHandle> ifcCfsFaces =
              IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcConnectedFaceSet, "CfsFaces");
-         if (ifcCfsFaces == null || ifcCfsFaces.Count == 0)
-            throw new InvalidOperationException("#" + ifcConnectedFaceSet.StepId + ": no faces in connected face set, aborting.");
+         if (ifcCfsFaces?.Count == 0)
+         {
+            Importer.TheLog.LogError(ifcConnectedFaceSet.StepId, "No faces in connected face set, aborting.", false);
+            return;
+         }
 
          foreach (IFCAnyHandle ifcCfsFace in ifcCfsFaces)
          {
@@ -89,24 +92,25 @@ namespace Revit.IFC.Import.Data
          }
 
          if (Faces.Count == 0)
-            throw new InvalidOperationException("#" + ifcConnectedFaceSet.StepId + ": no faces, aborting.");
+            Importer.TheLog.LogError(ifcConnectedFaceSet.StepId, "No faces in connected face set, aborting.", false);
       }
 
       /// <summary>
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry.</param>
+      /// <param name="scaledLcs">The scaled local coordinate system for the geometry.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
          foreach (IFCFace face in Faces)
          {
             try
             {
-               face.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+               face.CreateShape(shapeEditScope, scaledLcs, guid);
             }
             catch (Exception ex)
             {

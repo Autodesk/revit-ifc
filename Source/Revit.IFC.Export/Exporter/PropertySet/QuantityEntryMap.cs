@@ -42,8 +42,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="revitParameterName">
       /// Revit parameter name.
       /// </param>
-      public QuantityEntryMap(string revitParameterName)
-          : base(revitParameterName)
+      public QuantityEntryMap(string revitParameterName, string compatibleParamName)
+          : base(revitParameterName, compatibleParamName)
       {
 
       }
@@ -70,11 +70,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </summary>
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="element">The element of which this property is created for.</param>
       /// <param name="elementType">The element type of which this quantity is created for.</param>
       /// <returns>The created quantity handle.</returns>
-      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData,
+      public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData,
              Element element, ElementType elementType, QuantityEntry parentEntry)
       {
          bool useProperty = (!String.IsNullOrEmpty(RevitParameterName)) || (RevitBuiltInParameter != BuiltInParameter.INVALID);
@@ -130,7 +130,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          if (PropertyCalculator != null && !success)
          {
-            success = PropertyCalculator.Calculate(exporterIFC, extrusionCreationData, element, elementType);
+            success = PropertyCalculator.Calculate(exporterIFC, extrusionCreationData, element, elementType, this);
             if (success && parentEntry.QuantityType == QuantityType.Count)
                val = PropertyCalculator.GetIntValue();
             else

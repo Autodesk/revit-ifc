@@ -176,9 +176,12 @@ namespace Revit.IFC.Import.Data
                IFCPropertySet.AddParameterString(doc, element, category, this, "IfcPresentationLayer", ifcPresentationLayer, Id);
 
             // Set the container name of the element.
-            string containerName = (ContainingStructure != null) ? ContainingStructure.Name : null;
+            string containerName = ContainingStructure?.Name;
             if (containerName != null)
+            {
                IFCPropertySet.AddParameterString(doc, element, category, this, "IfcSpatialContainer", containerName, Id);
+               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcSpatialContainer GUID", ContainingStructure.GlobalId, Id);
+            }
          }
       }
 
@@ -262,16 +265,19 @@ namespace Revit.IFC.Import.Data
             if (voidObject == null)
             {
                Importer.TheLog.LogError(Id, "Can't cut Solid geometry with a Mesh (# " + voidInfo.Id + "), ignoring.", false);
-               return true;
+               continue;
             }
 
-            var voidTransform = voidInfo.TotalTransform;
+            Transform voidTransform = voidInfo.TotalTransform;
 
-            if (voidTransform != null && voidTransform.IsIdentity == false)
+            if (voidTransform != null)
             {
                // Transform the void into the space of the solid.
-               var t = ObjectLocation.TotalTransform.Inverse.Multiply(voidTransform);
-               voidObject = SolidUtils.CreateTransformed(voidObject, t);
+               Transform voidToSolidTrf = ObjectLocation.TotalTransform.Inverse.Multiply(voidTransform);
+               if (voidToSolidTrf.IsIdentity == false)
+               {
+                  voidObject = SolidUtils.CreateTransformed(voidObject, voidToSolidTrf);
+               }
             }
 
             solidInfo.GeometryObject = IFCGeometryUtil.ExecuteSafeBooleanOperation(solidInfo.Id, voidInfo.Id,
@@ -294,9 +300,7 @@ namespace Revit.IFC.Import.Data
          IFCElement element = this as IFCElement;
          if (element != null)
          {
-            IFCOpeningElement openingElement = element as IFCOpeningElement;
-            if (openingElement != null)
-               preventInstances = true;
+            preventInstances = this is IFCOpeningElement;
             foreach (IFCFeatureElement opening in element.Openings)
             {
                try
@@ -339,6 +343,7 @@ namespace Revit.IFC.Import.Data
                shapeEditScope.GraphicsStyleId = GraphicsStyleId;
                shapeEditScope.CategoryId = CategoryId;
                shapeEditScope.PreventInstances = preventInstances;
+               
                // The name can be added as well. but it is usually less useful than 'oid'
                string myId = GlobalId; // + "(" + Name + ")";
 
@@ -352,7 +357,7 @@ namespace Revit.IFC.Import.Data
                // Lower down this method we then pass lcs to the consumer element, so that it can apply
                // the transform as required.
                Transform transformToUse = Importer.TheProcessor.ApplyTransforms ? lcs : Transform.Identity;
-               ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, transformToUse, myId);
+               ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, myId);
 
                int numSolids = Solids.Count;
                // Attempt to cut each solid with each void.
@@ -497,6 +502,9 @@ namespace Revit.IFC.Import.Data
 
             if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcDistributionPort))
                return IFCDistributionPort.ProcessIFCDistributionPort(ifcProduct);
+
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcAnnotation))
+               return IFCAnnotation.ProcessIFCAnnotation(ifcProduct);
          }
          catch (Exception ex)
          {

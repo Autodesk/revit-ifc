@@ -486,7 +486,7 @@ namespace Revit.IFC.Export.Toolkit
                // are placed before the level, not above.  So we have made a small modification so that anything within
                // 10cm of the 'next' level is on that level.
 
-               double levelExtension = 10.0 / (12.0 * 2.54);
+               double levelExtension = LevelUtil.LevelExtension;
                foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
                {
                   // the cache contains levels from all the exported documents

@@ -57,7 +57,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// A time duration quantity
       /// </summary>
-      Time
+      Time,
+      Mass
    }
 
    /// <summary>
@@ -77,18 +78,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
 
       }
-      public QuantityEntry(string propertyName, string revitParameterName)
-          : base(propertyName, new QuantityEntryMap(revitParameterName))
+      public QuantityEntry(string revitParameterName, string propertyName)
+          : base(propertyName, new QuantityEntryMap(revitParameterName, propertyName))
       {
 
       }
       public QuantityEntry(string propertyName, BuiltInParameter builtInParameter)
-          : base(propertyName, new QuantityEntryMap(propertyName) { RevitBuiltInParameter = builtInParameter })
+          : base(propertyName, new QuantityEntryMap(propertyName, null) { RevitBuiltInParameter = builtInParameter })
       {
 
       }
       public QuantityEntry(string propertyName, PropertyCalculator calculator)
-          : base(propertyName, new QuantityEntryMap(propertyName) { PropertyCalculator = calculator })
+          : base(propertyName, new QuantityEntryMap(propertyName, null) { PropertyCalculator = calculator })
       {
 
       }
@@ -123,12 +124,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </summary>
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="element">The element of which this property is created for.</param>
       /// <param name="elementType">The element type of which this quantity is created for.</param>
       /// <returns>The created quantity handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC,
-         IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+         IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType)
       {
          foreach (QuantityEntryMap entry in Entries)
          {

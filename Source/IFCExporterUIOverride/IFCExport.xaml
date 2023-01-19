@@ -11,8 +11,8 @@
                   Title="{x:Static p:Resources.IFCExport}" 
                   WindowStyle="SingleBorderWindow" 
                   ContentRendered="ChildWindow_ContentRendered"
-                  SaveWindowSettings="True"
-                  Height="390" 
+                  SaveWindowSettings="True" 
+                  Height="438" 
                   Width="730" MinWidth="550" MinHeight="305">
    <Grid Margin="10,0" RenderTransformOrigin="0,0">
       <Label Content="{x:Static p:Resources.FileName}" HorizontalAlignment="Left" Margin="0,12,0,0" x:Name="label_FileName" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" RenderTransformOrigin="0.462,0.478"/>
@@ -32,8 +32,8 @@
                TextChanged="textBoxSetupDescription_TextChanged" BorderThickness="0" 
                VerticalContentAlignment="Center" 
                Background="Transparent"/>
-      <Label Content="{x:Static p:Resources.ProjectToExport}" HorizontalAlignment="Left" Margin="0,144,0,0" x:Name="label1_Copy" Height="28" VerticalAlignment="Top" Width="666" />
-      <ListView Margin="0,170,11,55" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="listViewDocuments"/>
+      <Label Content="{x:Static p:Resources.ProjectToExport}" HorizontalAlignment="Left" Margin="0,171,0,0" x:Name="label1_Copy" Height="28" VerticalAlignment="Top" Width="666" />
+      <ListView Margin="0,204,11,55" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="listViewDocuments"/>
       <TextBlock VerticalAlignment="Bottom" Margin="0,0,0,40" Height="15" HorizontalAlignment="Left">
          <Label Name="versionLabel" FontSize="10" Padding="0" Opacity="0.5"/>
       </TextBlock>
@@ -42,7 +42,7 @@
             <Run Text="{x:Static p:Resources.Help}" x:Uid="LearnMoreHyperlink" />
          </Hyperlink>
       </TextBlock>
-      <Button Content="{x:Static p:Resources.Export}" Margin="0,0,93,10" Name="buttonNext" Click="buttonNext_Click" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="77" />
+      <Button Content="{x:Static p:Resources.Export}" Margin="0,0,93,10" Name="buttonNext" Click="buttonExport_Click" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="77" />
       <Button Content="{x:Static p:Resources.Cancel}" Margin="0,0,11,10" Name="buttonCancel" Click="buttonCancel_Click" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="77" />
       <Label Content="{x:Static p:Resources.ProjectOrigin}" HorizontalAlignment="Left" Margin="0,111,0,0" x:Name="label1_Copy2" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" />
       <TextBox Height="28" 
@@ -53,6 +53,17 @@
          IsReadOnly="True" 
          TextWrapping="WrapWithOverflow" 
          TextChanged="textBoxSetupDescription_TextChanged" 
+         BorderThickness="0" 
+         VerticalContentAlignment="Center" 
+         Background="Transparent"/>
+      <Label Content="{x:Static p:Resources.ProjectSite}" HorizontalAlignment="Left" Margin="0,141,0,0" x:Name="label_ProjectLocation" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" />
+      <TextBox Height="28" 
+         Margin="210,141,10,0" 
+         x:Name="textBoxSetupProjectLocation" 
+         VerticalAlignment="Top" 
+         IsEnabled="True" 
+         IsReadOnly="True" 
+         TextWrapping="WrapWithOverflow"
          BorderThickness="0" 
          VerticalContentAlignment="Center" 
          Background="Transparent"/>

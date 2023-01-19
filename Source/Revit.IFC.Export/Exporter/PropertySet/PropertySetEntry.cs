@@ -253,7 +253,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       ComplexNumber,
       ThermalResistance,
       Numeric,
-      ElectricCapacitance
+      ElectricCapacitance,
+      URIReference,
+      Acceleration,
+      SoundPowerLevel,
+      IntegerCountRate,
+      IfcDocumentReference,
+      ElectricCharge,
+      Inductance,
+      AngularVelocity,
+      IfcCostValue,
+      IfcRelaxation
    }
 
    /// <summary>
@@ -293,8 +303,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="revitParameterName">
       /// Revit parameter name.
       /// </param>
-      public PropertySetEntry(string revitParameterName)
-          : base(revitParameterName)
+      public PropertySetEntry(string revitParameterName, string compatibleParamName = null)
+          : base(revitParameterName, compatibleParamName)
       {
       }
 
@@ -393,14 +403,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="owningPsetName">Name of Property Set this entry belongs to .</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="elementOrConnector">The element or connector of which this property is created for.</param>
       /// <param name="elementType">The element type of which this property is created for.</param>
       /// <param name="handle">The handle for which this property is created for.</param>
       /// <returns>The created property handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
-         IFCExtrusionCreationData extrusionCreationData, ElementOrConnector elementOrConnector,
-         ElementType elementType, IFCAnyHandle handle)
+         IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector,
+         ElementType elementType, IFCAnyHandle handle, bool fromSchedule=false)
       {
          // if CombinedParameterData, then we have to recreate the parameter value, since there is no
          // API for this.
@@ -414,7 +424,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName,
                extrusionCreationData, elementOrConnector, elementType, handle, PropertyType,
-               PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName);
+               PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName, fromSchedule);
             if (propHnd != null)
                return propHnd;
          }

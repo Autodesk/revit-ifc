@@ -58,7 +58,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// The ExporterIFC object.
       /// </param>
       /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
+      /// The IFCExportBodyParams.
       /// </param>
       /// <param name="element">
       /// The element to calculate the value.
@@ -69,12 +69,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          double volumeEps = MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps();
 
-         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyNetVolume", out m_Volume) != null) ||
-            (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "NetVolume", out m_Volume) != null))
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Volume, entryMap.CompatibleRevitParameterName, "IfcQtyNetVolume") != null)
          {
             m_Volume = UnitUtil.ScaleVolume(m_Volume);
             if (m_Volume > volumeEps)

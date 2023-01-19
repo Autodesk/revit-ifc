@@ -30,11 +30,8 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using UserInterfaceUtility.Json;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.EntityTree;
-using System.Resources;
 
 namespace BIM.IFC.Export.UI
 {
@@ -52,6 +49,9 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       IFCExportConfigurationsMap m_configurationsMap;
 
+      IDictionary<string, ProjectLocation> m_SiteLocations = new Dictionary<string, ProjectLocation>();
+      IList<string> m_SiteNames = new List<string>();
+
       IDictionary<string, TreeViewItem> m_TreeViewItemDict = new Dictionary<string, TreeViewItem>();
 
       /// <summary>
@@ -63,11 +63,20 @@ namespace BIM.IFC.Export.UI
       {
          InitializeComponent();
          m_configurationsMap = configurationsMap;
+         Document doc = IFCExport.TheDocument;
+         foreach (ProjectLocation pLoc in doc.ProjectLocations.Cast<ProjectLocation>().ToList())
+         {
+            // There seem to be a possibility that the Site Locations can have the same name (UI does not allow it though)
+            // In this case, it will skip the duplicate since there is no way for this to know which one is exactly selected
+            if (!m_SiteLocations.ContainsKey(pLoc.Name))
+            {
+               m_SiteNames.Add(pLoc.Name);
+               m_SiteLocations.Add(pLoc.Name, pLoc);
+            }
+         }
+         comboBoxProjectSite.ItemsSource = m_SiteNames;
 
          ResetToOriginalConfigSettings(currentConfigName);
-#if !DEBUG
-         button_ExcludeElement.Visibility = System.Windows.Visibility.Hidden;
-#endif
       }
 
       /// <summary>
@@ -88,27 +97,41 @@ namespace BIM.IFC.Export.UI
          }
          else
          {
-         UpdateActiveConfigurationOptions(originalConfiguration);
-         GetGeoReferenceInfo(originalConfiguration);
-      }
+            IFCExport.LastSelectedConfig.Add(originalConfiguration.Name, originalConfiguration);
+            originalConfiguration.SelectedSite = IFCExport.TheDocument.ActiveProjectLocation.Name;
+            UpdateActiveConfigurationOptions(originalConfiguration);
+            GetGeoReferenceInfo(originalConfiguration);
+         }
       }
 
-      private void GetGeoReferenceInfo(IFCExportConfiguration configuration, string newEPSGCode = "")
+      private void GetGeoReferenceInfo(IFCExportConfiguration configuration, string newEPSGCode = "", SiteLocation siteLoc = null)
       {
+         // if the SiteLocation is not specified, default will be taken from the Document, which will be the default/current Site
          Document doc = IFCExport.TheDocument;
+         if (siteLoc == null)
+            siteLoc = doc.SiteLocation;
+
+         var crsInfoNull = ValueTuple.Create<string, string, string, string, string>(null, null, null, null, null);
          (string projectedCRSName, string projectedCRSDesc, string epsgCode, string geodeticDatum, string uom) crsInfo =
-               OptionsUtil.GetEPSGCodeFromGeoCoordDef(doc.SiteLocation);
-         configuration.GeoRefCRSName = crsInfo.projectedCRSName;
-         configuration.GeoRefCRSDesc = crsInfo.projectedCRSDesc;
-         configuration.GeoRefGeodeticDatum = crsInfo.geodeticDatum;
-         configuration.GeoRefMapUnit = crsInfo.uom;
-         if (!string.IsNullOrWhiteSpace(crsInfo.epsgCode))
+               OptionsUtil.GetEPSGCodeFromGeoCoordDef(siteLoc);
+         if (!crsInfo.Equals(crsInfoNull))
          {
-            configuration.GeoRefEPSGCode = crsInfo.epsgCode;
-         }
-         else
-         {
-            configuration.GeoRefEPSGCode = newEPSGCode;
+            if (!string.IsNullOrWhiteSpace(crsInfo.projectedCRSName))
+               configuration.GeoRefCRSName = crsInfo.projectedCRSName;
+            if (!string.IsNullOrWhiteSpace(crsInfo.projectedCRSDesc))
+               configuration.GeoRefCRSDesc = crsInfo.projectedCRSDesc;
+            if (!string.IsNullOrWhiteSpace(crsInfo.geodeticDatum))
+               configuration.GeoRefGeodeticDatum = crsInfo.geodeticDatum;
+            if (!string.IsNullOrWhiteSpace(crsInfo.uom))
+               configuration.GeoRefMapUnit = crsInfo.uom;
+            if (!string.IsNullOrWhiteSpace(crsInfo.epsgCode))
+            {
+               configuration.GeoRefEPSGCode = crsInfo.epsgCode;
+            }
+            else
+            {
+               configuration.GeoRefEPSGCode = newEPSGCode;
+            }
          }
 
          SetupGeoReferenceInfo(configuration);
@@ -168,65 +191,83 @@ namespace BIM.IFC.Export.UI
       {
          if (!comboboxIfcType.HasItems)
          {
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3CV2));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCCOBIE));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3BFM));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
-         comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3CV2));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCCOBIE));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3BFM));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
 
-         // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
-         string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
-         if (!string.IsNullOrEmpty(nonMVDOption) && nonMVDOption.Equals("true", StringComparison.InvariantCultureIgnoreCase))
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4));
+            // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
+            string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
+            if (!string.IsNullOrEmpty(nonMVDOption) && nonMVDOption.Equals("true", StringComparison.InvariantCultureIgnoreCase))
+               comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4));
          }
 
          if (!comboboxFileType.HasItems)
          {
-         foreach (IFCFileFormat fileType in Enum.GetValues(typeof(IFCFileFormat)))
-         {
-            IFCFileFormatAttributes item = new IFCFileFormatAttributes(fileType);
-            comboboxFileType.Items.Add(item);
-         }
+            foreach (IFCFileFormat fileType in Enum.GetValues(typeof(IFCFileFormat)))
+            {
+               IFCFileFormatAttributes item = new IFCFileFormatAttributes(fileType);
+               comboboxFileType.Items.Add(item);
+            }
          }
 
          if (!comboboxSpaceBoundaries.HasItems)
          {
-         for (int level = 0; level <= 2; level++)
-         {
-            IFCSpaceBoundariesAttributes item = new IFCSpaceBoundariesAttributes(level);
-            comboboxSpaceBoundaries.Items.Add(item);
-         }
+            for (int level = 0; level <= 2; level++)
+            {
+               IFCSpaceBoundariesAttributes item = new IFCSpaceBoundariesAttributes(level);
+               comboboxSpaceBoundaries.Items.Add(item);
+            }
          }
 
          if (!comboboxActivePhase.HasItems)
          {
-         PhaseArray phaseArray = IFCCommandOverrideApplication.TheDocument.Phases;
-         comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId));  // Default.
-         foreach (Phase phase in phaseArray)
-         {
-            comboboxActivePhase.Items.Add(new IFCPhaseAttributes(phase.Id));
-         }
+            PhaseArray phaseArray = IFCCommandOverrideApplication.TheDocument.Phases;
+            comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId));  // Default.
+            foreach (Phase phase in phaseArray)
+            {
+               comboboxActivePhase.Items.Add(new IFCPhaseAttributes(phase.Id));
+            }
          }
 
          // Initialize level of detail combo box
          if (!comboBoxLOD.HasItems)
          {
-         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelExtraLow);
-         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelLow);
-         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelMedium);
-         comboBoxLOD.Items.Add(Properties.Resources.DetailLevelHigh);
+            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelExtraLow);
+            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelLow);
+            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelMedium);
+            comboBoxLOD.Items.Add(Properties.Resources.DetailLevelHigh);
+         }
+
+         if (!comboBoxProjectSite.HasItems)
+         {
+            Document doc = IFCExport.TheDocument;
+            foreach (ProjectLocation pLoc in doc.ProjectLocations.Cast<ProjectLocation>().ToList())
+            {
+               // There seem to be a possibility that the Site Locations can have the same name (UI does not allow it though)
+               // In this case, it will skip the duplicate since there is no way for this to know which one is exactly selected
+               if (!m_SiteLocations.ContainsKey(pLoc.Name))
+               {
+                  m_SiteNames.Add(pLoc.Name);
+                  m_SiteLocations.Add(pLoc.Name, pLoc);
+               }
+            }
+            comboBoxProjectSite.ItemsSource = m_SiteNames;
          }
 
          if (!comboBoxSitePlacement.HasItems)
          {
-         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Shared));
-         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Site));
-         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Project));
-         comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Internal));
-      }
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Shared));
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Site));
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Project));
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.Internal));
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.ProjectInTN));
+            comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.InternalInTN));
+         }
       }
 
       private void UpdatePhaseAttributes(IFCExportConfiguration configuration)
@@ -282,7 +323,6 @@ namespace BIM.IFC.Export.UI
             }
          }
 
-
          foreach (IFCSpaceBoundariesAttributes attribute in comboboxSpaceBoundaries.Items.Cast<IFCSpaceBoundariesAttributes>())
          {
             if (configuration.SpaceBoundaries == attribute.Level)
@@ -291,6 +331,16 @@ namespace BIM.IFC.Export.UI
                break;
             }
          }
+
+         ProjectLocation projectLocation = null;
+         if (!string.IsNullOrEmpty(configuration.SelectedSite))
+            m_SiteLocations.TryGetValue(configuration.SelectedSite, out projectLocation);
+
+         if (string.IsNullOrEmpty(configuration.SelectedSite) || projectLocation == null)
+            configuration.SelectedSite = IFCExport.TheDocument.ActiveProjectLocation.Name;
+
+         comboBoxProjectSite.SelectedItem = configuration.SelectedSite;
+
          foreach (IFCSitePlacementAttributes attribute in comboBoxSitePlacement.Items.Cast<IFCSitePlacementAttributes>())
          {
             if (configuration.SitePlacement == attribute.TransformBasis)
@@ -314,6 +364,7 @@ namespace BIM.IFC.Export.UI
          checkBoxUseActiveViewGeometry.IsChecked = configuration.UseActiveViewGeometry;
          checkboxExportBoundingBox.IsChecked = configuration.ExportBoundingBox;
          checkboxExportSolidModelRep.IsChecked = configuration.ExportSolidModelRep;
+         checkboxExportMaterialPsets.IsChecked = configuration.ExportMaterialPsets;
          checkboxExportSchedulesAsPsets.IsChecked = configuration.ExportSchedulesAsPsets;
          checkBoxExportSpecificSchedules.IsChecked = configuration.ExportSpecificSchedules;
          checkboxExportUserDefinedPset.IsChecked = configuration.ExportUserDefinedPsets;
@@ -366,6 +417,7 @@ namespace BIM.IFC.Export.UI
                                                                 checkBoxExportLinkedFiles,
                                                                 checkboxIncludeIfcSiteElevation,
                                                                 checkboxStoreIFCGUID,
+                                                                checkboxExportMaterialPsets,
                                                                 checkboxExportSchedulesAsPsets,
                                                                 checkBoxExportSpecificSchedules,
                                                                 checkBoxExportRoomsInView,
@@ -550,6 +602,7 @@ namespace BIM.IFC.Export.UI
             return checkBox.IsChecked.Value;
          return false;
       }
+
       /// <summary>
       /// The OK button callback.
       /// </summary>
@@ -567,6 +620,13 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportUserDefinedPsetsFileName = userDefinedPropertySetFileName.Text;
             configuration.ExportUserDefinedParameterMappingFileName = userDefinedParameterMappingTable.Text;
+            if (CRSOverride)
+            {
+               configuration.GeoRefEPSGCode = TextBox_EPSG.Text;
+               configuration.GeoRefCRSName = TextBox_CRSName.Text;
+               configuration.GeoRefCRSDesc = TextBox_CRSDesc.Text;
+               configuration.GeoRefGeodeticDatum = TextBox_GeoDatum.Text;
+            }
             IFCExport.LastSelectedConfig[configuration.Name] = configuration;
          }
 
@@ -672,7 +732,7 @@ namespace BIM.IFC.Export.UI
                         configuration.Name = GetFirstIncrementalName(configuration.Name);
                      if (configuration.IFCVersion == IFCVersion.IFCBCA)
                         configuration.IFCVersion = IFCVersion.IFC2x3CV2;
-                     m_configurationsMap.Add(configuration);
+                     m_configurationsMap.AddOrReplace(configuration);
 
                      // set new configuration as selected
                      listBoxConfigurations.Items.Add(configuration);
@@ -703,7 +763,7 @@ namespace BIM.IFC.Export.UI
             String newName = renameWindow.GetName();
             configuration.Name = newName;
             m_configurationsMap.Remove(oldName);
-            m_configurationsMap.Add(configuration);
+            m_configurationsMap.AddOrReplace(configuration);
             UpdateConfigurationsList(newName);
          }
       }
@@ -802,7 +862,7 @@ namespace BIM.IFC.Export.UI
          }
          else
             newConfiguration = configuration.Duplicate(name, makeEditable:true);
-         m_configurationsMap.Add(newConfiguration);
+         m_configurationsMap.AddOrReplace(newConfiguration);
 
          // set new configuration as selected
          listBoxConfigurations.Items.Add(newConfiguration);
@@ -1072,11 +1132,26 @@ namespace BIM.IFC.Export.UI
          else
          { 
             Document doc = IFCExport.TheDocument;
-            ProjectLocation projLocation = doc.ActiveProjectLocation;
+
+            if (comboBoxProjectSite.SelectedItem == null)
+            {
+               ProjectLocation projectLocation = null;
+               if (!string.IsNullOrEmpty(configuration.SelectedSite))
+                  m_SiteLocations.TryGetValue(configuration.SelectedSite, out projectLocation);
+
+               if (string.IsNullOrEmpty(configuration.SelectedSite) || projectLocation == null)
+                  configuration.SelectedSite = IFCExport.TheDocument.ActiveProjectLocation.Name;
+
+               comboBoxProjectSite.SelectedItem = configuration.SelectedSite;
+            }
+
+            ProjectLocation projLocation = m_SiteLocations[comboBoxProjectSite.SelectedItem.ToString()];
             (double eastings, double northings, double orthogonalHeight, double angleTN, double origAngleTN) geoRefInfo =
                OptionsUtil.ScaledGeoReferenceInformation(doc, configuration.SitePlacement, projLocation);
             TextBox_Eastings.Text = geoRefInfo.eastings.ToString("F4");
             TextBox_Northings.Text = geoRefInfo.northings.ToString("F4");
+            TextBox_RefElevation.Text = geoRefInfo.orthogonalHeight.ToString("F4");
+            TextBox_AngleFromTN.Text = geoRefInfo.angleTN.ToString("F4");
          }
       }
 
@@ -1183,6 +1258,21 @@ namespace BIM.IFC.Export.UI
          if (configuration != null)
          {
             configuration.ExportSolidModelRep = GetCheckbuttonChecked(checkBox);
+         }
+      }
+
+      /// <summary>
+      /// Updates the configuration ExportMaterialPsets when the "Export material property sets" option changed in the check box.
+      /// </summary>
+      /// <param name="sender">The source of the event.</param>
+      /// <param name="e">Event arguments that contains the event data.</param>
+      private void checkboxExportMaterialPsets_Checked(object sender, RoutedEventArgs e)
+      {
+         CheckBox checkBox = (CheckBox)sender;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.ExportMaterialPsets = GetCheckbuttonChecked(checkBox);
          }
       }
 
@@ -1368,7 +1458,6 @@ namespace BIM.IFC.Export.UI
             if (configuration != null)
                configuration.ExportUserDefinedParameterMappingFileName = filename;
          }
-
       }
 
 
@@ -1534,7 +1623,7 @@ namespace BIM.IFC.Export.UI
                      IFCExportConfiguration configuration = GetSelectedConfiguration();
                      GetGeoReferenceInfo(configuration, epsgStr);    // Some time the XML data does not provide the appropriate Authority element with EPSG code. in this case use the original string
                   }
-                  catch 
+                  catch
                   {
                      TextBox_EPSG.Text = ""; //Invalid epsg code, reset the textbox
                   }
@@ -1558,7 +1647,7 @@ namespace BIM.IFC.Export.UI
             listBoxConfigurations.Items.Clear();
          IFCExport.LastSelectedConfig.Clear();
 
-         m_configurationsMap.Add(IFCExportConfiguration.GetInSession());
+         m_configurationsMap.AddOrReplace(IFCExportConfiguration.GetInSession());
          m_configurationsMap.AddBuiltInConfigurations();
 
          if (configuration != null && m_configurationsMap.HasName(configuration.Name))
@@ -1566,55 +1655,77 @@ namespace BIM.IFC.Export.UI
          else
             ResetToOriginalConfigSettings(Properties.Resources.InSessionConfiguration);
       }
-      
-      private void button_ExcludeElement_Click(object sender, RoutedEventArgs e)
+
+      private void comboBoxProjectSite_SelectionChanged(object sender, SelectionChangedEventArgs e)
+      {
+         ProjectLocation selectedProjLocation = m_SiteLocations[comboBoxProjectSite.SelectedItem.ToString()];
+         SiteLocation siteLoc = null;
+         // Get the SiteLocation from the selected Site 
+         if (selectedProjLocation != null)
+         {
+            siteLoc = selectedProjLocation.GetSiteLocation();
+         }
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.SelectedSite = comboBoxProjectSite.SelectedItem.ToString();
+            GetGeoReferenceInfo(configuration, siteLoc: siteLoc);    // Some time the XML data does not provide the appropriate Authority element with EPSG code. in this case use the original string
+         }
+      }
+
+      bool CRSOverride = false;
+      private void Button_CRSReset_Click(object sender, RoutedEventArgs e)
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
-         ResourceManager rmgr = Properties.Resources.ResourceManager;
-         string desc = rmgr.GetString("ExcludeEntitySelection");
-         EntityTree entityTree = new EntityTree(configuration.IFCVersion, configuration.ExcludeFilter, desc, singleNodeSelection: false);
-         entityTree.Owner = this;
-         entityTree.Title = rmgr.GetString("IFCEntitySelection");
-         entityTree.OKLabelOverride = rmgr.GetString("OK");
-         entityTree.CancelLabelOverride = rmgr.GetString("Cancel");
-         entityTree.IFCSchemaLabelOverride = rmgr.GetString("IFCSchemaVersion");
-         entityTree.ShowDialog();
-         if (entityTree.Status)
-            configuration.ExcludeFilter = entityTree.GetUnSelectedEntity();
+         // Clear the existing GeoRef information in the configuration to reset
+         configuration.GeoRefCRSName = "";
+         configuration.GeoRefCRSDesc = "";
+         configuration.GeoRefEPSGCode = "";
+         configuration.GeoRefGeodeticDatum = "";
+         configuration.GeoRefMapUnit = "";
+         GetGeoReferenceInfo(configuration);
+         TextBox_CRSName.IsReadOnly = true;
+         TextBox_CRSName.BorderThickness = new Thickness(0);
+         TextBox_CRSDesc.IsReadOnly = true;
+         TextBox_CRSDesc.BorderThickness = new Thickness(0);
+         TextBox_GeoDatum.IsReadOnly = true;
+         TextBox_GeoDatum.BorderThickness = new Thickness(0);
+         TextBox_EPSG.IsReadOnly = false;
+         TextBox_EPSG.LostKeyboardFocus += TextBox_EPSG_LostKeyboardFocus;
+         CRSOverride = false;
       }
 
       /// <summary>
-      /// This is only for testing the UI code that will do the selection to be used later on for IFC Export As
-      /// To be removed when the final implementation is done
+      /// Manual override of the CRS values in the cases that our database is incomplete or out-of-date
       /// </summary>
       /// <param name="sender"></param>
       /// <param name="e"></param>
-      private void button_SelectSingleElement_Click(object sender, RoutedEventArgs e)
+      private void Button_CRSOverride_Click(object sender, RoutedEventArgs e)
+      {
+         TextBox_CRSName.IsReadOnly = false;
+         TextBox_CRSName.BorderThickness = new Thickness(1);
+         TextBox_CRSDesc.IsReadOnly = false;
+         TextBox_CRSDesc.BorderThickness = new Thickness(1);
+         TextBox_GeoDatum.IsReadOnly = false;
+         TextBox_GeoDatum.BorderThickness = new Thickness(1);
+         TextBox_EPSG.IsReadOnly = false;
+         TextBox_EPSG.LostKeyboardFocus -= TextBox_EPSG_LostKeyboardFocus;
+         CRSOverride = true;
+      }
+
+      private void button_ExcludeElement_Click(object sender, RoutedEventArgs e)
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
-         ResourceManager rmgr = Properties.Resources.ResourceManager;
-         string desc = rmgr.GetString("SelectSingleElement");
-         EntityTree entityTree = new EntityTree(IFCVersion.Default, configuration.ExcludeFilter, desc, singleNodeSelection: true);
-         entityTree.Owner = this;
-         entityTree.Title = rmgr.GetString("IFCEntitySelection");
-         entityTree.OKLabelOverride = rmgr.GetString("OK");
-         entityTree.CancelLabelOverride = rmgr.GetString("Cancel");
-         entityTree.IFCSchemaLabelOverride = rmgr.GetString("IFCSchemaVersion");
-         entityTree.ShowDialog();
-         string selectedEntity = null;
-         if (entityTree.Status)
-            selectedEntity = entityTree.GetSelectedEntity().Replace(";" ,"");
-
-         if (string.IsNullOrEmpty(selectedEntity))
-            return;
-
-         PredefinedTypeSelection predefSelection = new PredefinedTypeSelection(configuration.IFCVersion, selectedEntity);
-         predefSelection.Owner = this;
-         predefSelection.Title = rmgr.GetString("PredefinedTypeSelection");
-         predefSelection.OKLabelOverride = rmgr.GetString("OK"); 
-         predefSelection.CancelLabelOverride = rmgr.GetString("Cancel");
-         predefSelection.ShowDialog();
-         string selPredef = predefSelection.GetSelectedPredefinedType();
+         string desc = "";
+         EntityTree entityTree = new EntityTree(configuration.IFCVersion, configuration.ExcludeFilter, desc, singleNodeSelection: false)
+         {
+            Owner = this,
+            Title = Properties.Resources.IFCEntitySelection
+         };
+         entityTree.PredefinedTypeTreeView.Visibility = System.Windows.Visibility.Hidden;
+         bool? ret = entityTree.ShowDialog();
+         if (ret.HasValue && ret.Value == true)
+            configuration.ExcludeFilter = entityTree.GetUnSelectedEntity();
       }
    }
 }

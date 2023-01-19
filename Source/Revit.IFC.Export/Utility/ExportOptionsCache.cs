@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.Globalization;
-
+using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
@@ -39,6 +39,18 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class ExportOptionsCache
    {
+      /// <summary>
+      /// The pointer to the host document, set when exporting links as separate
+      /// IFC files.
+      /// </summary>
+      /// <remarks>
+      /// For active-view only export to work when exporting links as separate files,
+      /// we need access to the host document.  However, this can't be passed using
+      /// standard methods.  So we have a static pointer that can be set.  It is only
+      /// expected to be valid when exporting links as separate files.
+      /// </remarks>
+      public static Document HostDocument { get; set; } = null;
+
       public SiteTransformBasis SiteTransformation { get; set; } = SiteTransformBasis.Shared;
 
       public enum ExportTessellationLevel
@@ -49,20 +61,39 @@ namespace Revit.IFC.Export.Utility
          High = 4
       }
 
-      private GUIDOptions m_GUIDOptions;
-      private IFCVersion m_FileVersion;
       public COBieCompanyInfo COBieCompanyInfo { get; set; }
+
       public COBieProjectInfo COBieProjectInfo { get; set; }
-      public IFCFileHeaderItem FileHeaderItem { get; private set; } 
+
+      public IFCFileHeaderItem FileHeaderItem 
+      { 
+         get 
+         { 
+            return OptionsUtil.FileHeaderIFC; 
+         } 
+      }
+
       private KnownERNames m_exchangeRequirement = KnownERNames.NotDefined;
+      
       public KnownERNames GetExchangeRequirement { get { return m_exchangeRequirement; } }
+
       public string GeoRefCRSName { get; private set; }
+
       public string GeoRefCRSDesc { get; private set; }
+
       public string GeoRefEPSGCode { get; private set; }
+
       public string GeoRefGeodeticDatum { get; private set; }
+
       public string GeoRefMapUnit { get; private set; }
 
-   public bool IncludeSteelElements { get; set; }
+      /// <summary>
+      /// If we are exporting a linked file as a separate document and using a filter view, 
+      /// contains the element id of the filter view in the host document.
+      /// </summary>
+      public ElementId HostViewId { get; private set; } = ElementId.InvalidElementId;
+
+      public bool IncludeSteelElements { get; set; }
 
       /// Private default constructor.
       /// </summary>
@@ -251,9 +282,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          // "SingleElement" export option - useful for debugging - only one input element will be processed for export
-         String singleElementValue;
-         String elementsToExportValue;
-         if (options.TryGetValue("SingleElement", out singleElementValue))
+         if (options.TryGetValue("SingleElement", out string singleElementValue))
          {
             ElementId elementId = ParseElementId(singleElementValue);
 
@@ -261,7 +290,7 @@ namespace Revit.IFC.Export.Utility
             ids.Add(elementId);
             cache.ElementsForExport = ids;
          }
-         else if (options.TryGetValue("ElementsForExport", out elementsToExportValue))
+         else if (options.TryGetValue("ElementsForExport", out string elementsToExportValue))
          {
             IList<ElementId> ids = ParseElementIds(elementsToExportValue);
             cache.ElementsForExport = ids;
@@ -293,8 +322,7 @@ namespace Revit.IFC.Export.Utility
          string siteTransformation = OptionsUtil.GetNamedStringOption(options, "SitePlacement");
          if (!string.IsNullOrEmpty(siteTransformation))
          {
-            SiteTransformBasis trfBasis = SiteTransformBasis.Shared;
-            if (Enum.TryParse(siteTransformation, out trfBasis))
+            if (Enum.TryParse(siteTransformation, out SiteTransformBasis trfBasis))
                cache.SiteTransformation = trfBasis;
          }
          // We have two ways to get information about level of detail:
@@ -374,18 +402,6 @@ namespace Revit.IFC.Export.Utility
 
          // "FileType" - note - setting is not respected yet
          ParseFileType(options, cache);
-
-         string erName = OptionsUtil.GetNamedStringOption(options, "ExchangeRequirement");
-         Enum.TryParse(erName, out cache.m_exchangeRequirement);
-         // Get stored File Header information from the UI and use it for export
-         IFCFileHeaderItem fileHeaderItem = new IFCFileHeaderItem();
-         new IFCFileHeader().GetSavedFileHeader(document, out fileHeaderItem);
-         if (cache.m_exchangeRequirement != KnownERNames.NotDefined)
-         {
-            // It override existing value (if present) in the saved FileHeader, to use the selected ER from the UI
-            fileHeaderItem.FileDescription = "ExchangeRequirement [" + erName + "]";
-         }
-         cache.FileHeaderItem = fileHeaderItem;
 
          cache.SelectedConfigName = OptionsUtil.GetNamedStringOption(options, "ConfigName");
 
@@ -495,17 +511,7 @@ namespace Revit.IFC.Export.Utility
       /// Used in ExportIntializer to define the Property Sets.
       /// Try not to use it outside of ExportOptionsCache except to initialize the Property Sets.
       /// </summary>
-      public IFCVersion FileVersion
-      {
-         get
-         {
-            return m_FileVersion;
-         }
-         set
-         {
-            m_FileVersion = value;
-         }
-      }
+      public IFCVersion FileVersion { get; set; }
 
       /// <summary>
       /// The file name.
@@ -568,7 +574,7 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            return OptionsUtil.ExportAsCoordinationView2(FileVersion); 
+            return OptionsUtil.ExportAsCoordinationView2(FileVersion);
          }
       }
 
@@ -580,6 +586,17 @@ namespace Revit.IFC.Export.Utility
          get
          {
             return OptionsUtil.ExportAsOlderThanIFC4(FileVersion);
+         }
+      }
+
+      /// <summary>
+      /// Identifies if the IFC schema version is older than IFC 4x3.
+      /// </summary>
+      public bool ExportAsOlderThanIFC4x3
+      {
+         get
+         {
+            return OptionsUtil.ExportAsOlderThanIFC4x3(FileVersion);
          }
       }
 
@@ -892,15 +909,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Contains options for controlling how IFC GUIDs are generated on export.
       /// </summary>
-      public GUIDOptions GUIDOptions
-      {
-         get
-         {
-            if (m_GUIDOptions == null)
-               m_GUIDOptions = new GUIDOptions();
-            return m_GUIDOptions;
-         }
-      }
+      public GUIDOptions GUIDOptions { get; } = new GUIDOptions();
 
       /// <summary>
       /// Contains options for setting how entity names are generated.
@@ -962,6 +971,11 @@ namespace Revit.IFC.Export.Utility
          protected set;
       }
 
+      /// <summary>
+      /// The status of how to handle Revit link instances.
+      /// </summary>
+      public LinkedFileExportAs ExportLinkedFileAs { get; set; } = LinkedFileExportAs.DontExport;
+      
       ///<summary>
       /// The ExportingLink flag.
       /// This stores the flag telling if the current export is for a linked document.

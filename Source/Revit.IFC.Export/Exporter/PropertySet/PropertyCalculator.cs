@@ -44,7 +44,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
         /// The ExporterIFC object.
         /// </param>
         /// <param name="extrusionCreationData">
-        /// The IFCExtrusionCreationData.
+        /// The IFCExportBodyParams.
         /// </param>
         /// <param name="element">
         /// The element to calculate the value.
@@ -55,7 +55,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
         /// <returns>
         /// True if the operation succeed, false otherwise.
         /// </returns>
-        abstract public bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType);
+        abstract public bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, 
+           Element element, ElementType elementType, EntryMap psetOrQtoEntryMap);
 
       /// <summary>
       /// If implemented in derived classes, may retrieve parameter data for a specific IFC handle.

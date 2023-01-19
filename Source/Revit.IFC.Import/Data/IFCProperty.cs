@@ -23,7 +23,6 @@ using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.DB;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.Import.Properties;
 using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
@@ -36,16 +35,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The name.
       /// </summary>
-      protected string m_Name;
-
-      /// <summary>
-      /// The name.
-      /// </summary>
-      public string Name
-      {
-         get { return m_Name; }
-         protected set { m_Name = value; }
-      }
+      public string Name { get; protected set; }
 
       protected IFCProperty()
       {
@@ -131,13 +121,15 @@ namespace Revit.IFC.Import.Data
       /// <param name="element">The element being created.</param>
       /// <param name="category">The category of the element being created.</param>
       /// <param name="parameterMap">The parameters of the element.  Cached for performance.</param>
-      /// <param name="propertySetName">The name of the containing property set.</param>
+      /// <param name="propertyFullName">The name of the containing property set.</param>
       /// <param name="createdParameters">The names of the created parameters.</param>
-      public void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap, string propertySetName, ISet<string> createdParameters)
+      public void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap, string propertyFullName, ISet<string> createdParameters)
       {
          // Try to get the single value from the property.  If we can't get a single value, get it as a string.
          IFCPropertyValue propertyValueToUse = null;
-         if (this is IFCSimpleProperty)
+         bool multilineTableProperty = (this is IFCPropertyTableValue);
+
+         if ((this is IFCSimpleProperty) && !multilineTableProperty)
          {
             IFCSimpleProperty simpleProperty = this as IFCSimpleProperty;
             IList<IFCPropertyValue> propertyValues = simpleProperty.IFCPropertyValues;
@@ -239,17 +231,9 @@ namespace Revit.IFC.Import.Data
             return;
 
          Parameter existingParameter = null;
-         bool elementIsType = (element is ElementType);
-         string typeString = elementIsType ? " " + Resources.IFCTypeSchedule : string.Empty;
 
-         // Navisworks uses this engine and needs support for the old naming.
-         // We use the API-only UseStreamlinedOptions as a proxy for knowing this.
-         string originalParameterName =
-            IFCImportFile.TheFile.Options.UseStreamlinedOptions ?
-            Name + "(" + propertySetName + typeString + ")" :
-            propertySetName + "." + Name + typeString;
 
-         string parameterName = originalParameterName;
+         string parameterName = propertyFullName;
 
          if (parameterGroupMap.TryFindParameter(parameterName, out existingParameter))
          {
@@ -262,11 +246,11 @@ namespace Revit.IFC.Import.Data
             int parameterNameCount = 2;
             while (createdParameters.Contains(parameterName))
             {
-               parameterName = originalParameterName + " " + parameterNameCount;
+               parameterName = propertyFullName + " " + parameterNameCount;
                parameterNameCount++;
             }
             if (parameterNameCount > 2)
-               Importer.TheLog.LogWarning(Id, "Renamed parameter: " + originalParameterName + " to: " + parameterName, false);
+               Importer.TheLog.LogWarning(Id, "Renamed parameter: " + propertyFullName + " to: " + parameterName, false);
 
             bool created = false;
             switch (dataType.ToString())
@@ -274,7 +258,8 @@ namespace Revit.IFC.Import.Data
                case "String":
                case "Enumeration":
                case "Binary":
-                  created = IFCPropertySet.AddParameterString(doc, element, category, objDef, parameterName, stringValueToUse, Id);
+                     created = multilineTableProperty ? IFCPropertySet.AddParameterMultilineString(doc, element, category, objDef, parameterName, stringValueToUse, Id):
+                                                        IFCPropertySet.AddParameterString(doc, element, category, objDef, parameterName, stringValueToUse, Id);
                   break;
                case "Integer":
                   created = IFCPropertySet.AddParameterInt(doc, element, category, objDef, parameterName, intValueToUse.Value, Id);
@@ -295,7 +280,7 @@ namespace Revit.IFC.Import.Data
             }
 
             if (created)
-               createdParameters.Add(originalParameterName);
+               createdParameters.Add(propertyFullName);
 
             return;
          }

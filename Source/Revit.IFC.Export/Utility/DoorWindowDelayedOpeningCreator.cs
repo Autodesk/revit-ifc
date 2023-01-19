@@ -162,13 +162,14 @@ namespace Revit.IFC.Export.Utility
          IList<DoorWindowOpeningInfo> doorWindowOpeningInfoList = new List<DoorWindowOpeningInfo>();
 
          Element doorElem = doc.GetElement(InsertId);
-         string openingGUID = GUIDUtil.CreateSubElementGUID(doorElem, (int)IFCDoorSubElements.DoorOpening);
+         string levelHash = "Level: " + LevelId.ToString();
          if (ExtrusionData != null)
          {
             foreach (IFCExtrusionData extrusionData in ExtrusionData)
             {
-               if (doorWindowOpeningInfoList.Count > 0)
-                  openingGUID = GUIDUtil.CreateGUID();
+               int index = doorWindowOpeningInfoList.Count;
+               string openingGUID = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(doorElem, levelHash + " IfcOpeningElement: " + index.ToString()));
                DoorWindowOpeningInfo openingInfo = DoorWindowUtil.CreateOpeningForDoorWindow(exporterIFC, doc, hostObjHnd,
                    HostId, InsertId, openingGUID, extrusionData.GetLoops()[0], extrusionData.ExtrusionDirection,
                    UnitUtil.UnscaleLength(extrusionData.ScaledExtrusionLength), PosHingeSide, IsRecess);
@@ -181,8 +182,9 @@ namespace Revit.IFC.Export.Utility
          {
             foreach (Solid solid in Solids)
             {
-               if (doorWindowOpeningInfoList.Count > 0)
-                  openingGUID = GUIDUtil.CreateGUID();
+               int index = doorWindowOpeningInfoList.Count;
+               string openingGUID = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(doorElem, levelHash + "IfcOpeningElement: " + index.ToString()));
                DoorWindowOpeningInfo openingInfo = DoorWindowUtil.CreateOpeningForDoorWindow(exporterIFC, doc, hostObjHnd,
                    HostId, InsertId, openingGUID, solid, ScaledHostWidth, IsRecess);
                if (openingInfo != null && !IFCAnyHandleUtil.IsNullOrHasNoValue(openingInfo.OpeningHnd))
@@ -214,7 +216,8 @@ namespace Revit.IFC.Export.Utility
                IFCAnyHandle openingHnd = openingInfo.OpeningHnd;
 
                foundOpening = true;
-               string relGUID = GUIDUtil.CreateGUID();
+               string relGUID = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelFillsElement, openingHnd, DoorWindowHnd));
                IFCInstanceExporter.CreateRelFillsElement(file, relGUID, ownerHistory, null, null, openingHnd, DoorWindowHnd);
 
                IFCAnyHandle openingPlacement = IFCAnyHandleUtil.GetObjectPlacement(openingHnd);

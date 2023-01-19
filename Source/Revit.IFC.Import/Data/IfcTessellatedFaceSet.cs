@@ -28,6 +28,7 @@ using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Geometry;
+using Revit.IFC.Import.Properties;
 using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
@@ -36,10 +37,6 @@ namespace Revit.IFC.Import.Data
    {
       IFCCartesianPointList m_Coordinates = null;
 
-      protected IFCTessellatedFaceSet()
-      {
-      }
-
       /// <summary>
       /// Coordinates attribute. This is an IFCCartesianPointList.
       /// </summary>
@@ -47,6 +44,26 @@ namespace Revit.IFC.Import.Data
       {
          get { return m_Coordinates; }
          protected set { m_Coordinates = value; }
+      }
+
+      /// <summary>
+      /// Indexed Colour Map for TesselatedFaceSet (one colour per face).
+      /// </summary>
+      public IFCIndexedColourMap HasColours { get; protected set; } = null;
+
+      /// <summary>
+      /// Color to use in Material.  Created in Process() and used in CreateShapeInternal()
+      /// </summary>
+      protected Color MaterialColor { get; set; } = null;
+
+      /// <summary>
+      /// Material Created during CreateShapeInternal for applying the MaterialColor to this Face Set if needed.
+      /// If the shapeEditScope already contains a MeterialId then that should be used.
+      /// </summary>
+      protected ElementId MaterialId { get; set; } = ElementId.InvalidElementId;
+
+      protected IFCTessellatedFaceSet()
+      {
       }
 
       protected IFCTessellatedFaceSet(IFCAnyHandle item)
@@ -70,6 +87,84 @@ namespace Revit.IFC.Import.Data
             if (coordList != null)
                Coordinates = coordList;
          }
+
+         // Process IfcIndexedColourMap.  There is a maximum of one IfcIndexedColourMap per IfcTesselatedFaceSet (even though it is stored as a SET).
+         //
+         HashSet<IFCAnyHandle> hasColoursSet = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcTessellatedFaceSet, "HasColours");
+         if (hasColoursSet?.Count == 1)
+         {
+            IFCAnyHandle ifcIndexedColourMap = hasColoursSet.First();
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcIndexedColourMap))
+            {
+               Importer.TheLog.LogNullError(IFCEntityType.IfcIndexedColourMap);
+               return;
+            }
+
+            HasColours = IFCIndexedColourMap.ProcessIFCIndexedColourMap(ifcIndexedColourMap);
+
+            if ((StyledByItem == null) && (LayerAssignment == null) && (HasColours != null))
+            {
+               // Currently we only support one color per Mesh, so just use the first color.
+               //
+               IFCColourRgbList ifcColourRgbList = HasColours.Colours;
+               IList<int> colourIndices = HasColours?.ColourIndex;
+               if ((ifcColourRgbList != null) && (colourIndices?.Count > 1))
+               {
+                  MaterialColor = ifcColourRgbList.GetColor(colourIndices[0]);
+
+                  // Check for more than one unique colour and warn if found.
+                  // Simple case:  there is only one colour in IFCColourRgbList
+                  //
+                  if (ifcColourRgbList.ColourList?.Count > 1)
+                  {
+                     List<int> uniqueColorValues = colourIndices.Distinct().ToList();
+                     if (uniqueColorValues.Count > 1)
+                     {
+                        Importer.TheLog.LogWarning(Id, "Multiple Colour Indices unsupported in IFCTesselatedFaceSet at this time.", false);
+                     }
+                  }
+               }
+            }
+         }
+      }
+
+      /// <summary>
+      /// Returns a Material ElementId for the primary Color in the IFCColourRgbList.
+      /// This retrieves the Material ElementId from the Material Cache first.
+      /// Matching is done primarily on the RGB Values in the Material Color using a Default Material name ("IFCTesselatedFaceSet").
+      /// If that doesn't work, we create a new Material.
+      /// </summary>
+      /// <param name="shapeEditScope">Edit Scope used in creating the IFCTesselatedFaceSet.</param>
+      /// <returns></returns>
+      public override ElementId GetMaterialElementId (IFCImportShapeEditScope shapeEditScope)
+      {
+         // If we've already called this and set the Material Id, then just use that.
+         //
+         if (MaterialId != ElementId.InvalidElementId)
+            return MaterialId;
+
+         // If base class already has a Material, use that.  Also set the MaterialId of this class to avoid unneeded processing.
+         //
+         ElementId materialId = base.GetMaterialElementId(shapeEditScope);
+         if (materialId != ElementId.InvalidElementId)
+         {
+            MaterialId = materialId;
+            return MaterialId;
+         }
+
+         // Otherwise, create a new Material representing the MaterialColor for this object (used cached one if it exists).
+         //
+         if (MaterialId == ElementId.InvalidElementId)
+         {
+            IFCMaterialInfo newMaterialInfo = IFCMaterialInfo.Create(MaterialColor, null, null, null, null);
+            MaterialId = IFCMaterial.CreateMaterialElem(shapeEditScope.Document, Id, String.Format(Resources.IFCDefaultMaterialName, Id), newMaterialInfo);
+         }
+         return MaterialId;
+      }
+
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
+      {
       }
 
       /// <summary>

@@ -126,6 +126,16 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Converts a sound pressure value in Revit internal units to IFC units.
+      /// </summary>
+      /// <param name="unscaledPressure">The pressure value in Revit internal units.</param>
+      /// <returns>The pressure in IFC units.</returns>
+      static public double ScaleSoundPressure(double unscaledPressure)
+      {
+         return ScaleDouble(SpecTypeId.HvacPressure, unscaledPressure);
+      }
+
+      /// <summary>
       /// Converts a thermal transmittance value in Revit internal units to IFC units.
       /// </summary>
       /// <param name="unscaledThermalTransmittance">The thermal transmittance value in Revit internal units.</param>
@@ -223,6 +233,146 @@ namespace Revit.IFC.Export.Utility
       static public double ScaleElectricVoltage(double unscaledVoltage)
       {
          return ScaleDouble(SpecTypeId.ElectricalPotential, unscaledVoltage);
+      }
+
+      /// <summary>
+      /// Converts thermodynamic temperature in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The thermodynamic temperature in Revit internal units.</param>
+      /// <returns>The thermodynamic temperature in Revit display units.</returns>
+      static public double ScaleThermodynamicTemperature(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.HvacTemperature, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts DynamicViscosity in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The DynamicViscosity in Revit internal units.</param>
+      /// <returns>The DynamicViscosity in Revit display units.</returns>
+      static public double ScaleDynamicViscosity(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.HvacViscosity, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts IsothermalMoistureCapacity in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The IsothermalMoistureCapacity in Revit internal units.</param>
+      /// <returns>The IsothermalMoistureCapacity in Revit display units.</returns>
+      static public double ScaleIsothermalMoistureCapacity(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.IsothermalMoistureCapacity, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts MassDensity in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The MassDensity in Revit internal units.</param>
+      /// <returns>The MassDensity in Revit display units.</returns>
+      static public double ScaleMassDensity(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.MassDensity, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts ModulusOfElasticity in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The ModulusOfElasticity in Revit internal units.</param>
+      /// <returns>The ModulusOfElasticity in Revit display units.</returns>
+      static public double ScaleModulusOfElasticity(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.Stress, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts VaporPermeability in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The VaporPermeability in Revit internal units.</param>
+      /// <returns>The VaporPermeability in Revit display units.</returns>
+      static public double ScaleVaporPermeability(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.Permeability, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts ThermalExpansionCoefficient in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The ThermalExpansionCoefficient in Revit internal units.</param>
+      /// <returns>The ThermalExpansionCoefficient in Revit display units.</returns>
+      static public double ScaleThermalExpansionCoefficient(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.ThermalExpansionCoefficient, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts Pressure in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The Pressure in Revit internal units.</param>
+      /// <returns>The Pressure in Revit display units.</returns>
+      static public double ScalePressure(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.HvacPressure, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts SpecificHeatCapacity in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The Pressure in Revit internal units.</param>
+      /// <returns>The Pressure in Revit display units.</returns>
+      static public double ScaleSpecificHeatCapacity(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.SpecificHeat, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts HeatingValue in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The HeatingValue in Revit internal units.</param>
+      /// <returns>The HeatingValue in Revit display units.</returns>
+      static public double ScaleHeatingValue(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.SpecificHeatOfVaporization, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts MoistureDiffusivity in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The MoistureDiffusivity in Revit internal units.</param>
+      /// <returns>The MoistureDiffusivity in Revit display units.</returns>
+      static public double ScaleMoistureDiffusivity(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.Diffusivity, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts IonConcentration in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The IonConcentration in Revit internal units.</param>
+      /// <returns>The IonConcentration in Revit display units.</returns>
+      static public double ScaleIonConcentration(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.PipingDensity, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts MomentOfInertia in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The MomentOfInertia in Revit internal units.</param>
+      /// <returns>The MomentOfInertia in Revit display units.</returns>
+      static public double ScaleMomentOfInertia(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.MomentOfInertia, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts ThermalConductivity in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The ThermalConductivity in Revit internal units.</param>
+      /// <returns>The ThermalConductivity in Revit display units.</returns>
+      static public double ScaleThermalConductivity(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.ThermalConductivity, unscaledValue);
       }
 
       /// <summary>

@@ -32,17 +32,55 @@ namespace Revit.IFC.Common.Extensions
       /// <summary>
       /// The File Description field of IFC File header.
       /// </summary>
-      private string fileDescription;
-      public string FileDescription
+      public IList<string> FileDescriptions { get; set; } = new List<string>();
+
+      /// <summary>
+      /// Add a description item into the list
+      /// </summary>
+      /// <param name="descriptionItem">the string to be added to the description</param>
+      public void AddDescription(string descriptionItem)
       {
-         get { return fileDescription; }
-         set
+         if (!string.IsNullOrEmpty(descriptionItem))
+            FileDescriptions.Add(descriptionItem);
+      }
+
+      /// <summary>
+      /// Remove description item based on a keyword
+      /// </summary>
+      /// <param name="keyword">the keyword to be searched</param>
+      /// <returns>true if keyword found and removed successfully, false if not found</returns>
+      public bool AddOrReplaceDescriptionItem(string newDescItem)
+      {
+         bool ret = false;
+         string[] descItemToken = newDescItem.TrimStart().Split(':', ' ');
+         if (descItemToken.Length >= 1 && !string.IsNullOrEmpty(descItemToken[0]))
          {
-            if (fileDescription != null && value != null && !fileDescription.Equals(value, StringComparison.InvariantCultureIgnoreCase))
-               fileDescription = value;
-            else if (fileDescription == null && value != null)
-               fileDescription = value;
+            string keyword = descItemToken[0];
+            for (int idx = 0; idx < FileDescriptions.Count; ++idx)
+            {
+               string descriptionItem = FileDescriptions[idx];
+               // Items are the same, no need to do any replacement
+               if (descriptionItem.Equals(newDescItem))
+               {
+                  ret = true;
+                  break;
+               }
+
+               if (descriptionItem.TrimStart().StartsWith(keyword, StringComparison.InvariantCultureIgnoreCase))
+               {
+                  FileDescriptions.RemoveAt(idx);
+                  FileDescriptions.Add(newDescItem);
+                  ret = true;
+                  break;
+               }
+            }
+            if (!ret)
+            {
+               FileDescriptions.Add(newDescItem);
+               ret = true;
+            }
          }
+         return ret;
       }
 
       /// <summary>
@@ -214,7 +252,7 @@ namespace Revit.IFC.Common.Extensions
       /// <param name="other">the source File header to clone.</param>
       private IFCFileHeaderItem(IFCFileHeaderItem other)
       {
-         FileDescription = other.FileDescription;
+         FileDescriptions = other.FileDescriptions;
          SourceFileName = other.SourceFileName;
          AuthorName = other.AuthorName;
          AuthorEmail = other.AuthorEmail;

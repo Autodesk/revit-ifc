@@ -136,7 +136,7 @@ namespace Revit.IFC.Export.Exporter
                               }
 
                               IFCAnyHandle currLocalPlacement = currSetter.LocalPlacement;
-                              using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
+                              using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
                               {
                                  FamilyInstanceExporter.ExportFamilyInstanceAsMappedItem(exporterIFC, subFamInst, exportType, ifcEnumType, productWrapper,
                                      ElementId.InvalidElementId, null, currLocalPlacement);
@@ -444,7 +444,7 @@ namespace Revit.IFC.Export.Exporter
                Element hostPanel = ExporterCacheManager.Document.GetElement(hostPanelId);
                if (IsCurtainSystem(hostPanel))
                {
-                  CurtainGridSet gridSet = CurtainSystemExporter.GetCurtainGridSet(hostPanel);
+                  CurtainGridSet gridSet = GetCurtainGridSet(hostPanel);
                   if (gridSet == null || gridSet.Size == 0)
                   {
                      visiblePanelIds.Add(hostPanelId);
@@ -610,10 +610,11 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Returns if an element is a legacy or non-legacy curtain system of any base element type.
+      /// Returns if an element is a curtain system of any element type known to Revit API.
       /// </summary>
       /// <param name="element">The element.</param>
-      /// <returns>True if it is a legacy or non-legacy curtain system of any base element type, false otherwise.</returns>
+      /// <returns>True if it is a curtain system of any base element type, false otherwise.</returns>
+      /// <remarks>There are some legacy types not covered here, see IsLegacyCurtainElement.</remarks>
       public static bool IsCurtainSystem(Element element)
       {
          if (element == null)
@@ -636,7 +637,7 @@ namespace Revit.IFC.Export.Exporter
          if (element is Wall)
          {
             Wall wall = element as Wall;
-            if (!CurtainSystemExporter.IsLegacyCurtainWall(wall))
+            if (!IsLegacyCurtainWall(wall))
             {
                CurtainGrid curtainGrid = wall.CurtainGrid;
                curtainGridSet = new CurtainGridSet();
@@ -689,12 +690,11 @@ namespace Revit.IFC.Export.Exporter
             return;
          }
 
-         string elemName = NamingUtil.GetNameOverride(elementType, NamingUtil.GetIFCName(elementType));
          string elemElementType = NamingUtil.GetElementTypeOverride(elementType, null);
 
          // Property sets will be set later.
          wallType = IFCInstanceExporter.CreateCurtainWallType(exporterIFC.GetFile(), elementType,
-             null, null, elemElementType, (elemElementType != null) ? "USERDEFINED" : "NOTDEFINED");
+             null, null, null, elemElementType, (elemElementType != null) ? "USERDEFINED" : "NOTDEFINED");
 
          wrapper.RegisterHandleWithElementType(elementType, exportType, wallType, null);
 

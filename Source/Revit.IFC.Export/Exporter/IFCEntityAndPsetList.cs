@@ -154,6 +154,29 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Check whether the predefined property name is valid
+      /// </summary>
+      /// <param name="mvdName">the MVD name</param>
+      /// <param name="psetName">the predefined property name</param>
+      /// <returns>true/false</returns>
+      public bool AllowPredefPsetToBeCreated(string mvdName, string psetName)
+      {
+         // OK to create if the list is empty (not defined)
+         if (CertifiedEntityAndPsetDict.Count == 0)
+            return true;
+         IFCEntityAndPsetList theList;
+         if (CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
+         {
+            if (theList.EntityIsInTheList(psetName))
+               return true;
+            else
+               return false;
+         }
+         else
+            return true;
+      }
+
+      /// <summary>
       /// Check whether an entity name is valid in the current MVD
       /// </summary>
       /// <param name="entityName">the entity name</param>

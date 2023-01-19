@@ -26,8 +26,30 @@ namespace Revit.IFC.Export.Utility
    /// <summary>
    /// Used to keep a cache of the IfcRoot handles mapping to a generic handle.
    /// </summary>
-   public class BaseRelationsCache : Dictionary<IFCAnyHandle, ISet<IFCAnyHandle>>
+   public class BaseRelationsCache
    {
+      public class IFCAnyHandleComparer : IComparer<IFCAnyHandle>
+      {
+         /// <summary>
+         /// A comparison for two IFCAnyHandles.
+         /// </summary>
+         /// <param name="hnd1">The first handle.</param>
+         /// <param name="hnd2">The second handle.</param>
+         /// <returns>-1 if the first handle is smaller, 1 if larger, 0 if equal.</returns>
+         /// <remarks>This function assumes both handles are valid.</remarks>
+         public int Compare(IFCAnyHandle hnd1, IFCAnyHandle hnd2)
+         {
+            int id1 = hnd1.Id;
+            int id2 = hnd2.Id;
+            return (id1 < id2) ? -1 : ((id1 > id2) ? 1 : 0);
+         }
+      }
+
+      public IDictionary<IFCAnyHandle, ISet<IFCAnyHandle>> Cache { get; } =
+         new SortedDictionary<IFCAnyHandle, ISet<IFCAnyHandle>>(new IFCAnyHandleComparer());
+
+      public ICollection<IFCAnyHandle> Keys { get { return Cache.Keys; } }
+      
       /// <summary>
       /// Adds the IfcRoot handle to the dictionary.
       /// </summary>
@@ -38,16 +60,27 @@ namespace Revit.IFC.Export.Utility
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle) || IFCAnyHandleUtil.IsNullOrHasNoValue(product))
             return;
 
-         if (ContainsKey(handle))
+         if (Cache.ContainsKey(handle))
          {
-            this[handle].Add(product);
+            Cache[handle].Add(product);
          }
          else
          {
             HashSet<IFCAnyHandle> products = new HashSet<IFCAnyHandle>();
             products.Add(product);
-            this[handle] = products;
+            Cache[handle] = products;
          }
+      }
+
+      /// <summary>
+      /// Try to get the set of handles associated with a particular key.
+      /// </summary>
+      /// <param name="handle">The key.</param>
+      /// <param name="values">The set of associated values.</param>
+      /// <returns>True if the handle is in the dictionary.</returns>
+      public bool TryGetValue(IFCAnyHandle handle, out ISet<IFCAnyHandle> values)
+      {
+         return Cache.TryGetValue(handle, out values);
       }
 
       /// <summary>
@@ -61,34 +94,10 @@ namespace Revit.IFC.Export.Utility
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
             return null;
 
-         if (!TryGetValue(handle, out ISet<IFCAnyHandle> cacheHandles))
+         if (!Cache.TryGetValue(handle, out ISet<IFCAnyHandle> cacheHandles))
             return null;
 
-         IList<IFCAnyHandle> refObjToDel = new List<IFCAnyHandle>();
-         foreach (IFCAnyHandle cacheHandle in cacheHandles)
-         {
-
-            if (ExporterCacheManager.HandleToDeleteCache.Contains(cacheHandle))
-            {
-               refObjToDel.Add(cacheHandle);
-            }
-            else if (IFCAnyHandleUtil.IsNullOrHasNoValue(cacheHandle))
-            {
-               // If we get to these lines of code, then there is an error somewhere
-               // where we deleted a handle but didn't properly mark it as deleted.
-               // This should be investigated, but this will at least not prevent
-               // the export.
-               ExporterCacheManager.HandleToDeleteCache.Add(cacheHandle);
-               refObjToDel.Add(cacheHandle);
-            }
-         }
-
-         foreach (IFCAnyHandle refObjHandle in refObjToDel)
-         {
-            cacheHandles.Remove(refObjHandle);
-         }
-
-         return cacheHandles;
+         return ExporterUtil.CleanRefObjects(cacheHandles);
       }
    }
 }

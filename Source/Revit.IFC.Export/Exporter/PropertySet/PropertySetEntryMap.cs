@@ -41,7 +41,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// Revit parameter name.
       /// </param>
       public PropertySetEntryMap(string revitParameterName)
-          : base(revitParameterName)
+          : base(revitParameterName, null)
       {
 
       }
@@ -63,7 +63,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="owningPsetName">Name of Property Set this entry belongs to.</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="elementOrConnector">The element or connector of which this property is created for.</param>
       /// <param name="elementType">The element type of which this property is created for.</param>
       /// <param name="handle">The handle for which this property is created for.</param>
@@ -74,10 +74,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="propertyName">The name of property to create.</param>
       /// <returns>The created property handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
-         IFCExtrusionCreationData extrusionCreationData, ElementOrConnector elementOrConnector, 
+         IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector, 
          ElementType elementType, IFCAnyHandle handle, PropertyType propertyType, 
          PropertyType propertyArgumentType, PropertyValueType valueType, Type propertyEnumerationType,
-         string propertyName)
+         string propertyName, bool fromSchedule=false)
       {
          IFCAnyHandle propHnd = null;
 
@@ -92,7 +92,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                Element element = elementOrConnector.Element;
                propHnd = CreatePropertyFromElementOrSymbol(file, exporterIFC, owningPsetName, element,
                   elementType, propertyType, propertyArgumentType, valueType, propertyEnumerationType,
-                  propertyName);
+                  propertyName, fromSchedule);
             }
          }
 
@@ -109,6 +109,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       private static IFCData GetPropertyDataFromString(string valueString, PropertyType propertyType)
       {
          IFCData data = null;
+
+         // Trim unit symbol
+         int index = valueString.IndexOf(" ");
+         if (index > 0)
+            valueString = valueString.Substring(0, index);
 
          switch (propertyType)
          {
@@ -267,6 +272,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      data = IFCDataUtil.CreateAsMeasure(value, "IfcMassFlowRateMeasure");
                   break;
                }
+            case PropertyType.ModulusOfElasticity:
+               {
+                  if (Double.TryParse(valueString, out double value))
+                     data = IFCDataUtil.CreateAsMeasure(value, "IfcModulusOfElasticityMeasure");
+                  break;
+               }
             case PropertyType.NormalisedRatio:
                {
                   data = PropertyUtil.CreateNormalisedRatioMeasureDataFromString(valueString);
@@ -340,6 +351,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                {
                   if (Double.TryParse(valueString, out double value))
                      data = IFCDataUtil.CreateAsSoundPowerMeasure(value);
+                  break;
+               }
+            case PropertyType.SoundPressure:
+               {
+                  if (Double.TryParse(valueString, out double value))
+                     data = IFCDataUtil.CreateAsSoundPressureMeasure(value);
                   break;
                }
             case PropertyType.Text:
@@ -459,6 +476,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                          ifcPropertyName, valueType);
                      break;
                   }
+               case PropertyType.DynamicViscosity:
+                  {
+                     propHnd = PropertyUtil.CreateDynamicViscosityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                         builtInParameter, ifcPropertyName, valueType);
+                     break;
+                  }
                case PropertyType.ElectricalEfficacy:
                   {
                      propHnd = PropertyUtil.CreateElectricalEfficacyPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
@@ -487,9 +510,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                          ifcPropertyName, valueType);
                      break;
                   }
+               case PropertyType.HeatingValue:
+                  {
+                     propHnd = PropertyUtil.CreateHeatingValuePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                         ifcPropertyName, valueType);
+                     break;
+                  }
                case PropertyType.Identifier:
                   {
                      propHnd = PropertyUtil.CreateIdentifierPropertyFromElement(file, element, revitParamNameToUse, builtInParameter, ifcPropertyName, valueType);
+                     break;
+                  }
+               case PropertyType.Illuminance:
+                  {
+                     propHnd = PropertyUtil.CreateIlluminancePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                         ifcPropertyName, valueType);
                      break;
                   }
                case PropertyType.Integer:
@@ -497,9 +532,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      propHnd = PropertyUtil.CreateIntegerPropertyFromElement(file, element, revitParamNameToUse, ifcPropertyName, valueType);
                      break;
                   }
-               case PropertyType.Illuminance:
+               case PropertyType.IonConcentration:
                   {
-                     propHnd = PropertyUtil.CreateIlluminancePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                     propHnd = PropertyUtil.CreateIonConcentrationPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                         ifcPropertyName, valueType);
+                     break;
+                  }
+               case PropertyType.IsothermalMoistureCapacity:
+                  {
+                     propHnd = PropertyUtil.CreateIsothermalMoistureCapacityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
                          ifcPropertyName, valueType);
                      break;
                   }
@@ -564,6 +605,24 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                case PropertyType.MassFlowRate:
                   {
                      propHnd = PropertyUtil.CreateMassFlowRatePropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                         ifcPropertyName, valueType);
+                     break;
+                  }
+               case PropertyType.ModulusOfElasticity:
+                  {
+                     propHnd = PropertyUtil.CreateModulusOfElasticityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                         ifcPropertyName, valueType);
+                     break;
+                  }
+               case PropertyType.MoistureDiffusivity:
+                  {
+                     propHnd = PropertyUtil.CreateMoistureDiffusivityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
+                         ifcPropertyName, valueType);
+                     break;
+                  }
+               case PropertyType.MomentOfInertia:
+                  {
+                     propHnd = PropertyUtil.CreateMomentOfInertiaPropertyFromElement(file, exporterIFC, element, revitParamNameToUse, builtInParameter,
                          ifcPropertyName, valueType);
                      break;
                   }
@@ -643,9 +702,33 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                          builtInParameter, ifcPropertyName, valueType);
                      break;
                   }
+               case PropertyType.SoundPressure:
+                  {
+                     propHnd = PropertyUtil.CreateSoundPressurePropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                         builtInParameter, ifcPropertyName, valueType);
+                     break;
+                  }
+               case PropertyType.SpecificHeatCapacity:
+                  {
+                     propHnd = PropertyUtil.CreateSpecificHeatCapacityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                         builtInParameter, ifcPropertyName, valueType);
+                     break;
+                  }
                case PropertyType.Text:
                   {
                      propHnd = PropertyUtil.CreateTextPropertyFromElement(file, element, revitParamNameToUse, builtInParameter, ifcPropertyName, valueType, propertyEnumerationType);
+                     break;
+                  }
+               case PropertyType.ThermalConductivity:
+                  {
+                     propHnd = PropertyUtil.CreateThermalConductivityPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                         builtInParameter, ifcPropertyName, valueType);
+                     break;
+                  }
+               case PropertyType.ThermalExpansionCoefficient:
+                  {
+                     propHnd = PropertyUtil.CreateThermalExpansionCoefficientPropertyFromElement(file, exporterIFC, element, revitParamNameToUse,
+                         builtInParameter, ifcPropertyName, valueType);
                      break;
                   }
                case PropertyType.ThermalTransmittance:
@@ -755,8 +838,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elementType">The element type, if it is appropriate to look in it for value.</param>
       /// <returns>The property handle.</returns>
       IFCAnyHandle CreatePropertyFromElementOrSymbol(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, Element element, Element elementType,
-         PropertyType propertyType, PropertyType propertyArgumentType, PropertyValueType valueType, Type propertyEnumerationType, string propertyName)
+         PropertyType propertyType, PropertyType propertyArgumentType, PropertyValueType valueType, Type propertyEnumerationType, string propertyName, 
+         bool fromSchedule = false)
       {
+         // Pset from schedule will be created only on the instance and not on the type (type properties in the schedule will be added into the instance's pset
+         if ((element is ElementType || element is FamilySymbol) && fromSchedule)
+            return null;
+
          string localizedRevitParameterName = LocalizedRevitParameterName(ExporterCacheManager.LanguageType);
          string revitParameterName = RevitParameterName;
 
@@ -780,18 +868,32 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             propHnd = CreatePropertyFromElementBase(file, exporterIFC, element,
                  revitParameterName, propertyName, RevitBuiltInParameter,
                  propertyType, propertyArgumentType, valueType, propertyEnumerationType);
+
+            // For backward compatibility, if the new param name does not return anyhing, try the original name
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+               propHnd = CreatePropertyFromElementBase(file, exporterIFC, element,
+                 CompatibleRevitParameterName, propertyName, RevitBuiltInParameter,
+                 propertyType, propertyArgumentType, valueType, propertyEnumerationType);
+
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (element is ElementType || element is FamilySymbol))
             {
                revitParameterName += "[Type]";
                propHnd = CreatePropertyFromElementBase(file, exporterIFC, element,
                  revitParameterName, propertyName, RevitBuiltInParameter,
                  propertyType, propertyArgumentType, valueType, propertyEnumerationType);
+
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
+                  propHnd = CreatePropertyFromElementBase(file, exporterIFC, element,
+                    CompatibleRevitParameterName + "[Type]", propertyName, RevitBuiltInParameter,
+                    propertyType, propertyArgumentType, valueType, propertyEnumerationType);
             }
          }
 
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (elementType != null))
+         // Get the property from Type for this element only if the pset is for schedule 
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (elementType != null) && fromSchedule)
             return CreatePropertyFromElementOrSymbol(file, exporterIFC, owningPsetName, elementType, null,
-               propertyType, propertyArgumentType, valueType, propertyEnumerationType, propertyName);
+               propertyType, propertyArgumentType, valueType, propertyEnumerationType, propertyName, false);
+
          return propHnd;
       }
 
@@ -801,7 +903,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </summary>
       /// <param name="file">The file.</param>
       /// <param name="exporterIFC">The ExporterIFC.</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="elementOrConnector">The element or connector.</param>
       /// <param name="elementType">The element type.</param>
       /// <param name="handle">The handle for which we calculate the property.</param>
@@ -810,7 +912,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="propertyEnumerationType">The type of property.</param>
       /// <param name="propertyName">The name of property to create.</param>
       /// <returns>The property handle.</returns>
-      IFCAnyHandle CreatePropertyFromCalculatorOrDescription(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, ElementOrConnector elementOrConnector,
+      IFCAnyHandle CreatePropertyFromCalculatorOrDescription(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector,
             ElementType elementType, IFCAnyHandle handle, PropertyType propertyType, PropertyValueType valueType, Type propertyEnumerationType, string propertyName)
       {
          IFCAnyHandle propHnd = null;
@@ -837,7 +939,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
             // Create property from calculator value
             if (PropertyCalculator.GetParameterFromSubelementCache(element, handle) ||
-                PropertyCalculator.Calculate(exporterIFC, extrusionCreationData, element, elementType))
+                PropertyCalculator.Calculate(exporterIFC, extrusionCreationData, element, elementType, this))
             {
                propHnd = CreatePropertyFromCalculator(file, propertyType, valueType, propertyEnumerationType, propertyName, null);
             }
@@ -977,8 +1079,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                }
             case PropertyType.Count:
                {
-                  int val = (useCalculator) ? PropertyCalculator.GetIntValue() : Int32.Parse(propertyValue);
-                  propHnd = PropertyUtil.CreateCountMeasureProperty(file, propertyName, val, valueType);
+                  if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3)
+                  {
+                     double val = (useCalculator) ? PropertyCalculator.GetDoubleValue() : double.Parse(propertyValue);
+                     propHnd = PropertyUtil.CreateCountMeasureProperty(file, propertyName, val, valueType);
+                  }
+                  else
+                  {
+                     int val = (useCalculator) ? PropertyCalculator.GetIntValue() : Int32.Parse(propertyValue);
+                     propHnd = PropertyUtil.CreateCountMeasureProperty(file, propertyName, val, valueType);
+                  }
                   break;
                }
             case PropertyType.Frequency:

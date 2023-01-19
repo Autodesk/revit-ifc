@@ -61,7 +61,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          double propertyValue;
          if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
-            return CreateFrequencyProperty(file, ifcPropertyName, propertyValue, valueType);
+         {
+            if (valueType == PropertyValueType.BoundedValue)
+            {
+               IList<IFCData> boundedData = GetBoundedDataFromElement(elem, revitParameterName, propertyValue, SpecTypeId.Number, "IfcFrequencyMeasure");
+               return CreateBoundedValuePropertyFromList(file, ifcPropertyName, boundedData, null);
+            }
+            else
+            {
+               return CreateFrequencyProperty(file, ifcPropertyName, propertyValue, valueType);
+            }
+         }
          return null;
       }
 

@@ -95,7 +95,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="entry">The entry to add.</param>
       public QuantityEntry AddEntry(string name, string revitName, QuantityType quantityType, PropertyCalculator calculator)
       {
-         QuantityEntry ifcQE = new QuantityEntry(name, revitName);
+         QuantityEntry ifcQE = new QuantityEntry(revitName, name);
          ifcQE.QuantityType = quantityType;
          ifcQE.PropertyCalculator = calculator;
          AddEntry(ifcQE);
@@ -124,7 +124,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elementToUse">The base element.</param>
       /// <param name="elemTypeToUse">The base element type.</param>
       /// <returns>A set of quantities handles.</returns>
-      public HashSet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData ifcParams, Element elementToUse, ElementType elemTypeToUse)
+      public HashSet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams ifcParams, Element elementToUse, ElementType elemTypeToUse)
       {
          HashSet<IFCAnyHandle> props = new HashSet<IFCAnyHandle>();
          foreach (QuantityEntry entry in Entries)

@@ -964,16 +964,16 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="geomElement">The original geometry.</param>
       /// <param name="numFlights">The number of stair flights, or 0 if unknown.  If there is exactly 1 flight, return the original geoemtry.</param>
-      /// <returns>The geometry element.</returns>
+      /// <returns>The geometry element with its symbol id.</returns>
       /// <remarks>This routine may not work properly for railings created before 2006.  If you get
       /// poor representations from such railings, please upgrade the railings if possible.</remarks>
-      public static GeometryElement GetOneLevelGeometryElement(GeometryElement geomElement, int numFlights)
+      public static (GeometryElement element, ElementId symbolId) GetOneLevelGeometryElement(GeometryElement geomElement, int numFlights)
       {
          if (geomElement == null)
-            return null;
+            return (null, null);
 
          if (numFlights == 1)
-            return geomElement;
+            return (geomElement, null);
 
          foreach (GeometryObject geomObject in geomElement)
          {
@@ -992,16 +992,95 @@ namespace Revit.IFC.Export.Utility
             // representations.  If this is a concern, please upgrade the railings to any format since 2006.
             if (symbolGeomElement != null)
             {
+               ElementId oneLevelGeomSymbolId = geomInstance.Symbol.Id;
                Transform trf = geomInstance.Transform;
                if (trf != null && !trf.IsIdentity)
-                  return symbolGeomElement.GetTransformed(trf);
+                  return (symbolGeomElement.GetTransformed(trf), oneLevelGeomSymbolId);
                else
-                  return symbolGeomElement;
+                  return (symbolGeomElement, oneLevelGeomSymbolId);
             }
          }
-
-         return geomElement;
+         return (geomElement, null);
       }
+
+      /// <summary>
+      /// Get additional geometry of one level of a potentially multi-story stair, ramp, or railing that wasn't added in GetOneLevelGeometryElement
+      /// </summary>
+      /// <param name="allLevelsGeometry">The original geometry.</param>
+      /// <param name="mainGeometrySymbolId">The symbol id of the level main geometry.</param>
+      /// <returns>The geometry elements list.</returns>
+      public static List<GeometryElement> GetAdditionalOneLevelGeometry(GeometryElement allLevelsGeometry, ElementId mainGeometrySymbolId)
+      {
+         List<GeometryElement> additionalGeometry = new List<GeometryElement>();
+
+         if (allLevelsGeometry == null || mainGeometrySymbolId == null)
+            return additionalGeometry;
+
+         // Collect geometry and its Origin.Z grouped by symbols
+         Dictionary<ElementId, IList<Tuple<GeometryInstance, double>>> symbols = new Dictionary<ElementId, IList<Tuple<GeometryInstance, double>>>();
+         foreach (GeometryObject geomObject in allLevelsGeometry)
+         {
+            GeometryInstance instance = geomObject as GeometryInstance;
+            if (instance == null || instance.Symbol.Id == null)
+               continue;
+
+            ElementId id = instance.Symbol.Id;
+
+            IList<Tuple<GeometryInstance, double>> geomInstances;
+            if (!symbols.TryGetValue(id, out geomInstances))
+            {
+               geomInstances = new List<Tuple<GeometryInstance, double>>();
+               symbols[id] = geomInstances;
+            }
+            geomInstances.Add(new Tuple<GeometryInstance, double>(instance, instance.Transform.Origin.Z));
+         }
+
+         // Define the number of flights as number of main instances
+         int numFlights = 0;
+         IList<Tuple<GeometryInstance, double>> instances;
+         if (symbols.TryGetValue(mainGeometrySymbolId, out instances))
+            numFlights = instances.Count;
+
+         if (numFlights < 1)
+            return additionalGeometry;
+
+         // Collect proper amount of instances of each geometry
+         List<GeometryInstance> instncesToAdd = new List<GeometryInstance>();
+         foreach (KeyValuePair<ElementId, IList<Tuple<GeometryInstance, double>>> symbol in symbols)
+         {
+            if (symbol.Key == mainGeometrySymbolId)
+               continue;
+            
+            int numCurrInstances = symbol.Value.Count;
+            if (numCurrInstances == 0 || numCurrInstances % numFlights != 0)
+               continue;
+
+            // We take 'numCurrInstances/numFlights' instances with the lowest Origin.Z
+            // The oter instances are repeateble geometry of another level(flight)
+            int numInstancesToAdd = symbol.Value.Count / numFlights;
+            List<Tuple<GeometryInstance, double>> currInstances = symbol.Value.ToList();
+            instncesToAdd.AddRange(symbol.Value.OrderBy(x => x.Item2).Select(x => x.Item1).Take(numInstancesToAdd).ToList());
+         }
+
+         // Collect output geometry
+         foreach (GeometryInstance instance in instncesToAdd)
+         {
+            Element baseSymbol = instance.Symbol;
+            if (!(baseSymbol is ElementType))
+               continue;
+            GeometryElement symbolGeomElement = instance.GetSymbolGeometry();
+            if (symbolGeomElement != null)
+            {
+               Transform trf = instance.Transform;
+               if (trf != null && !trf.IsIdentity)
+                  additionalGeometry.Add(symbolGeomElement.GetTransformed(trf));
+               else
+                  additionalGeometry.Add(symbolGeomElement);
+            }
+         }
+         return additionalGeometry;
+      }
+       
 
       /// <summary>
       /// Projects a point to the closest point on the XY plane of a local coordinate system.
@@ -2063,7 +2142,7 @@ namespace Revit.IFC.Export.Utility
 
          double scaledPlanesDistance = UnitUtil.ScaleLength(planesDistance);
          Transform plane1LCS = GeometryUtil.CreateTransformFromPlane(plane1);
-         IFCAnyHandle extrusionHandle = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, origCurveLoops, plane1LCS, extDir, scaledPlanesDistance, false);
+         IFCAnyHandle extrusionHandle = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, origCurveLoops, plane1LCS, extDir, scaledPlanesDistance, false, out _);
 
          IFCAnyHandle booleanBodyItemHnd = IFCInstanceExporter.CreateBooleanResult(exporterIFC.GetFile(), IFCBooleanOperator.Difference,
              origBodyRepHnd, extrusionHandle);
@@ -2598,16 +2677,24 @@ namespace Revit.IFC.Export.Utility
       /// <param name="height">The height.</param>
       /// <param name="width">The width.</param>
       /// <returns>True if gets the values successfully.</returns>
-      public static bool ComputeHeightWidthOfCurveLoop(CurveLoop curveLoop, out double height, out double width)
+      public static bool ComputeHeightWidthOfCurveLoop(CurveLoop curveLoop, XYZ expectedWidthDir, out double height, out double width)
       {
+         bool result = false;
          height = width = 0;
 
          if (!curveLoop.HasPlane())
-            return false;
+            return result;
 
          Plane plane = curveLoop.GetPlane();
          Transform lcs = CreateTransformFromPlane(plane);
-         return ComputeHeightWidthOfCurveLoop(curveLoop, lcs, out height, out width);
+
+         result = ComputeHeightWidthOfCurveLoop(curveLoop, lcs, out height, out width);
+
+         // The plane might be flipped. Swap height and width in this case
+         if (expectedWidthDir != null && MathUtil.VectorsAreParallel(expectedWidthDir, plane.YVec))
+            (height, width) = (width, height);
+
+         return result;
       }
 
       /// <summary>
@@ -2644,6 +2731,23 @@ namespace Revit.IFC.Export.Utility
       /// methods used instead.
       /// </remarks>
       public static int MaxFaceCountForSplitVolumes = 2048;
+
+      /// <summary>
+      /// Gets the volume of a solid, if it is possible.
+      /// </summary>
+      /// <param name="solid">The solid.</param>
+      /// <returns>The volume of the solid, or null if it can't be determined.</returns>
+      public static double? GetSafeVolume(Solid solid)
+      {
+         try
+         {
+            return solid?.Volume ?? null;
+         }
+         catch
+         {
+            return null;
+         }
+      }
 
       /// <summary>
       /// Splits a Solid into distinct volumes.
@@ -3195,6 +3299,7 @@ namespace Revit.IFC.Export.Utility
             // Avoid consecutive duplicates
             if (CoordsAreWithinVertexTol(startPoint, endPoint))
                return null;
+
             return new PolyLineVertices(startPoint, endPoint);
          }
       }
@@ -3364,6 +3469,7 @@ namespace Revit.IFC.Export.Utility
             return new PolyLineVertices(listXYZ);
          else if (listUV != null && listUV.Count >= 2)
             return new PolyLineVertices(listUV);
+
          return null;
       }
       private static IList<IList<double>> OutdatedPointListFromGenericCurve(ExporterIFC exporterIFC,
@@ -3963,6 +4069,7 @@ namespace Revit.IFC.Export.Utility
             IFCAnyHandle pointListHnd = IFCInstanceExporter.CreateCartesianPointList(file, polyCurve.PointList);
             return IFCInstanceExporter.CreateIndexedPolyCurve(file, pointListHnd, segmentsIndices, false);
          }
+
          // if the Curve is a line, do the following
          if (curve is Line)
          {
@@ -3971,11 +4078,13 @@ namespace Revit.IFC.Export.Utility
             {
                Line curveLine = curve as Line;
                //ifcCurve = CreateLineSegment(exporterIFC, curveLine);
+
                // Create line based trimmed curve for Axis
                IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints, additionalTrf);
                XYZ dir = (additionalTrf == null) ? curveLine.Direction : additionalTrf.OfVector(curveLine.Direction);
                IFCAnyHandle vector = VectorToIfcVector(exporterIFC, curveLine.Direction);
                IFCAnyHandle line = IFCInstanceExporter.CreateLine(file, curveOrigin, vector);
+
                IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints, additionalTrf);
                HashSet<IFCData> trim1 = new HashSet<IFCData>();
                trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
@@ -3992,24 +4101,31 @@ namespace Revit.IFC.Export.Utility
             XYZ curveArcCenter = (additionalTrf == null) ? curveArc.Center : additionalTrf.OfPoint(curveArc.Center);
             XYZ curveArcNormal = (additionalTrf == null) ? curveArc.Normal : additionalTrf.OfVector(curveArc.Normal);
             XYZ curveArcXDirection = (additionalTrf == null) ? curveArc.XDirection : additionalTrf.OfVector(curveArc.XDirection);
+
             if (curveArcCenter == null || curveArcNormal == null || curveArcXDirection == null)
             {
                // encounter invalid curve, return null
                return null;
             }
             IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveArcCenter, cartesianPoints, additionalTrf);
+
             // Create the z-direction
             IFCAnyHandle axis = VectorToIfcDirection(exporterIFC, curveArcNormal);
+
             // Create the x-direction
             IFCAnyHandle refDirection = VectorToIfcDirection(exporterIFC, curveArcXDirection);
+
             IFCAnyHandle position3D = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
             IFCAnyHandle circle = IFCInstanceExporter.CreateCircle(file, position3D, UnitUtil.ScaleLength(curveArc.Radius));
+
             IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(0), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim1 = new HashSet<IFCData>();
             trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
+
             IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(1), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim2 = new HashSet<IFCData>();
             trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
+
             ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, circle, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
          }
          // If curve is an ellipse or elliptical Arc type
@@ -4019,18 +4135,26 @@ namespace Revit.IFC.Export.Utility
             IList<double> direction = new List<double>();
             XYZ ellipseNormal = (additionalTrf == null) ? curveEllipse.Normal : additionalTrf.OfVector(curveEllipse.Normal);
             XYZ ellipseXDirection = (additionalTrf == null) ? curveEllipse.XDirection : additionalTrf.OfVector(curveEllipse.XDirection);
+
             IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.Center, cartesianPoints, additionalTrf);
+
             IFCAnyHandle axis = VectorToIfcDirection(exporterIFC, ellipseNormal);
+
             // Create the x-direction
             IFCAnyHandle refDirection = VectorToIfcDirection(exporterIFC, ellipseXDirection);
+
             IFCAnyHandle position = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
+
             IFCAnyHandle ellipse = IFCInstanceExporter.CreateEllipse(file, position, UnitUtil.ScaleLength(curveEllipse.RadiusX), UnitUtil.ScaleLength(curveEllipse.RadiusY));
+
             IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(0), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim1 = new HashSet<IFCData>();
             trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
+
             IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(1), cartesianPoints, additionalTrf);
             HashSet<IFCData> trim2 = new HashSet<IFCData>();
             trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
+
             ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ellipse, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
          }
          else if (allowAdvancedCurve && (curve is HermiteSpline || curve is NurbSpline))
@@ -4048,6 +4172,7 @@ namespace Revit.IFC.Export.Utility
             {
                nurbSpline = curve as NurbSpline;
             }
+
             int degree = nurbSpline.Degree;
             IList<XYZ> controlPoints = nurbSpline.CtrlPoints;
             IList<IFCAnyHandle> controlPointsInIfc = new List<IFCAnyHandle>();
@@ -4055,17 +4180,22 @@ namespace Revit.IFC.Export.Utility
             {
                controlPointsInIfc.Add(XYZtoIfcCartesianPoint(exporterIFC, xyz, cartesianPoints, additionalTrf));
             }
+
             // Based on IFC4 specification, curveForm is for information only, leave it as UNSPECIFIED for now.
             Revit.IFC.Export.Toolkit.IFC4.IFCBSplineCurveForm curveForm = Toolkit.IFC4.IFCBSplineCurveForm.UNSPECIFIED;
+
             IFCLogical closedCurve = nurbSpline.IsClosed ? IFCLogical.True : IFCLogical.False;
+
             // Based on IFC4 specification, selfIntersect is for information only, leave it as Unknown for now
             IFCLogical selfIntersect = IFCLogical.Unknown;
+
             // Unlike Revit, IFC uses 2 lists to store knots information. The first list contain every distinct knot, 
             // and the second list stores the multiplicities of each knot. The following code creates those 2 lists  
             // from the Knots property of Revit NurbSpline
             DoubleArray revitKnots = nurbSpline.Knots;
             IList<double> ifcKnots = new List<double>();
             IList<int> knotMultiplitices = new List<int>();
+
             foreach (double knot in revitKnots)
             {
                if (ifcKnots.Count == 0 || !MathUtil.IsAlmostEqual(knot, ifcKnots[ifcKnots.Count - 1]))
@@ -4078,8 +4208,10 @@ namespace Revit.IFC.Export.Utility
                   knotMultiplitices[knotMultiplitices.Count - 1]++;
                }
             }
+
             // Based on IFC4 specification, knotSpec is for information only, leave it as UNSPECIFIED for now.
             Toolkit.IFC4.IFCKnotType knotSpec = Toolkit.IFC4.IFCKnotType.UNSPECIFIED;
+
             if (!nurbSpline.isRational)
             {
                ifcCurve = IFCInstanceExporter.CreateBSplineCurveWithKnots

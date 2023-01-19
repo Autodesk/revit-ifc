@@ -72,13 +72,13 @@ namespace Revit.IFC.Import.Data
          currPropertyValue = IFCImportHandleUtil.GetOptionalRealAttribute(ifcDoorPanelProperties, "PanelWidth", -1e+30);
          if (!MathUtil.IsAlmostEqual(currPropertyValue, -1e+30))
             DoubleProperties[Tuple.Create(GeneratePropertyName("PanelWidth"),
-                SpecTypeId.Length, AllowedValues.NonNegative)] = currPropertyValue;
+                SpecTypeId.Number, AllowedValues.NonNegative)] = currPropertyValue;
 
-         string currPropertyValueString = IFCImportHandleUtil.GetOptionalStringAttribute(ifcDoorPanelProperties, "PanelOperation", null);
+         string currPropertyValueString = IFCAnyHandleUtil.GetEnumerationAttribute(ifcDoorPanelProperties, "PanelOperation");
          if (!string.IsNullOrEmpty(currPropertyValueString))
             StringProperties[GeneratePropertyName("PanelOperation")] = currPropertyValueString;
 
-         currPropertyValueString = IFCImportHandleUtil.GetOptionalStringAttribute(ifcDoorPanelProperties, "PanelPosition", null);
+         currPropertyValueString = IFCAnyHandleUtil.GetEnumerationAttribute(ifcDoorPanelProperties, "PanelPosition");
          if (!string.IsNullOrEmpty(currPropertyValueString))
             StringProperties[GeneratePropertyName("PanelPosition")] = currPropertyValueString;
       }

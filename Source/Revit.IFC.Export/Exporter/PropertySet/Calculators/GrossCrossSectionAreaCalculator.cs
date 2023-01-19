@@ -58,7 +58,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// The ExporterIFC object.
       /// </param>
       /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
+      /// The IFCExportBodyParams.
       /// </param>
       /// <param name="element">
       /// The element to calculate the value.
@@ -69,13 +69,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          double crossSectionArea = 0;
 
          // 1. Check override parameter
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyGrossCrossSectionArea", out crossSectionArea) == null)
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "GrossCrossSectionArea", out crossSectionArea);
+         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out crossSectionArea, entryMap.CompatibleRevitParameterName, "IfcQtyGrossCrossSectionArea");
          m_Area = UnitUtil.ScaleArea(crossSectionArea);
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
             return true;

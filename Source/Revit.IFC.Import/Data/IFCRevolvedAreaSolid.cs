@@ -115,19 +115,15 @@ namespace Revit.IFC.Import.Data
       /// Return geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The shape edit scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>One or more created Solids.</returns>
       protected override IList<GeometryObject> CreateGeometryInternal(
-            IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+         IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
-         Transform origLCS = (lcs == null) ? Transform.Identity : lcs;
-         Transform unscaledRevolvePosition = (Position == null) ? origLCS : origLCS.Multiply(Position);
-
          Transform scaledOrigLCS = (scaledLcs == null) ? Transform.Identity : scaledLcs;
          Transform scaledRevolvePosition = (Position == null) ? scaledOrigLCS : scaledOrigLCS.Multiply(Position);
 
-         ISet<IList<CurveLoop>> disjointLoops = GetTransformedCurveLoops(unscaledRevolvePosition, scaledRevolvePosition);
+         ISet<IList<CurveLoop>> disjointLoops = GetTransformedCurveLoops(scaledRevolvePosition);
          if (disjointLoops == null || disjointLoops.Count() == 0)
             return null;
 
@@ -149,8 +145,15 @@ namespace Revit.IFC.Import.Data
             XYZ frameYVec = frameZVec.CrossProduct(frameXVec);
             Frame coordinateFrame = new Frame(frameOrigin, frameXVec, frameYVec, frameZVec);
 
-            GeometryObject myObj = GeometryCreationUtilities.CreateRevolvedGeometry(coordinateFrame, loops, 0, Angle, solidOptions);
-            myObjs?.Add(myObj);
+            try
+            {
+               GeometryObject myObj = GeometryCreationUtilities.CreateRevolvedGeometry(coordinateFrame, loops, 0, Angle, solidOptions);
+               myObjs?.Add(myObj);
+            }
+            catch
+            {
+               Importer.TheLog.LogError(Id, "Couldn't generate valid IfcRevolvedAreaSolid.", false);
+            }
          }
 
          return myObjs;
@@ -160,14 +163,14 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
-         IList<GeometryObject> revolvedGeometries = CreateGeometryInternal(shapeEditScope, lcs, scaledLcs, guid);
+         IList<GeometryObject> revolvedGeometries = CreateGeometryInternal(shapeEditScope, scaledLcs, guid);
          if (revolvedGeometries != null)
          {
             foreach (GeometryObject revolvedGeometry in revolvedGeometries)

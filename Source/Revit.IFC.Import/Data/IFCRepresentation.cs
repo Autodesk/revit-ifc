@@ -164,8 +164,15 @@ namespace Revit.IFC.Import.Data
          switch (Identifier)
          {
             case IFCRepresentationIdentifier.Axis:
-               return !(IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcCurve) ||
+               bool isNotAllowed = !(IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcCurve) ||
                    IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcMappedItem));
+
+               if (IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcGeometricSet))
+               {
+                  isNotAllowed = false;
+                  Importer.TheLog.LogWarning(item.StepId, "Axis representation has a disallowed IfcGeometricSet, processing.", true);
+               }
+               return isNotAllowed;
             case IFCRepresentationIdentifier.Body:
                return false;
             case IFCRepresentationIdentifier.Box:
@@ -291,10 +298,9 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      public void CreateShape(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      public void CreateShape(IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
          // Special handling for Box representation.  We may decide to create an IFCBoundingBox class and stop this special treatment.
          if (BoundingBox != null)
@@ -310,7 +316,7 @@ namespace Revit.IFC.Import.Data
             {
                foreach (IFCRepresentationItem representationItem in RepresentationItems)
                {
-                  representationItem.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+                  representationItem.CreateShape(shapeEditScope, scaledLcs, guid);
                }
             }
          }

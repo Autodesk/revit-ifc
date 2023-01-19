@@ -249,6 +249,49 @@ namespace Revit.IFC.Import.Data
          }
       }
 
+      protected void CreatePostalParameters(Document doc, Element element, IFCPostalAddress postalAddress)
+      {
+         if (element is ProjectInfo && postalAddress != null)
+         {
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+            string typeName = EntityType.ToString() + " ";
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Purpose))
+               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Purpose", postalAddress.Purpose, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Description))
+               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Description", postalAddress.Description, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.UserDefinedPurpose))
+               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "UserDefinedPurpose", postalAddress.UserDefinedPurpose, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.InternalLocation))
+               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "InternalLocation", postalAddress.InternalLocation, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.PostalBox))
+               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "PostalBox", postalAddress.PostalBox, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Town))
+               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Town", postalAddress.Town, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Region))
+               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Region", postalAddress.Region, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.PostalCode))
+               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "PostalCode", postalAddress.PostalCode, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Country))
+               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Country", postalAddress.Country, Id);
+
+            if (postalAddress.AddressLines != null)
+            {
+               string jointAddress = String.Join(", ", postalAddress.AddressLines);
+               if (!string.IsNullOrWhiteSpace(jointAddress))
+                  IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "AddressLines", jointAddress, Id);
+            }
+         }
+      }
+
       /// <summary>
       /// Processes IfcSpatialStructureElement handle.
       /// </summary>

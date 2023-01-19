@@ -23,6 +23,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Toolkit;
 
@@ -36,35 +37,37 @@ namespace Revit.IFC.Export.Utility
    /// <remarks>The intention of this class is to phase out the use of IFCProductWrapper.  As long as handles are created in native code,
    /// IFCProductWrapper will be necessary, but it should be used for as little as possible.  Note that items added directly to the
    /// ProductWrapper and not the internal IFCProductWrapper will not show up on entity counters in journal files.</remarks>
-   public class ProductWrapper : System.IDisposable
+   public class ProductWrapper :IDisposable
    {
-      HashSet<IFCAnyHandle> m_CreatedHandles = new HashSet<IFCAnyHandle>();
+      HashSet<IFCAnyHandle> CreatedHandles { get; set; } = new HashSet<IFCAnyHandle>();
 
-      IDictionary<Element, HashSet<IFCAnyHandle>> m_PropertySetsToCreate = new Dictionary<Element, HashSet<IFCAnyHandle>>();
+      IDictionary<Element, HashSet<IFCAnyHandle>> PropertySetsToCreate { get; set; } = new Dictionary<Element, HashSet<IFCAnyHandle>>();
 
-      private Dictionary<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>> m_ElementTypeHandles =
-          new Dictionary<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>>();
+      Dictionary<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>>
+         ElementTypeHandles { get; set; } = new Dictionary<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>>();
 
-      IFCProductWrapper m_InternalWrapper = null;
 
-      ProductWrapper m_ParentWrapper = null;
+      IFCProductWrapper InternalWrapper { get; set; } = null;
 
-      ExporterIFC m_ExporterIFC = null;
+      ProductWrapper ParentWrapper { get; set; } = null;
+
+      ExporterIFC ExporterIFC { get; set; } = null;
 
       protected ProductWrapper(ExporterIFC exporterIFC)
       {
-         m_ExporterIFC = exporterIFC;
+         ExporterIFC = exporterIFC;
       }
 
-      private void RegisterHandleWithElement(Element element, IFCAnyHandle handle, IFCExportInfoPair exportType = null)
+      private void RegisterHandleWithElement(Element element, IFCAnyHandle handle, 
+         IFCExportInfoPair exportType = null)
       {
          if (element == null || IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
             return;
-         HashSet<IFCAnyHandle> propertySetToCreate = null;
-         if (!m_PropertySetsToCreate.TryGetValue(element, out propertySetToCreate))
+         
+         if (!PropertySetsToCreate.TryGetValue(element, out HashSet<IFCAnyHandle> propertySetToCreate))
          {
             propertySetToCreate = new HashSet<IFCAnyHandle>();
-            m_PropertySetsToCreate[element] = propertySetToCreate;
+            PropertySetsToCreate[element] = propertySetToCreate;
          }
          propertySetToCreate.Add(handle);
 
@@ -78,18 +81,18 @@ namespace Revit.IFC.Export.Utility
       /// <param name="elementType">The element type.</param>
       /// <param name="prodTypeHnd">The handle.</param>
       /// <param name="existingPropertySets">Any existing propertysets.</param>
-      public void RegisterHandleWithElementType(ElementType elementType, IFCExportInfoPair exportType, IFCAnyHandle prodTypeHnd, HashSet<IFCAnyHandle> existingPropertySets)
+      public void RegisterHandleWithElementType(ElementType elementType, IFCExportInfoPair exportType, 
+         IFCAnyHandle prodTypeHnd, HashSet<IFCAnyHandle> existingPropertySets)
       {
          Tuple<ElementType, IFCExportInfoPair> elTypeKey = new Tuple<ElementType, IFCExportInfoPair>(elementType, exportType);
          if (elTypeKey.Item1 == null || IFCAnyHandleUtil.IsNullOrHasNoValue(prodTypeHnd))
             return;
 
          KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>> elementTypeHandle;
-         if (m_ElementTypeHandles.TryGetValue(elTypeKey, out elementTypeHandle))
+         if (ElementTypeHandles.TryGetValue(elTypeKey, out elementTypeHandle))
             return;
-            //throw new InvalidOperationException("Already associated type handle with element type.");
-
-         m_ElementTypeHandles[elTypeKey] = new KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>(prodTypeHnd, existingPropertySets);
+      
+         ElementTypeHandles[elTypeKey] = new KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>(prodTypeHnd, existingPropertySets);
 
          // In addition, add it to the ElementTypeToHandleCache.
          ExporterCacheManager.ElementTypeToHandleCache.Register(elementType, exportType, prodTypeHnd);
@@ -104,7 +107,7 @@ namespace Revit.IFC.Export.Utility
       public static ProductWrapper Create(ExporterIFC exporterIFC, bool allowRelateToLevel)
       {
          ProductWrapper productWrapper = new ProductWrapper(exporterIFC);
-         productWrapper.m_InternalWrapper = IFCProductWrapper.Create(exporterIFC, allowRelateToLevel);
+         productWrapper.InternalWrapper = IFCProductWrapper.Create(exporterIFC, allowRelateToLevel);
          return productWrapper;
       }
 
@@ -115,9 +118,9 @@ namespace Revit.IFC.Export.Utility
       /// <returns>A new ProductWrapper.</returns>
       public static ProductWrapper Create(ProductWrapper parentWrapper)
       {
-         ProductWrapper productWrapper = new ProductWrapper(parentWrapper.m_ExporterIFC);
-         productWrapper.m_InternalWrapper = IFCProductWrapper.Create(parentWrapper.m_InternalWrapper);
-         productWrapper.m_ParentWrapper = parentWrapper;
+         ProductWrapper productWrapper = new ProductWrapper(parentWrapper.ExporterIFC);
+         productWrapper.InternalWrapper = IFCProductWrapper.Create(parentWrapper.InternalWrapper);
+         productWrapper.ParentWrapper = parentWrapper;
          return productWrapper;
       }
 
@@ -129,9 +132,9 @@ namespace Revit.IFC.Export.Utility
       /// <returns>A new ProductWrapper.</returns>
       public static ProductWrapper Create(ProductWrapper parentWrapper, bool allowRelateToLevel)
       {
-         ProductWrapper productWrapper = new ProductWrapper(parentWrapper.m_ExporterIFC);
-         productWrapper.m_InternalWrapper = IFCProductWrapper.Create(parentWrapper.m_InternalWrapper, allowRelateToLevel);
-         productWrapper.m_ParentWrapper = parentWrapper;
+         ProductWrapper productWrapper = new ProductWrapper(parentWrapper.ExporterIFC);
+         productWrapper.InternalWrapper = IFCProductWrapper.Create(parentWrapper.InternalWrapper, allowRelateToLevel);
+         productWrapper.ParentWrapper = parentWrapper;
          return productWrapper;
       }
 
@@ -141,7 +144,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The internal IFCProductWrapper.</returns>
       public IFCProductWrapper ToNative()
       {
-         return m_InternalWrapper;
+         return InternalWrapper;
       }
 
       /// <summary>
@@ -151,13 +154,13 @@ namespace Revit.IFC.Export.Utility
       /// <remarks>Generally intended for when there is only one handle in the wrapper.</remarks>
       public IFCAnyHandle GetAnElement()
       {
-         if (m_CreatedHandles.Count > 0)
+         if (CreatedHandles.Count > 0)
          {
-            foreach (IFCAnyHandle firstHandle in m_CreatedHandles)
+            foreach (IFCAnyHandle firstHandle in CreatedHandles)
                return firstHandle;
          }
 
-         return m_InternalWrapper.GetAnElement();
+         return InternalWrapper.GetAnElement();
       }
 
       /// <summary>
@@ -166,7 +169,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>True if it is empty, false otherwise.</returns>
       public bool IsEmpty()
       {
-         return ((m_CreatedHandles.Count == 0) && (m_InternalWrapper.Count == 0));
+         return ((CreatedHandles.Count == 0) && (InternalWrapper.Count == 0));
       }
 
       /// <summary>
@@ -176,13 +179,13 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The handle, or null.</returns>
       public IFCAnyHandle GetElementOfType(IFCEntityType type)
       {
-         foreach (IFCAnyHandle handle in m_CreatedHandles)
+         foreach (IFCAnyHandle handle in CreatedHandles)
          {
             if (IFCAnyHandleUtil.IsSubTypeOf(handle, type))
                return handle;
          }
 
-         ICollection<IFCAnyHandle> internalObjects = m_InternalWrapper.GetAllObjects();
+         ICollection<IFCAnyHandle> internalObjects = InternalWrapper.GetAllObjects();
          foreach (IFCAnyHandle handle in internalObjects)
          {
             if (IFCAnyHandleUtil.IsSubTypeOf(handle, type))
@@ -198,9 +201,9 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The collection of handles.</returns>
       public ISet<IFCAnyHandle> GetAllObjects()
       {
-         ICollection<IFCAnyHandle> internalObjects = m_InternalWrapper.GetAllObjects();
+         ICollection<IFCAnyHandle> internalObjects = InternalWrapper.GetAllObjects();
          if (internalObjects.Count == 0)
-            return m_CreatedHandles;
+            return CreatedHandles;
 
          HashSet<IFCAnyHandle> allObjects = new HashSet<IFCAnyHandle>();
 
@@ -212,7 +215,7 @@ namespace Revit.IFC.Export.Utility
                allObjects.Add(internalObject);
          }
 
-         allObjects.UnionWith(m_CreatedHandles);
+         allObjects.UnionWith(CreatedHandles);
          return allObjects;
       }
 
@@ -221,10 +224,11 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="element">The element.</param>
       /// <param name="handle">The handle.</param>
-      public void AddElement(Element element, IFCAnyHandle handle, IFCExportInfoPair exportType)
+      public void AddElement(Element element, IFCAnyHandle handle, IFCExportInfoPair exportType, bool register = true)
       {
-         m_CreatedHandles.Add(handle);
-         RegisterHandleWithElement(element, handle, exportType);
+         CreatedHandles.Add(handle);
+         if (register)
+            RegisterHandleWithElement(element, handle, exportType);
       }
 
       /// <summary>
@@ -235,15 +239,17 @@ namespace Revit.IFC.Export.Utility
       /// <param name="setter">The placement setter.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      public void AddElement(Element element, IFCAnyHandle handle, PlacementSetter setter, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
+      public void AddElement(Element element, IFCAnyHandle handle, PlacementSetter setter, IFCExportBodyParams data, bool relateToLevel, 
+         IFCExportInfoPair exportType, bool register = true)
       {
          // There is a bug in the internal AddElement that requires us to do a levelInfo null check here.
          IFCLevelInfo levelInfo = setter.LevelInfo;
          bool actuallyRelateToLevel = relateToLevel && (levelInfo != null);
-         m_InternalWrapper.AddElement(handle, levelInfo, data, actuallyRelateToLevel);
+         InternalWrapper.AddElement(handle, levelInfo, data?.Data, actuallyRelateToLevel);
          if (levelInfo == null && relateToLevel)
             ExporterCacheManager.LevelInfoCache.OrphanedElements.Add(handle);
-         RegisterHandleWithElement(element, handle, exportType);
+         if (register)
+            RegisterHandleWithElement(element, handle, exportType);
       }
 
       /// <summary>
@@ -254,14 +260,16 @@ namespace Revit.IFC.Export.Utility
       /// <param name="levelInfo">The level information.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      public void AddElement(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
+      public void AddElement(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExportBodyParams data, bool relateToLevel, 
+         IFCExportInfoPair exportType, bool register = true)
       {
          // There is a bug in the internal AddElement that requires us to do a levelInfo null check here.
          bool actuallyRelateToLevel = relateToLevel && (levelInfo != null);
-         m_InternalWrapper.AddElement(handle, levelInfo, data, actuallyRelateToLevel);
+         InternalWrapper.AddElement(handle, levelInfo, data?.Data, actuallyRelateToLevel);
          if (levelInfo == null && relateToLevel)
             ExporterCacheManager.LevelInfoCache.OrphanedElements.Add(handle);
-         RegisterHandleWithElement(element, handle, exportType);
+         if (register)
+            RegisterHandleWithElement(element, handle, exportType);
       }
 
       /// <summary>
@@ -272,10 +280,10 @@ namespace Revit.IFC.Export.Utility
       /// <param name="levelInfo">The level information.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      public void AddSpace(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
+      public void AddSpace(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExportBodyParams data, bool relateToLevel, IFCExportInfoPair exportType)
       {
          bool actuallyRelateToLevel = relateToLevel && (levelInfo != null);
-         m_InternalWrapper.AddSpace(handle, levelInfo, data, actuallyRelateToLevel);
+         InternalWrapper.AddSpace(handle, levelInfo, data?.Data, actuallyRelateToLevel);
          if (levelInfo == null && relateToLevel)
             ExporterCacheManager.LevelInfoCache.OrphanedSpaces.Add(handle);
          RegisterHandleWithElement(element, handle, exportType);
@@ -290,7 +298,7 @@ namespace Revit.IFC.Export.Utility
       public void AddAnnotation(IFCAnyHandle handle, IFCLevelInfo levelInfo, bool relateToLevel)
       {
          // The internal AddAnnotation takes an optional levelInfo, so we don't need to do a levelInfo null check here.
-         m_InternalWrapper.AddAnnotation(handle, levelInfo, relateToLevel);
+         InternalWrapper.AddAnnotation(handle, levelInfo, relateToLevel);
       }
 
       /// <summary>
@@ -301,7 +309,7 @@ namespace Revit.IFC.Export.Utility
       public void AddBuilding(Element element, IFCAnyHandle handle)
       {
          RegisterHandleWithElement(element, handle);
-         m_InternalWrapper.AddBuilding(handle);
+         InternalWrapper.AddBuilding(handle);
       }
 
       /// <summary>
@@ -312,7 +320,7 @@ namespace Revit.IFC.Export.Utility
       public void AddSystem(Element element, IFCAnyHandle handle)
       {
          RegisterHandleWithElement(element, handle);
-         m_CreatedHandles.Add(handle);
+         CreatedHandles.Add(handle);
       }
 
       /// <summary>
@@ -323,12 +331,12 @@ namespace Revit.IFC.Export.Utility
       public void AddSite(Element element, IFCAnyHandle handle)
       {
          RegisterHandleWithElement(element, handle);
-         m_InternalWrapper.AddSite(handle);
+         InternalWrapper.AddSite(handle);
       }
 
       public void AddProject(Element element, IFCAnyHandle handle)
       {
-         m_CreatedHandles.Add(handle);
+         CreatedHandles.Add(handle);
       }
       /// <summary>
       /// Adds a material handle to associate with the IfcProduct in this wrapper.
@@ -336,7 +344,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="materialHnd"></param>
       public void AddFinishMaterial(IFCAnyHandle materialHnd)
       {
-         m_InternalWrapper.AddFinishMaterial(materialHnd);
+         InternalWrapper.AddFinishMaterial(materialHnd);
       }
 
       /// <summary>
@@ -344,7 +352,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void ClearFinishMaterials()
       {
-         m_InternalWrapper.ClearFinishMaterials();
+         InternalWrapper.ClearFinishMaterials();
       }
 
       /// <summary>
@@ -352,9 +360,9 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="handle">The handle.</param>
       /// <returns>The extrusion creation data, or null.</returns>
-      public IFCExtrusionCreationData FindExtrusionCreationParameters(IFCAnyHandle handle)
+      public IFCExportBodyParams FindExtrusionCreationParameters(IFCAnyHandle handle)
       {
-         return m_InternalWrapper.FindExtrusionCreationParameters(handle);
+         return new IFCExportBodyParams(InternalWrapper.FindExtrusionCreationParameters(handle));
       }
 
       /// <summary>
@@ -362,16 +370,45 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void Dispose()
       {
-         foreach (KeyValuePair<Element, HashSet<IFCAnyHandle>> propertySetToCreate in m_PropertySetsToCreate)
-            PropertyUtil.CreateInternalRevitPropertySets(m_ExporterIFC, propertySetToCreate.Key, propertySetToCreate.Value);
+         // If we have a parent wrapper, postpone creating property set so that we
+         // don't create the same property sets multiple times.
+         if (ParentWrapper != null)
+         {
+            foreach (var propertySetToCreate in PropertySetsToCreate)
+            {
+               if (!ParentWrapper.PropertySetsToCreate.TryGetValue(propertySetToCreate.Key, 
+                  out HashSet<IFCAnyHandle> handles))
+               {
+                  handles = new HashSet<IFCAnyHandle>();
+                  ParentWrapper.PropertySetsToCreate.Add(propertySetToCreate.Key, handles);
+               }
+               handles.UnionWith(propertySetToCreate.Value);
+            }
 
-         foreach (KeyValuePair<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>> elementTypeHandle in m_ElementTypeHandles)
-            PropertyUtil.CreateElementTypeProperties(m_ExporterIFC, elementTypeHandle.Key.Item1, elementTypeHandle.Value.Value, elementTypeHandle.Value.Key);
+            ParentWrapper.CreatedHandles.UnionWith(CreatedHandles);
 
-         if (m_ParentWrapper != null)
-            m_ParentWrapper.m_CreatedHandles.UnionWith(m_CreatedHandles);
+            foreach (var elementTypeHandle in ElementTypeHandles)
+            {
+               if (ParentWrapper.ElementTypeHandles.ContainsKey(elementTypeHandle.Key))
+                  continue;
+               
+               ParentWrapper.ElementTypeHandles[elementTypeHandle.Key] = elementTypeHandle.Value;
+            }
+         }
+         else
+         {
+            foreach (var propertySetToCreate in PropertySetsToCreate)
+            {
+               PropertyUtil.CreateInternalRevitPropertySets(ExporterIFC, propertySetToCreate.Key, propertySetToCreate.Value);
+            }
 
-         m_InternalWrapper.Dispose();
+            foreach (var elementTypeHandle in ElementTypeHandles)
+            {
+               PropertyUtil.CreateElementTypeProperties(ExporterIFC, elementTypeHandle.Key.Item1, elementTypeHandle.Value.Value, elementTypeHandle.Value.Key);
+            }
+         }
+
+         InternalWrapper.Dispose();
       }
 
       private ProductWrapper()
@@ -384,12 +421,12 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">the element</param>
       public void ClearInternalHandleWrapperData(Element element)
       {
-         if (m_InternalWrapper.Count > 0)
+         if (InternalWrapper.Count > 0)
          {
             HashSet<IFCAnyHandle> propertySetToCreate = null;
-            if (m_PropertySetsToCreate.TryGetValue(element, out propertySetToCreate))
+            if (PropertySetsToCreate.TryGetValue(element, out propertySetToCreate))
             {
-               ICollection<IFCAnyHandle> internalObjects = m_InternalWrapper.GetAllObjects();
+               ICollection<IFCAnyHandle> internalObjects = InternalWrapper.GetAllObjects();
                foreach (IFCAnyHandle internalObj in internalObjects)
                {
                   propertySetToCreate.Remove(internalObj);

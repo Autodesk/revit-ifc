@@ -140,12 +140,19 @@ namespace Revit.IFC.Import.Data
          return profileCurveLoops;
       }
 
-      private IList<GeometryObject> SplitSweptDiskIntoValidPieces(CurveLoop trimmedDirectrixInWCS, IList<CurveLoop> profileCurveLoops, SolidOptions solidOptions)
+      /// <summary>
+      /// Create as much of the swept disk solid geometry as possible.
+      /// </summary>
+      /// <param name="trimmedDirectrixInWCS">The directrix.</param>
+      /// <param name="profileCurveLoops">The original profile curves.</param>
+      /// <param name="solidOptions">The options for creating the solids.</param>
+      /// <returns>The created geometry, and true if it represents all of the original pieces.</returns>
+      private (IList<GeometryObject>, bool) SplitSweptDiskIntoValidPieces(CurveLoop trimmedDirectrixInWCS, IList<CurveLoop> profileCurveLoops, SolidOptions solidOptions)
       {
          // If we have 0 or 1 curves, there is nothing we can do here.
          int numCurves = trimmedDirectrixInWCS.Count();
          if (numCurves < 2)
-            return null;
+            return (null, false);
 
          // We will attempt to represent the original description in as few pieces as possible.  
          IList<Curve> directrixCurves = new List<Curve>();
@@ -155,7 +162,7 @@ namespace Revit.IFC.Import.Data
             {
                numCurves--;
                if (numCurves < 2)
-                  return null;
+                  return (null, false);
                continue;
             }
             directrixCurves.Add(directrixCurve);
@@ -168,6 +175,7 @@ namespace Revit.IFC.Import.Data
          CurveLoop currentCurveLoop = new CurveLoop();
          Solid bestSolidSoFar = null;
          double pathAttachmentParam = directrixCurves[0].GetEndParameter(0);
+         bool missedGeometry = false;
 
          for (int ii = 0; ii < numCurves; ii++)
          {
@@ -187,8 +195,9 @@ namespace Revit.IFC.Import.Data
                }
             }
 
-            // This should only happen as a result of the catch loop above.  We want to protect against the case where one or more pieces of the sweep 
-            // are completely invalid.
+            // This should only happen as a result of the catch loop above.  We want to
+            // protect against the case where one or more pieces of the sweep are completely
+            // invalid.
             while (bestSolidSoFar == null && (ii < numCurves))
             {
                try
@@ -205,35 +214,37 @@ namespace Revit.IFC.Import.Data
                catch
                {
                   ii++;
+                  missedGeometry = true;
                }
             }
          }
 
-         return sweptDiskPieces;
+         if (bestSolidSoFar != null)
+            sweptDiskPieces.Add(bestSolidSoFar);
+
+         return (sweptDiskPieces, !missedGeometry);
       }
 
       /// <summary>
       /// Return geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="unscaledLcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>Zero or more created geometries.</returns>
       protected override IList<GeometryObject> CreateGeometryInternal(
-            IFCImportShapeEditScope shapeEditScope, Transform unscaledLcs, Transform scaledLcs, string guid)
+            IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
-         Transform unscaledSweptDiskPosition = (unscaledLcs == null) ? Transform.Identity : unscaledLcs;
-         Transform scaledSweptDiskPosition = (scaledLcs == null) ? Transform.Identity : scaledLcs;
+         List<GeometryObject> myObjs = null;
+         Transform scaledSweptDiskPosition = scaledLcs ?? Transform.Identity;
 
          IList<CurveLoop> trimmedDirectrices = IFCGeometryUtil.TrimCurveLoops(Id, Directrix, StartParameter, EndParameter);
          if (trimmedDirectrices == null)
             return null;
 
-         List<GeometryObject> myObjs = null;
          foreach (CurveLoop trimmedDirectrix in trimmedDirectrices)
          {
-            CurveLoop trimmedDirectrixInWCS = IFCGeometryUtil.CreateTransformed(trimmedDirectrix, Id, unscaledSweptDiskPosition, scaledSweptDiskPosition);
+            CurveLoop trimmedDirectrixInWCS = IFCGeometryUtil.CreateTransformed(trimmedDirectrix, Id, scaledSweptDiskPosition);
 
             // Create the disk.
             Curve firstCurve = null;
@@ -261,10 +272,22 @@ namespace Revit.IFC.Import.Data
             catch (Exception ex)
             {
                // If we can't create a solid, we will attempt to split the Solid into valid pieces (that will likely have some overlap).
-               if (ex.Message.Contains("self-intersections"))
+               if (ex.Message.Contains("self-intersections") || ex.Message.Contains("Failed to create"))
                {
-                  Importer.TheLog.LogWarning(Id, "The IfcSweptDiskSolid definition does not define a valid solid, likely due to self-intersections or other such problems; the profile probably extends too far toward the inner curvature of the sweep path. Creating the minimum number of solids possible to represent the geometry.", false);
-                  myObjs.AddRange(SplitSweptDiskIntoValidPieces(trimmedDirectrixInWCS, profileCurveLoops, solidOptions));
+                  (IList<GeometryObject>, bool) solidSegments = SplitSweptDiskIntoValidPieces(trimmedDirectrixInWCS, profileCurveLoops, solidOptions);
+                  if (solidSegments.Item1 != null)
+                     myObjs.AddRange(solidSegments.Item1);
+
+                  // If Item2 is true, that means that the backup SplitSweptDiskIntoValidPieces routine was
+                  // able to create (probably slightly self-intersecting) geometry for all of the pieces
+                  // of the directrix.  If it is false, then there was some part of the directrix that we
+                  // couldn't create geometry for.  Log a warning in the first case and an error in the
+                  // second.
+                  if (solidSegments.Item2)
+                     Importer.TheLog.LogWarning(Id, "The IfcSweptDiskSolid definition does not define a valid solid, likely due to self-intersections or other such problems; the profile probably extends too far toward the inner curvature of the sweep path. Creating the minimum number of solids possible to represent the geometry.", false);
+                  else
+                     Importer.TheLog.LogError(Id, "The IfcSweptDiskSolid definition does not define a valid solid, likely due to self-intersections or other such problems; the profile probably extends too far toward the inner curvature of the sweep path. Creating as much of the geometry as possible.", false);
+
                }
                else
                   throw ex;
@@ -278,14 +301,14 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
-         IList<GeometryObject> sweptDiskGeometries = CreateGeometryInternal(shapeEditScope, lcs, scaledLcs, guid);
+         IList<GeometryObject> sweptDiskGeometries = CreateGeometryInternal(shapeEditScope, scaledLcs, guid);
          if (sweptDiskGeometries != null)
          {
             foreach (GeometryObject sweptDiskGeometry in sweptDiskGeometries)

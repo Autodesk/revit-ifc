@@ -57,19 +57,20 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// Calculates the diameter of a provision for void.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyDiameter", out m_Diameter) == null)
-               ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Diameter", out m_Diameter);
-         m_Diameter = UnitUtil.ScaleLength(m_Diameter);
-         if (m_Diameter > MathUtil.Eps() * MathUtil.Eps())
-            return true;
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Diameter, entryMap.CompatibleRevitParameterName, "IfcQtyDiameter") != null)
+         {
+            m_Diameter = UnitUtil.ScaleLength(m_Diameter);
+            if (m_Diameter > MathUtil.Eps() * MathUtil.Eps())
+               return true;
+         }
 
          if (extrusionCreationData == null)
             return false;

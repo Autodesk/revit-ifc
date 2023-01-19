@@ -217,11 +217,12 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">The element.</param>
       /// <param name="allowSeparateOpeningExport">True if IfcOpeningElement is allowed to be exported.</param>
       /// <returns>True if the element should be exported, false otherwise.</returns>
-      /// <remarks>There are some inefficiencies here, as we later check IfcExportAs in other contexts.  We should attempt to get the value only once.</remarks>
+      /// <remarks>There are some inefficiencies here, as we call GetExportInfoFromParameters
+      /// in other contexts.  We should attempt to get the value only once.</remarks>
       public static bool ShouldElementBeExported(ExporterIFC exporterIFC, Element element, bool allowSeparateOpeningExport)
       {
          // Allow the ExporterStateManager to say that an element should be exported regardless of settings.
-         if (ExporterStateManager.CanExportElementOverride())
+         if (ExporterStateManager.CanExportElementOverride)
             return true;
 
          // Check to see if the category should be exported.  This overrides the IfcExportAs parameter.
@@ -301,6 +302,20 @@ namespace Revit.IFC.Export.Utility
          return false;
       }
 
+      static IDictionary<string, IFCEntityType> PreIFC4Remap = new Dictionary<string, IFCEntityType>()
+      {
+         { "IFCAUDIOVISUALAPPLIANCE", IFCEntityType.IfcElectricApplianceType },
+         { "IFCBURNER", IFCEntityType.IfcGasTerminalType },
+         { "IFCELECTRICDISTRIBUTIONBOARD", IFCEntityType.IfcElectricDistributionPoint }
+      };
+
+      static IDictionary<string, IFCEntityType> IFC4Remap = new Dictionary<string, IFCEntityType>()
+      {
+         { "IFCGASTERMINAL", IFCEntityType.IfcBurnerType },
+         { "IFCELECTRICDISTRIBUTIONPOINT", IFCEntityType.IfcElectricDistributionBoardType },
+         { "IFCELECTRICHEATER", IFCEntityType.IfcSpaceHeaterType }
+      };
+
       /// <summary>
       /// Gets export type from IFC class name.
       /// </summary>
@@ -310,8 +325,8 @@ namespace Revit.IFC.Export.Utility
       {
          IFCExportInfoPair exportInfoPair = new IFCExportInfoPair();
 
-         string cleanIFCClassName = originalIFCClassName.Trim();
-         if (cleanIFCClassName.StartsWith("Ifc", true, null))
+         string cleanIFCClassName = originalIFCClassName.Trim().ToUpper();
+         if (cleanIFCClassName.StartsWith("IFC"))
          {
             // Here we try to catch any possible types that are missing above by checking both the class name or the type name
             // Unless there is any special treatment needed most of the above check can be done here
@@ -322,44 +337,22 @@ namespace Revit.IFC.Export.Utility
             // Deal with small number of IFC2x3/IFC4 types that have changed in a hardwired way.
             if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             {
-               if (string.Compare(clName, "IfcBurner", true) == 0)
-               {
-                  exportInfoPair.SetValueWithPair(IFCEntityType.IfcGasTerminalType);
-               }
-               else if (string.Compare(clName, "IfcElectricDistributionBoard", true) == 0)
-               {
-                  exportInfoPair.SetValueWithPair(IFCEntityType.IfcElectricDistributionPoint);
-               }
+               if (PreIFC4Remap.TryGetValue(clName, out IFCEntityType ifcEntityType))
+                  exportInfoPair.SetValueWithPair(ifcEntityType);
                else
-               {
                   exportInfoPair.SetValueWithPair(clName);
-               }
             }
             else
             {
-               if (string.Compare(clName, "IfcGasTerminal", true) == 0)
-               {
-                  exportInfoPair.SetValueWithPair(IFCEntityType.IfcBurnerType);
-               }
-               else if (string.Compare(clName, "IfcElectricDistributionPoint", true) == 0)
-               {
-                  exportInfoPair.SetValueWithPair(IFCEntityType.IfcElectricDistributionBoardType);
-               }
-               else if (string.Compare(clName, "IfcElectricHeater", true) == 0)
-               {
-                  exportInfoPair.SetValueWithPair(IFCEntityType.IfcSpaceHeaterType);
-               }
+               if (IFC4Remap.TryGetValue(clName, out IFCEntityType ifcEntityType))
+                  exportInfoPair.SetValueWithPair(ifcEntityType);
                else
-               {
                   exportInfoPair.SetValueWithPair(clName);
-            }
             }
 
             if (exportInfoPair.ExportInstance == IFCEntityType.UnKnown)
-               {
                exportInfoPair.SetValueWithPair(IFCEntityType.IfcBuildingElementProxy);
-               }
-            }
+         }
 
          exportInfoPair.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType("NOTDEFINED", exportInfoPair.ExportType.ToString());
 
@@ -609,13 +602,22 @@ namespace Revit.IFC.Export.Utility
          if (category == null || filterView == null)
             return true;
 
-         bool isVisible = false;
+         bool isVisible;
          if (m_CategoryVisibilityCache.TryGetValue(category.Id, out isVisible))
             return isVisible;
 
-         // The category will be visible if either we don't allow visibility controls (default: true), or
-         // we do allow visibility controls and the category is visible in the view.
-         isVisible = (!category.get_AllowsVisibilityControl(filterView) || category.get_Visible(filterView));
+         if (category.Id.IntegerValue > 0 && ExporterCacheManager.ExportOptionsCache.HostViewId != ElementId.InvalidElementId)
+         {
+            // We don't support checking the visibility of link document custom categories
+            // in the host view here.  We will use a different filter for this.
+            isVisible = true;
+         }
+         else
+         {
+            // The category will be visible if either we don't allow visibility controls (default: true), or
+            // we do allow visibility controls and the category is visible in the view.
+            isVisible = (!category.get_AllowsVisibilityControl(filterView) || category.get_Visible(filterView));
+         }
          m_CategoryVisibilityCache[category.Id] = isVisible;
          return isVisible;
       }
@@ -716,7 +718,7 @@ namespace Revit.IFC.Export.Utility
             if ((node.IsSubTypeOf("IfcObject") && 
                      (node.IsSubTypeOf("IfcProduct") || node.IsSubTypeOf("IfcGroup") || node.Name.Equals("IfcGroup", StringComparison.InvariantCultureIgnoreCase)))
                   || node.IsSubTypeOf("IfcProject") || node.Name.Equals("IfcProject", StringComparison.InvariantCultureIgnoreCase)
-                  || node.IsSubTypeOf("IfcTypeObject"))
+                  || node.IsSubTypeOf("IfcTypeObject") || node.Name.Equals("IfcMaterial", StringComparison.InvariantCultureIgnoreCase))
             {
                if (IFCEntityType.TryParse(entityType, true, out ifcType))
                   ret = ifcType;

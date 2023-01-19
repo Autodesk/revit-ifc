@@ -18,7 +18,7 @@ namespace BIM.IFC.Export.UI
    {
       TreeView m_TreeView = new TreeView();
       TreeViewItem PrevSelPDefItem = null;
-      IDictionary<string, TreeViewItem> m_TreeViewItemDict = new Dictionary<string, TreeViewItem>();
+      IDictionary<string, TreeViewItem> m_TreeViewItemDict = new Dictionary<string, TreeViewItem>(StringComparer.OrdinalIgnoreCase);
       IFCEntityTrie m_EntityTrie = new IFCEntityTrie();
       string m_IfcVersion = null;
       bool m_SingleNodeSelection = false;
@@ -77,13 +77,14 @@ namespace BIM.IFC.Export.UI
 
          if (m_SingleNodeSelection)
          {
-            button_ShowAll.Visibility = System.Windows.Visibility.Hidden;
-            button_ShowChecked.Visibility = System.Windows.Visibility.Hidden;
-            button_ShowUnchecked.Visibility = System.Windows.Visibility.Hidden;
+            label_Show.Visibility = System.Windows.Visibility.Hidden;
+            comboBox_ShowItems.Visibility = System.Windows.Visibility.Hidden;
          }
          else
          {
             HelpRun.Text = Properties.Resources.HelpSelectEntityForExport;
+            comboBox_ShowItems.ItemsSource = new List<string>() { Properties.Resources.ShowAll, Properties.Resources.ShowChecked, Properties.Resources.ShowUnchecked };
+            comboBox_ShowItems.SelectedIndex = 0;  // Default selection to show All
          }
 
          // If the IFC schema version is selected for export, the combobox will be disabled for selection
@@ -183,7 +184,18 @@ namespace BIM.IFC.Export.UI
                      // From IfcProductNode, recursively get all the children nodes and assign them into the treeview node (they are similar in the form)
                      TreeViewItem prod = new TreeViewItem();
                      prod.Name = "IfcProduct";
-                     prod.Header = ifcProductNode.Name + " " + TreeSelectionDesc;
+                     if (m_SingleNodeSelection)
+                        prod.Header = ifcProductNode.Name + " " + TreeSelectionDesc;
+                     else
+                     {
+                        ToggleButton prodNode = new CheckBox();
+                        prodNode.Name = prod.Name;
+                        prodNode.Content = prod.Name;
+                        prodNode.IsChecked = true;
+                        prod.Header = prodNode;
+                        prodNode.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
+                        prodNode.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
+                     }
                      prod.IsExpanded = true;
                      prod.FontWeight = FontWeights.Bold;
                      m_TreeView.Items.Add(GetNode(ifcProductNode, prod, ExclElementSet));
@@ -197,6 +209,18 @@ namespace BIM.IFC.Export.UI
                   TreeViewItem typeProd = new TreeViewItem();
                   typeProd.Name = "IfcTypeProduct";
                   typeProd.Header = ifcTypeProductNode.Name + " " + TreeSelectionDesc;
+                  if (m_SingleNodeSelection)
+                     typeProd.Header = ifcTypeProductNode.Name + " " + TreeSelectionDesc;
+                  else
+                  {
+                     ToggleButton typeProdNode = new CheckBox();
+                     typeProdNode.Name = typeProd.Name;
+                     typeProdNode.Content = typeProd.Name;
+                     typeProdNode.IsChecked = true;
+                     typeProd.Header = typeProdNode;
+                     typeProdNode.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
+                     typeProdNode.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
+                  }
                   typeProd.IsExpanded = true;
                   typeProd.FontWeight = FontWeights.Bold;
                   m_TreeView.Items.Add(GetNode(ifcTypeProductNode, typeProd, ExclElementSet));
@@ -209,8 +233,19 @@ namespace BIM.IFC.Export.UI
                   {
                      // For IfcGroup, a header is neaded because the IfcGroup itself is not a Abstract entity
                      TreeViewItem groupHeader = new TreeViewItem();
-                     groupHeader.Name = "IfcGroupHeader";
-                     groupHeader.Header = "IfcGroup" + " " + TreeSelectionDesc;
+                     groupHeader.Name = "IfcGroup";
+                     if (m_SingleNodeSelection)
+                        groupHeader.Header = "IfcGroup" + " " + TreeSelectionDesc;
+                     else
+                     {
+                        ToggleButton groupHeaderNode = new CheckBox();
+                        groupHeaderNode.Name = groupHeader.Name;
+                        groupHeaderNode.Content = groupHeader.Name;
+                        groupHeaderNode.IsChecked = true;
+                        groupHeader.Header = groupHeaderNode;
+                        groupHeaderNode.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
+                        groupHeaderNode.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
+                     }
                      groupHeader.IsExpanded = true;
                      groupHeader.FontWeight = FontWeights.Bold;
                      m_TreeView.Items.Add(groupHeader);
@@ -325,7 +360,7 @@ namespace BIM.IFC.Export.UI
                childNodeItem.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
                childNode.Header = childNodeItem;
             }
-         
+
             childNode.IsExpanded = true;
             childNode = GetNode(ifcNodeChild, childNode, exclSet);
             thisNode.Items.Add(childNode);
@@ -390,7 +425,7 @@ namespace BIM.IFC.Export.UI
                ToggleButton assocType = assocTypeItem.Header as ToggleButton;
                if (assocType != null)
                   assocType.IsChecked = isChecked;
-            } 
+            }
          }
          else if (thisNode.Name.Equals(tyName))
          {
@@ -610,7 +645,7 @@ namespace BIM.IFC.Export.UI
          DialogResult = true;
          if (m_SingleNodeSelection)
          {
-            if (string.IsNullOrEmpty(GetSelectedEntity()))
+            if (string.IsNullOrEmpty(GetSelectedEntity()) || string.IsNullOrEmpty(GetSelectedPredefinedType()))
                isReset = true;
             else
                isReset = false;
@@ -730,7 +765,7 @@ namespace BIM.IFC.Export.UI
                   return cbElem.Name;
             }
          }
-         return null;
+         return "";
       }
 
       private void TreeViewReturnToDefault()
@@ -874,7 +909,7 @@ namespace BIM.IFC.Export.UI
                if (origItem == null)
                   continue;   // Skip non-ToggleButton item
 
-               if (!origItem.IsChecked.HasValue 
+               if (!origItem.IsChecked.HasValue
                   || (checkFlag && origItem.IsChecked.Value == !checkFlag)
                   || (!checkFlag && origItem.IsChecked.Value == !checkFlag))
                   continue;
@@ -905,21 +940,6 @@ namespace BIM.IFC.Export.UI
          button_ExpandAll.IsEnabled = false;
       }
 
-      private void button_ShowChecked_Click(object sender, RoutedEventArgs e)
-      {
-         ShowCheckedOrUnChecked(true);
-      }
-
-      private void button_ShowUnchecked_Click(object sender, RoutedEventArgs e)
-      {
-         ShowCheckedOrUnChecked(false);
-      }
-
-      private void button_ShowAll_Click(object sender, RoutedEventArgs e)
-      {
-         TreeViewReturnToDefault();
-      }
-
       protected override bool OnContextHelp()
       {
          string contextIdName = null;
@@ -933,6 +953,22 @@ namespace BIM.IFC.Export.UI
          help.Launch();
 
          return true;
+      }
+
+      private void comboBox_ShowItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
+      {
+         switch (comboBox_ShowItems.SelectedIndex)
+         {
+            case 0:
+               TreeViewReturnToDefault();
+               break;
+            case 1:
+               ShowCheckedOrUnChecked(true);
+               break;
+            case 2:
+               ShowCheckedOrUnChecked(false);
+               break;
+         }
       }
    }
 }

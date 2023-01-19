@@ -64,6 +64,9 @@ namespace Revit.IFC.Export.Exporter
          if (element == null)
             return false;
 
+         if (ExporterCacheManager.AssemblyInstanceCache.ContainsKey(element.Id))
+            return true;      // Already processed before
+
          IFCFile file = exporterIFC.GetFile();
 
          using (IFCTransaction tr = new IFCTransaction(file))
@@ -76,6 +79,7 @@ namespace Revit.IFC.Export.Exporter
             PlacementSetter placementSetter = null;
             IFCLevelInfo levelInfo = null;
             bool relateToLevel = true;
+            ElementId overrideContainerId = ElementId.InvalidElementId;
 
             string ifcEnumType;
             IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(exporterIFC, element, out ifcEnumType);
@@ -89,11 +93,14 @@ namespace Revit.IFC.Export.Exporter
                // Create classification reference when System has classification filed name assigned to it
                ClassificationUtil.CreateClassification(exporterIFC, file, element, assemblyInstanceHnd);
 
-               HashSet<IFCAnyHandle> relatedBuildings = new HashSet<IFCAnyHandle>();
-               relatedBuildings.Add(ExporterCacheManager.BuildingHandle);
-
-               IFCAnyHandle relServicesBuildings = IFCInstanceExporter.CreateRelServicesBuildings(file, GUIDUtil.CreateGUID(),
-                   ExporterCacheManager.OwnerHistoryHandle, null, null, assemblyInstanceHnd, relatedBuildings);
+               HashSet<IFCAnyHandle> relatedBuildings = 
+                  new HashSet<IFCAnyHandle>() { ExporterCacheManager.BuildingHandle };
+               
+               string relServicesBuildingsGuid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelServicesBuildings, assemblyInstanceHnd));
+               IFCAnyHandle relServicesBuildings = IFCInstanceExporter.CreateRelServicesBuildings(file,
+                  relServicesBuildingsGuid, ExporterCacheManager.OwnerHistoryHandle, null, null, 
+                  assemblyInstanceHnd, relatedBuildings);
 
                relateToLevel = false; // Already related to the building via IfcRelServicesBuildings.
             }
@@ -101,8 +108,10 @@ namespace Revit.IFC.Export.Exporter
             {
                // Check for containment override
                IFCAnyHandle overrideContainerHnd = null;
-               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+               overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
 
+               if (overrideContainerId == null || overrideContainerId == ElementId.InvalidElementId)
+                  overrideContainerId = ExporterCacheManager.LevelInfoCache.GetLevelIdOfObject(element);
                using (placementSetter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
                {
                   IFCAnyHandle representation = null;
@@ -151,7 +160,7 @@ namespace Revit.IFC.Export.Exporter
             // relateToLevel depends on how the AssemblyInstance is being mapped to IFC, above.
             productWrapper.AddElement(element, assemblyInstanceHnd, levelInfo, null, relateToLevel, exportAs);
 
-            ExporterCacheManager.AssemblyInstanceCache.RegisterAssemblyInstance(element.Id, assemblyInstanceHnd);
+            ExporterCacheManager.AssemblyInstanceCache.RegisterAssemblyInstance(element.Id, assemblyInstanceHnd, overrideContainerId);
 
             tr.Commit();
             return true;

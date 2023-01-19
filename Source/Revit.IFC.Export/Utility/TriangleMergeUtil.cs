@@ -71,17 +71,16 @@ namespace Revit.IFC.Export.Utility
       /// <param name="vertxIndices">List of List of vertices. The first list will be the outer boundary and the rest are the inner boundaries</param>
       public IndexFace(IList<IList<int>> vertxIndices, ref IDictionary<int, XYZ> meshVertices)
       {
-         if (vertxIndices == null)
-            return;
-         if (vertxIndices.Count == 0)
+         int vertexCount = vertxIndices?.Count ?? 0;
+         if (vertexCount == 0)
             return;
 
          IndexOuterBoundary = vertxIndices[0];
-         vertxIndices.RemoveAt(0);
          SetupEdges(IndexOuterBoundary, 0);
 
-         if (vertxIndices.Count != 0)
+         if (vertexCount > 1)
          {
+            vertxIndices.RemoveAt(0);
             IndexedInnerBoundaries = vertxIndices;
 
             foreach (IList<int> innerBound in IndexedInnerBoundaries)
@@ -318,10 +317,19 @@ namespace Revit.IFC.Export.Utility
       int faceIdxOffset = 0;
 
       // These two must be hand in hand
-      public const double Tolerance = 1e-6;
       public const int DecimalPrecision = 6;
-
+      public const double Tolerance = 1e-6;
+      
       public bool IsMesh { get { return (m_MeshGeom != null && m_Geom == null); } }
+
+      /// <summary>
+      /// Get the total number of triangles from the Mesh or the TriangulatedShellComponent object.
+      /// </summary>
+      /// <returns>The total number of triangles.</returns>
+      public int GetTriangleCount()
+      {
+         return (IsMesh) ? m_MeshGeom.NumTriangles : m_Geom.TriangleCount;
+      }
 
       public List<XYZ> GetVertices() { return m_MeshVertices.Values.ToList(); }
 
@@ -443,20 +451,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Number of holes in a specific face
-      /// </summary>
-      /// <param name="fIdx">index of the face</param>
-      /// <returns>number of the holes in the face</returns>
-      public int NoOfHolesInFace(int fIdx)
-      {
-         if (m_FacesCollDict[m_MergedFaceSet.ElementAt(fIdx)].IndexedInnerBoundaries == null)
-            return 0;
-         if (m_FacesCollDict[m_MergedFaceSet.ElementAt(fIdx)].IndexedInnerBoundaries.Count == 0)
-            return 0;
-         return m_FacesCollDict[m_MergedFaceSet.ElementAt(fIdx)].IndexedInnerBoundaries.Count;
-      }
-
-      /// <summary>
       /// Get the inner boundaries of the merged faces for a specific face
       /// </summary>
       /// <param name="fIdx">the index of the face</param>
@@ -469,9 +463,10 @@ namespace Revit.IFC.Export.Utility
       public static XYZ NormalByNewellMethod(IList<XYZ> vertices)
       {
          XYZ normal;
-         if (vertices.Count == 3)
+         int vertCount = vertices.Count;
+         if (vertCount == 3)
          {
-            // If there are only 3 vertices, which is definitely a plannar face, we will use directly 2 vectors and calculate the cross product for the normal vector
+            // If there are only 3 vertices, which is definitely a planar face, we will use directly 2 vectors and calculate the cross product for the normal vector
             XYZ v1 = vertices[1] - vertices[0];
             XYZ v2 = vertices[2] - vertices[1];
             normal = v1.CrossProduct(v2);
@@ -485,7 +480,6 @@ namespace Revit.IFC.Export.Utility
             // Use Newell algorithm only when there are more than 3 vertices to handle non-convex face and colinear edges
             int idx = 0;
             XYZ prevVert = XYZ.Zero;
-            int vertCount = vertices.Count;
             foreach (XYZ vert in vertices)
             {
                if (idx > 0 && idx <= vertCount - 1)
@@ -516,7 +510,7 @@ namespace Revit.IFC.Export.Utility
       {
          int eulerBefore = ignoreMerge ? 0 : CalculateEulerCharacteristic();
 
-         int noTriangle = (IsMesh) ? m_MeshGeom.NumTriangles : m_Geom.TriangleCount;
+         int noTriangle = GetTriangleCount();
          IEqualityComparer<XYZ> normalComparer = new VectorCompare();
          Dictionary<XYZ, List<int>> faceSortedByNormal = new Dictionary<XYZ, List<int>>(normalComparer);
 

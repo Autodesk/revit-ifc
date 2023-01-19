@@ -154,10 +154,15 @@ namespace Revit.IFC.Export.Exporter
 
                            foreach (IFCAnyHandle surfaceHnd in info.GetSurfaces())
                            {
-                              IFCAnyHandle connectionGeometry = IFCInstanceExporter.CreateConnectionSurfaceGeometry(file, surfaceHnd, null);
+                              IFCAnyHandle connectionGeometry = IFCInstanceExporter.CreateConnectionSurfaceGeometry(file, 
+                                 surfaceHnd, null);
 
-                              SpaceBoundary spaceBoundary = new SpaceBoundary(spatialElement.Id, boundingElement.Id, setter.LevelId, connectionGeometry, IFCPhysicalOrVirtual.Physical,
-                                  isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
+                              SpaceBoundary spaceBoundary = new SpaceBoundary(null, 
+                                 spatialElement.Id, 
+                                 boundingElement.Id, setter.LevelId, 
+                                 connectionGeometry, 
+                                 IFCPhysicalOrVirtual.Physical,
+                                 isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
 
                               if (!ProcessIFCSpaceBoundary(exporterIFC, spaceBoundary, file))
                                  ExporterCacheManager.SpaceBoundaryCache.Add(spaceBoundary);
@@ -184,7 +189,7 @@ namespace Revit.IFC.Export.Exporter
                         if (boundingElement == null)
                            continue;
 
-                        ElementId buildingElemId = boundingElement.Id;
+                        ElementId boundingElementId = boundingElement.Id;
                         Curve trimmedCurve = roomBoundary.GetCurve();
 
                         if (trimmedCurve == null)
@@ -202,10 +207,13 @@ namespace Revit.IFC.Export.Exporter
                         bool isObjectExt = CategoryUtil.IsElementExternal(boundingElement);
                         bool isObjectPhys = (physOrVirt == IFCPhysicalOrVirtual.Physical);
 
-                        ElementId actualBuildingElemId = isObjectPhys ? buildingElemId : ElementId.InvalidElementId;
-
-                        SpaceBoundary spaceBoundary = new SpaceBoundary(spatialElement.Id, actualBuildingElemId, setter.LevelId, !IFCAnyHandleUtil.IsNullOrHasNoValue(connectionGeometry) ? connectionGeometry : null,
-                            physOrVirt, isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
+                        SpaceBoundary spaceBoundary = new SpaceBoundary(null, 
+                           spatialElement.Id,
+                           boundingElement.Id,
+                           setter.LevelId, 
+                           !IFCAnyHandleUtil.IsNullOrHasNoValue(connectionGeometry) ? connectionGeometry : null,
+                           physOrVirt, 
+                           isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
 
                         if (!ProcessIFCSpaceBoundary(exporterIFC, spaceBoundary, file))
                            ExporterCacheManager.SpaceBoundaryCache.Add(spaceBoundary);
@@ -324,8 +332,11 @@ namespace Revit.IFC.Export.Exporter
                               IFCAnyHandle insConnectionGeom = ExtrusionExporter.CreateConnectionSurfaceGeometry(exporterIFC, instCurve, lcs,
                                  insHeightScaled, baseHeightNonScaled);
 
-                              SpaceBoundary instBoundary = new SpaceBoundary(spatialElement.Id, elemId, setter.LevelId, !IFCAnyHandleUtil.IsNullOrHasNoValue(insConnectionGeom) ? insConnectionGeom : null, physOrVirt,
-                                  isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
+                              SpaceBoundary instBoundary = new SpaceBoundary(null, 
+                                 spatialElement.Id, elemId, setter.LevelId, 
+                                 !IFCAnyHandleUtil.IsNullOrHasNoValue(insConnectionGeom) ? insConnectionGeom : null, 
+                                 physOrVirt,
+                                 isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
                               if (!ProcessIFCSpaceBoundary(exporterIFC, instBoundary, file))
                                  ExporterCacheManager.SpaceBoundaryCache.Add(instBoundary);
                            }
@@ -425,7 +436,9 @@ namespace Revit.IFC.Export.Exporter
 
                                  IList<EnergyAnalysisOpening> openings = surface.GetAnalyticalOpenings();
                                  IFCAnyHandle connectionGeometry = CreateConnectionSurfaceGeometry(exporterIFC, surface, openings, offset);
-                                 CreateIFCSpaceBoundary(file, exporterIFC, spatialElement, boundingElement, setter.LevelId, connectionGeometry);
+                                 string name = surface.Name;
+                                 CreateIFCSpaceBoundary(file, exporterIFC, name, spatialElement, 
+                                    boundingElement, setter.LevelId, connectionGeometry);
 
                                  // try to add doors and windows for host objects if appropriate.
                                  if (boundingElement is HostObject)
@@ -434,7 +447,8 @@ namespace Revit.IFC.Export.Exporter
                                     {
                                        Element openingBoundingElem = GetBoundaryElement(document, opening.CADLinkUniqueId, opening.CADObjectUniqueId);
                                        IFCAnyHandle openingConnectionGeom = CreateConnectionSurfaceGeometry(exporterIFC, opening, offset);
-                                       CreateIFCSpaceBoundary(file, exporterIFC, spatialElement, openingBoundingElem, setter.LevelId, openingConnectionGeom);
+                                       CreateIFCSpaceBoundary(file, exporterIFC, opening.OpeningName,
+                                          spatialElement, openingBoundingElem, setter.LevelId, openingConnectionGeom);
                                     }
                                  }
                               }
@@ -471,25 +485,16 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Creates SpaceBoundary from a bounding element.
       /// </summary>
-      /// <param name="file">
-      /// The IFC file.
-      /// </param>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="spatialElement">
-      /// The spatial element.
-      /// </param>
-      /// <param name="boundingElement">
-      /// The bounding element.
-      /// </param>
-      /// <param name="levelId">
-      /// The level id.
-      /// </param>
-      /// <param name="connectionGeometry">
-      /// The connection geometry handle.
-      /// </param>
-      static void CreateIFCSpaceBoundary(IFCFile file, ExporterIFC exporterIFC, SpatialElement spatialElement, Element boundingElement, ElementId levelId, IFCAnyHandle connectionGeometry)
+      /// <param name="file">The IFC file.</param>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="name">The optional unique name of the space boundary.</param>
+      /// <param name="spatialElement">The spatial element.</param>
+      /// <param name="boundingElement">The bounding element.</param>
+      /// <param name="levelId">The level id.</param>
+      /// <param name="connectionGeometry">The connection geometry handle.</param>
+      static void CreateIFCSpaceBoundary(IFCFile file, ExporterIFC exporterIFC, string name,
+         SpatialElement spatialElement, Element boundingElement, ElementId levelId,
+         IFCAnyHandle connectionGeometry)
       {
          IFCPhysicalOrVirtual physOrVirt = IFCPhysicalOrVirtual.Physical;
          if (boundingElement == null || boundingElement is CurveElement)
@@ -499,8 +504,10 @@ namespace Revit.IFC.Export.Exporter
 
          bool isObjectExt = CategoryUtil.IsElementExternal(boundingElement);
 
-         SpaceBoundary spaceBoundary = new SpaceBoundary(spatialElement.Id, boundingElement != null ? boundingElement.Id : ElementId.InvalidElementId,
-             levelId, connectionGeometry, physOrVirt, isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
+         SpaceBoundary spaceBoundary = new SpaceBoundary(name, spatialElement.Id,
+            boundingElement?.Id ?? ElementId.InvalidElementId,
+            levelId, connectionGeometry, physOrVirt,
+            isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
 
          if (!ProcessIFCSpaceBoundary(exporterIFC, spaceBoundary, file))
             ExporterCacheManager.SpaceBoundaryCache.Add(spaceBoundary);
@@ -613,18 +620,10 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Creates IFC connection surface geometry from an opening object.
       /// </summary>
-      /// <param name="file">
-      /// The IFC file.
-      /// </param>
-      /// <param name="opening">
-      /// The EnergyAnalysisOpening.
-      /// </param>
-      /// <param name="offset">
-      /// The offset of opening.
-      /// </param>
-      /// <returns>
-      /// The connection surface geometry handle.
-      /// </returns>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="opening">The EnergyAnalysisOpening.</param>
+      /// <param name="offset">The offset of opening.</param>
+      /// <returns>The connection surface geometry handle.</returns>
       static IFCAnyHandle CreateConnectionSurfaceGeometry(ExporterIFC exporterIFC, EnergyAnalysisOpening opening, XYZ offset)
       {
          IFCFile file = exporterIFC.GetFile();
@@ -651,9 +650,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="spatialElement">The spatial element.</param>
       /// <param name="levelId">The level id.</param>
       /// <param name="levelInfo">The level info.</param>
-      /// <returns>
-      /// The height, scaled in IFC units.
-      /// </returns>
+      /// <returns>The height, scaled in IFC units.</returns>
       static double GetScaledHeight(SpatialElement spatialElement, ElementId levelId, IFCLevelInfo levelInfo)
       {
          Document document = spatialElement.Document;
@@ -728,25 +725,18 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Creates space boundary.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="boundary">
-      /// The space boundary object.
-      /// </param>
-      /// <param name="file">
-      /// The IFC file.
-      /// </param>
-      /// <returns>
-      /// True if processed successfully, false otherwise.
-      /// </returns>
-      public static bool ProcessIFCSpaceBoundary(ExporterIFC exporterIFC, SpaceBoundary boundary, IFCFile file)
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="boundary">The space boundary object.</param>
+      /// <param name="file">The IFC file.</param>
+      /// <returns>True if processed successfully, false otherwise.</returns>
+      public static bool ProcessIFCSpaceBoundary(ExporterIFC exporterIFC, SpaceBoundary boundary,
+         IFCFile file)
       {
-         string spaceBoundaryName = String.Empty;
+         string ifcSpaceBoundaryName = string.Empty;
          if (ExporterCacheManager.ExportOptionsCache.SpaceBoundaryLevel == 1)
-            spaceBoundaryName = "1stLevel";
+            ifcSpaceBoundaryName = "1stLevel";
          else if (ExporterCacheManager.ExportOptionsCache.SpaceBoundaryLevel == 2)
-            spaceBoundaryName = "2ndLevel";
+            ifcSpaceBoundaryName = "2ndLevel";
 
          IFCAnyHandle spatialElemHnd = ExporterCacheManager.SpaceInfoCache.FindSpaceHandle(boundary.SpatialElementId);
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(spatialElemHnd))
@@ -756,13 +746,19 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle buildingElemHnd = null;
          if (boundaryType == IFCPhysicalOrVirtual.Physical)
          {
-            buildingElemHnd = exporterIFC.FindSpaceBoundingElementHandle(boundary.BuildingElementId, boundary.LevelId);
+            buildingElemHnd = exporterIFC.FindSpaceBoundingElementHandle(boundary.NonSpatialElementId, boundary.LevelId);
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(buildingElemHnd))
                return false;
          }
 
-         IFCInstanceExporter.CreateRelSpaceBoundary(file, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle, spaceBoundaryName, null,
-            spatialElemHnd, buildingElemHnd, boundary.ConnectGeometryHandle, boundaryType, boundary.InternalOrExternal);
+         string hashCode = boundary.GetBoundaryHashCode();
+         string guid = GUIDUtil.GenerateIFCGuidFrom(
+            GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelSpaceBoundary, hashCode));
+
+         IFCInstanceExporter.CreateRelSpaceBoundary(file, guid,
+            ExporterCacheManager.OwnerHistoryHandle, ifcSpaceBoundaryName, null,
+            spatialElemHnd, buildingElemHnd, boundary.ConnectionGeometryHandle, boundaryType,
+            boundary.InternalOrExternal);
 
          return true;
       }
@@ -773,17 +769,12 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The ExporterIFC.</param>
       /// <param name="file">The file.</param>
       /// <param name="spaceHnd">The space handle.</param>
-      /// <param name="projectInfo">The project info.</param>
       /// <param name="spatialElement">The spatial element.</param>
       private static void CreateCOBIESpaceClassifications(IFCFile file, IFCAnyHandle spaceHnd,
-          ProjectInfo projectInfo, SpatialElement spatialElement)
+         SpatialElement spatialElement)
       {
-         HashSet<IFCAnyHandle> spaceHnds = new HashSet<IFCAnyHandle>() { spaceHnd };
-
-         string bimStandardsLocation = null;
-         if (projectInfo != null)
-            ParameterUtil.GetStringValueFromElement(projectInfo, "BIM Standards URL", out bimStandardsLocation);
-
+         string bimStandardsLocation = ExporterCacheManager.ClassificationCache.GetBIMStandardsURL(spatialElement);
+         
          // OCCS - Space by Function.
          if (ParameterUtil.GetStringValueFromElement(spatialElement, "OmniClass Number", out string itemReference) != null)
          {
@@ -797,50 +788,26 @@ namespace Revit.IFC.Export.Exporter
                ExporterCacheManager.ClassificationCache.ClassificationHandles.Add("OmniClass", classification);
             }
 
-            IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-              "http://www.omniclass.org/tables/OmniClass_13_2006-03-28.pdf", itemReference, itemName, classification);
-            IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-               ExporterCacheManager.OwnerHistoryHandle, "OmniClass", null, spaceHnds, classificationReference);
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(spatialElement, "IfcRelAssociatesClassification: OmniClass"));
+            ClassificationReferenceKey key = new ClassificationReferenceKey(
+               "http://www.omniclass.org/tables/OmniClass_13_2006-03-28.pdf", itemReference,
+               itemName, null, classification);
+            ExporterCacheManager.ClassificationCache.AddRelation(file, key, guid, null,
+               spaceHnd);
          }
 
          // Space Type (Owner)
-         itemReference = "";
-         if (ParameterUtil.GetStringValueFromElement(spatialElement, "Space Type (Owner) Reference", out itemReference) != null)
-         {
-            string itemName;
-            ParameterUtil.GetStringValueFromElement(spatialElement, "Space Type (Owner) Name", out itemName);
-
-            IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-              bimStandardsLocation, itemReference, itemName, null);
-            IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-               ExporterCacheManager.OwnerHistoryHandle, "Space Type (Owner)", null, spaceHnds, classificationReference);
-         }
+         CreateOneCOBIEClassificationReference(file, spatialElement, spaceHnd, null, 
+            "Space Type (Owner)", bimStandardsLocation);
 
          // Space Category (Owner)
-         itemReference = "";
-         if (ParameterUtil.GetStringValueFromElement(spatialElement, "Space Category (Owner) Reference", out itemReference) != null)
-         {
-            string itemName;
-            ParameterUtil.GetStringValueFromElement(spatialElement, "Space Category (Owner) Name", out itemName);
-
-            IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-              bimStandardsLocation, itemReference, itemName, null);
-            IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-               ExporterCacheManager.OwnerHistoryHandle, "Space Category (Owner)", null, spaceHnds, classificationReference);
-         }
+         CreateOneCOBIEClassificationReference(file, spatialElement, spaceHnd, null,
+            "Space Category (Owner)", bimStandardsLocation);
 
          // Space Category (BOMA)
-         itemReference = "";
-         if (ParameterUtil.GetStringValueFromElement(spatialElement, "Space Category (BOMA) Reference", out itemReference) != null)
-         {
-            string itemName;
-            ParameterUtil.GetStringValueFromElement(spatialElement, "Space Category (BOMA) Name", out itemName);
-
-            IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-              "http://www.BOMA.org", itemReference, itemName, null);
-            IFCAnyHandle relAssociates = IFCInstanceExporter.CreateRelAssociatesClassification(file, GUIDUtil.CreateGUID(),
-               ExporterCacheManager.OwnerHistoryHandle, "Space Category (BOMA)", "", spaceHnds, classificationReference);
-         }
+         CreateOneCOBIEClassificationReference(file, spatialElement, spaceHnd, null,
+            "Space Category (BOMA)", "http://www.BOMA.org");
       }
 
       /// <summary>
@@ -910,7 +877,7 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
 
          IFCAnyHandle spaceHnd = null;
-         using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
+         using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
          {
             IFCAnyHandle localPlacement = setter.LocalPlacement;
 
@@ -956,7 +923,7 @@ namespace Revit.IFC.Export.Exporter
                   XYZ orig = new XYZ(0, 0, elevation + bottomOffset);
                   Transform lcs = Transform.CreateTranslation(orig); // room calculated as level offset.
 
-                  IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, XYZ.BasisZ, scaledRoomHeight, true);
+                  IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, XYZ.BasisZ, scaledRoomHeight, true, out _);
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
                      return false;
 
@@ -1049,12 +1016,8 @@ namespace Revit.IFC.Export.Exporter
 
          // Export Classifications for SpatialElement for GSA/COBIE.
          if (ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE)
-         {
-            ProjectInfo projectInfo = spatialElement.Document.ProjectInformation;
-            if (projectInfo != null)
-               CreateCOBIESpaceClassifications(file, spaceHnd, projectInfo, spatialElement);
-         }
-
+            CreateCOBIESpaceClassifications(file, spaceHnd, spatialElement);
+         
          return true;
       }
 
@@ -1202,9 +1165,10 @@ namespace Revit.IFC.Export.Exporter
 
          if (properties.Count > 0)
          {
-            return IFCInstanceExporter.CreatePropertySet(file,
-                GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle, "ePset_SpatialZoneEnergyAnalysis",
-                null, properties);
+            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, "ePset_SpatialZoneEnergyAnalysis"));
+            return IFCInstanceExporter.CreatePropertySet(file, psetGuid, 
+               ExporterCacheManager.OwnerHistoryHandle, "ePset_SpatialZoneEnergyAnalysis", null, properties);
          }
 
          return null;
@@ -1326,9 +1290,10 @@ namespace Revit.IFC.Export.Exporter
 
          if (properties.Count > 0)
          {
-            return IFCInstanceExporter.CreatePropertySet(file,
-                GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle, "Pset_ZoneCommon",
-                null, properties);
+            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, "Pset_ZoneCommon"));
+            return IFCInstanceExporter.CreatePropertySet(file, psetGuid, 
+               ExporterCacheManager.OwnerHistoryHandle, "Pset_ZoneCommon", null, properties);
          }
 
          return null;
@@ -1362,118 +1327,95 @@ namespace Revit.IFC.Export.Exporter
 
          if (properties.Count > 0)
          {
-            return IFCInstanceExporter.CreatePropertySet(file,
-                GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle, "ePset_SpaceOccupant", null, properties);
+            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, "ePset_SpaceOccupant"));
+            return IFCInstanceExporter.CreatePropertySet(file, psetGuid, 
+               ExporterCacheManager.OwnerHistoryHandle, "ePset_SpaceOccupant", null, properties);
          }
 
          return null;
       }
 
+      static void CreateOneCOBIEClassificationReference(IFCFile file, Element element, 
+         IFCAnyHandle spaceHnd, IDictionary<string, IFCAnyHandle> classificationHandles,
+         string name, string location)
+      {
+         IFCAnyHandle handle = null;
+         if (classificationHandles?.TryGetValue(name, out handle) ?? false)
+         {
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
+               return;
+         }
+
+         string itemReference;
+         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, name + " Reference", out itemReference) != null)
+         {
+            string itemName;
+            ParameterUtil.GetStringValueFromElementOrSymbol(element, name + " Name", out itemName);
+
+            ClassificationReferenceKey key = new ClassificationReferenceKey(location, 
+               itemReference, itemName, null, null);
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, "IfcRelAssociatesClassification: " + name));
+            IFCAnyHandle classificationReference = ExporterCacheManager.ClassificationCache.AddRelation(
+               file, key, guid, null, spaceHnd);
+
+            if (classificationHandles != null)
+               classificationHandles[name] = classificationReference;
+         }
+      }
+
       /// <summary>
       /// Collect information to create space occupants and cache them to create when end export.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The exporterIFC object.
-      /// </param>
-      /// <param name="file">
-      /// The IFCFile object.
-      /// </param>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <param name="productWrapper">
-      /// The ProductWrapper.
-      /// </param>
+      /// <param name="exporterIFC">The exporterIFC object.</param>
+      /// <param name="file">The IFCFile object.</param>
+      /// <param name="element">The element.</param>
+      /// <param name="productWrapper">The ProductWrapper.</param>
       static void CreateSpaceOccupantInfo(IFCFile file, Element element, ProductWrapper productWrapper)
       {
-         IFCAnyHandle roomHandle = productWrapper.GetElementOfType(IFCEntityType.IfcSpace);
+         IFCAnyHandle spaceHnd = productWrapper.GetElementOfType(IFCEntityType.IfcSpace);
 
          bool exportToCOBIE = ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE;
 
          string name;
          if (ParameterUtil.GetStringValueFromElement(element, "Occupant", out name) != null)
          {
-            Dictionary<string, IFCAnyHandle> classificationHandles = new Dictionary<string, IFCAnyHandle>();
+            string location = exportToCOBIE ?
+               ExporterCacheManager.ClassificationCache.GetBIMStandardsURL(element) : null;
 
-            // Classifications.
-            if (exportToCOBIE)
-            {
-               Document doc = element.Document;
-               ProjectInfo projectInfo = doc.ProjectInformation;
-
-               string location = null;
-               if (projectInfo != null)
-                  ParameterUtil.GetStringValueFromElement(projectInfo, "BIM Standards URL", out location);
-
-               string itemReference;
-               if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "Space Occupant Organization ID Reference", out itemReference) != null)
-               {
-                  string itemName;
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, "Space Occupant Organization ID Name", out itemName);
-
-                  IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-                    location, itemReference, itemName, null);
-                  classificationHandles["Space Occupant Organization ID"] = classificationReference;
-               }
-
-               if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "Space Occupant Sub-Organization ID Reference", out itemReference) != null)
-               {
-                  string itemName;
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, "Space Occupant Sub-Organization ID Name", out itemName);
-
-                  IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-                    location, itemReference, itemName, null);
-                  classificationHandles["Space Occupant Sub-Organization ID"] = classificationReference;
-               }
-
-               if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "Space Occupant Sub-Organization ID Reference", out itemReference) != null)
-               {
-                  string itemName;
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, "Space Occupant Sub-Organization ID Name", out itemName);
-
-                  IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-                    location, itemReference, itemName, null);
-                  classificationHandles["Space Occupant Sub-Organization ID"] = classificationReference;
-               }
-
-               if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "Space Occupant Organization Billing ID Reference", out itemReference) != null)
-               {
-                  string itemName;
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, "Space Occupant Organization Billing ID Name", out itemName);
-
-                  IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-                    location, itemReference, itemName, null);
-                  classificationHandles["Space Occupant Organization Billing ID"] = classificationReference;
-               }
-            }
-
-            // Look for Parameter Set definition.  We don't use the general approach as Space Occupants are not "real" elements.
-            IFCAnyHandle spaceOccupantPSetHnd = CreatePSetSpaceOccupant(file, element);
-
+            Dictionary<string, IFCAnyHandle> classificationReferences;
             SpaceOccupantInfo spaceOccupantInfo = ExporterCacheManager.SpaceOccupantInfoCache.Find(name);
             if (spaceOccupantInfo == null)
             {
-               spaceOccupantInfo = new SpaceOccupantInfo(roomHandle, classificationHandles, spaceOccupantPSetHnd);
+               classificationReferences = new Dictionary<string, IFCAnyHandle>();
+               spaceOccupantInfo = new SpaceOccupantInfo(spaceHnd, classificationReferences, null);
                ExporterCacheManager.SpaceOccupantInfoCache.Register(name, spaceOccupantInfo);
             }
             else
             {
-               spaceOccupantInfo.RoomHandles.Add(roomHandle);
-               foreach (KeyValuePair<string, IFCAnyHandle> classificationReference in classificationHandles)
-               {
-                  if (!spaceOccupantInfo.ClassificationReferences[classificationReference.Key].HasValue)
-                     spaceOccupantInfo.ClassificationReferences[classificationReference.Key] = classificationReference.Value;
-                  else
-                  {
-                     // Delete redundant IfcClassificationReference from file.
-                     IFCAnyHandleUtil.Delete(classificationReference.Value);
-                  }
-               }
+               spaceOccupantInfo.RoomHandles.Add(spaceHnd);
+               classificationReferences = spaceOccupantInfo.ClassificationReferences;
+            }
 
-               if (spaceOccupantInfo.SpaceOccupantProperySetHandle == null || !spaceOccupantInfo.SpaceOccupantProperySetHandle.HasValue)
-                  spaceOccupantInfo.SpaceOccupantProperySetHandle = spaceOccupantPSetHnd;
-               else if (spaceOccupantPSetHnd.HasValue)
-                  IFCAnyHandleUtil.Delete(spaceOccupantPSetHnd);
+            if (exportToCOBIE)
+            {
+               CreateOneCOBIEClassificationReference(file, element, spaceHnd, classificationReferences,
+                  "Space Occupant Organization ID", location);
+
+               CreateOneCOBIEClassificationReference(file, element, spaceHnd, classificationReferences,
+                  "Space Occupant Sub-Organization ID", location);
+
+               CreateOneCOBIEClassificationReference(file, element, spaceHnd, classificationReferences,
+                  "Space Occupant Organization Billing ID", location);
+            }
+
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(spaceOccupantInfo.SpaceOccupantProperySetHandle))
+            {
+               // Look for Parameter Set definition.  We don't use the general approach as
+               // Space Occupants are not "real" elements.
+               spaceOccupantInfo.SpaceOccupantProperySetHandle = 
+                  CreatePSetSpaceOccupant(file, element);
             }
          }
       }
@@ -1487,15 +1429,17 @@ namespace Revit.IFC.Export.Exporter
             {
                ParameterUtil.GetStringValueFromElementOrSymbol(element, name + " Name", out string itemName);
 
-               IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-                 location, itemReference, itemName, null);
+               ClassificationReferenceKey key = new ClassificationReferenceKey(location,
+                  itemReference, itemName, null, null);
+               IFCAnyHandle classificationReference =
+                  ExporterCacheManager.ClassificationCache.FindOrCreateClassificationReference(file, key);
                zoneInfo.ClassificationReferences[name] = classificationReference;
             }
          }
       }
 
-      static private void CreateGSAInformation(ExporterIFC exporterIFC, Element element, ZoneInfo zoneInfo,
-         string zoneObjectType)
+      static private void CreateGSAInformation(ExporterIFC exporterIFC, Element element, 
+         ZoneInfo zoneInfo, string zoneObjectType)
       {
          IFCFile file = exporterIFC.GetFile();
 
@@ -1503,12 +1447,7 @@ namespace Revit.IFC.Export.Exporter
          if (isSpatialZone)
          {
             // Classifications.
-            Document doc = element.Document;
-            ProjectInfo projectInfo = doc.ProjectInformation;
-
-            string location = null;
-            if (projectInfo != null)
-               ParameterUtil.GetStringValueFromElement(projectInfo, "BIM Standards URL", out location);
+            string location = ExporterCacheManager.ClassificationCache.GetBIMStandardsURL(element);
 
             // Spatial Zone Type (Owner)
             CreateOneGSAClassification(file, zoneInfo, "Spatial Zone Type (Owner)", location, element);
@@ -1522,8 +1461,10 @@ namespace Revit.IFC.Export.Exporter
                if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "ASHRAE Zone Type", 
                   out string itemName) != null)
                {
-                  IFCAnyHandle classificationReference = IFCInstanceExporter.CreateClassificationReference(file,
-                    "ASHRAE 90.1", "Common Space Type", itemName, null);
+                  ClassificationReferenceKey key = new ClassificationReferenceKey("ASHRAE 90.1", 
+                     "Common Space Type", itemName, null, null);
+                  IFCAnyHandle classificationReference =
+                     ExporterCacheManager.ClassificationCache.FindOrCreateClassificationReference(file, key);
                   zoneInfo.ClassificationReferences["ASHRAE Zone Type"] = classificationReference;
                }
             }
@@ -1543,7 +1484,8 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="file">The IFCFile object.</param>
       /// <param name="element">The element.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
-      static void CreateZoneInfos(ExporterIFC exporterIFC, IFCFile file, Element element, ProductWrapper productWrapper)
+      static void CreateZoneInfos(ExporterIFC exporterIFC, IFCFile file, Element element, 
+         ProductWrapper productWrapper)
       {
          bool exportToCOBIE = ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE;
 

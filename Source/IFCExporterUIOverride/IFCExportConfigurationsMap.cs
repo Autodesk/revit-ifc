@@ -26,6 +26,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.DB.ExtensibleStorage;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.Common.Utility;
 
 namespace BIM.IFC.Export.UI
 {
@@ -62,7 +63,7 @@ namespace BIM.IFC.Export.UI
          // Deep copy
          foreach (IFCExportConfiguration value in map.Values)
          {
-            Add(value.Clone());
+            AddOrReplace(value.Clone());
          }
       }
 
@@ -73,19 +74,19 @@ namespace BIM.IFC.Export.UI
       {
          // These are the built-in configurations.  Provide a more extensible means of storage.
          // Order of construction: name, version, space boundaries, QTO, split walls, internal sets, 2d elems, boundingBox
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3, 1, false, false, true, false, false, false, true, false, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, true, true, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, true, false, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3FM, 1, true, false, false, true, true, false, true, true, false, includeSteelElements: true));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3CV2, 0, false, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3, 1, false, false, true, false, false, false, false, true, false, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFCCOBIE, 2, true, true, true, false, false, false, false, true, true, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3BFM, 1, true, true, false, false, false, false, false, true, false, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false, false));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3FM, 1, true, false, false, false, true, true, false, true, true, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, includeSteelElements: true,
             exchangeRequirement:KnownERNames.Architecture));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, includeSteelElements: true,
             exchangeRequirement:KnownERNames.Structural));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true,
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, includeSteelElements: true,
             exchangeRequirement:KnownERNames.BuildingService));
-         Add(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, false, includeSteelElements: true));
       }
 
       /// <summary>
@@ -129,6 +130,9 @@ namespace BIM.IFC.Export.UI
                      Field fieldExportSolidModelRep = m_OldSchema.GetField(s_setupExportSolidModelRep);
                      if (fieldExportSolidModelRep != null)
                         configuration.ExportSolidModelRep = configEntity.Get<bool>(s_setupExportSolidModelRep);
+                     Field fieldExportMaterialPsets = m_OldSchema.GetField(s_setupExportMaterialPsets);
+                     if (fieldExportMaterialPsets != null)
+                        configuration.ExportMaterialPsets = configEntity.Get<bool>(s_setupExportMaterialPsets);
                      Field fieldExportSchedulesAsPsets = m_OldSchema.GetField(s_setupExportSchedulesAsPsets);
                      if (fieldExportSchedulesAsPsets != null)
                         configuration.ExportSchedulesAsPsets = configEntity.Get<bool>(s_setupExportSchedulesAsPsets);
@@ -178,7 +182,7 @@ namespace BIM.IFC.Export.UI
                      if (fieldTessellationLevelOfDetail != null)
                         configuration.TessellationLevelOfDetail = configEntity.Get<double>(s_setupTessellationLevelOfDetail);
 
-                     Add(configuration);
+                     AddOrReplace(configuration);
                   }
                }
             }
@@ -233,6 +237,8 @@ namespace BIM.IFC.Export.UI
                         configuration.ExportBoundingBox = bool.Parse(configMap[s_setupExportBoundingBox]);
                      if (configMap.ContainsKey(s_setupExportSolidModelRep))
                         configuration.ExportSolidModelRep = bool.Parse(configMap[s_setupExportSolidModelRep]);
+                     if (configMap.ContainsKey(s_setupExportMaterialPsets))
+                        configuration.ExportMaterialPsets = bool.Parse(configMap[s_setupExportMaterialPsets]);
                      if (configMap.ContainsKey(s_setupExportSchedulesAsPsets))
                         configuration.ExportSchedulesAsPsets = bool.Parse(configMap[s_setupExportSchedulesAsPsets]);
                      if (configMap.ContainsKey(s_setupExportUserDefinedPsets))
@@ -268,6 +274,8 @@ namespace BIM.IFC.Export.UI
                            configuration.SitePlacement = siteTrfBasis;
                      }
                      // Geo Reference info
+                     if (configMap.ContainsKey(s_selectedSite))
+                        configuration.SelectedSite = configMap[s_selectedSite];
                      if (configMap.ContainsKey(s_geoRefCRSName))
                         configuration.GeoRefCRSName = configMap[s_geoRefCRSName];
                      if (configMap.ContainsKey(s_geoRefCRSDesc))
@@ -279,7 +287,7 @@ namespace BIM.IFC.Export.UI
                      if (configMap.ContainsKey(s_geoRefMapUnit))
                         configuration.GeoRefMapUnit = configMap[s_geoRefMapUnit];
 
-                     Add(configuration);
+                     AddOrReplace(configuration);
                   }
                }
             }
@@ -296,7 +304,7 @@ namespace BIM.IFC.Export.UI
                      string configData = configEntity.Get<string>(s_configMapField);
                      JavaScriptSerializer ser = new JavaScriptSerializer();
                      IFCExportConfiguration configuration = ser.Deserialize<IFCExportConfiguration>(configData);
-                     Add(configuration);
+                     AddOrReplace(configuration);
                   }
                }
             }
@@ -306,7 +314,7 @@ namespace BIM.IFC.Export.UI
             {
                foreach (KeyValuePair<string, IFCExportConfiguration> lastSelConfig in IFCExport.LastSelectedConfig)
                {
-                  Add(lastSelConfig.Value);
+                  AddOrReplace(lastSelConfig.Value);
                }
             }
          }
@@ -339,6 +347,7 @@ namespace BIM.IFC.Export.UI
       private const string s_setupExportSpecificSchedules = "ExportSpecificSchedules";
       private const string s_setupExportBoundingBox = "ExportBoundingBox";
       private const string s_setupExportSolidModelRep = "ExportSolidModelRep";
+      private const string s_setupExportMaterialPsets = "ExportMaterialPsets";
       private const string s_setupExportSchedulesAsPsets = "ExportSchedulesAsPsets";
       private const string s_setupExportUserDefinedPsets = "ExportUserDefinedPsets";
       private const string s_setupExportUserDefinedPsetsFileName = "ExportUserDefinedPsetsFileName";
@@ -360,6 +369,7 @@ namespace BIM.IFC.Export.UI
       private const string s_cobieProjectInfo = "COBieProjectInfo";
       private const string s_includeSteelElements = "IncludeSteelElements";
       // Geo Reference info
+      private const string s_selectedSite = "SelectedSite";
       private const string s_geoRefCRSName = "GeoRefCRSName";
       private const string s_geoRefCRSDesc = "GeoRefCRSDesc";
       private const string s_geoRefEPSGCode = "GeoRefEPSGCode";
@@ -369,7 +379,7 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// Updates the setups to save into the document.
       /// </summary>
-      public void UpdateSavedConfigurations()
+      public void UpdateSavedConfigurations(IFCExportConfigurationsMap initialConfigs)
       {
          // delete the old schema and the DataStorage.
          if (m_OldSchema == null)
@@ -443,9 +453,6 @@ namespace BIM.IFC.Export.UI
          List<IFCExportConfiguration> setupsToSave = new List<IFCExportConfiguration>();
          foreach (IFCExportConfiguration configuration in m_configurations.Values)
          {
-            if (configuration.IsBuiltIn)
-               continue;
-
             // Store in-session settings in the cached in-session configuration
             if (configuration.IsInSession)
             {
@@ -453,7 +460,16 @@ namespace BIM.IFC.Export.UI
                continue;
             }
 
-            setupsToSave.Add(configuration);
+            // Only add to setupsToSave if it is a new or changed configuration
+            if (initialConfigs.HasName(configuration.Name))
+            {
+               if (!ConfigurationComparer.ConfigurationsAreEqual(initialConfigs[configuration.Name], configuration))
+                  setupsToSave.Add(configuration);
+               else if (!configuration.IsBuiltIn)
+                  setupsToSave.Add(configuration);
+            }
+            else
+               setupsToSave.Add(configuration);
          }
 
          // If there are no setups to save, and if the schema is not present (which means there are no
@@ -535,9 +551,19 @@ namespace BIM.IFC.Export.UI
       /// Adds a configuration to the map.
       /// </summary>
       /// <param name="configuration">The configuration.</param>
-      public void Add(IFCExportConfiguration configuration)
+      public void AddOrReplace(IFCExportConfiguration configuration)
       {
-         m_configurations.Add(configuration.Name, configuration);
+         if (m_configurations.ContainsKey(configuration.Name))
+         {
+            if (m_configurations[configuration.Name].IsBuiltIn)
+               m_configurations[configuration.Name].UpdateBuiltInConfiguration(configuration);
+            else
+               m_configurations[configuration.Name] = configuration;
+         }
+         else
+         {
+            m_configurations.Add(configuration.Name, configuration);
+         }
       }
 
       /// <summary>

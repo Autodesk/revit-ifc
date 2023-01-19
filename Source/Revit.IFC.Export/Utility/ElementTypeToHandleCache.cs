@@ -62,7 +62,8 @@ namespace Revit.IFC.Export.Utility
 
    /// <summary>
    /// Used to keep a cache of a mapping of an ElementType to a handle.
-   /// This is specially handled because the same type can be assigned to different IFC entity with IfcExportAs and IfcExportType
+   /// This is specially handled because the same type can be assigned to different IFC entities 
+   /// based on parameter settings.
    /// </summary>
    public class ElementTypeToHandleCache
    {

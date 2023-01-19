@@ -37,20 +37,13 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Exports text note elements.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="textNote">
-      /// The text note element.
-      /// </param>
-      /// <param name="productWrapper">
-      /// The ProductWrapper.
-      /// </param>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="textNote">The text note element.</param>
+      /// <param name="productWrapper">The ProductWrapper.</param>
       public static void Export(ExporterIFC exporterIFC, TextNote textNote, ProductWrapper productWrapper)
       {
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         string predefinedType = null;
-         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, textNote, out predefinedType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, textNote, out string predefinedType);
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return;
 
@@ -59,7 +52,7 @@ namespace Revit.IFC.Export.Exporter
          {
             string textString = textNote.Text;
             if (String.IsNullOrEmpty(textString))
-               throw new Exception("TextNote does not have test string.");
+               return;
 
             ElementId symId = textNote.GetTypeId();
             if (symId == ElementId.InvalidElementId)
@@ -131,13 +124,19 @@ namespace Revit.IFC.Export.Exporter
                shapeReps.Add(bodyRepHnd);
 
                IFCAnyHandle prodShapeHnd = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
+               string guid = GUIDUtil.CreateGUID(textNote);
                IFCAnyHandle instHnd;
                if (exportType.ExportInstance == Common.Enums.IFCEntityType.IfcAnnotation)
-                  instHnd = IFCInstanceExporter.CreateAnnotation(exporterIFC, textNote, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
-                     setter.LocalPlacement, prodShapeHnd);
+               {
+                  instHnd = IFCInstanceExporter.CreateAnnotation(exporterIFC, textNote, guid,
+                     ExporterCacheManager.OwnerHistoryHandle, setter.LocalPlacement, prodShapeHnd);
+               }
                else
-                  instHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, textNote, GUIDUtil.CreateGUID(), ExporterCacheManager.OwnerHistoryHandle,
-                  setter.LocalPlacement, prodShapeHnd);
+               {
+                  instHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC,
+                     textNote, guid, ExporterCacheManager.OwnerHistoryHandle,
+                     setter.LocalPlacement, prodShapeHnd);
+               }
 
                productWrapper.AddAnnotation(instHnd, setter.LevelInfo, true);
             }

@@ -30,7 +30,8 @@ namespace BIM.IFC.Export.UI
    /// </summary>
    public partial class IFCClassificationWindow : ChildWindow
    {
-      private IFCClassification m_newClassification;
+
+      private IFCClassification m_newClassification = new IFCClassification();
       private IList<IFCClassification> m_newClassificationList = new List<IFCClassification>();
       private IFCClassification m_savedClassification = new IFCClassification();
 

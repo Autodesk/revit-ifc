@@ -182,7 +182,7 @@ namespace BIM.IFC.Export.UI
             // Note that when exporting multiple documents, we are still going to use the configurations from the
             // active document.  
             IFCExportConfigurationsMap configurationsMap = new IFCExportConfigurationsMap();
-            configurationsMap.Add(IFCExportConfiguration.GetInSession());
+            configurationsMap.AddOrReplace(IFCExportConfiguration.GetInSession());
             configurationsMap.AddBuiltInConfigurations();
             configurationsMap.AddSavedConfigurations();
 
@@ -217,7 +217,6 @@ namespace BIM.IFC.Export.UI
                String fullName = mainWindow.ExportFilePathName;
                String path = Path.GetDirectoryName(fullName);
                String fileName = multipleFiles ? Properties.Resources.MultipleFiles : Path.GetFileName(fullName);
-
 
                // This option should be rarely used, and is only for consistency with old files.  As such, it is set by environment variable only.
                String use2009GUID = Environment.GetEnvironmentVariable("Assign2009GUIDToBuildingStoriesOnIFCExport");
@@ -484,8 +483,8 @@ namespace BIM.IFC.Export.UI
 
             // get the link instances
             List<RevitLinkInstance> currRvtLinkInstances = rvtLinkNamesToInstancesDict[linkPathName];
-            IList<string> serTransforms = new List<string>();
             IList<string> linkFileNames = new List<string>();
+            IList<Tuple<ElementId, string>> serTransforms = new List<Tuple<ElementId, string>>();
 
             Document linkDocument = null;
             double lengthScaleFactorLink = 1.0;
@@ -582,7 +581,7 @@ namespace BIM.IFC.Export.UI
                tr.Origin *= lengthScaleFactorLink;
 
                // serialize transform
-               serTransforms.Add(SerializeTransform(tr));
+               serTransforms.Add(Tuple.Create(currRvtLinkInstance.Id, SerializeTransform(tr)));
             }
 
             // IFC export requires an open transaction, although no changes should be made
@@ -602,8 +601,11 @@ namespace BIM.IFC.Export.UI
 
                   for (int ind = 0; ind < numLinkInstancesToExport; ind++)
                   {
-                     string optionName = (ind == 0) ? "ExportLinkInstanceTransform" : "ExportLinkInstanceTransform" + (ind + 1).ToString();
-                     exportOptions.AddOption(optionName, serTransforms[ind]);
+                     string optionName = (ind == 0) ? "ExportLinkId" : "ExportLinkId" + (ind + 1).ToString();
+                     exportOptions.AddOption(optionName, serTransforms[ind].Item1.ToString());
+
+                     optionName = (ind == 0) ? "ExportLinkInstanceTransform" : "ExportLinkInstanceTransform" + (ind + 1).ToString();
+                     exportOptions.AddOption(optionName, serTransforms[ind].Item2);
 
                      // Don't pass in file name for the first link instance.
                      if (ind == 0)

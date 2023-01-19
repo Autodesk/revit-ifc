@@ -33,100 +33,83 @@ using Revit.IFC.Common.Extensions;
 namespace BIM.IFC.Export.UI
 {
    /// <summary>
+   /// Compare 2 configurations
+   /// </summary>
+   public static class ConfigurationComparer
+   {
+      public static bool ConfigurationsAreEqual<T>(T obj1, T obj2)
+      {
+         var serializer = new JavaScriptSerializer();
+         var obj1Serialized = serializer.Serialize(obj1);
+         var obj2Serialized = serializer.Serialize(obj2);
+         return obj1Serialized == obj2Serialized;
+      }
+   }
+
+   /// <summary>
    /// Represents a particular setup for an export to IFC.
    /// </summary>
    public class IFCExportConfiguration
    {
-      // Items under General Tab
       #region GeneralTab
+      /// <summary>
+      /// The IFCVersion of the configuration.
+      /// </summary>
+      public IFCVersion IFCVersion { get; set; } = IFCVersion.IFC2x3CV2;
 
-         /// <summary>
-         /// The IFCVersion of the configuration.
-         /// </summary>
-         public IFCVersion IFCVersion { get; set; } = IFCVersion.IFC2x3CV2;
+      private KnownERNames exchangeRequirement = KnownERNames.NotDefined;
 
-         private KnownERNames exchangeRequirement = KnownERNames.NotDefined;
-
-         public KnownERNames ExchangeRequirement {
-            get
+      public KnownERNames ExchangeRequirement
+      {
+         get
+         {
+            return exchangeRequirement;
+         }
+         set
+         {
+            if (IFCExchangeRequirements.ExchangeRequirements.ContainsKey(IFCVersion))
             {
-               return exchangeRequirement;
-            }
-            set
-            {
-               if (IFCExchangeRequirements.ExchangeRequirements.ContainsKey(IFCVersion))
-               {
-                  IList<KnownERNames> erList = IFCExchangeRequirements.ExchangeRequirements[IFCVersion];
-                  if (erList != null && erList.Contains(value))
-                     exchangeRequirement = value;
-               }
+               IList<KnownERNames> erList = IFCExchangeRequirements.ExchangeRequirements[IFCVersion];
+               if (erList != null && erList.Contains(value))
+                  exchangeRequirement = value;
             }
          }
+      }
 
-         /// <summary>
-         /// The IFCFileFormat of the configuration.
-         /// </summary>
-         public IFCFileFormat IFCFileType { get; set; } = IFCFileFormat.Ifc;
+      /// <summary>
+      /// The IFCFileFormat of the configuration.
+      /// </summary>
+      public IFCFileFormat IFCFileType { get; set; } = IFCFileFormat.Ifc;
 
-         /// <summary>
-         /// The phase of the document to export.
-         /// </summary>
-         public int ActivePhaseId { get; set; } = ElementId.InvalidElementId.IntegerValue;
+      /// <summary>
+      /// The phase of the document to export.
+      /// </summary>
+      public int ActivePhaseId { get; set; } = ElementId.InvalidElementId.IntegerValue;
 
-         /// <summary>
-         /// The level of space boundaries of the configuration.
-         /// </summary>
-         public int SpaceBoundaries { get; set; } = 0;
+      /// <summary>
+      /// The level of space boundaries of the configuration.
+      /// </summary>
+      public int SpaceBoundaries { get; set; } = 0;
 
-         /// <summary>
-         /// The origin of the exported file: either shared coordinates (Site Survey Point), Project Base Point, or internal coordinates.
-         /// </summary>
-         public SiteTransformBasis SitePlacement { get; set; } = SiteTransformBasis.Shared;
+      /// <summary>
+      /// Whether or not to split walls and columns by building stories.
+      /// </summary>
+      public bool SplitWallsAndColumns { get; set; } = false;
 
-         /// <summary>
-         /// Whether or not to split walls and columns by building stories.
-         /// </summary>
-         public bool SplitWallsAndColumns { get; set; } = false;
+      /// <summary>
+      /// Value indicating whether steel elements should be exported.
+      /// </summary>
+      public bool IncludeSteelElements { get; set; } = true;
 
-         /// <summary>
-         /// Value indicating whether steel elements should be exported.
-         /// </summary>
-         public bool IncludeSteelElements { get; set; } = true;
+      #region ProjectAddress
 
-         /// <summary>
-         /// Projected Coordinate System Name
-         /// </summary>
-         public string GeoRefCRSName { get; set; } = "";
+      /// <summary>
+      /// Items to set from Project Address Dialog Box
+      /// Only the option boolean are going to be remembered as the Address information itself is obtained from ProjectInfo
+      /// </summary>
+      public IFCAddressItem ProjectAddress { get; set; } = new IFCAddressItem();
 
-         /// <summary>
-         /// Projected Coordinate System Desccription
-         /// </summary>
-         public string GeoRefCRSDesc { get; set; } = "";
-
-         /// <summary>
-         /// EPSG Code for the Projected CRS
-         /// </summary>
-         public string GeoRefEPSGCode { get; set; } = "";
-
-         /// <summary>
-         /// The geodetic datum of the ProjectedCRS
-         /// </summary>
-         public string GeoRefGeodeticDatum { get; set; } = "";
-
-         /// <summary>
-         /// The Map Unit of the ProjectedCRS
-         /// </summary>
-         public string GeoRefMapUnit { get; set; } = "";
-
-         #region ProjectAddress
-
-            /// <summary>
-            /// Items to set from Project Address Dialog Box
-            /// Only the option boolean are going to be remembered as the Address information itself is obtained from ProjectInfo
-            /// </summary>
-            public IFCAddressItem ProjectAddress { get; set; } = new IFCAddressItem();
-
-         #endregion  // ProjectAddress
+      #endregion  // ProjectAddress
 
       #endregion  // GeneralTab
 
@@ -139,92 +122,97 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       public bool Export2DElements { get; set; } = false;
 
-         /// <summary>
-         /// 
-         /// </summary>
-         public bool ExportLinkedFiles { get; set; } = false;
+      /// <summary>
+      /// Specify how we export linked files.
+      /// </summary>
+      public bool ExportLinkedFiles { get; set; } = false;
 
-         /// <summary>
-         /// True to export only the visible elements of the current view (based on filtering and/or element and category hiding). 
-         /// False to export the entire model.  
-         /// </summary>
-         public bool VisibleElementsOfCurrentView { get; set; } = false;
+      /// <summary>
+      /// True to export only the visible elements of the current view (based on filtering and/or element and category hiding). 
+      /// False to export the entire model.  
+      /// </summary>
+      public bool VisibleElementsOfCurrentView { get; set; } = false;
 
-         /// <summary>
-         /// True to export rooms if their bounding box intersect with the section box.
-         /// </summary>
-         /// <remarks>
-         /// If the section box isn't visible, then all the rooms are exported if this option is set.
-         /// </remarks>
-         public bool ExportRoomsInView { get; set; } = false;
+      /// <summary>
+      /// True to export rooms if their bounding box intersect with the section box.
+      /// </summary>
+      /// <remarks>
+      /// If the section box isn't visible, then all the rooms are exported if this option is set.
+      /// </remarks>
+      public bool ExportRoomsInView { get; set; } = false;
 
       #endregion     //AdditionalContentTab
 
       // Items under Property Sets Tab
       #region PropertySetsTab
 
-         /// <summary>
-         /// True to include the Revit-specific property sets based on parameter groups. 
-         /// False to exclude them.
-         /// </summary>
-         public bool ExportInternalRevitPropertySets { get; set; } = false;
+      /// <summary>
+      /// True to include the Revit-specific property sets based on parameter groups. 
+      /// False to exclude them.
+      /// </summary>
+      public bool ExportInternalRevitPropertySets { get; set; } = false;
 
-         /// <summary>
-         /// True to include the IFC common property sets. 
-         /// False to exclude them.
-         /// </summary>
-         public bool ExportIFCCommonPropertySets { get; set; } = true;
+      /// <summary>
+      /// True to include the IFC common property sets. 
+      /// False to exclude them.
+      /// </summary>
+      public bool ExportIFCCommonPropertySets { get; set; } = true;
 
-         /// <summary>
-         /// Whether or not to include base quantities for model elements in the export data. 
-         /// Base quantities are generated from model geometry to reflect actual physical quantity values, independent of measurement rules or methods.
-         /// </summary>
-         public bool ExportBaseQuantities { get; set; } = false;
+      /// <summary>
+      /// Whether or not to include base quantities for model elements in the export data. 
+      /// Base quantities are generated from model geometry to reflect actual physical quantity values, independent of measurement rules or methods.
+      /// </summary>
+      public bool ExportBaseQuantities { get; set; } = false;
 
-         /// <summary>
-         /// True to allow exports of schedules as custom property sets.
-         /// False to exclude them.
-         /// </summary>
-         public bool ExportSchedulesAsPsets { get; set; } = false;
+      /// <summary>
+      /// True to include the material property sets. 
+      /// False to exclude them.
+      /// </summary>
+      public bool ExportMaterialPsets { get; set; } = false;
 
-         /// <summary>
-         /// True to export specific schedules.
-         /// </summary>
-         public bool? ExportSpecificSchedules { get; set; } = false;
+      /// <summary>
+      /// True to allow exports of schedules as custom property sets.
+      /// False to exclude them.
+      /// </summary>
+      public bool ExportSchedulesAsPsets { get; set; } = false;
 
-         /// <summary>
-         /// True to allow user defined property sets to be exported
-         /// False to ignore them
-         /// </summary>
-         public bool ExportUserDefinedPsets { get; set; } = false;
+      /// <summary>
+      /// True to export specific schedules.
+      /// </summary>
+      public bool? ExportSpecificSchedules { get; set; } = false;
 
-         /// <summary>
-         /// The name of the file containing the user defined property sets to be exported.
-         /// </summary>
-         public string ExportUserDefinedPsetsFileName { get; set; } = "";
+      /// <summary>
+      /// True to allow user defined property sets to be exported
+      /// False to ignore them
+      /// </summary>
+      public bool ExportUserDefinedPsets { get; set; } = false;
 
-         /// <summary>
-         /// True if the User decides to use the Parameter Mapping Table
-         /// False if the user decides to ignore it
-         /// </summary>
-         public bool ExportUserDefinedParameterMapping { get; set; } = false;
+      /// <summary>
+      /// The name of the file containing the user defined property sets to be exported.
+      /// </summary>
+      public string ExportUserDefinedPsetsFileName { get; set; } = "";
 
-         /// <summary>
-         /// The name of the file containing the user defined Parameter Mapping Table to be exported.
-         /// </summary>
-         public string ExportUserDefinedParameterMappingFileName { get; set; } = "";
+      /// <summary>
+      /// True if the User decides to use the Parameter Mapping Table
+      /// False if the user decides to ignore it
+      /// </summary>
+      public bool ExportUserDefinedParameterMapping { get; set; } = false;
 
-         #region ClassificationSettings
+      /// <summary>
+      /// The name of the file containing the user defined Parameter Mapping Table to be exported.
+      /// </summary>
+      public string ExportUserDefinedParameterMappingFileName { get; set; } = "";
 
-            /// <summary>
-            /// Settings from the Classification Dialog Box
-            /// </summary>
-            public IFCClassification ClassificationSettings { get; set; } = new IFCClassification();
+      #region ClassificationSettings
 
-         #endregion  // ClassificationSettings
+      /// <summary>
+      /// Settings from the Classification Dialog Box
+      /// </summary>
+      public IFCClassification ClassificationSettings { get; set; } = new IFCClassification();
+
+      #endregion  // ClassificationSettings
 
       #endregion  // PropertySetsTab
-
 
       // Items under Level of Detail Tab
       #region LevelOfDetailTab
@@ -236,98 +224,134 @@ namespace BIM.IFC.Export.UI
 
       #endregion  //LevelOfDetailTab 
 
-
       // Items under Advanced Tab
       #region AdvancedTab
 
-         /// <summary>
-         /// True to export the parts as independent building elements
-         /// False to export the parts with host element.
-         /// </summary>
-         public bool ExportPartsAsBuildingElements { get; set; } = false;
+      /// <summary>
+      /// True to export the parts as independent building elements
+      /// False to export the parts with host element.
+      /// </summary>
+      public bool ExportPartsAsBuildingElements { get; set; } = false;
 
-         /// <summary>
-         /// True to allow exports of solid models when possible.
-         /// False to exclude them.
-         /// </summary>
-         public bool ExportSolidModelRep { get; set; } = false;
+      /// <summary>
+      /// True to allow exports of solid models when possible.
+      /// False to exclude them.
+      /// </summary>
+      public bool ExportSolidModelRep { get; set; } = false;
 
-         /// <summary>
-         /// True to use the active view when generating geometry.
-         /// False to use default export options.
-         /// </summary>
-         public bool UseActiveViewGeometry { get; set; } = false;
+      /// <summary>
+      /// True to use the active view when generating geometry.
+      /// False to use default export options.
+      /// </summary>
+      public bool UseActiveViewGeometry { get; set; } = false;
 
-         /// <summary>
-         /// True to use the family and type name for references. 
-         /// False to use the type name only.
-         /// </summary>
-         public bool UseFamilyAndTypeNameForReference { get; set; } = false;
+      /// <summary>
+      /// True to use the family and type name for references. 
+      /// False to use the type name only.
+      /// </summary>
+      public bool UseFamilyAndTypeNameForReference { get; set; } = false;
 
-         /// <summary>
-         /// True to use a simplified approach to calculation of room volumes (based on extrusion of 2D room boundaries) which is also the default when exporting to IFC 2x2.   
-         /// False to use the Revit calculated room geometry to represent the room volumes (which is the default when exporting to IFC 2x3).
-         /// </summary>
-         public bool Use2DRoomBoundaryForVolume { get; set; } = false;
+      /// <summary>
+      /// True to use a simplified approach to calculation of room volumes (based on extrusion of 2D room boundaries) which is also the default when exporting to IFC 2x2.   
+      /// False to use the Revit calculated room geometry to represent the room volumes (which is the default when exporting to IFC 2x3).
+      /// </summary>
+      public bool Use2DRoomBoundaryForVolume { get; set; } = false;
 
-         /// <summary>
-         /// True to include IFCSITE elevation in the site local placement origin.
-         /// </summary>
-         public bool IncludeSiteElevation { get; set; } = false;
+      /// <summary>
+      /// True to include IFCSITE elevation in the site local placement origin.
+      /// </summary>
+      public bool IncludeSiteElevation { get; set; } = false;
 
-         /// <summary>
-         /// True to store the IFC GUID in the file after the export.  This will require manually saving the file to keep the parameter.
-         /// </summary>
-         public bool StoreIFCGUID { get; set; } = false;
+      /// <summary>
+      /// True to store the IFC GUID in the file after the export.  This will require manually saving the file to keep the parameter.
+      /// </summary>
+      public bool StoreIFCGUID { get; set; } = false;
 
-         /// <summary>
-         /// True to export bounding box.
-         /// False to exclude them.
-         /// </summary>
-         public bool ExportBoundingBox { get; set; } = false;
+      /// <summary>
+      /// True to export bounding box.
+      /// False to exclude them.
+      /// </summary>
+      public bool ExportBoundingBox { get; set; } = false;
 
-         /// <summary>
-         /// Value indicating whether tessellated geometry should be kept only as triagulation
-         /// (Note: in IFC4_ADD2 IfcPolygonalFaceSet is introduced that can simplify the coplanar triangle faces into a polygonal face. This option skip this)
-         /// </summary>
-         public bool UseOnlyTriangulation { get; set; } = false;
+      /// <summary>
+      /// Value indicating whether tessellated geometry should be kept only as triagulation
+      /// (Note: in IFC4_ADD2 IfcPolygonalFaceSet is introduced that can simplify the coplanar triangle faces into a polygonal face. This option skip this)
+      /// </summary>
+      public bool UseOnlyTriangulation { get; set; } = false;
 
-         /// <summary>
-         /// Value indicating whether only the Type name will be used to name the IfcTypeObject
-         /// </summary>
-         public bool UseTypeNameOnlyForIfcType { get; set; } = false;
+      /// <summary>
+      /// Value indicating whether only the Type name will be used to name the IfcTypeObject
+      /// </summary>
+      public bool UseTypeNameOnlyForIfcType { get; set; } = false;
 
-         /// <summary>
-         /// Value indicating whether the IFC Entity Name will use visible Revit Name
-         /// </summary>
-         public bool UseVisibleRevitNameAsEntityName { get; set; } = false;
+      /// <summary>
+      /// Value indicating whether the IFC Entity Name will use visible Revit Name
+      /// </summary>
+      public bool UseVisibleRevitNameAsEntityName { get; set; } = false;
 
       #endregion  // AdvancedTab
 
+      // Items under GeoReference Tab
+      #region GeoReference
+
+      /// <summary>
+      /// Selected Site name
+      /// </summary>
+      public string SelectedSite { get; set; }
+
+      /// <summary>
+      /// The origin of the exported file: either shared coordinates (Site Survey Point), Project Base Point, or internal coordinates.
+      /// </summary>
+      public SiteTransformBasis SitePlacement { get; set; } = SiteTransformBasis.Shared;
+
+      /// <summary>
+      /// Projected Coordinate System Name
+      /// </summary>
+      public string GeoRefCRSName { get; set; } = "";
+
+      /// <summary>
+      /// Projected Coordinate System Desccription
+      /// </summary>
+      public string GeoRefCRSDesc { get; set; } = "";
+
+      /// <summary>
+      /// EPSG Code for the Projected CRS
+      /// </summary>
+      public string GeoRefEPSGCode { get; set; } = "";
+
+      /// <summary>
+      /// The geodetic datum of the ProjectedCRS
+      /// </summary>
+      public string GeoRefGeodeticDatum { get; set; } = "";
+
+      /// <summary>
+      /// The Map Unit of the ProjectedCRS
+      /// </summary>
+      public string GeoRefMapUnit { get; set; } = "";
+      #endregion // GeoReference
 
       // Items under Entities to Export Tab
       #region EntitiesToExportTab
 
-         /// <summary>
-         /// Exclude filter string (element list in an arrary, seperated with semicolon ';')
-         /// </summary>
-         public string ExcludeFilter { get; set; } = "";
+      /// <summary>
+      /// Exclude filter string (element list in an arrary, seperated with semicolon ';')
+      /// </summary>
+      public string ExcludeFilter { get; set; } = "";
 
       #endregion  // EntitiesToExportTab
-
 
       // Items under COBie Tab
       #region COBieTab
 
-         /// <summary>
-         /// COBie specific company information (from a dedicated tab)
-         /// </summary>
-         public string COBieCompanyInfo { get; set; } = "";
+      /// <summary>
+      /// COBie specific company information (from a dedicated tab)
+      /// </summary>
+      public string COBieCompanyInfo { get; set; } = "";
 
-         /// <summary>
-         /// COBie specific project information (from a dedicated tab)
-         /// </summary>
-         public string COBieProjectInfo { get; set; } = "";
+      /// <summary>
+      /// COBie specific project information (from a dedicated tab)
+      /// </summary>
+      public string COBieProjectInfo { get; set; } = "";
 
       #endregion     // COBieTab
 
@@ -396,6 +420,7 @@ namespace BIM.IFC.Export.UI
       /// <param name="exportBaseQuantities">The ExportBaseQuantities.</param>
       /// <param name="splitWalls">The SplitWallsAndColumns option.</param>
       /// <param name="internalSets">The ExportInternalRevitPropertySets option.</param>
+      /// <param name="materialPsets">The ExportMaterialPsets option.</param>
       /// <param name="schedulesAsPSets">The ExportSchedulesAsPsets option.</param>
       /// <param name="userDefinedPSets">The ExportUserDefinedPsets option.</param>
       /// <param name="PlanElems2D">The Export2DElements option.</param>
@@ -407,6 +432,7 @@ namespace BIM.IFC.Export.UI
                                  bool exportBaseQuantities,
                                  bool splitWalls,
                                  bool internalSets,
+                                 bool materialPsets,
                                  bool schedulesAsPSets,
                                  bool userDefinedPSets,
                                  bool userDefinedParameterMapping,
@@ -422,7 +448,7 @@ namespace BIM.IFC.Export.UI
 
          // Items from General Tab
          configuration.Name = string.IsNullOrWhiteSpace(customName) ? ifcVersion.ToLabel() : customName;
-         if(exchangeRequirement != KnownERNames.NotDefined)
+         if (exchangeRequirement != KnownERNames.NotDefined)
          {
             configuration.Name = $"{configuration.Name} [{exchangeRequirement.ToShortLabel()}]";
          }
@@ -443,6 +469,7 @@ namespace BIM.IFC.Export.UI
          // Items from Property Sets Tab
          configuration.ExportInternalRevitPropertySets = internalSets;
          configuration.ExportBaseQuantities = exportBaseQuantities;
+         configuration.ExportMaterialPsets = materialPsets;
          configuration.ExportSchedulesAsPsets = schedulesAsPSets;
          configuration.ExportUserDefinedPsets = userDefinedPSets;
          configuration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\" + configuration.Name + @".txt";
@@ -467,7 +494,7 @@ namespace BIM.IFC.Export.UI
          theClone.ClassificationSettings = this.ClassificationSettings.Clone();
          return theClone;
       }
-      
+
       /// <summary>
       /// Duplicates this configuration by giving a new name.
       /// </summary>
@@ -697,7 +724,7 @@ namespace BIM.IFC.Export.UI
          // Create the instance to deserialize into.
          IFCExportConfiguration config = IFCExportConfiguration.CreateDefaultConfiguration();
          config.DeserializeFromJson(dictionary, serializer);
-         return config; 
+         return config;
       }
    }
 }

@@ -66,9 +66,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="revitParameterName">
       /// The parameter name for this Entry.
       /// </param>
-      public Entry(string revitParameterName)
+      public Entry(string revitParameterName, string compatibleParamName = null)
       {
-         Entries.Add(new T() { RevitParameterName = revitParameterName });
+         Entries.Add(new T() { RevitParameterName = revitParameterName, CompatibleRevitParameterName = compatibleParamName }) ;
          PropertyName = revitParameterName;
       }
 
