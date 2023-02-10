@@ -1521,6 +1521,9 @@ namespace Revit.IFC.Export.Utility
             ICollection<IFCAnyHandle> productSet = productWrapper.GetAllObjects();
             foreach (IFCAnyHandle prodHnd in productSet)
             {
+               if (productSet.Count > 1 && prodHnd == productSet.First() && IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcElementAssembly))
+                  continue;   //Classification for the ELementAssembly should have been created before when processing ElementAssembly
+
                // No need to check the subtype since Classification can be assigned to IfcRoot
                ClassificationUtil.CreateClassification(exporterIFC, file, element, prodHnd);
             }

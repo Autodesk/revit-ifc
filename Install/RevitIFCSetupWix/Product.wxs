@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="90EB043D-D4E7-4D0E-B4DE-33C9D103EB25" Name="Revit IFC 2022" Language="1033" Version="22.6.0.0" Manufacturer="Autodesk" UpgradeCode="254F4C8A-9ECA-4690-A718-21ACD3849485">
+   <Product Id="42595B8C-B370-4D93-987E-03D8DEBDE506" Name="Revit IFC 2022" Language="1033" Version="22.6.1.0" Manufacturer="Autodesk" UpgradeCode="254F4C8A-9ECA-4690-A718-21ACD3849485">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />

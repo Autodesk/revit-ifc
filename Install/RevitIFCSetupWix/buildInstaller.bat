@@ -13,7 +13,7 @@ SET PATH=%PATH%;%WixRoot%
 candle.exe -dProjectDir=%2 -ext WixUtilExtension %2Product.wxs 
 light.exe -ext WixUtilExtension -out RevitIFC2022.6.0.msi product.wixobj -ext WixUIExtension
 
-copy RevitIFC2022.6.0.msi %1..\Releasex64
-del RevitIFC2022.6.0.msi
+copy RevitIFC2022.6.1.msi %1..\Releasex64
+del RevitIFC2022.6.1.msi
 
-echo %1..\Releasex64\RevitIFC2022.6.0.msi
+echo %1..\Releasex64\RevitIFC2022.6.1.msi
