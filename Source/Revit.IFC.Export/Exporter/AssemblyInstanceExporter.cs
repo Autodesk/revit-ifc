@@ -90,9 +90,6 @@ namespace Revit.IFC.Export.Exporter
                string objectType = NamingUtil.GetObjectTypeOverride(element, NamingUtil.GetFamilyAndTypeName(element));
                assemblyInstanceHnd = IFCInstanceExporter.CreateSystem(file, guid, ownerHistory, name, description, objectType);
 
-               // Create classification reference when System has classification filed name assigned to it
-               ClassificationUtil.CreateClassification(exporterIFC, file, element, assemblyInstanceHnd);
-
                HashSet<IFCAnyHandle> relatedBuildings = 
                   new HashSet<IFCAnyHandle>() { ExporterCacheManager.BuildingHandle };
                
@@ -156,6 +153,9 @@ namespace Revit.IFC.Export.Exporter
 
             if (assemblyInstanceHnd == null)
                return false;
+
+            // Create classification reference when the Assembly has classification field name assigned to it
+            ClassificationUtil.CreateClassification(exporterIFC, file, element, assemblyInstanceHnd);
 
             // relateToLevel depends on how the AssemblyInstance is being mapped to IFC, above.
             productWrapper.AddElement(element, assemblyInstanceHnd, levelInfo, null, relateToLevel, exportAs);

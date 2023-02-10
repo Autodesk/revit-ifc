@@ -6971,13 +6971,17 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="month">The month in the date.</param>
       /// <param name="year">The year in the date.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateCalendarDate(IFCFile file, int day, int month, int year)
+      private static IFCAnyHandle CreateCalendarDate(IFCFile file, int day, int month, int year)
       {
-         IFCAnyHandle calendarDate = CreateInstance(file, IFCEntityType.IfcCalendarDate, null);
-         IFCAnyHandleUtil.SetAttribute(calendarDate, "DayComponent", day);
-         IFCAnyHandleUtil.SetAttribute(calendarDate, "MonthComponent", month);
-         IFCAnyHandleUtil.SetAttribute(calendarDate, "YearComponent", year);
-         return calendarDate;
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            return null;
+
+         IFCAnyHandle date = CreateInstance(file, IFCEntityType.IfcCalendarDate, null);
+
+         IFCAnyHandleUtil.SetAttribute(date, "DayComponent", day);
+         IFCAnyHandleUtil.SetAttribute(date, "MonthComponent", month);
+         IFCAnyHandleUtil.SetAttribute(date, "YearComponent", year);
+         return date;
       }
 
       /// <summary>
@@ -6989,16 +6993,36 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="editionDate">The date associated with this edition of the classification system.</param>
       /// <param name="name">The name of the classification.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateClassification(IFCFile file, string source, string edition, IFCAnyHandle editionDate,
-         string name)
+      public static IFCAnyHandle CreateClassification(IFCFile file, string source, string edition, int editionDateDay, int editionDateMonth, int editionDateYear,
+         string name, string description, string location)
       {
-         IFCAnyHandleUtil.ValidateSubTypeOf(editionDate, true, IFCEntityType.IfcCalendarDate);
-
          IFCAnyHandle classification = CreateInstance(file, IFCEntityType.IfcClassification, null);
          IFCAnyHandleUtil.SetAttribute(classification, "Source", source);
          IFCAnyHandleUtil.SetAttribute(classification, "Edition", edition);
-         IFCAnyHandleUtil.SetAttribute(classification, "EditionDate", editionDate);
          IFCAnyHandleUtil.SetAttribute(classification, "Name", name);
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         {
+            if (editionDateDay > 0 && editionDateMonth > 0 && editionDateYear > 0)
+            {
+               IFCAnyHandle editionDate = CreateCalendarDate(file, editionDateDay, editionDateMonth, editionDateYear);
+               IFCAnyHandleUtil.SetAttribute(classification, "EditionDate", editionDate);
+            }
+         }
+         else
+         {
+            if (editionDateDay > 0 && editionDateMonth > 0 && editionDateYear > 0)
+            {
+               string editionDate = editionDateYear.ToString("D4") + "-" + editionDateMonth.ToString("D2") + "-" + editionDateDay.ToString("D2");
+               IFCAnyHandleUtil.SetAttribute(classification, "EditionDate", editionDate);
+            }
+
+            if (!string.IsNullOrEmpty(description))
+               IFCAnyHandleUtil.SetAttribute(classification, "Description", description);
+
+            string attributeName = (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3) ? "Location" : "Specification";
+            if (!string.IsNullOrEmpty(location))
+               IFCAnyHandleUtil.SetAttribute(classification, attributeName, location);
+         }
          return classification;
       }
 
@@ -7015,15 +7039,13 @@ namespace Revit.IFC.Export.Toolkit
          string itemReference, string name, string description, IFCAnyHandle referencedSource)
       {
          // All IfcExternalReference arguments are optional.
-         IFCAnyHandleUtil.ValidateSubTypeOf(referencedSource, true, IFCEntityType.IfcClassification);
-
          IFCAnyHandle classificationReference = CreateInstance(file, IFCEntityType.IfcClassificationReference, null);
          SetExternalReference(classificationReference, location, itemReference, name);
          IFCAnyHandleUtil.SetAttribute(classificationReference, "ReferencedSource", referencedSource);
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             IFCAnyHandleUtil.SetAttribute(classificationReference, "Description", description);
-         
+
          return classificationReference;
       }
 
@@ -7041,13 +7063,6 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCAnyHandle CreateRelAssociatesClassification(IFCFile file, string globalId, IFCAnyHandle ownerHistory,
          string name, string description, HashSet<IFCAnyHandle> relatedObjects, IFCAnyHandle relatingClassification)
       {
-         ValidateRelAssociates(globalId, ownerHistory, name, description, relatedObjects);
-
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-            IFCAnyHandleUtil.ValidateSubTypeOf(relatingClassification, false, IFCEntityType.IfcClassificationReference);
-         else
-            IFCAnyHandleUtil.ValidateSubTypeOf(relatingClassification, false, IFCEntityType.IfcClassificationNotation, IFCEntityType.IfcClassificationReference);
-
          IFCAnyHandle relAssociatesClassification = CreateInstance(file, IFCEntityType.IfcRelAssociatesClassification, null);
          SetRelAssociates(relAssociatesClassification, globalId, ownerHistory, name, description, relatedObjects);
          IFCAnyHandleUtil.SetAttribute(relAssociatesClassification, "RelatingClassification", relatingClassification);
@@ -7072,8 +7087,6 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCAnyHandle CreateElementAssembly(ExporterIFC exporterIFC, Element element, string globalId, IFCAnyHandle ownerHistory,
           IFCAnyHandle objectPlacement, IFCAnyHandle representation, IFCAssemblyPlace? assemblyPlace, IFCElementAssemblyType predefinedType)
       {
-         //ValidateElement(globalId, ownerHistory, objectPlacement, representation);
-
          IFCAnyHandle elementAssembly = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcElementAssembly, element);
          SetElement(elementAssembly, element, globalId, ownerHistory, null, null, null, objectPlacement, representation, null);
 
@@ -7100,8 +7113,6 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCAnyHandle CreateBuildingElementPart(ExporterIFC exporterIFC, Element element, string guid, IFCAnyHandle ownerHistory,
           IFCAnyHandle objectPlacement, IFCAnyHandle representation)
       {
-         //ValidateElement(guid, ownerHistory, objectPlacement, representation);
-
          IFCAnyHandle part = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcBuildingElementPart, element);
          SetElement(part, element, guid, ownerHistory, null, null, null, objectPlacement, representation, null);
          return part;
