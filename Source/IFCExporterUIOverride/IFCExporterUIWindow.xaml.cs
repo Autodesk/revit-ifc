@@ -33,7 +33,6 @@ using System.Windows;
 using System.Windows.Controls;
 using UserInterfaceUtility.Json;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.Common.Extensions;
 
 namespace BIM.IFC.Export.UI
 {
@@ -703,12 +702,10 @@ namespace BIM.IFC.Export.UI
          bool? fileDialogResult = saveFileDialog.ShowDialog();
          if (fileDialogResult.HasValue && fileDialogResult.Value)
          {
-            IFCExportConfiguration configToSave = configuration.Clone();
-            configToSave.Name = Path.GetFileNameWithoutExtension(saveFileDialog.FileName);
             using (StreamWriter sw = new StreamWriter(saveFileDialog.FileName))
             {
                JavaScriptSerializer js = new JavaScriptSerializer();
-               sw.Write(SerializerUtils.FormatOutput(js.Serialize(configToSave)));
+               sw.Write(SerializerUtils.FormatOutput(js.Serialize(configuration)));
             }
          }
       }
@@ -746,7 +743,6 @@ namespace BIM.IFC.Export.UI
                      // set new configuration as selected
                      listBoxConfigurations.Items.Add(configuration);
                      listBoxConfigurations.SelectedItem = configuration;
-                     IFCClassificationMgr.UpdateClassification(IFCExport.TheDocument, configuration.ClassificationSettings);
                   }
                }
             }

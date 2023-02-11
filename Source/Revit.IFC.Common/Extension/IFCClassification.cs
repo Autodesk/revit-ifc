@@ -83,7 +83,7 @@ namespace Revit.IFC.Common.Extensions
          get { return classificationEditionDate; }
          set
          {
-            classificationEditionDate = value.Date;
+            classificationEditionDate = value;
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("datePicker1");
          }

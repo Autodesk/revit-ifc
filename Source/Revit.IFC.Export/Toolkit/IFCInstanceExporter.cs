@@ -5916,17 +5916,13 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="month">The month in the date.</param>
       /// <param name="year">The year in the date.</param>
       /// <returns>The handle.</returns>
-      private static IFCAnyHandle CreateCalendarDate(IFCFile file, int day, int month, int year)
+      public static IFCAnyHandle CreateCalendarDate(IFCFile file, int day, int month, int year)
       {
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-            return null;
-
-         IFCAnyHandle date = CreateInstance(file, IFCEntityType.IfcCalendarDate, null);
-
-         IFCAnyHandleUtil.SetAttribute(date, "DayComponent", day);
-         IFCAnyHandleUtil.SetAttribute(date, "MonthComponent", month);
-         IFCAnyHandleUtil.SetAttribute(date, "YearComponent", year);
-         return date;
+         IFCAnyHandle calendarDate = CreateInstance(file, IFCEntityType.IfcCalendarDate, null);
+         IFCAnyHandleUtil.SetAttribute(calendarDate, "DayComponent", day);
+         IFCAnyHandleUtil.SetAttribute(calendarDate, "MonthComponent", month);
+         IFCAnyHandleUtil.SetAttribute(calendarDate, "YearComponent", year);
+         return calendarDate;
       }
 
       /// <summary>
@@ -5938,36 +5934,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="editionDate">The date associated with this edition of the classification system.</param>
       /// <param name="name">The name of the classification.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateClassification(IFCFile file, string source, string edition, int editionDateDay, int editionDateMonth, int editionDateYear,
-         string name, string description, string location)
+      public static IFCAnyHandle CreateClassification(IFCFile file, string source, string edition, IFCAnyHandle editionDate,
+         string name)
       {
          IFCAnyHandle classification = CreateInstance(file, IFCEntityType.IfcClassification, null);
          IFCAnyHandleUtil.SetAttribute(classification, "Source", source);
          IFCAnyHandleUtil.SetAttribute(classification, "Edition", edition);
+         IFCAnyHandleUtil.SetAttribute(classification, "EditionDate", editionDate);
          IFCAnyHandleUtil.SetAttribute(classification, "Name", name);
-         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-         {
-            if (editionDateDay > 0 && editionDateMonth > 0 && editionDateYear > 0)
-            {
-               IFCAnyHandle editionDate = CreateCalendarDate(file, editionDateDay, editionDateMonth, editionDateYear);
-               IFCAnyHandleUtil.SetAttribute(classification, "EditionDate", editionDate);
-            }
-         }
-         else
-         {
-            if (editionDateDay > 0 && editionDateMonth > 0 && editionDateYear > 0)
-            {
-               string editionDate = editionDateYear.ToString("D4") + "-" + editionDateMonth.ToString("D2") + "-" + editionDateDay.ToString("D2");
-               IFCAnyHandleUtil.SetAttribute(classification, "EditionDate", editionDate);
-            }
-
-            if (!string.IsNullOrEmpty(description))
-               IFCAnyHandleUtil.SetAttribute(classification, "Description", description);
-
-            string attributeName = (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3) ? "Location" : "Specification";
-            if (!string.IsNullOrEmpty(location))
-               IFCAnyHandleUtil.SetAttribute(classification, attributeName, location);
-         }
          return classification;
       }
 

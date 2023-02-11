@@ -1414,9 +1414,6 @@ namespace Revit.IFC.Export.Utility
                      // For an aggregate, the member product must be processed with its element and type
                      ElementId overrideElementId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
                      Element elementToUse = (overrideElementId == ElementId.InvalidElementId) ? element : doc.GetElement(overrideElementId);
-                     Element elemOfProd = doc.GetElement(ExporterCacheManager.HandleToElementCache.Find(prodHnd));
-                     if (elemOfProd != null)
-                        elementToUse = elemOfProd;
                      ElementType elemTypeToUse = (overrideElementId == ElementId.InvalidElementId) ? elemType : doc.GetElement(elementToUse.GetTypeId()) as ElementType;
                      if (elemTypeToUse == null)
                         elemTypeToUse = elemType;
@@ -1521,9 +1518,6 @@ namespace Revit.IFC.Export.Utility
             ICollection<IFCAnyHandle> productSet = productWrapper.GetAllObjects();
             foreach (IFCAnyHandle prodHnd in productSet)
             {
-               if (productSet.Count > 1 && prodHnd == productSet.First() && IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcElementAssembly))
-                  continue;   //Classification for the ELementAssembly should have been created before when processing ElementAssembly
-
                // No need to check the subtype since Classification can be assigned to IfcRoot
                ClassificationUtil.CreateClassification(exporterIFC, file, element, prodHnd);
             }

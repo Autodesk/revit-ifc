@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ApplicationPackage SchemaVersion="1.0" AutodeskProduct="Revit" ProductType="Application" Name="IFC Exporter for Revit" AppVersion="23.2.4.0" Description="This application seamlessly replaces the built-in IFC export capabilities of Revit 2023. " Author="Autodesk" Icon=".\Contents\Resources\IFCExporter.png" AppNameSpace="appstore.exchange.autodesk.com" OnlineDocumentation="http://www.autodesk.com" HelpFile=".\Contents\Resources\ADSKIFCExporterHelp.htm" ProductCode="{40527B9C-60B8-407E-BF56-7AAA67F07ACA}" UpgradeCode="{A27E008E-2278-4F84-BB3B-59C605168900}" SupportedLocales="Enu">
+<ApplicationPackage SchemaVersion="1.0" AutodeskProduct="Revit" ProductType="Application" Name="IFC Exporter for Revit" AppVersion="23.2.3.0" Description="This application seamlessly replaces the built-in IFC export capabilities of Revit 2023. " Author="Autodesk" Icon=".\Contents\Resources\IFCExporter.png" AppNameSpace="appstore.exchange.autodesk.com" OnlineDocumentation="http://www.autodesk.com" HelpFile=".\Contents\Resources\ADSKIFCExporterHelp.htm" ProductCode="{40527B9C-60B8-407E-BF56-7AAA67F07ACA}" UpgradeCode="{A27E008E-2278-4F84-BB3B-59C605168900}" SupportedLocales="Enu">
   <CompanyDetails Name="Autodesk, Inc." Phone=" " Url="http://www.autodesk.com" Email="Revit.apps@autodesk.com" />
   <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2023" SeriesMax="R2023" />
   <Components Description="2023">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2023" SeriesMax="R2023" />
-    <ComponentEntry AppName="IFC For Revit 2023" Version="23.2.4" ModuleName="./Contents/2023/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2023" />
-    <ComponentEntry AppName="IFC For Revit 2023" Version="23.2.4" ModuleName="./Contents/2023/Revit.IFC.addin" AppDescription="IFC For Revit 2023" />
+    <ComponentEntry AppName="IFC For Revit 2023" Version="23.2.3" ModuleName="./Contents/2023/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2023" />
+    <ComponentEntry AppName="IFC For Revit 2023" Version="23.2.3" ModuleName="./Contents/2023/Revit.IFC.addin" AppDescription="IFC For Revit 2023" />
   </Components>
 </ApplicationPackage>
