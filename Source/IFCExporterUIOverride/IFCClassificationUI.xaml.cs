@@ -21,6 +21,7 @@ using Revit.IFC.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Controls;
 
 
 namespace BIM.IFC.Export.UI
@@ -43,8 +44,13 @@ namespace BIM.IFC.Export.UI
       public IFCClassificationWindow(IFCExportConfiguration configuration)
       {
          InitializeComponent();
-         m_newClassification = configuration.ClassificationSettings;
-         datePicker1.SelectedDate = DateTime.Today;
+         m_newClassification = configuration.ClassificationSettings.IsClassificationEmpty()? m_newClassification : configuration.ClassificationSettings;
+
+         if (m_newClassification.ClassificationEditionDate <= DateTime.MinValue || m_newClassification.ClassificationEditionDate >= DateTime.MaxValue)
+         {
+            m_newClassification.ClassificationEditionDate = DateTime.Now.Date;
+         }
+         datePicker1.SelectedDate = m_newClassification.ClassificationEditionDate.Date;
       }
 
       /// <summary>
@@ -72,6 +78,7 @@ namespace BIM.IFC.Export.UI
             {
                fillMandatoryFields(m_newClassification);
             }
+            m_newClassification.ClassificationEditionDate = datePicker1.SelectedDate.Value.Date;
             IFCClassificationMgr.UpdateClassification(IFCCommandOverrideApplication.TheDocument, m_newClassification);
          }
 
@@ -122,11 +129,14 @@ namespace BIM.IFC.Export.UI
          {
             m_savedClassification = m_newClassification.Clone();
          }
+      }
 
-         if (m_newClassification.ClassificationEditionDate <= DateTime.MinValue || m_newClassification.ClassificationEditionDate >= DateTime.MaxValue)
+      private void datePicker1_SelectedDateChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+      {
+         var picker = sender as DatePicker;
+         if (picker != null)
          {
-            DateTime today = DateTime.Now;
-            m_newClassification.ClassificationEditionDate = today;
+            m_newClassification.ClassificationEditionDate = picker.SelectedDate.Value.Date; // Picker only use the Date
          }
       }
    }

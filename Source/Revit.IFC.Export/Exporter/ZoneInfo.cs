@@ -274,8 +274,8 @@ namespace Revit.IFC.Export.Exporter
          if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue(
             classificationName, out classification))
          {
-            classification = IFCInstanceExporter.CreateClassification(file, "", "", null,
-               classificationName);
+            classification = IFCInstanceExporter.CreateClassification(file, "", "", 0, 0, 0,
+               classificationName, null, location);
             ExporterCacheManager.ClassificationCache.ClassificationHandles.Add(classificationName, classification);
          }
 

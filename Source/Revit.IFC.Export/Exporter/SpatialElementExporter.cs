@@ -784,7 +784,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle classification;
             if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue("OmniClass", out classification))
             {
-               classification = IFCInstanceExporter.CreateClassification(file, "http://www.omniclass.org", "v 1.0", null, "OmniClass");
+               classification = IFCInstanceExporter.CreateClassification(file, "CSI (Construction Specifications Institute)", "v 1.0", 0, 0, 0, 
+                  "OmniClass", "OmniClass Classification", "http://www.omniclass.org/tables/OmniClass_13_2006-03-28.pdf");
                ExporterCacheManager.ClassificationCache.ClassificationHandles.Add("OmniClass", classification);
             }
 
