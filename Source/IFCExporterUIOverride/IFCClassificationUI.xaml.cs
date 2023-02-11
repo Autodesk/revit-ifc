@@ -44,7 +44,7 @@ namespace BIM.IFC.Export.UI
       public IFCClassificationWindow(IFCExportConfiguration configuration)
       {
          InitializeComponent();
-         m_newClassification = configuration.ClassificationSettings;
+         m_newClassification = configuration.ClassificationSettings.IsClassificationEmpty() ? m_newClassification : configuration.ClassificationSettings;
 
          if (m_newClassification.ClassificationEditionDate <= DateTime.MinValue || m_newClassification.ClassificationEditionDate >= DateTime.MaxValue)
          {
