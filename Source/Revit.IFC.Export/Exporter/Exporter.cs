@@ -4199,7 +4199,29 @@ namespace Revit.IFC.Export.Exporter
          ExporterIFCUtils.SetGlobal2DOriginHandle(origin2d);
       }
 
-      private HashSet<IFCAnyHandle> RemoveContainedHandlesFromSet(ICollection<IFCAnyHandle> initialSet)
+      private static bool ValidateContainedHandle(IFCAnyHandle initialHandle)
+      {
+         if (ExporterCacheManager.ElementsInAssembliesCache.Contains(initialHandle))
+            return false;
+
+         try
+         {
+            if (!IFCAnyHandleUtil.HasRelDecomposes(initialHandle))
+               return true;
+         }
+         catch
+         {
+         }
+
+         return false;
+      }
+
+      /// <summary>
+      /// Remove contained or invalid handles from this set.
+      /// </summary>
+      /// <param name="initialSet">The initial set that may have contained or invalid handles.</param>
+      /// <returns>A cleaned set.</returns>
+      public static HashSet<IFCAnyHandle> RemoveContainedHandlesFromSet(ICollection<IFCAnyHandle> initialSet)
       {
          HashSet<IFCAnyHandle> filteredSet = new HashSet<IFCAnyHandle>();
 
@@ -4207,21 +4229,110 @@ namespace Revit.IFC.Export.Exporter
          {
             foreach (IFCAnyHandle initialHandle in initialSet)
             {
-               if (ExporterCacheManager.ElementsInAssembliesCache.Contains(initialHandle))
-                  continue;
-
-               try
-               {
-                  if (!IFCAnyHandleUtil.HasRelDecomposes(initialHandle))
-                     filteredSet.Add(initialHandle);
-               }
-               catch
-               {
-               }
+               if (ValidateContainedHandle(initialHandle))
+                  filteredSet.Add(initialHandle);
             }
          }
 
          return filteredSet;
+      }
+
+      private class IFCLevelExportInfo
+      {
+         public IFCLevelExportInfo() { }
+
+         public IDictionary<ElementId, IList<IFCLevelInfo>> LevelMapping { get; set; } =
+            new Dictionary<ElementId, IList<IFCLevelInfo>>();
+
+         public IList<IFCLevelInfo> OrphanedLevelInfos { get; set; } = new List<IFCLevelInfo>();
+
+         public void UnionLevelInfoRelated(ElementId toLevelId, IFCLevelInfo fromLevel)
+         {
+            if (fromLevel == null)
+               return;
+
+            if (toLevelId == ElementId.InvalidElementId)
+            {
+               OrphanedLevelInfos.Add(fromLevel);
+               return;
+            }
+
+            IList<IFCLevelInfo> levelMappingList;
+            if (!LevelMapping.TryGetValue(toLevelId, out levelMappingList))
+            {
+               levelMappingList = new List<IFCLevelInfo>();
+               LevelMapping[toLevelId] = levelMappingList;
+            }
+            levelMappingList.Add(fromLevel);
+         }
+
+         public void TransferOrphanedLevelInfo(ElementId toLevelId)
+         {
+            if (toLevelId == ElementId.InvalidElementId)
+               return;
+
+            if (OrphanedLevelInfos.Count == 0)
+               return;
+
+            IList<IFCLevelInfo> toLevelMappingList;
+            if (!LevelMapping.TryGetValue(toLevelId, out toLevelMappingList))
+            {
+               toLevelMappingList = new List<IFCLevelInfo>();
+               LevelMapping[toLevelId] = toLevelMappingList;
+            }
+
+            foreach (IFCLevelInfo orphanedLevelInfo in OrphanedLevelInfos)
+            {
+               toLevelMappingList.Add(orphanedLevelInfo);
+            }
+            OrphanedLevelInfos.Clear();
+         }
+
+         public Tuple<HashSet<IFCAnyHandle>, HashSet<IFCAnyHandle>> CollectValidHandlesForLevel(
+            ElementId levelId, IFCLevelInfo levelInfo)
+         {
+            if (levelId == ElementId.InvalidElementId || levelInfo == null)
+               return null;
+
+            HashSet<IFCAnyHandle> levelRelatedProducts = new HashSet<IFCAnyHandle>();
+            levelRelatedProducts.UnionWith(levelInfo.GetRelatedProducts());
+
+            HashSet<IFCAnyHandle> levelRelatedElements = new HashSet<IFCAnyHandle>();
+            levelRelatedElements.UnionWith(levelInfo.GetRelatedElements());
+
+            IList<IFCLevelInfo> levelMappingList;
+            if (LevelMapping.TryGetValue(levelId, out levelMappingList))
+            {
+               foreach (IFCLevelInfo containedLevelInfo in levelMappingList)
+               {
+                  if (containedLevelInfo != null)
+                  {
+                     levelRelatedProducts.UnionWith(containedLevelInfo.GetRelatedProducts());
+                     levelRelatedElements.UnionWith(containedLevelInfo.GetRelatedElements());
+                  }
+               }
+            }
+
+            return Tuple.Create(RemoveContainedHandlesFromSet(levelRelatedProducts),
+               RemoveContainedHandlesFromSet(levelRelatedElements));
+         }
+
+         public HashSet<IFCAnyHandle> CollectOrphanedHandles()
+         {
+            HashSet<IFCAnyHandle> orphanedHandles = new HashSet<IFCAnyHandle>();
+            foreach (IFCLevelInfo containedLevelInfo in OrphanedLevelInfos)
+            {
+               if (containedLevelInfo != null)
+               {
+                  orphanedHandles.UnionWith(containedLevelInfo.GetRelatedProducts());
+                  orphanedHandles.UnionWith(containedLevelInfo.GetRelatedElements());
+               }
+            }
+
+            // RemoveContainedHandlesFromSet will be called before these are used, so
+            // don't bother doing it twice.
+            return orphanedHandles;
+         }
       }
 
       /// <summary>
@@ -4235,6 +4346,9 @@ namespace Revit.IFC.Export.Exporter
          IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.LevelsByElevation;
          IFCFile file = exporterIFC.GetFile();
 
+         ElementId lastValidLevelId = ElementId.InvalidElementId;
+         IFCLevelExportInfo levelInfoMapping = new IFCLevelExportInfo();
+
          for (int ii = 0; ii < levelIds.Count; ii++)
          {
             ElementId levelId = levelIds[ii];
@@ -4242,59 +4356,23 @@ namespace Revit.IFC.Export.Exporter
             if (levelInfo == null)
                continue;
 
-            // remove products that are aggregated (e.g., railings in stairs).
             Element level = document.GetElement(levelId);
 
-            ICollection<IFCAnyHandle> relatedProductsToCheck = levelInfo.GetRelatedProducts();
-            ICollection<IFCAnyHandle> relatedElementsToCheck = levelInfo.GetRelatedElements();
-
-            // get coincident levels, if any.
-            double currentElevation = levelInfo.Elevation;
+            levelInfoMapping.TransferOrphanedLevelInfo(levelId);
             int nextLevelIdx = ii + 1;
-            for (int jj = ii + 1; jj < levelIds.Count; jj++, nextLevelIdx++)
-            {
-               ElementId nextLevelId = levelIds[jj];
-               IFCLevelInfo levelInfo2 = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, nextLevelId);
-               if (levelInfo2 == null)
-                  continue;
-
-               if (MathUtil.IsAlmostEqual(currentElevation, levelInfo2.Elevation))
-               {
-                  foreach (IFCAnyHandle relatedProduct in levelInfo2.GetRelatedProducts())
-                     relatedProductsToCheck.Add(relatedProduct);
-
-                  foreach (IFCAnyHandle relatedElement in levelInfo2.GetRelatedElements())
-                     relatedElementsToCheck.Add(relatedElement);
-               }
-               else
-                  break;
-            }
 
             // We may get stale handles in here; protect against this.
-            HashSet<IFCAnyHandle> relatedProducts = RemoveContainedHandlesFromSet(relatedProductsToCheck);
-            HashSet<IFCAnyHandle> relatedElements = RemoveContainedHandlesFromSet(relatedElementsToCheck);
+            Tuple<HashSet<IFCAnyHandle>, HashSet<IFCAnyHandle>> productsAndElements =
+               levelInfoMapping.CollectValidHandlesForLevel(levelId, levelInfo);
 
-            // skip coincident levels, if any.
-            for (int jj = ii + 1; jj < nextLevelIdx; jj++)
+            HashSet<IFCAnyHandle> relatedProducts = productsAndElements.Item1;
+            HashSet<IFCAnyHandle> relatedElements = productsAndElements.Item2;
+
+            using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, false))
             {
-               ElementId nextLevelId = levelIds[jj];
-               IFCLevelInfo levelInfo2 = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, nextLevelId);
-               if (levelInfo2 == null)
-                  continue;
-
-               if (!levelInfo.GetBuildingStorey().Equals(levelInfo2.GetBuildingStorey()))
-                  IFCAnyHandleUtil.Delete(levelInfo2.GetBuildingStorey());
-            }
-            ii = nextLevelIdx - 1;
-
-            if (relatedProducts.Count == 0 && relatedElements.Count == 0)
-               IFCAnyHandleUtil.Delete(levelInfo.GetBuildingStorey());
-            else
-            {
-               // We have decided to keep the level - export properties, quantities and classifications.
-               using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, false))
+               IFCAnyHandle buildingStoreyHandle = levelInfo.GetBuildingStorey();
+               if (!buildingStories.Contains(buildingStoreyHandle))
                {
-                  IFCAnyHandle buildingStoreyHandle = levelInfo.GetBuildingStorey();
                   buildingStories.Add(buildingStoreyHandle);
                   IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcBuildingStorey);
 
@@ -4307,24 +4385,18 @@ namespace Revit.IFC.Export.Exporter
 
             if (relatedProducts.Count > 0)
             {
-               HashSet<IFCAnyHandle> buildingProducts = RemoveContainedHandlesFromSet(relatedProducts);
-               if (buildingProducts.Count > 0)
-               {
-                  IFCAnyHandle buildingStorey = levelInfo.GetBuildingStorey();
-                  string guid = GUIDUtil.CreateSubElementGUID(level, (int)IFCBuildingStoreySubElements.RelAggregates);
-                  ExporterCacheManager.ContainmentCache.AddRelations(buildingStorey, guid, relatedProducts);
-               }
+               IFCAnyHandle buildingStorey = levelInfo.GetBuildingStorey();
+               string guid = GUIDUtil.CreateSubElementGUID(level, (int)IFCBuildingStoreySubElements.RelAggregates);
+               ExporterCacheManager.ContainmentCache.AddRelations(buildingStorey, guid, relatedProducts);
             }
 
             if (relatedElements.Count > 0)
             {
-               HashSet<IFCAnyHandle> buildingElements = RemoveContainedHandlesFromSet(relatedElements);
-               if (buildingElements.Count > 0)
-               {
-                  string guid = GUIDUtil.CreateSubElementGUID(level, (int)IFCBuildingStoreySubElements.RelContainedInSpatialStructure);
-                  IFCInstanceExporter.CreateRelContainedInSpatialStructure(file, guid, ExporterCacheManager.OwnerHistoryHandle, null, null, buildingElements, levelInfo.GetBuildingStorey());
-               }
+               string guid = GUIDUtil.CreateSubElementGUID(level, (int)IFCBuildingStoreySubElements.RelContainedInSpatialStructure);
+               IFCInstanceExporter.CreateRelContainedInSpatialStructure(file, guid, ExporterCacheManager.OwnerHistoryHandle, null, null, relatedElements, levelInfo.GetBuildingStorey());
             }
+
+            ii = nextLevelIdx - 1;
          }
 
          if (buildingStories.Count > 0)
@@ -4334,6 +4406,11 @@ namespace Revit.IFC.Export.Exporter
             string guid = GUIDUtil.CreateSubElementGUID(projectInfo, (int)IFCProjectSubElements.RelAggregatesBuildingStories);
             ExporterCacheManager.ContainmentCache.AddRelations(buildingHnd, guid, buildingStories);
          }
+
+         // We didn't find a level for this.  Put it in the IfcBuilding, IfcSite, or IfcProject later.
+         HashSet<IFCAnyHandle> orphanedHandles = levelInfoMapping.CollectOrphanedHandles();
+
+         ExporterCacheManager.LevelInfoCache.OrphanedElements.UnionWith(orphanedHandles);
       }
 
       /// <summary>
