@@ -264,7 +264,7 @@ namespace Revit.IFC.Export.Exporter
 
          ClassificationUtil.ParseClassificationCode(zoneClassificationCode, null,
             out string classificationName, out string classificationCode,
-            out string classificationDescription);
+            out string classificationRefName);
          ExporterCacheManager.ClassificationLocationCache.TryGetValue(classificationName,
             out string location);
 
@@ -279,8 +279,8 @@ namespace Revit.IFC.Export.Exporter
             ExporterCacheManager.ClassificationCache.ClassificationHandles.Add(classificationName, classification);
          }
 
-         ClassificationReferenceKey key = new ClassificationReferenceKey(location, 
-            classificationName, classificationCode, classificationDescription, classification);
+         ClassificationReferenceKey key = new ClassificationReferenceKey(location,
+            classificationCode, classificationRefName, null, classification);
          ClassificationReferences[zoneClassificationCode] =
             ExporterCacheManager.ClassificationCache.FindOrCreateClassificationReference(file, key);
       }
