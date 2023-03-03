@@ -666,9 +666,17 @@ namespace BIM.IFC.Export.UI
                continue;
 
             // set direct for all the writeable props
-            if (propInfo.CanWrite)
+            if (propInfo.CanWrite && !propInfo.IsDefined(typeof(ScriptIgnoreAttribute)))
             {
-               propInfo.SetValue(this, serializer.ConvertToType(propValue, propInfo.PropertyType));
+               try
+               {
+                  propInfo.SetValue(this, serializer.ConvertToType(propValue, propInfo.PropertyType));
+               }
+               catch (Exception)
+               {
+                  // avoid exceptions that may occur during property deserialization to continue loading user configuration,
+                  // the default value should be set
+               }
                continue;
             }
 

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ApplicationPackage SchemaVersion="1.0" AutodeskProduct="Revit" ProductType="Application" Name="IFC Exporter for Revit" AppVersion="4.0.0.0" 
+<ApplicationPackage SchemaVersion="1.0" AutodeskProduct="Revit" ProductType="Application" Name="IFC Exporter for Revit" AppVersion="22.6.2.0" 
                     Description="This application seamlessly replaces the built-in IFC export capabilities of Revit 2022. " 
                     Author="Autodesk" Icon=".\Contents\Resources\IFCExporter.png" AppNameSpace="appstore.exchange.autodesk.com" 
                     OnlineDocumentation="http://www.autodesk.com" HelpFile=".\Contents\Resources\ADSKIFCExporterHelp.htm" 
@@ -8,7 +8,7 @@
   <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2022" SeriesMax="R2022" />
   <Components Description="2022">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2022" SeriesMax="R2022" />
-    <ComponentEntry AppName="IFC For Revit 2022" Version="22.6.1" ModuleName="./Contents/2022/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2022" />
-    <ComponentEntry AppName="IFC For Revit 2022" Version="22.6.1" ModuleName="./Contents/2022/Revit.IFC.addin" AppDescription="IFC For Revit 2022" />
+    <ComponentEntry AppName="IFC For Revit 2022" Version="22.6.2" ModuleName="./Contents/2022/IFCExporterUIOverride.addin" AppDescription="IFC For Revit 2022" />
+    <ComponentEntry AppName="IFC For Revit 2022" Version="22.6.2" ModuleName="./Contents/2022/Revit.IFC.addin" AppDescription="IFC For Revit 2022" />
   </Components>
 </ApplicationPackage>
