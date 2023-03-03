@@ -304,11 +304,19 @@ namespace BIM.IFC.Export.UI
                {
                   foreach (DataStorage storedSetup in GetSavedConfigurations(m_jsonSchema))
                   {
-                     Entity configEntity = storedSetup.GetEntity(m_jsonSchema);
-                     string configData = configEntity.Get<string>(s_configMapField);
-                     JavaScriptSerializer ser = new JavaScriptSerializer();
-                     IFCExportConfiguration configuration = ser.Deserialize<IFCExportConfiguration>(configData);
-                     AddOrReplace(configuration);
+                     try
+                     {
+                        Entity configEntity = storedSetup.GetEntity(m_jsonSchema);
+                        string configData = configEntity.Get<string>(s_configMapField);
+                        JavaScriptSerializer ser = new JavaScriptSerializer();
+                        ser.RegisterConverters(new JavaScriptConverter[] { new IFCExportConfigurationConverter() });
+                        IFCExportConfiguration configuration = ser.Deserialize<IFCExportConfiguration>(configData);
+                        AddOrReplace(configuration);
+                     }
+                     catch (Exception)
+                     {
+                        // don't skip all configurations if an exception occurs for one
+                     }
                   }
                }
             }

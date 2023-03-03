@@ -97,7 +97,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
                {
                   ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
-                     uniformatCode, uniformatDescription, "", classification);
+                     uniformatCode, uniformatKeyString, uniformatDescription, classification);
                   InsertClassificationReference(file, key, elemHnd);
                }
             }
