@@ -42,5 +42,5 @@ using System.Runtime.InteropServices;
 // The following information is used in the Open Source version as the release version number.
 // The number will show up in the Title bar of the export dialog as well as at the IFC header file
 // This number must be manually updated prior to releasing the new version
-[assembly: AssemblyVersion("22.6.1.0")]
-[assembly: AssemblyFileVersion("22.6.1.0")]
+[assembly: AssemblyVersion("22.6.2.0")]
+[assembly: AssemblyFileVersion("22.6.2.0")]
