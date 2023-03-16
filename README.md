@@ -16,8 +16,8 @@ Links to multilingial versions of the Revit IFC Manual V2.0 can be found here: [
 
 ## Issues and Labels
 <!-- When submitting an Issue, users will be asked to chose between the following submittal templates:
-- Problem Report [PR]( ): a "bug" or some kind of issue found during the use of the functionality.
-- Enhancement [ENH]( ): a request change to improve functionality and/or user interface (UI) and/or experience (UX)
+- Problem Report [PR]( ): is a "bug", error, or issue found during the use of any aspect of the IFC functionality.
+- Enhancement Request [ENH]( ): a proposed change to improve functionality and/or user interface (UI) and/or experience (UX)
 - Inquiry [INQ]( ): a question about functionality and/or UI/UX but not a Problem or an Enhancement -->
 
 GitHub labels are used to classify the nature of the Issue and help developers group, sort, and prioritize them. <!-- The **Triage** label is automatically added when reporting an issue.--> Reporting users and staff can add/edit labels. To make the triage and reporting process faster and easier (may also mean getting your issues addressed with higher priority), please use the **Labels** to classify the nature of the Issue to the best of your knowledge.
