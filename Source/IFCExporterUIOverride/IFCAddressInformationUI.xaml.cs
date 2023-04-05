@@ -53,11 +53,6 @@ namespace BIM.IFC.Export.UI
       }
 
       /// <summary>
-      /// The file to store the previous window bounds.
-      /// </summary>
-      string m_SettingFile = "IFCAddressInformationUIWindowSettings_v30.txt";    // update the file when resize window bounds.
-
-      /// <summary>
       /// initialization of IFCAssignemt class
       /// </summary>
       /// <param name="document"></param>
@@ -88,17 +83,6 @@ namespace BIM.IFC.Export.UI
       private void OnInit(object sender, RoutedEventArgs e)
       {
          DataContext = m_newAddressItem;
-      }
-
-      /// <summary>
-      /// Saves the window bounds when close the window.
-      /// </summary>
-      /// <param name="sender">The source of the event.</param>
-      /// <param name="e">Event arguments that contains the event data.</param>
-      private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-      {
-         // Save restore bounds for the next time this window is opened
-         IFCUISettings.SaveWindowBounds(m_SettingFile, this.RestoreBounds);
       }
 
       /// <summary>

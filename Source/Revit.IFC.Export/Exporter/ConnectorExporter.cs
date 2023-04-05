@@ -128,8 +128,11 @@ namespace Revit.IFC.Export.Exporter
                
                IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : (flowDirection == FlowDirectionType.Out ? IFCFlowDirection.Source : IFCFlowDirection.Sink);
                IFCAnyHandle hostElementIFCHandle = ExporterCacheManager.MEPCache.Find(hostElement.Id);
-               string guid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcDistributionPort,
-                  connector.Id.ToString(), hostElementIFCHandle);
+
+               // Note that hostElementIFCHandle could be null if, e.g., the host is a Wire.
+               string guid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(hostElement,
+                  IFCEntityType.IfcDistributionPort.ToString() + " Connector: " + connector.Id.ToString()));
 
                IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, hostElementIFCHandle, flowDir);
                IFCFile ifcFile = exporterIFC.GetFile();
@@ -149,7 +152,8 @@ namespace Revit.IFC.Export.Exporter
                else
                {
                   // Attach the port to the element
-                  string relGuid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelConnectsPortToElement, connector.Id.ToString(), port);
+                  string relGuid = GUIDUtil.GenerateIFCGuidFrom(
+                     GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelConnectsPortToElement, connector.Id.ToString(), port));
                   string connectionName = hostElement.Id + "|" + guid;
                   IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, relGuid, ownerHistory, connectionName, portType, port, hostElementIFCHandle);
                }
@@ -196,8 +200,8 @@ namespace Revit.IFC.Export.Exporter
          /// <returns>-1 if c1 is less than c2, 1 if c1 is greater than c2, and 0 if c1 is c2.</returns>
          public int Compare(Connector c1, Connector c2)
          {
-            int c1OwnerId = c1?.Owner?.Id.IntegerValue ?? -1;
-            int c2OwnerId = c2?.Owner?.Id.IntegerValue ?? -1;
+            long c1OwnerId = c1?.Owner?.Id.Value ?? -1;
+            long c2OwnerId = c2?.Owner?.Id.Value ?? -1;
             if (c1OwnerId < c2OwnerId)
                return -1;
             if (c1OwnerId > c2OwnerId)
@@ -331,7 +335,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle outElementIFCHandle = ExporterCacheManager.MEPCache.Find(outElement.Id);
 
          // Note: In IFC4 the IfcRelConnectsPortToElement should be used for a dynamic connection. The static connection should use IfcRelNests
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
             if (inElementIFCHandle == null || outElementIFCHandle == null ||
                !IFCAnyHandleUtil.IsSubTypeOf(inElementIFCHandle, IFCEntityType.IfcObjectDefinition)
@@ -362,7 +366,8 @@ namespace Revit.IFC.Export.Exporter
 
          // ----------------------- In Port ----------------------
          {
-            portInGuid = GUIDUtil.GenerateIFCGuidFrom("InPort" + connector.Id, inElement, outElement);
+            portInGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString("InPort" + connector.Id, inElement, outElement));
             IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : IFCFlowDirection.Sink;
 
             IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, inElementIFCHandle, flowDir);            
@@ -373,7 +378,8 @@ namespace Revit.IFC.Export.Exporter
             SetDistributionPortAttributes(portIn, connector, portType, inElement.Id, ref flowDir);
 
             // Attach the port to the element
-            string guid = GUIDUtil.GenerateIFCGuidFrom("InPortRelConnects" + connector.Id, inElement, outElement);
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString("InPortRelConnects" + connector.Id, inElement, outElement));
             string connectionName = inElement.Id + "|" + guid;
 
             // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
@@ -386,7 +392,8 @@ namespace Revit.IFC.Export.Exporter
 
          // ----------------------- Out Port----------------------
          {
-            portOutGuid = GUIDUtil.GenerateIFCGuidFrom("OutPort" + connector.Id, outElement, inElement);
+            portOutGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString("OutPort" + connector.Id, outElement, inElement));
             IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : IFCFlowDirection.Source;
 
             IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connected, outElementIFCHandle, flowDir);
@@ -397,7 +404,8 @@ namespace Revit.IFC.Export.Exporter
             SetDistributionPortAttributes(portOut, connected, portType, outElement.Id, ref flowDir);
 
             // Attach the port to the element
-            string guid = GUIDUtil.GenerateIFCGuidFrom("OutPortRelConnects" + connector.Id.ToString(), outElement, inElement);
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString("OutPortRelConnects" + connector.Id.ToString(), outElement, inElement));
             string connectionName = outElement.Id + "|" + guid;
 
             // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
@@ -414,7 +422,8 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle realizingElement = null;
             string connectionName = portInGuid + "|" + portOutGuid;
             string connectionType = "Flow";   // Assigned as Description
-            string guid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelConnectsPorts, portIn, portOut);
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelConnectsPorts, portIn, portOut));
             IFCInstanceExporter.CreateRelConnectsPorts(ifcFile, guid, ownerHistory, connectionName, connectionType, portIn, portOut, realizingElement);
             AddConnectionInternal(inElement.Id, outElement.Id);
          }
@@ -523,7 +532,8 @@ namespace Revit.IFC.Export.Exporter
 
          foreach (KeyValuePair<IFCAnyHandle, IList<IFCAnyHandle>> relNests in m_NestedMembershipDict)
          {
-            string guid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelNests, relNests.Key);
+            string guid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelNests, relNests.Key));
             IFCInstanceExporter.CreateRelNests(file, guid, ownerHistory, name, description, relNests.Key, relNests.Value);
          }
       }
@@ -617,8 +627,8 @@ namespace Revit.IFC.Export.Exporter
                if (props.Count < 1)
                   continue;
 
-               string guid = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcPropertySet, currDesc.Name,
-                  handle);
+               string guid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcPropertySet, currDesc.Name, handle));
                IFCAnyHandle propertySet = IFCInstanceExporter.CreatePropertySet(file, 
                   guid, ownerHistory, currDesc.Name, currDesc.DescriptionOfSet,
                   props);
@@ -683,7 +693,7 @@ namespace Revit.IFC.Export.Exporter
             portName = ConnectorExporter.GetPortNameFromFlowDirection(flowDir, hostId, connector.Id);
          IFCAnyHandleUtil.OverrideNameAttribute(port, portName);
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
             // "PredefinedType"
             Toolkit.IFC4.IFCDistributionPortType portType = GetMappedIFCDistributionPortType(connector.Domain);

@@ -225,76 +225,18 @@ namespace Revit.IFC.Import.Data
          return (sweptDiskPieces, !missedGeometry);
       }
 
-      protected List<GeometryObject> CreateConformalGeometryIfPossible(
-            IFCImportShapeEditScope shapeEditScope, Transform unscaledLcs)
-      {
-         Transform unscaledSweptDiskPosition = (unscaledLcs == null) ? Transform.Identity : unscaledLcs;
-         
-         IList<CurveLoop> trimmedDirectrices = IFCGeometryUtil.TrimCurveLoops(Id, Directrix, StartParameter, EndParameter);
-         if (trimmedDirectrices == null)
-            return null;
-
-         List<GeometryObject> myObjs = null;
-         bool isIdentity = unscaledSweptDiskPosition.IsIdentity;
-
-         foreach (CurveLoop trimmedDirectrix in trimmedDirectrices)
-         {
-            // Create the disk.
-            Curve firstCurve = null;
-            foreach (Curve curve in trimmedDirectrix)
-            {
-               firstCurve = curve;
-               break;
-            }
-
-            double startParam = 0.0;
-            IList<CurveLoop> profileCurveLoops = CreateProfileCurveLoopsForDirectrix(firstCurve, out startParam);
-            if (profileCurveLoops == null)
-               return null;
-
-            SolidOptions solidOptions = new SolidOptions(GetMaterialElementId(shapeEditScope), shapeEditScope.GraphicsStyleId);
-            myObjs = new List<GeometryObject>();
-
-            try
-            {
-               Solid sweptDiskSolid = GeometryCreationUtilities.CreateSweptGeometry(trimmedDirectrix, 0, startParam, profileCurveLoops,
-                  solidOptions);
-               if (!isIdentity)
-                  sweptDiskSolid = SolidUtils.CreateTransformed(sweptDiskSolid, unscaledSweptDiskPosition);
-
-               if (sweptDiskSolid != null)
-                  myObjs.Add(sweptDiskSolid);
-            }
-            catch
-            {
-               return null;
-            }
-         }
-
-         return myObjs;
-      }
-
       /// <summary>
       /// Return geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="unscaledLcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>Zero or more created geometries.</returns>
       protected override IList<GeometryObject> CreateGeometryInternal(
-            IFCImportShapeEditScope shapeEditScope, Transform unscaledLcs, Transform scaledLcs, string guid)
+            IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
          List<GeometryObject> myObjs = null;
-         if (scaledLcs == null || scaledLcs.IsConformal && MathUtil.IsAlmostEqual(scaledLcs.Scale, 1.0))
-         {
-            myObjs = CreateConformalGeometryIfPossible(shapeEditScope, unscaledLcs);
-            if (myObjs != null)
-               return myObjs;
-         }
-
-         Transform unscaledSweptDiskPosition = (unscaledLcs == null) ? Transform.Identity : unscaledLcs;
-         Transform scaledSweptDiskPosition = (scaledLcs == null) ? Transform.Identity : scaledLcs;
+         Transform scaledSweptDiskPosition = scaledLcs ?? Transform.Identity;
 
          IList<CurveLoop> trimmedDirectrices = IFCGeometryUtil.TrimCurveLoops(Id, Directrix, StartParameter, EndParameter);
          if (trimmedDirectrices == null)
@@ -302,7 +244,7 @@ namespace Revit.IFC.Import.Data
 
          foreach (CurveLoop trimmedDirectrix in trimmedDirectrices)
          {
-            CurveLoop trimmedDirectrixInWCS = IFCGeometryUtil.CreateTransformed(trimmedDirectrix, Id, unscaledSweptDiskPosition, scaledSweptDiskPosition);
+            CurveLoop trimmedDirectrixInWCS = IFCGeometryUtil.CreateTransformed(trimmedDirectrix, Id, scaledSweptDiskPosition);
 
             // Create the disk.
             Curve firstCurve = null;
@@ -359,14 +301,14 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
-         IList<GeometryObject> sweptDiskGeometries = CreateGeometryInternal(shapeEditScope, lcs, scaledLcs, guid);
+         IList<GeometryObject> sweptDiskGeometries = CreateGeometryInternal(shapeEditScope, scaledLcs, guid);
          if (sweptDiskGeometries != null)
          {
             foreach (GeometryObject sweptDiskGeometry in sweptDiskGeometries)

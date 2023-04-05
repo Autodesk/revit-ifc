@@ -41,7 +41,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="instanceId">The ElementId of the AssemblyInstance.</param>
       /// <param name="instanceHnd">The IFC handle of the AssemblyInstance.</param>
-      public void RegisterAssemblyInstance(ElementId instanceId, IFCAnyHandle instanceHnd)
+      public void RegisterAssemblyInstance(ElementId instanceId, IFCAnyHandle instanceHnd, ElementId levelId = null)
       {
          AssemblyInstanceInfo assemblyInstanceInfo;
          if (!TryGetValue(instanceId, out assemblyInstanceInfo))
@@ -49,6 +49,7 @@ namespace Revit.IFC.Export.Utility
             assemblyInstanceInfo = new AssemblyInstanceInfo();
          }
          assemblyInstanceInfo.AssemblyInstanceHandle = instanceHnd;
+         assemblyInstanceInfo.AssignedLevelId = levelId;
          this[instanceId] = assemblyInstanceInfo;
       }
 

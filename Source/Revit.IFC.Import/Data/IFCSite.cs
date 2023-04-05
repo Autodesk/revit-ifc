@@ -33,8 +33,6 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCSite : IFCSpatialStructureElement
    {
-      // TODO: handle SiteAddress.
-
       /// <summary>
       /// Check if an object placement is relative to the site's placement, and fix it if necessary.
       /// </summary>
@@ -103,7 +101,7 @@ namespace Revit.IFC.Import.Data
       protected override void Process(IFCAnyHandle ifcIFCSite)
       {
          base.Process(ifcIFCSite);
-         
+
          RefElevation = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcIFCSite, "RefElevation", 0.0);
 
          IList<int> refLatitudeList = IFCAnyHandleUtil.GetAggregateIntAttribute<List<int>>(ifcIFCSite, "RefLatitude");
@@ -130,6 +128,10 @@ namespace Revit.IFC.Import.Data
          }
 
          LandTitleNumber = IFCAnyHandleUtil.GetStringAttribute(ifcIFCSite, "LandTitleNumber");
+
+         IFCAnyHandle ifcPostalAddress = IFCImportHandleUtil.GetOptionalInstanceAttribute(ifcIFCSite, "SiteAddress");
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcPostalAddress))
+            SiteAddress = IFCPostalAddress.ProcessIFCPostalAddress(ifcPostalAddress);
       }
 
       /// <summary>
@@ -151,6 +153,11 @@ namespace Revit.IFC.Import.Data
       /// The Land Title number.
       /// </summary>
       public string LandTitleNumber { get; protected set; } = null;
+
+      /// <summary>
+      /// The optional address given to the site for postal purposes.
+      /// </summary>
+      public IFCPostalAddress SiteAddress { get; protected set; } = null;
 
       /// <summary>
       /// Processes an IfcSite object.
@@ -216,20 +223,8 @@ namespace Revit.IFC.Import.Data
       {
          base.Create(doc);
 
-         // TODO: Reconsider this for multiple sites.
-         foreach (IFCObjectDefinition objectDefinition in ComposedObjectDefinitions)
-         {
-            if (objectDefinition is IFCBuilding)
-            {
-               // There should only be one IfcSite in the file, but in case there are multiple, we want to make sure 
-               // that the one containing the IfcBuilding has its parameters stored somewhere.
-               // In the case where we didn't create an element above, use the ProjectInfo element in the 
-               // document to store its parameters.
-               if (CreatedElementId == ElementId.InvalidElementId)
-                  CreatedElementId = Importer.TheCache.ProjectInformationId;
-               break;
-            }
-         }
+         if ((Id == Importer.TheCache.DefaultSiteId) && (CreatedElementId == ElementId.InvalidElementId))
+            CreatedElementId = Importer.TheCache.ProjectInformationId;
       }
 
       /// <summary>
@@ -238,6 +233,37 @@ namespace Revit.IFC.Import.Data
       /// <remarks>This corresponds to the ProjectPosition, and should be
       /// used to offset objects placed not relative to a site.</remarks>
       public static XYZ BaseSiteOffset { get; set; } = null;
+
+      /// <summary>
+      /// Iterates through all of the IFCSites belonging to a an IFCProject, and finds the Default one.
+      /// The default IFCSite is one that is composed of an IFCBuilding (or the first IFCSite if no IFCBuildings are found).
+      /// </summary>
+      /// <param name="sites">List of IFCSites in file.</param>
+      public static void FindDefaultSite(IList<IFCSite> sites)
+      {
+         // If no sites, then stop the processing.
+         //
+         if ((sites?.Count ?? 0) == 0)
+            return;
+
+         IFCSite firstSite = sites[0];
+         if (firstSite == null)
+            return;
+
+         Importer.TheCache.DefaultSiteId = firstSite.Id;
+
+         foreach (IFCSite site in sites)
+         {
+            foreach (IFCObjectDefinition objectDefinition in site.ComposedObjectDefinitions)
+            {
+               if (objectDefinition is IFCBuilding)
+               {
+                  Importer.TheCache.DefaultSiteId = site.Id;
+                  return;
+               }
+            }
+         }
+      }
 
       public static void ProcessSiteLocations(Document doc, IList<IFCSite> sites)
       {
@@ -425,6 +451,8 @@ namespace Revit.IFC.Import.Data
                IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, landTitleNumber, Id);
             }
          }
+
+         CreatePostalParameters(doc, element, SiteAddress);
 
          ForgeTypeId lengthUnits = null;
          if (!Importer.TheProcessor.ScaleValues)

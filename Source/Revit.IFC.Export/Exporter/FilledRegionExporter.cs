@@ -121,7 +121,8 @@ namespace Revit.IFC.Export.Exporter
                   List<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>() { bodyRepHnd };
 
                   string index = (loopIndex + 1).ToString();
-                  string annotationGuid = GUIDUtil.GenerateIFCGuidFrom(filledRegion, index);
+                  string annotationGuid = GUIDUtil.GenerateIFCGuidFrom(
+                     GUIDUtil.CreateGUIDString(filledRegion, index));
                   IFCAnyHandle productShape = IFCInstanceExporter.CreateProductDefinitionShape(file, 
                      null, null, shapeReps);
                   IFCAnyHandle annotation = IFCInstanceExporter.CreateAnnotation(exporterIFC, 

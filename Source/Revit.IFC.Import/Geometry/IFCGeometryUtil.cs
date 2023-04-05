@@ -111,13 +111,12 @@ namespace Revit.IFC.Import.Geometry
       /// </summary>
       /// <param name="origLoop">The original curve loop.</param>
       /// <param name="id">The id of the originating entity, for error reporting.</param>
-      /// <param name="unscaledTrf">The unscaled (conformal) transform, used if we don't know how to process the curve loop.</param>
       /// <param name="scaledTrf">The scaled transform.</param>
       /// <returns>The transformed loop.</returns>
       /// <remarks>Revit API only allows for conformal transformations.  Here, we support
       /// enough data types for non-conformal cases.  In cases where we can't process
       /// a curve in the loop, we will use the conformal parameter and log an error.</remarks>
-      public static CurveLoop CreateTransformed(CurveLoop origLoop, int id, Transform unscaledTrf, Transform scaledTrf)
+      public static CurveLoop CreateTransformed(CurveLoop origLoop, int id, Transform scaledTrf)
       {
          if (origLoop == null)
             return null;
@@ -129,9 +128,10 @@ namespace Revit.IFC.Import.Geometry
          foreach (Curve curve in origLoop)
          {
             Curve newCurve = null;
+
+            // Cover only Line, Arc, and Ellipse for now.  These are the most common cases.  Warn if it isn't one of these, or if the 
             try
             {
-               // Cover only Line, Arc, and Ellipse for now.  These are the most common cases.  Warn if it isn't one of these, or if the 
                if (curve is Line)
                {
                   Line line = curve as Line;
@@ -185,21 +185,69 @@ namespace Revit.IFC.Import.Geometry
                   newCurve = CreateArcOrEllipse(scaledCenter, scaledRadiusX, scaledRadiusY, scaledXAxis, scaledYAxis, startParam, endParam);
                }
             }
-            catch (Exception)
+            catch
             {
                newCurve = null;
             }
 
-            if (newCurve == null)
-            {
-               Importer.TheLog.LogError(id, "Couldn't apply a non-uniform transform to this curve loop.  The resulting geometry may be the wrong size.", false);
-               return CreateTransformedFromConformalTransform(origLoop, unscaledTrf);
-            }
-            else
+            if (newCurve != null)
             {
                newLoop.Append(newCurve);
             }
+            else
+            {
+               // Simple heuristic to create a valid polyline from an original curve.
+               
+               // Get the tessellation points.
+               IList<XYZ> points = curve.Tessellate();
+               int numPoints = points.Count;
+               if (numPoints < 2)
+                  continue;
+
+               // Apply the scale.
+               IList<XYZ> scaledPoints = new List<XYZ>();
+               foreach (XYZ point in points)
+               {
+                  scaledPoints.Add(scaledTrf.OfPoint(point));
+               }
+
+               // Try to create segments that are of valid length for a curve, since
+               // tessellation may create points that are too close together.
+               IList<XYZ> segmentEnds = new List<XYZ>() { scaledPoints[0] };
+               int numSegments = 0;
+               int lastPointIndex = 0;
+               for (int ii = 1; ii < numPoints; ii++)
+               {
+                  if (!LineSegmentIsTooShort(segmentEnds[numSegments], scaledPoints[ii]))
+                  {
+                     segmentEnds.Add(scaledPoints[ii]);
+                     numSegments++;
+                     lastPointIndex = ii;
+                  }
+               }
+
+               if (numSegments == 0)
+                  continue;
+
+               // If the last segment end is not the end tessellation point, and it is legal
+               // to extend the last segment, do so.  This could result in a too big gap if we
+               // can't patch this, but hopefully this is a very rare case.
+               if (lastPointIndex < numPoints - 1)
+               {
+                  if (!LineSegmentIsTooShort(segmentEnds[numSegments - 1], scaledPoints[numPoints - 1]))
+                  {
+                     segmentEnds[numSegments] = scaledPoints[numPoints - 1];
+                  }
+               }
+
+               // Add the segments.
+               for (int ii = 0; ii < numSegments; ii++)
+               {
+                  newLoop.Append(Line.CreateBound(segmentEnds[ii], segmentEnds[ii + 1]));
+               }
+            }
          }
+
          return newLoop;
       }
 
@@ -327,7 +375,7 @@ namespace Revit.IFC.Import.Geometry
                // Now we have to check that we didn't inadvertently make a "too-short" segment.
                for (int ii = numNewPoints - 1; ii > 0; ii--)
                {
-                  if (IFCGeometryUtil.LineSegmentIsTooShort(finalPoints[ii], finalPoints[ii - 1]))
+                  if (LineSegmentIsTooShort(finalPoints[ii], finalPoints[ii - 1]))
                   {
                      // TODO: log this removal.
                      finalPoints.RemoveAt(ii - 1); // Remove the intermediate point, not the last point.
@@ -554,14 +602,35 @@ namespace Revit.IFC.Import.Geometry
          return true;
       }
 
+      private static bool HasSuspiciousNumberOfCurveSegments(int id, IFCCurve ifcCurve, double endVal)
+      {
+         if (!(ifcCurve is IFCCompositeCurve))
+            return false;
+
+         IList<IFCCurve> curveSegments = (ifcCurve as IFCCompositeCurve).Segments;
+
+         if (!MathUtil.IsAlmostEqual(curveSegments.Count(), endVal))
+            return false;
+
+         bool isAllTrimmedCurves = curveSegments.All(curveSegment => (curveSegment is IFCTrimmedCurve));
+         if (isAllTrimmedCurves)
+            return false;
+
+         Importer.TheLog.LogWarning(id, "The End Parameter is equal to the number of segments. " +
+            "Most likely, this is an error in the sending application, and the trim extents are being ignored.  " +
+            "If this trim was intended, please contact Autodesk.", true);
+         return true;
+      }
+
       /// <summary>
       /// Given a list of curves, finds any unbound cyclic curves and splits them.
       /// </summary>
       /// <param name="curves">The list of curves.</param>
+      /// <returns>True if anything was done, false otherwise.</returns>
       /// <remarks>This will modify the input curves.  This will silently ignore
       /// unbound, acyclic curves.
       /// This does not respect the ordering of the curves.</remarks>
-      public static void SplitUnboundCyclicCurves(IList<Curve> curves)
+      public static bool SplitUnboundCyclicCurves(IList<Curve> curves)
       {
          IList<Curve> newCurves = null;
 
@@ -583,23 +652,28 @@ namespace Revit.IFC.Import.Geometry
          }
 
          if (newCurves == null)
-            return;
+            return false;
 
          foreach (Curve newCurve in newCurves)
          {
             curves.Add(newCurve);
          }
+
+         return true;
       }
 
       /// <summary>
       /// Given a curveloop, finds any unbound cyclic curves in it and splits them.
       /// </summary>
       /// <param name="curveLoop">Curveloop to process.</param>
-      /// <returns>New curveloop, which has all the curves split.</returns>
+      /// <returns>New curveloop, which has all the curves split, if any were split, otherwise
+      /// the original curveloop.</returns>
       public static CurveLoop SplitUnboundCyclicCurves(CurveLoop curveLoop)
       {
          var curves = curveLoop.ToList();
-         SplitUnboundCyclicCurves(curves);
+         if (!SplitUnboundCyclicCurves(curves))
+            return curveLoop;
+
          CurveLoop splitCurveLoop = new CurveLoop();
          curves.ForEach(x => splitCurveLoop.Append(x));
          return splitCurveLoop;
@@ -656,14 +730,14 @@ namespace Revit.IFC.Import.Geometry
             return origCurveLoop;
 
          // Special cases: 
-         // if startval = 0 and endval = 1, then this likely means that the importing application
+         // if startval = 0 and endval = 1, or endval is equal to the number of composite curve segments then this likely means that the importing application
          // incorrectly set the extents to be the "whole" curve, when really this is just a portion of the curves
          // (the parametrization is described above).
          // As such, if the totalParamLength is not 1 but startVal = 0 and endVal = 1, we will warn but not trim.
          // This is not a hypothetical case: it occurs in several AllPlan 2017 files at least.
-         if (HasSuspiciousTrimParameters(id, startVal, endVal, totalParamLength))
+         if (HasSuspiciousNumberOfCurveSegments(id, ifcCurve, endVal) || HasSuspiciousTrimParameters(id, startVal, endVal, totalParamLength))
             return origCurveLoop;
-         
+
          int numCurves = loopCurves.Count;
          double currentPosition = 0.0;
          int currCurve = 0;
@@ -1016,7 +1090,6 @@ namespace Revit.IFC.Import.Geometry
 
          int lastVertex = 0;
          List<XYZ> vertList = new List<XYZ>();
-         outputVerticesList = vertList;
          for (int ii = 1; ii <= inputVerticesList.Count; ii++)
          {
             int currIdx = (ii % inputVerticesList.Count);
@@ -1042,6 +1115,37 @@ namespace Revit.IFC.Import.Geometry
                Importer.TheLog.LogComment(entityId, warningString, false);
             }
          }
+
+         // The loop can contain useless overlapping segments (espessially after too close vertices removing)
+         List<XYZ> noOverlapList = new List<XYZ>();         
+         RemoveOverlappingSegments(vertList, out noOverlapList);
+         outputVerticesList = noOverlapList;
+      }
+
+      /// <summary>
+      /// Remove vertices that create useless overlapping segments
+      /// </summary>
+      /// <param name="inputVerticesList">Input list of the vertices</param>
+      /// <param name="outputVerticesList">Output List of the valid vertices</param>
+      /// <returns></returns>
+      public static void RemoveOverlappingSegments(IList<XYZ> inputVerticesList, out List<XYZ> outputVerticesList)
+      {
+         List<XYZ> vertList = new List<XYZ>();
+         outputVerticesList = vertList;
+
+         if (inputVerticesList.Count > 2)
+            for (int ii = 0; ii < inputVerticesList.Count; ii++)
+            {
+               XYZ prevPt = inputVerticesList[(ii > 0) ? ii - 1 : inputVerticesList.Count - 1];
+               XYZ currPt = inputVerticesList[ii]; 
+               XYZ nextPt = inputVerticesList[(ii + 1) % inputVerticesList.Count];
+
+               // Do not add current point if prev point lays on the next segment
+               // or next point is on the prev segment
+               if (prevPt.DistanceTo(currPt) + prevPt.DistanceTo(nextPt) > currPt.DistanceTo(nextPt) + MathUtil.Eps() &&
+                   nextPt.DistanceTo(currPt) + nextPt.DistanceTo(prevPt) > currPt.DistanceTo(prevPt) + MathUtil.Eps())
+                  vertList.Add(currPt);
+            }
       }
 
       /// <summary>

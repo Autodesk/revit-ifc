@@ -47,15 +47,30 @@ namespace Revit.IFC.Import.Data
       public double ElevationOfRefHeight { get; protected set; } = 0.0;
 
       /// <summary>
+      /// The elevation above the minimal terrain level.
+      /// </summary>
+      public double ElevationOfTerrain { get; protected set; } = 0.0;
+
+      /// <summary>
+      /// The optional address given to the building for postal purposes.
+      /// </summary>
+      public IFCPostalAddress BuildingAddress { get; protected set; } = null;
+
+      /// <summary>
       /// Processes IfcBuilding attributes.
       /// </summary>
       /// <param name="ifcBuilding">The IfcBuilding handle.</param>
       protected override void Process(IFCAnyHandle ifcBuilding)
       {
-         // TODO: process IfcBuilding specific data.
+         base.Process(ifcBuilding);
+
          ElevationOfRefHeight = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcBuilding, "ElevationOfRefHeight", 0.0);
 
-         base.Process(ifcBuilding);
+         ElevationOfTerrain = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(ifcBuilding, "ElevationOfTerrain", 0.0);
+
+         IFCAnyHandle ifcPostalAddress = IFCImportHandleUtil.GetOptionalInstanceAttribute(ifcBuilding, "BuildingAddress");
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcPostalAddress))
+            BuildingAddress = IFCPostalAddress.ProcessIFCPostalAddress(ifcPostalAddress);
       }
 
       public override void PostProcess()
@@ -115,6 +130,18 @@ namespace Revit.IFC.Import.Data
          // If it doesn't, use the ProjectInfo element in the document to store its parameters.
          if (CreatedElementId == ElementId.InvalidElementId)
             CreatedElementId = Importer.TheCache.ProjectInformationId;
+      }
+
+      /// <summary>
+      /// Creates or populates Revit element params based on the information contained in this class.
+      /// </summary>
+      /// <param name="doc">The document.</param>
+      /// <param name="element">The element.</param>
+      protected override void CreateParametersInternal(Document doc, Element element)
+      {
+         base.CreateParametersInternal(doc, element);
+
+         CreatePostalParameters(doc, element, BuildingAddress);
       }
 
       /// <summary>

@@ -52,6 +52,10 @@ namespace BIM.IFC.Export.UI
                return Resources.IFC4RV;
             case IFCVersion.IFC2x3BFM:
                return Resources.IFCMVDFMHandOver;
+            case IFCVersion.IFC4x3:
+               return Resources.IFCVersion4x3;
+            case IFCVersion.IFCSG:
+               return Resources.IFCSG;
             default:
                return Resources.IFCVersionUnrecognized;
          }

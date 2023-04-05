@@ -24,6 +24,7 @@ using System.Text;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Import.Enums;
 
 namespace Revit.IFC.Import.Data
 {
@@ -114,6 +115,14 @@ namespace Revit.IFC.Import.Data
 
          Tag = IFCAnyHandleUtil.GetStringAttribute(ifcTypeProduct, "Tag");
 
+         // IFCRepresentationItem should know that it is processing something for Hybrid IFC Imports.
+         // Then it will create IFCHybridRepresentationItems, which are placeholders for body geometry created by AnyCAD.
+         // This is so data for Representation Item will still exist, even if legacy geometry does not.
+         if ((Importer.TheOptions.IsHybridImport) && (Importer.TheHybridInfo?.HybridMap?.ContainsKey(GlobalId) ?? false))
+         {
+            Importer.TheHybridInfo.RepresentationsAlreadyCreated = true;
+         }
+
          IList<IFCAnyHandle> representationMapsHandle = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcTypeProduct, "RepresentationMaps");
          if (representationMapsHandle != null && representationMapsHandle.Count > 0)
          {
@@ -131,6 +140,11 @@ namespace Revit.IFC.Import.Data
                   RegisterRepresentationMapWithTypeProject(representationMap, this);
                }
             }
+         }
+
+         if ((Importer.TheOptions.IsHybridImport) && (Importer.TheHybridInfo?.RepresentationsAlreadyCreated ?? false))
+         {
+            Importer.TheHybridInfo.RepresentationsAlreadyCreated = false;
          }
       }
 
@@ -150,6 +164,10 @@ namespace Revit.IFC.Import.Data
          IFCEntity typeProduct;
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcTypeProduct.StepId, out typeProduct))
             return (typeProduct as IFCTypeProduct);
+
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && 
+            IFCAnyHandleUtil.IsValidSubTypeOf(ifcTypeProduct, IFCEntityType.IfcDoorType))
+               return IFCDoorType.ProcessIFCDoorType(ifcTypeProduct);
 
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTypeProduct, IFCEntityType.IfcDoorStyle))
             return IFCDoorStyle.ProcessIFCDoorStyle(ifcTypeProduct);

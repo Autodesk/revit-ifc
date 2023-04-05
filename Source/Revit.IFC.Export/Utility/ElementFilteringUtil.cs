@@ -99,7 +99,7 @@ namespace Revit.IFC.Export.Utility
          filters.Add(GetDesignOptionFilter());
 
          // Phases: only for non-spatial elements.  For spatial elements, we will do a check afterwards.
-         if (!forSpatialElements && !ExporterCacheManager.ExportOptionsCache.ExportingLink)
+         if (!forSpatialElements && ExporterUtil.ExportingHostModel())
             filters.Add(GetPhaseStatusFilter(document));
 
          return new LogicalAndFilter(filters);
@@ -207,7 +207,7 @@ namespace Revit.IFC.Export.Utility
          IFCExportElement value = (exportElement != null) ? (IFCExportElement)exportElement.AsInteger() : IFCExportElement.ByType;
          if (value != IFCExportElement.ByType)
             return value;
-         
+
          // Element is ByType - look at the ElementType, if it exists.
          Parameter exportElementType = elementType?.get_Parameter(BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE);
          IFCExportElementType typeValue = (exportElementType != null) ? (IFCExportElementType)exportElementType.AsInteger() : IFCExportElementType.Default;
@@ -236,7 +236,7 @@ namespace Revit.IFC.Export.Utility
       public static bool ShouldElementBeExported(ExporterIFC exporterIFC, Element element, bool allowSeparateOpeningExport)
       {
          // Allow the ExporterStateManager to say that an element should be exported regardless of settings.
-         if (ExporterStateManager.CanExportElementOverride())
+         if (ExporterStateManager.CanExportElementOverride)
             return true;
 
          // First, check if the element is set explicitly to be exported or not exported.  This
@@ -244,7 +244,7 @@ namespace Revit.IFC.Export.Utility
          Element elementType = element.Document.GetElement(element.GetTypeId());
          IFCExportElement? exportElementState = GetExportElementState(element, elementType);
          if (exportElementState.HasValue)
-             return exportElementState.Value == IFCExportElement.Yes;
+            return exportElementState.Value == IFCExportElement.Yes;
 
          // Check to see if the category should be exported if parameters aren't set.
          // Note that in previous versions, the category override the parameter settings.  This is
@@ -603,6 +603,12 @@ namespace Revit.IFC.Export.Utility
          m_CategoryVisibilityCache.Clear();
       }
 
+      private static bool ProcessingLink()
+      {
+         return ExporterCacheManager.ExportOptionsCache.HostViewId != ElementId.InvalidElementId ||
+            ExporterStateManager.CurrentLinkId != ElementId.InvalidElementId;
+      }
+
       /// <summary>
       /// Checks if a category is visible for certain view.
       /// </summary>
@@ -616,13 +622,23 @@ namespace Revit.IFC.Export.Utility
          if (category == null || filterView == null)
             return true;
 
-         bool isVisible = false;
+         bool isVisible;
          if (m_CategoryVisibilityCache.TryGetValue(category.Id, out isVisible))
             return isVisible;
 
-         // The category will be visible if either we don't allow visibility controls (default: true), or
-         // we do allow visibility controls and the category is visible in the view.
-         isVisible = (!category.get_AllowsVisibilityControl(filterView) || category.get_Visible(filterView));
+         if (category.Id.Value > 0 && ProcessingLink())
+         {
+            // We don't support checking the visibility of link document custom categories
+            // in the host view here.  We will use a different filter for this.
+            isVisible = true;
+         }
+         else
+         {
+            // The category will be visible if either we don't allow visibility controls (default: true), or
+            // we do allow visibility controls and the category is visible in the view.
+            isVisible = (!category.get_AllowsVisibilityControl(filterView) || category.get_Visible(filterView));
+         }
+
          m_CategoryVisibilityCache[category.Id] = isVisible;
          return isVisible;
       }
@@ -647,9 +663,10 @@ namespace Revit.IFC.Export.Utility
          if (hidden)
             return false;
 
-         bool temporaryVisible = filterView.IsElementVisibleInTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate, element.Id);
+         if (ProcessingLink())
+            return true;
 
-         return temporaryVisible;
+         return filterView.IsElementVisibleInTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate, element.Id);
       }
 
       /// <summary>
@@ -723,7 +740,7 @@ namespace Revit.IFC.Export.Utility
             if ((node.IsSubTypeOf("IfcObject") && 
                      (node.IsSubTypeOf("IfcProduct") || node.IsSubTypeOf("IfcGroup") || node.Name.Equals("IfcGroup", StringComparison.InvariantCultureIgnoreCase)))
                   || node.IsSubTypeOf("IfcProject") || node.Name.Equals("IfcProject", StringComparison.InvariantCultureIgnoreCase)
-                  || node.IsSubTypeOf("IfcTypeObject"))
+                  || node.IsSubTypeOf("IfcTypeObject") || node.Name.Equals("IfcMaterial", StringComparison.InvariantCultureIgnoreCase))
             {
                if (IFCEntityType.TryParse(entityType, true, out ifcType))
                   ret = ifcType;

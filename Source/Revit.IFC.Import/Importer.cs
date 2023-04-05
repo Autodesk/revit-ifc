@@ -25,6 +25,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.ExternalService;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Import.Data;
+using Revit.IFC.Import.Properties;
 using Revit.IFC.Import.Utility;
 using IFCImportOptions = Revit.IFC.Import.Utility.IFCImportOptions;
 using Revit.IFC.Import.Core;
@@ -82,7 +83,7 @@ namespace Revit.IFC.Import
          }
          else
             throw new InvalidOperationException("Failed to get IFC importer service.");
-      }
+      } 
    }
 
    /// <summary>
@@ -97,6 +98,8 @@ namespace Revit.IFC.Import
       IFCImportCache m_ImportCache = null;
 
       IFCImportLog m_ImportLog = null;
+
+      IFCImportHybridInfo m_ImportHybridInfo = null;
 
       private static HashSet<FailureDefinitionId> m_ImportPostedErrors = null;
 
@@ -154,6 +157,7 @@ namespace Revit.IFC.Import
 
       static public IIFCFileProcessor TheProcessor { get => TheOptions?.Processor; }
 
+      static public IFCImportHybridInfo TheHybridInfo { get; protected set; } = null;
 
       /// <summary>
       /// The log file used for this import process.
@@ -324,7 +328,7 @@ namespace Revit.IFC.Import
 
          string revitFileName = IFCImportFile.GetRevitFileName(ifcFileName);
 
-         // If the RVT file doesn't exist, we'll reload.  Otherwise, look at saved file size and timestamp.
+         // If the RVT file doesn't exist, we'll reload. Otherwise, look at saved file size and timestamp.
          if (!File.Exists(revitFileName))
             return true;
 
@@ -357,6 +361,33 @@ namespace Revit.IFC.Import
          }
 
          return false;
+      }
+
+      /// <summary>
+      /// Start a Transaction for the ReferenceIFC path.
+      /// Will enable ForcedModalHandling and ClearAfterRollback in FailureHandlingOptions.
+      /// </summary>
+      /// <param name="transaction">Transaction to start.</param>
+      /// <returns>Transaction Status after Start().  This should be Started if all went well.</returns>
+      /// <exception cref="ArgumentNullException">Transaction parameter should be non-null.</exception>
+      public static TransactionStatus StartReferenceIFCTransaction(Transaction transaction)
+      {
+         TransactionStatus transactionStatus = transaction.GetStatus();
+         if (transactionStatus == TransactionStatus.Started)
+         {
+            TheLog.LogWarning(-1, "Attempting to start ReferenceIFC Transaction when already started", true);
+            return transactionStatus;
+         }
+
+         transactionStatus = transaction.Start(Resources.IFCOpenReferenceFile);
+         if (transactionStatus == TransactionStatus.Started)
+         {
+            FailureHandlingOptions options = transaction.GetFailureHandlingOptions();
+            options.SetForcedModalHandling(true);
+            options.SetClearAfterRollback(true);
+         }
+
+         return transactionStatus;
       }
 
       private bool DocumentUpToDate(Document doc, string ifcFileName)
@@ -452,7 +483,6 @@ namespace Revit.IFC.Import
 
          Document originalDocument = document;
          Document ifcDocument = null;
-
          if (TheOptions.Action == IFCImportAction.Link)
          {
             string linkedFileName = IFCImportFile.GetRevitFileName(localFileName);
@@ -460,7 +490,9 @@ namespace Revit.IFC.Import
             ifcDocument = LoadOrCreateLinkDocument(originalDocument, linkedFileName);
          }
          else
+         {
             ifcDocument = originalDocument;
+         }
 
          bool useCachedRevitFile = DocumentUpToDate(ifcDocument, localFileName);
 
@@ -469,9 +501,10 @@ namespace Revit.IFC.Import
          if (!useCachedRevitFile && ifcDocument.IsLinked)
          {
             useCachedRevitFile = true;
-            Importer.AddDelayedLinkError(BuiltInFailures.ImportFailures.IFCCantUpdateLinkedFile);
+            AddDelayedLinkError(BuiltInFailures.ImportFailures.IFCCantUpdateLinkedFile);
          }
 
+         Transaction transaction = null;
          if (!useCachedRevitFile)
          {
             m_ImportCache = IFCImportCache.Create(ifcDocument, localFileName);
@@ -480,8 +513,28 @@ namespace Revit.IFC.Import
             if (TheOptions.Action == IFCImportAction.Link)
                TheCache.CreateExistingElementMaps(ifcDocument);
 
+            // At this point:
+            // ifcDoument = document that will hold the info.
+            // localFileName = file path from where input will occur.
+            // Do Hybrid Import if needed.
+            //
+            if (TheOptions.IsHybridImport)
+            {
+               // Hybrid IFC Import:  Create Transaction now, since Document.Import needs it.
+               // Non-Hybrid IFC Import:  IFCFile.Create() will create Transaction later.
+               transaction = new Transaction(ifcDocument);
+               if (TransactionStatus.Started != StartReferenceIFCTransaction(transaction))
+               {
+                  TheLog.LogError(-1, "Unable to start Transaction for Hybrid IFC Import", false);
+               }
+               else
+               {
+                  TheHybridInfo = m_ImportHybridInfo = new IFCImportHybridInfo(ifcDocument, localFileName);
+               }
+            }
+
             // TheFile will contain the same value as the return value for this function.
-            IFCImportFile.Create(localFileName, m_ImportOptions, ifcDocument);
+            IFCImportFile.Create(localFileName, m_ImportOptions, ifcDocument, transaction);
          }
 
          if (useCachedRevitFile || IFCImportFile.TheFile != null)
@@ -497,6 +550,75 @@ namespace Revit.IFC.Import
                   IFCObjectDefinition.CreateElement(ifcDocument, objDef);
 
                theFile.EndImport(ifcDocument, localFileName);
+
+               // Make sure to log detailed information after EndImport.
+               if (Importer.TheOptions.VerboseLogging && Importer.TheHybridInfo != null)
+               {
+                  Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import:  Start of Detailed Logging after Hybrid IFC Import. ---", false);
+                  Importer.TheLog.LogWarning(-1, "Hybrid IFC Import:  If an IfcGuid does not appear in the following list, then it was processed entirely via legacy code.", false);
+                  Importer.TheLog.LogWarning(-1, "Hybrid IFC Import:  If an IfcGuid is no longer in the Hybrid Map, but its ElementId is in the Elements to be deleted list, this is normal.", false);
+                  Importer.TheHybridInfo.LogHybridMapDetailed();
+                  Importer.TheHybridInfo.LogElementsToDeleteDetailed();
+                  Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import:  End of Logging detailed Information after Hybrid IFC Import.---", false);
+
+                  FilteredElementCollector collector = new FilteredElementCollector(ifcDocument);
+
+                  List<Type> supportedElementTypes = new List<Type>();
+                  supportedElementTypes.Add(typeof(DirectShape));
+                  ElementMulticlassFilter multiclassFilter = new ElementMulticlassFilter(supportedElementTypes);
+                  collector.WherePasses(multiclassFilter);
+
+                  int numDirectShapes = collector.GetElementCount();
+                  if (numDirectShapes == 0)
+                  {
+                     ifcDocument.Application.WriteJournalComment("Hybrid IFC Import: No IFCProducts Imported.", false);
+                  }
+                  else if (numDirectShapes != (Importer.TheHybridInfo.HybridElements?.Count ?? 0))
+                  {
+                     ifcDocument.Application.WriteJournalComment("---- Hybrid IFC Import: Some DirectShapes processed within Revit. ---", false);
+
+                     IList<Element> directShapeElements = collector.ToElements();
+                     // This is inefficient, but we need to reliably get the IFCGuids
+
+                     // HybridMap is for IFC GlobalId --> ElementId.  This is used for almost all of the Hybrid IFC Import processing.
+                     // reverseLookup is for ElementId --> IFC GlobalId.  This is used to find the ElementId associated with a given IFC GlobalId (for logging purposes).
+                     IDictionary<ElementId, String> reverseLookup = new Dictionary<ElementId, String>();
+                     foreach (KeyValuePair<String, ElementId> pair in Importer.TheHybridInfo.HybridMap)
+                     {
+                        try
+                        {
+                           ElementId elementId = pair.Value;
+                           string ifcGuid = pair.Key;
+                           reverseLookup.Add(pair.Value, pair.Key);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                           Importer.TheLog.LogWarning(-1, $"Duplicate ElementId found when reversing Hybrid Map for logging {ex.Message}", false);
+                        }
+                     }
+
+                     // Log (into journal) IFC GlobalIds & ElementIds that were imported by AnyCAD or via Revit alone.
+                     ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: Count of DirectShapes imported via AnyCAD:  {Importer.TheHybridInfo.HybridElements.Count}", false);
+                     foreach (Element element in directShapeElements)
+                     {
+                        String ifcGuid;
+                        if (reverseLookup.TryGetValue(element.Id, out ifcGuid))
+                        {
+                           ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: AnyCAD DirectShape (IFC GUID, ElementId): ({ifcGuid}, {element.Id})", false);
+                        }
+                     }
+
+                     ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: Count of DirectShapes falling back to Revit:  {numDirectShapes - Importer.TheHybridInfo.HybridElements.Count}", false);
+                     foreach (Element element in directShapeElements)
+                     {
+                        if (reverseLookup.ContainsKey(element.Id))
+                           continue;
+                        string ifcGuid = IFCGUIDUtil.GetGUID(element);
+                        ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: Fallback DirectShape (IFC GUID, ElementId): ({ifcGuid}, {element.Id})", false);
+                     }
+                  }
+               }
+
             }
 
             if (TheOptions.Action == IFCImportAction.Link)
@@ -508,8 +630,7 @@ namespace Revit.IFC.Import
             }
          }
 
-         if (m_ImportCache != null)
-            m_ImportCache.Reset(ifcDocument);
+         m_ImportCache?.Reset(ifcDocument);
       }
 
       /// <summary>
@@ -520,7 +641,7 @@ namespace Revit.IFC.Import
       {
          TheImporter = this;
 
-         IDictionary<String, String> options = importer.GetOptions();
+         IDictionary<string, string> options = importer.GetOptions();
          TheOptions = m_ImportOptions = IFCImportOptions.Create(options);
 
          // An early check, based on the options set - if we are allowed to use an up-to-date existing file on disk, use it.
@@ -544,8 +665,7 @@ namespace Revit.IFC.Import
          }
          catch (Exception ex)
          {
-            if (Importer.TheLog != null)
-               Importer.TheLog.LogError(-1, ex.Message, false);
+            TheLog?.LogError(-1, ex.Message, false);
             // The following message can sometimes occur when reloading some IFC files
             // from external resources.  In this case, we should silently fail, and not
             // throw.
@@ -554,10 +674,8 @@ namespace Revit.IFC.Import
          }
          finally
          {
-            if (Importer.TheLog != null)
-               Importer.TheLog.Close();
-            if (IFCImportFile.TheFile != null)
-               IFCImportFile.TheFile.Close();
+            TheLog?.Close();
+            IFCImportFile.TheFile?.Close();
          }
       }
 
@@ -580,9 +698,9 @@ namespace Revit.IFC.Import
          return new Guid("88743F28-A2E1-4935-949D-4DB7A724A150");
       }
 
-      public Autodesk.Revit.DB.ExternalService.ExternalServiceId GetServiceId()
+      public ExternalServiceId GetServiceId()
       {
-         return Autodesk.Revit.DB.ExternalService.ExternalServices.BuiltInExternalServices.IFCImporterService;
+         return ExternalServices.BuiltInExternalServices.IFCImporterService;
       }
 
       public string GetVendorId()

@@ -103,8 +103,8 @@ namespace Revit.IFC.Import.Data
          if (simpleProfile == null)
             Importer.TheLog.LogError(Id, "Can't handle profile curve of type " + SweptCurve.GetType() + ".", true);
 
-         CurveLoop outerCurve = simpleProfile.OuterCurve;
-         Curve profileCurve = (outerCurve != null) ? outerCurve.First<Curve>() : null;
+         CurveLoop outerCurve = simpleProfile.GetTheOuterCurveLoop();
+         Curve profileCurve = outerCurve?.First();
 
          if (profileCurve == null)
             Importer.TheLog.LogError(Id, "Cannot create the profile curve of this revolved surface.", true);

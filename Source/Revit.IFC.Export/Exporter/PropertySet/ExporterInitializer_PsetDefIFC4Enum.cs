@@ -16,54 +16,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
 {
 
 
-   public enum IFCDoorPanelOperation {
-      SWINGING,
-      DOUBLE_ACTING,
-      SLIDING,
-      FOLDING,
-      REVOLVING,
-      ROLLINGUP,
-      FIXEDPANEL,
-      USERDEFINED,
-      NOTDEFINED}
-
-   public enum IFCDoorPanelPosition {
-      LEFT,
-      MIDDLE,
-      RIGHT,
-      NOTDEFINED}
-
-   public enum IFCPermeableCoveringOperation {
-      GRILL,
-      LOUVER,
-      SCREEN,
-      USERDEFINED,
-      NOTDEFINED}
-
-   public enum IFCWindowPanelPosition {
-      LEFT,
-      MIDDLE,
-      RIGHT,
-      BOTTOM,
-      TOP,
-      NOTDEFINED}
-
-   public enum IFCWindowPanelOperation {
-      SIDEHUNGRIGHTHAND,
-      SIDEHUNGLEFTHAND,
-      TILTANDTURNRIGHTHAND,
-      TILTANDTURNLEFTHAND,
-      TOPHUNG,
-      BOTTOMHUNG,
-      PIVOTHORIZONTAL,
-      PIVOTVERTICAL,
-      SLIDINGHORIZONTAL,
-      SLIDINGVERTICAL,
-      REMOVABLECASEMENT,
-      FIXEDCASEMENT,
-      OTHEROPERATION,
-      NOTDEFINED}
-
    public enum PEnum_ElementStatus {
       NEW,
       EXISTING,
@@ -852,15 +804,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
       UNSET}
 
    public enum PEnum_ConductorFunctionEnum {
-      PHASE_L1,
-      PHASE_L2,
-      PHASE_L3,
-      NEUTRAL,
-      PROTECTIVEEARTH,
-      PROTECTIVEEARTHNEUTRAL,
-      OTHER,
-      NOTKNOWN,
-      UNSET}
+      L1,
+      L2,
+      L3}
 
    public enum PEnum_InsulationStandardClass {
       CLASS0APPLIANCE,

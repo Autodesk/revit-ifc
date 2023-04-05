@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="40527B9C-60B8-407E-BF56-7AAA67F07ACA" Name="Revit IFC 2023" Language="1033" Version="23.1.0.0" Manufacturer="Autodesk" UpgradeCode="A27E008E-2278-4F84-BB3B-59C605168900">
+   <Product Id="F1A1177D-4CE7-4AAA-B4E6-EC318112D7B4" Name="Revit IFC 2024" Language="1033" Version="24.0.0.0" Manufacturer="Autodesk" UpgradeCode="1A9C2C21-24B8-42D2-0000-992E73C11B3F">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -19,7 +19,7 @@
       <WixVariable Id="WixUIDefUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt"></WixVariable>
       <WixVariable Id="WixUICOBieUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\IFC2x3 Extended FM HandOver View.txt"></WixVariable>
 
-      <Feature Id="ProductFeature" Title="Revit IFC 2023" Level="1" ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id="ProductFeature" Title="Revit IFC 2024" Level="1" ConfigurableDirectory='INSTALLDIR'>
          <ComponentGroupRef Id="ProductComponents" />
          <ComponentGroupRef Id="ProductResourceComponents" />
          <ComponentGroupRef Id="ProductFRFiles" />
@@ -44,7 +44,7 @@
       <Fragment>
          <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFilesFolder">
-               <Directory Id="INSTALLDIR" Name="Revit IFC 2023">
+               <Directory Id="INSTALLDIR" Name="Revit IFC 2024">
                   <Directory Id="INSTALLRESOURCE" Name="Resource" />
                   <Directory Id="INSTALLFRUI" Name="fr" />
                   <Directory Id="INSTALLDEUI" Name="de" />
@@ -55,12 +55,12 @@
                <Directory Id="DIR_ADSK" Name="Autodesk">
                   <Directory Id="DIR_REVIT" Name="Revit">
                      <Directory Id="DIR_ADDINS" Name="Addins">
-                        <Directory Id="DIR_Addins" Name="2023"/>
+                        <Directory Id="DIR_Addins" Name="2024"/>
                      </Directory>
                   </Directory>
                   <Directory Id="DIR_REVIT_LT" Name="RevitLT">
                      <Directory Id="DIR_ADDINS_LT" Name="Addins">
-                        <Directory Id="DIR_Addins_LT" Name="2023"/>
+                        <Directory Id="DIR_Addins_LT" Name="2024"/>
                      </Directory>
                   </Directory>
                </Directory>
@@ -73,9 +73,9 @@
             <Directory Id="CommonAppDataFolder" Name="MyAppDataFolder">
                <Directory Id="DIR_ADSK" Name="Autodesk">
                   <Directory Id="DIR_PLUGINS" Name="ApplicationPlugins">
-                     <Directory Id="DIR_PACKAGE" Name="IFC 2023.bundle">
+                     <Directory Id="DIR_PACKAGE" Name="IFC 2024.bundle">
                         <Directory Id="DIR_Contents" Name="Contents">
-                          <Directory Id="INSTALLDIR" Name="2023">
+                          <Directory Id="INSTALLDIR" Name="2024">
                             <Directory Id="INSTALLRESOURCE" Name="Resource" />
                             <Directory Id="INSTALLFRUI" Name="fr" />
                             <Directory Id="INSTALLDEUI" Name="de" />
@@ -112,7 +112,10 @@
                <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExportUIOverride.dll" Source="$(var.ProjectDir)..\Program Files to Install\IFCExportUIOverride.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Common_DLL" Guid="C7ED4A2C-DCB1-457E-968F-2DDE9993C1B6">
-               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Common.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.dll" KeyPath="yes" />
+            </Component>
+            <Component Id = "COMP_IFC_Import_Core_DLL" Guid="33DEBE0A-57D1-4BFC-BC99-FDA776B6224E">
+               <File Id ="FILE_Ifc_Import_Core_DLL" Name="Revit.IFC.Import.Core.dll" Source="$(var.Revit.IFC.Import.Core.TargetDir)Revit.IFC.Import.Core.dll" KeyPath="yes" />
             </Component>
          <?else?>
             <Component Id = "COMP_IFC_Export_DLL" Guid="D59E44AA-89A3-4CD7-AD9C-8D4D7AC6026B">
@@ -127,7 +130,17 @@
             <Component Id = "COMP_IFC_Common_DLL" Guid="C7ED4A2C-DCB1-457E-968F-2DDE9993C1B6">
                <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.dll" KeyPath="yes" />
             </Component>
+            <Component Id = "COMP_IFC_Import_Core_DLL" Guid="33DEBE0A-57D1-4BFC-BC99-FDA776B6224E">
+               <File Id ="FILE_Ifc_Import_Core_DLL" Name="Revit.IFC.Import.Core.dll" Source="$(var.Revit.IFC.Import.Core.TargetDir)Revit.IFC.Import.Core.dll" KeyPath="yes" />
+            </Component>
          <?endif?>
+
+         <Component Id = "SteelCon_ASIFC_DLL" Guid="449A672A-2500-4BE7-AAFE-6751B84A77A4">
+            <File Id ="FILE_SteelCon_ASIFC_DLL" Name="Autodesk.SteelConnections.ASIFC.dll" Source="$(var.ProjectDir)..\Program Files to Install\Autodesk.SteelConnections.ASIFC.dll" KeyPath="yes" />
+         </Component>
+         <Component Id = "SteelCon_ASIFC_Sig" Guid="4DFE7524-0FC5-4931-809D-2F50D2C623A8">
+            <File Id ="FILE_SteelCon_ASIFC_Sig" Name="Autodesk.SteelConnections.ASIFC.sig" Source="$(var.ProjectDir)..\Program Files to Install\Autodesk.SteelConnections.ASIFC.sig" KeyPath="yes" />
+         </Component>
         
          <Component Id = "COMP_LICENSE_RTF" Guid="9F0851DD-3A43-4D49-AC8C-8B8D2F394A91">
             <File Id ="FILE_LICENSE_RTF" Name="LICENSE.rtf" Source="$(var.ProjectDir)..\Program Files to Install\LICENSE.rtf" KeyPath="yes" />
@@ -144,6 +157,9 @@
         <Component Id = "COMP_GeometryGymIFC_DLL" Guid="467589B7-945B-4B06-89D1-668DFFAFD074">
           <File Id ="FILE_GeometryGymIFC_DLL" Name="GeometryGymIFC.dll" Source="$(var.Revit.IFC.Export.TargetDir)GeometryGymIFC.dll" KeyPath="yes" />
         </Component>
+         <Component Id = "COMP_ICSharpCode_SharpZipLib_DLL" Guid="B5E27E3B-E9AC-42D6-BFED-55C999B773B8">
+            <File Id ="FILE_ICSharpCode_SharpZipLib_DLL" Name="ICSharpCode.SharpZipLib.dll" Source="$(var.Revit.IFC.Import.TargetDir)ICSharpCode.SharpZipLib.DLL" KeyPath="yes" />
+         </Component>
          <Component Id = "COMP_IFC2X2ADD1_EXP" Guid="03084C2B-FD44-48C8-AA91-71A9EB199181">
             <File Id ="FILE_IFC2X2ADD1_EXP" Name="IFC2X2_ADD1.exp" Source="$(var.ProjectDir)..\Program Files to Install\IFC2X2_ADD1.exp" KeyPath="yes" />
          </Component>
@@ -162,6 +178,12 @@
          <Component Id = "COMP_IFC4_XSD" Guid="51B549A3-DCB2-412B-9D4D-1B72D901D2B3">
             <File Id ="FILE_IFC4_XSD" Name="IFC4.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC4.xsd" KeyPath="yes" />
          </Component>
+         <Component Id = "COMP_IFC4RV_XSD" Guid="C23C0681-71CE-44B2-9E22-F0DF87587C1E">
+            <File Id ="FILE_IFC4RV_XSD" Name="IFC4RV.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC4RV.xsd" KeyPath="yes" />
+         </Component>
+         <Component Id = "COMP_IFC4X3_XSD" Guid="9531BB44-C7E8-4EEE-AF26-6EBFB5562711">
+            <File Id ="FILE_IFC4X3_XSD" Name="IFC4X3.xsd" Source="$(var.ProjectDir)..\Program Files to Install\IFC4X3.xsd" KeyPath="yes" />
+         </Component>
          <Component Id = "COMP_IFC_Shared_Parameters_RevitIFCBuiltIn_ALL_TXT" Guid="BD6EB78A-7AED-40C3-9B24-AA74652A3C25">
             <File Id ="FILE_IFC_Shared_Parameters_RevitIFCBuiltIn_ALL" Name="IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC Shared Parameters-RevitIFCBuiltIn_ALL.txt" KeyPath="yes" />
          </Component>
@@ -171,6 +193,9 @@
             <Component Id = "COMP_IFCCertifiedEntitiesAndPSets_JSON" Guid="D7609AF6-AF1B-4190-BE0A-60158CDFDE80">
             <File Id ="FILE_IFCCertifiedEntitiesAndPSets_JSON" Name="IFCCertifiedEntitiesAndPSets.json" Source="$(var.ProjectDir)..\Program Files to Install\IFCCertifiedEntitiesAndPSets.json" KeyPath="yes" />
          </Component>
+		 <Component Id = "COMP_IFCSG_UserDefinedPsets" Guid="292936D3-1C6E-47A5-8593-D9278E546811">
+          <File Id="FILE_IFCSG_UserDefinedPsets" Name="IFC-SG Property Mapping Export.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC-SG Property Mapping Export.txt" KeyPath="yes" />
+       </Component>
          <?ifndef ForNavisworks2019?>
             <Component Id = "COMP_IFC_Addin_manifest" Guid="EC8783CA-DAE8-4233-B714-BB16B5BDBAC3">
              <File Id ="FILE_Export_manifest" Name="Revit.IFC.addin" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.addin" KeyPath="yes" />

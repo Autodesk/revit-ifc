@@ -253,7 +253,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       ComplexNumber,
       ThermalResistance,
       Numeric,
-      ElectricCapacitance
+      ElectricCapacitance,
+      URIReference,
+      Acceleration,
+      SoundPowerLevel,
+      IntegerCountRate,
+      IfcDocumentReference,
+      ElectricCharge,
+      Inductance,
+      AngularVelocity,
+      IfcCostValue,
+      IfcRelaxation
    }
 
    /// <summary>
@@ -359,7 +369,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          Parameter parameter = null;
          if (ParameterUtils.IsBuiltInParameter(paramId))
          {
-            parameter = element.get_Parameter((BuiltInParameter)paramId.IntegerValue);
+            parameter = element.get_Parameter((BuiltInParameter)paramId.Value);
          }
          else
          {
@@ -391,13 +401,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="owningPsetName">Name of Property Set this entry belongs to .</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="elementOrConnector">The element or connector of which this property is created for.</param>
       /// <param name="elementType">The element type of which this property is created for.</param>
       /// <param name="handle">The handle for which this property is created for.</param>
       /// <returns>The created property handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
-         IFCExtrusionCreationData extrusionCreationData, ElementOrConnector elementOrConnector,
+         IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector,
          ElementType elementType, IFCAnyHandle handle, bool fromSchedule=false)
       {
          // if CombinedParameterData, then we have to recreate the parameter value, since there is no

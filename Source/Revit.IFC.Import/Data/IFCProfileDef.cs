@@ -160,8 +160,6 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCCompositeProfile : IFCProfileDef
    {
-      private IList<IFCProfileDef> m_Profiles = null;
-
       /// <summary>
       /// Default constructor.
       /// </summary>
@@ -218,15 +216,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// Get the list of contained profiles.
       /// </summary>
-      public IList<IFCProfileDef> Profiles
-      {
-         get
-         {
-            if (m_Profiles == null)
-               m_Profiles = new List<IFCProfileDef>();
-            return m_Profiles;
-         }
-      }
+      public IList<IFCProfileDef> Profiles { get; } = new List<IFCProfileDef>();
    }
 
    // We may create more subclasses if we want to preserve the original parametric data.
@@ -1296,22 +1286,13 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCSimpleProfile : IFCProfileDef
    {
-      private CurveLoop m_OuterCurve = null;
-
-      private IList<CurveLoop> m_InnerCurves = null;
-
-      // This is only valid for IFCParameterizedProfile.  We place it here to be at the same level as the CurveLoops,
-      // so that they can be transformed in a consisent matter.
-      private Transform m_Position = null;
-
       /// <summary>
       /// The location (origin and rotation) of the parametric profile.
       /// </summary>
-      public Transform Position
-      {
-         get { return m_Position; }
-         protected set { m_Position = value; }
-      }
+      /// <remarks>This is only valid for IFCParameterizedProfile.  We place it here to be at the 
+      /// same level as the CurveLoops, so that they can be transformed in a consisent matter.
+      /// </remarks>
+      public Transform Position { get; protected set; } = null;
 
       private void ProcessIFCArbitraryOpenProfileDef(IFCAnyHandle profileDef)
       {
@@ -1547,25 +1528,19 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Get the one outer curve loop, iff there is only one.
+      /// </summary>
+      /// <returns>The one outer curve loop, or null if there is not exactly 1.</returns>
+      public CurveLoop GetTheOuterCurveLoop() {  return OuterCurve; }
+
+      /// <summary>
       /// Get the outer curve loop.
       /// </summary>
-      public CurveLoop OuterCurve
-      {
-         get { return m_OuterCurve; }
-         protected set { m_OuterCurve = value; }
-      }
+      protected CurveLoop OuterCurve { get; set; } = null;
 
       /// <summary>
       /// Get the list of inner curve loops.
       /// </summary>
-      public IList<CurveLoop> InnerCurves
-      {
-         get
-         {
-            if (m_InnerCurves == null)
-               m_InnerCurves = new List<CurveLoop>();
-            return m_InnerCurves;
-         }
-      }
+      public IList<CurveLoop> InnerCurves { get; } = new List<CurveLoop>();
    }
 }

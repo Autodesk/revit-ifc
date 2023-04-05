@@ -81,11 +81,11 @@ namespace Revit.IFC.Export.Utility
       {
          string parameterName = baseParameterName + index.ToString();
          double value = 0.0;
-         if (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(element, parameterName, out value) != null)
+         if (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(element, parameterName, out value, null) != null)
             return value;
 
          // If the index is 1, we will try again with baseParameterName.
-         if (index == 1 && ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(element, baseParameterName, out value) != null)
+         if (index == 1 && ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(element, baseParameterName, out value, null) != null)
             return value;
 
          return null;
@@ -211,38 +211,38 @@ namespace Revit.IFC.Export.Utility
          double value1, value2;
 
          // both of these must be defined, or not defined - if only one is defined, we ignore the values.
-         if ((ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "LiningDepth", out value1) != null) &&
-             (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "LiningThickness", out value2) != null))
+         if ((ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.LiningDepth", out value1, "LiningDepth") != null) &&
+             (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.LiningThickness", out value2, "LiningThickness") != null))
          {
             liningDepthOpt = UnitUtil.ScaleLength(value1);
             liningThicknessOpt = UnitUtil.ScaleLength(value2);
          }
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "LiningOffset", out value1) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.LiningOffset", out value1, "LiningOffset") != null)
             liningOffsetOpt = UnitUtil.ScaleLength(value1);
 
          // both of these must be defined, or not defined - if only one is defined, we ignore the values.
-         if ((ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "ThresholdDepth", out value1) != null) &&
-             (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "ThresholdThickness", out value2) != null))
+         if ((ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.ThresholdDepth", out value1, "ThresholdDepth") != null) &&
+             (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.ThresholdThickness", out value2, "ThresholdThickness") != null))
          {
             thresholdDepthOpt = UnitUtil.ScaleLength(value1);
             thresholdThicknessOpt = UnitUtil.ScaleLength(value2);
          }
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "ThresholdOffset", out value1) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.ThresholdOffset", out value1, "ThresholdOffset") != null)
             liningOffsetOpt = UnitUtil.ScaleLength(value1);
 
          // both of these must be defined, or not defined - if only one is defined, we ignore the values.
-         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "TransomOffset", out value1) != null) &&
-             (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "TransomThickness", out value2) != null))
+         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.TransomOffset", out value1, "TransomOffset") != null) &&
+             (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.TransomThickness", out value2, "TransomThickness") != null))
          {
             transomOffsetOpt = UnitUtil.ScaleLength(value1);
             transomThicknessOpt = UnitUtil.ScaleLength(value2);
          }
 
          // both of these must be defined, or not defined - if only one is defined, we ignore the values.
-         if ((ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "CasingDepth", out value1) != null) &&
-             (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "CasingThickness", out value2) != null))
+         if ((ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.CasingDepth", out value1, "CasingDepth") != null) &&
+             (ParameterUtil.GetPositiveDoubleValueFromElementOrSymbol(familyInstance, "IfcDoorLiningProperties.CasingThickness", out value2, "CasingThickness") != null))
          {
             casingDepthOpt = UnitUtil.ScaleLength(value1);
             casingThicknessOpt = UnitUtil.ScaleLength(value2);
@@ -271,9 +271,9 @@ namespace Revit.IFC.Export.Utility
          string currPanelName = "PanelPosition" + number.ToString();
 
          string value = null;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, currPanelName, out value) == null)
+         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcDoorPanelProperties." + currPanelName, out value, currPanelName) == null)
          {
-            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, basePanelName, out value) == null)
+            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcDoorPanelProperties." + basePanelName, out value, basePanelName) == null)
                return baseValue;
          }
 
@@ -393,7 +393,7 @@ namespace Revit.IFC.Export.Utility
       public static IFCDoorStyleConstruction GetDoorStyleConstruction(Element element)
       {
          string value = null;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "Construction", out value) == null)
+         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcDoorStyle.ConstructionType", out value, "ConstructionType", "Construction") == null)
             ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.DOOR_CONSTRUCTION_TYPE, false, out value);
 
          if (String.IsNullOrEmpty(value))
@@ -429,7 +429,7 @@ namespace Revit.IFC.Export.Utility
       public static IFCWindowStyleConstruction GetIFCWindowStyleConstruction(Element element)
       {
          string value;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "Construction", out value) == null)
+         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcWindowStyle.ConstructionType", out value, "ConstructionType", "Construction") == null)
             ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_CONSTRUCTION_TYPE, false, out value);
 
          if (String.IsNullOrWhiteSpace(value))
@@ -471,7 +471,7 @@ namespace Revit.IFC.Export.Utility
          string currPanelName = "PanelOperation" + number.ToString();
 
          string value;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, currPanelName, out value) == null)
+         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcWindowPanelProperties." + currPanelName, out value, currPanelName) == null)
             value = initialValue;
 
          if (value == "")
@@ -526,7 +526,7 @@ namespace Revit.IFC.Export.Utility
          string currPanelName = "PanelPosition" + number.ToString();
 
          string value;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, currPanelName, out value) == null)
+         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcWindowPanelProperties." + currPanelName, out value, currPanelName) == null)
             value = initialValue;
 
          if (value == "")
@@ -579,29 +579,29 @@ namespace Revit.IFC.Export.Utility
          double value2 = 0.0;
 
          // both of these must be defined (or not defined)
-         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "LiningDepth", out value1) != null) &&
-             (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "LiningThickness", out value2) != null))
+         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowLiningProperties.LiningDepth", out value1, "LiningDepth") != null) &&
+             (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowLiningProperties.LiningThickness", out value2, "LiningThickness") != null))
          {
             liningDepthOpt = UnitUtil.ScaleLength(value1);
             liningThicknessOpt = UnitUtil.ScaleLength(value2);
          }
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "TransomThickness", out value1) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowLiningProperties.TransomThickness", out value1, "TransomThickness") != null)
             transomThicknessOpt = UnitUtil.ScaleLength(value1);
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "FirstTransomOffset", out value1) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowLiningProperties.FirstTransomOffset", out value1, "FirstTransomOffset") != null)
             firstTransomOffsetOpt = UnitUtil.ScaleLength(value1);
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "SecondTransomOffset", out value1) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowLiningProperties.SecondTransomOffset", out value1, "SecondTransomOffset") != null)
             secondTransomOffsetOpt = UnitUtil.ScaleLength(value1);
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "MullionThickness", out value1) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowLiningProperties.MullionThickness", out value1, "MullionThickness") != null)
             mullionThicknessOpt = UnitUtil.ScaleLength(value1);
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "FirstMullionOffset", out value1) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowLiningProperties.FirstMullionOffset", out value1, "FirstMullionOffset") != null)
             firstMullionOffsetOpt = UnitUtil.ScaleLength(value1);
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "SecondMullionOffset", out value1) != null)
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowLiningProperties.SecondMullionOffset", out value1, "SecondMullionOffset") != null)
             secondMullionOffsetOpt = UnitUtil.ScaleLength(value1);
 
          string windowLiningGUID = GUIDUtil.CreateSubElementGUID(familyInstance, (int)IFCWindowSubElements.WindowLining);
@@ -651,10 +651,10 @@ namespace Revit.IFC.Export.Utility
             double? frameThickness = null;
 
             double value1, value2;
-            if (((ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, frameDepthCurrString, out value1) != null) ||
-                ((panelNumber == 1) && (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "FrameDepth", out value1) != null))) &&
-               ((ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, frameThicknessCurrString, out value2) != null) ||
-                ((panelNumber == 1) && (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "FrameThickness", out value2) != null))))
+            if (((ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowPanelProperties." + frameDepthCurrString, out value1, frameDepthCurrString) != null) ||
+                ((panelNumber == 1) && (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowPanelProperties.FrameDepth", out value1, "FrameDepth") != null))) &&
+               ((ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowPanelProperties." + frameThicknessCurrString, out value2, frameThicknessCurrString) != null) ||
+                ((panelNumber == 1) && (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "IfcWindowPanelProperties.FrameThickness", out value2, "FrameThickness") != null))))
             {
                frameDepth = UnitUtil.ScaleLength(value1);
                frameThickness = UnitUtil.ScaleLength(value2);
@@ -881,7 +881,7 @@ namespace Revit.IFC.Export.Utility
          XYZ relZ = XYZ.BasisZ;
          XYZ relX = XYZ.BasisX;
 
-         Transform openingTrf = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, hostObjPlacementHnd);
+         Transform openingTrf = ExporterIFCUtils.GetUnscaledTransformWithoutFixOfDirection(exporterIFC, hostObjPlacementHnd);
          openingTrf = openingTrf.Inverse;
 
          // Create a copy of the opening loop that will be expressed in the local coordinate system relative to the wall
@@ -1054,7 +1054,7 @@ namespace Revit.IFC.Export.Utility
 
          if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
          {
-            using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
+            using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
             {
                double height = 0.0, width = 0.0;
                if (GeometryUtil.ComputeHeightWidthOfCurveLoop(tmpCutLoop, lcs, out height, out width))
@@ -1101,13 +1101,13 @@ namespace Revit.IFC.Export.Utility
 
          using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, insertElement))
          {
-            using (IFCExtrusionCreationData extrusionCreationData = new IFCExtrusionCreationData())
+            using (IFCExportBodyParams extrusionCreationData = new IFCExportBodyParams())
             {
                extrusionCreationData.SetLocalPlacement(ExporterUtil.CreateLocalPlacement(file, setter.LocalPlacement, null));
                extrusionCreationData.ReuseLocalPlacement = true;
 
                IFCAnyHandle openingHnd = OpeningUtil.CreateOpening(exporterIFC, hostObjHnd, hostElement, insertElement, openingGUID, solid, scaledHostWidth,
-                   isRecess, extrusionCreationData, null, null);
+                   isRecess, extrusionCreationData, null, null, null, -1, -1);
 
                double unscaledHeight = UnitUtil.UnscaleLength(extrusionCreationData.ScaledHeight);
                double unscaledWidth = UnitUtil.UnscaleLength(extrusionCreationData.ScaledWidth);

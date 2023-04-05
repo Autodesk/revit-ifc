@@ -124,7 +124,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elementToUse">The base element.</param>
       /// <param name="elemTypeToUse">The base element type.</param>
       /// <returns>A set of quantities handles.</returns>
-      public HashSet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData ifcParams, Element elementToUse, ElementType elemTypeToUse)
+      public HashSet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams ifcParams, Element elementToUse, ElementType elemTypeToUse)
       {
          HashSet<IFCAnyHandle> props = new HashSet<IFCAnyHandle>();
          foreach (QuantityEntry entry in Entries)

@@ -75,12 +75,13 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Determines if we require the IfcRoot entity to have a name.
+      /// Determines the default name of an IfcRoot, if any.
       /// </summary>
-      /// <returns>Returns true if we require the IfcRoot entity to have a name.</returns>
-      protected override bool CreateNameIfNull()
+      /// <param name="name">The original name.</param>
+      /// <returns>The default name of an IfcRoot, if any.</returns>
+      protected override string GetDefaultName(string name)
       {
-         return true;
+         return Properties.Resources.IFCUnknownPropertySet;
       }
 
       /// <summary>
@@ -129,6 +130,15 @@ namespace Revit.IFC.Import.Data
       public virtual Tuple<string, bool> CreatePropertySet(Document doc, Element element, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap)
       {
          return new Tuple<string, bool>(null, false);
+      }
+
+      protected string CreatePropertyName(string propertyName, string typeString = "")
+      {
+         // Navisworks uses this engine and needs support for the old naming.
+         // We use the API-only UseStreamlinedOptions as a proxy for knowing this.
+         return IFCImportFile.TheFile.Options.UseStreamlinedOptions ?
+            propertyName + "(" + Name + typeString +  ")" :
+            Name + "." + propertyName + typeString;
       }
    }
 }

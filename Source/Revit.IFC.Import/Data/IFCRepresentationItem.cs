@@ -29,6 +29,59 @@ using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
+   // An IFCHybridRepresentationItem exists because for Hybrid IFC Import, Revit needs something to represent a RepresentationItem, other than null.
+   // Body geometry for DirectShapes are actually created by AnyCAD, but there are other data within a RepresentationItem (e.g., PresentationLayer)
+   // that must persist, otherwise Elements will lose parameters.
+   // Therefore, this exists just a placeholder for DirectShapes that have body geometry created via AnyCAD.
+   public class IFCHybridRepresentationItem : IFCRepresentationItem
+   {
+      protected IFCHybridRepresentationItem()
+      {
+      }
+
+      /// <summary>
+      /// Constructor to create a new IFCHybridRepresentationItem.
+      /// </summary>
+      /// <param name="ifcRepresentationItem">Handle representing IFCRepresentationItem.</param>
+      protected IFCHybridRepresentationItem(IFCAnyHandle ifcRepresentationItem)
+      {
+         Process(ifcRepresentationItem);
+      }
+
+
+      /// <summary>
+      /// Process IFCHybridRepresentationItem members.
+      /// Even though we don't have any members, it exists to maintain a parallel structure of other IFCEntity processing.
+      /// </summary>
+      /// <param name="ifcRepresentationItem">Handle representing IFCRepresentationItem.</param>
+      override protected void Process(IFCAnyHandle ifcRepresentationItem)
+      {
+         base.Process(ifcRepresentationItem);
+      }
+
+      /// <summary>
+      /// Create the IFCHybridRepresentationItem.
+      /// </summary>
+      /// <param name="ifcRepresentationItem">Handle corresponding to the IFCRepresentationItem that AnyCAD already processed.</param>
+      /// <returns>IFCHybridRepresentationItem object.</returns>
+      public static IFCHybridRepresentationItem ProcessIFCHybridRepresentationItem(IFCAnyHandle ifcRepresentationItem)
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcRepresentationItem))
+         {
+            Importer.TheLog.LogNullError(IFCEntityType.IfcRepresentationItem);
+            return null;
+         }
+
+         IFCEntity hybridRepresentationItem;
+         IFCImportFile.TheFile.EntityMap.TryGetValue(ifcRepresentationItem.StepId, out hybridRepresentationItem);
+         if (hybridRepresentationItem != null)
+            return (hybridRepresentationItem as IFCHybridRepresentationItem);
+
+         return new IFCHybridRepresentationItem(ifcRepresentationItem);
+      }
+
+   }
+
    public abstract class IFCRepresentationItem : IFCEntity
    {
       /// <summary>
@@ -110,10 +163,10 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      public void CreateShape(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      public void CreateShape(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          if (StyledByItem != null)
             StyledByItem.Create(shapeEditScope);
@@ -123,7 +176,7 @@ namespace Revit.IFC.Import.Data
 
          using (IFCImportShapeEditScope.IFCMaterialStack stack = new IFCImportShapeEditScope.IFCMaterialStack(shapeEditScope, StyledByItem, LayerAssignment))
          {
-            CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+            CreateShapeInternal(shapeEditScope, scaledLcs, guid);
          }
       }
 
@@ -131,9 +184,10 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry.</param>
+      /// <param name="scaledLcs">The scaled local coordinate system for the geometry.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      virtual protected void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      virtual protected void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
       }
 
@@ -154,50 +208,67 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcMappedItem))
-            return IFCMappedItem.ProcessIFCMappedItem(ifcRepresentationItem);
-         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcStyledItem))
-            return IFCStyledItem.ProcessIFCStyledItem(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTopologicalRepresentationItem))
-            return IFCTopologicalRepresentationItem.ProcessIFCTopologicalRepresentationItem(ifcRepresentationItem);
+         // Skip Body Geometry if doing Hybrid IFC Import and currently processing Hybrid IfcProductRepresentation.
+         bool skipBodyGeometry = (Importer.TheOptions.IsHybridImport) && (Importer.TheHybridInfo?.RepresentationsAlreadyCreated ?? false);
+         if (!skipBodyGeometry)
+         {
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcMappedItem))
+               return IFCMappedItem.ProcessIFCMappedItem(ifcRepresentationItem);
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcStyledItem))
+               return IFCStyledItem.ProcessIFCStyledItem(ifcRepresentationItem);
+            if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTopologicalRepresentationItem))
+               return IFCTopologicalRepresentationItem.ProcessIFCTopologicalRepresentationItem(ifcRepresentationItem);
 
-         // TODO: Move everything below to IFCGeometricRepresentationItem, once it is created.
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcBooleanResult))
-            return IFCBooleanResult.ProcessIFCBooleanResult(ifcRepresentationItem);
+            // TODO: Move everything below to IFCGeometricRepresentationItem, once it is created.
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcBooleanResult))
+               return IFCBooleanResult.ProcessIFCBooleanResult(ifcRepresentationItem);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcFaceBasedSurfaceModel))
+               return IFCFaceBasedSurfaceModel.ProcessIFCFaceBasedSurfaceModel(ifcRepresentationItem);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcGeometricSet))
+               return IFCGeometricSet.ProcessIFCGeometricSet(ifcRepresentationItem);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcShellBasedSurfaceModel))
+               return IFCShellBasedSurfaceModel.ProcessIFCShellBasedSurfaceModel(ifcRepresentationItem);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcSolidModel))
+               return IFCSolidModel.ProcessIFCSolidModel(ifcRepresentationItem);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcCsgPrimitive3D))
+               return IFCCsgPrimitive3D.ProcessIFCCsgPrimitive3D(ifcRepresentationItem);
+
+            // TODO: Move the items below to IFCGeometricRepresentationItem->IFCTessellatedItem->IfcTessellatedFaceSet.
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTriangulatedFaceSet))
+               return IFCTriangulatedFaceSet.ProcessIFCTriangulatedFaceSet(ifcRepresentationItem);
+            // There is no way to actually determine an IFC4Add2 file vs. a "vanilla" IFC4 file, which is
+            // obsolete.  The try/catch here allows us to read these obsolete files without crashing.
+            try
+            {
+               if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPolygonalFaceSet))
+                  return IFCPolygonalFaceSet.ProcessIFCPolygonalFaceSet(ifcRepresentationItem);
+            }
+            catch (Exception ex)
+            {
+               // Once we fail once, downgrade the schema so we don't try again.
+               if (IFCImportFile.HasUndefinedAttribute(ex))
+                  IFCImportFile.TheFile.DowngradeIFC4SchemaTo(IFCSchemaVersion.IFC4Add1Obsolete);
+               else
+                  throw ex;
+            }
+
+            if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcSurface))
+               return IFCSurface.ProcessIFCSurface(ifcRepresentationItem);
+         }
+
+         // Non-body geometry.  Still need to process curves & points for Hybrid IFC Import.
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcCurve))
             return IFCCurve.ProcessIFCCurve(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcFaceBasedSurfaceModel))
-            return IFCFaceBasedSurfaceModel.ProcessIFCFaceBasedSurfaceModel(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcGeometricSet))
-            return IFCGeometricSet.ProcessIFCGeometricSet(ifcRepresentationItem);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPoint))
             return IFCPoint.ProcessIFCPoint(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcShellBasedSurfaceModel))
-            return IFCShellBasedSurfaceModel.ProcessIFCShellBasedSurfaceModel(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcSolidModel))
-            return IFCSolidModel.ProcessIFCSolidModel(ifcRepresentationItem);
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcCsgPrimitive3D))
-            return IFCCsgPrimitive3D.ProcessIFCCsgPrimitive3D(ifcRepresentationItem);
 
-         // TODO: Move the items below to IFCGeometricRepresentationItem->IFCTessellatedItem->IfcTessellatedFaceSet.
-         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTriangulatedFaceSet))
-            return IFCTriangulatedFaceSet.ProcessIFCTriangulatedFaceSet(ifcRepresentationItem);
-         // There is no way to actually determine an IFC4Add2 file vs. a "vanilla" IFC4 file, which is
-         // obsolete.  The try/catch here allows us to read these obsolete files without crashing.
-         try
+         if (skipBodyGeometry)
          {
-            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPolygonalFaceSet))
-               return IFCPolygonalFaceSet.ProcessIFCPolygonalFaceSet(ifcRepresentationItem);
-         }
-         catch (Exception ex)
-         {
-            // Once we fail once, downgrade the schema so we don't try again.
-            if (IFCImportFile.HasUndefinedAttribute(ex))
-               IFCImportFile.TheFile.DowngradeIFC4SchemaTo(IFCSchemaVersion.IFC4Add1Obsolete);
-            else
-               throw ex;
+            Importer.TheLog.LogComment(ifcRepresentationItem.Id, "Hybrid Import Adding Dummy IfcRepresentationItem, since geometry is already imported", true);
+            return IFCHybridRepresentationItem.ProcessIFCHybridRepresentationItem(ifcRepresentationItem);
          }
 
+         // Everything else is an error.
          Importer.TheLog.LogUnhandledSubTypeError(ifcRepresentationItem, IFCEntityType.IfcRepresentationItem, false);
          return null;
       }

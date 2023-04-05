@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Import.Core;
@@ -178,6 +179,13 @@ namespace Revit.IFC.Import.Utility
 
       public IIFCFileProcessor Processor { get; protected set; }
 
+      /// <summary>
+      /// Indicates whether the current IFC Import is Hybrid or not.
+      /// True:  Hybrid (legacy + AnyCAD)
+      /// False:  legacy only
+      /// </summary>
+      public bool IsHybridImport { get; protected set; } = false;
+
       protected IFCImportOptions()
       {
       }
@@ -288,6 +296,14 @@ namespace Revit.IFC.Import.Utility
 
          if (Processor == null)
             Processor = new IFCDefaultProcessor();
+
+         ImportIFCOptions importIFCOptions = ImportIFCOptions.GetImportIFCOptions();
+         string linkProcessor = importIFCOptions.LinkProcessor;
+
+         // For now, only use hybrid import if revit.ini has "AnyCAD" set.
+         // In the future, this will change to:
+         // IsHybridImport = (string.Compare(linkProcessor, "Legacy", true) != 0);
+         IsHybridImport = (string.Compare(linkProcessor, "AnyCAD", true) == 0);
       }
 
       /// <summary>

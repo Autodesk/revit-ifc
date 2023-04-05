@@ -181,7 +181,7 @@ namespace Revit.IFC.Export.Exporter
                sweptSolidExporter.RepresentationType = ShapeRepresentationType.SweptSolid;
                Transform lcs = GeometryUtil.CreateTransformFromPlanarFace(sweptAnalyzer.ProfileFace);
                sweptSolidExporter.RepresentationItem = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, profileName, faceBoundaries, lcs,
-                   line.Direction, UnitUtil.ScaleLength(line.Length), false);
+                   line.Direction, UnitUtil.ScaleLength(line.Length), false, out _);
                if ((addInfo & GenerateAdditionalInfo.GenerateFootprint) != 0)
                {
                   sweptSolidExporter.FootprintInfo = new FootPrintInfo(faceBoundaries, lcs);
@@ -190,7 +190,7 @@ namespace Revit.IFC.Export.Exporter
             else
             {
                sweptSolidExporter = new SweptSolidExporter();
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+               if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                {
                   // Use tessellated geometry in IFC Reference View
                   if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)

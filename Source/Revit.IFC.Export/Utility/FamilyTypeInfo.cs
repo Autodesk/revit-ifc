@@ -177,7 +177,7 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       public Transform StyleTransform { get; set; } = Transform.Identity;
 
-      public IFCExtrusionCreationData extraParams { get; set; } = new IFCExtrusionCreationData();
+      public IFCExportBodyParams extraParams { get; set; } = new IFCExportBodyParams();
 
       public MaterialAndProfile MaterialAndProfile { get; set; } = new MaterialAndProfile();
 

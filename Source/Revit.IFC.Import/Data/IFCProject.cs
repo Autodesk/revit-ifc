@@ -149,6 +149,8 @@ namespace Revit.IFC.Import.Data
          double trueNorth = 0.0;
          if (repContexts != null)
          {
+            IFCAnyHandle mapConv = null;
+
             foreach (IFCAnyHandle geomRepContextHandle in repContexts)
             {
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(geomRepContextHandle) &&
@@ -175,7 +177,7 @@ namespace Revit.IFC.Import.Data
                         if (IFCAnyHandleUtil.IsSubTypeOf(coordOperation.FirstOrDefault(), IFCEntityType.IfcMapConversion))
                         {
                            hasMapConv = true;
-                           IFCAnyHandle mapConv = coordOperation.FirstOrDefault();
+                           mapConv = coordOperation.FirstOrDefault();
                            bool found = false;
                            double eastings = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(mapConv, "Eastings", out found);
                            if (!found)
@@ -213,7 +215,7 @@ namespace Revit.IFC.Import.Data
                               // we should probably augment Processor.AddParameter to ensure that CreateOrUpdateElement
                               // is called before anything is attempted to be added.  This is a special case, though,
                               // as in Revit we don't actually create an element for the IfcProject.
-                              Importer.TheProcessor.CreateOrUpdateElement(Id, GlobalId, EntityType.ToString(), CategoryId.IntegerValue, null);
+                              Importer.TheProcessor.CreateOrUpdateElement(Id, GlobalId, EntityType.ToString(), CategoryId.Value, null);
 
                               Category category = IFCPropertySet.GetCategoryForParameterIfValid(projectInfo, Id);
                               IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.Name", geoRefName, Id);
@@ -255,7 +257,16 @@ namespace Revit.IFC.Import.Data
                   projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
 
                   if (!string.IsNullOrEmpty(geoRefName))
-                     IFCImportFile.TheFile.Document.SiteLocation.SetGeoCoordinateSystem(geoRefName);
+                  {
+                     try
+                     {
+                        IFCImportFile.TheFile.Document.SiteLocation.SetGeoCoordinateSystem(geoRefName);
+                     }
+                     catch
+                     {
+                        Importer.TheLog.LogError(mapConv?.Id ?? -1, geoRefName + " is not a recognized coordinate system.", false);
+                     }
+                  }
                }
                else
                {
@@ -401,6 +412,7 @@ namespace Revit.IFC.Import.Data
             }
          }
          IFCSite.ProcessSiteLocations(doc, sites);
+         IFCSite.FindDefaultSite(sites);
                
          base.Create(doc);
 

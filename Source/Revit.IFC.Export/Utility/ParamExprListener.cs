@@ -278,7 +278,7 @@ namespace Revit.IFC.Export.Utility
             var spParCtx = context.GetChild(0) as ParamExprGrammarParser.Special_paramContext;
             if (spParCtx.ELEMENTID() != null)
             {
-               nodeP.nodePropertyValue = RevitElement.Id.IntegerValue;
+               nodeP.nodePropertyValue = RevitElement.Id.Value;
             }
             else if (spParCtx.RUNNINGNUMBER() != null)
             {

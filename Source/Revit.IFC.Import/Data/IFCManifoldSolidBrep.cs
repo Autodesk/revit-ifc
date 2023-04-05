@@ -49,14 +49,14 @@ namespace Revit.IFC.Import.Data
       }
 
       private Tuple<IList<GeometryObject>, bool> CollectFaces(IFCImportShapeEditScope shapeEditScope, 
-         Transform lcs, Transform scaledLcs, string guid)
+         Transform scaledLcs, string guid)
       {
          using (BuilderScope bs = shapeEditScope.InitializeBuilder(IFCShapeBuilderType.TessellatedShapeBuilder))
          {
             TessellatedShapeBuilderScope tsBuilderScope = bs as TessellatedShapeBuilderScope;
 
             tsBuilderScope.StartCollectingFaceSet();
-            Outer.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+            Outer.CreateShape(shapeEditScope, scaledLcs, guid);
 
             IList<GeometryObject> geomObjs = null;
             bool canRevertToMesh = tsBuilderScope.CanRevertToMesh();
@@ -83,17 +83,16 @@ namespace Revit.IFC.Import.Data
       /// Return geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The shape edit scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>The created geometry.</returns>
       protected override IList<GeometryObject> CreateGeometryInternal(
-         IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+         IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
          if (Outer == null || Outer.Faces.Count == 0)
             return null;
 
-         Tuple<IList<GeometryObject>, bool> faceInfo = CollectFaces(shapeEditScope, lcs, scaledLcs, guid);
+         Tuple<IList<GeometryObject>, bool> faceInfo = CollectFaces(shapeEditScope, scaledLcs, guid);
 
          IList<GeometryObject> geomObjs = faceInfo.Item1;
          if (geomObjs == null || geomObjs.Count == 0)
@@ -103,7 +102,7 @@ namespace Revit.IFC.Import.Data
                using (IFCImportShapeEditScope.BuildPreferenceSetter setter =
                    new IFCImportShapeEditScope.BuildPreferenceSetter(shapeEditScope, IFCImportShapeEditScope.BuildPreferenceType.AnyMesh))
                {
-                  faceInfo = CollectFaces(shapeEditScope, lcs, scaledLcs, guid);
+                  faceInfo = CollectFaces(shapeEditScope, scaledLcs, guid);
                   geomObjs = faceInfo.Item1;
                }
             }
@@ -134,19 +133,19 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
          // Ignoring Inner shells for now.
          if (Outer != null)
          {
             try
             {
-               IList<GeometryObject> solids = CreateGeometry(shapeEditScope, lcs, scaledLcs, guid);
+               IList<GeometryObject> solids = CreateGeometry(shapeEditScope, scaledLcs, guid);
                if (solids != null)
                {
                   foreach (GeometryObject solid in solids)

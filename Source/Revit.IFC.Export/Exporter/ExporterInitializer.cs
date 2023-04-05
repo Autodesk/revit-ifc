@@ -108,7 +108,6 @@ namespace Revit.IFC.Export.Exporter
                propertySetsToExport += InitCommonPropertySets;
 
             propertySetsToExport += InitExtraCommonPropertySets;
-            propertySetsToExport += InitPredefinedPropertySets;
          }
 
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportSchedulesAsPsets)
@@ -136,6 +135,25 @@ namespace Revit.IFC.Export.Exporter
          }
 
          propertySetsToExport?.Invoke(cache.PropertySets);
+      }
+
+      /// <summary>
+      /// Initializes predefined property sets.
+      /// </summary>
+      /// <param name="propertySetsToExport">Existing functions to call for property set initialization.</param>
+      public static void InitPreDefinedPropertySets(Exporter.PreDefinedPropertySetsToExport propertySetsToExport)
+      {
+         ParameterCache cache = ExporterCacheManager.ParameterCache;
+
+         if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportIFCCommon)
+         {
+            if (propertySetsToExport == null)
+               propertySetsToExport = InitPreDefinedPropertySets;
+            else
+               propertySetsToExport += InitPreDefinedPropertySets;
+         }
+
+         propertySetsToExport?.Invoke(cache.PreDefinedPropertySets);
       }
 
       /// <summary>
@@ -537,7 +555,7 @@ namespace Revit.IFC.Export.Exporter
 
                         // We use asBuiltInParameterId to get the parameter by id below.  We don't want to use it later, however, so
                         // we store builtInParameterId only if it is a proper member of the enumeration.
-                        BuiltInParameter asBuiltInParameterId = (BuiltInParameter)parameterId.IntegerValue;
+                        BuiltInParameter asBuiltInParameterId = (BuiltInParameter)parameterId.Value;
                         BuiltInParameter builtInParameterId =
                             ParameterUtils.IsBuiltInParameter(parameterId) ? asBuiltInParameterId : BuiltInParameter.INVALID;
 
@@ -775,7 +793,9 @@ namespace Revit.IFC.Export.Exporter
 
          ifcSlabQuantity.AddEntry("Perimeter", QuantityType.PositiveLength, PerimeterCalculator.Instance);
          ifcSlabQuantity.AddEntry("Width", QuantityType.PositiveLength, WidthCalculator.Instance);
-         
+         ifcSlabQuantity.AddEntry("Length", QuantityType.PositiveLength, LengthCalculator.Instance);
+         ifcSlabQuantity.AddEntry("Depth", QuantityType.PositiveLength, DepthCalculator.Instance);
+
          baseQuantities.Add(ifcSlabQuantity);
       }
 

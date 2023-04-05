@@ -35,24 +35,6 @@ namespace BIM.IFC.Export.UI
    static public class IFCUISettings
    {
       /// <summary>
-      /// Save the restore bounds of the window.
-      /// </summary>
-      /// <param name="filename">The file to store the Rect data.</param>
-      /// <param name="restoreBounds">The Rect object.</param>
-      static public void SaveWindowBounds(string filename, Rect restoreBounds)
-      {
-         // Save restore bounds for the next time this window is opened
-         IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForAssembly();
-         using (IsolatedStorageFileStream stream = new IsolatedStorageFileStream(filename, FileMode.Create, storage))
-         using (StreamWriter writer = new StreamWriter(stream))
-         {
-            // Write restore bounds value to file
-            writer.WriteLine(restoreBounds.ToString());
-            writer.WriteLine(GetAssemblyVersion());
-         }
-      }
-
-      /// <summary>
       /// Get the assembly version of the UI.
       /// </summary>
       /// <returns>The version string.</returns>

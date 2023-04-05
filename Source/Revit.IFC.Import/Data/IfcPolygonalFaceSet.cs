@@ -72,11 +72,12 @@ namespace Revit.IFC.Import.Data
          }
       }
 
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          using (BuilderScope bs = shapeEditScope.InitializeBuilder(IFCShapeBuilderType.TessellatedShapeBuilder))
          {
-            base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+            base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
             TessellatedShapeBuilderScope tsBuilderScope = bs as TessellatedShapeBuilderScope;
 

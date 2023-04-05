@@ -19,7 +19,7 @@ namespace BIM.IFC.Export.UI.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
@@ -430,7 +430,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Current selected setup:.
+        ///   Looks up a localized string similar to Export setup:.
         /// </summary>
         public static string CurrentSelectedSetup {
             get {
@@ -772,6 +772,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Export material property sets.
+        /// </summary>
+        public static string ExportMaterialPropertySets {
+            get {
+                return ResourceManager.GetString("ExportMaterialPropertySets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export parts as building elements.
         /// </summary>
         public static string ExportPartsAsBuildingElements {
@@ -1051,11 +1060,20 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IFC4 Design Transfer View.
+        ///   Looks up a localized string similar to IFC4 Design Transfer View [Unofficial].
         /// </summary>
         public static string IFC4DTV {
             get {
                 return ResourceManager.GetString("IFC4DTV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The selected export setup is not supported by buildingSMART International. Files created using this setup may not be usable by other software..
+        /// </summary>
+        public static string IFC4DTVWarning {
+            get {
+                return ResourceManager.GetString("IFC4DTVWarning", resourceCulture);
             }
         }
         
@@ -1092,6 +1110,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCExport {
             get {
                 return ResourceManager.GetString("IFCExport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC Export Warning.
+        /// </summary>
+        public static string IFCExportGenericWarning {
+            get {
+                return ResourceManager.GetString("IFCExportGenericWarning", resourceCulture);
             }
         }
         
@@ -1186,6 +1213,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IFC-SG Regulatory Requirements View.
+        /// </summary>
+        public static string IFCSG {
+            get {
+                return ResourceManager.GetString("IFCSG", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unrecognized file type option.
         /// </summary>
         public static string IFCUnknown {
@@ -1218,6 +1254,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCVersion2x3 {
             get {
                 return ResourceManager.GetString("IFCVersion2x3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC4x3 [Experimental].
+        /// </summary>
+        public static string IFCVersion4x3 {
+            get {
+                return ResourceManager.GetString("IFCVersion4x3", resourceCulture);
             }
         }
         
@@ -1321,7 +1366,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Include IFCSITE elevation in the site local placement origin.
+        ///   Looks up a localized string similar to Include IFCSite elevation in the site local placement origin.
         /// </summary>
         public static string IncludeIfcSiteElevation {
             get {
@@ -1407,6 +1452,51 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string LevelOfDetail {
             get {
                 return ResourceManager.GetString("LevelOfDetail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Linked files.
+        /// </summary>
+        public static string LinkedFiles {
+            get {
+                return ResourceManager.GetString("LinkedFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not export.
+        /// </summary>
+        public static string LinkedFilesDontExport {
+            get {
+                return ResourceManager.GetString("LinkedFilesDontExport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export in same IFCProject.
+        /// </summary>
+        public static string LinkedFilesSameProject {
+            get {
+                return ResourceManager.GetString("LinkedFilesSameProject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export in same IFCSite.
+        /// </summary>
+        public static string LinkedFilesSameSite {
+            get {
+                return ResourceManager.GetString("LinkedFilesSameSite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export as separate IFCs.
+        /// </summary>
+        public static string LinkedFilesSeparate {
+            get {
+                return ResourceManager.GetString("LinkedFilesSeparate", resourceCulture);
             }
         }
         
@@ -1510,7 +1600,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Multiple assignments found in the selected objects !.
+        ///   Looks up a localized string similar to Multiple assignments found in the selected objects..
         /// </summary>
         public static string MultipleAssignments {
             get {

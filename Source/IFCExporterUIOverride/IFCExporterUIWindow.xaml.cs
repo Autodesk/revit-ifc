@@ -23,6 +23,7 @@ using Autodesk.Revit.UI;
 using Autodesk.UI.Windows;
 using Microsoft.Win32;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Utility;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -51,11 +52,6 @@ namespace BIM.IFC.Export.UI
 
       IDictionary<string, ProjectLocation> m_SiteLocations = new Dictionary<string, ProjectLocation>();
       IList<string> m_SiteNames = new List<string>();
-
-      /// <summary>
-      /// The file to store the previous window bounds.
-      /// </summary>
-      string m_SettingFile = "IFCExporterUIWindowSettings_v36.txt";    // update the file when resize window bounds.
 
       IDictionary<string, TreeViewItem> m_TreeViewItemDict = new Dictionary<string, TreeViewItem>();
 
@@ -204,6 +200,8 @@ namespace BIM.IFC.Export.UI
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4x3));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCSG));
 
             // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
             string nonMVDOption = Environment.GetEnvironmentVariable("AllowNonMVDOption");
@@ -273,6 +271,14 @@ namespace BIM.IFC.Export.UI
             comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.ProjectInTN));
             comboBoxSitePlacement.Items.Add(new IFCSitePlacementAttributes(SiteTransformBasis.InternalInTN));
          }
+
+         if (!comboboxLinkedFiles.HasItems)
+         {
+            comboboxLinkedFiles.Items.Add(new IFCLinkedFileExportAs(LinkedFileExportAs.DontExport));
+            comboboxLinkedFiles.Items.Add(new IFCLinkedFileExportAs(LinkedFileExportAs.ExportAsSeparate));
+            comboboxLinkedFiles.Items.Add(new IFCLinkedFileExportAs(LinkedFileExportAs.ExportSameProject));
+            comboboxLinkedFiles.Items.Add(new IFCLinkedFileExportAs(LinkedFileExportAs.ExportSameSite));
+         }
       }
 
       private void UpdatePhaseAttributes(IFCExportConfiguration configuration)
@@ -282,17 +288,17 @@ namespace BIM.IFC.Export.UI
             UIDocument uiDoc = new UIDocument(IFCCommandOverrideApplication.TheDocument);
             Parameter currPhase = uiDoc.ActiveView.get_Parameter(BuiltInParameter.VIEW_PHASE);
             if (currPhase != null)
-               configuration.ActivePhaseId = currPhase.AsElementId().IntegerValue;
+               configuration.ActivePhaseId = currPhase.AsElementId().Value;
             else
-               configuration.ActivePhaseId = ElementId.InvalidElementId.IntegerValue;
+               configuration.ActivePhaseId = ElementId.InvalidElementId.Value;
          }
 
          if (!IFCPhaseAttributes.Validate(configuration.ActivePhaseId))
-            configuration.ActivePhaseId = ElementId.InvalidElementId.IntegerValue;
+            configuration.ActivePhaseId = ElementId.InvalidElementId.Value;
 
          foreach (IFCPhaseAttributes attribute in comboboxActivePhase.Items.Cast<IFCPhaseAttributes>())
          {
-            if (configuration.ActivePhaseId == attribute.PhaseId.IntegerValue)
+            if (configuration.ActivePhaseId == attribute.PhaseId.Value)
             {
                comboboxActivePhase.SelectedItem = attribute;
                break;
@@ -337,6 +343,15 @@ namespace BIM.IFC.Export.UI
             }
          }
 
+         foreach (IFCLinkedFileExportAs attribute in comboboxLinkedFiles.Items.Cast<IFCLinkedFileExportAs>())
+         {
+            if (configuration.ExportLinkedFiles == attribute.ExportAs)
+            {
+               comboboxLinkedFiles.SelectedItem = attribute.ToString();
+               break;
+            }
+         }
+
          ProjectLocation projectLocation = null;
          if (!string.IsNullOrEmpty(configuration.SelectedSite))
             m_SiteLocations.TryGetValue(configuration.SelectedSite, out projectLocation);
@@ -369,17 +384,18 @@ namespace BIM.IFC.Export.UI
          checkBoxUseActiveViewGeometry.IsChecked = configuration.UseActiveViewGeometry;
          checkboxExportBoundingBox.IsChecked = configuration.ExportBoundingBox;
          checkboxExportSolidModelRep.IsChecked = configuration.ExportSolidModelRep;
+         checkboxExportMaterialPsets.IsChecked = configuration.ExportMaterialPsets;
          checkboxExportSchedulesAsPsets.IsChecked = configuration.ExportSchedulesAsPsets;
          checkBoxExportSpecificSchedules.IsChecked = configuration.ExportSpecificSchedules;
          checkboxExportUserDefinedPset.IsChecked = configuration.ExportUserDefinedPsets;
          userDefinedPropertySetFileName.Text = configuration.ExportUserDefinedPsetsFileName;
-         checkBoxExportLinkedFiles.IsChecked = configuration.ExportLinkedFiles;
          checkboxIncludeIfcSiteElevation.IsChecked = configuration.IncludeSiteElevation;
          checkboxStoreIFCGUID.IsChecked = configuration.StoreIFCGUID;
          checkBoxExportRoomsInView.IsChecked = configuration.ExportRoomsInView;
          comboBoxLOD.SelectedIndex = (int)(Math.Round(configuration.TessellationLevelOfDetail * 4) - 1);
          checkboxIncludeSteelElements.IsChecked = configuration.IncludeSteelElements;
          comboBoxSitePlacement.SelectedIndex = (int)configuration.SitePlacement;
+         comboboxLinkedFiles.SelectedIndex = (int)configuration.ExportLinkedFiles;
          if ((configuration.IFCVersion == IFCVersion.IFC4 || configuration.IFCVersion == IFCVersion.IFC4DTV || configuration.IFCVersion == IFCVersion.IFC4RV)
             && !configuration.IsBuiltIn)
             checkBox_TriangulationOnly.IsEnabled = true;
@@ -418,9 +434,9 @@ namespace BIM.IFC.Export.UI
                                                                 checkBoxFamilyAndTypeName,
                                                                 checkboxExportBoundingBox,
                                                                 checkboxExportSolidModelRep,
-                                                                checkBoxExportLinkedFiles,
                                                                 checkboxIncludeIfcSiteElevation,
                                                                 checkboxStoreIFCGUID,
+                                                                checkboxExportMaterialPsets,
                                                                 checkboxExportSchedulesAsPsets,
                                                                 checkBoxExportSpecificSchedules,
                                                                 checkBoxExportRoomsInView,
@@ -462,7 +478,8 @@ namespace BIM.IFC.Export.UI
             || (configuration.IFCVersion == IFCVersion.IFC2x3CV2)
             || (configuration.IFCVersion == IFCVersion.IFC4RV)
             || (configuration.IFCVersion == IFCVersion.IFC4DTV)
-            || (configuration.IFCVersion == IFCVersion.IFC4))
+            || (configuration.IFCVersion == IFCVersion.IFC4)
+            || (configuration.IFCVersion == IFCVersion.IFC4x3))
          {
             checkboxIncludeSteelElements.IsChecked = configuration.IncludeSteelElements;
             checkboxIncludeSteelElements.IsEnabled = true;
@@ -1200,19 +1217,8 @@ namespace BIM.IFC.Export.UI
          IFCExportConfiguration configuration = GetSelectedConfiguration();
          if (configuration != null)
          {
-            configuration.ActivePhaseId = attributes.PhaseId.IntegerValue;
+            configuration.ActivePhaseId = attributes.PhaseId.Value;
          }
-      }
-
-      /// <summary>
-      /// Saves the window bounds when close the window.
-      /// </summary>
-      /// <param name="sender">The source of the event.</param>
-      /// <param name="e">Event arguments that contains the event data.</param>
-      private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-      {
-         // Save restore bounds for the next time this window is opened
-         IFCUISettings.SaveWindowBounds(m_SettingFile, this.RestoreBounds);
       }
 
       /// <summary>
@@ -1272,6 +1278,21 @@ namespace BIM.IFC.Export.UI
          if (configuration != null)
          {
             configuration.ExportSolidModelRep = GetCheckbuttonChecked(checkBox);
+         }
+      }
+
+      /// <summary>
+      /// Updates the configuration ExportMaterialPsets when the "Export material property sets" option changed in the check box.
+      /// </summary>
+      /// <param name="sender">The source of the event.</param>
+      /// <param name="e">Event arguments that contains the event data.</param>
+      private void checkboxExportMaterialPsets_Checked(object sender, RoutedEventArgs e)
+      {
+         CheckBox checkBox = (CheckBox)sender;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.ExportMaterialPsets = GetCheckbuttonChecked(checkBox);
          }
       }
 
@@ -1366,21 +1387,6 @@ namespace BIM.IFC.Export.UI
             configuration.ExportUserDefinedParameterMapping = GetCheckbuttonChecked(checkBox);
             userDefinedParameterMappingTable.IsEnabled = configuration.ExportUserDefinedParameterMapping;
             buttonParameterMappingBrowse.IsEnabled = configuration.ExportUserDefinedParameterMapping;
-         }
-      }
-
-      /// <summary>
-      /// Update checkbox for export linked files option
-      /// </summary>
-      /// <param name="sender">The source of the event.</param>
-      /// <param name="e">Event arguments that contains the event data.</param>
-      private void checkBoxExportLinkedFiles_Checked(object sender, RoutedEventArgs e)
-      {
-         CheckBox checkBox = (CheckBox)sender;
-         IFCExportConfiguration configuration = GetSelectedConfiguration();
-         if (configuration != null)
-         {
-            configuration.ExportLinkedFiles = GetCheckbuttonChecked(checkBox);
          }
       }
 
@@ -1725,6 +1731,16 @@ namespace BIM.IFC.Export.UI
          bool? ret = entityTree.ShowDialog();
          if (ret.HasValue && ret.Value == true)
             configuration.ExcludeFilter = entityTree.GetUnSelectedEntity();
+      }
+
+      private void comboboxLinkedFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
+      {
+         IFCLinkedFileExportAs attributes = (IFCLinkedFileExportAs)comboboxLinkedFiles.SelectedItem;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (attributes != null && configuration != null)
+         {
+            configuration.ExportLinkedFiles = attributes.ExportAs;
+         }
       }
    }
 }

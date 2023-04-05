@@ -642,12 +642,9 @@ namespace Revit.IFC.Export.Utility
       public static Options GetIFCExportGeometryOptions()
       {
          Options options = new Options();
-         if (ExporterCacheManager.ExportOptionsCache.FilterViewForExport != null)
-         {
-            options.DetailLevel = ExporterCacheManager.ExportOptionsCache.FilterViewForExport.DetailLevel;
-         }
-         else
-            options.DetailLevel = ViewDetailLevel.Fine;
+         options.DetailLevel = 
+            ExporterCacheManager.ExportOptionsCache.FilterViewForExport?.DetailLevel ??
+            ViewDetailLevel.Fine;
          return options;
       }
 
@@ -2143,7 +2140,7 @@ namespace Revit.IFC.Export.Utility
 
          double scaledPlanesDistance = UnitUtil.ScaleLength(planesDistance);
          Transform plane1LCS = GeometryUtil.CreateTransformFromPlane(plane1);
-         IFCAnyHandle extrusionHandle = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, origCurveLoops, plane1LCS, extDir, scaledPlanesDistance, false);
+         IFCAnyHandle extrusionHandle = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, origCurveLoops, plane1LCS, extDir, scaledPlanesDistance, false, out _);
 
          IFCAnyHandle booleanBodyItemHnd = IFCInstanceExporter.CreateBooleanResult(exporterIFC.GetFile(), IFCBooleanOperator.Difference,
              origBodyRepHnd, extrusionHandle);
@@ -2671,16 +2668,24 @@ namespace Revit.IFC.Export.Utility
       /// <param name="height">The height.</param>
       /// <param name="width">The width.</param>
       /// <returns>True if gets the values successfully.</returns>
-      public static bool ComputeHeightWidthOfCurveLoop(CurveLoop curveLoop, out double height, out double width)
+      public static bool ComputeHeightWidthOfCurveLoop(CurveLoop curveLoop, XYZ expectedWidthDir, out double height, out double width)
       {
+         bool result = false;
          height = width = 0;
 
          if (!curveLoop.HasPlane())
-            return false;
+            return result;
 
          Plane plane = curveLoop.GetPlane();
          Transform lcs = CreateTransformFromPlane(plane);
-         return ComputeHeightWidthOfCurveLoop(curveLoop, lcs, out height, out width);
+
+         result = ComputeHeightWidthOfCurveLoop(curveLoop, lcs, out height, out width);
+
+         // The plane might be flipped. Swap height and width in this case
+         if (expectedWidthDir != null && MathUtil.VectorsAreParallel(expectedWidthDir, plane.YVec))
+            (height, width) = (width, height);
+
+         return result;
       }
 
       /// <summary>
@@ -3738,11 +3743,12 @@ namespace Revit.IFC.Export.Utility
       /// <param name="allowAdvancedCurve">indicates whether (TRUE) we want to convert "advanced" curve type 
       ///                                  like Hermite or NURBS to IfcCurve or (FALSE) we want to tessellate them</param>
       /// <param name="cartesianPoints">A map of already created cartesian points, to avoid duplication.</param>
+      /// <param name="useTrimmedCurve">True if we are trimming the generated curve, false otherwise.</param>
       /// <returns>The handle representing the IFCCurve</returns>
       /// <remarks>This cartesianPoints map caches certain 3D points computed by this function that are related to the 
       /// curve, such as the start point of a line and the center of an arc.  It uses the cached values when possible.</remarks>
       public static IFCAnyHandle CreateIFCCurveFromRevitCurve(IFCFile file, ExporterIFC exporterIFC, Curve curve, bool allowAdvancedCurve,
-         IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints, Transform additionalTrf = null)
+         IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints, bool useTrimmedCurve, Transform additionalTrf = null)
       {
          IFCAnyHandle ifcCurve = null;
 
@@ -3775,15 +3781,19 @@ namespace Revit.IFC.Export.Utility
                IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints, additionalTrf);
                XYZ dir = (additionalTrf == null) ? curveLine.Direction : additionalTrf.OfVector(curveLine.Direction);
                IFCAnyHandle vector = VectorToIfcVector(exporterIFC, curveLine.Direction);
-               IFCAnyHandle line = IFCInstanceExporter.CreateLine(file, curveOrigin, vector);
+               ifcCurve = IFCInstanceExporter.CreateLine(file, curveOrigin, vector);
 
-               IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints, additionalTrf);
-               HashSet<IFCData> trim1 = new HashSet<IFCData>();
-               trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
-               IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints, additionalTrf);
-               HashSet<IFCData> trim2 = new HashSet<IFCData>();
-               trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
-               ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, line, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+               if (useTrimmedCurve)
+               {
+                  IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints, additionalTrf);
+                  HashSet<IFCData> trim1 = new HashSet<IFCData>();
+                  trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
+                  IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints, additionalTrf);
+                  HashSet<IFCData> trim2 = new HashSet<IFCData>();
+                  trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
+
+                  ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+               }
             }
          }
          // if the Curve is an Arc do following
@@ -3808,17 +3818,20 @@ namespace Revit.IFC.Export.Utility
             IFCAnyHandle refDirection = VectorToIfcDirection(exporterIFC, curveArcXDirection);
 
             IFCAnyHandle position3D = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
-            IFCAnyHandle circle = IFCInstanceExporter.CreateCircle(file, position3D, UnitUtil.ScaleLength(curveArc.Radius));
+            ifcCurve = IFCInstanceExporter.CreateCircle(file, position3D, UnitUtil.ScaleLength(curveArc.Radius));
 
-            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(0), cartesianPoints, additionalTrf);
-            HashSet<IFCData> trim1 = new HashSet<IFCData>();
-            trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
+            if (useTrimmedCurve)
+            {
+               IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(0), cartesianPoints, additionalTrf);
+               HashSet<IFCData> trim1 = new HashSet<IFCData>();
+               trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
 
-            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(1), cartesianPoints, additionalTrf);
-            HashSet<IFCData> trim2 = new HashSet<IFCData>();
-            trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
+               IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(1), cartesianPoints, additionalTrf);
+               HashSet<IFCData> trim2 = new HashSet<IFCData>();
+               trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
 
-            ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, circle, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+               ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+            }
          }
          // If curve is an ellipse or elliptical Arc type
          else if (curve is Ellipse)
@@ -3837,17 +3850,20 @@ namespace Revit.IFC.Export.Utility
 
             IFCAnyHandle position = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
 
-            IFCAnyHandle ellipse = IFCInstanceExporter.CreateEllipse(file, position, UnitUtil.ScaleLength(curveEllipse.RadiusX), UnitUtil.ScaleLength(curveEllipse.RadiusY));
+            ifcCurve = IFCInstanceExporter.CreateEllipse(file, position, UnitUtil.ScaleLength(curveEllipse.RadiusX), UnitUtil.ScaleLength(curveEllipse.RadiusY));
 
-            IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(0), cartesianPoints, additionalTrf);
-            HashSet<IFCData> trim1 = new HashSet<IFCData>();
-            trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
+            if (useTrimmedCurve)
+            {
+               IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(0), cartesianPoints, additionalTrf);
+               HashSet<IFCData> trim1 = new HashSet<IFCData>();
+               trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
 
-            IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(1), cartesianPoints, additionalTrf);
-            HashSet<IFCData> trim2 = new HashSet<IFCData>();
-            trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
+               IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(1), cartesianPoints, additionalTrf);
+               HashSet<IFCData> trim2 = new HashSet<IFCData>();
+               trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
 
-            ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ellipse, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+               ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+            }
          }
          else if (allowAdvancedCurve && (curve is HermiteSpline || curve is NurbSpline))
          {
@@ -4643,7 +4659,7 @@ namespace Revit.IFC.Export.Utility
             Transform rotationTrfAtInternal = Transform.CreateRotationAtPoint(new XYZ(0, 0, 1), pbAngle, XYZ.Zero);
 
             // For Linked file, the WCS should always be based on the shared coordinates
-            if (!ExporterCacheManager.ExportOptionsCache.ExportingLink)
+            if (ExporterUtil.ExportingHostModel())
             {
                switch (transformBasis)
                {
@@ -4655,7 +4671,7 @@ namespace Revit.IFC.Export.Utility
                      trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
                      break;
                   case SiteTransformBasis.Site:
-                     xyz = surveyPoint.Position;
+                     xyz = rotationTrfAtInternal.OfPoint(surveyPoint.Position);
                      xyz = new XYZ(-xyz.X, -xyz.Y, -xyz.Z);
                      trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
                      break;
@@ -4665,7 +4681,7 @@ namespace Revit.IFC.Export.Utility
                      trf = CreateTransformFromVectorsAndOrigin(Transform.Identity.BasisX, Transform.Identity.BasisY, Transform.Identity.BasisZ, xyz);
                      break;
                   case SiteTransformBasis.ProjectInTN:
-                     xyz = projectBasePoint.Position;
+                     xyz = rotationTrfAtInternal.OfPoint(projectBasePoint.Position);
                      xyz = new XYZ(-xyz.X, -xyz.Y, -xyz.Z);
                      trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
                      break;
@@ -4674,7 +4690,7 @@ namespace Revit.IFC.Export.Utility
                      trf = CreateTransformFromVectorsAndOrigin(Transform.Identity.BasisX, Transform.Identity.BasisY, Transform.Identity.BasisZ, xyz);
                      break;
                   case SiteTransformBasis.InternalInTN:
-                     xyz = new XYZ(0.0, 0.0, 0.0);
+                     xyz = rotationTrfAtInternal.OfPoint(new XYZ(0.0, 0.0, 0.0));
                      trf = CreateTransformFromVectorsAndOrigin(rotationTrfAtInternal.BasisX, rotationTrfAtInternal.BasisY, rotationTrfAtInternal.BasisZ, xyz);
                      break;
                   default:

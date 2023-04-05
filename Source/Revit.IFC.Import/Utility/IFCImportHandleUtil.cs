@@ -263,7 +263,7 @@ namespace Revit.IFC.Import.Utility
       /// <param name="handle">The entity handle.</param>
       /// <param name="name">The attribute name.</param>
       /// <param name="throwError">True if the routine should throw an exception.</param>
-      /// <returns>The attribute valu, or null if not found.</returns>
+      /// <returns>The attribute value, or null if not found.</returns>
       static public string GetRequiredStringAttribute(IFCAnyHandle handle, string name, bool throwError)
       {
          string attribute = IFCAnyHandleUtil.GetStringAttribute(handle, name);

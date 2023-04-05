@@ -191,7 +191,7 @@
     <value>Export schedules as property sets</value>
   </data>
   <data name="IncludeIfcSiteElevation" xml:space="preserve">
-    <value>Include IFCSITE elevation in the site local placement origin</value>
+    <value>Include IFCSite elevation in the site local placement origin</value>
   </data>
   <data name="UseCoarseTessellation" xml:space="preserve">
     <value>Use coarse tessellation for some BReps</value>
@@ -275,9 +275,6 @@
     <value>Custom parameter sets</value>
     <comment>User Defined Parameter Sets</comment>
   </data>
-  <data name="IFCExportProcessError" xml:space="preserve">
-    <value>The IFC export process encountered an error for: {0}.</value>
-  </data>
   <data name="LinkInstanceExportCantCreateDoc" xml:space="preserve">
     <value>Could not create a temporary document for exporting the linked instance(s) for ids: {0}</value>
   </data>
@@ -301,6 +298,15 @@
   </data>
   <data name="IFCExport" xml:space="preserve">
     <value>IFC export</value>
+  </data>
+  <data name="IFCExportProcessError" xml:space="preserve">
+    <value>The IFC export process encountered an error for: {0}.</value>
+  </data>
+  <data name="IFCExportProcessGenericError" xml:space="preserve">
+    <value>The IFC export process encountered an error.</value>
+  </data>
+  <data name="IFCExportGenericWarning" xml:space="preserve">
+    <value>IFC Export Warning</value>
   </data>
   <data name="Address" xml:space="preserve">
     <value>Project Address...</value>
@@ -351,7 +357,7 @@
     <value>Country</value>
   </data>
   <data name="CurrentSelectedSetup" xml:space="preserve">
-    <value>Current selected setup:</value>
+    <value>Export setup:</value>
   </data>
   <data name="DeleteOldSetups" xml:space="preserve">
     <value>Delete old IFC export setups</value>
@@ -614,9 +620,6 @@
   <data name="SelectOneOrMoreProjects" xml:space="preserve">
     <value>Please select at least one project to export.</value>
   </data>
-  <data name="IFCExportProcessGenericError" xml:space="preserve">
-    <value>The IFC export process encountered an error.</value>
-  </data>
   <data name="Use2DRoomBoundariesForRoomVolume" xml:space="preserve">
     <value>Use 2D room boundaries for room volume</value>
   </data>
@@ -639,7 +642,10 @@
     <value>IFC2x3 COBie 2.4 Design Deliverable View</value>
   </data>
   <data name="IFC4DTV" xml:space="preserve">
-    <value>IFC4 Design Transfer View</value>
+    <value>IFC4 Design Transfer View [Unofficial]</value>
+  </data>
+  <data name="IFC4DTVWarning" xml:space="preserve">
+    <value>The selected export setup is not supported by buildingSMART International. Files created using this setup may not be usable by other software.</value>
   </data>
   <data name="IFC4RV" xml:space="preserve">
     <value>IFC4 Reference View</value>
@@ -897,7 +903,7 @@
     <value>Error</value>
   </data>
   <data name="MultipleAssignments" xml:space="preserve">
-    <value>Multiple assignments found in the selected objects !</value>
+    <value>Multiple assignments found in the selected objects.</value>
   </data>
   <data name="Search" xml:space="preserve">
     <value>Search</value>
@@ -928,5 +934,29 @@
   </data>
   <data name="Show" xml:space="preserve">
     <value>Show</value>
+  </data>
+  <data name="LinkedFiles" xml:space="preserve">
+    <value>Linked files</value>
+  </data>
+  <data name="LinkedFilesDontExport" xml:space="preserve">
+    <value>Do not export</value>
+  </data>
+  <data name="LinkedFilesSameProject" xml:space="preserve">
+    <value>Export in same IFCProject</value>
+  </data>
+  <data name="LinkedFilesSameSite" xml:space="preserve">
+    <value>Export in same IFCSite</value>
+  </data>
+  <data name="LinkedFilesSeparate" xml:space="preserve">
+    <value>Export as separate IFCs</value>
+  </data>
+  <data name="IFCVersion4x3" xml:space="preserve">
+    <value>IFC4x3 [Experimental]</value>
+  </data>
+  <data name="ExportMaterialPropertySets" xml:space="preserve">
+    <value>Export material property sets</value>
+  </data>
+  <data name="IFCSG" xml:space="preserve">
+    <value>IFC-SG Regulatory Requirements View</value>
   </data>
 </root>

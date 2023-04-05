@@ -11,10 +11,9 @@
                   Title="{x:Static p:Resources.IFCExport}" 
                   WindowStyle="SingleBorderWindow" 
                   ContentRendered="ChildWindow_ContentRendered"
-                  SaveWindowSettings="True"
-                  Closing="Window_Closing" 
+                  SaveWindowSettings="True" 
                   Height="438" 
-                  Width="730" MinWidth="550" MinHeight="300">
+                  Width="730" MinWidth="550" MinHeight="305">
    <Grid Margin="10,0" RenderTransformOrigin="0,0">
       <Label Content="{x:Static p:Resources.FileName}" HorizontalAlignment="Left" Margin="0,12,0,0" x:Name="label_FileName" Height="28" VerticalAlignment="Top" Width="202" VerticalContentAlignment="Top" RenderTransformOrigin="0.462,0.478"/>
       <TextBox Height="23" Margin="210,12,125,0" Name="textBoxSetupFileName" VerticalAlignment="Top" IsEnabled="True"  TextWrapping="NoWrap" VerticalContentAlignment="Center"/>
@@ -34,8 +33,11 @@
                VerticalContentAlignment="Center" 
                Background="Transparent"/>
       <Label Content="{x:Static p:Resources.ProjectToExport}" HorizontalAlignment="Left" Margin="0,171,0,0" x:Name="label1_Copy" Height="28" VerticalAlignment="Top" Width="666" />
-      <ListView Margin="0,204,11,50" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="listViewDocuments"/>
-      <TextBlock VerticalAlignment="Bottom"  Margin="0,0,0,10" Height="23" HorizontalAlignment="Left" Width="515">
+      <ListView Margin="0,204,11,55" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="listViewDocuments"/>
+      <TextBlock VerticalAlignment="Bottom" Margin="0,0,0,40" Height="15" HorizontalAlignment="Left">
+         <Label Name="versionLabel" FontSize="10" Padding="0" Opacity="0.5"/>
+      </TextBlock>
+      <TextBlock VerticalAlignment="Bottom"  Margin="0,0,0,10" Height="20" HorizontalAlignment="Left" Width="515">
          <Hyperlink Click="OnHelpClick">
             <Run Text="{x:Static p:Resources.Help}" x:Uid="LearnMoreHyperlink" />
          </Hyperlink>

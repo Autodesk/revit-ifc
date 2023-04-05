@@ -105,7 +105,8 @@ namespace Revit.IFC.Export.Exporter
 
          string ifcEnumTypeAsString = IFCAnyHandleUtil.GetEnumerationAttribute(origRailing, "PredefinedType");
 
-         string copyGUID = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRailing, index.ToString(), origRailing);
+         string copyGUID = GUIDUtil.GenerateIFCGuidFrom(
+            GUIDUtil.CreateGUIDString(IFCEntityType.IfcRailing, index.ToString(), origRailing));
          IFCAnyHandle copyOwnerHistory = IFCAnyHandleUtil.GetInstanceAttribute(origRailing, "OwnerHistory");
 
          return IFCInstanceExporter.CreateRailing(exporterIFC, elem, copyGUID, copyOwnerHistory, newLocalPlacement, newProdRep, ifcEnumTypeAsString);
@@ -225,7 +226,7 @@ namespace Revit.IFC.Export.Exporter
 
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
             {
-               using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
                   IFCAnyHandle localPlacement = setter.LocalPlacement;
                   StairRampContainerInfo stairRampInfo = null;

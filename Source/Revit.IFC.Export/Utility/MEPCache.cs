@@ -72,7 +72,7 @@ namespace Revit.IFC.Export.Utility
       public IFCAnyHandle Find(ElementId elementId)
       {
          IFCAnyHandle handle;
-         if (m_MEPElementHandleDictionary.TryGetValue(elementId.IntegerValue, out handle))
+         if (m_MEPElementHandleDictionary.TryGetValue(elementId.Value, out handle))
          {
             return handle;
          }
@@ -90,7 +90,7 @@ namespace Revit.IFC.Export.Utility
       /// </param>
       public void Register(Element element, IFCAnyHandle handle)
       {
-         int idVal = element.Id.IntegerValue;
+         long idVal = element.Id.Value;
          if (m_MEPElementHandleDictionary.ContainsKey(idVal))
             return;
 

@@ -47,21 +47,17 @@
     <OutputPath>bin\Releasex64\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Autodesk.UI.Windows, Version=2.16.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\Autodesk.UI.Windows.dll</HintPath>
+    <Reference Include="Autodesk.UI.Windows">
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\Autodesk.UI.Windows.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPI, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPI.dll</HintPath>
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPIIFC.dll</HintPath>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPIIFC.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIUI, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPIUI.dll</HintPath>
+    <Reference Include="RevitAPIUI">
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPIUI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -77,9 +73,8 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
-    <Reference Include="UserInterfaceUtility, Version=22.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\UserInterfaceUtility.dll</HintPath>
+    <Reference Include="UserInterfaceUtility">
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\UserInterfaceUtility.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
@@ -100,13 +95,15 @@
       <DependentUpon>IFCClassificationUI.xaml</DependentUpon>
     </Compile>
     <Compile Include="IFCEntityTree\BrowseIFCEntityServer.cs" />
-    <Compile Include="IFCEntityTree\EntityTree.xaml.cs" />
-    <Compile Include="IFCEntityTree\PredefinedTypeSelection.xaml.cs" />
+    <Compile Include="IFCEntityTree\EntityTree.xaml.cs">
+      <DependentUpon>EntityTree.xaml</DependentUpon>
+    </Compile>
     <Compile Include="IFCEnumExtensions.cs" />
     <Compile Include="IFCExchangeRequirements.cs" />
     <Compile Include="IFCFileHeaderInformationUI.xaml.cs">
       <DependentUpon>IFCFileHeaderInformationUI.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IFCLinkedFileExportAs.cs" />
     <Compile Include="IFCPhaseAttributes.cs" />
     <Compile Include="IFCPropertySets.cs" />
     <Compile Include="IFCRenameExportSetup.xaml.cs">
@@ -146,12 +143,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <EmbeddedResource Include="Properties\Resources.de.resx">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.fr.resx">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.de.resx" />
+    <EmbeddedResource Include="Properties\Resources.fr.resx" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -187,12 +180,12 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="COBieCompanyInfoTab.xaml">
-      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="COBieProjectInfoTab.xaml">
-      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="IFCAddressInformationUI.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -203,10 +196,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="IFCEntityTree\EntityTree.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="IFCEntityTree\PredefinedTypeSelection.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -233,11 +222,22 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="icons\create.ico" />
+  </ItemGroup>
+  <ItemGroup>
     <Resource Include="icons\delete.ico" />
+  </ItemGroup>
+  <ItemGroup>
     <Resource Include="icons\rename.ico" />
+  </ItemGroup>
+  <ItemGroup>
     <Resource Include="icons\duplicate_ico.ico" />
+  </ItemGroup>
+  <ItemGroup>
     <Resource Include="icons\load.ico" />
     <Resource Include="icons\save.ico" />
+    <Content Include="Autodesk.IFC.Export.UI.addin">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj">
@@ -245,12 +245,19 @@
       <Name>Revit.IFC.Common</Name>
       <Private>False</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Revit.IFC.Export\Revit.IFC.Export.csproj">
+      <Project>{bce5141a-291b-4cd8-a69b-7b9345aa00e9}</Project>
+      <Name>Revit.IFC.Export</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project=".\IFCExporterUIOverride.props" />
   <PropertyGroup>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>
+$(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dll $(AddinGUID)
+xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2024.bundle\Contents\2024\" /F /R /Y /I
+</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -78,6 +78,30 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Override for the ExportMaterialPsets value from UI or API options.
+      /// </summary>
+      private bool? ExportMaterialPsetsOverride
+      {
+         get;
+         set;
+      }
+
+      /// <summary>
+      /// Whether or not to include material property sets.
+      /// </summary>
+      public bool ExportMaterialPsets
+      {
+         get
+         {
+            // if the option is set by alternate UI, return the setting in UI.
+            if (ExportMaterialPsetsOverride != null)
+               return (bool)ExportMaterialPsetsOverride;
+            // otherwise return false by default.
+            return false;
+         }
+      }
+
+      /// <summary>
       /// Override for the ExportSchedulesAsPsets value from UI or API options.
       /// </summary>
       private bool? ExportSchedulesAsPsetsOverride
@@ -188,6 +212,9 @@ namespace Revit.IFC.Export.Utility
 
          // "ExportIFCCommonPropertySets" override
          propertySetOptions.ExportIFCCommonOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportIFCCommonPropertySets");
+
+         // "ExportMaterialPsets" override
+         propertySetOptions.ExportMaterialPsetsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportMaterialPsets");
 
          // "ExportSchedulesAsPsets" override
          propertySetOptions.ExportSchedulesAsPsetsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportSchedulesAsPsets");

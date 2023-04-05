@@ -20,14 +20,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
@@ -112,7 +109,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="levelId">The level id.</param>
       /// <param name="radialGrids">The set of radial grids.</param>
       /// <param name="linearGrids">The set of linear grids.</param>
-      public static void ExportRadialGrids(ExporterIFC exporterIFC, ElementId levelId, string gridName, IDictionary<XYZ, List<Grid>> radialGrids, IDictionary<XYZ, List<Grid>> linearGrids)
+      public static void ExportRadialGrids(ExporterIFC exporterIFC, ElementId levelId, 
+         string gridName, IDictionary<XYZ, List<Grid>> radialGrids, 
+         IDictionary<XYZ, List<Grid>> linearGrids)
       {
          foreach (XYZ centerPoint in radialGrids.Keys)
          {
@@ -138,7 +137,8 @@ namespace Revit.IFC.Export.Exporter
                continue; //not export the orphan grid (only has U).
 
             // export a radial IFCGrid.
-            ExportGrid(exporterIFC, levelId, gridName, radialUAxes, radialVAxes, null);
+            string hashCode = centerPoint.ToString();
+            ExportGrid(exporterIFC, levelId, gridName, hashCode, radialUAxes, radialVAxes, null);
 
             // remove the linear grids that have been exported.
             exportedLinearGrids = exportedLinearGrids.Union<Grid>(radialVAxes).ToList();
@@ -172,7 +172,8 @@ namespace Revit.IFC.Export.Exporter
             List<Grid> duplexAxesV = FindParallelGrids(linearGrids, vDirection);
 
             // export a rectangular IFCGrid.
-            ExportGrid(exporterIFC, levelId, gridName, duplexAxesU, duplexAxesV, null);
+            string hashCode = uDirection.ToString() + ":" + vDirection.ToString();
+            ExportGrid(exporterIFC, levelId, gridName, hashCode, duplexAxesU, duplexAxesV, null);
 
             // remove the linear grids that have been exported.
             exportedLinearGrids = exportedLinearGrids.Union<Grid>(duplexAxesU).ToList();
@@ -201,13 +202,17 @@ namespace Revit.IFC.Export.Exporter
             List<Grid> sameDirectionAxesV = new List<Grid>();
             List<Grid> sameDirectionAxesW = new List<Grid>();
             sameDirectionAxesU = linearGrids[directionList[ii]];
+            string hashCode = directionList[ii].ToString();
+
             if (ii + 1 < directionList.Count)
             {
                sameDirectionAxesV = linearGrids[directionList[ii + 1]];
+               hashCode += ":" + directionList[ii + 1].ToString();
             }
             if (ii + 2 < directionList.Count)
             {
                sameDirectionAxesW = linearGrids[directionList[ii + 2]];
+               hashCode += ":" + directionList[ii + 2].ToString();
             }
 
             // TODO: warn user about orphaned grid lines.
@@ -215,7 +220,8 @@ namespace Revit.IFC.Export.Exporter
                continue;//not export the orphan grid (only has U).
 
             // export a triangular IFCGrid.
-            ExportGrid(exporterIFC, levelId, gridName, sameDirectionAxesU, sameDirectionAxesV, sameDirectionAxesW);
+            ExportGrid(exporterIFC, levelId, gridName, hashCode,
+               sameDirectionAxesU, sameDirectionAxesV, sameDirectionAxesW);
          }
       }
 
@@ -224,12 +230,15 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="levelId">The level ID.</param>
+      /// <param name="gridName">The grid name.</param>
+      /// <param name="hashCode">An extra code to generate a unique guid.</param>
       /// <param name="sameDirectionAxesU">The U axes of grids.</param>
       /// <param name="sameDirectionAxesV">The V axes of grids.</param>
       /// <param name="sameDirectionAxesW">The W axes of grids.</param>
-      public static void ExportGrid(ExporterIFC exporterIFC, ElementId levelId, string gridName, List<Grid> sameDirectionAxesU, List<Grid> sameDirectionAxesV, List<Grid> sameDirectionAxesW)
+      public static void ExportGrid(ExporterIFC exporterIFC, ElementId levelId, 
+         string gridName, string hashCode,
+         List<Grid> sameDirectionAxesU, List<Grid> sameDirectionAxesV, List<Grid> sameDirectionAxesW)
       {
-
          List<IFCAnyHandle> axesU = null;
          List<IFCAnyHandle> axesV = null;
          List<IFCAnyHandle> axesW = null;
@@ -242,10 +251,13 @@ namespace Revit.IFC.Export.Exporter
             {
                GridRepresentationData gridRepresentationData = new GridRepresentationData();
 
-               axesU = CreateIFCGridAxisAndRepresentations(exporterIFC, productWrapper, sameDirectionAxesU, representations, gridRepresentationData);
-               axesV = CreateIFCGridAxisAndRepresentations(exporterIFC, productWrapper, sameDirectionAxesV, representations, gridRepresentationData);
+               axesU = CreateIFCGridAxisAndRepresentations(exporterIFC, productWrapper, 
+                  sameDirectionAxesU, representations, gridRepresentationData);
+               axesV = CreateIFCGridAxisAndRepresentations(exporterIFC, productWrapper, 
+                  sameDirectionAxesV, representations, gridRepresentationData);
                if (sameDirectionAxesW != null)
-                  axesW = CreateIFCGridAxisAndRepresentations(exporterIFC, productWrapper, sameDirectionAxesW, representations, gridRepresentationData);
+                  axesW = CreateIFCGridAxisAndRepresentations(exporterIFC, productWrapper, 
+                     sameDirectionAxesW, representations, gridRepresentationData);
 
                IFCAnyHandle contextOfItemsFootPrint = exporterIFC.Get3DContextHandle("FootPrint");
                string identifierOpt = "FootPrint";
@@ -266,13 +278,13 @@ namespace Revit.IFC.Export.Exporter
                if (useIFCCADLayer)
                {
                   shapeRepresentation = RepresentationUtil.CreateShapeRepresentation(exporterIFC, contextOfItemsFootPrint,
-                      identifierOpt, representationTypeOpt, allCurves, gridRepresentationData.m_IFCCADLayer);
+                     identifierOpt, representationTypeOpt, allCurves, gridRepresentationData.m_IFCCADLayer);
                }
                else
                {
                   ElementId catId = CategoryUtil.GetSafeCategoryId(gridRepresentationData.m_Grids[0]);
                   shapeRepresentation = RepresentationUtil.CreateShapeRepresentation(exporterIFC, gridRepresentationData.m_Grids[0], catId,
-                          contextOfItemsFootPrint, identifierOpt, representationTypeOpt, allCurves);
+                     contextOfItemsFootPrint, identifierOpt, representationTypeOpt, allCurves);
                }
                representations.Add(shapeRepresentation);
 
@@ -283,12 +295,14 @@ namespace Revit.IFC.Export.Exporter
                bool useLevelInfo = (levelInfo != null);
                IFCAnyHandle gridLevelHandle = useLevelInfo ? levelInfo.GetBuildingStorey() : ExporterCacheManager.BuildingHandle;
 
-               string gridGUID = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcGrid, gridName, gridLevelHandle);
+               string gridGUID = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcGrid, gridName + ":" + hashCode, gridLevelHandle));
 
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                IFCAnyHandle levelObjectPlacement = (gridLevelHandle != null) ? IFCAnyHandleUtil.GetObjectPlacement(gridLevelHandle) : null;
                IFCAnyHandle copyLevelPlacement = (levelObjectPlacement != null) ? ExporterUtil.CopyLocalPlacement(ifcFile, levelObjectPlacement) : null;
-               IFCAnyHandle ifcGrid = IFCInstanceExporter.CreateGrid(exporterIFC, gridGUID, ownerHistory, gridName, copyLevelPlacement, productRep, axesU, axesV, axesW);
+               IFCAnyHandle ifcGrid = IFCInstanceExporter.CreateGrid(exporterIFC, gridGUID, 
+                  ownerHistory, gridName, copyLevelPlacement, productRep, axesU, axesV, axesW);
 
                productWrapper.AddElement(null, ifcGrid, levelInfo, null, true, null);
 
@@ -419,11 +433,8 @@ namespace Revit.IFC.Export.Exporter
       private static IDictionary<Tuple<ElementId, string>, List<Grid>> GetAllGrids(Document document, ExporterIFC exporterIFC)
       {
          View currentView = ExporterCacheManager.ExportOptionsCache.FilterViewForExport;
-         Level currentLevel = null;
-         if (currentView != null)
-         {
-            currentLevel = currentView.GenLevel;
-         }
+         Level currentLevel = currentView?.GenLevel;
+         
          SortedDictionary<double,ElementId> levelIds = new SortedDictionary<double,ElementId>();
          
          if (currentLevel != null)
@@ -579,47 +590,11 @@ namespace Revit.IFC.Export.Exporter
             double dotProduct = direction.DotProduct(baseDirection);
             if (MathUtil.IsAlmostEqual(dotProduct, -1.0))
             {
-               parallelGrids = parallelGrids.Union<Grid>(linearGrids[direction]).ToList();
+               parallelGrids = parallelGrids.Union(linearGrids[direction]).ToList();
                return parallelGrids;
             }
          }
          return parallelGrids;
-      }
-
-      /// <summary>
-      /// Get the Grid name from the U, V, W grid lines.
-      /// </summary>
-      /// <param name="sameDirectionAxesU">The U direction of grids.</param>
-      /// <param name="sameDirectionAxesV">The V direction of grids.</param>
-      /// <param name="sameDirectionAxesW">The W direction of grids.</param>
-      /// <returns>The NameOverride if any grid defines the parameter; null otherwise.</returns>
-      private static string GetGridName(List<Grid> sameDirectionAxesU, List<Grid> sameDirectionAxesV, List<Grid> sameDirectionAxesW)
-      {
-         string gridName = GetOverrideGridName(sameDirectionAxesU);
-         if (gridName == null)
-            gridName = GetOverrideGridName(sameDirectionAxesV);
-         if (gridName == null)
-            gridName = GetOverrideGridName(sameDirectionAxesW);
-         return gridName;
-      }
-
-      /// <summary>
-      /// Get the first override Grid name from a collection of grids.
-      /// </summary>
-      /// <param name="gridList">The collection of grids.</param>
-      /// <returns>The NameOverride if any grid defines the parameter; else return null.</returns>
-      private static string GetOverrideGridName(List<Grid> gridList)
-      {
-         if (gridList == null)
-            return null;
-
-         foreach (Grid grid in gridList)
-         {
-            string gridName = NamingUtil.GetNameOverride(grid, null);
-            if (gridName != null)
-               return gridName;
-         }
-         return null;
       }
    }
 }

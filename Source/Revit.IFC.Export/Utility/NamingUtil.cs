@@ -88,37 +88,42 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Checks if two strings are equal ignoring case, spaces and underscores.
       /// </summary>
-      /// <param name="string1">
-      /// The string to be compared.
-      /// </param>
-      /// <param name="string2">
-      /// The other string to be compared.
-      /// </param>
-      /// <returns>
-      /// True if they are equal, false otherwise.
-      /// </returns>
+      /// <param name="string1">The string to be compared.</param>
+      /// <param name="string2">The other string to be compared.</param>
+      /// <returns>True if they are equal, false otherwise.</returns>
       public static bool IsEqualIgnoringCaseSpacesAndUnderscores(string string1, string string2)
       {
-         string nospaceOrUndescore1 = RemoveUnderscores(RemoveSpaces(string1));
-         string nospaceOrUndescore2 = RemoveUnderscores(RemoveSpaces(string2));
-         return (string.Compare(nospaceOrUndescore1, nospaceOrUndescore2, true) == 0);
+         string nospaceOrUnderscore1 = RemoveSpacesAndUnderscores(string1);
+         string nospaceOrUnderscore2 = RemoveSpacesAndUnderscores(string2);
+         return (string.Compare(nospaceOrUnderscore1, nospaceOrUnderscore2, true) == 0);
+      }
+
+      /// <summary>
+      /// Checks if a string is equal ignoring case, spaces and underscores to one of two possible strings.
+      /// </summary>
+      /// <param name="string1">The string to be compared.</param>
+      /// <param name="string2a">Option 1 to be compared.</param>
+      /// <param name="string2b">Option 2 to be compared.</param>
+      /// <returns>True if string1 matches string2a or string2b, false otherwise.</returns>
+      public static bool IsEqualIgnoringCaseSpacesAndUnderscores(string string1, 
+         string string2a, string string2b)
+      {
+         string nospaceOrUnderscore1 = RemoveSpacesAndUnderscores(string1);
+         string nospaceOrUnderscore2a = RemoveSpacesAndUnderscores(string2a);
+         if (string.Compare(nospaceOrUnderscore1, nospaceOrUnderscore2a, true) == 0)
+            return true;
+
+         string nospaceOrUnderscore2b = RemoveSpacesAndUnderscores(string2b);
+         return (string.Compare(nospaceOrUnderscore1, nospaceOrUnderscore2b, true) == 0);
       }
 
       /// <summary>
       /// Gets override string value from element parameter.
       /// </summary>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <param name="paramName">
-      /// The parameter name.
-      /// </param>
-      /// <param name="originalValue">
-      /// The original value.
-      /// </param>
-      /// <returns>
-      /// The string contains the string value.
-      /// </returns>
+      /// <param name="element">The element.</param>
+      /// <param name="paramName">The parameter name.</param>
+      /// <param name="originalValue">The original value.</param>
+      /// <returns>The string contains the string value.</returns>
       public static string GetOverrideStringValue(Element element, string paramName, string originalValue)
       {
          //string strValue;

@@ -1702,6 +1702,44 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Get the base representation in case of MappedItem
+      /// </summary>
+      /// <param name="representation">the representation</param>
+      /// <returns>the base representation type</returns>
+      /// <exception cref="ArgumentException"></exception>
+      public static string GetBaseRepresentationType(IFCAnyHandle representation)
+      {
+         if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
+            throw new ArgumentException("The operation is not valid for this handle.");
+
+         IFCData ifcData = representation.GetAttribute("RepresentationType");
+         if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
+         {
+            string repType = ifcData.AsString();
+            if (repType.Equals("MappedRepresentation", StringComparison.InvariantCultureIgnoreCase))
+            {
+               HashSet<IFCAnyHandle> mapItems = GetItems(representation);
+               if (mapItems.Count > 0)
+               {
+                  // The mapped representation should be of the same type. Use the first one will suffice
+                  IFCAnyHandle mapSrc = GetInstanceAttribute(mapItems.First(), "MappingSource");
+                  if (!IsNullOrHasNoValue(mapSrc))
+                  {
+                     IFCAnyHandle mapRep = GetInstanceAttribute(mapSrc, "MappedRepresentation");
+                     if (!IsNullOrHasNoValue(mapRep))
+                     {
+                        repType = GetRepresentationType(mapRep);
+                     }
+                  }
+               }
+            }
+            return repType;
+         }
+
+         return null;
+      }
+
+      /// <summary>
       /// Gets set of Items of a representation handle.
       /// </summary>
       /// <param name="representation">The representation handle.</param>
@@ -1814,30 +1852,6 @@ namespace Revit.IFC.Common.Utility
             {
                representationsAggr.Add(IFCData.CreateIFCAnyHandle(representation));
             }
-         }
-      }
-
-      /// <summary>
-      /// Add RelatedObjects into IfcRelAssociates
-      /// </summary>
-      /// <param name="relAssociates">The IfcRelAssociates entity</param>
-      /// <param name="related">The entity handle to be added to the RelatedObjects attribute</param>
-      public static void AssociatesAddRelated(IFCAnyHandle relAssociates, IFCAnyHandle related)
-      {
-         if (related == null)
-            throw new ArgumentNullException("IfcRelAssociates related");
-
-         if (!IsSubTypeOf(relAssociates, IFCEntityType.IfcRelAssociatesClassification))
-            throw new ArgumentException("The operation is not valid for this handle.");
-
-         IFCAggregate aggregate = relAssociates.GetAttribute("RelatedObjects").AsAggregate();
-         if (aggregate == null)
-         {
-            relAssociates.SetAttribute("RelatedObjects", new List<IFCAnyHandle>() { related });
-         }
-         else
-         {
-            aggregate.Add(IFCData.CreateIFCAnyHandle(related));
          }
       }
 
