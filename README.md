@@ -4,6 +4,8 @@ This is the .NET code used by Revit and Revit LT 2019 and later to support IFC. 
 
 _An archive of the original SourceForge forums can be found [here](https://sourceforge.net/p/ifcexporter/discussion/)._
 
+***Note: The most current annual version and two previous versions are supported with fixes/changes. Older versions will not be supported.***
+
 ## Releases
 The latest addon downloads and Release Notes can be found here: [Releases](https://github.com/Autodesk/revit-ifc/releases). New versions of the addon, from 2023 and later, should also be available in the Autodesk Desktop App (ADA) per your user and license settings.
 
