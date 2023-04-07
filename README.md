@@ -16,11 +16,12 @@ Links to multilingial versions of the Revit IFC Manual V2.0 can be found here: [
 - [IFC in Revit 2023](https://help.autodesk.com/view/RVT/2023/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 - [IFC in Revit 2022](https://help.autodesk.com/view/RVT/2022/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 
-<!--## Issue Submittal Templates
+## Issue Submittal Templates
 When submitting an Issue, users will be asked to chose between the following submittal templates:
-- Problem Report [PR]( ): is a "bug", error, or issue found during the use of any aspect of the IFC functionality.
-- Enhancement Request [ENH]( ): a proposed change to improve functionality and/or user interface (UI) and/or experience (UX)
-- Inquiry [INQ]( ): a question about functionality and/or UI/UX but not a Problem or an Enhancement -->
+- Problem Report [PR]: is a "bug", error, or issue found during the use of any aspect of the IFC functionality.
+- Enhancement Request [ENH]: a proposed change to improve functionality and/or user interface (UI) and/or experience (UX)
+- Inquiry [INQ]: a question about functionality and/or UI/UX but not a Problem or an Enhancement
+This will assist the development team with triaging and prioritizing reports.
 
 ## Labels
 GitHub labels are used to classify the nature of the Issue and help developers group, sort, and prioritize them. <!-- The **Triage** label is automatically added when reporting an issue.--> Reporting users and staff can add/edit labels. To make the triage and reporting process faster and easier (may also mean getting your issues addressed with higher priority), please use the **Labels** to classify the nature of the Issue to the best of your knowledge.
