@@ -19,7 +19,7 @@ Links to multilingial versions of the Revit IFC Manual V2.0 can be found here: [
 ## Issue Submittal Templates
 When submitting an Issue, users will be asked to chose between the following submittal templates:
 - **Problem Report [PR]**: _is a "bug", error, or issue found during the use of any aspect of the IFC functionality._
-- **Enhancement Request [ENH]**: _a proposed change to improve functionality and/or user interface (UI) and/or experience (UX)_
+- **Enhancement Request [ENH]**: _a proposed change to improve functionality, user interface (UI), and/or experience (UX)_
 - **Inquiry [INQ]**: _a question about functionality and/or UI/UX but not a Problem or an Enhancement_
 This will assist the development team with triaging and prioritizing reports.
 
