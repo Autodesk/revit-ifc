@@ -5,24 +5,31 @@ This is the .NET code used by Revit and Revit LT 2019 and later to support IFC. 
 _An archive of the original SourceForge forums can be found [here](https://sourceforge.net/p/ifcexporter/discussion/)._
 
 ## Releases
-The latest addon downloads and Release Notes can be found here: [Releases](https://github.com/Autodesk/revit-ifc/releases). New versions of the addon, from  2023 and later, should also be available in the Autodesk Desktop App (ADA) per your user and license settings.
+The latest addon downloads and Release Notes can be found here: [Releases](https://github.com/Autodesk/revit-ifc/releases). New versions of the addon, from 2023 and later, should also be available in the Autodesk Desktop App (ADA) per your user and license settings.
 
 ## Help
 Links to multilingial versions of the Revit IFC Manual V2.0 can be found here: [Revit Blog](https://blogs.autodesk.com/revit/2022/02/09/now-available-revit-ifc-manual-version-2-0/)
 ### Product Doumentation (English)
+- [IFC in Revit 2024](https://help.autodesk.com/view/RVT/2024/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 - [IFC in Revit 2023](https://help.autodesk.com/view/RVT/2023/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 - [IFC in Revit 2022](https://help.autodesk.com/view/RVT/2022/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
-- [IFC in Revit 2021](https://help.autodesk.com/view/RVT/2021/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 
-## Issues and Labels
-<!-- When submitting an Issue, users will be asked to chose between the following submittal templates:
+<!--## Issue Submittal Templates
+When submitting an Issue, users will be asked to chose between the following submittal templates:
 - Problem Report [PR]( ): is a "bug", error, or issue found during the use of any aspect of the IFC functionality.
 - Enhancement Request [ENH]( ): a proposed change to improve functionality and/or user interface (UI) and/or experience (UX)
 - Inquiry [INQ]( ): a question about functionality and/or UI/UX but not a Problem or an Enhancement -->
 
+## Labels
 GitHub labels are used to classify the nature of the Issue and help developers group, sort, and prioritize them. <!-- The **Triage** label is automatically added when reporting an issue.--> Reporting users and staff can add/edit labels. To make the triage and reporting process faster and easier (may also mean getting your issues addressed with higher priority), please use the **Labels** to classify the nature of the Issue to the best of your knowledge.
 
-### Issue Components
+### Version Label
+- 2024
+- 2023
+- 2022
+- ... *(will expand as more versions are released)*
+
+### Component Labels
 - API
 - coordinate system
 - documentation
@@ -37,25 +44,17 @@ GitHub labels are used to classify the nature of the Issue and help developers g
 
 More Labels of this type can be added as needed/requested by users and developers, but this should be a relatively simple list to make high-level sorting and identifying quicker and easier.
 
-### Issue Version
-- 2019
-- 2020
-- 2021
-- 2022
-- 2023
-- ... *(will expand as more versions are released)*
-
-### Issue Status
+### Status Labels
 (set by Autodesk Developers) 
-- rejected 
-- in progress (a formal bug has been filed internally. No formal commitment on when/how)
-- Cannot Reproduce (unable to reproduce the error on our side)
-- duplicate (will try to link to similar Issues)
-- feedback (additional feedback from the reporter is required)
-- fixed 
+- Rejected 
+- In progress (a formal bug has been filed internally. No formal commitment on when/how)
+- Cannot reproduce (unable to reproduce the error on our side)
+- Duplicate (will try to link to similar Issues)
+- Feedback (additional feedback from the reporter is required)
+- Fixed 
 - Triage (initial state of labeling and determining priority)
 
-Ideally, each Issue should include a Type, Component, and Version Label from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. Developers may also add an internal Autodesk Jira number/link to an Issue, but this is for internal reference and tracking only and not accessible to the general public.
+Ideally, each Issue should include Version and Component labels from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. Developers may also add an internal Autodesk Jira number/link to an Issue, but this is for internal reference and tracking only and not accessible to the general public.
 
 ## License
 The Revit IFC open source uses the Lesser General Public License version 2.0 (LGPLv2).  It relies on ANTLR 4 which uses the BSD license.
