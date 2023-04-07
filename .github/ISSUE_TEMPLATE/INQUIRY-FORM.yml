@@ -1,0 +1,73 @@
+name: Inquiry
+description: File an Inquiry
+title: "INQ: "
+labels: ["inquiry", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        An Inquiry is a question about IFC functionality and/or UI/UX (but not a Problem Report or an Enhancement Request), where the user needs further assistance or guidance in its usage. Please describe the inquiry (may include images) and post the smallest possible sample files (RVT and IFC), zipped. If you cannot post a file to this public forum, please email files to ifc-github-support@autodesk.com. They will be used internally only and kept confidential.
+  - type: textarea
+    id: Inquirytext
+    attributes:
+      label: Inquiry description
+      description: What are you trying to accomplish?
+      placeholder: Inquiry description including images and zipped RVT/IFC files
+      value: "... "
+    validations:
+      required: true
+  - type: dropdown
+    id: Revitversion
+    attributes:
+      label: Revit Version
+      description: What version of Revit are you using?
+      options:
+        - 2024.0.x
+        - 2023.1.x
+        - 2023.0.x
+        - 2022.1.x
+        - 2022.0.x
+        - pre 2022
+    validations:
+      required: true
+  - type: dropdown
+    id: IFCAddonversion
+    attributes:
+      label: IFC for Revit Addon Version
+      description: What version of the IFC for Revit addon are you using?
+      options:
+        - 24.x.x.x
+        - 23.2.5.0
+        - 23.2.4.0
+        - 23.2.3.0
+        - 23.1.1.0
+        - 23.1.0.0
+        - 22.6.2.0
+        - 22.6.1.0
+        - 22.6.0.0
+        - 22.5.2.0
+        - 22.5.1.0
+        - 22.5.0.0
+        - pre 2022
+        - Other / None
+    validations:
+      required: true
+  - type: dropdown
+    id: Windowsversion
+    attributes:
+      label: Windows Version
+      description: What version of Windows are you using?
+      options:
+        - 11 22H2
+        - 11 21H2
+        - 10 22H2
+        - 10 21H2
+        - 10 21H1
+        - 10 20H2
+        - 10 2004
+    validations:
+      required: true      
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to fill out this Inquiry.
