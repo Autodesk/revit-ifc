@@ -27,6 +27,9 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Common.Enums;
+using System.Runtime.Remoting.Contexts;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -166,7 +169,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The ParameterCache object.
       /// </summary>
-      static ParameterCache m_ParameterCache;
+      public static ParameterCache ParameterCache { get; set; } = new ParameterCache();
 
       /// <summary>
       /// The PartExportedCache object.
@@ -204,6 +207,101 @@ namespace Revit.IFC.Export.Utility
       /// The top level IfcSite handle.
       /// </summary>
       public static IFCAnyHandle SiteHandle { get; set; } = null;
+
+      /// <summary>
+      /// The top level 2D context handles by identifier.
+      /// </summary>
+      private static IDictionary<IFCRepresentationIdentifier, IFCAnyHandle> Context2DHandles
+      { get; set; } = new Dictionary<IFCRepresentationIdentifier, IFCAnyHandle>();
+
+      /// <summary>
+      /// The top level 3D context handles by identifier.
+      /// </summary>
+      private static IDictionary<IFCRepresentationIdentifier, IFCAnyHandle> Context3DHandles 
+         { get; set; } = new Dictionary<IFCRepresentationIdentifier, IFCAnyHandle>();
+
+      /// <summary>
+      /// Caches the context handle for a particular IfcGeometricRepresentationContext in this
+      /// cache and in the internal cache if necessary.
+      /// </summary>
+      /// <param name="exporterIFC">The exporterIFC class for access to the internal cache.</param>
+      /// <param name="identifier">The identifier.</param>
+      /// <param name="contextHandle">The created context handle.</param>
+      public static void Set3DContextHandle(ExporterIFC exporterIFC, 
+         IFCRepresentationIdentifier identifier, 
+         IFCAnyHandle contextHandle)
+      {
+         string identifierAsString = identifier == IFCRepresentationIdentifier.None ? 
+            string.Empty : identifier.ToString();
+         exporterIFC.Set3DContextHandle(contextHandle, identifierAsString);
+         Context3DHandles[identifier] = contextHandle;
+      }
+
+      /// <summary>
+      /// Get the handle associated to a particular IfcGeometricRepresentationContext.
+      /// </summary>
+      /// <param name="identifier">The identifier.</param>
+      /// <returns>The corresponding IfcGeometricRepresentationContext handle.</returns>
+      public static IFCAnyHandle Get3DContextHandle(IFCRepresentationIdentifier identifier)
+      {
+         if (Context3DHandles.TryGetValue(identifier, out IFCAnyHandle handle))
+            return handle;
+
+         return null;
+      }
+
+      /// <summary>
+      /// Get the handle associated to a particular IfcGeometricRepresentationContext, or create it
+      /// if it doesn't exist.
+      /// </summary>
+      /// <param name="file">The IFCFile class.</param>
+      /// <param name="identifier">The identifier.</param>
+      /// <returns>The corresponding IfcGeometricRepresentationContext handle.</returns>
+      public static IFCAnyHandle GetOrCreate3DContextHandle(ExporterIFC exporterIFC, 
+         IFCRepresentationIdentifier identifier)
+      {
+         IFCAnyHandle context3d = Get3DContextHandle(identifier);
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(context3d))
+            return context3d;
+
+         // This is primarily intended for model curves; we don't
+         // want to add the IfcGeometricRepresentationContext unless it is actually used.
+         if (!Context3DHandles.TryGetValue(IFCRepresentationIdentifier.None, out IFCAnyHandle parent))
+            return null;
+
+         IFCFile file = exporterIFC.GetFile();
+         IFCAnyHandle newContext3D = IFCInstanceExporter.CreateGeometricRepresentationSubContext(
+            file, identifier.ToString(), "Model", parent, null, IFCGeometricProjection.Model_View, null);
+         Set3DContextHandle(exporterIFC, identifier, newContext3D);
+         return newContext3D;
+      }
+      
+      /// <summary>
+             /// Caches the context handle for a particular IfcGeometricRepresentationContext in this
+             /// cache and in the internal cache if necessary.
+             /// </summary>
+             /// <param name="exporterIFC">The exporterIFC class for access to the internal cache.</param>
+             /// <param name="identifier">The identifier.</param>
+             /// <param name="contextHandle">The created context handle.</param>
+      public static void Set2DContextHandle(ExporterIFC exporterIFC,
+         IFCRepresentationIdentifier identifier,
+         IFCAnyHandle contextHandle)
+      {
+         Context2DHandles[identifier] = contextHandle;
+      }
+
+      /// <summary>
+      /// Get the handle associated to a particular IfcGeometricRepresentationContext.
+      /// </summary>
+      /// <param name="identifier">The identifier.</param>
+      /// <returns>The corresponding IfcGeometricRepresentationContext handle.</returns>
+      public static IFCAnyHandle Get2DContextHandle(IFCRepresentationIdentifier identifier)
+      {
+         if (Context2DHandles.TryGetValue(identifier, out IFCAnyHandle handle))
+            return handle;
+
+         return null;
+      }
 
       /// <summary>
       /// The SpaceBoundaryCache object.
@@ -391,7 +489,7 @@ namespace Revit.IFC.Export.Utility
       static public HashSet<(IFCAnyHandle, string)> QtoSetCreated { get; set; } = new HashSet<(IFCAnyHandle, string)>();
 
       /// <summary>
-      /// The ParameterCache object.
+      /// The AllocatedGeometryObjectCache object.
       /// </summary>
       public static AllocatedGeometryObjectCache AllocatedGeometryObjectCache
       {
@@ -517,19 +615,6 @@ namespace Revit.IFC.Export.Utility
             if (m_AttributeCache == null)
                m_AttributeCache = new AttributeCache();
             return m_AttributeCache;
-         }
-      }
-
-/// <summary>
-/// The ParameterCache object.
-/// </summary>
-public static ParameterCache ParameterCache
-      {
-         get
-         {
-            if (m_ParameterCache == null)
-               m_ParameterCache = new ParameterCache();
-            return m_ParameterCache;
          }
       }
 
@@ -1409,8 +1494,10 @@ public static ParameterCache ParameterCache
             m_CertifiedEntitiesAndPsetCache = null;
             m_ExportOptionsCache = null;
             m_Global3DOriginHandle = null;
+            Context3DHandles.Clear();
             GUIDCache.Clear();
             OwnerHistoryHandle = null;
+            ParameterCache.Clear();
             ProjectHandle = null;
             m_UnitsCache = null;
          }
@@ -1424,7 +1511,7 @@ public static ParameterCache ParameterCache
 
          if (m_AllocatedGeometryObjectCache != null)
             m_AllocatedGeometryObjectCache.DisposeCache();
-         ParameterUtil.ClearParameterCache();
+         ParameterUtil.ClearParameterValueCaches();
 
          m_AllocatedGeometryObjectCache = null;
          m_AreaSchemeCache = null;
@@ -1472,7 +1559,6 @@ public static ParameterCache ParameterCache
          MaterialRelationsCache = new MaterialRelationsCache();
          m_MEPCache = null;
          m_Object2DCurves = null;
-         m_ParameterCache = null;
          m_PartExportedCache = null;
          m_PresentationLayerSetCache = null;
          m_PresentationStyleCache = null;

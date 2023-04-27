@@ -80,6 +80,7 @@ namespace Revit.IFC.Import.Data
                IFCEntityType.IfcPile,
                IFCEntityType.IfcRailing,
                IFCEntityType.IfcRamp,
+               IFCEntityType.IfcReinforcingBar,
                IFCEntityType.IfcRoof,
                IFCEntityType.IfcSlab,
                IFCEntityType.IfcStair,
@@ -153,6 +154,8 @@ namespace Revit.IFC.Import.Data
             // IfcStructuralAnalysisModel, IfcStructuralCurveMember, IfcStructuralLoadGroup, IfcStructuralSurfaceMember
             if (EntityType == IFCEntityType.IfcDistributionPort)
                predefinedTypeName = "FlowDirection";
+            else if (EntityType == IFCEntityType.IfcReinforcingBar)
+               predefinedTypeName = "BarRole";
             else if ((EntityType == IFCEntityType.IfcRamp) ||
                      (EntityType == IFCEntityType.IfcRoof) ||
                      (EntityType == IFCEntityType.IfcStair))

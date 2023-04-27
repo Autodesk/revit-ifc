@@ -96,6 +96,23 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             else
                return false;
          }
+         else if (element is Railing)
+         {
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.CURVE_ELEM_LENGTH, out lengthFromParam);
+            m_Length = UnitUtil.ScaleLength(lengthFromParam);
+         }
+         else if (element is Wall)
+         {
+            Wall wallElement = element as Wall;
+            if (wallElement != null && wallElement.Location != null)
+            {
+               Curve wallAxis = (wallElement.Location as LocationCurve).Curve;
+               if (wallAxis != null)
+               {
+                  m_Length = UnitUtil.ScaleLength(wallAxis.Length);
+               }
+            }
+         }
 
          // For others
          if (m_Length > MathUtil.Eps())
@@ -111,7 +128,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             // For Slab, length is the major edge of the rectangle area profile (get it from ScaledWidth)
             // Also for Stair support
             IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
-            if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcSlab) || element.Category.BuiltInCategory == BuiltInCategory.OST_StairsStringerCarriage)
+            if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcSlab) || 
+               CategoryUtil.GetSafeCategoryId(element).Value == (long)BuiltInCategory.OST_StairsStringerCarriage)
             {
                m_Length = extrusionCreationData.ScaledWidth;
             }

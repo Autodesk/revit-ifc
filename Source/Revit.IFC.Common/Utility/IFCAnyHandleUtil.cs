@@ -1936,7 +1936,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if it is null or has no value, false otherwise.</returns>
       public static bool IsNullOrHasNoValue(IFCAnyHandle handle)
       {
-         return handle == null || !handle.HasValue;
+         return !(handle?.HasValue ?? false);
       }
 
       /// <summary>
@@ -1951,6 +1951,25 @@ namespace Revit.IFC.Common.Utility
             return false;
 
          return handle.IsTypeOf(GetIFCEntityTypeName(type));
+      }
+
+      /// <summary>
+      /// Checks if the handle is an entity of exactly one of the given type (not including its sub-types).
+      /// </summary>
+      /// <param name="handle">The handle to be checked.</param>
+      /// <param name="types">The entity types to be checked against.</param>
+      /// <returns>True if the handle entity is an entity one of the given type (not including its sub-types).</returns>
+      public static bool IsTypeOneOf(IFCAnyHandle handle, ISet<IFCEntityType> types)
+      {
+         if (IsNullOrHasNoValue(handle) || types == null)
+            return false;
+
+         foreach (var entityType in types)
+         {
+            if (handle.IsTypeOf(GetIFCEntityTypeName(entityType)))
+               return true;
+         }
+         return false;
       }
 
       /// <summary>

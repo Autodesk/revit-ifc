@@ -38,7 +38,7 @@ namespace Revit.IFC.Import.Data
       public IFCVoidInfo(IFCSolidInfo solid)
          : base(solid.Id, solid.GeometryObject)
       {
-         this.RepresentationType = solid.RepresentationType;
+         this.RepresentationIdentifier = solid.RepresentationIdentifier;
       }
    }
 
@@ -247,7 +247,7 @@ namespace Revit.IFC.Import.Data
       protected override bool CutSolidByVoids(IFCSolidInfo solidInfo)
       {
          // We only cut "Body" representation items.
-         if (solidInfo.RepresentationType != IFCRepresentationIdentifier.Body)
+         if (solidInfo.RepresentationIdentifier != IFCRepresentationIdentifier.Body)
             return true;
 
          IList<IFCVoidInfo> voidsToUse = null;
@@ -355,7 +355,9 @@ namespace Revit.IFC.Import.Data
             }
          }
 
-         if (HasValidTopLevelGeometry())
+         // If this entity will be a container DirectShape, it may not have any valid top-level geometry at this time.
+         // Detect the situation and allow Element Creation to proceed for Hybrid Import only.
+         if (HasValidTopLevelGeometry() || IsHybridImportContainer())
          {
             // IFCImportShapeEditScope will not create Body geometry for Hybrid IFC Import, but it may need to create other geometry.
             using (IFCImportShapeEditScope shapeEditScope = IFCImportShapeEditScope.Create(doc, this))
@@ -377,17 +379,42 @@ namespace Revit.IFC.Import.Data
                // Lower down this method we then pass lcs to the consumer element, so that it can apply
                // the transform as required.
                Transform transformToUse = Importer.TheProcessor.ApplyTransforms ? lcs : Transform.Identity;
-               ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, myId);
+               if (Importer.TheOptions.IsHybridImport && (Importer.TheHybridInfo != null))
+               {
+                  transformToUse = transformToUse.Multiply(Importer.TheHybridInfo.LargeCoordinateTransform);
+               }
+
+               // Hybrid Import only:   An IfcProduct whose DirectShape will be a container might not have a DirectShape created yet.
+               // If this is the case, create an empty DirectShape for the container.
+               // If so, create an empty DirectShape to hold container Geometry.
+               if (Importer.TheOptions.IsHybridImport && (Importer.TheHybridInfo?.HybridMap != null))
+               { 
+                  if (IsHybridImportContainer() && !Importer.TheHybridInfo.HybridMap.ContainsKey(GlobalId))
+                  {
+                     CreatedElementId = Importer.TheHybridInfo.CreateEmptyContainer(this);
+                     Importer.TheLog.LogComment(Id, $"Creating Empty Container for {GlobalId}:{CreatedElementId}", false);
+                  }
+               }
+               
+               // For Hybrid Import Containers, there may be the possibility that there is no valid top-level Geometry.  In that
+               // case, don't create the ProductRepresentation.
+               if (HasValidTopLevelGeometry())
+               {
+                  ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, myId);
+               }
 
                // Everything up to this point needs to be done for Hybrid IFC Import as well.  The Product Representation will not contain
                // geometry, but it will contain parameters that are needed for the DirectShape imported for Hybrid IFC Import.
-               if (Importer.TheOptions.IsHybridImport)
+               if (Importer.TheOptions.IsHybridImport && GlobalId != null)
                {
+                  // "Create" a DirectShape Element.
+                  // This is for those Elements imported via the ATF Pipeline, or for those Elements created above simply to hold an empty container.
                   ElementId hybridElementId = ElementId.InvalidElementId;
                   if (Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out hybridElementId) ?? false)
                   {
+                     // If GlobalId is in the HybridMap, handle Hybrid Product Creation from Hybrid Import.
                      CreatedElementId = hybridElementId;
-                     CreatedElementId = Importer.TheHybridInfo?.HandleHybridProductCreation(shapeEditScope, this);
+                     CreatedElementId = Importer.TheHybridInfo.HandleHybridProductCreation(shapeEditScope, this);
                   }
                }
 

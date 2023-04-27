@@ -29,59 +29,6 @@ using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
-   // An IFCHybridRepresentationItem exists because for Hybrid IFC Import, Revit needs something to represent a RepresentationItem, other than null.
-   // Body geometry for DirectShapes are actually created by AnyCAD, but there are other data within a RepresentationItem (e.g., PresentationLayer)
-   // that must persist, otherwise Elements will lose parameters.
-   // Therefore, this exists just a placeholder for DirectShapes that have body geometry created via AnyCAD.
-   public class IFCHybridRepresentationItem : IFCRepresentationItem
-   {
-      protected IFCHybridRepresentationItem()
-      {
-      }
-
-      /// <summary>
-      /// Constructor to create a new IFCHybridRepresentationItem.
-      /// </summary>
-      /// <param name="ifcRepresentationItem">Handle representing IFCRepresentationItem.</param>
-      protected IFCHybridRepresentationItem(IFCAnyHandle ifcRepresentationItem)
-      {
-         Process(ifcRepresentationItem);
-      }
-
-
-      /// <summary>
-      /// Process IFCHybridRepresentationItem members.
-      /// Even though we don't have any members, it exists to maintain a parallel structure of other IFCEntity processing.
-      /// </summary>
-      /// <param name="ifcRepresentationItem">Handle representing IFCRepresentationItem.</param>
-      override protected void Process(IFCAnyHandle ifcRepresentationItem)
-      {
-         base.Process(ifcRepresentationItem);
-      }
-
-      /// <summary>
-      /// Create the IFCHybridRepresentationItem.
-      /// </summary>
-      /// <param name="ifcRepresentationItem">Handle corresponding to the IFCRepresentationItem that AnyCAD already processed.</param>
-      /// <returns>IFCHybridRepresentationItem object.</returns>
-      public static IFCHybridRepresentationItem ProcessIFCHybridRepresentationItem(IFCAnyHandle ifcRepresentationItem)
-      {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcRepresentationItem))
-         {
-            Importer.TheLog.LogNullError(IFCEntityType.IfcRepresentationItem);
-            return null;
-         }
-
-         IFCEntity hybridRepresentationItem;
-         IFCImportFile.TheFile.EntityMap.TryGetValue(ifcRepresentationItem.StepId, out hybridRepresentationItem);
-         if (hybridRepresentationItem != null)
-            return (hybridRepresentationItem as IFCHybridRepresentationItem);
-
-         return new IFCHybridRepresentationItem(ifcRepresentationItem);
-      }
-
-   }
-
    public abstract class IFCRepresentationItem : IFCEntity
    {
       /// <summary>
@@ -212,20 +159,12 @@ namespace Revit.IFC.Import.Data
          bool skipBodyGeometry = (Importer.TheOptions.IsHybridImport) && (Importer.TheHybridInfo?.RepresentationsAlreadyCreated ?? false);
          if (!skipBodyGeometry)
          {
-            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcMappedItem))
-               return IFCMappedItem.ProcessIFCMappedItem(ifcRepresentationItem);
-            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcStyledItem))
-               return IFCStyledItem.ProcessIFCStyledItem(ifcRepresentationItem);
             if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcTopologicalRepresentationItem))
                return IFCTopologicalRepresentationItem.ProcessIFCTopologicalRepresentationItem(ifcRepresentationItem);
 
             // TODO: Move everything below to IFCGeometricRepresentationItem, once it is created.
-            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcBooleanResult))
-               return IFCBooleanResult.ProcessIFCBooleanResult(ifcRepresentationItem);
             if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcFaceBasedSurfaceModel))
                return IFCFaceBasedSurfaceModel.ProcessIFCFaceBasedSurfaceModel(ifcRepresentationItem);
-            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcGeometricSet))
-               return IFCGeometricSet.ProcessIFCGeometricSet(ifcRepresentationItem);
             if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcShellBasedSurfaceModel))
                return IFCShellBasedSurfaceModel.ProcessIFCShellBasedSurfaceModel(ifcRepresentationItem);
             if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcSolidModel))
@@ -256,11 +195,21 @@ namespace Revit.IFC.Import.Data
                return IFCSurface.ProcessIFCSurface(ifcRepresentationItem);
          }
 
-         // Non-body geometry.  Still need to process curves & points for Hybrid IFC Import.
+         // Need to process IFCBooleanResult because the individual operands should become IFCHybridRepresentationItem.
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcBooleanResult))
+            return IFCBooleanResult.ProcessIFCBooleanResult(ifcRepresentationItem);
+
+         // Handle IFCStyledItem since IFCHybridRepresentationItem may need to add Materials on import.
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcStyledItem))
+            return IFCStyledItem.ProcessIFCStyledItem(ifcRepresentationItem);
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcMappedItem))
+            return IFCMappedItem.ProcessIFCMappedItem(ifcRepresentationItem);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcCurve))
             return IFCCurve.ProcessIFCCurve(ifcRepresentationItem);
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPoint))
             return IFCPoint.ProcessIFCPoint(ifcRepresentationItem);
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcGeometricSet))
+            return IFCGeometricSet.ProcessIFCGeometricSet(ifcRepresentationItem);
 
          if (skipBodyGeometry)
          {

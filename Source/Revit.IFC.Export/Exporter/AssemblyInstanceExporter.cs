@@ -39,7 +39,7 @@ namespace Revit.IFC.Export.Exporter
    {
       private static IFCElementAssemblyType GetPredefinedTypeFromObjectType(string objectType)
       {
-         if (String.IsNullOrEmpty(objectType))
+         if (string.IsNullOrEmpty(objectType))
             return IFCElementAssemblyType.NotDefined;
 
          foreach (IFCElementAssemblyType val in Enum.GetValues(typeof(IFCElementAssemblyType)))
@@ -64,7 +64,9 @@ namespace Revit.IFC.Export.Exporter
          if (element == null)
             return false;
 
-         if (ExporterCacheManager.AssemblyInstanceCache.ContainsKey(element.Id))
+         if (ExporterCacheManager.AssemblyInstanceCache.TryGetValue(element.Id,
+            out AssemblyInstanceInfo info) &&
+            !IFCAnyHandleUtil.IsNullOrHasNoValue(info.AssemblyInstanceHandle))
             return true;      // Already processed before
 
          IFCFile file = exporterIFC.GetFile();
@@ -89,9 +91,6 @@ namespace Revit.IFC.Export.Exporter
                string description = NamingUtil.GetDescriptionOverride(element, null);
                string objectType = NamingUtil.GetObjectTypeOverride(element, NamingUtil.GetFamilyAndTypeName(element));
                assemblyInstanceHnd = IFCInstanceExporter.CreateSystem(file, guid, ownerHistory, name, description, objectType);
-
-               // Create classification reference when System has classification filed name assigned to it
-               ClassificationUtil.CreateClassification(exporterIFC, file, element, assemblyInstanceHnd);
 
                HashSet<IFCAnyHandle> relatedBuildings = 
                   new HashSet<IFCAnyHandle>() { ExporterCacheManager.BuildingHandle };
@@ -120,47 +119,31 @@ namespace Revit.IFC.Export.Exporter
                   localPlacement = placementSetter.LocalPlacement;
                   levelInfo = placementSetter.LevelInfo;
 
-                  switch (exportAs.ExportInstance)
-                  {
-                     case IFCEntityType.IfcCurtainWall:
-                        assemblyInstanceHnd = IFCInstanceExporter.CreateCurtainWall(exporterIFC, element, guid,
-                            ownerHistory, localPlacement, representation, ifcEnumType);
-                        break;
-                     case IFCEntityType.IfcRamp:
-                        string rampPredefinedType = RampExporter.GetIFCRampType(ifcEnumType);
-                        assemblyInstanceHnd = IFCInstanceExporter.CreateRamp(exporterIFC, element, guid,
-                            ownerHistory, localPlacement, representation, rampPredefinedType);
-                        break;
-                     case IFCEntityType.IfcRoof:
-                        assemblyInstanceHnd = IFCInstanceExporter.CreateRoof(exporterIFC, element, guid,
-                            ownerHistory, localPlacement, representation, ifcEnumType);
-                        break;
-                     case IFCEntityType.IfcStair:
-                        string stairPredefinedType = StairsExporter.GetIFCStairType(ifcEnumType);
-                        assemblyInstanceHnd = IFCInstanceExporter.CreateStair(exporterIFC, element, guid,
-                            ownerHistory, localPlacement, representation, stairPredefinedType);
-                        break;
-                     case IFCEntityType.IfcWall:
-                        assemblyInstanceHnd = IFCInstanceExporter.CreateWall(exporterIFC, element, guid,
-                            ownerHistory, localPlacement, representation, ifcEnumType);
-                        break;
-                     default:
-                        string objectType = NamingUtil.GetObjectTypeOverride(element, NamingUtil.GetFamilyAndTypeName(element));
-                        IFCElementAssemblyType assemblyPredefinedType = GetPredefinedTypeFromObjectType(objectType);
-                        assemblyInstanceHnd = IFCInstanceExporter.CreateElementAssembly(exporterIFC, element, guid,
-                            ownerHistory, localPlacement, representation, IFCAssemblyPlace.NotDefined, assemblyPredefinedType);
-                        break;
-                  }
+                  assemblyInstanceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, exporterIFC, element, guid,
+                     ownerHistory, localPlacement, representation);
                }
             }
 
-            if (assemblyInstanceHnd == null)
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(assemblyInstanceHnd))
                return false;
 
-            // relateToLevel depends on how the AssemblyInstance is being mapped to IFC, above.
-            productWrapper.AddElement(element, assemblyInstanceHnd, levelInfo, null, relateToLevel, exportAs);
+            // Create classification reference when the Assembly has classification field name assigned to it
+            ClassificationUtil.CreateClassification(exporterIFC, file, element,
+               assemblyInstanceHnd);
 
-            ExporterCacheManager.AssemblyInstanceCache.RegisterAssemblyInstance(element.Id, assemblyInstanceHnd, overrideContainerId);
+            // relateToLevel depends on how the AssemblyInstance is being mapped to IFC, above.
+            productWrapper.AddElement(element, assemblyInstanceHnd, levelInfo, null,
+               relateToLevel, exportAs);
+
+            ExporterCacheManager.AssemblyInstanceCache.RegisterAssemblyInstance(element.Id,
+               assemblyInstanceHnd, overrideContainerId);
+
+            IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportAs, 
+               file, productWrapper);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeHnd))
+            {
+               ExporterCacheManager.TypeRelationsCache.Add(typeHnd, assemblyInstanceHnd);
+            }
 
             tr.Commit();
             return true;
@@ -258,7 +241,7 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcElementAssembly;
+         IFCEntityType elementClassTypeEnum = IFCEntityType.IfcElementAssembly;
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return;
 

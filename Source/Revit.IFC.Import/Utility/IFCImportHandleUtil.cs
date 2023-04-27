@@ -88,6 +88,21 @@ namespace Revit.IFC.Import.Utility
       }
 
       /// <summary>
+      /// Finds the value of a optional length attribute.
+      /// </summary>
+      /// <param name="handle">The entity handle.</param>
+      /// <param name="name">The name of the atribute.</param>
+      /// <returns>The length value if it exists, scaled.</returns>
+      static public double? GetOptionalScaledLengthAttribute(IFCAnyHandle handle, string name)
+      {
+         double? value = IFCAnyHandleUtil.GetDoubleAttribute(handle, name);
+         if (value.HasValue)
+            return IFCUnitUtil.ScaleLength(value.Value);
+
+         return value;
+      }
+
+      /// <summary>
       /// Finds the value of a optional normalised ratio attribute.
       /// </summary>
       /// <param name="handle">The entity handle.</param>

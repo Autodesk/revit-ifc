@@ -152,11 +152,8 @@ namespace Revit.IFC.Export.Exporter
                            WallExporter.ExportWall(exporterIFC, null, subElem, null, ref geomElem, productWrapper);
                         }
                      }
-                     catch (Exception ex)
+                     catch 
                      {
-                        if (ExporterUtil.IsFatalException(wallElement.Document, ex))
-                           throw ex;
-                        continue;
                      }
                   }
                }
@@ -193,8 +190,8 @@ namespace Revit.IFC.Export.Exporter
          double eps = UnitUtil.ScaleLength(document.Application.VertexTolerance);
 
          IFCFile file = exporterIFC.GetFile();
-         IFCAnyHandle contextOfItems = exporterIFC.Get3DContextHandle("Body");
-
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
+         
          IFCGeometryInfo info = IFCGeometryInfo.CreateFaceGeometryInfo(eps);
 
          ISet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();

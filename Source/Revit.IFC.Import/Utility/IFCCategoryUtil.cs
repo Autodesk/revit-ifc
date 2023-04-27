@@ -515,6 +515,7 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcPlate] = BuiltInCategory.OST_StructuralFraming;
          m_EntityTypeToCategory[IFCEntityType.IfcPlateStandardCase] = BuiltInCategory.OST_StructuralFraming;
          m_EntityTypeToCategory[IFCEntityType.IfcPlateType] = BuiltInCategory.OST_StructuralFraming;
+         m_EntityTypeToCategory[IFCEntityType.IfcProjectionElement] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcProtectiveDeviceType] = BuiltInCategory.OST_ElectricalFixtures;
          m_EntityTypeToCategory[IFCEntityType.IfcProxy] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcPump] = BuiltInCategory.OST_MechanicalEquipment;
@@ -943,7 +944,7 @@ namespace Revit.IFC.Import.Utility
                         subCategory.SetLineWeight(lineWeight.Value, graphicsStyleType);
                   }
                   catch
-                  {
+                  { 
                   }
                }
             }
@@ -1130,7 +1131,7 @@ namespace Revit.IFC.Import.Utility
       /// <returns>The sub-category.  This allows shapes to have their visibility controlled by the sub-category.</param></returns>
       public static Category GetSubCategoryForRepresentation(Document doc, int entityId, IFCRepresentationIdentifier repId)
       {
-         if (repId == IFCRepresentationIdentifier.Body || repId == IFCRepresentationIdentifier.Unhandled)
+         if (repId == IFCRepresentationIdentifier.Body || repId == IFCRepresentationIdentifier.Other)
             return null;
 
          Category category = Importer.TheCache.GenericModelsCategory;

@@ -26,6 +26,7 @@ using Autodesk.Revit.DB;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -112,8 +113,9 @@ namespace Revit.IFC.Export.Exporter
                   file.CreateStyle(exporterIFC, representItem, color, foregroundPatternId);
 
                   HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { representItem };
+                  IFCAnyHandle context2D = ExporterCacheManager.Get2DContextHandle(IFCRepresentationIdentifier.Annotation);
                   IFCAnyHandle bodyRepHnd = RepresentationUtil.CreateAnnotationSetRep(exporterIFC, filledRegion, categoryId,
-                     exporterIFC.Get2DContextHandle(), bodyItems);
+                     context2D, bodyItems);
 
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
                      return;
@@ -127,7 +129,7 @@ namespace Revit.IFC.Export.Exporter
                      null, null, shapeReps);
                   IFCAnyHandle annotation = IFCInstanceExporter.CreateAnnotation(exporterIFC, 
                      filledRegion, annotationGuid, ownerHistory, setter.LocalPlacement, 
-                     productShape);
+                     productShape, null);
 
                   productWrapper.AddAnnotation(annotation, setter.LevelInfo, true);
                }

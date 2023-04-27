@@ -525,32 +525,30 @@ namespace Revit.IFC.Export.Utility
       static private string GetRevitDisplayName(Element element)
       {
          if (element == null)
-            return "";
+            return string.Empty;
 
-         string fullName = (element.Category != null) ? element.Category.Name : "";
+         string fullName = CategoryUtil.GetCategoryName(element);
          string typeName = element.Name;
-         string familyName = "";
+         string familyName = string.Empty;
 
-         ElementType elementType = null;
-         if (element is ElementType)
-            elementType = element as ElementType;
-         else
-            elementType = element.Document.GetElement(element.GetTypeId()) as ElementType;
+         ElementType elementType = (element is ElementType) ?
+            (element as ElementType) :
+            element.Document.GetElement(element.GetTypeId()) as ElementType;
 
          if (elementType != null)
             familyName = elementType.FamilyName;
 
-         if (familyName != "")
+         if (!string.IsNullOrEmpty(familyName))
          {
-            if (fullName != "")
+            if (!string.IsNullOrEmpty(fullName))
                fullName = fullName + " : " + familyName;
             else
                fullName = familyName;
          }
 
-         if (typeName != "")
+         if (!string.IsNullOrEmpty(typeName))
          {
-            if (fullName != "")
+            if (!string.IsNullOrEmpty(fullName))
                fullName = fullName + " : " + typeName;
             else
                fullName = typeName;
@@ -965,7 +963,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="inputName">the input name</param>
       /// <param name="theNameSet">the Set where the name should be search</param>
       /// <returns>the unique name that is also added into the Set</returns>
-      public static string GetUniqueNameWithinSet(string inputName, ref HashSet<string> theNameSet)
+      public static string GetUniqueNameWithinSet(string inputName, HashSet<string> theNameSet)
       {
          string uniqueName = inputName;
          if (!theNameSet.Contains(uniqueName))

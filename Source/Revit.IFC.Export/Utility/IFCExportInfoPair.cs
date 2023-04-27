@@ -56,11 +56,21 @@ namespace Revit.IFC.Export.Utility
             string newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportInstance.ToString());
             if (ExporterUtil.IsNotDefined(newValidatedPredefinedType))
             {
-               // if the ExportType is unknown, i.e. Entity without type (e.g. IfcGrid), must try the enum type from the instance type + "Type"
+               // if the ExportType is unknown, i.e. Entity without type (e.g. IfcGrid),
+               // must try the enum type from the instance type + "Type" generally, but
+               // there are exceptions.
                if (m_ExportType == IFCEntityType.UnKnown)
-                  newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportInstance.ToString() + "Type");
+               {
+                  newValidatedPredefinedType =
+                     IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED",
+                     IfcSchemaEntityTree.GetTypeNameFromInstanceName(m_ExportInstance.ToString()));
+               }
                else
-                  newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED", m_ExportType.ToString());
+               {
+                  newValidatedPredefinedType =
+                     IFCValidateEntry.GetValidIFCPredefinedTypeType(value, "NOTDEFINED",
+                     m_ExportType.ToString());
+               }
             }
             m_ValidatedPredefinedType = newValidatedPredefinedType;
          }
@@ -244,11 +254,12 @@ namespace Revit.IFC.Export.Utility
                m_ExportType = entityType;
             else
             {
-               // If the type name is not found, likely it does not have the pair at this level, needs to get the supertype of the instance to get the type pair
+               // If the type name is not found, likely it does not have the pair at this level,
+               // needs to get the supertype of the instance to get the type pair
                IList<IfcSchemaEntityNode> instNodes = IfcSchemaEntityTree.FindAllSuperTypes(ifcVersion, entityTypeStr, "IfcProduct", "IfcGroup");
                foreach (IfcSchemaEntityNode instNode in instNodes)
                {
-                  typeName = instNode.Name + "Type";
+                  typeName = IfcSchemaEntityTree.GetTypeNameFromInstanceName(instNode.Name);
                   IfcSchemaEntityNode node = theTree.Find(typeName);
                   if (node == null)
                      node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(ifcVersion, typeName);

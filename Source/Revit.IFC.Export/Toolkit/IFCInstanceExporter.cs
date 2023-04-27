@@ -132,7 +132,7 @@ namespace Revit.IFC.Export.Toolkit
                IFCEntityType entTypeTest, entTypeUse;
                if (Enum.TryParse(entityTypeStr, true, out entTypeTest))    //check for valid IFC entity type (combined)
                {
-                  if (IFCCompatibilityType.checkCompatibleType(entTypeTest, out entTypeUse))  //check whether it is MEP type that needs to create the supertype in IFC2x-
+                  if (IFCCompatibilityType.CheckCompatibleType(entTypeTest, out entTypeUse))  //check whether it is MEP type that needs to create the supertype in IFC2x-
                      return entTypeUse.ToString();
                   else
                      return entityTypeStr;
@@ -1855,23 +1855,20 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="longName">The long name.</param>
       /// <param name="compositionType">The composition type.</param>
       /// <param name="internalOrExternal">Specify if it is an exterior space (i.e. part of the outer space) or an interior space.</param>
+      /// <param name="predefinedType">The predefined type of the space (for IFC4+).</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateSpace(ExporterIFC exporterIFC, Element element, string guid, IFCAnyHandle ownerHistory,
           IFCAnyHandle objectPlacement, IFCAnyHandle representation,
-          IFCElementComposition compositionType, IFCInternalOrExternal internalOrExternal)
+          IFCElementComposition compositionType, IFCInternalOrExternal internalOrExternal, string predefinedType)
       {
-         string strSpaceNumber = null;
-         string strSpaceName = null;
-         string strSpaceDesc = null;
+         ParameterUtil.GetStringValueFromElement(element, BuiltInParameter.ROOM_NUMBER, 
+            out string strSpaceNumber);
 
-         if (ParameterUtil.GetStringValueFromElement(element, BuiltInParameter.ROOM_NUMBER, out strSpaceNumber) == null)
-            strSpaceNumber = null;
+         ParameterUtil.GetStringValueFromElement(element, BuiltInParameter.ROOM_NAME,
+            out string strSpaceName);
 
-         if (ParameterUtil.GetStringValueFromElement(element, BuiltInParameter.ROOM_NAME, out strSpaceName) == null)
-            strSpaceName = null;
-
-         if (ParameterUtil.GetStringValueFromElement(element, BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS, out strSpaceDesc) == null)
-            strSpaceDesc = null;
+         ParameterUtil.GetStringValueFromElement(element, BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS, 
+            out string strSpaceDesc);
 
          IFCAnyHandle space = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcSpace, element);
          string name = NamingUtil.GetNameOverride(space, element, strSpaceNumber);
@@ -1879,19 +1876,24 @@ namespace Revit.IFC.Export.Toolkit
          string longName = NamingUtil.GetLongNameOverride(space, element, strSpaceName);
          string objectType = NamingUtil.GetObjectTypeOverride(element, null);
          double? spaceElevationWithFlooring = null;
-         double elevationWithFlooring = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcElevationWithFlooring", out elevationWithFlooring) != null)
+         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcElevationWithFlooring",
+            out double elevationWithFlooring) != null)
+         {
             spaceElevationWithFlooring = UnitUtil.ScaleLength(elevationWithFlooring);
+         }
+
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            // In IFC4 the position of the attribute is replaced with PreDefinedType
-            IFCAnyHandleUtil.SetAttribute(space, "PreDefinedType", IFC4.IFCSpaceType.SPACE);
+            IFCAnyHandleUtil.SetAttribute(space, "PreDefinedType", predefinedType);
          }
          else
          {
-            // set this attribute only when it is exported to format PRIOR to IFC4. The attribute has been removed/replaced in IFC4 and the property is moved to property set Pset_SpaceCommon.IsExternal
+            // set this attribute only when it is exported to format PRIOR to IFC4.
+            // The attribute has been removed/replaced in IFC4 and the property is moved to
+            // property set Pset_SpaceCommon.IsExternal
             IFCAnyHandleUtil.SetAttribute(space, "InteriorOrExteriorSpace", internalOrExternal);
          }
+
          IFCAnyHandleUtil.SetAttribute(space, "ElevationWithFlooring", spaceElevationWithFlooring);
          SetSpatialStructureElement(space, element, guid, ownerHistory, name, desc, objectType, objectPlacement, representation, longName, compositionType);
 
@@ -2653,7 +2655,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="unitType">The derived unit type.</param>
       /// <param name="userDefinedType">The word, or group of words, by which the derived unit is referred to.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateDerivedUnit(IFCFile file, ISet<IFCAnyHandle> elements, IFCDerivedUnitEnum unitType,
+      public static IFCAnyHandle CreateDerivedUnit(IFCFile file, ISet<IFCAnyHandle> elements, Enum unitType,
           string userDefinedType)
       {
          IFCAnyHandle derivedUnit = CreateInstance(file, IFCEntityType.IfcDerivedUnit, null);
@@ -3705,7 +3707,17 @@ namespace Revit.IFC.Export.Toolkit
             SetProduct(genericIFCEntity, element, guid, ownerHistory, null, null, null, objectPlacement, representation);
 
          SetPredefinedType(genericIFCEntity, entityToCreate);
-  
+
+         // Special cases here.  TODO: Provide some interface to pass these in.
+         switch (entityToCreate.ExportInstance)
+         {
+            case IFCEntityType.IfcElementAssembly:
+               {
+                  IFCAnyHandleUtil.SetAttribute(genericIFCEntity, "AssemblyPlace", IFCAssemblyPlace.NotDefined);
+                  break;
+               }
+         }
+
          return genericIFCEntity;
       }
 
@@ -3999,12 +4011,17 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="objectType">The object type.</param>
       /// <param name="objectPlacement">The object placement.</param>
       /// <param name="representation">The geometric representation of the entity.</param>
+      /// <param name="predefinedType">The predefined type, for IFC4x3+.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateAnnotation(ExporterIFC exporterIFC, Element element, string guid, IFCAnyHandle ownerHistory,
-          IFCAnyHandle objectPlacement, IFCAnyHandle representation)
+          IFCAnyHandle objectPlacement, IFCAnyHandle representation, string predefinedType)
       {
          IFCAnyHandle annotation = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcAnnotation, element);
          SetProduct(annotation, element, guid, ownerHistory, null, null, null, objectPlacement, representation);
+         if (predefinedType != null && ExporterCacheManager.ExportOptionsCache.ExportAs4x3)
+         {
+            IFCAnyHandleUtil.SetAttribute(annotation, "PredefinedType", predefinedType, true);
+         }
          return annotation;
       }
 
@@ -5841,8 +5858,14 @@ namespace Revit.IFC.Export.Toolkit
           string name, string description, IList<IFCData> enumerationValues, IFCAnyHandle enumerationReference)
       {
          IFCAnyHandle propertyEnumeratedValue = CreateInstance(file, IFCEntityType.IfcPropertyEnumeratedValue, null);
-         if (enumerationValues != null && enumerationValues.Count > 0)
+         if ((enumerationValues?.Count ?? 0) > 0)
+         {
             IFCAnyHandleUtil.SetAttribute(propertyEnumeratedValue, "EnumerationValues", enumerationValues);
+         }
+         else 
+         {
+            throw new InvalidOperationException("Trying to create IfcPropertyEnumeratedValue with no values.");
+         }
          IFCAnyHandleUtil.SetAttribute(propertyEnumeratedValue, "EnumerationReference", enumerationReference);
          SetProperty(propertyEnumeratedValue, name, description);
          return propertyEnumeratedValue;
@@ -5950,13 +5973,17 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="month">The month in the date.</param>
       /// <param name="year">The year in the date.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateCalendarDate(IFCFile file, int day, int month, int year)
+      private static IFCAnyHandle CreateCalendarDate(IFCFile file, int day, int month, int year)
       {
-         IFCAnyHandle calendarDate = CreateInstance(file, IFCEntityType.IfcCalendarDate, null);
-         IFCAnyHandleUtil.SetAttribute(calendarDate, "DayComponent", day);
-         IFCAnyHandleUtil.SetAttribute(calendarDate, "MonthComponent", month);
-         IFCAnyHandleUtil.SetAttribute(calendarDate, "YearComponent", year);
-         return calendarDate;
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            return null;
+
+         IFCAnyHandle date = CreateInstance(file, IFCEntityType.IfcCalendarDate, null);
+
+         IFCAnyHandleUtil.SetAttribute(date, "DayComponent", day);
+         IFCAnyHandleUtil.SetAttribute(date, "MonthComponent", month);
+         IFCAnyHandleUtil.SetAttribute(date, "YearComponent", year);
+         return date;
       }
 
       /// <summary>
@@ -5965,17 +5992,41 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="file">The file.</param>
       /// <param name="source">The source of the classification.</param>
       /// <param name="edition">The edition of the classification system.</param>
-      /// <param name="editionDate">The date associated with this edition of the classification system.</param>
+      /// <param name="editionDateDay">The Day part of the date associated with this edition of the classification system.</param>
+      /// <param name="editionDateMonth">The Month part of the date associated with this edition of the classification system.</param>
+      /// <param name="editionDateYear">The Year part of the date associated with this edition of the classification system.</param>
       /// <param name="name">The name of the classification.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateClassification(IFCFile file, string source, string edition, IFCAnyHandle editionDate,
-         string name)
+      public static IFCAnyHandle CreateClassification(IFCFile file, string source, string edition, int editionDateDay, int editionDateMonth, int editionDateYear,
+         string name, string description, string location)
       {
          IFCAnyHandle classification = CreateInstance(file, IFCEntityType.IfcClassification, null);
          IFCAnyHandleUtil.SetAttribute(classification, "Source", source);
          IFCAnyHandleUtil.SetAttribute(classification, "Edition", edition);
-         IFCAnyHandleUtil.SetAttribute(classification, "EditionDate", editionDate);
          IFCAnyHandleUtil.SetAttribute(classification, "Name", name);
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         {
+            if (editionDateDay > 0 && editionDateMonth > 0 && editionDateYear > 0)
+            {
+               IFCAnyHandle editionDate = CreateCalendarDate(file, editionDateDay, editionDateMonth, editionDateYear);
+               IFCAnyHandleUtil.SetAttribute(classification, "EditionDate", editionDate);
+            }
+         }
+         else
+         {
+            if (editionDateDay > 0 && editionDateMonth > 0 && editionDateYear > 0)
+            {
+               string editionDate = editionDateYear.ToString("D4") + "-" + editionDateMonth.ToString("D2") + "-" + editionDateDay.ToString("D2");
+               IFCAnyHandleUtil.SetAttribute(classification, "EditionDate", editionDate);
+            }
+
+            if (!string.IsNullOrEmpty(description))
+               IFCAnyHandleUtil.SetAttribute(classification, "Description", description);
+
+            string attributeName = (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3) ? "Location" : "Specification";
+            if (!string.IsNullOrEmpty(location))
+               IFCAnyHandleUtil.SetAttribute(classification, attributeName, location);
+         }
          return classification;
       }
 

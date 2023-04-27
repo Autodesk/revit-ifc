@@ -97,7 +97,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             }
             else
             {
-               success = (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, RevitParameterName, parentEntry.IgnoreInternalValue, out dblVal) != null);
+               success = (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, RevitParameterName, out dblVal) != null);
                if (!success && RevitBuiltInParameter != BuiltInParameter.INVALID)
                   success = (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, RevitBuiltInParameter, out dblVal) != null);
                if (success)

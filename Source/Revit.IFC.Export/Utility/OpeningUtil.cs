@@ -79,9 +79,10 @@ namespace Revit.IFC.Export.Utility
 
                // Openings shouldn't have surface styles for their geometry.
                HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { extrusionHandle };
-               
-               IFCAnyHandle representationHnd = RepresentationUtil.CreateSweptSolidRep(exporterIFC,
-                  element, categoryId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null);
+
+               IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
+               IFCAnyHandle representationHnd = RepresentationUtil.CreateSweptSolidRep(
+                  exporterIFC, element, categoryId, contextOfItems, bodyItems, null, null);
                IList<IFCAnyHandle> representations = IFCAnyHandleUtil.IsNullOrHasNoValue(representationHnd) ?
                   null : new List<IFCAnyHandle>() { representationHnd };
 
@@ -404,7 +405,7 @@ namespace Revit.IFC.Export.Utility
 
          IFCAnyHandle openingPlacement = extrusionCreationData.GetLocalPlacement();
          IFCAnyHandle hostObjPlacementHnd = IFCAnyHandleUtil.GetObjectPlacement(hostObjHnd);
-         Transform relTransform = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(openingPlacement, hostObjPlacementHnd);
+         Transform relTransform = ExporterUtil.GetRelativePlacementOffsetTransformWithoutDirFix(exporterIFC, openingPlacement, hostObjPlacementHnd);
 
          openingPlacement = ExporterUtil.CreateLocalPlacement(file, hostObjPlacementHnd,
              relTransform.Origin, relTransform.BasisZ, relTransform.BasisX);

@@ -207,11 +207,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="unscaledTrfOrig">The scaled local placement origin.</param>
       /// <param name="locationCurve">The optional location curve.</param>
       /// <returns>The transform corresponding to the movement, if any.</returns>
-      public Transform InitializeFromBoundingBox(ExporterIFC exporterIFC, BoundingBoxXYZ bbox, IFCExportBodyParams ecData, LocationCurve locationCurve, out XYZ unscaledTrfOrig)
+      public Transform InitializeFromBoundingBox(ExporterIFC exporterIFC, BoundingBoxXYZ bbox, IFCExportBodyParams ecData, Location location, out XYZ unscaledTrfOrig)
       {
          unscaledTrfOrig = new XYZ();
          if (ecData == null)
             return null;
+
+         LocationCurve locationCurve = location as LocationCurve;
+         LocationPoint locationPoint = location as LocationPoint;
 
          Transform trf = Transform.Identity;
          IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
@@ -241,6 +244,10 @@ namespace Revit.IFC.Export.Toolkit
 
                if (angle > 0.5 * Math.PI && angle < Math.PI || angle > -0.5 * Math.PI && angle < 0)
                   corner = new XYZ(corner.X, corner.Y, bbox.Max.Z);
+            }
+            else if (locationPoint != null)
+            {
+               corner = new XYZ(0.0, 0.0, locationPoint.Point.Z);
             }
 
             XYZ scaledOrig = UnitUtil.ScaleLength(corner);

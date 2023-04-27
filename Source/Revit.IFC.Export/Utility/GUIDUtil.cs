@@ -258,13 +258,14 @@ namespace Revit.IFC.Export.Utility
 
       private static GUIDString CreateInternal(bool useInstanceGeometry,
       Element instanceOrSymbol, IFCExportInfoPair exportInfoPair, bool isFlipped,
-      ElementId levelId, int? index, bool useEntityType)
+      ElementId levelId, int? index, bool useEntityType, ElementId materialId)
       {
          int subElementIndex = ExporterStateManager.GetCurrentRangeIndex();
          bool hasLevelId = (levelId != ElementId.InvalidElementId);
+         bool hasMaterialId = (materialId != ElementId.InvalidElementId);
 
          // Legacy GUIDs.
-         if (useInstanceGeometry && !useEntityType && !hasLevelId)
+         if (useInstanceGeometry && !useEntityType && !hasLevelId && !hasMaterialId)
          {
             if (subElementIndex == 0)
                return CreateGUIDString(instanceOrSymbol, (int)IFCFamilyInstanceSubElements.InstanceAsType);
@@ -279,7 +280,7 @@ namespace Revit.IFC.Export.Utility
          {
             hash = "Flipped: " + isFlipped.ToString();
          }
-         else if (useInstanceGeometry || useEntityType || (subElementIndex > 0) || hasLevelId)
+         else if (useInstanceGeometry || useEntityType || (subElementIndex > 0) || hasLevelId || hasMaterialId)
          {
             hash = string.Empty;
          }
@@ -303,6 +304,9 @@ namespace Revit.IFC.Export.Utility
             if (index.HasValue)
                hash += " Copy: " + index.ToString();
 
+            if (hasMaterialId)
+               hash += " Material: " + materialId.ToString();
+
             return CreateGUIDString(instanceOrSymbol, hash);
          }
 
@@ -314,9 +318,10 @@ namespace Revit.IFC.Export.Utility
       {
          bool isFlipped = typeKey?.IsFlipped ?? false;
          ElementId levelId = typeKey?.LevelId ?? ElementId.InvalidElementId;
+         ElementId materialId = typeKey?.MaterialId ?? ElementId.InvalidElementId;
 
          GUIDString guidString = CreateInternal(useInstanceGeometry, instanceOrSymbol,
-            exportInfoPair, isFlipped, levelId, index, false);
+            exportInfoPair, isFlipped, levelId, index, false, materialId);
 
          // We want to preserve existing GUIDs, so we will only use entityType if there is a
          // conflict.
@@ -324,7 +329,7 @@ namespace Revit.IFC.Export.Utility
             return guidString;
 
          return CreateInternal(useInstanceGeometry, instanceOrSymbol,
-               exportInfoPair, isFlipped, levelId, index, true);
+               exportInfoPair, isFlipped, levelId, index, true, materialId);
       }
 
       /// <summary>
