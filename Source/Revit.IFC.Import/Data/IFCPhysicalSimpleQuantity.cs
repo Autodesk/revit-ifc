@@ -148,6 +148,7 @@ namespace Revit.IFC.Import.Data
          switch (type)
          {
             case IFCDataPrimitiveType.Double:
+            case IFCDataPrimitiveType.Number:
                baseValue = Value.AsDouble();
                break;
             case IFCDataPrimitiveType.Integer:

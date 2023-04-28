@@ -64,12 +64,20 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                return true;
             }
          }
-
          // Work for Window element
-         if (categoryId == new ElementId(BuiltInCategory.OST_Windows))
+         else if (categoryId == new ElementId(BuiltInCategory.OST_Windows))
          {
             if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_HEIGHT, out height) != null) &&
                   (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_WIDTH, out width) != null))
+            {
+               m_Area = UnitUtil.ScaleArea(height * width);
+               return true;
+            }
+         }
+         else if (categoryId == new ElementId(BuiltInCategory.OST_Ceilings) || categoryId == new ElementId(BuiltInCategory.OST_Floors)
+            || element is Floor)
+         {
+            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED, out height) != null)
             {
                m_Area = UnitUtil.ScaleArea(height * width);
                return true;
@@ -85,10 +93,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // Work for Space element or other element that has extrusion
-         if (extrusionCreationData == null)
-            return false;
-
-         m_Area = extrusionCreationData.ScaledArea;
+         m_Area = extrusionCreationData?.ScaledArea ?? 0.0;
          return m_Area > MathUtil.Eps() * MathUtil.Eps();
       }
 

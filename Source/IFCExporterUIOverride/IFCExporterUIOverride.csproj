@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BIM.IFC.Export.UI</RootNamespace>
-    <AssemblyName>IFCExportUIOverride</AssemblyName>
+    <AssemblyName>IFCExporterUIOverride</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>

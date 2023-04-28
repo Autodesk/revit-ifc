@@ -399,7 +399,7 @@ namespace Revit.IFC.Export.Utility
          {
             foreach (var propertySetToCreate in PropertySetsToCreate)
             {
-               PropertyUtil.CreateInternalRevitPropertySets(ExporterIFC, propertySetToCreate.Key, propertySetToCreate.Value);
+               PropertyUtil.CreateInternalRevitPropertySets(ExporterIFC, propertySetToCreate.Key, propertySetToCreate.Value, false);
             }
 
             foreach (var elementTypeHandle in ElementTypeHandles)

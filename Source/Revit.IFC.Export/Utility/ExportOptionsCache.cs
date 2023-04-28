@@ -1086,12 +1086,14 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="idx">The index</param>
       /// <returns>The transform corresponding to the given index, or the Identity transform if out of range.</returns>
-      public Transform GetLinkInstanceTransform(int idx)
+      public Transform GetUnscaledLinkInstanceTransform(int idx)
       {
          if (idx < 0 || idx >= GetNumLinkInstanceInfos())
             return Transform.Identity;
 
-         return LinkInstanceInfos[idx].Item2;
+         Transform unscaledTransform = new Transform(LinkInstanceInfos[idx].Item2);
+         unscaledTransform.Origin = UnitUtil.UnscaleLength(unscaledTransform.Origin);
+         return unscaledTransform;
       }
 
 

@@ -19,11 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Export.Exporter.PropertySet;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -58,9 +55,9 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Clears parameter cache.
+      /// Clears the parameter value caches.
       /// </summary>
-      public static void ClearParameterCache()
+      public static void ClearParameterValueCaches()
       {
          m_NonIFCParameters.Clear();
          m_IFCParameters.Clear();
@@ -183,47 +180,20 @@ namespace Revit.IFC.Export.Utility
       }
 
       public static Parameter GetDoubleValueFromElement(Element element, string propertyName,
-         bool disallowInternalMatch, out double propertyValue)
+         out double propertyValue)
       {
-         ForgeTypeId unitType;
-         Parameter parameter = GetDoubleValueFromElement(element, propertyName, out propertyValue, out unitType);
-         if (parameter == null || (disallowInternalMatch && (parameter.Definition is InternalDefinition)))
-            return null;
-
-         return parameter;
-      }
-
-      public static Parameter GetDoubleValueFromElement(Element element, string propertyName, out double propertyValue)
-      {
-         return GetDoubleValueFromElement(element, propertyName, false, out propertyValue);
+         return GetDoubleValueFromElement(element, propertyName, out propertyValue, out _);
       }
 
       public static Parameter GetDoubleValueFromElement(Element element, ForgeTypeId group, string propertyName, 
-         bool disallowInternalMatch, out double propertyValue)
+         out double propertyValue)
       {
-         ForgeTypeId unitType;
-         Parameter parameter = GetDoubleValueFromElement(element, group, propertyName, out propertyValue, out unitType);
-         if (parameter == null || (disallowInternalMatch && (parameter.Definition is InternalDefinition)))
-            return null;
-
-         return parameter;
-      }
-
-      public static Parameter GetDoubleValueFromElement(Element element, ForgeTypeId group, string propertyName, out double propertyValue)
-      {
-         return GetDoubleValueFromElement(element, group, propertyName, false, out propertyValue);
+         return GetDoubleValueFromElement(element, group, propertyName, out propertyValue, out _);
       }
 
       private static bool IsInputValid(Element element, string propertyName)
       {
-         if (String.IsNullOrEmpty(propertyName))
-            //throw new ArgumentException("It is null or empty.", "propertyName");
-            return false;
-
-         if (element == null)
-            return false;
-
-         return true;
+         return !string.IsNullOrEmpty(propertyName) && element != null;
       }
 
       private static Parameter GetParameterValue (Element element, Parameter parameter, string propertyName, out double propertyValue, out ForgeTypeId unitType)
@@ -253,7 +223,7 @@ namespace Revit.IFC.Export.Utility
                         unitType = pResv.UnitType;
                         return parameter;
                      }
-                     return Double.TryParse(propValue, out propertyValue) ? parameter : null;
+                     return double.TryParse(propValue, out propertyValue) ? parameter : null;
                   }
             }
          }
@@ -461,7 +431,8 @@ namespace Revit.IFC.Export.Utility
       /// <param name="builtInParameter">The built-in parameter.</param>
       /// <param name="propertyValue">The output property value.</param>
       /// <returns>The parameter, or null if not found.</returns>
-      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, BuiltInParameter builtInParameter, out double propertyValue)
+      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, 
+         BuiltInParameter builtInParameter, out double propertyValue)
       {
          propertyValue = 0.0;
          if (element == null)
@@ -486,14 +457,10 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="element">The element, which can be null.</param>
       /// <param name="propertyName">The property name.</param>
-      /// <param name="disallowInternalMatch">If true, don't match an internal Revit parameter of the same name.</param>
       /// <param name="propertyValue">The output property value.</param>
       /// <returns>The parameter, or null if not found.</returns>
-      /// <remarks>"disallowInternalMatch" is intended to be used primarily for quantities, where
-      /// the internal Revit parameter may have the same name, but a different calculation, than
-      /// the IFC parameter.</remarks>
-      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, string propertyName, 
-         bool disallowInternalMatch, out double propertyValue)
+      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, 
+         string propertyName, out double propertyValue)
       {
          propertyValue = 0.0;
          if (element == null || string.IsNullOrEmpty(propertyName))
@@ -501,13 +468,8 @@ namespace Revit.IFC.Export.Utility
 
          Parameter parameter = GetDoubleValueFromElement(element, propertyName, out propertyValue);
          if (parameter != null)
-         {
-            if (disallowInternalMatch && parameter.Definition is InternalDefinition)
-               parameter = null;
-            else
-               return parameter;
-         }
-
+            return parameter;
+         
          Document document = element.Document;
          ElementId typeId = element.GetTypeId();
 
@@ -530,19 +492,20 @@ namespace Revit.IFC.Export.Utility
       /// <param name="propertyValue">The output property value.</param>
       /// <param name="alternateNames">the variable array of alternate names mainly to support backward compatibility</param>
       /// <returns>The parameter, or null if not found.</returns>
-      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, string propertyName, out double propertyValue, params string[] alternateNames)
+      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, 
+         string propertyName, out double propertyValue, params string[] alternateNames)
       {
          propertyValue = 0.0;
          if (string.IsNullOrEmpty(propertyName))
             return null;
 
          Parameter parameter;
-         parameter = GetDoubleValueFromElementOrSymbol(element, propertyName, false, out propertyValue);
+         parameter = GetDoubleValueFromElementOrSymbol(element, propertyName, out propertyValue);
          if (parameter == null && alternateNames != null && alternateNames.Length > 0)
          {
             foreach (string altName in alternateNames)
             {
-               parameter = GetDoubleValueFromElementOrSymbol(element, altName, false, out propertyValue);
+               parameter = GetDoubleValueFromElementOrSymbol(element, altName, out propertyValue);
                if (parameter != null)
                   break;
             }
@@ -656,7 +619,11 @@ namespace Revit.IFC.Export.Utility
          foreach (ParameterElementCache otherCache in m_NonIFCParameters[elementId].Values)
          {
             if (otherCache.ParameterCache.TryGetValue(cleanPropertyName, out parameter))
-               return parameter;
+            {
+               parameter = ValidateParameter(parameter);
+               if (parameter != null)
+                  return parameter;
+            }
          }
 
          return parameter;
@@ -923,6 +890,23 @@ namespace Revit.IFC.Export.Utility
 
          return getParameterByNameFromCache(elemId, propertyName);
       }
+
+      private static HashSet<BuiltInParameter> MisleadingParameters { get; } =
+         new HashSet<BuiltInParameter>()
+         {
+            BuiltInParameter.ANALYTICAL_ROUGHNESS,
+            BuiltInParameter.DUCT_ROUGHNESS,
+            BuiltInParameter.PIPE_ROUGHNESS,
+            BuiltInParameter.ELEM_CATEGORY_PARAM
+         };
+
+      internal static Parameter ValidateParameter(Parameter parameter)
+      {
+         if (MisleadingParameters.Contains((BuiltInParameter)parameter.Id.Value))
+            return null;
+         return parameter;
+      }
+
       /// <summary>
       /// Gets the parameter by name from an element for a specific parameter group.
       /// </summary>
@@ -930,7 +914,8 @@ namespace Revit.IFC.Export.Utility
       /// <param name="group">The parameter group.</param>
       /// <param name="propertyName">The property name.</param>
       /// <returns>The Parameter.</returns>
-      internal static Parameter GetParameterFromName(ElementId elemId, ForgeTypeId group, string propertyName)
+      internal static Parameter GetParameterFromName(ElementId elemId, ForgeTypeId group, 
+         string propertyName)
       {
          if (!m_IFCParameters.ContainsKey(elemId))
             CacheParametersForElement(elemId);

@@ -607,15 +607,15 @@ namespace Revit.IFC.Export.Exporter
       private static void ExportConnectorProperties(ExporterIFC exporterIFC, Connector connector,
          IFCAnyHandle handle)
       {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
+            return;
+         
          IFCFile file = exporterIFC.GetFile();
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-            IList<IList<PropertySetDescription>> psetsToCreate = ExporterCacheManager.ParameterCache.PropertySets;
-            if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
-               return;
-
-            IList<PropertySetDescription> currPsetsToCreate = ExporterUtil.GetCurrPSetsToCreate(handle, psetsToCreate);
+            IList<PropertySetDescription> currPsetsToCreate =
+               ExporterUtil.GetCurrPSetsToCreate(handle, PSetsToProcess.Both); 
             if (currPsetsToCreate.Count == 0)
                return;
 

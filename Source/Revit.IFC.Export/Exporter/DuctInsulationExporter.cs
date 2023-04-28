@@ -17,21 +17,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
-using Revit.IFC.Export.Toolkit;
-using Revit.IFC.Export.Exporter.PropertySet;
-using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Exporter
 {
    /// <summary>
-   /// Provides methods to export a Revit element as IfcCovering of type INSULATION.
+   /// Provides methods to export a Revit insulation element.
    /// </summary>
    class DuctInsulationExporter : InsulationExporter
    {

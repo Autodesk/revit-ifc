@@ -285,11 +285,11 @@ namespace Revit.IFC.Export.Utility
       /// <returns>True if equal, false otherwise.</returns>
       private static bool IsEqualToTypeName(String name, String baseName)
       {
-         if (String.Compare(name, baseName, true) == 0)
+         if (string.Compare(name, baseName, true) == 0)
             return true;
 
-         String typeName = baseName + "Type";
-         return (String.Compare(name, typeName, true) == 0);
+         string typeName = IfcSchemaEntityTree.GetTypeNameFromInstanceName(baseName);
+         return (string.Compare(name, typeName, true) == 0);
       }
 
       /// <summary>

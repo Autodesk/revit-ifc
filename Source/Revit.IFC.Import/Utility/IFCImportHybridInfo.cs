@@ -24,9 +24,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Import.Data;
-using Revit.IFC.Common.Enums;
 
 
 namespace Revit.IFC.Import.Utility
@@ -73,6 +73,18 @@ namespace Revit.IFC.Import.Utility
       /// IFC File being imported.
       /// </summary>
       public string IfcInputFile { get; set; } = null;
+
+      /// <summary>
+      /// Transform applied to all Elements created via open-source processing within Revit.
+      /// </summary>
+      public Transform LargeCoordinateTransform { get; set; } = Transform.Identity;
+
+      /// <summary>
+      /// Keeps track of one-to-many mapping of entities that will result in container to sub-Element relationships.
+      /// Key:  stepId of the container entity.
+      /// Value:  Set of IfcObjectDefinition entities that result in sub-Elements.
+      /// </summary>
+      public IDictionary<int, HashSet<IFCObjectDefinition>> ContainerMap { get; set; } = null;
 
       /// <summary>
       /// Internal reference to the class that is responsible for doing the actual import and Map creation.
@@ -129,14 +141,11 @@ namespace Revit.IFC.Import.Utility
             Importer.TheLog.LogWarning(-1, "Hybrid IFC Import:  Number of Element / IFC Guid associations do not match number of imported Elements.", false);
          }
 
-         if (Importer.TheOptions.VerboseLogging)
-         {
-            Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import:  Start of Logging detailed Information about AnyCAD Import ---", false);
-            Importer.TheLog.LogWarning(-1, "Hybrid IFC Import:  If an IfcGuid does not appear in the following list, then it will fallback to Revit processing ---", false);
-            LogImportedElementsDetailed();
-            LogHybridMapDetailed();
-            Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import: End of Logging detailed Information about AnyCAD Import ---", false);
-         }
+         Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import:  Start of Logging detailed Information about AnyCAD Import ---", false);
+         Importer.TheLog.LogComment(-1, "Hybrid IFC Import:  If an IfcGuid does not appear in the following list, then it will fallback to Revit processing ---", false);
+         LogImportedElementsDetailed();
+         LogHybridMapDetailed();
+         Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: End of Logging detailed Information about AnyCAD Import ---", false);
       }
 
       /// <summary>
@@ -149,27 +158,27 @@ namespace Revit.IFC.Import.Utility
       /// </remarks>
       public void LogImportedElementsDetailed()
       {
-         Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import: Start Imported Element Details. ---", false);
+         Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: Start Imported Element Details. ---", false);
          foreach (ElementId elementId in HybridElements)
          {
             DirectShape shape = IfcDocument?.GetElement(elementId) as DirectShape;
             if (shape == null)
             {
-               Importer.TheLog.LogWarning(-1, $"Hybrid IFC Import: ElementId Imported, but no Element exists:  {elementId}.", false);
+               Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: ElementId Imported, but no Element exists:  {elementId}.", false);
                continue;
             }
 
             ElementId directShapeType = shape.TypeId;
             if ((directShapeType ?? ElementId.InvalidElementId) == ElementId.InvalidElementId)
             {
-               Importer.TheLog.LogWarning(-1, $"Hybrid IFC Import: DirectShape Imported with no DirectShapeType: {elementId}.", false);
+               Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: DirectShape Imported with no DirectShapeType: {elementId}.", false);
             }
             else
             {
-               Importer.TheLog.LogWarning(-1, $"Hybrid IFC Import: (DirectShape, DirectShapeType) Imported: ({elementId}, {directShapeType}).", false);
+               Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: (DirectShape, DirectShapeType) Imported: ({elementId}, {directShapeType}).", false);
             }
          }
-         Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import: End Imported Element Details. ---", false);
+         Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: End Imported Element Details. ---", false);
       }
 
       /// <summary>
@@ -177,16 +186,16 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public void LogHybridMapDetailed ()
       {
-         Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import: Start Hybrid Map Details. ---", false);
+         Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: Start Hybrid Map Details. ---", false);
          if (HybridMap == null)
          {
-            Importer.TheLog.LogWarning(-1, "HybridIFCImport:  Hybrid Map not created during import.", false);
+            Importer.TheLog.LogComment(-1, "HybridIFCImport:  Hybrid Map not created during import.", false);
          }
          else
          {
             if (HybridMap.Count == 0)
             {
-               Importer.TheLog.LogWarning(-1, "HybridIFCImport:  Hybrid Map created, but contains no entries.", false);
+               Importer.TheLog.LogComment(-1, "HybridIFCImport:  Hybrid Map created, but contains no entries.", false);
             }
             else
             {
@@ -196,24 +205,24 @@ namespace Revit.IFC.Import.Utility
                   ElementId elementId = mapEntry.Value;
                   if (!string.IsNullOrEmpty(ifcGuid) && ((elementId ?? ElementId.InvalidElementId) != ElementId.InvalidElementId))
                   {
-                     Importer.TheLog.LogWarning(-1, $"Hybrid IFC Import: Map Entry Created (IFC Guid, ElementId):  ({mapEntry.Key}, {mapEntry.Value})", false);
+                     Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: Map Entry Created (IFC Guid, ElementId):  ({mapEntry.Key}, {mapEntry.Value})", false);
                      continue;
                   }
 
                   if (!string.IsNullOrEmpty(ifcGuid))
                   {
-                     Importer.TheLog.LogWarning(-1, "Hybrid IFC Import:  Hybrid Map entry has no IFC Guid.", false);
+                     Importer.TheLog.LogComment(-1, "Hybrid IFC Import:  Hybrid Map entry has no IFC Guid.", false);
                      continue;
                   }
 
                   if ((elementId ?? ElementId.InvalidElementId) != ElementId.InvalidElementId)
                   {
-                     Importer.TheLog.LogWarning(-1, $"Hybrid IFC Import:  Hybrid Map entry has no ElementId for {ifcGuid}", false);
+                     Importer.TheLog.LogComment(-1, $"Hybrid IFC Import:  Hybrid Map entry has no ElementId for {ifcGuid}", false);
                   }
                }
             }
          }
-         Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import: End Hybrid Map Details. ---", false);
+         Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: End Hybrid Map Details. ---", false);
       }
 
       /// <summary>
@@ -221,27 +230,27 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public void LogElementsToDeleteDetailed ()
       {
-         Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import: Start Elements to be deleted Details. ---", false);
+         Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: Start Elements to be deleted Details. ---", false);
          foreach (ElementId elementId in ElementsToDelete)
          {
             DirectShape shape = IfcDocument?.GetElement(elementId) as DirectShape;
             if (shape == null)
             {
-               Importer.TheLog.LogWarning(-1, $"Hybrid IFC Import: ElementId identified to be deleted, but no Element exists:  {elementId}.", false);
+               Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: ElementId identified to be deleted, but no Element exists:  {elementId}.", false);
                continue;
             }
 
             ElementId directShapeType = shape.TypeId;
             if ((directShapeType ?? ElementId.InvalidElementId) == ElementId.InvalidElementId)
             {
-               Importer.TheLog.LogWarning(-1, $"Hybrid IFC Import: DirectShape identified to be deleted with no DirectShapeType: {elementId}.", false);
+               Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: DirectShape identified to be deleted with no DirectShapeType: {elementId}.", false);
             }
             else
             {
                Importer.TheLog.LogWarning(-1, $"Hybrid IFC Import: (DirectShape, DirectShapeType) indentified to be deleted: ({elementId}, {directShapeType}).", false);
             }
          }
-         Importer.TheLog.LogWarning(-1, "--- Hybrid IFC Import: End Elements to be deleted Details. ---", false);
+         Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: End Elements to be deleted Details. ---", false);
       }
 
       /// <summary>
@@ -362,6 +371,38 @@ namespace Revit.IFC.Import.Utility
       }
 
       /// <summary>
+      /// Creates a DirectShape simply to contain Geometry copied from other Elements.
+      /// The DirectShape won't have any Geometry at this time, but it will be put into the HybridMap.
+      /// </summary>
+      /// <param name="ifcProduct">IfcProduct entity corresponding to empty DirectShape.</param>
+      /// <returns>ElementId of new DirectShape if successful, ElementId.InvalidElementId otherwise.</returns>
+      public ElementId CreateEmptyContainer(IFCProduct ifcProduct)
+      {
+         // If HybridMap is null or empty, no other Elements were imported using the ATF Pipeline, so this doesn't need to be created.
+         if ((ifcProduct == null) || ((HybridMap?.Count ?? 0) == 0))
+         {
+            return ElementId.InvalidElementId;
+         }
+
+         // If Container is already in HybridMAp, DirectShape has already been created.
+         ElementId containerElementId;
+         if (HybridMap.TryGetValue(ifcProduct.GlobalId, out containerElementId))
+         {
+            return containerElementId;
+         }
+
+         DirectShape emptyContainerDS = IFCElementUtil.CreateElement(IfcDocument, ifcProduct.CategoryId, ifcProduct.GlobalId, null, ifcProduct.Id, ifcProduct.EntityType);
+         if (emptyContainerDS == null)
+         {
+            return ElementId.InvalidElementId;
+         }
+
+         HybridMap.Add(ifcProduct.GlobalId, emptyContainerDS.Id);
+         
+         return emptyContainerDS.Id;
+      }
+
+      /// <summary>
       /// This will create a container DirectShape to represent an IFCGroup, which normally has neither geometry
       /// nor a Revit Element associated with it.
       /// </summary>
@@ -419,52 +460,432 @@ namespace Revit.IFC.Import.Utility
       }
 
       /// <summary>
-      /// Handles Special-cases Categories with Hybrid IFC Import.
-      /// This will duplicate the DirectShape Element associated with the objectDefinition passed in,
-      /// replacing it within both HybridElements and HybridMap.
+      /// Handles special cases for DirectShape "Creation".
+      /// Current special cases:
+      /// 1. Structural Column -- duplicates all DirectShapes and referenced DirectShapeTypes, using a new Category (Structural Column).
+      /// 2. Creates a Container Element for sub-Elements.  This doesn't create a new Element.  It just populates a DirectShape Element with sub-Element Geometry.
+      ///    empty
       /// </summary>
-      /// <param name="objectDefinition">IFCObjectDefinition to check for Special-case.</param>
-      /// <returns>New ElementId.</returns>
-      public ElementId CreateElementForSpecialCategoryCase(IFCObjectDefinition objectDefinition)
+      /// <param name="objectDefinition">Entity that may exhibit special-case behavior.</param>
+      /// <returns>ElementId of new DirectShape if new Element created, ElementId.InvalidElement otherwise.</returns>
+      public ElementId CreateElementForSpecialCases(IFCObjectDefinition objectDefinition)
       {
-         if (objectDefinition.CategoryId == ElementId.InvalidElementId)
+         if (objectDefinition == null)
          {
-            Importer.TheLog.LogError(objectDefinition.Id, "Category ID not set -- unable to check for Special Category Cases.", false);
+            Importer.TheLog.LogNullError(objectDefinition.EntityType);
             return ElementId.InvalidElementId;
          }
 
          ElementId newElementId = ElementId.InvalidElementId;
+         // Special Cases:
+         // 1. Columns that should be Structure Columns.
+         // 2. Containers that have sub-elements.
          if (IFCCategoryUtil.IsSpecialColumnCase(objectDefinition))
          {
-            DirectShape oldDirectShape = IfcDocument.GetElement(objectDefinition.CreatedElementId) as DirectShape;
-            if (oldDirectShape != null)
+            newElementId = (objectDefinition is IFCProduct architecturalColumn) ? CreateStructuralColumnDirectShape(architecturalColumn) : ElementId.InvalidElementId;
+         }
+         else if (objectDefinition.IsHybridImportContainer())
+         {
+            newElementId = (objectDefinition is IFCProduct container) ? CreateContainer(container) : ElementId.InvalidElementId;
+         }
+
+         // If special case processing resulted in an error, or did not change the ElementId, there is no need to replace
+         // the old ElementId with a new one.
+         if ((newElementId != ElementId.InvalidElementId) && (newElementId != objectDefinition.CreatedElementId))
+         {
+            ReplaceElementId(objectDefinition.GlobalId, objectDefinition.CreatedElementId, newElementId);
+         }
+
+         return newElementId;
+      }
+
+      /// <summary>
+      /// Populate Container DirectShape Element with sub-Element Geometry.
+      /// This will not actually create the DirectShape.  The DirectShape should already exist and be within the HybridMap.
+      /// </summary>
+      /// <param name="containerProduct">IFCProduct representing the Container.</param>
+      /// <returns>ElementId of the DirectShape if successful, ElementId.InvalidElementId otherwise.</returns>
+      protected ElementId CreateContainer(IFCProduct containerProduct)
+      {
+         // If nothing is in the HybridMap, just return.  Nothing needs to be done.
+         if ((containerProduct == null) || ((HybridMap?.Count ?? 0) == 0))
+         {
+            Importer.TheLog.LogNullError(containerProduct.EntityType);
+         }
+
+         int stepId = containerProduct.Id;
+         string containerGuid = containerProduct.GlobalId;
+         ElementId containerCategoryId = containerProduct.CategoryId;
+         if ((stepId < 1) || string.IsNullOrEmpty(containerGuid) || (containerCategoryId == ElementId.InvalidElementId))
+         {
+            Importer.TheLog.LogError(stepId, "Cannot create Container Geometry for IfcProduct -- invalid entity", false);
+            return ElementId.InvalidElementId;
+         }
+
+         if (HybridMap == null)
+         {
+            Importer.TheLog.LogWarning(stepId, $"No Sub-elements imported for {containerProduct.GlobalId} via Hybrid.  Nothing to reference", false);
+            return ElementId.InvalidElementId;
+         }
+
+         IList<GeometryObject> newGeometryObjects = new List<GeometryObject>();
+
+         // If there is any Geometry already within the DirectShape (there may be an Axis Curve for an IfcWall, for instance,
+         // add it to the Shape used at the end.  This will overwrite the current Geometry.
+         ElementId containerDirectShapeElementId = ElementId.InvalidElementId;
+         if (!HybridMap.TryGetValue(containerGuid, out containerDirectShapeElementId))
+         {
+            return ElementId.InvalidElementId;
+         }
+
+         DirectShape containerDirectShape = IfcDocument.GetElement(containerDirectShapeElementId) as DirectShape;
+         if (containerDirectShape == null)
+         {
+            return ElementId.InvalidElementId;
+         }
+
+         Options options = new Options();
+         GeometryElement oldContainerGeometryElement = containerDirectShape?.get_Geometry(options);
+         if (oldContainerGeometryElement != null)
+         {
+            foreach (GeometryObject geomObj in oldContainerGeometryElement)
             {
-               if ((oldDirectShape.Category.Id ?? ElementId.InvalidElementId) != objectDefinition.CategoryId)
+               if (geomObj != null)
                {
-                  // Need to duplicate the DirectShape with a different category.
-                  IList<ElementId> elementIds = new List<ElementId> { objectDefinition.CreatedElementId };
-                  IList<GeometryObject> duplicatedGeometry = DuplicateDirectShapeGeometry(elementIds);
-                  DirectShape newDirectShape = IFCElementUtil.CreateElement(IfcDocument, objectDefinition.CategoryId, objectDefinition.GlobalId,
-                                                                         duplicatedGeometry, objectDefinition.Id, objectDefinition.EntityType);
-
-                  if (newDirectShape == null)
-                  {
-                     Importer.TheLog.LogWarning(objectDefinition.Id, "Unable to create a Structural Column -- falling back to Architectural Column.", false);
-                     return ElementId.InvalidElementId;
-                  }
-
-                  // Make sure we copy over the Type ID for the new DirectShape.
-                  newDirectShape.SetTypeId(oldDirectShape.TypeId);
-                  newElementId = newDirectShape.Id;
+                  newGeometryObjects.Add(geomObj);
                }
             }
          }
 
-         if (newElementId != ElementId.InvalidElementId)
+         // Iterate through all the sub-elements.
+         HashSet<IFCObjectDefinition> relatedObjects = null;
+         if (!(ContainerMap?.TryGetValue(stepId, out relatedObjects) ?? false))
          {
-            ReplaceElementId(objectDefinition.GlobalId, objectDefinition.CreatedElementId, newElementId);
+            Importer.TheLog.LogComment(stepId, $"No Related Objects for Container {containerProduct.GlobalId}.", false);
+            return ElementId.InvalidElementId;
          }
-         return newElementId;
+
+         foreach (IFCObjectDefinition relatedObject in relatedObjects)
+         {
+            // Get the DirectShape for each sub-element.  It should be there.
+            ElementId subElementId;
+            if (!HybridMap.TryGetValue(relatedObject.GlobalId, out subElementId))
+            {
+               Importer.TheLog.LogWarning(stepId, $"{relatedObject.GlobalId} is not an Aggregate of {containerProduct.GlobalId}", false);
+               continue;
+            }
+
+            DirectShape subElementDirectShape = IfcDocument.GetElement(subElementId) as DirectShape;
+            if (subElementDirectShape == null)
+            {
+               continue;
+            }
+
+            // Duplicate sub-Element Geometry using the Category of the Container Geometry.
+            IList<GeometryObject> newSubElementGeometries = DuplicateGeometryForDirectShape(subElementDirectShape, containerProduct);
+            if ((newSubElementGeometries?.Count ?? 0) == 0)
+            {
+               Importer.TheLog.LogError(stepId, "Unable to duplicate Geometry for DirectShape recategorization.", false);
+               return ElementId.InvalidElementId;
+            }
+
+            // Reference new sub-Element Geometry.
+            GeometryInstance newSubElementGeometryInstance = newSubElementGeometries.First() as GeometryInstance; ;
+            if (newSubElementGeometryInstance == null)
+            {
+               Importer.TheLog.LogWarning(stepId, "Duplicate Geometry is not a GeometryInstance.  Using old Geometry.", false);
+               return ElementId.InvalidElementId;
+            }
+
+            newGeometryObjects.Add(newSubElementGeometryInstance);
+         }
+
+         // Set the Geometry of the containerDirectShape to newGeometryObjects.
+         containerDirectShape.SetShape(newGeometryObjects);
+         return containerDirectShape.Id;
+      }
+
+      /// <summary>
+      /// Create a new DirectShape for the new Structural Column.
+      /// </summary>
+      /// <preconditions></preconditions>
+      /// <param name="ifcColumn">Column that needs a Category change from OST_Column to OST_StructuralColumn.</param>
+      /// <returns>ElementId of new Structural Column for successful creation, ElementId.InvalidElementId otherwise.</returns>
+      protected ElementId CreateStructuralColumnDirectShape(IFCProduct ifcColumn)
+      {
+         if (ifcColumn == null)
+         {
+            Importer.TheLog.LogError(-1, "IfcColumn invalid during DirectShape recategorization.", false);
+            return ElementId.InvalidElementId;
+         }
+
+         int stepId = ifcColumn.Id;
+         ElementId ifcColumnCategory = ifcColumn.CategoryId;
+         if (ifcColumnCategory != new ElementId(BuiltInCategory.OST_StructuralColumns))
+         {
+            Importer.TheLog.LogWarning(stepId, "IfcColumn is not a Structural Column", false);
+            return ElementId.InvalidElementId;
+         }
+
+         ElementId oldDirectShapeElementId = ifcColumn.CreatedElementId;
+         DirectShape oldDirectShape = IfcDocument.GetElement(oldDirectShapeElementId) as DirectShape;
+         ElementId oldDirectShapeCategory = (oldDirectShape?.Category?.Id ?? ElementId.InvalidElementId);
+         if (oldDirectShapeCategory == ElementId.InvalidElementId)
+         {
+            Importer.TheLog.LogWarning(stepId, "Unable to determine Category of DirectShape.", false);
+            return ElementId.InvalidElementId;
+         }
+
+         if (oldDirectShapeCategory == ifcColumnCategory)
+         {
+            Importer.TheLog.LogComment(stepId, "Category of Column and DirectShape agree. No recategorization needed.", false);
+            return ElementId.InvalidElementId;
+         }
+
+         // Perform Deep copy of Geometry and DirectShapeTypes.
+         IList<GeometryObject> newGeomObjects = DuplicateGeometryForDirectShape(oldDirectShape, ifcColumn);
+         if ((newGeomObjects?.Count ?? 0) == 0)
+         {
+            Importer.TheLog.LogError(stepId, "Unable to duplicate Geometry for DirectShape recategorization.", false);
+            return ElementId.InvalidElementId;
+         }
+
+         GeometryInstance newDirectShapeGeometryInstance = newGeomObjects.First() as GeometryInstance; ;
+         if (newDirectShapeGeometryInstance == null)
+         {
+            Importer.TheLog.LogWarning(stepId, "Duplicate Geometry is not a GeometryInstance.  Using old Geometry.", false);
+            return ElementId.InvalidElementId;
+         }
+
+         ElementId directShapeTypeId = newDirectShapeGeometryInstance.GetSymbolGeometryId().SymbolId;
+         if (directShapeTypeId == ElementId.InvalidElementId)
+         {
+            Importer.TheLog.LogWarning(stepId, "Even though new DirectShape Geometry created, unable to find DirectShapeType.", false);
+            return ElementId.InvalidElementId;
+         }
+
+         IList<GeometryObject> structuralColumnGeometry = new List<GeometryObject>();
+         structuralColumnGeometry.Add(newDirectShapeGeometryInstance);
+
+         DirectShape newDirectShape = IFCElementUtil.CreateElement(IfcDocument, ifcColumnCategory, ifcColumn.GlobalId, structuralColumnGeometry, stepId, ifcColumn.EntityType);
+         if (newDirectShape == null)
+         {
+            Importer.TheLog.LogError(stepId, "Unable to create new DirectShape Element for Structural Column.", false);
+            return ElementId.InvalidElementId;
+         }
+
+         newDirectShape.SetTypeId(directShapeTypeId);
+         return newDirectShape.Id;
+      }
+
+      /// <summary>
+      /// Duplicates Geometry within DirectShape for a new DirectShape creation.
+      /// This is to drive the process where the DirectShape -> GInstance -> DirectShapeType -> etc. will be preserved.
+      /// </summary>
+      /// <param name="oldDirectShapeElementId">ElementId for the exiting DirectShape.</param>
+      /// <param name="ifcProduct">IfcProduct corresponding to the DirectShape.</param>
+      /// <returns>List of Geometry Objects for the new DirectShape.</returns>
+      protected IList<GeometryObject> DuplicateGeometryForDirectShape(DirectShape oldDirectShape, IFCProduct ifcProduct)
+      {
+         int stepId = ifcProduct?.Id ?? -1;
+         if ((oldDirectShape == null) || (stepId <= 0))
+         {
+            return null;
+         }
+
+         // DirectShape should have one and only one GeometryInstance, and no other GeometryObjects.
+         Options options = new Options();
+         GeometryElement geometryElement = oldDirectShape?.get_Geometry(options);
+         if ((geometryElement?.Count() ?? 0) == 0)
+         {
+            return null;
+         }
+
+         GeometryInstance oldDirectShapeGeometryInstance = geometryElement?.First() as GeometryInstance;
+         GeometryElement oldDirectShapeTypeGeometryElement = oldDirectShapeGeometryInstance?.SymbolGeometry;
+         if (oldDirectShapeTypeGeometryElement == null)
+         {
+            return null;
+         }
+
+         ElementId oldDirectShapeTypeElementId = oldDirectShapeGeometryInstance?.GetSymbolGeometryId().SymbolId ?? ElementId.InvalidElementId;
+         if (oldDirectShapeTypeElementId == ElementId.InvalidElementId)
+         {
+            return null;
+         }
+
+         // Reminder:  the passed-in IfcProduct may be a Container for the DirectShape.  
+         // The container should have an associated IfcTypeObject, but it's not required as per spec.
+         IFCTypeObject ifcTypeObject = null;
+         HashSet<IFCTypeObject> typeObjects = ifcProduct.TypeObjects;
+         if ((typeObjects?.Count ?? 0) > 0)
+         {
+            ifcTypeObject = typeObjects.First();
+         }
+
+         // Most of the work happens here to Copy DirectShapeTypes.
+         ElementId newDirectShapeTypeId = DeepCopyDirectShapeType(oldDirectShapeTypeElementId, oldDirectShapeTypeGeometryElement, ifcProduct.CategoryId, ifcTypeObject);
+
+         string definitionId = GetDirectShapeTypeDefinitionId(newDirectShapeTypeId);
+         if (string.IsNullOrEmpty(definitionId))
+         {
+            return null;
+         }
+
+         // Create new GeoemtryInstance to add new DirectShapeType using the same Trf.
+         // String = ifcTypeObject.GlobalId + oldDirectShapeTypeElementId (as a string).
+         IList<GeometryObject> newGeomObjects = DirectShape.CreateGeometryInstance(IfcDocument, definitionId, oldDirectShapeGeometryInstance.Transform);
+         return newGeomObjects;
+      }
+
+      /// <summary>
+      /// Retrieves definition ID to look up DirectShapeType for GeometryInsance creation.
+      /// </summary>
+      /// <param name="elementId">ElementId of DirectShapeType.</param>
+      /// <returns>definitionId string, or string.Empty if unable to create definition ID.</returns>
+      protected static string GetDirectShapeTypeDefinitionId(ElementId elementId)
+      {
+         if (elementId == ElementId.InvalidElementId)
+         {
+            return string.Empty;
+         }
+
+         return $"DeepCopyDirectShapeType.{elementId}";
+      }
+
+      /// <summary>
+      /// This will perform a Deep Copy of a DirectShapeType.
+      /// This will iterate through all GeometryObjects contained within the passed-in GeometryElement, which has the Geometry for
+      /// oldDirectShapeTypeElementId.
+      /// Each GeometryObject is either a GeometryInstance or a Solid.
+      /// For a GeometryInstance, that will specify another DirectShapeType, so do a DeepCopyDirectShapeType() on that DirectShapeType 
+      /// and create a new GeometryInstance pointing to the new DirectShapeType created during the copy.  Add the new GeometryInstance to the new Geometry List.
+      /// For a Solid, just add the Solid to the new Geometry List.
+      /// Once all GeometryObjects are collected, create a new DirectShapeType and store all GeometryObjects within the new DirectShapeType.
+      /// Add a definition to the new type within the DirectShapeLibrary so callers can reference this new DirectShapeType when they need to.
+      /// </summary>
+      /// <param name="oldDirectShapeTypeElementId">ElementId for existing DirectShapeType.</param>
+      /// <param name="oldDirectShapeTypeGeometryElement">GeometryElement for existing DirectShapeType.</param>
+      /// <param name="newCategoryId">Category that DirectShapeTypes should be.</param>
+      /// <param name="ifcTypeObject">IFCTypeObject step that drives this.  If null, values from old DirectShapeType will be used.</param>
+      /// <returns>ElementId of new DirectShapeType, or ElementId.Invalid if unable to create new DirectShapeType at any step.</returns>
+      protected ElementId DeepCopyDirectShapeType(ElementId oldDirectShapeTypeElementId, GeometryElement oldDirectShapeTypeGeometryElement, 
+                                                  ElementId newCategoryId, IFCTypeObject ifcTypeObject = null)
+      {
+         if ((oldDirectShapeTypeElementId == ElementId.InvalidElementId) || (oldDirectShapeTypeGeometryElement == null))
+         {
+            return ElementId.InvalidElementId;
+         }
+
+         DirectShapeType oldDirectShapeType = IfcDocument.GetElement(oldDirectShapeTypeElementId) as DirectShapeType;
+
+         IList<GeometryObject> newGeomObjs = new List<GeometryObject>();
+         foreach (GeometryObject geomObj in oldDirectShapeTypeGeometryElement)
+         {
+            if (geomObj is GeometryInstance)
+            {
+               GeometryInstance geomInstance = geomObj as GeometryInstance;
+               GeometryElement otherOldDirectShapeTypeGeometryElement = geomInstance?.SymbolGeometry;
+               if (otherOldDirectShapeTypeGeometryElement == null)
+               {
+                  continue;
+               }
+
+               ElementId otherOldDirectShapeTypeElementId = geomInstance.GetSymbolGeometryId().SymbolId;
+               if (otherOldDirectShapeTypeElementId == ElementId.InvalidElementId)
+               {
+                  continue;
+               }
+
+               ElementId otherNewDirectShapeTypeElementId = DeepCopyDirectShapeType(otherOldDirectShapeTypeElementId, otherOldDirectShapeTypeGeometryElement,
+                                                                                    newCategoryId, ifcTypeObject);
+               if (otherNewDirectShapeTypeElementId == ElementId.InvalidElementId)
+               {
+                  continue;
+               }
+
+               // otherDefinitionId is the index into the DirectShapeLibrary for the other DirectShapeType.
+               string otherDefinitionId = GetDirectShapeTypeDefinitionId(otherNewDirectShapeTypeElementId);
+               if (string.IsNullOrEmpty(otherDefinitionId))
+               {
+                  continue;
+               }
+
+               // Create a new GeometryInstance to the new DirectShapeType Element.
+               IList<GeometryObject> newGeometryObjectsForGeometryInstance = DirectShape.CreateGeometryInstance(IfcDocument, otherDefinitionId, geomInstance.Transform);
+               foreach (GeometryObject newGeometryObjectForGeometryInstance in newGeometryObjectsForGeometryInstance)
+               {
+                  GeometryInstance geometryInstance = newGeometryObjectForGeometryInstance as GeometryInstance;
+                  if (geometryInstance == null)
+                  {
+                     continue;
+                  }
+                  newGeomObjs.Add(newGeometryObjectForGeometryInstance);
+               }
+            }
+            else if (geomObj != null)
+            {
+               newGeomObjs.Add(geomObj);
+            }
+         }
+
+         DirectShapeType newDirectShapeType = DuplicateDirectShapeType(oldDirectShapeType, newCategoryId, ifcTypeObject);
+         if (newDirectShapeType == null)
+         {
+            return ElementId.InvalidElementId;
+         }
+
+         // In ATF Pipeline, oldDirectShapeType has had its DirectShapeType family changed.
+         // If this is the case, do the same with the new DirectShapeType.
+         if (newDirectShapeType.CanChangeFamilyName())
+         {
+            newDirectShapeType.SetFamilyName(oldDirectShapeType.FamilyName);
+         }
+
+         // Need to store this so parents can create a new GeometryInstance
+         ElementId newDirectShapeTypeElementId = newDirectShapeType.Id;
+
+         // definitionId is the index into the DirectShapeLibrary for this DirectShapeType.
+         string definitionId = GetDirectShapeTypeDefinitionId(newDirectShapeTypeElementId);
+         if (string.IsNullOrEmpty(definitionId))
+         {
+            return ElementId.InvalidElementId;
+         }
+
+         // Only set the shape if definition ID was valid.
+         newDirectShapeType.SetShape(newGeomObjs);
+
+         DirectShapeLibrary dsl = DirectShapeLibrary.GetDirectShapeLibrary(IfcDocument);
+         if (dsl == null)
+         {
+            return ElementId.InvalidElementId;
+         }
+
+         dsl.AddDefinitionType(definitionId, newDirectShapeTypeElementId);
+         return newDirectShapeTypeElementId;
+      }
+
+      /// <summary>
+      /// Creates new DirectShapeType to hold duplicated GeometryObjects.
+      /// </summary>
+      /// <param name="oldDirectShapeType">DirectShapeType to be duplicated.</param>
+      /// <param name="newCategoryId">Category of new DirectShapeTyhpe.</param>
+      /// <param name="ifcTypeObject">IfcTypeObject to use for DirectShapeTyhpe. (may be null).</param>
+      /// <returns>New DirectShapeTyhpe if successful, null otherwise.</returns>
+      protected DirectShapeType DuplicateDirectShapeType(DirectShapeType oldDirectShapeType, ElementId newCategoryId, IFCTypeObject ifcTypeObject = null)
+      {
+         if ((oldDirectShapeType == null) || ((newCategoryId ?? ElementId.InvalidElementId) == ElementId.InvalidElementId))
+         {
+            return null;
+         }
+
+         ElementId categoryToUse = (DirectShape.IsValidCategoryId(newCategoryId, IfcDocument)) ? newCategoryId : oldDirectShapeType.Category.Id;
+
+         DirectShapeTypeOptions options = new DirectShapeTypeOptions();
+         options.AllowDuplicateNames = true;
+
+         string nameToUse = ifcTypeObject?.GetVisibleName() ?? oldDirectShapeType.Name;
+         return DirectShapeType.Create(IfcDocument, nameToUse, categoryToUse, options);
       }
 
       /// <summary>
@@ -494,7 +915,7 @@ namespace Revit.IFC.Import.Utility
             {
                continue;
             }
-
+            
             foreach (GeometryObject geometryObject in geometryElement)
             {
                // For Hybrid IFC Import, it is sufficient to check for GeometryInstances only.
@@ -526,13 +947,18 @@ namespace Revit.IFC.Import.Utility
       public ElementId HandleHybridProductCreation(IFCImportShapeEditScope shapeEditScope, IFCProduct ifcProduct)
       {
          if (!Importer.TheOptions.IsHybridImport || (shapeEditScope == null) || (ifcProduct == null) || (ifcProduct.CreatedElementId == ElementId.InvalidElementId))
+         {
             return ElementId.InvalidElementId;
+         }
+
+         ElementId hybridElementId = ifcProduct.CreatedElementId;
 
          // Get DirectShape to "Create".  It's already created, so Revit is not really creating it here.
-         ElementId hybridElementId = ifcProduct.CreatedElementId;
          DirectShape directShape = IfcDocument.GetElement(hybridElementId) as DirectShape;
          if (directShape == null)
+         {
             return ElementId.InvalidElementId;
+         }
 
          // Get solids for IFCProduct.  Only Points and Curves should be contained within "Solids".
          if (ifcProduct.Solids?.Count > 0)
@@ -554,18 +980,27 @@ namespace Revit.IFC.Import.Utility
             directShape.AppendShape(wireframeBuilder);
          }
 
+         // Add Plan View Curves.
+         if (shapeEditScope.AddPlanViewCurves(ifcProduct.FootprintCurves, ifcProduct.Id))
+         {
+            shapeEditScope.SetPlanViewRep(directShape);
+         }
+
          // IFCProduct needs PresentationLayer parameter, which is contained in the RepresentationItem (or IFCHybridRepresentationItem).
          ifcProduct.PresentationLayerNames.UnionWith(shapeEditScope.PresentationLayerNames);
 
-         // Handle possible catagory change for Structural Columns.
-         // directShapeId is the current DirectShape ElementId.  If the category changes (like it may below)
-         // a whole new DirectShape will be created, with a new ElementId.
+         // Handle Special Cases:
+         // 1.  Possible Category Change for Structural Columns.  This requires a whole new DirectShape/DirectShapeType tree creation.
+         // 2.  Containers for IfcRelAggregates (e.g., IfcWall & IfcBuildingElementParts).
+         // In either of these, the specialCaseElementId may end up being the same as the original CreatedElementId.
+         // If new ElementId is in
+         // This means that there was no new Element created, so don't delete the ElementId in that case.
          ElementId newCreatedId = hybridElementId;
-         ElementId specialCaseElementId = Importer.TheHybridInfo.CreateElementForSpecialCategoryCase(ifcProduct);
+         ElementId specialCaseElementId = Importer.TheHybridInfo.CreateElementForSpecialCases(ifcProduct);
          if ((specialCaseElementId != ElementId.InvalidElementId) && (specialCaseElementId != hybridElementId))
          {
-            // specialCaseElementId has replaced hybridElementId.
-            // Scheduled the old ElementId for deletion and set 
+            // specialCaseElementId has replaced hybridElementId in the HybridMap.
+            // The hybridElementId will be deleted later.
             Importer.TheHybridInfo.ElementsToDelete.Add(hybridElementId);
             newCreatedId = specialCaseElementId;
          }

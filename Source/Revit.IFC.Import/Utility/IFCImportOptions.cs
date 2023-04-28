@@ -190,7 +190,7 @@ namespace Revit.IFC.Import.Utility
       {
       }
 
-      protected IFCImportOptions(IDictionary<String, String> options)
+      protected IFCImportOptions(IDictionary<string, string> options, string ifcFileName)
       {
          // "Intent": covers what the import operation is intended to create.
          // The two options are:
@@ -202,7 +202,7 @@ namespace Revit.IFC.Import.Utility
          if (!string.IsNullOrWhiteSpace(intent))
          {
             IFCImportIntent intentTemp;
-            if (!Enum.TryParse<IFCImportIntent>(intent, out intentTemp))
+            if (!Enum.TryParse(intent, out intentTemp))
                intentTemp = IFCImportIntent.Reference;
             Intent = intentTemp;
          }
@@ -215,7 +215,7 @@ namespace Revit.IFC.Import.Utility
          if (!string.IsNullOrWhiteSpace(action))
          {
             IFCImportAction actionTemp;
-            if (!Enum.TryParse<IFCImportAction>(action, out actionTemp))
+            if (!Enum.TryParse(action, out actionTemp))
                actionTemp = IFCImportAction.Open;
             Action = actionTemp;
          }
@@ -300,20 +300,23 @@ namespace Revit.IFC.Import.Utility
          ImportIFCOptions importIFCOptions = ImportIFCOptions.GetImportIFCOptions();
          string linkProcessor = importIFCOptions.LinkProcessor;
 
-         // For now, only use hybrid import if revit.ini has "AnyCAD" set.
+         // For now, only use hybrid import if revit.ini has "AnyCAD" set and we are importing
+         // STEP (.ifc) files.
          // In the future, this will change to:
          // IsHybridImport = (string.Compare(linkProcessor, "Legacy", true) != 0);
-         IsHybridImport = (string.Compare(linkProcessor, "AnyCAD", true) == 0);
+         IsHybridImport = (string.Compare(linkProcessor, "AnyCAD", true) == 0) &&
+            (ifcFileName.EndsWith(".ifc"));
       }
 
       /// <summary>
       /// Populate a new IFCImportOptions class with values based on the opions passed in by the user.
       /// </summary>
       /// <param name="options">The user-set options for this import.</param>
+      /// <param name="ifcFileName">The name of the IFC file.</param>
       /// <returns>The new IFCImportOptions class.</returns>
-      static public IFCImportOptions Create(IDictionary<String, String> options)
+      static public IFCImportOptions Create(IDictionary<string, string> options, string ifcFileName)
       {
-         return new IFCImportOptions(options);
+         return new IFCImportOptions(options, ifcFileName);
       }
    }
 }

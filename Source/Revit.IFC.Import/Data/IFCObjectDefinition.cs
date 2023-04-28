@@ -91,6 +91,28 @@ namespace Revit.IFC.Import.Data
       public IFCObjectDefinition Decomposes { get; set; } = null;
 
       /// <summary>
+      /// Indicates if this IFCObjectDefinition is allowed to act as a Container whose DirectShape will have Geometry that will contain
+      /// Geometry from DirectShapes corresponding to other entities.
+      /// This is defined via an IfcRelAggregates relationship, but it only applies if the "RelatedTo" entity will result in a DirectShape
+      /// in the Revit Document.
+      /// This is used to indicate that this entity can act in this capacity.
+      /// </summary>
+      /// <returns>False unless overridden by a derived class.</returns>
+      public virtual bool IsAllowedToAggregateGeometry() => false;
+
+      /// <summary>
+      /// Indicates if this IfcObjectDefinition is acting as a Container whose DirectShape will have Geometry that will contain
+      /// Geometry from DirectShapes corresponding to other entities.
+      /// This only applies to Hybrid Import.
+      /// This is used to indicate that this actually is acting in this capacity.
+      /// </summary>
+      /// <returns></returns>
+      public bool IsHybridImportContainer()
+      {
+         return (Importer.TheOptions.IsHybridImport && IsAllowedToAggregateGeometry() && (Importer.TheHybridInfo?.ContainerMap?.ContainsKey(Id) ?? false));
+      }
+
+      /// <summary>
       /// Get the reference elevation of this object, located in the containing IFCBuilding.
       /// </summary>
       /// <returns>The value of the reference elevation.</returns>

@@ -49,8 +49,9 @@ namespace Revit.IFC.Export.Exporter
       {
          IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
 
-         IFCAnyHandle contextOfItems2d = exporterIFC.Get2DContextHandle();
-         IFCAnyHandle contextOfItems1d = exporterIFC.Get3DContextHandle("Axis");
+         IFCAnyHandle contextOfItems2d = ExporterCacheManager.Get2DContextHandle(IFCRepresentationIdentifier.Annotation);
+         IFCAnyHandle contextOfItems1d = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Axis);
+
 
          // for proxies, we store the IfcRepresentationMap directly since there is no style.
          IFCAnyHandle style = typeInfo.Style;
@@ -407,6 +408,7 @@ namespace Revit.IFC.Export.Exporter
                      break;
                   }
                case IFCEntityType.IfcFurniture:
+               case IFCEntityType.IfcFurnishingElement:
                   {
                      typeStyle = IFCInstanceExporter.CreateFurnitureType(file, familySymbol,
                         guid, propertySets, repMapList, null, null, null,
@@ -487,6 +489,23 @@ namespace Revit.IFC.Export.Exporter
          return true;
       }
 
+      private static bool IsTransformValid(Transform transform)
+      {
+         // There are no good API functions that check if a
+         // Transform has invalid information in it.  So just
+         // try assignment.
+         try
+         {
+            XYZ checkTransform = transform.OfPoint(XYZ.Zero);
+         }
+         catch (Autodesk.Revit.Exceptions.ArgumentException)
+         {
+            return false;
+         }
+
+         return true;
+      }
+
       /// <summary>
       /// Exports a family instance as a mapped item.
       /// </summary>
@@ -504,6 +523,18 @@ namespace Revit.IFC.Export.Exporter
          bool isSplit = range != null;
          if (exportParts && !PartExporter.CanExportElementInPartExport(familyInstance, isSplit ? overrideLevelId : familyInstance.LevelId, isSplit))
             return;
+
+         // A Family Instance can have its own copy of geometry, or use the symbol's copy with a transform.
+         // The routine below tells us whether to use the Instance's copy or the Symbol's copy.
+         bool useInstanceGeometry = GeometryUtil.UsesInstanceGeometry(familyInstance);
+         Transform trf = familyInstance.GetTransform();
+         if (!IsTransformValid(trf))
+         {
+            // We have found cases where there are family instances with invalid transform
+            // information.  If we find them, ignore them (they won't be visible in Revit,
+            // either.)
+            return;
+         }
 
          Document doc = familyInstance.Document;
          IFCFile file = exporterIFC.GetFile();
@@ -523,10 +554,6 @@ namespace Revit.IFC.Export.Exporter
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(familySymbol);
 
          string familyName = familySymbol.Name;
-         // A Family Instance can have its own copy of geometry, or use the symbol's copy with a transform.
-         // The routine below tells us whether to use the Instance's copy or the Symbol's copy.
-         bool useInstanceGeometry = GeometryUtil.UsesInstanceGeometry(familyInstance);
-         Transform trf = familyInstance.GetTransform();
 
          MaterialAndProfile materialAndProfile = null;
          IFCAnyHandle materialProfileSet = null;
@@ -553,9 +580,10 @@ namespace Revit.IFC.Export.Exporter
          exportType = FamilyExporterUtil.AdjustExportTypeForSchema(exportType, exportType.ValidatedPredefinedType);
 
          bool flipped = doorWindowInfo?.FlippedSymbol ?? false;
+         ElementId overrideMaterialId = ExporterUtil.GetSingleMaterial(familyInstance);
 
          var typeKey = new TypeObjectKey(originalFamilySymbol.Id,
-            overrideLevelId, flipped, exportType);
+            overrideLevelId, flipped, exportType, overrideMaterialId);
 
          FamilyTypeInfo currentTypeInfo = 
             ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
@@ -647,12 +675,15 @@ namespace Revit.IFC.Export.Exporter
                         return; // no proper visible split geometry to export.
                   }
                   else
+                  {
                      geomObjects.Add(exportGeometry);
+                  }
 
+                  bool isExtrusionFriendlyType = IsExtrusionFriendlyType(exportType.ExportInstance);
                   bool tryToExportAsExtrusion = (!ExporterCacheManager.ExportOptionsCache.ExportAs2x2
-                     || IsExtrusionFriendlyType(exportType.ExportInstance));
+                     || isExtrusionFriendlyType);
 
-                  if (IsExtrusionFriendlyType(exportType.ExportInstance))
+                  if (isExtrusionFriendlyType)
                   {
                      // Get a profile name. 
                      string profileName = NamingUtil.GetProfileName(familySymbol);
@@ -665,91 +696,73 @@ namespace Revit.IFC.Export.Exporter
 
                         extraParams.CustomAxis = extrudeDirection;
                         extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXY;
-                     }
-                     else
-                     {
-                        extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;
-                        LocationPoint point = familyInstance.Location as LocationPoint;
 
-                        if (point != null)
-                           orig = point.Point;
-
-                        // TODO: Is this a useful default?  Should it be based
-                        // on the instance transform in some way?
-                        extrudeDirection = XYZ.BasisZ;
-                     }
-
-                     if (solids.Count > 0)
-                     {
-                        FootPrintInfo footprintInfo = null;
-                        // The "extrudeDirection" passed in is in global coordinates if it represents
-                        // a custom axis, while the geometry is in either the FamilyInstance or 
-                        // FamilySymbol coordinate system, depending on the useInstanceGeometry
-                        // flag.  If we aren't using instance geometry, convert the extrusion direction
-                        // and base plane to be in the symbol/geometry space.
-                        XYZ extrusionDirectionToUse = (useInstanceGeometry || !extraParams.HasCustomAxis) ?
-                           extrudeDirection : trf.Inverse.OfVector(extrudeDirection);
-                        Plane basePlaneToUse = GeometryUtil.CreatePlaneByNormalAtOrigin(extrusionDirectionToUse);
-
-                        GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
-                        ExtrusionExporter.ExtraClippingData extraClippingData = null;
-                        IFCAnyHandle bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
-                              categoryId, false, solids, basePlaneToUse, orig, extrusionDirectionToUse, null, out extraClippingData,
-                              out footprintInfo, out materialAndProfile, out extrusionData, addInfo, profileName: profileName);
-                        if (extrusionData != null)
+                        if (solids.Count > 0)
                         {
-                           extraParams.Slope = extrusionData.Slope;
-                           extraParams.ScaledLength = extrusionData.ScaledLength;
-                           extraParams.ExtrusionDirection = extrusionData.ExtrusionDirection;
-                           extraParams.ScaledHeight = extrusionData.ScaledHeight;
-                           extraParams.ScaledWidth = extrusionData.ScaledWidth;
+                           FootPrintInfo footprintInfo = null;
+                           // The "extrudeDirection" passed in is in global coordinates if it represents
+                           // a custom axis, while the geometry is in either the FamilyInstance or 
+                           // FamilySymbol coordinate system, depending on the useInstanceGeometry
+                           // flag.  If we aren't using instance geometry, convert the extrusion direction
+                           // and base plane to be in the symbol/geometry space.
+                           XYZ extrusionDirectionToUse = (useInstanceGeometry || !extraParams.HasCustomAxis) ?
+                              extrudeDirection : trf.Inverse.OfVector(extrudeDirection);
+                           Plane basePlaneToUse = GeometryUtil.CreatePlaneByNormalAtOrigin(extrusionDirectionToUse);
 
-                           extraParams.ScaledArea = extrusionData.ScaledArea;
-                           extraParams.ScaledInnerPerimeter = extrusionData.ScaledInnerPerimeter;
-                           extraParams.ScaledOuterPerimeter = extrusionData.ScaledOuterPerimeter;
-                        }
-
-                        typeInfo.MaterialIdList = extraClippingData.MaterialIds;
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepresentation))
-                        {
-                           representations3D.Add(bodyRepresentation);
-                           repMapTrfList.Add(null);
-                           if (materialAndProfile != null)
-                              typeInfo.MaterialAndProfile = materialAndProfile;   // Keep material and profile information in the type info for later creation
-
-                           if (IsExtrusionFriendlyType(exportType.ExportInstance))
+                           GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
+                           ExtrusionExporter.ExtraClippingData extraClippingData = null;
+                           IFCAnyHandle bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
+                                 categoryId, false, solids, basePlaneToUse, orig, extrusionDirectionToUse, null, out extraClippingData,
+                                 out footprintInfo, out materialAndProfile, out extrusionData, addInfo, profileName: profileName);
+                           if (extrusionData != null)
                            {
-                              if (axisInfo != null)
+                              extraParams.Slope = extrusionData.Slope;
+                              extraParams.ScaledLength = extrusionData.ScaledLength;
+                              extraParams.ExtrusionDirection = extrusionData.ExtrusionDirection;
+                              extraParams.ScaledHeight = extrusionData.ScaledHeight;
+                              extraParams.ScaledWidth = extrusionData.ScaledWidth;
+
+                              extraParams.ScaledArea = extrusionData.ScaledArea;
+                              extraParams.ScaledInnerPerimeter = extrusionData.ScaledInnerPerimeter;
+                              extraParams.ScaledOuterPerimeter = extrusionData.ScaledOuterPerimeter;
+                           }
+
+                           typeInfo.MaterialIdList = extraClippingData.MaterialIds;
+                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepresentation))
+                           {
+                              representations3D.Add(bodyRepresentation);
+                              repMapTrfList.Add(null);
+                              if (materialAndProfile != null)
+                                 typeInfo.MaterialAndProfile = materialAndProfile;   // Keep material and profile information in the type info for later creation
+
+                              Transform newLCS = Transform.Identity;
+                              Transform offset = Transform.Identity;
+                              if (materialAndProfile != null)
                               {
-                                 Transform newLCS = Transform.Identity;
-                                 Transform offset = Transform.Identity;
-                                 if (materialAndProfile != null)
+                                 if (materialAndProfile.LCSTransformUsed != null)
                                  {
-                                    if (materialAndProfile.LCSTransformUsed != null)
-                                    {
-                                       // If the Solid creation uses a different LCS, we will use the same LCS for the Axis and transform the Axis to this new LCS
-                                       newLCS = new Transform(materialAndProfile.LCSTransformUsed);
-                                       // The Axis will be offset later to compensate the shift
-                                       offset = newLCS;
-                                    }
+                                    // If the Solid creation uses a different LCS, we will use the same LCS for the Axis and transform the Axis to this new LCS
+                                    newLCS = new Transform(materialAndProfile.LCSTransformUsed);
+                                    // The Axis will be offset later to compensate the shift
+                                    offset = newLCS;
                                  }
+                              }
 
-                                 if (!useInstanceGeometry)
-                                 {
-                                    // If the extrusion is created from the FamilySymbol, the new LCS will be the FamilyIntance transform
-                                    newLCS = trf;
-                                    offset = Transform.Identity;
-                                 }
+                              if (!useInstanceGeometry)
+                              {
+                                 // If the extrusion is created from the FamilySymbol, the new LCS will be the FamilyIntance transform
+                                 newLCS = trf;
+                                 offset = Transform.Identity;
+                              }
 
-                                 ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);
-                                 IFCAnyHandle axisRep = StructuralMemberExporter.CreateStructuralMemberAxis(exporterIFC, familyInstance, catId, axisInfo, newLCS);
-                                 if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
-                                 {
-                                    representations3D.Add(axisRep);
-                                    // This offset is going to be applied later. Need to scale the coordinate into the correct unit scale
-                                    offset.Origin = UnitUtil.ScaleLength(offset.Origin);
-                                    repMapTrfList.Add(offset);
-                                 }
+                              ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);
+                              IFCAnyHandle axisRep = StructuralMemberExporter.CreateStructuralMemberAxis(exporterIFC, familyInstance, catId, axisInfo, newLCS);
+                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
+                              {
+                                 representations3D.Add(axisRep);
+                                 // This offset is going to be applied later. Need to scale the coordinate into the correct unit scale
+                                 offset.Origin = UnitUtil.ScaleLength(offset.Origin);
+                                 repMapTrfList.Add(offset);
                               }
                            }
                         }
@@ -777,9 +790,9 @@ namespace Revit.IFC.Export.Exporter
                      if (exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcPlate)
                         bodyExporterOptions.CollectFootprintHandle = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
 
-                     GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
+                     GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);  
                      bodyData = BodyExporter.ExportBody(exporterIFC, familyInstance, categoryId, ExporterUtil.GetSingleMaterial(familyInstance),
-                           geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName);
+                           geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName, instanceGeometry:useInstanceGeometry);
                      typeInfo.MaterialIdList = bodyData.MaterialIds;
                      offsetTransform = bodyData.OffsetTransform;
 
@@ -910,7 +923,7 @@ namespace Revit.IFC.Export.Exporter
 
                      if (curveSet.Count > 0)
                      {
-                        IFCAnyHandle contextOfItems2d = exporterIFC.Get2DContextHandle();
+                        IFCAnyHandle contextOfItems2d = ExporterCacheManager.Get2DContextHandle(IFCRepresentationIdentifier.Annotation);
                         IFCAnyHandle curveRepresentationItem = IFCInstanceExporter.CreateGeometricSet(file, curveSet);
                         HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
                         bodyItems.Add(curveRepresentationItem);

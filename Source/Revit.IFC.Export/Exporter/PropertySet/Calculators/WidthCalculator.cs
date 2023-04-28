@@ -96,11 +96,31 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (m_Width > MathUtil.Eps())
             return true;
 
+         ElementId categoryId = CategoryUtil.GetSafeCategoryId(element); 
+         IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
+
+         if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcDoor) || categoryId == new ElementId(BuiltInCategory.OST_Doors))
+         {
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_WIDTH, out m_Width);
+         }
+         else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcWindow) || categoryId == new ElementId(BuiltInCategory.OST_Windows))
+         {
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_WIDTH, out m_Width);
+         }
+         else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcRampFlight)
+            || IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcStairFlight))
+         {
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.STAIRS_ATTR_TREAD_WIDTH, out m_Width);
+         }
+
+         m_Width = UnitUtil.ScaleLength(m_Width);
+         if (m_Width > MathUtil.Eps())
+            return true;
+
          if (extrusionCreationData == null)
             return false;
 
          // For Slab width is the lesser edge of the rectangle area profile (get it from ScaledHeight)
-         IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
          if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcSlab))
          {
             m_Width = extrusionCreationData.ScaledHeight;

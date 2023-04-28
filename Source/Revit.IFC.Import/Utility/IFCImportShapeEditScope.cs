@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
+using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Import.Data;
 using Revit.IFC.Import.Enums;
@@ -243,10 +244,10 @@ namespace Revit.IFC.Import.Utility
       /// Returns the type of the IFCRepresentation that contains the currently processed IFC entity, if set.
       /// </summary>
       /// <returns>The representation identifier, or Unhandled if there is none.</returns>
-      public IFCRepresentationIdentifier GetContainingRepresentationType()
+      public IFCRepresentationIdentifier GetContainingRepresentationIdentifier()
       {
          if (ContainingRepresentation == null)
-            return IFCRepresentationIdentifier.Unhandled;
+            return IFCRepresentationIdentifier.Other;
          return ContainingRepresentation.Identifier;
       }
 
@@ -261,7 +262,7 @@ namespace Revit.IFC.Import.Utility
          if (solidInfo == null || solidInfo.GeometryObject == null)
             return;
 
-         solidInfo.RepresentationType = GetContainingRepresentationType();
+         solidInfo.RepresentationIdentifier = GetContainingRepresentationIdentifier();
          Creator.Solids.Add(solidInfo);
       }
 

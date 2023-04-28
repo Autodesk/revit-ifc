@@ -259,8 +259,9 @@ namespace Revit.IFC.Export.Exporter
                   axesW = CreateIFCGridAxisAndRepresentations(exporterIFC, productWrapper, 
                      sameDirectionAxesW, representations, gridRepresentationData);
 
-               IFCAnyHandle contextOfItemsFootPrint = exporterIFC.Get3DContextHandle("FootPrint");
-               string identifierOpt = "FootPrint";
+               IFCRepresentationIdentifier identifier = IFCRepresentationIdentifier.FootPrint;
+               string identifierOpt = identifier.ToString();
+               IFCAnyHandle contextOfItemsFootPrint = ExporterCacheManager.Get3DContextHandle(identifier);
                string representationTypeOpt = "GeometricCurveSet";
 
                int numGridsToExport = gridRepresentationData.m_Grids.Count;

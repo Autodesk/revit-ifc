@@ -393,11 +393,30 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
-      /// Find a Non ABS supertype entity from the input type name
+      /// Generate the Entity type name corresponding to an instance.
       /// </summary>
-      /// <param name="context">the IFC schema context</param>
-      /// <param name="typeName">the type name</param>
-      /// <returns>the non-abs supertype instance node</returns>
+      /// <param name="instanceName">The instance name.</param>
+      /// <returns>The type name.</returns>
+      /// <remarks>
+      /// This is done in a heuristic fashion, so we will need to 
+      /// make sure exceptions are dealt with.
+      /// </remarks>
+      public static string GetTypeNameFromInstanceName(string instanceName)
+      {
+         // Deal with exceptions.
+         if (string.Compare(instanceName, "IfcProduct", true) == 0)
+            return "IfcTypeProduct";
+         else if (string.Compare(instanceName, "IfcObject", true) == 0)
+            return "IfcTypeObject";
+         return instanceName + "Type";
+      }
+      
+      /// <summary>
+       /// Find a Non ABS supertype entity from the input type name
+       /// </summary>
+       /// <param name="context">the IFC schema context</param>
+       /// <param name="typeName">the type name</param>
+       /// <returns>the non-abs supertype instance node</returns>
       static public IfcSchemaEntityNode FindNonAbsInstanceSuperType(string context, string typeName)
       {
          IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
@@ -413,7 +432,10 @@ namespace Revit.IFC.Common.Utility
             return res;
          }
 
-         string theTypeName = typeName.Substring(typeName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ? typeName : typeName + "Type";
+         string theTypeName =
+            typeName.Substring(typeName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ?
+            typeName : GetTypeNameFromInstanceName(typeName); 
+         
          IfcSchemaEntityNode entNode = ifcEntitySchemaTree.Find(theTypeName);
          if (entNode != null)
          {

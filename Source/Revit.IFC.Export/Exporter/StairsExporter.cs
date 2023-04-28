@@ -839,7 +839,7 @@ namespace Revit.IFC.Export.Exporter
 
                   BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                   IFCAnyHandle representation = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC,
-                      stair, categoryId, stairsGeom, bodyExporterOptions, null, ecData, out bodyData);
+                      stair, categoryId, stairsGeom, bodyExporterOptions, null, ecData, out bodyData, instanceGeometry: true);
 
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(representation))
                   {
@@ -888,7 +888,7 @@ namespace Revit.IFC.Export.Exporter
 
                   // Create appropriate type
 
-                  IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, exportType.ValidatedPredefinedType, productWrapper);
+                  IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(stairTypeHnd, containedStairHnd);
                   CategoryUtil.CreateMaterialAssociation(exporterIFC, containedStairHnd, bodyData.MaterialIds);
 
@@ -904,7 +904,7 @@ namespace Revit.IFC.Export.Exporter
 
                      // Create appropriate type for the container
                      //string contPredefType = GetValidatedStairType(stair as Stairs, ifcEnumType);
-                     IFCAnyHandle stairContTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, exportType.ValidatedPredefinedType, productWrapper);
+                     IFCAnyHandle stairContTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(stairContTypeHnd, stairContainerHnd);
 
                      productWrapper.AddElement(stair, stairContainerHnd, placementSetter.LevelInfo, ecData, true, exportType);
@@ -966,8 +966,8 @@ namespace Revit.IFC.Export.Exporter
                List<IFCAnyHandle> componentHandles = new List<IFCAnyHandle>();
                IList<IFCExportBodyParams> componentExtrusionData = new List<IFCExportBodyParams>();
 
-               IFCAnyHandle contextOfItemsFootPrint = exporterIFC.Get3DContextHandle("FootPrint");
-               IFCAnyHandle contextOfItemsAxis = exporterIFC.Get3DContextHandle("Axis");
+               IFCAnyHandle contextOfItemsFootPrint = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.FootPrint);
+               IFCAnyHandle contextOfItemsAxis = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Axis);
 
                Transform trf = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, placementSetter.LocalPlacement);
 
@@ -982,10 +982,12 @@ namespace Revit.IFC.Export.Exporter
 
                // Create appropriate type
                IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcStair, predefType);
-               IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
+               IFCAnyHandle stairTypeHnd = ExporterUtil.CreateGenericTypeFromElement(stair, exportType, exporterIFC.GetFile(), productWrapper);
                ExporterCacheManager.TypeRelationsCache.Add(stairTypeHnd, stairContainerHnd);
 
                productWrapper.AddElement(stair, stairContainerHnd, placementSetter.LevelInfo, null, true, exportType);
+
+               string ifcCADLayer = RepresentationUtil.GetPresentationLayerOverride(stair);
 
                // Get List of runs to export their geometry.
                ICollection<ElementId> runIds = stair.GetStairsRuns();
@@ -994,13 +996,13 @@ namespace Revit.IFC.Export.Exporter
                {
                   index++;
                   StairsRun run = doc.GetElement(runId) as StairsRun;
-
+          
                   using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                   {
                      ecData.AllowVerticalOffsetOfBReps = false;
                      ecData.SetLocalPlacement(ExporterUtil.CreateLocalPlacement(file, placementSetter.LocalPlacement, null));
                      ecData.ReuseLocalPlacement = true;
-
+                     ecData.IFCCADLayerOverride = ifcCADLayer;
                      GeometryElement runGeometryElement = run.get_Geometry(geomOptions);
 
                      BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
@@ -1043,7 +1045,7 @@ namespace Revit.IFC.Export.Exporter
                      IFCAnyHandleUtil.OverrideNameAttribute(stairFlightHnd, runName);
                      // Create type
                      IFCExportInfoPair flightEportType = new IFCExportInfoPair(IFCEntityType.IfcStairFlight, flightPredefType);
-                     IFCAnyHandle flightTypeHnd = ExporterUtil.CreateGenericTypeFromElement(run, flightEportType, exporterIFC.GetFile(), ownerHistory, flightPredefType, productWrapper);
+                     IFCAnyHandle flightTypeHnd = ExporterUtil.CreateGenericTypeFromElement(run, flightEportType, exporterIFC.GetFile(), productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(flightTypeHnd, stairFlightHnd);
 
                      componentHandles.Add(stairFlightHnd);
@@ -1112,7 +1114,7 @@ namespace Revit.IFC.Export.Exporter
 
                      // Create type
                      IFCExportInfoPair landingExportType = new IFCExportInfoPair(IFCEntityType.IfcSlab, landingPredefinedType);
-                     IFCAnyHandle landingTypeHnd = ExporterUtil.CreateGenericTypeFromElement(landing, landingExportType, exporterIFC.GetFile(), ownerHistory, landingPredefinedType, productWrapper);
+                     IFCAnyHandle landingTypeHnd = ExporterUtil.CreateGenericTypeFromElement(landing, landingExportType, exporterIFC.GetFile(), productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(landingTypeHnd, landingHnd);
 
                      componentHandles.Add(landingHnd);
@@ -1137,12 +1139,13 @@ namespace Revit.IFC.Export.Exporter
                   {
                      ecData.SetLocalPlacement(ExporterUtil.CreateLocalPlacement(file, placementSetter.LocalPlacement, null));
                      ecData.ReuseLocalPlacement = true;
+                     ecData.IFCCADLayerOverride = ifcCADLayer;
 
                      GeometryElement supportGeometryElement = support.get_Geometry(geomOptions);
                      BodyData bodyData;
                      BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                      IFCAnyHandle representation = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC,
-                         support, categoryId, supportGeometryElement, bodyExporterOptions, null, ecData, out bodyData);
+                         support, categoryId, supportGeometryElement, bodyExporterOptions, null, ecData, out bodyData, instanceGeometry: true);
 
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(representation))
                      {
@@ -1662,8 +1665,8 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>Boundary line representations.</returns>
       static IList<IFCAnyHandle> CreateBoundaryLineReps(ExporterIFC exporterIFC, IFCLegacyStairOrRamp legacyStair, Element legacyStairElem)
       {
-         IFCAnyHandle contextOfItemsBoundary = exporterIFC.Get3DContextHandle("FootPrint");
-
+         IFCAnyHandle contextOfItemsBoundary = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.FootPrint);
+         
          IList<IFCAnyHandle> boundaryLineReps = new List<IFCAnyHandle>();
 
          IFCFile file = exporterIFC.GetFile();
@@ -1714,7 +1717,7 @@ namespace Revit.IFC.Export.Exporter
       static IList<IFCAnyHandle> CreateWalkLineReps(ExporterIFC exporterIFC, IFCLegacyStairOrRamp legacyStair, Element legacyStairElem)
       {
          IList<IFCAnyHandle> walkLineReps = new List<IFCAnyHandle>();
-         IFCAnyHandle contextOfItemsWalkLine = exporterIFC.Get3DContextHandle("Axis");
+         IFCAnyHandle contextOfItemsWalkLine = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Axis);
 
          ElementId cateId = CategoryUtil.GetSafeCategoryId(legacyStairElem);
          Transform lcs = Transform.Identity;
@@ -1749,8 +1752,8 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          IFCFile file = exporterIFC.GetFile();
-         IFCAnyHandle contextOfItemsFootPrint = exporterIFC.Get3DContextHandle("FootPrint");
-         IFCAnyHandle contextOfItemsAxis = exporterIFC.Get3DContextHandle("Axis");
+         IFCAnyHandle contextOfItemsFootPrint = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.FootPrint);
+         IFCAnyHandle contextOfItemsAxis = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Axis);
 
          Transform trfFromBodyData = new Transform(bodyData.OffsetTransform);
          trfFromBodyData.Origin = bodyData.OffsetTransform.Origin;

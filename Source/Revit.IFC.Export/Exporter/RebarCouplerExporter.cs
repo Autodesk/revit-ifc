@@ -68,7 +68,7 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType);
+            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType, ElementId.InvalidElementId);
             
             FamilyTypeInfo currentTypeInfo = 
                ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
@@ -123,13 +123,14 @@ namespace Revit.IFC.Export.Exporter
                if (repMapList.Count == 0)
                   return;
 
-               IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
-               IFCAnyHandle contextOfItems3d = exporterIFC.Get3DContextHandle("Body");
-               ISet<IFCAnyHandle> representations = new HashSet<IFCAnyHandle>();
-               representations.Add(ExporterUtil.CreateDefaultMappedItem(file, repMapList[0], XYZ.Zero));
-               IFCAnyHandle shapeRep = RepresentationUtil.CreateBodyMappedItemRep(exporterIFC, coupler, categoryId, contextOfItems3d, representations);
-               shapeReps.Add(shapeRep);
+               IFCAnyHandle contextOfItems3d = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
 
+               ISet<IFCAnyHandle> representations = new HashSet<IFCAnyHandle>()
+               { ExporterUtil.CreateDefaultMappedItem(file, repMapList[0], XYZ.Zero) };
+
+               IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>()
+               { RepresentationUtil.CreateBodyMappedItemRep(exporterIFC, coupler, categoryId, contextOfItems3d, representations) };
+               
                IFCAnyHandle productRepresentation = IFCInstanceExporter.CreateProductDefinitionShape(exporterIFC.GetFile(), null, null, shapeReps);
 
                Transform trf = coupler.GetCouplerPositionTransform(idx);

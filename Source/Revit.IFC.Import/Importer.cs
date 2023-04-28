@@ -188,7 +188,7 @@ namespace Revit.IFC.Import
          Importer importer = new Importer();
          TheImporter = importer;
          TheCache = IFCImportCache.Create(originalDocument, ifcFileName);
-         TheOptions = importer.m_ImportOptions = IFCImportOptions.Create(importOptions);
+         TheOptions = importer.m_ImportOptions = IFCImportOptions.Create(importOptions, ifcFileName);
          TheLog = IFCImportLog.CreateLog(ifcFileName, "log.html", !TheOptions.DisableLogging);
          return importer;
       }
@@ -520,6 +520,9 @@ namespace Revit.IFC.Import
             //
             if (TheOptions.IsHybridImport)
             {
+               BasePoint originalSurveyPoint = BasePoint.GetSurveyPoint(ifcDocument);
+               XYZ originalPosition = originalSurveyPoint.SharedPosition;
+               
                // Hybrid IFC Import:  Create Transaction now, since Document.Import needs it.
                // Non-Hybrid IFC Import:  IFCFile.Create() will create Transaction later.
                transaction = new Transaction(ifcDocument);
@@ -530,6 +533,16 @@ namespace Revit.IFC.Import
                else
                {
                   TheHybridInfo = m_ImportHybridInfo = new IFCImportHybridInfo(ifcDocument, localFileName);
+                  if (TheHybridInfo != null)
+                  {
+                     BasePoint newSurveyPoint = BasePoint.GetSurveyPoint(ifcDocument);
+                     XYZ newPosition = newSurveyPoint.SharedPosition;
+
+                     if (!newPosition.IsAlmostEqualTo(originalPosition))
+                     {
+                        TheHybridInfo.LargeCoordinateTransform = Transform.CreateTranslation(newPosition - originalPosition);
+                     }
+                  }
                }
             }
 
@@ -641,13 +654,13 @@ namespace Revit.IFC.Import
       {
          TheImporter = this;
 
+         string fullIFCFileName = importer.FullFileName;
          IDictionary<string, string> options = importer.GetOptions();
-         TheOptions = m_ImportOptions = IFCImportOptions.Create(options);
+         TheOptions = m_ImportOptions = IFCImportOptions.Create(options, fullIFCFileName);
 
          // An early check, based on the options set - if we are allowed to use an up-to-date existing file on disk, use it.
          try
          {
-            string fullIFCFileName = importer.FullFileName;
             if (!TheOptions.ForceImport && !NeedsReload(importer.Document, fullIFCFileName))
                return;
 
@@ -675,6 +688,7 @@ namespace Revit.IFC.Import
          finally
          {
             TheLog?.Close();
+            TheLog = null;
             IFCImportFile.TheFile?.Close();
          }
       }

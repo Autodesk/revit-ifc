@@ -18,4 +18,24 @@ namespace Revit.IFC.Common.Enums
       ProjectInTN = 4,
       InternalInTN = 5
    }
+
+   public enum IFCRepresentationIdentifier
+   {
+      Annotation,
+      Axis,
+      Body,
+      BodyFallback, // Body-Fallback.
+      Box,
+      Clearance,
+      CoG,  // Center of gravity
+      FootPrint,
+      Lighting,
+      Profile,
+      Reference,
+      Style,
+      Surface,
+      Other,
+
+      None  // The top level value.
+   }
 }

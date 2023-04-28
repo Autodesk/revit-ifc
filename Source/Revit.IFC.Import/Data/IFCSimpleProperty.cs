@@ -161,9 +161,12 @@ namespace Revit.IFC.Import.Data
       void ProcessIFCPropertyEnumeratedValue(IFCAnyHandle propertyEnumeratedValue)
       {
          List<IFCData> enumValues = IFCAnyHandleUtil.GetAggregateAttribute<List<IFCData>>(propertyEnumeratedValue, "EnumerationValues");
-         foreach (IFCData value in enumValues)
+         if (enumValues != null)
          {
-            IFCPropertyValues.Add(new IFCPropertyValue(this, value, false));
+            foreach (IFCData value in enumValues)
+            {
+               IFCPropertyValues.Add(new IFCPropertyValue(this, value, false));
+            }
          }
       }
 
