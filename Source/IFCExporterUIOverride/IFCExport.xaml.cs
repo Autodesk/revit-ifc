@@ -248,6 +248,8 @@ namespace BIM.IFC.Export.UI
          SetParent(app.MainWindowHandle);
 
          InitializeComponent();
+         // When user press escape key it will close the window
+         PreviewKeyDown += (s, e) => { if (e.Key == System.Windows.Input.Key.Escape) Close(); };
 
          currentSelectedSetup.SelectionChanged -= currentSelectedSetup_SelectionChanged;
 
