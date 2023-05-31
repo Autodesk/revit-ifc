@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="1A9C2C21-2325-42D2-0000-992E73C12300" Name="Revit IFC 2023" Language="1033" Version="23.2.5.0" Manufacturer="Autodesk" UpgradeCode="1A9C2C21-23B8-42D2-0000-992E73C11B3F">
+   <Product Id="1A9C2C21-2330-42D2-0000-992E73C12300" Name="Revit IFC 2023" Language="1033" Version="23.3.0.0" Manufacturer="Autodesk" UpgradeCode="1A9C2C21-23B8-42D2-0000-992E73C11B3F">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -112,10 +112,10 @@
                <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExporterUIOverride.dll" Source="$(var.ProjectDir)..\Program Files to Install\IFCExporterUIOverride.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Common_DLL" Guid="C7ED4A2C-DCB1-457E-968F-2DDE9993C1B6">
-               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Common.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Import_Core_DLL" Guid="33DEBE0A-57D1-4BFC-BC99-FDA776B6224E">
-               <File Id ="FILE_Ifc_Import_Core_DLL" Name="Revit.IFC.Import.Core.dll" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Import.Core.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_Import_Core_DLL" Name="Revit.IFC.Import.Core.dll" Source="$(var.Revit.IFC.Import.Core.TargetDir)Revit.IFC.Import.Core.dll" KeyPath="yes" />
             </Component>
          <?else?>
             <Component Id = "COMP_IFC_Export_DLL" Guid="D59E44AA-89A3-4CD7-AD9C-8D4D7AC6026B">

@@ -79,9 +79,10 @@ namespace Revit.IFC.Export.Utility
 
                // Openings shouldn't have surface styles for their geometry.
                HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { extrusionHandle };
-               
-               IFCAnyHandle representationHnd = RepresentationUtil.CreateSweptSolidRep(exporterIFC,
-                  element, categoryId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null);
+
+               IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
+               IFCAnyHandle representationHnd = RepresentationUtil.CreateSweptSolidRep(
+                  exporterIFC, element, categoryId, contextOfItems, bodyItems, null, null);
                IList<IFCAnyHandle> representations = IFCAnyHandleUtil.IsNullOrHasNoValue(representationHnd) ?
                   null : new List<IFCAnyHandle>() { representationHnd };
 
@@ -327,9 +328,9 @@ namespace Revit.IFC.Export.Utility
                string openingGUID = CreateOpeningGUID(element, openingElem, range, 
                   openingIndex, solidIndex);
                   
-               CreateOpening(exporterIFC, parentHandle, localPlacement, element, openingElem, openingGUID, extrusionData, lcs, openingData.IsRecess,
-                   setter, localWrapper, range, openingIndex, solidIndex, registerOpening);
-               createdOpeningCount++;
+               if (CreateOpening(exporterIFC, parentHandle, localPlacement, element, openingElem, openingGUID, extrusionData, lcs, openingData.IsRecess,
+                   setter, localWrapper, range, openingIndex, solidIndex, registerOpening) != null)
+                  createdOpeningCount++;
             }
          }
          return createdOpeningCount;
@@ -486,53 +487,73 @@ namespace Revit.IFC.Export.Utility
 
          ElementId catId = CategoryUtil.GetSafeCategoryId(insertElement);
 
+         if (extrusionData.ScaledExtrusionLength < MathUtil.Eps())
+         {
+            double thickness = 0.0;
+            if (hostElement is Floor)
+               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM, out thickness);
+            else if (hostElement is RoofBase)
+               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM, out thickness);
+            else if (hostElement is Ceiling)
+               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.CEILING_THICKNESS, out thickness);
+
+            if (thickness < MathUtil.Eps())
+               return null;
+
+            extrusionData.ScaledExtrusionLength = UnitUtil.ScaleLength(thickness);
+         }
+
+         IFCAnyHandle openingHnd = null;
          IFCAnyHandle openingProdRepHnd = RepresentationUtil.CreateExtrudedProductDefShape(exporterIFC, insertElement, catId,
              curveLoops, lcs, extrusionData.ExtrusionDirection, extrusionData.ScaledExtrusionLength);
 
-         string openingObjectType = isRecess ? "Recess" : "Opening";
-         IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-         string openingName = NamingUtil.GetNameOverride(insertElement, null);
-         if (string.IsNullOrEmpty(openingName))
-            openingName = NamingUtil.GetNameOverride(hostElement, NamingUtil.CreateIFCObjectName(exporterIFC, hostElement));
-         string openingDescription = NamingUtil.GetDescriptionOverride(insertElement, null);
-         string openingTag = NamingUtil.GetTagOverride(insertElement);
-         IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, 
-            openingGUID, ownerHistory, openingName, openingDescription, openingObjectType,
-            ExporterUtil.CreateLocalPlacement(file, hostPlacement, null), openingProdRepHnd, openingTag);
-         IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement, openingObjectType);
-         IFCExportBodyParams ecData = null;
-         if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(openingProdRepHnd))
          {
-            double height, width;
-            ecData = new IFCExportBodyParams();
-            if (GeometryUtil.ComputeHeightWidthOfCurveLoop(curveLoops[0], lcs, out height, out width))
+            string openingObjectType = isRecess ? "Recess" : "Opening";
+            IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+            string openingName = NamingUtil.GetNameOverride(insertElement, null);
+            if (string.IsNullOrEmpty(openingName))
+               openingName = NamingUtil.GetNameOverride(hostElement, NamingUtil.CreateIFCObjectName(exporterIFC, hostElement));
+            string openingDescription = NamingUtil.GetDescriptionOverride(insertElement, null);
+            string openingTag = NamingUtil.GetTagOverride(insertElement);
+            openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC,
+               openingGUID, ownerHistory, openingName, openingDescription, openingObjectType,
+               ExporterUtil.CreateLocalPlacement(file, hostPlacement, null), openingProdRepHnd, openingTag);
+            IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement, openingObjectType);
+            IFCExportBodyParams ecData = null;
+            if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
             {
-               ecData.ScaledHeight = UnitUtil.ScaleLength(height);
-               ecData.ScaledWidth = UnitUtil.ScaleLength(width);
+               double height, width;
+               ecData = new IFCExportBodyParams();
+               if (GeometryUtil.ComputeHeightWidthOfCurveLoop(curveLoops[0], lcs, out height, out width))
+               {
+                  ecData.ScaledHeight = UnitUtil.ScaleLength(height);
+                  ecData.ScaledWidth = UnitUtil.ScaleLength(width);
+               }
+               else
+               {
+                  double area = ExporterIFCUtils.ComputeAreaOfCurveLoops(curveLoops);
+                  ecData.ScaledArea = UnitUtil.ScaleArea(area);
+               }
+               PropertyUtil.CreateOpeningQuantities(exporterIFC, openingHnd, ecData);
             }
-            else
-            {
-               double area = ExporterIFCUtils.ComputeAreaOfCurveLoops(curveLoops);
-               ecData.ScaledArea = UnitUtil.ScaleArea(area);
-            }
-            PropertyUtil.CreateOpeningQuantities(exporterIFC, openingHnd, ecData);
-         }
 
-         if (localWrapper != null)
-         {
-            Element elementForProperties = null;
-            if (GUIDUtil.IsGUIDFor(hostElement, insertElement, range, openingIndex, solidIndex, openingGUID))
+            if (localWrapper != null)
             {
-               elementForProperties = insertElement;
-               registerAsOpening = true;
+               Element elementForProperties = null;
+               if (GUIDUtil.IsGUIDFor(hostElement, insertElement, range, openingIndex, solidIndex, openingGUID))
+               {
+                  elementForProperties = insertElement;
+                  registerAsOpening = true;
+               }
+               localWrapper.AddElement(elementForProperties, openingHnd, setter, ecData, false, exportInfo, registerAsOpening);
             }
-            localWrapper.AddElement(elementForProperties, openingHnd, setter, ecData, false, exportInfo, registerAsOpening);
-         }
 
-         string voidGuid = GUIDUtil.GenerateIFCGuidFrom(
-            GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelVoidsElement, hostObjHnd, openingHnd));
-         IFCInstanceExporter.CreateRelVoidsElement(file, voidGuid, ownerHistory, null, null, 
-            hostObjHnd, openingHnd);
+            string voidGuid = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelVoidsElement, hostObjHnd, openingHnd));
+            IFCInstanceExporter.CreateRelVoidsElement(file, voidGuid, ownerHistory, null, null,
+               hostObjHnd, openingHnd);
+         }
          return openingHnd;
       }
 

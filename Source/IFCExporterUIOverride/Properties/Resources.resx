@@ -279,22 +279,22 @@
     <value>Could not create a temporary document for exporting the linked instance(s) for ids: {0}</value>
   </data>
   <data name="LinkInstanceExportCantFindDoc" xml:space="preserve">
-    <value>The document for the linked instance(s) could not be found for id(s): {0}.</value>
+    <value>The document for the linked instance(s) could not be found for ids: {0}.</value>
   </data>
   <data name="LinkInstanceExportErrorMain" xml:space="preserve">
     <value>{0} linked instance(s) could not be exported.</value>
   </data>
   <data name="LinkInstanceExportErrorPath" xml:space="preserve">
-    <value>The path for the linked instance(s) did not exist for id(s): {0}.</value>
+    <value>The path for the linked instance(s) did not exist for ids: {0}.</value>
   </data>
   <data name="LinkInstanceExportNonConformal" xml:space="preserve">
-    <value>The linked instance(s) were non-conformal for id(s): {0}.</value>
+    <value>The linked instance(s) were non-conformal for ids: {0}.</value>
   </data>
   <data name="LinkInstanceExportHasReflection" xml:space="preserve">
-    <value>The linked instance(s) were mirrored for id(s): {0}.  To export a mirrored linked instance, mirror the linked geometry and link in the new document.</value>
+    <value>The linked instance(s) were mirrored for ids: {0}.  To export a mirrored linked instance, mirror the linked geometry and link in the new document.</value>
   </data>
   <data name="LinkInstanceExportScaled" xml:space="preserve">
-    <value>The linked instance(s) were scaled for id(s): {0}.</value>
+    <value>The linked instance(s) were scaled for ids: {0}.</value>
   </data>
   <data name="IFCExport" xml:space="preserve">
     <value>IFC export</value>
@@ -357,7 +357,7 @@
     <value>Country</value>
   </data>
   <data name="CurrentSelectedSetup" xml:space="preserve">
-    <value>Current selected setup:</value>
+    <value>Export setup:</value>
   </data>
   <data name="DeleteOldSetups" xml:space="preserve">
     <value>Delete old IFC export setups</value>

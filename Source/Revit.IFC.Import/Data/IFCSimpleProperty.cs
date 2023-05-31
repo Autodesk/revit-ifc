@@ -84,7 +84,11 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(simpleProperty);
 
-         Name = IFCImportHandleUtil.GetRequiredStringAttribute(simpleProperty, "Name", true);
+         Name = IFCImportHandleUtil.GetRequiredStringAttribute(simpleProperty, "Name", false);
+         if (string.IsNullOrWhiteSpace(Name))
+         {
+            Name = Properties.Resources.IFCUnknownProperty + " " + Id;
+         }
 
          // IfcPropertyBoundedValue and IfcPropertyTableValue has already been split off into their own classes.  Need to do the same with the rest here.
          if (IFCAnyHandleUtil.IsSubTypeOf(simpleProperty, IFCEntityType.IfcPropertySingleValue))
@@ -157,9 +161,12 @@ namespace Revit.IFC.Import.Data
       void ProcessIFCPropertyEnumeratedValue(IFCAnyHandle propertyEnumeratedValue)
       {
          List<IFCData> enumValues = IFCAnyHandleUtil.GetAggregateAttribute<List<IFCData>>(propertyEnumeratedValue, "EnumerationValues");
-         foreach (IFCData value in enumValues)
+         if (enumValues != null)
          {
-            IFCPropertyValues.Add(new IFCPropertyValue(this, value, false));
+            foreach (IFCData value in enumValues)
+            {
+               IFCPropertyValues.Add(new IFCPropertyValue(this, value, false));
+            }
          }
       }
 

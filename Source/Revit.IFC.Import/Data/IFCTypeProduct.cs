@@ -84,7 +84,7 @@ namespace Revit.IFC.Import.Data
             return;
          }
 
-         string repType = representationMap.MappedRepresentation.Type;
+         string repType = representationMap.MappedRepresentation.RepresentationType;
          if (repType == null)
             repType = string.Empty;
 

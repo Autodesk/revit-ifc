@@ -35,7 +35,7 @@ namespace Revit.IFC.Export.Exporter
    /// <summary>
    /// Provides methods to export a Revit element as IfcReinforcingMesh.
    /// </summary>
-   class FabricSheetExporter
+   public class FabricSheetExporter
    {
       /// <summary>
       /// Exports a FabricArea as an IfcGroup.  There is no geometry to export.
@@ -205,8 +205,12 @@ namespace Revit.IFC.Export.Exporter
                ISet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle> { bodyItem };
                IFCAnyHandle shapeRep = null;
                if (bodyItems.Count > 0)
-                  shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(cfg.ExporterIFC, cfg.Sheet, cfg.CategoryId,
-                     cfg.ExporterIFC.Get3DContextHandle("Body"), bodyItems, null);
+               {
+                  ElementId cfgCategoryId = CategoryUtil.GetSafeCategoryId(cfg);
+                  IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
+                  shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(cfg.ExporterIFC, cfg.Sheet, 
+                     cfgCategoryId, contextOfItems, bodyItems, null);
+               }
                IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
                if (shapeRep != null)
                   shapeReps.Add(shapeRep);
@@ -268,8 +272,12 @@ namespace Revit.IFC.Export.Exporter
 
          IFCAnyHandle shapeRep = null;
          if (cfg.BodyItems.Count > 0)
-            shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(cfg.ExporterIFC, cfg.Sheet, cfg.CategoryId, 
-               cfg.ExporterIFC.Get3DContextHandle("Body"), cfg.BodyItems, null);
+         {
+            ElementId categoryId = CategoryUtil.GetSafeCategoryId(cfg);
+            IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
+            shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(cfg.ExporterIFC, cfg.Sheet,
+               categoryId, contextOfItems, cfg.BodyItems, null);
+         }
 
          IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
          if (shapeRep != null)

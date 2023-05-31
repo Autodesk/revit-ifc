@@ -25,6 +25,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.ExternalService;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Import.Data;
+using Revit.IFC.Import.Properties;
 using Revit.IFC.Import.Utility;
 using IFCImportOptions = Revit.IFC.Import.Utility.IFCImportOptions;
 using Revit.IFC.Import.Core;
@@ -82,7 +83,7 @@ namespace Revit.IFC.Import
          }
          else
             throw new InvalidOperationException("Failed to get IFC importer service.");
-      }
+      } 
    }
 
    /// <summary>
@@ -184,7 +185,7 @@ namespace Revit.IFC.Import
          Importer importer = new Importer();
          TheImporter = importer;
          TheCache = IFCImportCache.Create(originalDocument, ifcFileName);
-         TheOptions = importer.m_ImportOptions = IFCImportOptions.Create(importOptions);
+         TheOptions = importer.m_ImportOptions = IFCImportOptions.Create(importOptions, ifcFileName);
          TheLog = IFCImportLog.CreateLog(ifcFileName, "log.html", !TheOptions.DisableLogging);
          return importer;
       }
@@ -324,7 +325,7 @@ namespace Revit.IFC.Import
 
          string revitFileName = IFCImportFile.GetRevitFileName(ifcFileName);
 
-         // If the RVT file doesn't exist, we'll reload.  Otherwise, look at saved file size and timestamp.
+         // If the RVT file doesn't exist, we'll reload. Otherwise, look at saved file size and timestamp.
          if (!File.Exists(revitFileName))
             return true;
 
@@ -357,6 +358,33 @@ namespace Revit.IFC.Import
          }
 
          return false;
+      }
+
+      /// <summary>
+      /// Start a Transaction for the ReferenceIFC path.
+      /// Will enable ForcedModalHandling and ClearAfterRollback in FailureHandlingOptions.
+      /// </summary>
+      /// <param name="transaction">Transaction to start.</param>
+      /// <returns>Transaction Status after Start().  This should be Started if all went well.</returns>
+      /// <exception cref="ArgumentNullException">Transaction parameter should be non-null.</exception>
+      public static TransactionStatus StartReferenceIFCTransaction(Transaction transaction)
+      {
+         TransactionStatus transactionStatus = transaction.GetStatus();
+         if (transactionStatus == TransactionStatus.Started)
+         {
+            TheLog.LogWarning(-1, "Attempting to start ReferenceIFC Transaction when already started", true);
+            return transactionStatus;
+         }
+
+         transactionStatus = transaction.Start(Resources.IFCOpenReferenceFile);
+         if (transactionStatus == TransactionStatus.Started)
+         {
+            FailureHandlingOptions options = transaction.GetFailureHandlingOptions();
+            options.SetForcedModalHandling(true);
+            options.SetClearAfterRollback(true);
+         }
+
+         return transactionStatus;
       }
 
       private bool DocumentUpToDate(Document doc, string ifcFileName)
@@ -452,7 +480,6 @@ namespace Revit.IFC.Import
 
          Document originalDocument = document;
          Document ifcDocument = null;
-
          if (TheOptions.Action == IFCImportAction.Link)
          {
             string linkedFileName = IFCImportFile.GetRevitFileName(localFileName);
@@ -460,7 +487,9 @@ namespace Revit.IFC.Import
             ifcDocument = LoadOrCreateLinkDocument(originalDocument, linkedFileName);
          }
          else
+         {
             ifcDocument = originalDocument;
+         }
 
          bool useCachedRevitFile = DocumentUpToDate(ifcDocument, localFileName);
 
@@ -469,9 +498,10 @@ namespace Revit.IFC.Import
          if (!useCachedRevitFile && ifcDocument.IsLinked)
          {
             useCachedRevitFile = true;
-            Importer.AddDelayedLinkError(BuiltInFailures.ImportFailures.IFCCantUpdateLinkedFile);
+            AddDelayedLinkError(BuiltInFailures.ImportFailures.IFCCantUpdateLinkedFile);
          }
 
+         Transaction transaction = null;
          if (!useCachedRevitFile)
          {
             m_ImportCache = IFCImportCache.Create(ifcDocument, localFileName);
@@ -481,7 +511,7 @@ namespace Revit.IFC.Import
                TheCache.CreateExistingElementMaps(ifcDocument);
 
             // TheFile will contain the same value as the return value for this function.
-            IFCImportFile.Create(localFileName, m_ImportOptions, ifcDocument);
+            IFCImportFile.Create(localFileName, m_ImportOptions, ifcDocument, transaction);
          }
 
          if (useCachedRevitFile || IFCImportFile.TheFile != null)
@@ -508,8 +538,7 @@ namespace Revit.IFC.Import
             }
          }
 
-         if (m_ImportCache != null)
-            m_ImportCache.Reset(ifcDocument);
+         m_ImportCache?.Reset(ifcDocument);
       }
 
       /// <summary>
@@ -520,13 +549,13 @@ namespace Revit.IFC.Import
       {
          TheImporter = this;
 
-         IDictionary<String, String> options = importer.GetOptions();
-         TheOptions = m_ImportOptions = IFCImportOptions.Create(options);
+         string fullIFCFileName = importer.FullFileName;
+         IDictionary<string, string> options = importer.GetOptions();
+         TheOptions = m_ImportOptions = IFCImportOptions.Create(options, fullIFCFileName);
 
          // An early check, based on the options set - if we are allowed to use an up-to-date existing file on disk, use it.
          try
          {
-            string fullIFCFileName = importer.FullFileName;
             if (!TheOptions.ForceImport && !NeedsReload(importer.Document, fullIFCFileName))
                return;
 
@@ -544,8 +573,7 @@ namespace Revit.IFC.Import
          }
          catch (Exception ex)
          {
-            if (Importer.TheLog != null)
-               Importer.TheLog.LogError(-1, ex.Message, false);
+            TheLog?.LogError(-1, ex.Message, false);
             // The following message can sometimes occur when reloading some IFC files
             // from external resources.  In this case, we should silently fail, and not
             // throw.
@@ -554,10 +582,9 @@ namespace Revit.IFC.Import
          }
          finally
          {
-            if (Importer.TheLog != null)
-               Importer.TheLog.Close();
-            if (IFCImportFile.TheFile != null)
-               IFCImportFile.TheFile.Close();
+            TheLog?.Close();
+            TheLog = null;
+            IFCImportFile.TheFile?.Close();
          }
       }
 
@@ -580,9 +607,9 @@ namespace Revit.IFC.Import
          return new Guid("88743F28-A2E1-4935-949D-4DB7A724A150");
       }
 
-      public Autodesk.Revit.DB.ExternalService.ExternalServiceId GetServiceId()
+      public ExternalServiceId GetServiceId()
       {
-         return Autodesk.Revit.DB.ExternalService.ExternalServices.BuiltInExternalServices.IFCImporterService;
+         return ExternalServices.BuiltInExternalServices.IFCImporterService;
       }
 
       public string GetVendorId()

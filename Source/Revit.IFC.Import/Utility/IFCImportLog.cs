@@ -550,36 +550,6 @@ namespace Revit.IFC.Import.Utility
             }
             ProcessLogTableEnd(total);
 
-            // Copy existing .log file, if any, to this file.
-            // For now, assume name of original log file = logFileName - ".html"
-            if (LogFileName.EndsWith(".log.html"))
-            {
-               string originalLogFileName = LogFileName.Substring(0, LogFileName.Length - 5);
-               try
-               {
-                  // ODA_TODO: Remove this when we remove the EDM toolkit.
-                  if (File.Exists(originalLogFileName))
-                  {
-                     StreamReader originalLogFile = new StreamReader(originalLogFileName);
-                     if (originalLogFile != null)
-                     {
-                        WriteLineNoBreak("<A NAME=\"ToolkitMessage\"></A>");
-                        WriteLineNoBreak("Toolkit Log");
-                        WriteLine("");
-
-                        string originalLogContents = null;
-                        while ((originalLogContents = originalLogFile.ReadLine()) != null)
-                           WriteLine(originalLogContents);
-                        originalLogFile.Close();
-                        File.Delete(originalLogFileName);
-                     }
-                  }
-               }
-               catch
-               {
-               }
-            }
-
             WriteLine("");
             WriteLine("Importer Version: " + IFCImportOptions.ImporterVersion);
 

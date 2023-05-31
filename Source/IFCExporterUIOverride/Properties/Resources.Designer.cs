@@ -430,7 +430,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Current selected setup:.
+        ///   Looks up a localized string similar to Export setup:.
         /// </summary>
         public static string CurrentSelectedSetup {
             get {
@@ -1456,7 +1456,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The document for the linked instance(s) could not be found for id(s): {0}..
+        ///   Looks up a localized string similar to The document for the linked instance(s) could not be found for ids: {0}..
         /// </summary>
         public static string LinkInstanceExportCantFindDoc {
             get {
@@ -1474,7 +1474,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The path for the linked instance(s) did not exist for id(s): {0}..
+        ///   Looks up a localized string similar to The path for the linked instance(s) did not exist for ids: {0}..
         /// </summary>
         public static string LinkInstanceExportErrorPath {
             get {
@@ -1483,7 +1483,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The linked instance(s) were mirrored for id(s): {0}.  To export a mirrored linked instance, mirror the linked geometry and link in the new document..
+        ///   Looks up a localized string similar to The linked instance(s) were mirrored for ids: {0}.  To export a mirrored linked instance, mirror the linked geometry and link in the new document..
         /// </summary>
         public static string LinkInstanceExportHasReflection {
             get {
@@ -1492,7 +1492,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The linked instance(s) were non-conformal for id(s): {0}..
+        ///   Looks up a localized string similar to The linked instance(s) were non-conformal for ids: {0}..
         /// </summary>
         public static string LinkInstanceExportNonConformal {
             get {
@@ -1501,7 +1501,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The linked instance(s) were scaled for id(s): {0}..
+        ///   Looks up a localized string similar to The linked instance(s) were scaled for ids: {0}..
         /// </summary>
         public static string LinkInstanceExportScaled {
             get {

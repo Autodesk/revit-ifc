@@ -282,7 +282,8 @@ namespace Revit.IFC.Export.Utility
             }
             else if (spParCtx.RUNNINGNUMBER() != null)
             {
-               var key = new Tuple<string, string>(RevitElement.Category.Name, RevitParameterName);
+               string categoryName = CategoryUtil.GetCategoryName(RevitElement);
+               var key = new Tuple<string, string>(categoryName, RevitParameterName);
                int lastNumber;
                if (LastRunningNumberCollection.ContainsKey(key))
                {

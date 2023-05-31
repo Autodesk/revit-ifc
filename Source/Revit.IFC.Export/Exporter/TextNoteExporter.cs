@@ -26,6 +26,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -112,16 +113,16 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle repItemHnd = IFCInstanceExporter.CreateTextLiteralWithExtent(file, textString, origin, Toolkit.IFCTextPath.Left, extent, boxAlignment);
                IFCAnyHandle annoTextOccHnd = IFCInstanceExporter.CreateStyledItem(file, repItemHnd, presHndSet, null);
 
-               ElementId catId = textNote.Category != null ? textNote.Category.Id : ElementId.InvalidElementId;
-               HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
-               bodyItems.Add(repItemHnd);
-               IFCAnyHandle bodyRepHnd = RepresentationUtil.CreateAnnotationSetRep(exporterIFC, textNote, catId, exporterIFC.Get2DContextHandle(), bodyItems);
+               ElementId catId = CategoryUtil.GetSafeCategoryId(textNote);
+               HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { repItemHnd };
+               IFCAnyHandle context2d = ExporterCacheManager.Get2DContextHandle(IFCRepresentationIdentifier.Annotation);
+               IFCAnyHandle bodyRepHnd = RepresentationUtil.CreateAnnotationSetRep(exporterIFC, 
+                  textNote, catId, context2d, bodyItems);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
                   throw new Exception("Failed to create shape representation.");
 
-               IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
-               shapeReps.Add(bodyRepHnd);
+               IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>() { bodyRepHnd };
 
                IFCAnyHandle prodShapeHnd = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
                string guid = GUIDUtil.CreateGUID(textNote);
@@ -129,7 +130,8 @@ namespace Revit.IFC.Export.Exporter
                if (exportType.ExportInstance == Common.Enums.IFCEntityType.IfcAnnotation)
                {
                   instHnd = IFCInstanceExporter.CreateAnnotation(exporterIFC, textNote, guid,
-                     ExporterCacheManager.OwnerHistoryHandle, setter.LocalPlacement, prodShapeHnd);
+                     ExporterCacheManager.OwnerHistoryHandle, setter.LocalPlacement, prodShapeHnd,
+                     null);
                }
                else
                {

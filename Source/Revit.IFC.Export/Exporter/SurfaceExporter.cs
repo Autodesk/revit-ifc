@@ -23,6 +23,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -107,9 +108,10 @@ namespace Revit.IFC.Export.Exporter
 
 
          ElementId catId = CategoryUtil.GetSafeCategoryId(element);
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
 
-         bodyRep = RepresentationUtil.CreateSurfaceRep(exporterIFC, element, catId, exporterIFC.Get3DContextHandle("Body"), surfaceItems,
-             exportAsFacetation, bodyRep);
+         bodyRep = RepresentationUtil.CreateSurfaceRep(exporterIFC, element, catId,
+            contextOfItems, surfaceItems, exportAsFacetation, bodyRep);
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
             return false;
 
@@ -117,8 +119,10 @@ namespace Revit.IFC.Export.Exporter
          {
             HashSet<IFCAnyHandle> boundaryRepresentationSet = new HashSet<IFCAnyHandle>();
             boundaryRepresentationSet.UnionWith(boundaryRepresentations);
-            boundaryRep = RepresentationUtil.CreateBoundaryRep(exporterIFC, element, catId, exporterIFC.Get3DContextHandle("FootPrint"), boundaryRepresentationSet,
-                boundaryRep);
+            IFCAnyHandle contextOfItemsFootPrint = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.FootPrint);
+
+            boundaryRep = RepresentationUtil.CreateBoundaryRep(exporterIFC, element, catId,
+               contextOfItemsFootPrint, boundaryRepresentationSet, boundaryRep);
          }
 
          return true;

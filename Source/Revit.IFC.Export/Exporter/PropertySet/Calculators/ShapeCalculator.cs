@@ -87,6 +87,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodRepHnd))
             return false;
 
+         // TODO: See if we need to extend this beyond provisions for voids and duct segments.
+         bool isDuctSegmentTypeShapeParam =
+            string.Compare(entryMap.RevitParameterName, "Pset_DuctSegmentTypeCommon.Shape", true) == 0;
+
          IList<IFCAnyHandle> repHnds = IFCAnyHandleUtil.GetRepresentations(prodRepHnd);
          foreach (IFCAnyHandle repHnd in repHnds)
          {
@@ -114,15 +118,26 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                   return false;
 
                m_CurrentProfileHandle = sweptAreaHnd;
+
+               // "Shape" isn't just for Provision For Void; it is also for 
+               // Pset_DuctSegmentTypeCommon.Shape.  They have different values, so we will
+               // figure out the base value and then "translate".
+               // TODO: Deal with potentially different schemas.
                if (IFCAnyHandleUtil.IsTypeOf(m_CurrentProfileHandle, IFCEntityType.IfcRectangleProfileDef))
-                  m_Shape = IFCProvisionForVoidShapeType.Rectangle.ToString();
+               {
+                  m_Shape = isDuctSegmentTypeShapeParam ? IFC4.PEnum_DuctSegmentShape.RECTANGULAR.ToString() :
+                     IFCProvisionForVoidShapeType.Rectangle.ToString();
+               }
                else if (IFCAnyHandleUtil.IsTypeOf(m_CurrentProfileHandle, IFCEntityType.IfcCircleProfileDef))
+               {
                   m_Shape = IFCProvisionForVoidShapeType.Round.ToString();
+               }
             }
 
             if (m_Shape == null)
             {
-               m_Shape = IFCProvisionForVoidShapeType.Undefined.ToString();
+               m_Shape = isDuctSegmentTypeShapeParam ? IFC4.PEnum_DuctSegmentShape.OTHER.ToString() :
+                  IFCProvisionForVoidShapeType.Undefined.ToString();
                m_CurrentProfileHandle = null;
             }
 

@@ -111,15 +111,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public string MethodOfMeasurement { get; set; } = String.Empty;
 
       /// <summary>
-      /// If true, don't use the internal Revit parameter of the same name.
-      /// </summary>
-      /// <remarks>
-      /// This is intended to be used when the internal Revit parameter of the same name 
-      /// (depending on localization) has a different calculation than the IFC parameter.
-      /// </remarks>
-      public bool IgnoreInternalValue { get; set; } = false;
-
-      /// <summary>
       /// Process to create element quantity.
       /// </summary>
       /// <param name="file">The IFC file.</param>

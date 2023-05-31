@@ -58,6 +58,8 @@ namespace Revit.IFC.Export.Utility
                ExportThermalParameters(file, document, material, materialHnd);
 
                ExportMappedMaterialProperties(file, exporterIFC, material, materialHnd);
+
+               PropertyUtil.CreateInternalRevitPropertySets(exporterIFC, material, new HashSet<IFCAnyHandle>() { materialHnd }, true);
             }
          }
       }
@@ -125,59 +127,15 @@ namespace Revit.IFC.Export.Utility
 
          HashSet<IFCAnyHandle> properties = new HashSet<IFCAnyHandle>();
 
-         // Name
-         string name = material.Name;
-         properties.Add(PropertyUtil.CreateLabelProperty(file, "Name", name, PropertyValueType.SingleValue, null));
-
          // Category
-         name = material.MaterialCategory;
+         string name = material.MaterialCategory;
          properties.Add(PropertyUtil.CreateLabelProperty(file, "Category", name, PropertyValueType.SingleValue, null));
 
          // Class
          name = material.MaterialClass;
          properties.Add(PropertyUtil.CreateLabelProperty(file, "Class", name, PropertyValueType.SingleValue, null));
 
-         // Description
-         string strValue;
-         ParameterUtil.GetStringValueFromElement(material, BuiltInParameter.ALL_MODEL_DESCRIPTION, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Description", strValue, PropertyValueType.SingleValue, null));
-
-         // Comments
-         ParameterUtil.GetStringValueFromElement(material, BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Comments", strValue, PropertyValueType.SingleValue, null));
-
-         // Manufacturer
-         ParameterUtil.GetStringValueFromElement(material, BuiltInParameter.ALL_MODEL_MANUFACTURER, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Manufacturer", strValue, PropertyValueType.SingleValue, null));
-
-         // Model
-         ParameterUtil.GetStringValueFromElement(material, BuiltInParameter.ALL_MODEL_MODEL, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Model", strValue, PropertyValueType.SingleValue, null));
-
-         // Cost
-         ParameterUtil.GetStringValueFromElement(material, BuiltInParameter.ALL_MODEL_COST, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Cost", strValue, PropertyValueType.SingleValue, null));
-
-         // URL
-         ParameterUtil.GetStringValueFromElement(material, BuiltInParameter.ALL_MODEL_URL, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "URL", strValue, PropertyValueType.SingleValue, null));
-
-         // Keynote
-         ParameterUtil.GetStringValueFromElement(material, BuiltInParameter.KEYNOTE_PARAM, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Keynote", strValue, PropertyValueType.SingleValue, null));
-
-         // Mark
-         ParameterUtil.GetStringValueFromElement(material, BuiltInParameter.ALL_MODEL_MARK, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Mark", strValue, PropertyValueType.SingleValue, null));
-
+         // The rest of identity parameters are exported automatically in PropertyUtil.CreateInternalRevitPropertySets
          return properties;
       }
 
@@ -584,7 +542,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="properties"> The properties set.</param>
       /// <param name="description"> The description.</param>
       /// <param name="name">The name.</param>
-      static void ExportGenericMaterialPropertySet(IFCFile file, IFCAnyHandle materialHnd, ISet<IFCAnyHandle> properties, string description, string name)
+      public static void ExportGenericMaterialPropertySet(IFCFile file, IFCAnyHandle materialHnd, ISet<IFCAnyHandle> properties, string description, string name)
       {
          if (file == null || materialHnd == null || properties == null || properties.Count < 1)
             return;
@@ -606,9 +564,12 @@ namespace Revit.IFC.Export.Utility
       {
          if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            IList<IList<PreDefinedPropertySetDescription>> psetsToCreate = ExporterCacheManager.ParameterCache.PreDefinedPropertySets;
-            IList<PreDefinedPropertySetDescription> currPsetsToCreate = ExporterUtil.GetCurrPreDefinedPSetsToCreate(materialHnd, psetsToCreate);
-
+            IList<IList<PreDefinedPropertySetDescription>> psetsToCreate = 
+               ExporterCacheManager.ParameterCache.PreDefinedPropertySets;
+            IList<PreDefinedPropertySetDescription> currPsetsToCreate =
+               ExporterUtil.GetCurrPreDefinedPSetsToCreate(materialHnd, psetsToCreate,
+               PSetsToProcess.Both);
+            
             foreach (PreDefinedPropertySetDescription currDesc in currPsetsToCreate)
             {
                // Create list of IFCData attributes using mapped parameter name
@@ -641,8 +602,8 @@ namespace Revit.IFC.Export.Utility
          }
          else
          {
-            IList<IList<PropertySetDescription>> psetsToCreate = ExporterCacheManager.ParameterCache.PropertySets;
-            IList<PropertySetDescription> currPsetsToCreate = ExporterUtil.GetCurrPSetsToCreate(materialHnd, psetsToCreate);
+            IList<PropertySetDescription> currPsetsToCreate =
+               ExporterUtil.GetCurrPSetsToCreate(materialHnd, PSetsToProcess.Instance);
 
             foreach (PropertySetDescription currDesc in currPsetsToCreate)
             {

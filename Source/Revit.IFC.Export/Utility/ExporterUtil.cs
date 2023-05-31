@@ -26,11 +26,22 @@ using Autodesk.Revit.DB.Mechanical;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Toolkit;
+using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Utility
 {
+   /// <summary>
+   /// An enum to decide what types of property sets to return for an entity.
+   /// </summary>
+   public enum PSetsToProcess
+   {
+      Type,
+      Instance,
+      Both
+   }
+
    /// <summary>
    /// Provides general utility methods for IFC export.
    /// </summary>
@@ -91,7 +102,7 @@ namespace Revit.IFC.Export.Utility
          catch
          {
          }
-         
+
       }
 
       /// <summary>
@@ -126,26 +137,6 @@ namespace Revit.IFC.Export.Utility
 
          elevation = projPos.Elevation;
          return true;
-      }
-
-      /// <summary>
-      /// Determines if the Exception is local to the element, or if export should be aborted.
-      /// </summary>
-      /// <param name="document">The document.</param>
-      /// <param name="ex">The unexpected exception.</param>
-      public static bool IsFatalException(Document document, Exception exception)
-      {
-         string msg = exception.ToString();
-         if (msg.Contains("Error in allocating memory"))
-         {
-            if (document == null)
-               return true;
-
-            FailureMessage fm = new FailureMessage(BuiltInFailures.ExportFailures.IFCFatalToolkitExportError);
-            document.PostFailure(fm);
-            return true;
-         }
-         return false;
       }
 
       /// <summary>
@@ -905,15 +896,15 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">The element.</param>
       /// <param name="categoryId">The returned category id.</param>
       /// <returns>The entity name.</returns>
-      public static string GetIFCClassNameFromExportTable(ExporterIFC exporterIFC, Element element, out ElementId categoryId)
+      public static string GetIFCClassNameFromExportTable(ExporterIFC exporterIFC, 
+         Element element, out ElementId categoryId)
       {
-         categoryId = ElementId.InvalidElementId;
+         Category category = CategoryUtil.GetSafeCategory(element);
 
-         Category category = element.Category;
+         categoryId = category?.Id ?? ElementId.InvalidElementId;
          if (category == null)
             return null;
-
-         categoryId = category.Id;
+         
          string specialEntry = GetIFCClassNameOrTypeFromSpecialEntry(exporterIFC, element, categoryId, true);
          if (specialEntry != null)
             return specialEntry;
@@ -929,7 +920,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The predefined type.</returns>
       public static string GetIFCTypeFromExportTable(ExporterIFC exporterIFC, Element element)
       {
-         Category category = element.Category;
+         Category category = CategoryUtil.GetSafeCategory(element);
          if (category == null)
             return null;
 
@@ -941,15 +932,208 @@ namespace Revit.IFC.Export.Utility
          return GetIFCTypeFromExportTable(exporterIFC, element, categoryId, -1);
       }
 
-      private class ApplicablePsets<T>
+      private class ApplicablePsets<T> where T : Description
       {
          public class PsetsByTypeAndPredefinedType
          {
-            public IList<T> ByType { get; set; }
-            public IList<T> ByPredefinedType { get; set; }
+            public void Initialize(bool process, PsetsByTypeAndPredefinedType cachedPsets)
+            {
+               if (process)
+               {
+                  SearchByType = cachedPsets?.ByType == null;
+                  SearchByPredefinedType = cachedPsets?.ByPredefinedType == null;
+                  SearchByAltPredefinedType = cachedPsets?.ByAltPredefinedType == null;
+               }
+
+               ByType = new List<T>();
+               ByPredefinedType = new List<T>();
+               ByAltPredefinedType = new List<T>();
+            }
+
+            public void UnionWith(PsetsByTypeAndPredefinedType applicablePsets)
+            {
+               if (SearchByType)
+                  ByType = ByType.Union(applicablePsets.ByType).ToList();
+               if (SearchByPredefinedType)
+                  ByPredefinedType = ByPredefinedType.Union(applicablePsets.ByPredefinedType).ToList();
+               if (SearchByAltPredefinedType)
+                  ByAltPredefinedType = ByAltPredefinedType.Union(applicablePsets.ByAltPredefinedType).ToList();
+            }
+
+            public void PopulateFromCache(PsetsByTypeAndPredefinedType cacheToUse)
+            {
+               if (!SearchByType)
+                  ByType = cacheToUse.ByType;
+               if (!SearchByPredefinedType)
+                  ByPredefinedType = cacheToUse.ByPredefinedType;
+               if (!SearchByAltPredefinedType)
+                  ByAltPredefinedType = cacheToUse.ByAltPredefinedType;
+            }
+
+            public void PopulateCache(IFCEntityType entityType,
+               string predefinedType,
+               string altPredefinedType,
+               IDictionary<ExporterCacheManager.PropertySetKey, IList<T>> cacheToUse)
+            {
+               if (SearchByType && ByType.Count > 0)
+                  cacheToUse[new ExporterCacheManager.PropertySetKey(entityType, null)] = ByType;
+               if (SearchByPredefinedType && ByPredefinedType.Count > 0)
+                  cacheToUse[new ExporterCacheManager.PropertySetKey(entityType, predefinedType)] = ByPredefinedType;
+               if (SearchByAltPredefinedType && ByAltPredefinedType.Count > 0)
+                  cacheToUse[new ExporterCacheManager.PropertySetKey(entityType, altPredefinedType)] = ByAltPredefinedType;
+            }
+
+            public void AddToList(List<T> currList)
+            {
+               currList.AddRange(ByType);
+               currList.AddRange(ByPredefinedType);
+               currList.AddRange(ByAltPredefinedType);
+            }
+
+            public bool NeedSearch()
+            {
+               return SearchByType || SearchByPredefinedType || SearchByAltPredefinedType;
+            }
+
+            public IList<T> ByType { get; set; } = null;
+            public IList<T> ByPredefinedType { get; set; } = null;
+            public IList<T> ByAltPredefinedType { get; set; } = null;
+
+            private bool SearchByType { get; set; } = false;
+            private bool SearchByPredefinedType { get; set; } = false;
+            private bool SearchByAltPredefinedType { get; set; } = false;
          }
+
          public PsetsByTypeAndPredefinedType ByIfcEntity { get; set; } = new PsetsByTypeAndPredefinedType();
          public PsetsByTypeAndPredefinedType ByIfcEntityType { get; set; } = new PsetsByTypeAndPredefinedType();
+
+         public void Initialize(bool processInstance, bool processType,
+            ApplicablePsets<T> cachedPsets)
+         {
+            ProcessInstance = processInstance;
+            ProcessType = processType;
+
+            ByIfcEntity.Initialize(ProcessInstance, cachedPsets?.ByIfcEntity);
+            ByIfcEntityType.Initialize(ProcessType, cachedPsets?.ByIfcEntityType);
+         }
+
+         public void PopulateFromCache(ApplicablePsets<T> cacheToUse)
+         {
+            if (ProcessInstance)
+            {
+               ByIfcEntity.PopulateFromCache(cacheToUse.ByIfcEntity);
+            }
+
+            if (ProcessType)
+            {
+               ByIfcEntityType.PopulateFromCache(cacheToUse.ByIfcEntityType);
+            }
+         }
+
+         public void UnionWith(ApplicablePsets<T> applicablePsets)
+         {
+            if (ProcessInstance)
+            {
+               ByIfcEntity.UnionWith(applicablePsets.ByIfcEntity);
+            }
+
+            if (ProcessType)
+            {
+               ByIfcEntityType.UnionWith(applicablePsets.ByIfcEntityType);
+            }
+         }
+
+         public bool NeedSearch()
+         {
+            return ByIfcEntity.NeedSearch() || ByIfcEntityType.NeedSearch();
+         }
+
+         public void PopulateCache(IFCEntityType instanceEntity,
+            IFCEntityType typeEntity,
+            string predefinedType,
+            string altPredefinedType,
+            IDictionary<ExporterCacheManager.PropertySetKey, IList<T>> cacheToUse)
+         {
+            if (ProcessInstance)
+            {
+               ByIfcEntity.PopulateCache(instanceEntity, predefinedType, altPredefinedType, cacheToUse);
+            }
+
+            if (ProcessType)
+            {
+               ByIfcEntityType.PopulateCache(typeEntity, predefinedType, altPredefinedType, cacheToUse);
+            }
+         }
+
+         public void AddItem(bool addToInstance, bool addToType, IFCExportInfoPair exportInfo,
+            string objectType, T currDesc)
+         {
+            bool userdefinedPdefType = false;
+
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            {
+               userdefinedPdefType = true;
+            }
+            else
+            {
+               if (!string.IsNullOrEmpty(currDesc.PredefinedType)
+                  && currDesc.PredefinedType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase)
+                  && currDesc.PredefinedType.Equals("USERDEFINED", StringComparison.InvariantCultureIgnoreCase))
+                  userdefinedPdefType = true;
+            }
+
+            bool appropriateObjectType = false;
+            if (!string.IsNullOrEmpty(currDesc.ObjectType)
+               && currDesc.ObjectType.Equals(objectType, StringComparison.InvariantCultureIgnoreCase)
+               && !(currDesc.ObjectType.StartsWith("IFC", StringComparison.InvariantCultureIgnoreCase)
+                  || currDesc.ObjectType.StartsWith("Pset", StringComparison.InvariantCultureIgnoreCase)))
+            {
+               appropriateObjectType = true;
+            }
+
+            if (string.IsNullOrEmpty(currDesc.PredefinedType))
+            {
+               if (addToInstance)
+                  ByIfcEntity.ByType.Add(currDesc);
+               if (addToType)
+                  ByIfcEntityType.ByType.Add(currDesc);
+            }
+            // Also check ObjectType for extended predefined of USERDEFINED (for IFC4 onward only)
+            else if (appropriateObjectType && userdefinedPdefType)
+            {
+               if (addToInstance)
+                  ByIfcEntity.ByAltPredefinedType.Add(currDesc);
+               if (addToType)
+                  ByIfcEntityType.ByAltPredefinedType.Add(currDesc);
+            }
+            else if (!string.IsNullOrEmpty(currDesc.PredefinedType) &&
+               currDesc.PredefinedType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase))
+            {
+               if (addToInstance)
+                  ByIfcEntity.ByPredefinedType.Add(currDesc);
+               if (addToType)
+                  ByIfcEntityType.ByPredefinedType.Add(currDesc);
+            }
+         }
+
+         public IList<T> AsList()
+         {
+            List<T> newList = new List<T>();
+            if (ProcessInstance)
+            {
+               ByIfcEntity.AddToList(newList);
+            }
+
+            if (ProcessType)
+            {
+               ByIfcEntityType.AddToList(newList);
+            }
+            return newList;
+         }
+
+         private bool ProcessInstance { get; set; } = false;
+
+         private bool ProcessType { get; set; } = false;
       }
 
       /// <summary>
@@ -965,30 +1149,35 @@ namespace Revit.IFC.Export.Utility
             entityType.ToString(), parentType.ToString(), strict: false);
       }
 
-     /// <summary>
-      /// Gets the list of common property sets appropriate to this handle.
+      /// <summary>
+      /// Gets the list of defined property sets appropriate to this handle.
       /// </summary>
       /// <param name="prodHnd">The handle.</param>
-      /// <param name="psetsToCreate">The list of all property sets.</param>
+      /// <param name="psetsToProcess">Process instance or type properties (or both).</param>
       /// <returns>The list of property sets for this handle.</returns>
       public static IList<PropertySetDescription> GetCurrPSetsToCreate(IFCAnyHandle prodHnd,
-         IList<IList<PropertySetDescription>> psetsToCreate)
+         PSetsToProcess psetsToProcess)
       {
-         return GetCurrPSetsToCreateGeneric(prodHnd, psetsToCreate, ExporterCacheManager.PropertySetsForTypeCache);
+         ParameterCache parameterCache = ExporterCacheManager.ParameterCache;
+         IList<IList<PropertySetDescription>> psetsToCreate = parameterCache.PropertySets;
+         IList<int> instanceAndTypePsetIndices = parameterCache.InstanceAndTypePsetIndices;
+         
+         return GetCurrPSetsToCreateGeneric(prodHnd, psetsToCreate, instanceAndTypePsetIndices,
+            ExporterCacheManager.PropertySetsForTypeCache, psetsToProcess);
       }
-
       /// <summary>
-      /// Gets the list of predefined property sets appropriate to this handle.
+      /// Gets the list of predefined property sets appropriate to this handle
       /// </summary>
       /// <param name="prodHnd">The handle.</param>
       /// <param name="psetsToCreate">The list of all property sets.</param>
       /// <returns>The list of predefined property sets for this handle.</returns>
       public static IList<PreDefinedPropertySetDescription> GetCurrPreDefinedPSetsToCreate(IFCAnyHandle prodHnd,
-         IList<IList<PreDefinedPropertySetDescription>> psetsToCreate)
+         IList<IList<PreDefinedPropertySetDescription>> psetsToCreate,
+         PSetsToProcess psetsToProcess)
       {
-         return GetCurrPSetsToCreateGeneric(prodHnd, psetsToCreate, ExporterCacheManager.PreDefinedPropertySetsForTypeCache);
+         return GetCurrPSetsToCreateGeneric(prodHnd, psetsToCreate, null,
+            ExporterCacheManager.PreDefinedPropertySetsForTypeCache, psetsToProcess);
       }
-
 
       public static IFCExportInfoPair GetExportInfoForProperties(IFCAnyHandle prodHnd)
       {
@@ -1051,6 +1240,84 @@ namespace Revit.IFC.Export.Utility
          return exportInfo;
       }
 
+      private static IList<T> GetCachedValue<T>(bool process,
+         IDictionary<ExporterCacheManager.PropertySetKey, IList<T>> cacheToUse,
+         IFCEntityType entityType,
+         string predefinedType) where T : Description
+      {
+         if (!process)
+            return null;
+
+         ExporterCacheManager.PropertySetKey key =
+            new ExporterCacheManager.PropertySetKey(entityType, predefinedType);
+         if (cacheToUse.TryGetValue(key, out IList<T> tmpCachedPsets))
+            return tmpCachedPsets;
+         return null;
+      }
+
+      /// <summary>
+      /// Get PropertySets from cache.
+      /// Current logic searches psets by 6 different PropertySet keys:
+      ///   1)IfcEntity,
+      ///   2)IfcEntity + PredefinedType,
+      ///   3)IfcEntity + AltPredefinedType,
+      ///   4)IfcEntityType,
+      ///   5)IfcEntityType + PredefinedType.
+      ///   6)IfcEntityType + AltPredefinedType,
+      /// Found psets are stored separately in ApplicablePsets object.
+      /// </summary>
+      /// <param name="exportInfo">the export infor pair</param>
+      /// <returns>ApplicablePsets object with 6 containers which store 6 different groups of psets.
+      /// If size of container is 0 then this means that search hasn't found any Psets associated with
+      /// this type which is why empty container was cached. This function finds it and returns.
+      /// If container is null then this means that info for this type is not cached because search has
+      /// never been performed for it.
+      /// </returns>
+      private static ApplicablePsets<T> GetCachedPropertySetsGeneric<T>(IFCExportInfoPair exportInfo,
+         string objectType, IDictionary<ExporterCacheManager.PropertySetKey, IList<T>> cacheToUse,
+         PSetsToProcess psetsToProcess) where T : Description
+      {
+         // For IFC2x3, we can have a situation where there isn't a 1:1 mapping of instance to type,
+         // and so we get the type passed in as exportInfo.ExportInstance.  In this case, we use the
+         // Instance ExportInstance but populate the ByIfcEntityType fields.
+         bool processInstance = psetsToProcess != PSetsToProcess.Type;
+         bool processType = psetsToProcess != PSetsToProcess.Instance;
+
+         ApplicablePsets<T> applicablePsets = new ApplicablePsets<T>();
+
+         if (!processInstance && !processType)
+            return applicablePsets;
+
+         bool unknownType = exportInfo.ExportType == IFCEntityType.UnKnown;
+
+         IFCEntityType instanceEntity = exportInfo.ExportInstance;
+         IFCEntityType typeEntity =
+            (processType && unknownType) ? exportInfo.ExportInstance : exportInfo.ExportType;
+
+         applicablePsets.ByIfcEntity.ByType =
+            GetCachedValue(processInstance, cacheToUse, instanceEntity, null);
+         applicablePsets.ByIfcEntityType.ByType =
+            GetCachedValue(processType, cacheToUse, typeEntity, null);
+
+         if (!string.IsNullOrEmpty(exportInfo.ValidatedPredefinedType))
+         {
+            applicablePsets.ByIfcEntity.ByPredefinedType =
+               GetCachedValue(processInstance, cacheToUse, instanceEntity, exportInfo.ValidatedPredefinedType);
+            applicablePsets.ByIfcEntityType.ByPredefinedType =
+               GetCachedValue(processType, cacheToUse, typeEntity, exportInfo.ValidatedPredefinedType);
+         }
+
+         if (!string.IsNullOrEmpty(objectType))
+         {
+            applicablePsets.ByIfcEntity.ByAltPredefinedType =
+               GetCachedValue(processInstance, cacheToUse, instanceEntity, objectType);
+            applicablePsets.ByIfcEntityType.ByAltPredefinedType =
+               GetCachedValue(processType, cacheToUse, typeEntity, objectType);
+         }
+
+         return applicablePsets;
+      }
+
       /// <summary>
       /// Gets the list of common property sets appropriate to this handle.
       /// </summary>
@@ -1059,171 +1326,124 @@ namespace Revit.IFC.Export.Utility
       /// <param name="cacheToUse">The cache for property sets.</param>
       /// <returns>The list of property sets for this handle.</returns>
       public static IList<T> GetCurrPSetsToCreateGeneric<T>(IFCAnyHandle prodHnd,
-          IList<IList<T>> psetsToCreate, IDictionary<ExporterCacheManager.PropertySetKey, IList<T>> cacheToUse) where T : Description
+         IList<IList<T>> psetsToCreate, IList<int> instanceAndTypePsetIndices,
+         IDictionary<ExporterCacheManager.PropertySetKey,
+         IList<T>> cacheToUse, PSetsToProcess psetsToProcess) where T : Description
       {
          IFCExportInfoPair exportInfo = GetExportInfoForProperties(prodHnd);
 
-         // Find existing Psets list for the given type in the cache
-         var cachedPsets = GetCachedPropertySetsGeneric(exportInfo, cacheToUse);
-         //Set bool variables to true below to search for property sets If they were not found in cache 
-         bool searchPsetsByEntity                     = cachedPsets.ByIfcEntity.ByType == null;
-         bool searchPsetsByEntityPredefinedType       = cachedPsets.ByIfcEntity.ByPredefinedType == null;
-         bool searchPsetsByEntityType                 = cachedPsets.ByIfcEntityType.ByType == null;
-         bool searchPsetsByEntityTypePredefinedType   = cachedPsets.ByIfcEntityType.ByPredefinedType == null;
+         bool processInstance = psetsToProcess != PSetsToProcess.Type;
+         bool processType = psetsToProcess != PSetsToProcess.Instance;
 
-         IList<T> currPsetsForEntity                     = new List<T>();
-         IList<T> currPsetsForEntityPredefinedType       = new List<T>();
-         IList<T> currPsetsForEntityType                 = new List<T>();
-         IList<T> currPsetsForEntityTypePredefinedType   = new List<T>();
-         if (searchPsetsByEntity || searchPsetsByEntityPredefinedType || searchPsetsByEntityType || searchPsetsByEntityTypePredefinedType)
+         if ((!processInstance && !processType) || !prodHnd.HasValue)
+            return new List<T>();
+
+         string objectType = IFCAnyHandleUtil.GetStringAttribute(prodHnd, "ObjectType");
+
+         // Find existing Psets list for the given type in the cache
+         var cachedPsets = GetCachedPropertySetsGeneric(exportInfo, objectType, cacheToUse,
+            psetsToProcess);
+
+         //Set bool variables to true below to search for property sets If they were not found in cache 
+         ApplicablePsets<T> currPsets = new ApplicablePsets<T>();
+         currPsets.Initialize(processInstance, processType, cachedPsets);
+
+         if (currPsets.NeedSearch())
          {
-            foreach (IList<T> currStandard in psetsToCreate)
+            int numPsetsToCreate = psetsToCreate.Count;
+            for (int ii = 0; ii < numPsetsToCreate; ii++)
             {
-               var applicablePsets = GetApplicablePropertySets(exportInfo, currStandard);
-               if (searchPsetsByEntity)
-                  Union(ref currPsetsForEntity, applicablePsets.ByIfcEntity.ByType);
-               if (searchPsetsByEntityPredefinedType)
-                  Union(ref currPsetsForEntityPredefinedType, applicablePsets.ByIfcEntity.ByPredefinedType);
-               if (searchPsetsByEntityType)
-                  Union(ref currPsetsForEntityType, applicablePsets.ByIfcEntityType.ByType);
-               if (searchPsetsByEntityTypePredefinedType)
-                  Union(ref currPsetsForEntityTypePredefinedType, applicablePsets.ByIfcEntityType.ByPredefinedType);
+               IList<T> currStandard = psetsToCreate[ii];
+               bool isInstanceAndTypePset = instanceAndTypePsetIndices?.Contains(ii) ?? false;
+               var applicablePsets = GetApplicablePropertySets(exportInfo, objectType,
+                  currStandard, isInstanceAndTypePset, psetsToProcess);
+
+               currPsets.UnionWith(applicablePsets);
             }
 
-            if (searchPsetsByEntity)
-               cacheToUse[new ExporterCacheManager.PropertySetKey(exportInfo.ExportInstance, null)] = currPsetsForEntity;
+            bool unknownType = exportInfo.ExportType == IFCEntityType.UnKnown;
 
-            if (searchPsetsByEntityPredefinedType)
-               cacheToUse[new ExporterCacheManager.PropertySetKey(exportInfo.ExportInstance, exportInfo.ValidatedPredefinedType)] = currPsetsForEntityPredefinedType;
+            IFCEntityType typeEntity =
+               (processType && unknownType) ? exportInfo.ExportInstance : exportInfo.ExportType;
 
-            if (searchPsetsByEntityType)
-               cacheToUse[new ExporterCacheManager.PropertySetKey(exportInfo.ExportType, null)] = currPsetsForEntityType;
-
-            if (searchPsetsByEntityTypePredefinedType)
-               cacheToUse[new ExporterCacheManager.PropertySetKey(exportInfo.ExportType, exportInfo.ValidatedPredefinedType)] = currPsetsForEntityTypePredefinedType;
+            currPsets.PopulateCache(exportInfo.ExportInstance,
+               typeEntity,
+               exportInfo.ValidatedPredefinedType,
+               objectType,
+               cacheToUse);
          }
 
-         if (!searchPsetsByEntity)
-            currPsetsForEntity = cachedPsets.ByIfcEntity.ByType;
+         currPsets.PopulateFromCache(cachedPsets);
 
-         if (!searchPsetsByEntityPredefinedType)
-            currPsetsForEntityPredefinedType = cachedPsets.ByIfcEntity.ByPredefinedType;
-
-         if (!searchPsetsByEntityType)
-            currPsetsForEntityType = cachedPsets.ByIfcEntityType.ByType;
-
-         if (!searchPsetsByEntityTypePredefinedType)
-            currPsetsForEntityTypePredefinedType = cachedPsets.ByIfcEntityType.ByPredefinedType;
-
-         var currPsets = currPsetsForEntity.ToList();//make independent copy. Without this we will have a bug.
-         currPsets.AddRange(currPsetsForEntityPredefinedType);
-         currPsets.AddRange(currPsetsForEntityType);
-         currPsets.AddRange(currPsetsForEntityTypePredefinedType);
-         return currPsets;
+         return currPsets.AsList();
       }
 
       /// <summary>
-      /// Get applicable PropertySets for an entity type with optionaly condition for PredefinedType
-      ///    The logic needs some explanation here. The quality of IFC documentation is rather poor especially the earlier version (i.e. IFC2x2, IFC2x3)
-      ///    The use of ObjectType in the PSD is unclear sometime it is a duplicate of applicable classes, sometime it is showing PredefinedType (in IFC2x2),
-      ///    sometime purely useless information. Due to that, we will also check ObjectType for applicable entity if not present, and also cheked for
-      ///    PredefinedType if not present
+      /// Get applicable PropertySets for an entity type with optional condition for 
+      /// PredefinedType.
+      ///    The logic needs some explanation here. The quality of IFC documentation is rather poor
+      ///    especially the earlier version (i.e. IFC2x2, IFC2x3).
+      ///    The use of ObjectType in the PSD is unclear sometime it is a duplicate of applicable 
+      ///    classes, sometimes it is showing PredefinedType (in IFC2x2), sometimes purely useless
+      ///    information. Due to that, we will also check ObjectType for applicable entity if not
+      ///    present, and also check for PredefinedType if not present.
       /// </summary>
-      /// <param name="exportInfo">the export infor pair</param>
-      /// <param name="psetList">the pset list to iterate</param>
-      /// <returns>filtered results of the applicable Psets. Output psets are grouped by type they relate to.</returns>
-      static ApplicablePsets<T> GetApplicablePropertySets<T>(IFCExportInfoPair exportInfo, IEnumerable<T> psetList) where T : Description
+      /// <param name="exportInfo">The export info pair.</param>
+      /// <param name="psetList">The pset list to iterate.</param>
+      /// <returns>Filtered results of the applicable Psets. Output psets are grouped by type they
+      /// relate to.</returns>
+      static ApplicablePsets<T> GetApplicablePropertySets<T>(IFCExportInfoPair exportInfo,
+         string objectType, IEnumerable<T> psetList, bool isInstanceAndTypePSet,
+         PSetsToProcess psetsToProcess)
+         where T : Description
       {
-         IList<T> applicablePsetsByType = null;
-         IList<T> applicablePsetsByPredefinedType = null;
+         bool processInstance = psetsToProcess != PSetsToProcess.Type;
+         bool processType = psetsToProcess != PSetsToProcess.Instance;
+
          ApplicablePsets<T> applicablePsets = new ApplicablePsets<T>();
-         applicablePsets.ByIfcEntity.ByType = new List<T>();
-         applicablePsets.ByIfcEntity.ByPredefinedType = new List<T>();
-         applicablePsets.ByIfcEntityType.ByType = new List<T>();
-         applicablePsets.ByIfcEntityType.ByPredefinedType = new List<T>();
+         if (!processInstance && !processType)
+            return applicablePsets;
+
+         applicablePsets.Initialize(processInstance, processType, null);
+
+         bool unknownType = exportInfo.ExportType == IFCEntityType.UnKnown;
+
+         IFCEntityType instanceEntity = exportInfo.ExportInstance;
+         IFCEntityType typeEntity =
+            (processType && unknownType) ? exportInfo.ExportInstance : exportInfo.ExportType;
+
          foreach (T currDesc in psetList)
          {
-            bool toAdd = false;
-            if (currDesc.IsAppropriateEntityType(exportInfo.ExportInstance) || currDesc.IsAppropriateObjectType(exportInfo.ExportInstance))
+            bool addToInstance = false;
+            bool addToType = false;
+
+            if (processInstance || (processType && isInstanceAndTypePSet))
             {
-               toAdd = true;
-               applicablePsetsByType = applicablePsets.ByIfcEntity.ByType;
-               applicablePsetsByPredefinedType = applicablePsets.ByIfcEntity.ByPredefinedType;
+               if (currDesc.IsAppropriateEntityType(instanceEntity) ||
+                  currDesc.IsAppropriateObjectType(instanceEntity))
+               {
+                  addToInstance = true;
+                  addToType = isInstanceAndTypePSet;
+               }
             }
+
             // ObjectType if the Applicable type is missing
-            else if (currDesc.IsAppropriateEntityType(exportInfo.ExportType) || currDesc.IsAppropriateObjectType(exportInfo.ExportType))
+            if (processType || (processInstance && isInstanceAndTypePSet))
             {
-               toAdd = true;
-               applicablePsetsByType = applicablePsets.ByIfcEntityType.ByType;
-               applicablePsetsByPredefinedType = applicablePsets.ByIfcEntityType.ByPredefinedType;
-            }
-
-            if (toAdd)
-            {
-               if (string.IsNullOrEmpty(currDesc.PredefinedType))
+               if (currDesc.IsAppropriateEntityType(typeEntity) ||
+                  currDesc.IsAppropriateObjectType(typeEntity))
                {
-                  applicablePsetsByType.Add(currDesc);
-               }
-               else if (!string.IsNullOrEmpty(currDesc.PredefinedType) && currDesc.PredefinedType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase))
-               {
-                  applicablePsetsByPredefinedType.Add(currDesc);
-               }
-               // Also check ObjectType since the predefinedType seems to go here for the earlier versions of IFC
-               else if (!string.IsNullOrEmpty(currDesc.ObjectType) && currDesc.ObjectType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase))
-               {
-                  applicablePsetsByType.Add(currDesc);
+                  addToInstance = isInstanceAndTypePSet;
+                  addToType = true;
                }
             }
-         }
-         return applicablePsets;
-      }
 
-      /// <summary>
-      /// Get PropertySets from cache.
-      /// Current logic searches psets by 4 different PropertySet keys:
-      ///   1)IfcEntity,
-      ///   2)IfcEntity + PredefinedType,
-      ///   3)IfcEntityType,
-      ///   4)IfcEntityType + PredefinedType.
-      /// Found psets are stored separately in ApplicablePsets object.
-      /// </summary>
-      /// <param name="exportInfo">the export infor pair</param>
-      /// <returns>ApplicablePsets object with 4 containers which store 4 different groups of psets.
-      /// If size of container is 0 then this means that search hasn't found any Psets associated with this type 
-      /// which is why empty container was cached. This function finds it and returns.
-      /// If container is null then this means that info for this type is not cached because search has never been performed for it.
-      /// </returns>
-      private static ApplicablePsets<T> GetCachedPropertySetsGeneric<T>(IFCExportInfoPair exportInfo, IDictionary<ExporterCacheManager.PropertySetKey, IList<T>> cacheToUse) where T : Description
-      {
-         ApplicablePsets<T> applicablePsets = new ApplicablePsets<T>();
-         IList<T> tmpCachedPsets = null;
-
-         if (cacheToUse.TryGetValue(new ExporterCacheManager.PropertySetKey(exportInfo.ExportInstance, null), out tmpCachedPsets))
-         {
-            applicablePsets.ByIfcEntity.ByType = tmpCachedPsets;
-         }
-         if (cacheToUse.TryGetValue(new ExporterCacheManager.PropertySetKey(exportInfo.ExportType, null), out tmpCachedPsets))
-         {
-            applicablePsets.ByIfcEntityType.ByType = tmpCachedPsets;
-         }
-
-         if (string.IsNullOrEmpty(exportInfo.ValidatedPredefinedType))
-         {
-            applicablePsets.ByIfcEntity.ByPredefinedType = new List<T>();
-            applicablePsets.ByIfcEntityType.ByPredefinedType = new List<T>();
-         }
-         else
-         {
-            if (cacheToUse.TryGetValue(new ExporterCacheManager.PropertySetKey(exportInfo.ExportInstance, exportInfo.ValidatedPredefinedType), out tmpCachedPsets))
+            if (addToInstance || addToType)
             {
-               applicablePsets.ByIfcEntity.ByPredefinedType = tmpCachedPsets;
-            }
-            if (cacheToUse.TryGetValue(new ExporterCacheManager.PropertySetKey(exportInfo.ExportType, exportInfo.ValidatedPredefinedType), out tmpCachedPsets))
-            {
-               applicablePsets.ByIfcEntityType.ByPredefinedType = tmpCachedPsets;
+               applicablePsets.AddItem(addToInstance, addToType,
+                  exportInfo, objectType, currDesc);
             }
          }
-
          return applicablePsets;
       }
 
@@ -1267,7 +1487,7 @@ namespace Revit.IFC.Export.Utility
                HashSet<IFCAnyHandle> propertySets = new HashSet<IFCAnyHandle>() { propertySetDraughting };
                ExporterCacheManager.CreatedSpecialPropertySets.Add(element.Id, propertySets, relatedObjects);
             }
-            
+
             transaction.Commit();
          }
       }
@@ -1293,8 +1513,7 @@ namespace Revit.IFC.Export.Utility
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
             ICollection<IFCAnyHandle> productSet = productWrapper.GetAllObjects();
-            IList<IList<PropertySetDescription>> psetsToCreate = ExporterCacheManager.ParameterCache.PropertySets;
-
+            
             // In some cases, like multi-story stairs and ramps, we may have the same Pset used for multiple levels.
             // If ifcParams is null, re-use the property set.
             IDictionary<Tuple<Element, Element, string>, IFCAnyHandle> createdPropertySets =
@@ -1308,12 +1527,16 @@ namespace Revit.IFC.Export.Utility
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodHnd))
                   continue;
 
-               IList<PropertySetDescription> currPsetsToCreate = GetCurrPSetsToCreate(prodHnd, psetsToCreate);
+               IList<PropertySetDescription> currPsetsToCreate =
+                  GetCurrPSetsToCreate(prodHnd, PSetsToProcess.Instance);
                if (currPsetsToCreate.Count == 0)
                   continue;
 
                ElementId overrideElementId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
                Element elementToUse = (overrideElementId == ElementId.InvalidElementId) ? element : doc.GetElement(overrideElementId);
+               Element elemOfProd = doc.GetElement(ExporterCacheManager.HandleToElementCache.Find(prodHnd));
+               if (elemOfProd != null)
+                  elementToUse = elemOfProd;
                ElementType elemTypeToUse = (overrideElementId == ElementId.InvalidElementId) ? elemType : doc.GetElement(elementToUse.GetTypeId()) as ElementType;
                if (elemTypeToUse == null)
                   elemTypeToUse = elemType;
@@ -1414,9 +1637,6 @@ namespace Revit.IFC.Export.Utility
                      // For an aggregate, the member product must be processed with its element and type
                      ElementId overrideElementId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
                      Element elementToUse = (overrideElementId == ElementId.InvalidElementId) ? element : doc.GetElement(overrideElementId);
-                     Element elemOfProd = doc.GetElement(ExporterCacheManager.HandleToElementCache.Find(prodHnd));
-                     if (elemOfProd != null)
-                        elementToUse = elemOfProd;
                      ElementType elemTypeToUse = (overrideElementId == ElementId.InvalidElementId) ? elemType : doc.GetElement(elementToUse.GetTypeId()) as ElementType;
                      if (elemTypeToUse == null)
                         elemTypeToUse = elemType;
@@ -1465,10 +1685,10 @@ namespace Revit.IFC.Export.Utility
                            if (!ExporterCacheManager.QtoSetCreated.Contains((prodHnd, paramSetName)))
                            {
                               string guid = GUIDUtil.GenerateIFCGuidFrom(
-                                 GUIDUtil.CreateGUIDString(IFCEntityType.IfcElementQuantity, 
+                                 GUIDUtil.CreateGUIDString(IFCEntityType.IfcElementQuantity,
                                  "QuantitySet: " + paramSetName, prodHnd));
-                              IFCAnyHandle quantity = IFCInstanceExporter.CreateElementQuantity(file, 
-                                 prodHnd, guid, ownerHistory, paramSetName, description, 
+                              IFCAnyHandle quantity = IFCInstanceExporter.CreateElementQuantity(file,
+                                 prodHnd, guid, ownerHistory, paramSetName, description,
                                  methodName, quantities);
                               IFCAnyHandle prodHndToUse = prodHnd;
                               DescriptionCalculator ifcRDC = currDesc.DescriptionCalculator;
@@ -1587,7 +1807,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">The element.</param>
       /// <param name="restrictedGroup">The subset of IFC entities allowed.</param>
       /// <returns>The IFC entity/predefined type pair.</returns>
-      public static IFCExportInfoPair GetIFCExportElementParameterInfo(Element element, 
+      public static IFCExportInfoPair GetIFCExportElementParameterInfo(Element element,
          IFCEntityType restrictedGroup)
       {
          if (element == null)
@@ -1613,9 +1833,9 @@ namespace Revit.IFC.Export.Utility
 
             // Ignore the value if we can't process it.
             IFCExportInfoPair overrideExportType = ElementFilteringUtil.GetExportTypeFromClassName(symbolClassName);
-            if (!overrideExportType.IsUnKnown && 
+            if (!overrideExportType.IsUnKnown &&
                IfcSchemaEntityTree.IsSubTypeOf(ExporterCacheManager.ExportOptionsCache.FileVersion, overrideExportType.ExportInstance, restrictedGroup))
-            { 
+            {
                exportType = overrideExportType;
             }
          }
@@ -1657,8 +1877,8 @@ namespace Revit.IFC.Export.Utility
       private static IFCExportInfoPair OverrideExportTypeForStructuralFamilies(Element element,
          IFCExportInfoPair originalExportInfoPair)
       {
-         if ((!originalExportInfoPair.IsUnKnown) && 
-            (originalExportInfoPair.ExportInstance != IFCEntityType.IfcBuildingElementProxy) && 
+         if ((!originalExportInfoPair.IsUnKnown) &&
+            (originalExportInfoPair.ExportInstance != IFCEntityType.IfcBuildingElementProxy) &&
             (originalExportInfoPair.ExportType != IFCEntityType.IfcBuildingElementProxyType))
             return originalExportInfoPair;
 
@@ -1735,9 +1955,11 @@ namespace Revit.IFC.Export.Utility
          IFCExportInfoPair exportType = GetExportTypeForFurniture(exporterIFC, element);
 
          // 3. Check the parameters IFC_EXPORT_ELEMENT*_AS.
+         bool isExportTypeDefinedInParameters = false;
          if (exportType.IsUnKnown)
          {
             exportType = GetIFCExportElementParameterInfo(element, restrictedGroup);
+            isExportTypeDefinedInParameters = !exportType.IsUnKnown;
          }
 
          // 4. Look at class specified by the IFC Export Options table in step 1.
@@ -1752,7 +1974,7 @@ namespace Revit.IFC.Export.Utility
                exportType.ValidatedPredefinedType = enumTypeValue;
             }
          }
-         
+
          // 5. Check at a pre-defined mapping from Revit category to IFC entity and pre-defined type.
          if (exportType.IsUnKnown)
          {
@@ -1768,14 +1990,15 @@ namespace Revit.IFC.Export.Utility
 
          // 7. Check whether we override IfcBuildingElementProxy/Unknown values with 
          // structural known values.
-         exportType = OverrideExportTypeForStructuralFamilies(element, exportType);
+         if (!isExportTypeDefinedInParameters)
+            exportType = OverrideExportTypeForStructuralFamilies(element, exportType);
 
          // 8. Check to see if we should override the ValidatedPredefinedType from
          // IFC_EXPORT_PREDEFINEDTYPE*.
          string pdefFromParam = GetExportTypeFromTypeParameter(element, null);
          if (!string.IsNullOrEmpty(pdefFromParam))
             enumTypeValue = pdefFromParam;
-         
+
          if (!string.IsNullOrEmpty(enumTypeValue))
             exportType.ValidatedPredefinedType = enumTypeValue;
 
@@ -1796,8 +2019,8 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">The element.</param>
       /// <param name="enumTypeValue">The output string value represents the enum type.</param>
       /// <returns>The IFCExportInfoPair.</returns>
-      public static IFCExportInfoPair GetProductExportType(ExporterIFC exporterIFC, Element element,
-        out string enumTypeValue)
+      public static IFCExportInfoPair GetProductExportType(ExporterIFC exporterIFC, 
+         Element element, out string enumTypeValue)
       {
          return GetExportType(exporterIFC, element, IFCEntityType.IfcProduct, out enumTypeValue);
       }
@@ -1810,8 +2033,8 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">The element.</param>
       /// <param name="enumTypeValue">The output string value represents the enum type.</param>
       /// <returns>The IFCExportInfoPair.</returns>
-      public static IFCExportInfoPair GetObjectExportType(ExporterIFC exporterIFC, Element element,
-        out string enumTypeValue)
+      public static IFCExportInfoPair GetObjectExportType(ExporterIFC exporterIFC, 
+         Element element, out string enumTypeValue)
       {
          return GetExportType(exporterIFC, element, IFCEntityType.IfcObject, out enumTypeValue);
       }
@@ -1849,12 +2072,9 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">the Element</param>
       /// <param name="exportType">the export Type</param>
       /// <param name="file">the IFC File</param>
-      /// <param name="ownerHistory">the OwnerHistory</param>
-      /// <param name="predefinedType">PredefinedType</param>
       /// <returns>IFCAnyHandle if successful, null otherwise</returns>
-      public static IFCAnyHandle CreateGenericTypeFromElement(Element element, 
-         IFCExportInfoPair exportType, IFCFile file, IFCAnyHandle ownerHistory, 
-         string predefinedType, ProductWrapper productWrapper)
+      public static IFCAnyHandle CreateGenericTypeFromElement(Element element,
+         IFCExportInfoPair exportType, IFCFile file, ProductWrapper productWrapper)
       {
          Document doc = element.Document;
          ElementId typeElemId = element.GetTypeId();
@@ -1870,7 +2090,11 @@ namespace Revit.IFC.Export.Utility
 
             string typeGuid = GUIDUtil.GenerateIFCGuidFrom(elementType, exportType);
             entType = IFCInstanceExporter.CreateGenericIFCType(exportType, elementType, typeGuid, file, null, null);
-            productWrapper.RegisterHandleWithElementType(elementType, exportType, entType, null);
+
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(entType))
+            {
+               productWrapper.RegisterHandleWithElementType(elementType, exportType, entType, null);
+            }
          }
          else
          {
@@ -1945,17 +2169,17 @@ namespace Revit.IFC.Export.Utility
 
          string guid = GUIDUtil.GenerateIFCGuidFrom(
             GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelDefinesByProperties, name, relatingPropertyDefinition));
-         CreateRelDefinesByProperties(file, guid, ownerHistory, name, description, relatedObjects, 
+         CreateRelDefinesByProperties(file, guid, ownerHistory, name, description, relatedObjects,
             relatingPropertyDefinition);
       }
-      
+
       /// <summary>
-       /// Create an IfcCreateCurveBoundedPlane given a polygonal outer boundary and 0 or more polygonal inner boundaries.
-       /// </summary>
-       /// <param name="file">The IFCFile.</param>
-       /// <param name="newOuterLoopPoints">The list of points representating the outer boundary of the plane.</param>
-       /// <param name="innerLoopPoints">The list of inner boundaries of the plane.  This list can be null.</param>
-       /// <returns>The IfcCreateCurveBoundedPlane.</returns>
+      /// Create an IfcCreateCurveBoundedPlane given a polygonal outer boundary and 0 or more polygonal inner boundaries.
+      /// </summary>
+      /// <param name="file">The IFCFile.</param>
+      /// <param name="newOuterLoopPoints">The list of points representating the outer boundary of the plane.</param>
+      /// <param name="innerLoopPoints">The list of inner boundaries of the plane.  This list can be null.</param>
+      /// <returns>The IfcCreateCurveBoundedPlane.</returns>
       public static IFCAnyHandle CreateCurveBoundedPlane(IFCFile file, IList<XYZ> newOuterLoopPoints, IList<IList<XYZ>> innerLoopPoints)
       {
          if (newOuterLoopPoints == null)
@@ -2580,7 +2804,7 @@ namespace Revit.IFC.Export.Utility
       public static ExportPartAs ShouldExportByComponentsOrParts(Element element, int layersOrPartsCount)
       {
          bool exportParts = PartExporter.ShouldExportParts(element, layersOrPartsCount);
-         if(exportParts)
+         if (exportParts)
             return ExportPartAs.Part;
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && !exportParts && layersOrPartsCount > 1)
@@ -2599,7 +2823,7 @@ namespace Revit.IFC.Export.Utility
       public static ExportPartAs CanExportByComponentsOrParts(Element element)
       {
          ExportPartAs exportPartAs = ShouldExportByComponentsOrParts(element, PartUtils.GetAssociatedParts(element.Document, element.Id, false, true).Count);
-         if(PartUtils.HasAssociatedParts(element.Document, element.Id) && (exportPartAs == ExportPartAs.Part || exportPartAs == ExportPartAs.ShapeAspect))
+         if (PartUtils.HasAssociatedParts(element.Document, element.Id) && (exportPartAs == ExportPartAs.Part || exportPartAs == ExportPartAs.ShapeAspect))
          {
             return exportPartAs;
          }

@@ -257,26 +257,6 @@ namespace Revit.IFC.Common.Utility
       /// </summary>
       /// <param name="schemaFile">the IFC schema file name (without extension). Caller must make sure it is the supported schema file</param>
       /// <returns>the tree, or null if the schema file is not found</returns>
-      static public IfcSchemaEntityTree GetEntityDictFor(string schemaFile)
-      {
-         if (m_IFCSchemaDict.ContainsKey(schemaFile))
-            return m_IFCSchemaDict[schemaFile];
-
-         // if not found, process the file and add into the static dictionary
-         IfcSchemaEntityTree entityTree = PopulateEntityDictFor(schemaFile);
-         if (entityTree == null)
-            return null;
-
-         m_IFCSchemaDict.Add(schemaFile, entityTree);
-         m_IFCEntityPredefTypeDict.Add(schemaFile, entityTree.PredefinedTypeEnumDict);
-         return entityTree;
-      }
-
-      /// <summary>
-      /// Get the IFC Entity Dictionary for the given IFC version specified by the schema file name (without extension)
-      /// </summary>
-      /// <param name="schemaFile">the IFC schema file name (without extension). Caller must make sure it is the supported schema file</param>
-      /// <returns>the tree, or null if the schema file is not found</returns>
       static public IfcSchemaEntityTree GetEntityDictFor(string schemaFile, string schemaLoc = null)
       {
          schemaFile = schemaFile.ToUpper();
@@ -416,11 +396,30 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
-      /// Find a Non ABS supertype entity from the input type name
+      /// Generate the Entity type name corresponding to an instance.
       /// </summary>
-      /// <param name="context">the IFC schema context</param>
-      /// <param name="typeName">the type name</param>
-      /// <returns>the non-abs supertype instance node</returns>
+      /// <param name="instanceName">The instance name.</param>
+      /// <returns>The type name.</returns>
+      /// <remarks>
+      /// This is done in a heuristic fashion, so we will need to 
+      /// make sure exceptions are dealt with.
+      /// </remarks>
+      public static string GetTypeNameFromInstanceName(string instanceName)
+      {
+         // Deal with exceptions.
+         if (string.Compare(instanceName, "IfcProduct", true) == 0)
+            return "IfcTypeProduct";
+         else if (string.Compare(instanceName, "IfcObject", true) == 0)
+            return "IfcTypeObject";
+         return instanceName + "Type";
+      }
+      
+      /// <summary>
+       /// Find a Non ABS supertype entity from the input type name
+       /// </summary>
+       /// <param name="context">the IFC schema context</param>
+       /// <param name="typeName">the type name</param>
+       /// <returns>the non-abs supertype instance node</returns>
       static public IfcSchemaEntityNode FindNonAbsInstanceSuperType(string context, string typeName)
       {
          IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
@@ -436,7 +435,10 @@ namespace Revit.IFC.Common.Utility
             return res;
          }
 
-         string theTypeName = typeName.Substring(typeName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ? typeName : typeName + "Type";
+         string theTypeName =
+            typeName.Substring(typeName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ?
+            typeName : GetTypeNameFromInstanceName(typeName); 
+         
          IfcSchemaEntityNode entNode = ifcEntitySchemaTree.Find(theTypeName);
          if (entNode != null)
          {

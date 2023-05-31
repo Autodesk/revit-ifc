@@ -207,7 +207,7 @@ namespace Revit.IFC.Export.Utility
          IFCExportElement value = (exportElement != null) ? (IFCExportElement)exportElement.AsInteger() : IFCExportElement.ByType;
          if (value != IFCExportElement.ByType)
             return value;
-         
+
          // Element is ByType - look at the ElementType, if it exists.
          Parameter exportElementType = elementType?.get_Parameter(BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE);
          IFCExportElementType typeValue = (exportElementType != null) ? (IFCExportElementType)exportElementType.AsInteger() : IFCExportElementType.Default;
@@ -244,7 +244,7 @@ namespace Revit.IFC.Export.Utility
          Element elementType = element.Document.GetElement(element.GetTypeId());
          IFCExportElement? exportElementState = GetExportElementState(element, elementType);
          if (exportElementState.HasValue)
-             return exportElementState.Value == IFCExportElement.Yes;
+            return exportElementState.Value == IFCExportElement.Yes;
 
          // Check to see if the category should be exported if parameters aren't set.
          // Note that in previous versions, the category override the parameter settings.  This is
@@ -285,11 +285,11 @@ namespace Revit.IFC.Export.Utility
       /// <returns>True if equal, false otherwise.</returns>
       private static bool IsEqualToTypeName(String name, String baseName)
       {
-         if (String.Compare(name, baseName, true) == 0)
+         if (string.Compare(name, baseName, true) == 0)
             return true;
 
-         String typeName = baseName + "Type";
-         return (String.Compare(name, typeName, true) == 0);
+         string typeName = IfcSchemaEntityTree.GetTypeNameFromInstanceName(baseName);
+         return (string.Compare(name, typeName, true) == 0);
       }
 
       /// <summary>
@@ -603,6 +603,12 @@ namespace Revit.IFC.Export.Utility
          m_CategoryVisibilityCache.Clear();
       }
 
+      private static bool ProcessingLink()
+      {
+         return ExporterCacheManager.ExportOptionsCache.HostViewId != ElementId.InvalidElementId ||
+            ExporterStateManager.CurrentLinkId != ElementId.InvalidElementId;
+      }
+
       /// <summary>
       /// Checks if a category is visible for certain view.
       /// </summary>
@@ -620,7 +626,7 @@ namespace Revit.IFC.Export.Utility
          if (m_CategoryVisibilityCache.TryGetValue(category.Id, out isVisible))
             return isVisible;
 
-         if (category.Id.IntegerValue > 0 && ExporterCacheManager.ExportOptionsCache.HostViewId != ElementId.InvalidElementId)
+         if (category.Id.IntegerValue > 0 && ProcessingLink())
          {
             // We don't support checking the visibility of link document custom categories
             // in the host view here.  We will use a different filter for this.
@@ -632,6 +638,7 @@ namespace Revit.IFC.Export.Utility
             // we do allow visibility controls and the category is visible in the view.
             isVisible = (!category.get_AllowsVisibilityControl(filterView) || category.get_Visible(filterView));
          }
+
          m_CategoryVisibilityCache[category.Id] = isVisible;
          return isVisible;
       }
@@ -656,9 +663,10 @@ namespace Revit.IFC.Export.Utility
          if (hidden)
             return false;
 
-         bool temporaryVisible = filterView.IsElementVisibleInTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate, element.Id);
+         if (ProcessingLink())
+            return true;
 
-         return temporaryVisible;
+         return filterView.IsElementVisibleInTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate, element.Id);
       }
 
       /// <summary>
