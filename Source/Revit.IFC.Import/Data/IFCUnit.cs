@@ -284,6 +284,7 @@ namespace Revit.IFC.Import.Data
             else if (specTypeId.Equals(SpecTypeId.Length))
             {
                supportedTypes[""] = Tuple.Create(UnitTypeId.Meters, SymbolTypeId.Meter);
+               supportedTypes["DECI"] = Tuple.Create(UnitTypeId.Decimeters, SymbolTypeId.Dm);
                supportedTypes["CENTI"] = Tuple.Create(UnitTypeId.Centimeters, SymbolTypeId.Cm);
                supportedTypes["MILLI"] = Tuple.Create(UnitTypeId.Millimeters, SymbolTypeId.Mm);
             }
@@ -316,6 +317,11 @@ namespace Revit.IFC.Import.Data
             else if (specTypeId.Equals(SpecTypeId.Wattage))
             {
                supportedTypes[""] = Tuple.Create(UnitTypeId.Watts, SymbolTypeId.Watt);
+            }
+            else if (specTypeId.Equals(SpecTypeId.Energy))
+            {
+               supportedTypes[""] = Tuple.Create(UnitTypeId.Joules, SymbolTypeId.Joule);
+               supportedTypes["KILO"] = Tuple.Create(UnitTypeId.Kilojoules, SymbolTypeId.KJ);
             }
             m_sSupportedMetricUnitTypes[specTypeId] = supportedTypes;
          }
@@ -350,7 +356,8 @@ namespace Revit.IFC.Import.Data
          // length ^ 2
          if (specTypeId.Equals(SpecTypeId.Area) ||
             specTypeId.Equals(SpecTypeId.ElectricalPotential) ||
-            specTypeId.Equals(SpecTypeId.HvacPower))
+            specTypeId.Equals(SpecTypeId.HvacPower) ||
+            specTypeId.Equals(SpecTypeId.Energy))
          {
             return (scaleFactor * scaleFactor) * areaFactor;
          }
@@ -510,6 +517,8 @@ namespace Revit.IFC.Import.Data
                return string.Compare(unit1?.CustomSpec, unit2?.CustomSpec);
          }
       }
+
+
 
       /// <summary>
       /// Processes an IfcDerivedUnit.
@@ -738,6 +747,17 @@ namespace Revit.IFC.Import.Data
             expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
             expectedTypesList.Add(expectedTypes);
          }
+         else if (string.Compare(unitType, "HEATFLUXDENSITYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.HvacPowerDensity;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only W/m^2 = kg/s^3.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.WattsPerSquareMeter, SymbolTypeId.WPerMSup2);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddCustomExpectedType(-3, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
          else if (string.Compare(unitType, "VAPORPERMEABILITYUNIT", true) == 0)
          {
             Spec = SpecTypeId.Permeability;
@@ -831,6 +851,107 @@ namespace Revit.IFC.Import.Data
             expectedTypes.AddExpectedType(4, SpecTypeId.Length);
             expectedTypesList.Add(expectedTypes);
          }
+         else if (string.Compare(unitType, "AREADENSITYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.MassPerUnitArea;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only kg/m^2.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.KilogramsPerSquareMeter, SymbolTypeId.KgPerMSup2);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddExpectedType(-2, SpecTypeId.Length);
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "MASSPERLENGTHUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.MassPerUnitLength;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only kg/m.
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.KilogramsPerMeter, SymbolTypeId.KgPerM);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddExpectedType(-1, SpecTypeId.Length);
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "THERMALRESISTANCEUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.ThermalResistance;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only (m^2 * K)/W = (s^3 * K) / kg 
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.SquareMeterKelvinsPerWatt, SymbolTypeId.MSup2KPerW);
+            expectedTypes.AddCustomExpectedType(3, "TIMEUNIT");
+            expectedTypes.AddExpectedType(1, SpecTypeId.HvacTemperature);
+            expectedTypes.AddExpectedType(-1, SpecTypeId.Mass);
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "ACCELERATIONUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.Acceleration;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only m/s^2 
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.MetersPerSecondSquared, SymbolTypeId.MPerSSup2);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Length);
+            expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "ANGULARVELOCITYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.Pulsation;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only rad/s
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.RadiansPerSecond, SymbolTypeId.RadPerS);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Angle);
+            expectedTypes.AddCustomExpectedType(-1, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "LINEARSTIFFNESSUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.PointSpringCoefficient;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only N/m = kg/s^2 
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.NewtonsPerMeter, SymbolTypeId.NPerM);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "WARPINGCONSTANTUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.WarpingConstant;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only m^6
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.MetersToTheSixthPower, SymbolTypeId.MSup6);
+            expectedTypes.AddExpectedType(6, SpecTypeId.Length);
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "LINEARMOMENTUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.LinearMoment;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only N-m/m = (kg * m)/s^2 
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.NewtonMetersPerMeter, SymbolTypeId.NDashMPerM);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Length);
+            expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
+         else if (string.Compare(unitType, "TORQUEUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.Moment;
+            UnitSystem = UnitSystem.Metric;
+
+            // Support only N-m = (kg * m^2)/s^2
+            DerivedUnitExpectedTypes expectedTypes = new DerivedUnitExpectedTypes(UnitTypeId.NewtonMeters, SymbolTypeId.NDashM);
+            expectedTypes.AddExpectedType(1, SpecTypeId.Mass);
+            expectedTypes.AddExpectedType(2, SpecTypeId.Length);
+            expectedTypes.AddCustomExpectedType(-2, "TIMEUNIT");
+            expectedTypesList.Add(expectedTypes);
+         }
          else if (string.Compare(unitType, "USERDEFINED", true) == 0)
          {
             // Look at the sub-types to see what we support.
@@ -920,6 +1041,11 @@ namespace Revit.IFC.Import.Data
          else if (string.Compare(unitType, "ELECTRICVOLTAGEUNIT", true) == 0)
          {
             Spec = SpecTypeId.ElectricalPotential;
+            unitNameSupported = ProcessMetricPrefix(prefix, Spec);
+         }
+         else if (string.Compare(unitType, "ENERGYUNIT", true) == 0)
+         {
+            Spec = SpecTypeId.Energy;
             unitNameSupported = ProcessMetricPrefix(prefix, Spec);
          }
          else if (string.Compare(unitType, "FORCEUNIT", true) == 0)

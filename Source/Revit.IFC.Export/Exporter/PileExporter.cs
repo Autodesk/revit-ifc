@@ -99,7 +99,7 @@ namespace Revit.IFC.Export.Exporter
                   // TODO: to allow shared geometry for Piles. For now, Pile export will not use shared geometry
                   if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
                   {
-                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
+                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(type, pile);
                   }
                   if (exportParts)

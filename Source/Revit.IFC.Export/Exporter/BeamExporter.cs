@@ -240,9 +240,12 @@ namespace Revit.IFC.Export.Exporter
 
          if (axis_items.Count > 0)
          {
-            string identifierOpt = "Axis";   // This is by IFC2x2+ convention.
-            IFCAnyHandle axisRep = RepresentationUtil.CreateShapeRepresentation(exporterIFC, element, catId, exporterIFC.Get3DContextHandle(identifierOpt),
-               identifierOpt, representationTypeOpt, axis_items);
+            IFCRepresentationIdentifier identifier = IFCRepresentationIdentifier.Axis;
+            string identifierOpt = identifier.ToString();   // This is by IFC2x2+ convention.
+            IFCAnyHandle contextHandle3d = ExporterCacheManager.Get3DContextHandle(identifier);
+            IFCAnyHandle axisRep = RepresentationUtil.CreateShapeRepresentation(exporterIFC, 
+               element, catId, contextHandle3d, identifierOpt, representationTypeOpt, 
+               axis_items);
             return axisRep;
          }
 

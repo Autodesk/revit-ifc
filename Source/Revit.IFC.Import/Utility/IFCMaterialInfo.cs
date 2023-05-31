@@ -87,5 +87,10 @@ namespace Revit.IFC.Import.Utility
       {
          return new IFCMaterialInfo(color, transparency, shininess, smoothness, id);
       }
+
+      public bool IsValid()
+      {
+         return (Color != null) || (Transparency != null) || (Shininess != null) || (Smoothness != null);
+      }
    }
 }

@@ -1393,14 +1393,14 @@ namespace Revit.IFC.Export.Exporter
                   retVal.BaseRepresentationItems.Add(currRetVal.BaseRepresentationItems[0]);
             }
 
-            IFCAnyHandle contextOfItemsBody = exporterIFC.Get3DContextHandle("Body");
+            IFCAnyHandle contextOfItemsBody = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
 
             if (extrusionBodyItems.Count > 0 && (extrusionClippingBodyItems.Count == 0 && extrusionBooleanBodyItems.Count == 0))
             {
                if ((addInfo & GenerateAdditionalInfo.GenerateBody) != 0)
                {
                   retVal.Handle = RepresentationUtil.CreateSweptSolidRep(exporterIFC, element, catId, contextOfItemsBody,
-                     extrusionBodyItems, null);
+                     extrusionBodyItems, null, null);
                   retVal.ShapeRepresentationType = ShapeRepresentationType.SweptSolid;
                }
             }
@@ -1430,7 +1430,7 @@ namespace Revit.IFC.Export.Exporter
                   // If both Clipping and extrusion exist, they will become boolean body Union
                   ICollection<IFCAnyHandle> booleanBodyItems = extrusionClippingBodyItems.Union<IFCAnyHandle>(extrusionBooleanBodyItems).ToList();
                   extrusionBodyItems.UnionWith(booleanBodyItems);
-                  retVal.Handle = RepresentationUtil.CreateSweptSolidRep(exporterIFC, element, catId, contextOfItemsBody, extrusionBodyItems, null);
+                  retVal.Handle = RepresentationUtil.CreateSweptSolidRep(exporterIFC, element, catId, contextOfItemsBody, extrusionBodyItems, null, null);
                   retVal.ShapeRepresentationType = ShapeRepresentationType.SweptSolid;
                }
             }
@@ -1603,8 +1603,9 @@ namespace Revit.IFC.Export.Exporter
                      // allowMultipleClipPlanes is based on category, as determined in AllowMultipleClipPlanesForCategory.  Default is true.
                      Element cuttingElement = document.GetElement(elementCutoutsForElement.Key);
                      bool allowMultipleClipPlanes = true;
-                     if (cuttingElement != null && cuttingElement.Category != null)
-                        AllowMultipleClipPlanesForCategory(cuttingElement.Category.Id);
+                     ElementId cuttingElementCategoryId = CategoryUtil.GetSafeCategoryId(cuttingElement);
+                     if (cuttingElementCategoryId != ElementId.InvalidElementId)
+                        AllowMultipleClipPlanesForCategory(cuttingElementCategoryId);
 
                      foreach (ICollection<Face> elementCutout in elementCutoutsForElement.Value)
                      {

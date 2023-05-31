@@ -70,13 +70,17 @@ namespace Revit.IFC.Export.Utility
       /// <param name="originalShapeRepresentation">The original shape representation.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateOrAppendShapeRepresentation(ExporterIFC exporterIFC, Element element, ElementId categoryId, IFCAnyHandle contextOfItems,
-         string identifierOpt, string representationTypeOpt, ISet<IFCAnyHandle> items, IFCAnyHandle originalShapeRepresentation)
+         string identifierOpt, string representationTypeOpt, ISet<IFCAnyHandle> items, IFCAnyHandle originalShapeRepresentation,
+         string ifcCADLayerOverride)
       {
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(originalShapeRepresentation))
          {
             GeometryUtil.AddItemsToShape(originalShapeRepresentation, items);
             return originalShapeRepresentation;
          }
+         
+         if (!string.IsNullOrWhiteSpace(ifcCADLayerOverride))
+            return CreateShapeRepresentation(exporterIFC, contextOfItems, identifierOpt, representationTypeOpt, items, ifcCADLayerOverride);
 
          return CreateShapeRepresentation(exporterIFC, element, categoryId, contextOfItems, identifierOpt, representationTypeOpt, items);
       }
@@ -232,7 +236,7 @@ namespace Revit.IFC.Export.Utility
          string repTypeOpt = ShapeRepresentationType.Tessellation.ToString();
          IFCAnyHandle bodyRepresentation =
              CreateOrAppendShapeRepresentation(exporterIFC, element, categoryId, contextOfItems, identifierOpt, repTypeOpt,
-                 bodyItems, originalRepresentation);
+                 bodyItems, originalRepresentation, null);
          return bodyRepresentation;
       }
 
@@ -253,7 +257,7 @@ namespace Revit.IFC.Export.Utility
          string repTypeOpt = ShapeRepresentationType.AdvancedBrep.ToString();
          IFCAnyHandle bodyRepresentation =
              CreateOrAppendShapeRepresentation(exporterIFC, element, categoryId, contextOfItems, identifierOpt, repTypeOpt,
-                 bodyItems, originalRepresentation);
+                 bodyItems, originalRepresentation, null);
          return bodyRepresentation;
       }
 
@@ -267,13 +271,13 @@ namespace Revit.IFC.Export.Utility
       /// <param name="originalShapeRepresentation">The original shape representation.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateSweptSolidRep(ExporterIFC exporterIFC, Element element, ElementId categoryId, IFCAnyHandle contextOfItems,
-          ISet<IFCAnyHandle> bodyItems, IFCAnyHandle originalRepresentation)
+          ISet<IFCAnyHandle> bodyItems, IFCAnyHandle originalRepresentation, string ifcCADLayerOverride)
       {
          string identifierOpt = "Body";   // this is by IFC2x2 convention, not temporary
          string repTypeOpt = ShapeRepresentationType.SweptSolid.ToString();  // this is by IFC2x2 convention, not temporary
          IFCAnyHandle bodyRepresentation =
             CreateOrAppendShapeRepresentation(exporterIFC, element, categoryId, contextOfItems, identifierOpt, repTypeOpt,
-               bodyItems, originalRepresentation);
+               bodyItems, originalRepresentation, ifcCADLayerOverride);
          return bodyRepresentation;
       }
 
@@ -293,7 +297,7 @@ namespace Revit.IFC.Export.Utility
          string repTypeOpt = ShapeRepresentationType.AdvancedSweptSolid.ToString();  // this is by IFC2x2 convention, not temporary
          IFCAnyHandle bodyRepresentation =
             CreateOrAppendShapeRepresentation(exporterIFC, element, categoryId, contextOfItems, identifierOpt, repTypeOpt,
-               bodyItems, originalRepresentation);
+               bodyItems, originalRepresentation, null);
          return bodyRepresentation;
       }
 
@@ -398,7 +402,7 @@ namespace Revit.IFC.Export.Utility
 
          string repTypeOpt = ShapeRepresentationType.SurfaceModel.ToString();  // IFC2x2+ convention
          IFCAnyHandle bodyRepresentation = CreateOrAppendShapeRepresentation(exporterIFC, element, categoryId,
-            contextOfItems, identifierOpt, repTypeOpt, bodyItems, originalRepresentation);
+            contextOfItems, identifierOpt, repTypeOpt, bodyItems, originalRepresentation, null);
          return bodyRepresentation;
       }
 
@@ -418,7 +422,7 @@ namespace Revit.IFC.Export.Utility
 
          string repTypeOpt = ShapeRepresentationType.Curve2D.ToString();  // this is by IFC2x2 convention, not temporary
          IFCAnyHandle bodyRepresentation = CreateOrAppendShapeRepresentation(exporterIFC, element, categoryId,
-            contextOfItems, identifierOpt, repTypeOpt, bodyItems, originalRepresentation);
+            contextOfItems, identifierOpt, repTypeOpt, bodyItems, originalRepresentation, null);
          return bodyRepresentation;
       }
 
@@ -572,7 +576,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateAppropriateProductDefinitionShape(ExporterIFC exporterIFC, Element element, ElementId categoryId,
           GeometryElement geometryElement, BodyExporterOptions bodyExporterOptions, IList<IFCAnyHandle> extraReps,
-          IFCExportBodyParams extrusionCreationData, out BodyData bodyData, bool skipBody = false)
+          IFCExportBodyParams extrusionCreationData, out BodyData bodyData, bool skipBody = false, bool instanceGeometry = false)
       {
          bodyData = null;
          SolidMeshGeometryInfo info = null;
@@ -612,7 +616,7 @@ namespace Revit.IFC.Export.Utility
                matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
 
             bodyData = BodyExporter.ExportBody(exporterIFC, element, categoryId, matId, geometryList,
-                bodyExporterOptions, extrusionCreationData);
+                bodyExporterOptions, extrusionCreationData, instanceGeometry:instanceGeometry);
             IFCAnyHandle bodyRep = bodyData.RepresentationHnd;
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
             {
@@ -743,7 +747,7 @@ namespace Revit.IFC.Export.Utility
          bodyItems.Add(extrusionHnd);
 
          IFCAnyHandle contextOfItems = exporterIFC.Get3DContextHandle("Body");
-         IFCAnyHandle shapeRepHnd = CreateSweptSolidRep(exporterIFC, element, categoryId, contextOfItems, bodyItems, null);
+         IFCAnyHandle shapeRepHnd = CreateSweptSolidRep(exporterIFC, element, categoryId, contextOfItems, bodyItems, null, null);
 
          IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
          shapeReps.Add(shapeRepHnd);

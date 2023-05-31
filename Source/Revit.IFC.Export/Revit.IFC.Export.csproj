@@ -51,11 +51,11 @@
   <ItemGroup>
     <Reference Include="RevitAPI, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\2023_Revit_API\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\2023_Revit_API\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Web.Extensions" />
@@ -104,14 +104,18 @@
     <Compile Include="Exporter\PropertySet\Calculators\ConcealedCeiling.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ConcealedFlooring.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\FireRatingCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\GrossCeilingAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\GrossCrossSectionAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\GrossFloorAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\IsExternalCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterRCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\LongitudinalBarNominalDiameter.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\LongitudinalBarSpacing.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\MeshLengthCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\MeshWidthCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NetAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NetCrossSectionAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NetFloorAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NosingLengthCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfRiserCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfTreadsCalculator.cs" />
@@ -211,6 +215,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Toolkit\IFC4x3Enums.cs" />
     <Compile Include="Toolkit\IFCValidateEntry.cs" />
     <Compile Include="Toolkit\IFC4Enums.cs" />
     <Compile Include="Toolkit\IFCEnums.cs" />

@@ -393,20 +393,39 @@ namespace Revit.IFC.Import.Utility
          // Map from entity type to built-in category id.
          m_EntityTypeToCategory[IFCEntityType.IfcAirTerminal] = BuiltInCategory.OST_DuctTerminal;
          m_EntityTypeToCategory[IFCEntityType.IfcAirTerminalType] = BuiltInCategory.OST_DuctTerminal;
+         m_EntityTypeToCategory[IFCEntityType.IfcAirToAirHeatRecovery] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcAirToAirHeatRecoveryType] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcAlarmType] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcAlignment] = BuiltInCategory.OST_Alignments;
+         m_EntityTypeToCategory[IFCEntityType.IfcAlignmentHorizontal] = BuiltInCategory.OST_Alignments;
+         m_EntityTypeToCategory[IFCEntityType.IfcAlignmentSegment] = BuiltInCategory.OST_Alignments;
+         m_EntityTypeToCategory[IFCEntityType.IfcAlignmentVertical] = BuiltInCategory.OST_Alignments;
          m_EntityTypeToCategory[IFCEntityType.IfcAnnotation] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcAudioVisualAppliance] = BuiltInCategory.OST_AudioVisualDevices;
+         m_EntityTypeToCategory[IFCEntityType.IfcAudioVisualApplianceType] = BuiltInCategory.OST_AudioVisualDevices;
          m_EntityTypeToCategory[IFCEntityType.IfcBeam] = BuiltInCategory.OST_StructuralFraming;
          m_EntityTypeToCategory[IFCEntityType.IfcBeamStandardCase] = BuiltInCategory.OST_StructuralFraming;
          m_EntityTypeToCategory[IFCEntityType.IfcBeamType] = BuiltInCategory.OST_StructuralFraming;
          m_EntityTypeToCategory[IFCEntityType.IfcBoiler] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcBoilerType] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcBuilding] = BuiltInCategory.OST_ProjectInformation;
          m_EntityTypeToCategory[IFCEntityType.IfcBuildingElementPart] = BuiltInCategory.OST_Parts;
          m_EntityTypeToCategory[IFCEntityType.IfcBuildingElementPartType] = BuiltInCategory.OST_Parts;
          m_EntityTypeToCategory[IFCEntityType.IfcBuildingElementProxy] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcBuildingElementProxyType] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcBuildingStorey] = BuiltInCategory.OST_Levels;
+         m_EntityTypeToCategory[IFCEntityType.IfcBuiltElement] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcCableCarrierFitting] = BuiltInCategory.OST_CableTrayFitting;
          m_EntityTypeToCategory[IFCEntityType.IfcCableCarrierFittingType] = BuiltInCategory.OST_CableTrayFitting;
          m_EntityTypeToCategory[IFCEntityType.IfcCableCarrierSegment] = BuiltInCategory.OST_CableTray;
          m_EntityTypeToCategory[IFCEntityType.IfcCableCarrierSegmentType] = BuiltInCategory.OST_CableTray;
+         m_EntityTypeToCategory[IFCEntityType.IfcCableSegment] = BuiltInCategory.OST_Conduit;
+         m_EntityTypeToCategory[IFCEntityType.IfcCableSegmentType] = BuiltInCategory.OST_Conduit;
+         m_EntityTypeToCategory[IFCEntityType.IfcChimney] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcChimneyType] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcCoil] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcCommunicationsAppliance] = BuiltInCategory.OST_DataDevices;
+         m_EntityTypeToCategory[IFCEntityType.IfcCommunicationsApplianceType] = BuiltInCategory.OST_DataDevices;
          m_EntityTypeToCategory[IFCEntityType.IfcColumn] = BuiltInCategory.OST_Columns;
          m_EntityTypeToCategory[IFCEntityType.IfcColumnStandardCase] = BuiltInCategory.OST_Columns;
          m_EntityTypeToCategory[IFCEntityType.IfcController] = BuiltInCategory.OST_SpecialityEquipment;
@@ -415,8 +434,13 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcCoveringType] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcCurtainWall] = BuiltInCategory.OST_CurtaSystem;
          m_EntityTypeToCategory[IFCEntityType.IfcCurtainWallType] = BuiltInCategory.OST_CurtaSystem;
+         m_EntityTypeToCategory[IFCEntityType.IfcDamper] = BuiltInCategory.OST_DuctAccessory;
+         m_EntityTypeToCategory[IFCEntityType.IfcDamperType] = BuiltInCategory.OST_DuctAccessory;
          m_EntityTypeToCategory[IFCEntityType.IfcDiscreteAccessory] = BuiltInCategory.OST_SpecialityEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcDiscreteAccessoryType] = BuiltInCategory.OST_SpecialityEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcDistributionControlElement] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcDistributionElement] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcDistributionElementType] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcDistributionFlowElement] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcDistributionPort] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcDoor] = BuiltInCategory.OST_Doors;
@@ -427,16 +451,33 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcDuctFittingType] = BuiltInCategory.OST_DuctFitting;
          m_EntityTypeToCategory[IFCEntityType.IfcDuctSegment] = BuiltInCategory.OST_DuctCurves;
          m_EntityTypeToCategory[IFCEntityType.IfcDuctSegmentType] = BuiltInCategory.OST_DuctCurves;
+         m_EntityTypeToCategory[IFCEntityType.IfcDuctSilencer] = BuiltInCategory.OST_DuctCurves;
+         m_EntityTypeToCategory[IFCEntityType.IfcDuctSilencerType] = BuiltInCategory.OST_DuctCurves;
+         m_EntityTypeToCategory[IFCEntityType.IfcElectricAppliance] = BuiltInCategory.OST_SpecialityEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcElectricApplianceType] = BuiltInCategory.OST_SpecialityEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcElectricDistributionBoard] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcElectricDistributionBoardType] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcElementAssembly] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcEnergyConversionDevice] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcFacilityPart] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcFan] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcFanType] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcFastener] = BuiltInCategory.OST_StructConnections;
          m_EntityTypeToCategory[IFCEntityType.IfcFastenerType] = BuiltInCategory.OST_StructConnections;
+         m_EntityTypeToCategory[IFCEntityType.IfcFilter] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcFilterType] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcFireSuppressionTerminal] = BuiltInCategory.OST_Sprinklers;
+         m_EntityTypeToCategory[IFCEntityType.IfcFireSuppressionTerminalType] = BuiltInCategory.OST_Sprinklers;
          m_EntityTypeToCategory[IFCEntityType.IfcFlowController] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcFlowControllerType] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcFlowFitting] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcFlowMeter] = BuiltInCategory.OST_PipeAccessory;
+         m_EntityTypeToCategory[IFCEntityType.IfcFlowMeterType] = BuiltInCategory.OST_PipeAccessory;
          m_EntityTypeToCategory[IFCEntityType.IfcFlowMovingDevice] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcFlowSegment] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcFlowStorageDevice] = BuiltInCategory.OST_SpecialityEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcFlowTerminal] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcFlowTreatmentDevice] = BuiltInCategory.OST_PlumbingEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcFooting] = BuiltInCategory.OST_StructuralFoundation;
          m_EntityTypeToCategory[IFCEntityType.IfcFootingType] = BuiltInCategory.OST_StructuralFoundation;
          m_EntityTypeToCategory[IFCEntityType.IfcFurniture] = BuiltInCategory.OST_Furniture;
@@ -446,7 +487,13 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcGeographicElement] = BuiltInCategory.OST_Site;
          m_EntityTypeToCategory[IFCEntityType.IfcGeographicElementType] = BuiltInCategory.OST_Site;
          m_EntityTypeToCategory[IFCEntityType.IfcGrid] = BuiltInCategory.OST_Grids;
-         m_EntityTypeToCategory[IFCEntityType.IfcJunctionBoxType] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcHeatExchangerType] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcHumidifier] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcHumidifierType] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcInterceptor] = BuiltInCategory.OST_PlumbingEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcInterceptorType] = BuiltInCategory.OST_PlumbingEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcJunctionBox] = BuiltInCategory.OST_ElectricalFixtures;
+         m_EntityTypeToCategory[IFCEntityType.IfcJunctionBoxType] = BuiltInCategory.OST_ElectricalFixtures;
          m_EntityTypeToCategory[IFCEntityType.IfcLamp] = BuiltInCategory.OST_LightingDevices;
          m_EntityTypeToCategory[IFCEntityType.IfcLampType] = BuiltInCategory.OST_LightingDevices;
          m_EntityTypeToCategory[IFCEntityType.IfcLightFixture] = BuiltInCategory.OST_LightingFixtures;
@@ -468,7 +515,8 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcPlate] = BuiltInCategory.OST_StructuralFraming;
          m_EntityTypeToCategory[IFCEntityType.IfcPlateStandardCase] = BuiltInCategory.OST_StructuralFraming;
          m_EntityTypeToCategory[IFCEntityType.IfcPlateType] = BuiltInCategory.OST_StructuralFraming;
-         m_EntityTypeToCategory[IFCEntityType.IfcProtectiveDeviceType] = BuiltInCategory.OST_SpecialityEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcProjectionElement] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcProtectiveDeviceType] = BuiltInCategory.OST_ElectricalFixtures;
          m_EntityTypeToCategory[IFCEntityType.IfcProxy] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcPump] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcPumpType] = BuiltInCategory.OST_MechanicalEquipment;
@@ -478,6 +526,7 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcRampType] = BuiltInCategory.OST_Ramps;
          m_EntityTypeToCategory[IFCEntityType.IfcRampFlight] = BuiltInCategory.OST_Ramps;
          m_EntityTypeToCategory[IFCEntityType.IfcRampFlightType] = BuiltInCategory.OST_Ramps;
+         m_EntityTypeToCategory[IFCEntityType.IfcReferent] = BuiltInCategory.OST_Alignments;
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingBar] = BuiltInCategory.OST_Rebar;
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingBarType] = BuiltInCategory.OST_Rebar;
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingMesh] = BuiltInCategory.OST_FabricAreas;
@@ -504,19 +553,33 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcStairType] = BuiltInCategory.OST_Stairs;
          m_EntityTypeToCategory[IFCEntityType.IfcStairFlight] = BuiltInCategory.OST_Stairs;
          m_EntityTypeToCategory[IFCEntityType.IfcStairFlightType] = BuiltInCategory.OST_Stairs;
+         m_EntityTypeToCategory[IFCEntityType.IfcStructuralCurveAction] = BuiltInCategory.OST_AnalyticalMember;
+         m_EntityTypeToCategory[IFCEntityType.IfcStructuralCurveMember] = BuiltInCategory.OST_AnalyticalMember;
+         m_EntityTypeToCategory[IFCEntityType.IfcStructuralCurveReaction] = BuiltInCategory.OST_AnalyticalMember;
+         m_EntityTypeToCategory[IFCEntityType.IfcStructuralPointConnection] = BuiltInCategory.OST_AnalyticalNodes;
+         m_EntityTypeToCategory[IFCEntityType.IfcStructuralPointReaction] = BuiltInCategory.OST_AnalyticalNodes;
          m_EntityTypeToCategory[IFCEntityType.IfcSwitchingDevice] = BuiltInCategory.OST_ElectricalFixtures;
          m_EntityTypeToCategory[IFCEntityType.IfcSwitchingDeviceType] = BuiltInCategory.OST_ElectricalFixtures;
          m_EntityTypeToCategory[IFCEntityType.IfcSystemFurnitureElement] = BuiltInCategory.OST_Furniture;
          m_EntityTypeToCategory[IFCEntityType.IfcSystemFurnitureElementType] = BuiltInCategory.OST_Furniture;
          m_EntityTypeToCategory[IFCEntityType.IfcTank] = BuiltInCategory.OST_SpecialityEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcTankType] = BuiltInCategory.OST_SpecialityEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcTransformer] = BuiltInCategory.OST_ElectricalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcTransformerType] = BuiltInCategory.OST_ElectricalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcTransportElement] = BuiltInCategory.OST_SpecialityEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcTransportElementType] = BuiltInCategory.OST_SpecialityEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcUnitaryControlElement] = BuiltInCategory.OST_MechanicalControlDevices;
+         m_EntityTypeToCategory[IFCEntityType.IfcUnitaryControlElementType] = BuiltInCategory.OST_MechanicalControlDevices;
+         m_EntityTypeToCategory[IFCEntityType.IfcUnitaryEquipment] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcValve] = BuiltInCategory.OST_PipeAccessory;
          m_EntityTypeToCategory[IFCEntityType.IfcValveType] = BuiltInCategory.OST_PipeAccessory;
+         m_EntityTypeToCategory[IFCEntityType.IfcVirtualElement] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcVoidingFeature] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcWall] = BuiltInCategory.OST_Walls;
          m_EntityTypeToCategory[IFCEntityType.IfcWallStandardCase] = BuiltInCategory.OST_Walls;
          m_EntityTypeToCategory[IFCEntityType.IfcWallType] = BuiltInCategory.OST_Walls;
+         m_EntityTypeToCategory[IFCEntityType.IfcWasteTerminal] = BuiltInCategory.OST_PlumbingEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcWasteTerminalType] = BuiltInCategory.OST_PlumbingEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcWindow] = BuiltInCategory.OST_Windows;
          m_EntityTypeToCategory[IFCEntityType.IfcWindowStandardCase] = BuiltInCategory.OST_Windows;
          m_EntityTypeToCategory[IFCEntityType.IfcWindowStyle] = BuiltInCategory.OST_Windows;
@@ -867,9 +930,23 @@ namespace Revit.IFC.Import.Utility
             //If not found, then create a Subcategory of the Category.
             if (subCategory == null)
             {
-               
-               subCategory = Importer.TheCache.DocumentCategories.NewSubcategory(Category.GetCategory(doc, categoryId), subCategoryName);
+               Category parentCategory = Category.GetCategory(doc, categoryId);
+               subCategory = Importer.TheCache.DocumentCategories.NewSubcategory(parentCategory, subCategoryName);
                CreateMaterialsForSpecialSubcategories(doc, id, subCategory, subCategoryName);
+
+               // Copy the line weights of the parent category.
+               foreach (GraphicsStyleType graphicsStyleType in Enum.GetValues(typeof(GraphicsStyleType)))
+               {
+                  try
+                  {
+                     int? lineWeight = parentCategory.GetLineWeight(graphicsStyleType);
+                     if (lineWeight.HasValue)
+                        subCategory.SetLineWeight(lineWeight.Value, graphicsStyleType);
+                  }
+                  catch
+                  { 
+                  }
+               }
             }
 
             createdSubcategories[subCategoryName] = subCategory;
@@ -952,22 +1029,8 @@ namespace Revit.IFC.Import.Utility
             predefinedType = typePredefinedType;
 
          // Set "special" predefined types 
-         try
-         {
-            switch (entityType)
-            {
-               case IFCEntityType.IfcColumn:
-               case IFCEntityType.IfcColumnStandardCase:
-               case IFCEntityType.IfcColumnType:
-                  if (IsColumnLoadBearing(entity))
-                     predefinedType = "[LoadBearing]";
-                  break;
-            }
-         }
-         catch (Exception ex)
-         {
-            Importer.TheLog.LogWarning(entity.Id, ex.Message, false);
-         }
+         if (IsSpecialColumnCase(entity))
+            predefinedType = "[LoadBearing]";
 
          // Get Object Type for Entity.  This may be null if the entity is not an IFCObject.
          //
@@ -1068,7 +1131,7 @@ namespace Revit.IFC.Import.Utility
       /// <returns>The sub-category.  This allows shapes to have their visibility controlled by the sub-category.</param></returns>
       public static Category GetSubCategoryForRepresentation(Document doc, int entityId, IFCRepresentationIdentifier repId)
       {
-         if (repId == IFCRepresentationIdentifier.Body || repId == IFCRepresentationIdentifier.Unhandled)
+         if (repId == IFCRepresentationIdentifier.Body || repId == IFCRepresentationIdentifier.Other)
             return null;
 
          Category category = Importer.TheCache.GenericModelsCategory;
@@ -1079,6 +1142,36 @@ namespace Revit.IFC.Import.Utility
          string subCategoryName = repId.ToString();
          Category subCategory = GetOrCreateSubcategory(doc, entityId, subCategoryName, categoryId);
          return subCategory;
+      }
+
+      /// <summary>
+      /// Determines if the ObjectDefinition is one of the special Load-bearing cases, which requires a Category of Structural Column in Revit.
+      /// </summary>
+      /// <param name="objectDefinition">Entity to check.</param>
+      /// <returns>True if the parameter is a special load-bearing column, False otherwise.</returns>
+      public static bool IsSpecialColumnCase(IFCObjectDefinition objectDefinition)
+      {
+         bool isSpecialCase = false;
+         try
+         {
+            switch (objectDefinition.EntityType)
+            {
+               case IFCEntityType.IfcColumn:
+               case IFCEntityType.IfcColumnStandardCase:
+               case IFCEntityType.IfcColumnType:
+                  if (IsColumnLoadBearing(objectDefinition))
+                  {
+                     isSpecialCase = true;
+                  }
+                  break;
+            }
+         }
+         catch (Exception ex)
+         {
+            Importer.TheLog.LogWarning(objectDefinition.Id, ex.Message, false);
+         }
+
+         return isSpecialCase;
       }
    }
 }

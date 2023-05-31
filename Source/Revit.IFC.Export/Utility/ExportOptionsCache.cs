@@ -238,7 +238,7 @@ namespace Revit.IFC.Export.Utility
 
          return federatedLinkInfo;
       }
-      
+
       /// <summary>
       /// Creates a new export options cache from the data in the ExporterIFC passed from Revit.
       /// </summary>
@@ -282,7 +282,6 @@ namespace Revit.IFC.Export.Utility
             // any sub-type of View.  Work around this by re-getting the element pointer.
             cache.FilterViewForExport = filterView?.Document.GetElement(filterView.Id) as View;
          }
-
 
          cache.ExportBoundingBoxOverride = null;
          cache.IncludeSiteElevation = false;
@@ -360,9 +359,6 @@ namespace Revit.IFC.Export.Utility
 
          bool? exportRoomsInView = OptionsUtil.GetNamedBooleanOption(options, "ExportRoomsInView");
          cache.ExportRoomsInView = exportRoomsInView != null ? exportRoomsInView.Value : false;
-
-         // Using the alternate UI or not.
-         cache.AlternateUIVersionOverride = OptionsUtil.GetNamedStringOption(options, "AlternateUIVersion");
 
          // Include IFCSITE elevation in the site local placement origin
          bool? includeIfcSiteElevation = OptionsUtil.GetNamedBooleanOption(options, "IncludeSiteElevation");
@@ -444,7 +440,6 @@ namespace Revit.IFC.Export.Utility
                ExporterStateManager.CurrentLinkId =
                   new ElementId(linkIdInt.HasValue ? linkIdInt.Value : -1);
 
-
                Transform currTransform = null;
                if (!string.IsNullOrEmpty(aLinkInstanceTransform))
                {
@@ -483,6 +478,9 @@ namespace Revit.IFC.Export.Utility
 
       public void UpdateForDocument(ExporterIFC exporterIFC, Document document, string guid)
       {
+         ExporterCacheManager.BaseLinkedDocumentGUID = guid;
+         ExporterCacheManager.Document = document;
+
          IDictionary<string, string> options = exporterIFC.GetOptions();
 
          if (ActivePhaseId == ElementId.InvalidElementId)
@@ -529,8 +527,6 @@ namespace Revit.IFC.Export.Utility
          // Ensure the cache is set to the default (ActiveProjectLocation) if not set
          if (ExporterCacheManager.SelectedSiteProjectLocation == null)
             ExporterCacheManager.SelectedSiteProjectLocation = document.ActiveProjectLocation;
-
-         ExporterCacheManager.BaseLinkedDocumentGUID = guid;
       }
 
       /// <summary>
@@ -923,29 +919,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Cache variable for the Alternate UI version override (if export from Alternate UI)
-      /// </summary>
-      public string AlternateUIVersionOverride
-      {
-         get;
-         set;
-      }
-
-      /// <summary>
-      /// The UI Version of the exporter.
-      /// </summary>
-      public string ExporterUIVersion
-      {
-         get
-         {
-            if (AlternateUIVersionOverride != null)
-               return AlternateUIVersionOverride;
-            else
-               return "Default UI";
-         }
-      }
-
-      /// <summary>
       /// The version of the exporter.
       /// </summary>
       public string ExporterVersion
@@ -956,7 +929,7 @@ namespace Revit.IFC.Export.Utility
             string exporterVersion = "Unknown Exporter version";
             if (File.Exists(assemblyFile))
             {
-               exporterVersion = "Exporter " + FileVersionInfo.GetVersionInfo(assemblyFile).FileVersion;
+               exporterVersion = "IFC " + FileVersionInfo.GetVersionInfo(assemblyFile).FileVersion;
             }
             return exporterVersion;
          }
@@ -1105,12 +1078,14 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="idx">The index</param>
       /// <returns>The transform corresponding to the given index, or the Identity transform if out of range.</returns>
-      public Transform GetLinkInstanceTransform(int idx)
+      public Transform GetUnscaledLinkInstanceTransform(int idx)
       {
          if (idx < 0 || idx >= GetNumLinkInstanceInfos())
             return Transform.Identity;
 
-         return LinkInstanceInfos[idx].Item2;
+         Transform unscaledTransform = new Transform(LinkInstanceInfos[idx].Item2);
+         unscaledTransform.Origin = UnitUtil.UnscaleLength(unscaledTransform.Origin);
+         return unscaledTransform;
       }
 
 

@@ -177,13 +177,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          // have different names.
          IDictionary<string, IFCAnyHandle> propertiesByName = new SortedDictionary<string, IFCAnyHandle>();
 
-         bool fromSchedule = ExporterCacheManager.ViewScheduleElementCache.ContainsKey(this.ViewScheduleId);
-        
+         // Get the property from Type for this element if the pset is for schedule or 
+         // if element doesn't have an associated type (e.g. IfcRoof)
+         bool lookInType = ExporterCacheManager.ViewScheduleElementCache.ContainsKey(this.ViewScheduleId)
+                           || IFCAnyHandleUtil.IsTypeOneOf(handle, PropertyUtil.EntitiesWithNoRelatedType);
+
          foreach (PropertySetEntry entry in m_Entries)
          {
             try
             {
-               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle, fromSchedule);
+               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle, lookInType);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportMaterialPsets)
                   propHnd = MaterialBuildInParameterUtil.CreateMaterialPropertyIfBuildIn(Name, entry.PropertyName, entry.PropertyType, elementOrConnectorToUse?.Element, file);
@@ -195,7 +198,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                if (currPropertyName != null)
                   propertiesByName[currPropertyName] = propHnd;
             }
-            catch (Exception) { }
+            catch(Exception) { }
          }
 
          ISet<IFCAnyHandle> props = new HashSet<IFCAnyHandle>(propertiesByName.Values);

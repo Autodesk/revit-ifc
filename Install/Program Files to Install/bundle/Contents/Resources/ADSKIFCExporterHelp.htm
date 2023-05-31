@@ -237,6 +237,80 @@ working on expanding and eventually removing this limit, and we will be tracking
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
 <div class="versionset">
+	<div class="version">23.3.0.0</div><div class="versioninfo-bullet">
+      <br><p>
+         General:
+			<ul>
+				<li>This is the first version of IFC Exporter for Revit 2023. 
+				<li>It contains a various improvements and bug fixes for the basic Revit 2023. 
+			</ul>	
+       </p>
+	   <br>
+	   <p>
+         Improvements:
+			<ul>
+				<li>Added IFC2x3 Qto sets.
+				<li>Added material shared parameters export.
+				<li>Added the BarRole attribute when exporting IfcReinforcingBars to IFC.
+				<li>Added type entities for rebar and assemblies when exporting to IFC.
+				<li>Added support for exporting predefined types when exporting spaces to IFC4+.
+				<li>Added support of new measure units.
+				<li>Allowed export of rebar with slightly invalid transforms to IFC.
+				<li>Implemented exporting user defined parameters of 'Real' type as IfcReal with Revit display values.
+				<li>Implemented exporting of IfcRailingType entity.
+				<li>Implemented support of all 4 Revit velocity data types on export.
+				<li>Improved display of openings when export or linking in IFC files.
+				<li>Improved calculation of the linked levels elevation.
+				<li>Improved export of IfcPropertyEnumeratedValue.
+				<li>Improved export of insulation and lining as anything.
+				<li>Improved export of projects to IFC that contained family instances with invalid placements.
+				<li>Improved handling entities that don`t have PredefinedType.
+				<li>Improved handling of prohibited characters importing IFC file.
+				<li>Improved how classifications are viewed in certain older external applications when exporting to IFC.
+				<li>Improved linking of IFC files that contained properties with no names.
+				<li>Improved linking of IFC files with slightly self-intersecting profile data.
+				<li>Improved list/bounded/table user defined properties values export for Instances and Types.
+				<li>Improved processing of representation items.
+				<li>Improved support for exporting advanced BReps to IFC if the unofficial IFC4 Design Transfer View is used.
+				<li>Improved the export of the material layers of some IFC4 files with 0 thickness material layers.
+				<li>Improved the export of advanced BReps to the unofficial IFC4 Design Transfer View.
+				<li>Improved the behavior for export of elements split by levels.
+				<li>Improved user defined property set mapping, especially for IFC2x3 entities that previously had no type entity exported.
+				<li>Updated 4x3 enums according to IFC4.3.1.0 Documentation.
+			</ul>
+		</p>
+		<br>
+		<p>
+         Bug Fixes:
+			<ul>
+				<li>Corrected the value for many MEP parameters exported to IFC.
+				<li>Fixed colour for exported pipe fitting.
+				<li>Fixed inconsistent IfcMaterialConstituent naming.
+				<li>Fixed export of a user-defined structural element type.
+				<li>Fixed export of IfcFurnitureType.AssemblyPlace attribute.
+				<li>Fixed export of IFC properties associated with the top-level IfcProject entity.
+				<li>Fixed export of materials from hosted wall sweep.
+				<li>Fixed export of material layer parameters of a ceiling element.
+				<li>Fixed export of user defined properties for roofs.
+				<li>Fixed export of some assemblies to IFC that resulted in orphaned entities.
+				<li>Fixed export of stairs layer name.
+				<li>Fixed IfcExportType for ceilings.
+				<li>Fixed IFC Classification export.
+				<li>Fixed IFCMEASUREWITHUNIT. 
+				<li>Fixed log file creation for linking.
+				<li>Fixed processing of IFCPostalAddress with empty AddressLine.
+				<li>Fixed the calculation of the height parameter for some railings in metric projects when a previous value had been calculated that wasn't applicable to this railing.
+				<li>Fixed the issue when IfcCovering sill's body was exported as Brep instead of SweptSolid.
+				<li>Fixed the processing of openings when exporting a wall as shape aspects (components).
+				<li>Fixed the slope common property set parameter calculation when exporting some stringers to IFC.
+				<li>Fixed Revit Data types export.
+				<li>Removed the use of several Revit built-in parameters when exporting IFC properties that have the same name but are different.
+			</ul>
+		</p>
+		<br>
+	</div>
+	<br>
+
     <div class="version">23.2.5.0</div><div class="versioninfo-bullet">
 		<br><p>
          General:

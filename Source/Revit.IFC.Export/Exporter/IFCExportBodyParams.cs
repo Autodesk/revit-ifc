@@ -192,6 +192,11 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// The CAD Layer override.
+      /// </summary>
+      public string IFCCADLayerOverride { get; set; } = null;
+
+      /// <summary>
       /// Constructs a default IFCExportBodyParams object.
       /// </summary>
       public IFCExportBodyParams() { }

@@ -37,8 +37,7 @@ namespace Revit.IFC.Export.Toolkit
             IFCVersion ifcVer = IFCVersion.Default;
             if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3)
                //desiredTypeExtra = "IFC4x3.";
-               //Handling the IFC4x3 format for using the IFC Extension with Revit versions older than 2023.1 which does not support IFC4x3.
-               ifcVer = OptionsUtil.GetIFCVersionByName("IFC4x3");
+               ifcVer = IFCVersion.IFC4x3;
             else if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
                //desiredTypeExtra = "IFC4.";
                ifcVer = IFCVersion.IFC4;

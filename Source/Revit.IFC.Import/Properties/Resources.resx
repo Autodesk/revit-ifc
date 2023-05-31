@@ -144,4 +144,10 @@
   <data name="IFCTypeSchedule" xml:space="preserve">
     <value>Type</value>
   </data>
+  <data name="IFCUnknownProperty" xml:space="preserve">
+    <value>UnknownProperty</value>
+  </data>
+  <data name="IFCUnknownPropertySet" xml:space="preserve">
+    <value>UnknownPropertySet</value>
+  </data>
 </root>

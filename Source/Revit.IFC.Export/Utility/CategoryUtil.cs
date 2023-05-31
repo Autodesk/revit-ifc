@@ -23,6 +23,7 @@ using System.Linq;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Autodesk.Revit.DB.Structure;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter;
@@ -37,60 +38,72 @@ namespace Revit.IFC.Export.Utility
    public class CategoryUtil
    {
       /// <summary>
-      /// Gets category id of an element.
+      /// Gets category of an element, if it has one.
       /// </summary>
-      /// <remarks>
-      /// Returns InvalidElementId when argument is null.
-      /// </remarks>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <returns>
-      /// The category id.
-      /// </returns>
-      public static ElementId GetSafeCategoryId(Element element)
+      /// <remarks>Returns null when argument is null.</remarks>
+      /// <param name="element">The element.</param>
+      /// <returns>The category.</returns>
+      public static Category GetSafeCategory(Element element)
       {
          if (element == null)
-            return ElementId.InvalidElementId;
-         return element.Category.Id;
+            return null;
+
+         // Special cases below - at the moment only one, for ModelCurves.
+         if (element is ModelCurve)
+         {
+            CurveElement modelCurve = element as ModelCurve;
+            GraphicsStyle lineStyle = modelCurve.LineStyle as GraphicsStyle;
+            if (lineStyle != null)
+               return lineStyle.GraphicsStyleCategory;
+         }
+
+         return element.Category;
+      }
+
+      /// <summary>
+      /// Gets category id of an element.
+      /// </summary>
+      /// <remarks>Returns InvalidElementId when argument is null.</remarks>
+      /// <param name="element">The element.</param>
+      /// <returns>The category id.</returns>
+      public static ElementId GetSafeCategoryId(Element element)
+      {
+         return GetSafeCategory(element)?.Id ?? ElementId.InvalidElementId;
+      }
+
+      /// <summary>
+      /// Gets category id of an element.
+      /// </summary>
+      /// <remarks>Returns InvalidElementId when argument is null.</remarks>
+      /// <param name="element">The element.</param>
+      /// <returns>The category id.</returns>
+      public static ElementId GetSafeCategoryId(FabricSheetExporter.FabricSheetExportConfig config)
+      {
+         return config.CategoryId;
       }
 
       /// <summary>
       /// Gets category name of an element.
       /// </summary>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <returns>
-      /// The category name.
-      /// </returns>
-      public static String GetCategoryName(Element element)
+      /// <param name="element">The element.</param>
+      /// <returns>The category name.</returns>
+      public static string GetCategoryName(Element element)
       {
-         Category category = element.Category;
-
-         if (category == null)
-         {
-            throw new Exception("Unable to obtain category for element id " + element.Id.IntegerValue);
-         }
-         return category.Name;
+         return GetSafeCategory(element)?.Name ?? string.Empty;
       }
 
       /// <summary>
       /// Gets material id of the category of an element.
       /// </summary>
+      /// <param name="element">The element.</param>
+      /// <returns>The material id.</returns>
       /// <remarks>
       /// Returns the material id of the parent category when the category of the element has no material.
       /// </remarks>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <returns>
-      /// The material id.
-      /// </returns>
       public static ElementId GetBaseMaterialIdForElement(Element element)
       {
          ElementId baseMaterialId = ElementId.InvalidElementId;
-         Category category = element.Category;
+         Category category = GetSafeCategory(element);
          if (category != null)
          {
             Material baseMaterial = category.Material;
@@ -117,7 +130,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The original color if it is valid, or a default color (grey) if it isn't.</returns>
       public static Color GetSafeColor(Color originalColor)
       {
-         if (originalColor.IsValid)
+         if (originalColor?.IsValid ?? false)
             return originalColor;
 
          // Default color is grey.
@@ -173,64 +186,42 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Generate a default color from the line color of a category.
+      /// </summary>
+      /// <param name="category">The category.</param>
+      /// <returns>The line color, or grey if it is black.</returns>
+      public static Color GetColorFromLineColor(Category category)
+      {
+         Color color = GetSafeColor(category?.LineColor);
+
+         // Grey is returned in place of pure black.  For systems which default to a black background color, 
+         // Grey is more of a contrast.  
+         if (color.Red == 0 && color.Green == 0 && color.Blue == 0)
+            color = new Color(0x7f, 0x7f, 0x7f);
+
+         return color;
+      }
+
+      /// <summary>
       /// Gets the color of the material of the category of an element.
       /// </summary>
+      /// <param name="element">The element.</param>
+      /// <returns>The color of the element.</returns>
       /// <remarks>
-      /// Returns the line color of the category when the category of the element has no material.
+      /// Returns the line color of the category when the category of the element has no 
+      /// material.
       /// </remarks>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <returns>
-      /// The color of the element.
-      /// </returns>
-      public static Autodesk.Revit.DB.Color GetElementColor(Element element)
+      public static Color GetElementColor(Element element)
       {
-         Category category = element.Category;
-
-         if (category == null)
-         {
-            throw new Exception("Unable to obtain category for element id " + element.Id.IntegerValue);
-         }
-
-         Material material = category.Material;
+         Category category = GetSafeCategory(element);
+         Material material = category?.Material;
 
          if (material != null)
          {
             return GetSafeColor(material.Color);
          }
-         else
-         {
-            Color color = GetSafeColor(category.LineColor);
 
-            // Grey is returned in place of pure black.  For systems which default to a black background color, 
-            // Grey is more of a contrast.  
-            if (color.Red == 0 && color.Green == 0 && color.Blue == 0)
-               color = new Color(0x7f, 0x7f, 0x7f);
-
-            return color;
-         }
-      }
-
-      /// <summary>
-      /// Get the element color and opacity from the material associated to an element's category, if any.
-      /// </summary>
-      /// <param name="element">The element.</param>
-      /// <param name="opacity">The return opacity value.</param>
-      /// <returns>The material color.</returns>
-      public static Color GetElementColorAndOpacityFromCategory(Element element, out double opacity)
-      {
-         opacity = 1.0;
-         Category category = element.Category;
-         if (category != null)
-         {
-            Material matElem = element.Category.Material;
-            if (matElem != null)
-            {
-               opacity = (double)(100 - matElem.Transparency) / 100;
-            }
-         }
-         return GetElementColor(element);
+         return GetColorFromLineColor(category);
       }
 
       private static bool CacheIsElementExternal(ElementId elementId, bool isExternal)
@@ -416,10 +407,9 @@ namespace Revit.IFC.Export.Utility
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="instanceHandle">The IFC instance handle.</param>
       /// <param name="materialId">The list of material ids.</param>
-      public static void CreateMaterialAssociation(ExporterIFC exporterIFC, IFCAnyHandle instanceHandle, ICollection<ElementId> materialList)
+      public static void CreateMaterialAssociation(ExporterIFC exporterIFC, 
+         IFCAnyHandle instanceHandle, ICollection<ElementId> materialList)
       {
-         Document document = ExporterCacheManager.Document;
-
          // Create material association if any.
          bool createConstituentSet = (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4);
          HashSet<IFCAnyHandle> materials = createConstituentSet ? null : new HashSet<IFCAnyHandle>();
@@ -452,7 +442,6 @@ namespace Revit.IFC.Export.Utility
          }
 
          IFCFile file = exporterIFC.GetFile();
-         IFCAnyHandle materialContainerHnd = null;
          
          if (createConstituentSet)
          {
@@ -470,7 +459,7 @@ namespace Revit.IFC.Export.Utility
          }
          else
          {
-            materialContainerHnd = CreateMaterialList(file, materials.ToList());
+            IFCAnyHandle materialContainerHnd = CreateMaterialList(file, materials.ToList());
             ExporterCacheManager.MaterialSetUsageCache.Add(materialContainerHnd, instanceHandle);
          }
       }
@@ -484,8 +473,6 @@ namespace Revit.IFC.Export.Utility
       /// <param name="representationItemInfoSet">RepresentationItem info set</param>
       public static void CreateMaterialAssociationWithShapeAspect(ExporterIFC exporterIFC, Element element, IFCAnyHandle instanceHandle, HashSet<Tuple<MaterialConstituentInfo, IFCAnyHandle>> representationItemInfoSet)
       {
-         Document document = ExporterCacheManager.Document;
-
          // Create material association if any.
          bool createConstituentSet = (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4);
          HashSet<IFCAnyHandle> materials = createConstituentSet ? null : new HashSet<IFCAnyHandle>();
@@ -811,7 +798,7 @@ namespace Revit.IFC.Export.Utility
                         styledItemHnd = IFCInstanceExporter.CreateStyledItem(file, styledRepItem, styles, null);
                      }
 
-                     IFCAnyHandle contextOfItems = exporterIFC.Get3DContextHandle("");
+                     IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.None);
 
                      string repId = "Style";
                      string repType = (hasFill) ? "Material and Cut Pattern" : "Material";

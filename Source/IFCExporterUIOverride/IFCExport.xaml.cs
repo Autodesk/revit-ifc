@@ -448,8 +448,6 @@ namespace BIM.IFC.Export.UI
             string selectedConfigName = editorWindow.GetSelectedConfigurationName();
 
             UpdateCurrentSelectedSetupCombo(selectedConfigName);
-
-            updateFileName();
          }
 
          // The SelectionChanged event will be activated again after the Modify Config Window is closed

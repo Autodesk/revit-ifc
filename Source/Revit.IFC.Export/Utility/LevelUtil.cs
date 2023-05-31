@@ -53,9 +53,9 @@ namespace Revit.IFC.Export.Utility
             if (x.Id == y.Id)
                return 0;
 
-            if (x.Elevation == y.Elevation)
+            if (x.ProjectElevation == y.ProjectElevation)
                return (x.Id > y.Id) ? 1 : -1;
-            return (x.Elevation > y.Elevation) ? 1 : -1;
+            return (x.ProjectElevation > y.ProjectElevation) ? 1 : -1;
          }
 
          #endregion
@@ -227,8 +227,8 @@ namespace Revit.IFC.Export.Utility
                   Level possibleNextLevel = nextLevelAsElement as Level;
                   if (possibleNextLevel != null && IsBuildingStory(possibleNextLevel))
                   {
-                     double nextLevelElevation = possibleNextLevel.Elevation;
-                     double netElevation = nextLevelElevation - level.Elevation;
+                     double nextLevelElevation = possibleNextLevel.ProjectElevation;
+                     double netElevation = nextLevelElevation - level.ProjectElevation;
                      if (netElevation > 0.0)
                      {
                         height = netElevation;

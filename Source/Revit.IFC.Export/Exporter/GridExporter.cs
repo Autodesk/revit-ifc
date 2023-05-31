@@ -259,8 +259,9 @@ namespace Revit.IFC.Export.Exporter
                   axesW = CreateIFCGridAxisAndRepresentations(exporterIFC, productWrapper, 
                      sameDirectionAxesW, representations, gridRepresentationData);
 
-               IFCAnyHandle contextOfItemsFootPrint = exporterIFC.Get3DContextHandle("FootPrint");
-               string identifierOpt = "FootPrint";
+               IFCRepresentationIdentifier identifier = IFCRepresentationIdentifier.FootPrint;
+               string identifierOpt = identifier.ToString();
+               IFCAnyHandle contextOfItemsFootPrint = ExporterCacheManager.Get3DContextHandle(identifier);
                string representationTypeOpt = "GeometricCurveSet";
 
                int numGridsToExport = gridRepresentationData.m_Grids.Count;
@@ -433,11 +434,8 @@ namespace Revit.IFC.Export.Exporter
       private static IDictionary<Tuple<ElementId, string>, List<Grid>> GetAllGrids(Document document, ExporterIFC exporterIFC)
       {
          View currentView = ExporterCacheManager.ExportOptionsCache.FilterViewForExport;
-         Level currentLevel = null;
-         if (currentView != null)
-         {
-            currentLevel = currentView.GenLevel;
-         }
+         Level currentLevel = currentView?.GenLevel;
+         
          SortedDictionary<double,ElementId> levelIds = new SortedDictionary<double,ElementId>();
          
          if (currentLevel != null)

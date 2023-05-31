@@ -140,5 +140,23 @@ namespace Revit.IFC.Import.Properties {
                 return ResourceManager.GetString("IFCTypeSchedule", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UnknownProperty.
+        /// </summary>
+        internal static string IFCUnknownProperty {
+            get {
+                return ResourceManager.GetString("IFCUnknownProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UnknownPropertySet.
+        /// </summary>
+        internal static string IFCUnknownPropertySet {
+            get {
+                return ResourceManager.GetString("IFCUnknownPropertySet", resourceCulture);
+            }
+        }
     }
 }

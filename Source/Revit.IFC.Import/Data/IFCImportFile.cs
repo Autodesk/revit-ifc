@@ -46,7 +46,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The transaction for the import.
       /// </summary>
-      private Transaction Transaction { get; set; } = null;
+      private Transaction ReferenceTransaction { get; set; } = null;
 
       
       /// <summary>
@@ -136,11 +136,8 @@ namespace Revit.IFC.Import.Data
          }
          finally
          {
-            if (ifcFile != null)
-            {
-               ifcFile.Close();
-               ifcFile = null;
-            }
+            ifcFile?.Close();
+            ifcFile = null;
          }
       }
 
@@ -202,6 +199,15 @@ namespace Revit.IFC.Import.Data
       private IFCSchemaVersion SchemaVersion { get; set; } = IFCSchemaVersion.IFC2x3; // default
 
       /// <summary>
+      /// Constructs IFCImportFile object using transaction that may already be started.
+      /// </summary>
+      /// <param name="transaction">Transaction for IFCImportFile.</param>
+      protected IFCImportFile (Transaction transaction = null)
+      {
+         ReferenceTransaction = transaction;
+      }
+      
+      /// <summary>
       /// Checks if the schema version of this file is at least the specified version.
       /// </summary>
       /// <param name="version">The version to checif the schema version of this file is at least the specified version. against.</param>
@@ -245,16 +251,6 @@ namespace Revit.IFC.Import.Data
       /// Units in the IFC project.
       /// </summary>
       public IFCUnits IFCUnits { get; } = new IFCUnits();
-
-      private void InitializeOpenTransaction(string name)
-      {
-         Transaction.Start(Resources.IFCOpenReferenceFile);
-
-         FailureHandlingOptions options = Transaction.GetFailureHandlingOptions();
-         //options.SetFailuresPreprocessor(Log);
-         options.SetForcedModalHandling(true);
-         options.SetClearAfterRollback(true);
-      }
 
       public static string TheFileName { get; protected set; }
       public static int TheBrepCounter { get; set; }
@@ -397,8 +393,12 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <returns>True if the process is successful, false otherwise.</returns>
       private bool ProcessReference()
-      { 
-         InitializeOpenTransaction("Open IFC Reference File");
+      {
+         if (TransactionStatus.Started != Importer.StartReferenceIFCTransaction(ReferenceTransaction))
+         {
+            Importer.TheLog.LogError(-1, "Unable to start Transaction for ReferenceIFC Import", true);
+            return false;
+         }
 
          //If there is more than one project, we will be ignoring all but the first one.
          IList<IFCAnyHandle> projects = IFCImportFile.TheFile.GetInstances(IFCEntityType.IfcProject, false);
@@ -442,7 +442,11 @@ namespace Revit.IFC.Import.Data
 
          ProcessFile(ifcFilePath);
 
-         Transaction = new Transaction(doc);
+         if (ReferenceTransaction == null)
+         {
+            ReferenceTransaction = new Transaction(doc);
+         }
+
          bool success = true;
          switch (options.Intent)
          {
@@ -450,6 +454,7 @@ namespace Revit.IFC.Import.Data
                success = ProcessReference();
                break;
          }
+
          if (success)
             StoreIFCCreatorInfo(IFCFile, doc.ProjectInformation);
          else
@@ -466,10 +471,11 @@ namespace Revit.IFC.Import.Data
       /// <param name="ifcFilePath">The path of the file.</param>
       /// <param name="options">The IFC import options.</param>
       /// <param name="doc">The optional document argument.  If importing into Revit, not supplying a document may reduce functionality later.</param>
+      /// <param name="transaction">Transaction, if one has already been started.</param>
       /// <returns>The IFCImportFile.</returns>
-      public static IFCImportFile Create(string ifcFilePath, IFCImportOptions options, Document doc)
+      public static IFCImportFile Create(string ifcFilePath, IFCImportOptions options, Document doc, Transaction transaction = null)
       {
-         TheFile = new IFCImportFile();
+         TheFile = new IFCImportFile(transaction);
          try
          { 
             TheFile.Process(ifcFilePath, options, doc);
@@ -674,8 +680,8 @@ namespace Revit.IFC.Import.Data
             //TheLog.LogError(-1, ex.Message, false);
          }
 
-         if (Transaction != null)
-            Transaction.Commit();
+         if (ReferenceTransaction != null)
+            ReferenceTransaction.Commit();
       }
 
       /// <summary>
@@ -1106,6 +1112,7 @@ namespace Revit.IFC.Import.Data
          }
          else if (schemaName.Equals("IFC4X3", StringComparison.OrdinalIgnoreCase))
          {
+            //schemaVersion = IFCSchemaVersion.IFC4x3; 
             schemaVersion = IFCSchemaVersion.IFC4x3;
          }
          else
@@ -1113,7 +1120,10 @@ namespace Revit.IFC.Import.Data
 
          if (schemaVersion >= IFCSchemaVersion.IFC4x1)
          {
-            Importer.TheLog.LogWarning(-1, "Schema " + schemaName + " is not fully supported. Some elements may be missed or imported incorrectly.", false);
+            if (Importer.TheLog != null)
+            {
+               Importer.TheLog.LogWarning(-1, "Schema " + schemaName + " is not fully supported. Some elements may be missed or imported incorrectly.", false);
+            }
          }
 
          return modelOptions;

@@ -18,7 +18,7 @@
 //
 
 using Autodesk.Revit.DB;
-using Revit.IFC.Import.Data;
+using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Import.Utility
 {
@@ -37,7 +37,7 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// The representation that created the geometry.
       /// </summary>
-      public IFCRepresentationIdentifier RepresentationType { get; set; }
+      public IFCRepresentationIdentifier RepresentationIdentifier { get; set; }
 
       /// <summary>
       /// The created geometry.
@@ -47,7 +47,7 @@ namespace Revit.IFC.Import.Utility
       protected IFCSolidInfo()
       {
          Id = -1;
-         RepresentationType = IFCRepresentationIdentifier.Unhandled;
+         RepresentationIdentifier = IFCRepresentationIdentifier.Other;
          GeometryObject = null;
       }
 
@@ -63,7 +63,7 @@ namespace Revit.IFC.Import.Utility
       /// <param name="id">The id associated with the geometry in the IFC file.</param>
       /// <param name="geometryObject">The created geometry.</param>
       /// <returns>The IFCSolidInfo class.</returns>
-      /// <remarks>The RepresentationType is intended to be added in the AddGeometry function call.</remarks>
+      /// <remarks>The RepresentationIdentifier is intended to be added in the AddGeometry function call.</remarks>
       public static IFCSolidInfo Create(int id, GeometryObject geometryObject)
       {
          return new IFCSolidInfo(id, geometryObject);

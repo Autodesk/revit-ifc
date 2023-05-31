@@ -56,7 +56,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          }
          else
          {
-            parameter = ParameterUtil.GetParameterFromName(element.Id, null, RevitParameterName);
+            parameter = ParameterUtil.GetParameterFromName(element.Id, RevitParameterName);
          }
          if (parameter == null)
             return null;

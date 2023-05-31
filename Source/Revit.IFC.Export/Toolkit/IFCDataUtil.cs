@@ -256,6 +256,96 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Creates an IFCData object as IfcAccelerationMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsAccelerationMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcAccelerationMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcEnergyMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsEnergyMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcEnergyMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcLinearMomentMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsLinearMomentMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcLinearMomentMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcMassPerLengthMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsMassPerLengthMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcMassPerLengthMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcTorqueMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsTorqueMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcTorqueMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcLinearStiffnessMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsLinearStiffnessMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcLinearStiffnessMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcAngularVelocityMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsAngularVelocityMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcAngularVelocityMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcThermalResistanceMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsThermalResistanceMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcThermalResistanceMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcWarpingConstantMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsWarpingConstantMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcWarpingConstantMeasure");
+      }
+
+      /// <summary>
       /// Creates an IFCData object as IfcLinearVelocityMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>
@@ -486,6 +576,26 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Creates an IFCData object as IfcHeatFluxDensityMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsHeatFluxDensityMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcHeatFluxDensityMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcAreaDensityMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsAreaDensityMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcAreaDensityMeasure");
+      }
+
+      /// <summary>
       /// Creates an IFCData object as IfcThermalConductivityMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>
@@ -627,6 +737,26 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Creates an IFCData object as IfcMassMeasure
+      /// </summary>
+      /// <param name="value">the double value</param>
+      /// <returns>the IFCData object</returns>
+      public static IFCData CreateAsMassMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcMassMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcTimeMeasure
+      /// </summary>
+      /// <param name="value">the double value</param>
+      /// <returns>the IFCData object</returns>
+      public static IFCData CreateAsTimeMeasure(double value)
+      {
+         return CreateAsMeasure(value, "IfcTimeMeasure");
+      }
+
+      /// <summary>
       /// Creates an IFCData object as IfcPlanarForceMeasure
       /// </summary>
       /// <param name="value">the double value</param>
@@ -658,6 +788,7 @@ namespace Revit.IFC.Export.Toolkit
          return IFCData.CreateIntegerOfType(value, type);
       }
 
+
       public static string ValidateEnumeratedValue(string value, Type propertyEnumerationType)
       {
          if (propertyEnumerationType != null && propertyEnumerationType.IsEnum && !string.IsNullOrEmpty(value))
@@ -685,7 +816,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateThermodynamicTemperatureMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null,  parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -704,7 +835,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateDynamicViscosityMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -723,7 +854,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateHeatingValueMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -742,7 +873,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateIsothermalMoistureCapacityMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -761,7 +892,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreatePositiveLengthMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -780,7 +911,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateRatioMeasureFromElement(Element element, string parameterName, PropertyType propertyType)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             data = CreateRatioMeasureDataCommon(propertyValue, propertyType);
@@ -797,7 +928,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateMassDensityMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -816,7 +947,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateModulusOfElasticityMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -835,7 +966,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateMoistureDiffusivityMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -854,7 +985,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateIonConcentrationMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -873,7 +1004,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateVaporPermeabilityMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -892,7 +1023,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateThermalExpansionCoefficientMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -911,7 +1042,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreatePressureMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -930,7 +1061,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateSpecificHeatCapacityMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -949,7 +1080,7 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateThermalConductivityMeasureFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, null, parameterName, out double propertyValue);
+         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
@@ -985,7 +1116,7 @@ namespace Revit.IFC.Export.Toolkit
          IFCData data = null;
          Parameter param = ParameterUtil.GetIntValueFromElement(element, parameterName, out int propertyValue);
          if (param != null)
-            data = CreateAsBoolean(propertyValue != 0);
+            data = CreateAsBoolean(propertyValue != 0);         
          return data;
       }
 
@@ -1015,6 +1146,7 @@ namespace Revit.IFC.Export.Toolkit
          }
          return data;
       }
+
 
    }
 }

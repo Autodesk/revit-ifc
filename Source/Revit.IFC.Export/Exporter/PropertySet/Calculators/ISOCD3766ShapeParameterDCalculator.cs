@@ -71,7 +71,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                return false; // In case of the Bent free form the parameter should be obtain from subelement. (It can have value for another bar in set and we don't want that value). 
          }
 
-         bool ret = (ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameterGroup.PG_GEOMETRY, "D", out m_ShapeParameterD) != null);
+         bool ret = (ParameterUtil.GetDoubleValueFromElement(element, GroupTypeId.Geometry, "D", out m_ShapeParameterD) != null);
          if (ret)
             m_ShapeParameterD = UnitUtil.ScaleLength(m_ShapeParameterD);
          return ret;
