@@ -46,9 +46,7 @@ GitHub labels are used to classify the nature of the Issue and help developers g
 - performance
 - UI/UX 
 
-More Labels of this type can be added as needed/requested by users and developers, but this should be a relatively simple
-
- list to make high-level sorting and identifying quicker and easier.
+More Labels of this type can be added as needed/requested by users and developers, but this should be a relatively simple list to make high-level sorting and identifying quicker and easier.
 
 ### Status Labels
 (set by Autodesk Developers) 
