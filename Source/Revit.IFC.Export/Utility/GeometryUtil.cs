@@ -3478,182 +3478,144 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Sort the edge loops in the given face
+      /// Organizes the edge loops of a face in groups of one outer loop and its corresponding inner loops.
       /// </summary>
-      /// <param name="edgeArrays">The list of loops</param>
-      /// <param name="face">The given face</param>
-      /// <returns>Returns a map that maps every outer loop to its corresponding inner loops</returns>
-      public static Dictionary<EdgeArray, IList<EdgeArray>> SortEdgeLoop(EdgeArrayArray edgeArrays, Face face)
+      /// <param name="face">The input face</param>
+      /// <returns></returns>
+      public static List<(EdgeArray outerLoop, List<EdgeArray> innerLoops)> GetOuterLoopsWithInnerLoops(Face face)
       {
-         // we will sort these loops by tessellating every edgeArray on the given face to get the uv loop. 
-         // The connection between each edge array and its corresponding uv loop will be stored in the loopMap. 
-         // We will then sort the uv loops and store the result in the sortedTessellatedLoops. After we 
-         // finish sorting uv loops, we convert them back to edge arrays and return the result
+         var uvDomain = face.GetBoundingBox();
 
-         Dictionary<EdgeArray, IList<EdgeArray>> sortedEdgeLoops = new Dictionary<EdgeArray, IList<EdgeArray>>();
-         Dictionary<IList<UV>, IList<IList<UV>>> sortedTessellatedLoops = new Dictionary<IList<UV>, IList<IList<UV>>>();
-         IDictionary<IList<UV>, EdgeArray> loopMap = new Dictionary<IList<UV>, EdgeArray>();
+         var outerLoops = new List<EdgeArray>();
+         var innerLoops = new List<EdgeArray>();
 
-         foreach (EdgeArray edgeArray in edgeArrays)
+         var combinedLoops = new List<(EdgeArray outerLoop, List<EdgeArray> innerLoops)>();
+
+         //Classify as outer or inner loop by looking at loop orientations.
+         foreach (var loop in face.EdgeLoops.Cast<EdgeArray>())
          {
-            // We will tessellate edgeArray to get tessellatedLoop
-            List<UV> tessellatedLoop = new List<UV>();
+            if (LoopIsCCWOnFace(face, loop))
+               outerLoops.Add(loop);
+            else
+               innerLoops.Add(loop);
+         }
 
+         //Special cases of no inner loops or only one outer loop.
+         if (!innerLoops.Any())
+            return outerLoops.Select(ol => (ol, new List<EdgeArray>())).ToList();
 
-            // the number of already processed edges, we only use this to know if we are processing the last edge or not
-            int count = 0;
+         if (outerLoops.Count == 1)
+            return new List<(EdgeArray outerLoop, List<EdgeArray> innerLoops)> { (outerLoops[0], innerLoops) };
 
-            // Tessellate each edge to get a list of UV points and add them to tessellatedLoop
-            // we have to make sure that we don't add the same point twice to the list, since each point is shared by 2 edges in the loop
-            foreach (Edge edge in edgeArray)
+         //Special case where the outer loop has incorrect orientation. Still try to export with single outer loop.
+         if (outerLoops.Count == 0 && innerLoops.Count == 1)
+            return new List<(EdgeArray outerLoop, List<EdgeArray> innerLoops)> { (innerLoops[0], outerLoops) };
+
+         //No special case, have to find out which inner loop belongs to which outer loop.
+         //We do this by sampling the outer loops with rather high accuracy to approximate them
+         //with polygons and by checking for containment of a point of the inner loop in one 
+         //of those polygons.
+         var outerLoopToSamples = new Dictionary<EdgeArray, IList<UV>>();
+
+         var result = outerLoops.Select(ol => (ol, new List<EdgeArray>())).ToList();
+
+         foreach (var innerLoop in innerLoops)
+         {
+            var uv = innerLoop.Cast<Edge>().First().EvaluateOnFace(0.0, face);
+
+            bool found = false;
+            foreach (var (outerLoop, innerLoopsForOuter) in result)
             {
-
-               bool lastEdge = (++count == edgeArray.Size);
-               List<UV> tessellatedEdge = edge.TessellateOnFace(face).ToList<UV>();
-
-               // For the first edge in the loop, we will add all of its tessellated points to the list
-               if (tessellatedLoop.Count == 0)
+               IList<UV> samples = null;
+               if (!outerLoopToSamples.TryGetValue(outerLoop, out samples))
                {
-                  tessellatedLoop.AddRange(tessellatedEdge);
+                  samples = TessellateLoopOnFace(face, outerLoop);
+                  outerLoopToSamples[outerLoop] = samples;
                }
-               else
+
+               if (PointInsidePolygon(uv, samples))
                {
-                  // For every other edge that is not the first one, one of its end point will already be in tessellatedLoop (if not then
-                  // we have a disconnected edge loop, in that case we will stop the process and throw an exception). 
-                  // However, because tessellateOnFace is not consistent in the direction that it tessellates an edge, we don't know how 
-                  // this edge connects to the existing loop. Thus we have to check 2 end points of this edge against 2 end points of the
-                  // loops to decide which 2 of them are equal. 
-
-                  // If this edge is the last edge in the loop, then both of its end point will already be in the loop, hence we need an extra
-                  // check to avoid adding redundant points.
-                  double distEndToStart = tessellatedEdge[tessellatedEdge.Count - 1].DistanceTo(tessellatedLoop[0]);
-                  double distStartToStart = tessellatedEdge[0].DistanceTo(tessellatedLoop[0]);
-                  double distEndToEnd = tessellatedEdge[tessellatedEdge.Count - 1].DistanceTo(tessellatedLoop[tessellatedLoop.Count - 1]);
-                  double distStartToEnd = tessellatedEdge[0].DistanceTo(tessellatedLoop[tessellatedLoop.Count - 1]);
-
-                  double minDist = Math.Min(Math.Min(distEndToStart, distStartToStart), Math.Min(distEndToEnd, distStartToEnd));
-                  double uvTol = ExporterCacheManager.Document.Application.VertexTolerance;
-                  if (minDist > uvTol)
-                     throw new InvalidOperationException("Disconnected edge loop");
-
-                  if (MathUtil.IsAlmostEqual(distEndToStart, minDist))
-                  {
-                     // if the last point of the edge is the first point of the loop, then remove that last point, and
-                     // append the loop to this edge
-                     tessellatedEdge.RemoveAt(tessellatedEdge.Count - 1);
-                     if (lastEdge)
-                     {
-                        tessellatedEdge.RemoveAt(0);
-                     }
-                     tessellatedEdge.AddRange(tessellatedLoop);
-                     tessellatedLoop = tessellatedEdge;
-                  }
-                  else if (MathUtil.IsAlmostEqual(distStartToStart, minDist))
-                  {
-                     // if the first point of the edge is the first point of the loop, we reverse the edge, remove the last point (which used to be 
-                     // the first one), and append the loop to this edge
-                     tessellatedEdge.Reverse();
-                     tessellatedEdge.RemoveAt(tessellatedEdge.Count - 1);
-                     if (lastEdge)
-                     {
-                        tessellatedEdge.RemoveAt(0);
-                     }
-                     tessellatedEdge.AddRange(tessellatedLoop);
-                     tessellatedLoop = tessellatedEdge;
-                  }
-                  else if (MathUtil.IsAlmostEqual(distEndToEnd, minDist))
-                  {
-                     // if the last point of the edge is the last point of the loop, we remove that point and append the reversed edge to the loop
-                     tessellatedEdge.Reverse();
-                     tessellatedEdge.RemoveAt(0);
-                     if (lastEdge)
-                     {
-                        tessellatedEdge.RemoveAt(tessellatedEdge.Count - 1);
-                     }
-                     tessellatedLoop.AddRange(tessellatedEdge);
-                  }
-                  else if (MathUtil.IsAlmostEqual(distStartToEnd, minDist))
-                  {
-                     // if the last point of the loop is the first point of the edge, then we remove that point and append the edge to the loop
-                     tessellatedEdge.RemoveAt(0);
-                     if (lastEdge)
-                     {
-                        tessellatedEdge.RemoveAt(tessellatedEdge.Count - 1);
-                     }
-                     tessellatedLoop.AddRange(tessellatedEdge);
-                  }
-                  else
-                  {
-                     throw new InvalidOperationException("Unexpected case.");
-                  }
-               }
-            }
-
-            // After finishing tessellating this loop, store a map from the tessellatedLoop to the edgeArray in the loopMap
-            loopMap.Add(tessellatedLoop, edgeArray);
-
-            bool created = false;
-            // After getting the tessellatedLoop, we will add it to the sortedTessellatedLoops by first checking if this loop is inside 
-            // any of the outer loops in the map (which are the keys in this map)
-            // 1. If this loop is inside one of them, says outerLoop, then we will have to check if this loop is inside or contains any of the outerLoop's inners:
-            //      - if it is inside one of the outerLoop's inners, then this loop will be an outer loop and we will just have to add it as a new key to the map
-            //      - if it contains some of the outerLoop's inners, then all of these inners will become outer loops
-            //      - if none of the above, then we will add this loop as an another inner loop of the outerLoop
-            // 2. If this loop is not inside any of the outer loops, then it will be an outer loop.
-            foreach (KeyValuePair<IList<UV>, IList<IList<UV>>> entry in sortedTessellatedLoops)
-            {
-               // first we check if tessellatedLoop is inside any of the loop in the sortedTessellatedEdges
-               if (PointInsidePolygon(tessellatedLoop[0], entry.Key))
-               {
-                  // now we need to check if each loop in entry.Value is inside this loop
-                  IList<IList<UV>> innerLoops = new List<IList<UV>>();
-                  if (IsInsideAnotherLoop(tessellatedLoop, entry.Value))
-                  {
-                     // if tessellateLoop is inside another loop, then it will become the outer loop
-                     sortedTessellatedLoops.Add(tessellatedLoop, new List<IList<UV>>());
-                  }
-                  else if (IsOutsideOtherLoops(tessellatedLoop, entry.Value, out innerLoops))
-                  {
-                     // if tessellatedLoop contains some other loops, then all of these loops become outer loop
-                     entry.Value.Add(tessellatedLoop);
-                     foreach (IList<UV> innerLoop in innerLoops)
-                     {
-                        entry.Value.Remove(innerLoop);
-                        sortedTessellatedLoops.Add(innerLoop, new List<IList<UV>>());
-                     }
-                  }
-                  else
-                  {
-                     entry.Value.Add(tessellatedLoop);
-                  }
-                  created = true;
+                  innerLoopsForOuter.Add(innerLoop);
+                  found = true;
                   break;
                }
             }
 
-            if (!created)
-            {
-               // this means tessellatedLoop is not inside any of the outerloop in the sortedTessellatedLoop
-               sortedTessellatedLoops.Add(tessellatedLoop, new List<IList<UV>>());
-            }
+            if (!found)
+               return null;
          }
 
-         // convert IList<UV> back into EdgeArray and return the result;
+         return result;
+      }
 
-         foreach (KeyValuePair<IList<UV>, IList<IList<UV>>> entry in sortedTessellatedLoops)
+      /// <summary>
+      /// Determines wether a given loop on a face is CCW w.r.t. the face normal.
+      /// </summary>
+      /// <param name="face">The input face</param>
+      /// <param name="loop">The input loop on the face</param>
+      /// <returns></returns>
+      private static bool LoopIsCCWOnFace(Face face, EdgeArray loop)
+      {
+         var uvSamples = SampleLoopOnFaceSimple(loop, face, 4);
+
+         var points = uvSamples.Select(uv => new XYZ(uv.U, uv.V, 0.0)).ToList();
+
+         var normal = TriangleMergeUtil.NormalByNewellMethod(points);
+
+         bool ccwAroundSurfaceNormal = normal.Z > 0.0;
+         return face.OrientationMatchesSurfaceOrientation ? ccwAroundSurfaceNormal : !ccwAroundSurfaceNormal;
+      }
+
+      /// <summary>
+      /// Does simple sampling of an edge loop on a face.
+      /// </summary>
+      /// <param name="loop">The input loop</param>
+      /// <param name="face">The face on which the loop resides</param>
+      /// <param name="nSamplesPerCurvedEdge">The number of samples, not including the end point, that is taken on a curved edge</param>
+      /// <returns></returns>
+      private static UV[] SampleLoopOnFaceSimple(EdgeArray loop, Face face, int nSamplesPerCurvedEdge)
+      {
+         return loop.Cast<Edge>().SelectMany(e => SampleEdgeOnFaceSimple(e, face, nSamplesPerCurvedEdge)).ToArray();
+      }
+
+      /// <summary>
+      /// Does simple sampling of an edge on a face.
+      /// </summary>
+      /// <param name="edge">The input edge</param>
+      /// <param name="face">The face to which the edge belongs</param>
+      /// <param name="nSamplesWhenCurved">The number of samples, not including the end point, that is taken on a curved edge</param>
+      /// <returns></returns>
+      private static UV[] SampleEdgeOnFaceSimple(Edge edge, Face face, int nSamplesWhenCurved)
+      {
+         int nSamples = (edge.AsCurve() is Line) ? 1 : nSamplesWhenCurved;
+
+         double step = 1.0 / (double)nSamples;
+
+         var sampleParams = new List<double> { };
+
+         (int iStart, int iEnd, int increment) = edge.IsFlippedOnFace(face) ? (nSamples, 0, -1) : (0, nSamples, 1);
+         for (int i = iStart; i != iEnd; i += increment)
+            sampleParams.Add(i * step);
+
+         return sampleParams.Select(p => edge.EvaluateOnFace(p, face)).ToArray();
+      }
+
+      /// <summary>
+      /// Tessellates a loop on a face using built in accuracy parameters that are adequate for visual representation.
+      /// The UV samples are ordered such that the loop is traversed in its natural way
+      /// i.e. CCW around the face normal for outer loops and CW for inner loops.
+      /// </summary>
+      /// <param name="face">The face of the loop</param>
+      /// <param name="loop">The loop</param>
+      /// <returns></returns>
+      private static IList<UV> TessellateLoopOnFace(Face face, EdgeArray loop)
+      {
+         return loop.Cast<Edge>().SelectMany(e =>
          {
-            IList<UV> key = entry.Key;
-            IList<EdgeArray> innerLoops = new List<EdgeArray>();
+            var uvs = e.TessellateOnFace(face);
 
-            foreach (IList<UV> uvLoop in entry.Value)
-            {
-               innerLoops.Add(loopMap[uvLoop]);
-            }
-
-            sortedEdgeLoops.Add(loopMap[key], innerLoops);
-         }
-
-         return sortedEdgeLoops;
+            return e.IsFlippedOnFace(face) ? uvs.Reverse() : uvs;
+         }).ToList();
       }
 
       /// <summary>
@@ -3790,22 +3752,30 @@ namespace Revit.IFC.Export.Utility
          else if (curve is Arc)
          {
             Arc curveArc = curve as Arc;
-            XYZ curveArcCenter = (additionalTrf == null) ? curveArc.Center : additionalTrf.OfPoint(curveArc.Center);
-            XYZ curveArcNormal = (additionalTrf == null) ? curveArc.Normal : additionalTrf.OfVector(curveArc.Normal);
-            XYZ curveArcXDirection = (additionalTrf == null) ? curveArc.XDirection : additionalTrf.OfVector(curveArc.XDirection);
+            // Normal and x direction should be transformed to IFC coordinates before applying additional transform
+            // arc center will be transformed later in XYZtoIfcCartesianPoint
+            XYZ curveArcNormal = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, curveArc.Normal);
+            XYZ curveArcXDirection = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, curveArc.XDirection);
+            if (additionalTrf != null)
+            {
+               curveArcNormal = additionalTrf.OfVector(curveArcNormal);
+               curveArcXDirection = additionalTrf.OfVector(curveArcXDirection);
+            }
 
-            if (curveArcCenter == null || curveArcNormal == null || curveArcXDirection == null)
+            if (curveArc.Center == null || curveArcNormal == null || curveArcXDirection == null)
             {
                // encounter invalid curve, return null
                return null;
             }
-            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveArcCenter, cartesianPoints, additionalTrf);
+            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveArc.Center, cartesianPoints, additionalTrf);
 
             // Create the z-direction
-            IFCAnyHandle axis = VectorToIfcDirection(exporterIFC, curveArcNormal);
+            // No need to transform to IFC coordinates anymore
+            IFCAnyHandle axis = ExporterUtil.CreateDirection(file, curveArcNormal);
 
             // Create the x-direction
-            IFCAnyHandle refDirection = VectorToIfcDirection(exporterIFC, curveArcXDirection);
+            // No need to transform to IFC coordinates anymore
+            IFCAnyHandle refDirection = ExporterUtil.CreateDirection(file, curveArcXDirection);
 
             IFCAnyHandle position3D = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
             IFCAnyHandle circle = IFCInstanceExporter.CreateCircle(file, position3D, UnitUtil.ScaleLength(curveArc.Radius));
@@ -3824,16 +3794,23 @@ namespace Revit.IFC.Export.Utility
          else if (curve is Ellipse)
          {
             Ellipse curveEllipse = curve as Ellipse;
-            IList<double> direction = new List<double>();
-            XYZ ellipseNormal = (additionalTrf == null) ? curveEllipse.Normal : additionalTrf.OfVector(curveEllipse.Normal);
-            XYZ ellipseXDirection = (additionalTrf == null) ? curveEllipse.XDirection : additionalTrf.OfVector(curveEllipse.XDirection);
+            // Normal and x direction should be transformed to IFC coordinates before applying additional transform
+            XYZ ellipseNormal = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, curveEllipse.Normal);
+            XYZ ellipseXDirection = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, curveEllipse.XDirection);
+            if (additionalTrf != null)
+            {
+               ellipseNormal = additionalTrf.OfVector(ellipseNormal);
+               ellipseXDirection = additionalTrf.OfVector(ellipseXDirection);
+            }
 
             IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.Center, cartesianPoints, additionalTrf);
 
-            IFCAnyHandle axis = VectorToIfcDirection(exporterIFC, ellipseNormal);
+            // No need to transform to IFC coordinates anymore
+            IFCAnyHandle axis = ExporterUtil.CreateDirection(file, ellipseNormal);
 
             // Create the x-direction
-            IFCAnyHandle refDirection = VectorToIfcDirection(exporterIFC, ellipseXDirection);
+            // No need to transform to IFC coordinates anymore
+            IFCAnyHandle refDirection = ExporterUtil.CreateDirection(file, ellipseXDirection);
 
             IFCAnyHandle position = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
 
