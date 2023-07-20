@@ -25,6 +25,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Import.Enums;
+using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
@@ -115,36 +116,26 @@ namespace Revit.IFC.Import.Data
 
          Tag = IFCAnyHandleUtil.GetStringAttribute(ifcTypeProduct, "Tag");
 
-         // IFCRepresentationItem should know that it is processing something for Hybrid IFC Imports.
-         // Then it will create IFCHybridRepresentationItems, which are placeholders for body geometry created by AnyCAD.
-         // This is so data for Representation Item will still exist, even if legacy geometry does not.
-         if ((Importer.TheOptions.IsHybridImport) && (Importer.TheHybridInfo?.HybridMap?.ContainsKey(GlobalId) ?? false))
+         using (RepresentationsAlreadyCreatedSetter setter = new RepresentationsAlreadyCreatedSetter(GlobalId))
          {
-            Importer.TheHybridInfo.RepresentationsAlreadyCreated = true;
-         }
-
-         IList<IFCAnyHandle> representationMapsHandle = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcTypeProduct, "RepresentationMaps");
-         if (representationMapsHandle != null && representationMapsHandle.Count > 0)
-         {
-            foreach (IFCAnyHandle representationMapHandle in representationMapsHandle)
+            IList<IFCAnyHandle> representationMapsHandle = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcTypeProduct, "RepresentationMaps");
+            if (representationMapsHandle?.Count > 0)
             {
-               IFCRepresentationMap representationMap = IFCRepresentationMap.ProcessIFCRepresentationMap(representationMapHandle);
-               if (representationMap != null)
+               foreach (IFCAnyHandle representationMapHandle in representationMapsHandle)
                {
-                  RepresentationMaps.Add(representationMap);
+                  IFCRepresentationMap representationMap = IFCRepresentationMap.ProcessIFCRepresentationMap(representationMapHandle);
+                  if (representationMap != null)
+                  {
+                     RepresentationMaps.Add(representationMap);
 
-                  // Traditionally we would create a "dummy" DirectShapeType for each IfcRepresentationMap.  In the case where the IfcRepresentationMap is not used by another other IfcTypeProduct, 
-                  // we would like to stop creating the "dummy" DirectShapeType and store the geometry in the DirectShapeType associated with the IfcTypeProduct.  However, IfcRepresentationMap 
-                  // does not have an INVERSE relationship to its IfcTypeProduct(s), at least in IFC2x3.
-                  // As such, we keep track of the IfcRepresentationMaps that have the relationship described above for future correspondence.
-                  RegisterRepresentationMapWithTypeProject(representationMap, this);
+                     // Traditionally we would create a "dummy" DirectShapeType for each IfcRepresentationMap.  In the case where the IfcRepresentationMap is not used by another other IfcTypeProduct, 
+                     // we would like to stop creating the "dummy" DirectShapeType and store the geometry in the DirectShapeType associated with the IfcTypeProduct.  However, IfcRepresentationMap 
+                     // does not have an INVERSE relationship to its IfcTypeProduct(s), at least in IFC2x3.
+                     // As such, we keep track of the IfcRepresentationMaps that have the relationship described above for future correspondence.
+                     RegisterRepresentationMapWithTypeProject(representationMap, this);
+                  }
                }
             }
-         }
-
-         if ((Importer.TheOptions.IsHybridImport) && (Importer.TheHybridInfo?.RepresentationsAlreadyCreated ?? false))
-         {
-            Importer.TheHybridInfo.RepresentationsAlreadyCreated = false;
          }
       }
 

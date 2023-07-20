@@ -97,6 +97,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Entering a value here will reset the Purpose field to &quot;USERDEFINED&quot;..
+        /// </summary>
+        public static string AddressInformationTooltip {
+            get {
+                return ResourceManager.GetString("AddressInformationTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Address line 1.
         /// </summary>
         public static string AddressLine1 {
@@ -2374,6 +2383,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option if any tessellated geometry should remain as triangulated faces, or if the export performance is affected..
+        /// </summary>
+        public static string TriangulationOnlyTooltip {
+            get {
+                return ResourceManager.GetString("TriangulationOnlyTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unknown alternate UI version.
         /// </summary>
         public static string UnkownAltUIVer {
@@ -2527,11 +2545,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option to export the IFC type name as the Revit type name without the family name..
+        /// </summary>
+        public static string UseTypeNameOnlyTooltip {
+            get {
+                return ResourceManager.GetString("UseTypeNameOnlyTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Use visible Revit name as the IFCEntity name.
         /// </summary>
         public static string UseVisibleRevitNameAsEntityName {
             get {
                 return ResourceManager.GetString("UseVisibleRevitNameAsEntityName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use this option to export IFC entity name as the visible Revit name..
+        /// </summary>
+        public static string UseVisibleRevitNameTooltip {
+            get {
+                return ResourceManager.GetString("UseVisibleRevitNameTooltip", resourceCulture);
             }
         }
         

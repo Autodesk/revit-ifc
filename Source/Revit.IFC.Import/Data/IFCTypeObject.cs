@@ -121,6 +121,18 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Get the category id for an object from another object.
+      /// </summary>
+      /// <param name="doc">The document.</param>
+      /// <param name="objDef">The other IFCObjectDefinition.</param>
+      /// <remarks>This is intended for IFCTypeObjects to have the same category id as their entities.</remarks>
+      public void CalculateCategoryAndGStyleIdsFromObject(Document doc, IFCObject obj)
+      {
+         CategoryIdCache = obj.GetCategoryId(doc);
+         GraphicsStyleIdCache = obj.GetGraphicsStyleId(doc);
+      }
+
+      /// <summary>
       /// Processes IfcTypeObject attributes.
       /// </summary>
       /// <param name="ifcTypeObject">The IfcTypeObject handle.</param>
@@ -193,7 +205,7 @@ namespace Revit.IFC.Import.Data
 
             if (shapeType == null)
             {
-               shapeType = IFCElementUtil.CreateElementType(doc, GetVisibleName(), CategoryId, Id, GlobalId, EntityType);
+               shapeType = IFCElementUtil.CreateElementType(doc, GetVisibleName(), GetCategoryId(doc), Id, GlobalId, EntityType);
             }
             else
             {

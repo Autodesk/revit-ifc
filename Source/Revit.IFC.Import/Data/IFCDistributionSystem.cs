@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
@@ -139,7 +140,7 @@ namespace Revit.IFC.Import.Data
 
       /// <summary>
       /// Indicates whether we should create a separate DirectShape for this IFC entity.
-      /// For IfcDistributionSystem, a DIrectShape should be created.
+      /// For IfcDistributionSystem, a DirectShape should be created.
       /// </summary>
       /// <returns>True if a DirectShape container is created, False otherwise.</returns>
       public override bool CreateContainer() { return true; }
@@ -162,8 +163,8 @@ namespace Revit.IFC.Import.Data
 
                // Add IfcSystemClassification parameter.
                Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, this, "SystemClassification", systemClassificationString, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, this, "SystemName", LongName, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "SystemClassification", systemClassificationString, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "SystemName", LongName, Id);
             }
          }
       }

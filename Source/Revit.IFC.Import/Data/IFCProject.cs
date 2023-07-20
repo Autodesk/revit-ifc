@@ -215,30 +215,39 @@ namespace Revit.IFC.Import.Data
                               // we should probably augment Processor.AddParameter to ensure that CreateOrUpdateElement
                               // is called before anything is attempted to be added.  This is a special case, though,
                               // as in Revit we don't actually create an element for the IfcProject.
-                              Importer.TheProcessor.CreateOrUpdateElement(Id, GlobalId, EntityType.ToString(), CategoryId.Value, null);
+                              if (!Importer.IsDefaultProcessor())
+                              {
+                                 Importer.TheProcessor.CreateOrUpdateElement(Id, GlobalId, EntityType.ToString(), GetCategoryId(doc).Value, null);
+                              }
 
                               Category category = IFCPropertySet.GetCategoryForParameterIfValid(projectInfo, Id);
-                              IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.Name", geoRefName, Id);
-                              if (!string.IsNullOrEmpty(desc))
-                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.Description", desc, Id);
-                              if (!string.IsNullOrEmpty(geodeticDatum))
-                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.GeodeticDatum", geodeticDatum, Id);
-                              if (!string.IsNullOrEmpty(verticalDatum))
-                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.VerticalDatum", verticalDatum, Id);
-                              if (!string.IsNullOrEmpty(mapProj))
-                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapProjection", mapProj, Id);
-                              if (!string.IsNullOrEmpty(mapZone))
-                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapZone", mapZone, Id);
-                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(mapUnit))
+
+                              using (ParameterSetter setter = new ParameterSetter())
                               {
-                                 IFCUnit mapUnitIfc = IFCUnit.ProcessIFCUnit(mapUnit);
-                                 string unitStr = UnitUtils.GetTypeCatalogStringForUnit(mapUnitIfc.Unit);
-                                 IFCPropertySet.AddParameterString(doc, projectInfo, category, this, "IfcProjectedCRS.MapUnit", unitStr, Id);
-                                 double convFactor = UnitUtils.Convert(1.0, mapUnitIfc.Unit, IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length).Unit);
-                                 eastings = convFactor * eastings;
-                                 northings = convFactor * northings;
-                                 orthogonalHeight = convFactor * orthogonalHeight;
-                                 geoRef = new XYZ(eastings, northings, orthogonalHeight);
+                                 ParametersToSet parametersToSet = setter.ParametersToSet;
+                                 parametersToSet.AddStringParameter(doc, projectInfo, category, this, "IfcProjectedCRS.Name", geoRefName, Id);
+                                 if (!string.IsNullOrEmpty(desc))
+                                    parametersToSet.AddStringParameter(doc, projectInfo, category, this, "IfcProjectedCRS.Description", desc, Id);
+                                 if (!string.IsNullOrEmpty(geodeticDatum))
+                                    parametersToSet.AddStringParameter(doc, projectInfo, category, this, "IfcProjectedCRS.GeodeticDatum", geodeticDatum, Id);
+                                 if (!string.IsNullOrEmpty(verticalDatum))
+                                    parametersToSet.AddStringParameter(doc, projectInfo, category, this, "IfcProjectedCRS.VerticalDatum", verticalDatum, Id);
+                                 if (!string.IsNullOrEmpty(mapProj))
+                                    parametersToSet.AddStringParameter(doc, projectInfo, category, this, "IfcProjectedCRS.MapProjection", mapProj, Id);
+                                 if (!string.IsNullOrEmpty(mapZone))
+                                    parametersToSet.AddStringParameter(doc, projectInfo, category, this, "IfcProjectedCRS.MapZone", mapZone, Id);
+
+                                 if (!IFCAnyHandleUtil.IsNullOrHasNoValue(mapUnit))
+                                 {
+                                    IFCUnit mapUnitIfc = IFCUnit.ProcessIFCUnit(mapUnit);
+                                    string unitStr = UnitUtils.GetTypeCatalogStringForUnit(mapUnitIfc.Unit);
+                                    parametersToSet.AddStringParameter(doc, projectInfo, category, this, "IfcProjectedCRS.MapUnit", unitStr, Id);
+                                    double convFactor = UnitUtils.Convert(1.0, mapUnitIfc.Unit, IFCImportFile.TheFile.IFCUnits.GetIFCProjectUnit(SpecTypeId.Length).Unit);
+                                    eastings = convFactor * eastings;
+                                    northings = convFactor * northings;
+                                    orthogonalHeight = convFactor * orthogonalHeight;
+                                    geoRef = new XYZ(eastings, northings, orthogonalHeight);
+                                 }
                               }
                            }
                         }

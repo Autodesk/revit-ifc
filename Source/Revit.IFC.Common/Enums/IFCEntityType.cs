@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Revit.IFC.Common.Enums
+﻿namespace Revit.IFC.Common.Enums
 {
    /// <summary>
    /// IFC entity types. Combining IFC2x2_ADD1, IFC2x3_TC1, IFC4 (Add2) and IFC4x entities, which are non-abstract 
@@ -478,7 +473,6 @@ namespace Revit.IFC.Common.Enums
       IfcInventory,
       IfcIrregularTimeSeries,
       IfcIrregularTimeSeriesValue,
-      IfcIshapeProfileDef,
       IfcIShapeProfileDef,
       IfcJunctionBox,
       IfcJunctionBoxType,

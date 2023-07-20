@@ -434,6 +434,7 @@ namespace Revit.IFC.Import.Data
       protected override void CreateParametersInternal(Document doc, Element element)
       {
          base.CreateParametersInternal(doc, element);
+
          string parameterName = "LandTitleNumber";
 
          // TODO: move this to new shared parameter names override function.
@@ -448,7 +449,7 @@ namespace Revit.IFC.Import.Data
             if (!string.IsNullOrWhiteSpace(landTitleNumber))
             {
                Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, landTitleNumber, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, parameterName, landTitleNumber, Id);
             }
          }
 

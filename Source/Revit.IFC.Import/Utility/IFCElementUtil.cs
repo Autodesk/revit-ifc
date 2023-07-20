@@ -153,7 +153,7 @@ namespace Revit.IFC.Import.Utility
       {
          DirectShapeTypeOptions options = new DirectShapeTypeOptions();
          options.AllowDuplicateNames = true;
-         ElementId validCategoryId = IFCElementUtil.GetDSValidCategoryId(doc, categoryId, id);
+         ElementId validCategoryId = GetDSValidCategoryId(doc, categoryId, id);
          DirectShapeType directShapeType = DirectShapeType.Create(doc, name, validCategoryId, options);
          Importer.TheCache.CreatedDirectShapeTypes[id] = directShapeType.Id;
 

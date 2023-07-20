@@ -269,6 +269,7 @@
     <Compile Include="Utility\IFCParameterSetByGroup.cs" />
     <Compile Include="Utility\IFCSolidInfo.cs" />
     <Compile Include="Utility\IFCUnitUtil.cs" />
+    <Compile Include="Utility\ParametersToSet.cs" />
     <Compile Include="Utility\ProcessIFCRelation.cs" />
     <Compile Include="Utility\TessellatedShapeBuilderScope.cs" />
   </ItemGroup>

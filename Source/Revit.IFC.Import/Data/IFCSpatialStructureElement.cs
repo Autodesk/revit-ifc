@@ -120,20 +120,19 @@ namespace Revit.IFC.Import.Data
       {
          base.CreateParametersInternal(doc, element);
 
+         if (element == null)
+            return;
 
-         if (element != null)
+         // Set "ObjectTypeOverride" parameter.
+         string longName = LongName;
+         if (!string.IsNullOrWhiteSpace(longName))
          {
-            // Set "ObjectTypeOverride" parameter.
-            string longName = LongName;
-            if (!string.IsNullOrWhiteSpace(longName))
-            {
-               string parameterName = "LongNameOverride";
-               if (element is ProjectInfo)
-                  parameterName = EntityType.ToString() + " " + parameterName;
+            string parameterName = "LongNameOverride";
+            if (element is ProjectInfo)
+               parameterName = EntityType.ToString() + " " + parameterName;
 
-               Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, longName, Id);
-            }
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+            ParametersToSet.AddStringParameter(doc, element, category, this, parameterName, longName, Id);
          }
       }
 
@@ -257,37 +256,37 @@ namespace Revit.IFC.Import.Data
             string typeName = EntityType.ToString() + " ";
 
             if (!string.IsNullOrWhiteSpace(postalAddress.Purpose))
-               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Purpose", postalAddress.Purpose, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Purpose", postalAddress.Purpose, Id);
 
             if (!string.IsNullOrWhiteSpace(postalAddress.Description))
-               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Description", postalAddress.Description, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Description", postalAddress.Description, Id);
 
             if (!string.IsNullOrWhiteSpace(postalAddress.UserDefinedPurpose))
-               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "UserDefinedPurpose", postalAddress.UserDefinedPurpose, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "UserDefinedPurpose", postalAddress.UserDefinedPurpose, Id);
 
             if (!string.IsNullOrWhiteSpace(postalAddress.InternalLocation))
-               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "InternalLocation", postalAddress.InternalLocation, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "InternalLocation", postalAddress.InternalLocation, Id);
 
             if (!string.IsNullOrWhiteSpace(postalAddress.PostalBox))
-               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "PostalBox", postalAddress.PostalBox, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "PostalBox", postalAddress.PostalBox, Id);
 
             if (!string.IsNullOrWhiteSpace(postalAddress.Town))
-               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Town", postalAddress.Town, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Town", postalAddress.Town, Id);
 
             if (!string.IsNullOrWhiteSpace(postalAddress.Region))
-               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Region", postalAddress.Region, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Region", postalAddress.Region, Id);
 
             if (!string.IsNullOrWhiteSpace(postalAddress.PostalCode))
-               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "PostalCode", postalAddress.PostalCode, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "PostalCode", postalAddress.PostalCode, Id);
 
             if (!string.IsNullOrWhiteSpace(postalAddress.Country))
-               IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "Country", postalAddress.Country, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Country", postalAddress.Country, Id);
 
             if (postalAddress.AddressLines != null)
             {
-               string jointAddress = String.Join(", ", postalAddress.AddressLines);
+               string jointAddress = string.Join(", ", postalAddress.AddressLines);
                if (!string.IsNullOrWhiteSpace(jointAddress))
-                  IFCPropertySet.AddParameterString(doc, element, category, this, typeName + "AddressLines", jointAddress, Id);
+                  ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "AddressLines", jointAddress, Id);
             }
          }
       }

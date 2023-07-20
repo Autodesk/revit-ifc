@@ -63,18 +63,20 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(item);
 
+         IFCAnyHandle mappingSource = IFCImportHandleUtil.GetRequiredInstanceAttribute(item, "MappingSource", false);
+         if (mappingSource == null)
+            return;
+
+         MappingSource = IFCRepresentationMap.ProcessIFCRepresentationMap(mappingSource);
+         if (MappingSource.IsHybridOnly())
+            return;
+
          // We will not fail if the transform is not given, but instead assume it to be the identity.
          IFCAnyHandle mappingTarget = IFCImportHandleUtil.GetRequiredInstanceAttribute(item, "MappingTarget", false);
          if (mappingTarget != null)
             MappingTarget = IFCCartesianTransformOperator.ProcessIFCCartesianTransformOperator(mappingTarget);
          else
             MappingTarget = IFCCartesianTransformOperator.ProcessIFCCartesianTransformOperator();
-
-         IFCAnyHandle mappingSource = IFCImportHandleUtil.GetRequiredInstanceAttribute(item, "MappingSource", false);
-         if (mappingSource == null)
-            return;
-
-         MappingSource = IFCRepresentationMap.ProcessIFCRepresentationMap(mappingSource);
       }
 
       private int FindAlternateGeometrySource(int originalId)
@@ -100,6 +102,12 @@ namespace Revit.IFC.Import.Data
          Transform scaledLcs, string guid)
       {
          base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
+
+         // Optimization for hybrid import.  MappingTarget will be null in this case.
+         if (MappingTarget == null)
+         {
+            return;
+         }
 
          // Check scale; if it is uniform, create an instance.  If not, create a shape directly.
          // TODO: Instead allow creation of instances based on similar scaling.
@@ -129,15 +137,19 @@ namespace Revit.IFC.Import.Data
          if (canCreateType)
          {
             int mappingSourceId = MappingSource.Id;
+
             int geometrySourceId = FindAlternateGeometrySource(mappingSourceId);
             MappingSource.CreateShape(shapeEditScope, null, guid);
 
-            if (shapeEditScope.Creator != null)
+            // IFCDefaultProcessor doesn't implement PostProcessMappedItem.  Skip this call to avoid
+            // GetCategoryId(), which can create an unnecessary subcategory (which also forces an
+            // unnecessary regeneration).
+            if ((shapeEditScope.Creator != null) && !(Importer.TheProcessor is IFCDefaultProcessor))
             {
                Importer.TheProcessor.PostProcessMappedItem(shapeEditScope.Creator.Id,
                   shapeEditScope.Creator.GlobalId,
                   shapeEditScope.Creator.EntityType.ToString(),
-                  shapeEditScope.Creator.CategoryId,
+                  shapeEditScope.Creator.GetCategoryId(shapeEditScope.Document),
                   geometrySourceId,
                   newScaledLcs);
             }

@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+using System;
 using System.Collections.Generic;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
@@ -32,13 +33,6 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCBuildingStorey : IFCSpatialStructureElement
    {
-      static ElementId ViewPlanTypeId { get; set; } = ElementId.InvalidElementId;
-
-      /// <summary>
-      /// Returns true if we have tried to set ViewPlanTypeId.  ViewPlanTypeId may or may not have a valid value.
-      /// </summary>
-      static bool ViewPlanTypeIdInitialized { get; set; } = false;
-
       /// <summary>
       /// Returns the associated Plan View for the level.
       /// </summary>
@@ -53,14 +47,24 @@ namespace Revit.IFC.Import.Data
       /// Get the default family type for creating ViewPlans.
       /// </summary>
       /// <param name="doc"></param>
-      /// <returns></returns>
+      /// <returns>The default family type.</returns>
       public static ElementId GetViewPlanTypeId(Document doc)
       {
-         if (ViewPlanTypeIdInitialized == false)
+         // There are theoretical cases where this could fail, but no such cases have been
+         // seen in practice.
+         if (Importer.TheCache.ViewPlanTypeIdInitialized == false)
          {
-            ViewFamily viewFamilyToUse = (doc.Application.Product == ProductType.Structure) ? ViewFamily.StructuralPlan : ViewFamily.FloorPlan;
+            // Basically, we only want to use the StructuralPlan if Structure is our only valid
+            // option.
+            ViewFamily viewFamilyToUse;
+            if (doc.Application.IsArchitectureEnabled || doc.Application.IsSystemsEnabled)
+               viewFamilyToUse = ViewFamily.FloorPlan;
+            else if (doc.Application.IsStructureEnabled)
+               viewFamilyToUse = ViewFamily.StructuralPlan;
+            else
+               viewFamilyToUse = ViewFamily.FloorPlan;
 
-            ViewPlanTypeIdInitialized = true;
+            Importer.TheCache.ViewPlanTypeIdInitialized = true;
             FilteredElementCollector collector = new FilteredElementCollector(doc);
             ICollection<Element> viewFamilyTypes = collector.OfClass(typeof(ViewFamilyType)).ToElements();
             foreach (Element element in viewFamilyTypes)
@@ -68,12 +72,12 @@ namespace Revit.IFC.Import.Data
                ViewFamilyType viewFamilyType = element as ViewFamilyType;
                if (viewFamilyType.ViewFamily == viewFamilyToUse)
                {
-                  ViewPlanTypeId = viewFamilyType.Id;
+                  Importer.TheCache.ViewPlanTypeId = viewFamilyType.Id;
                   break;
                }
             }
          }
-         return ViewPlanTypeId;
+         return Importer.TheCache.ViewPlanTypeId;
       }
 
       /// <summary>
@@ -98,7 +102,7 @@ namespace Revit.IFC.Import.Data
          {
             // Set "IfcElevation" parameter.
             Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-            IFCPropertySet.AddParameterDouble(doc, element, category, this, "IfcElevation", SpecTypeId.Length, UnitTypeId.Feet, Elevation, Id);
+            ParametersToSet.AddParameterDouble(doc, element, category, this, "IfcElevation", SpecTypeId.Length, UnitTypeId.Feet, Elevation, Id);
          }
       }
 

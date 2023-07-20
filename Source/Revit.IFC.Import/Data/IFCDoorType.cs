@@ -98,8 +98,18 @@ namespace Revit.IFC.Import.Data
       {
          base.CreateParametersInternal(doc, element);
 
-         if (element != null)
+         if (element == null)
+            return;
+
+         IFCDefaultProcessor processor = Importer.TheProcessor as IFCDefaultProcessor;
+         if (processor != null)
+         {
+            processor.SetElementStringParameter(element, Id, BuiltInParameter.DOOR_OPERATION_TYPE, OperationType.ToString(), false, ParametersToSet);
+         }
+         else
+         {
             Importer.TheProcessor.SetStringParameter(element, Id, BuiltInParameter.DOOR_OPERATION_TYPE, OperationType.ToString(), false);
+         }
       }
    }
 }

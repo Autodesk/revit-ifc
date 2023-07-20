@@ -104,7 +104,7 @@ namespace Revit.IFC.Import.Data
             if (!string.IsNullOrWhiteSpace(ElementType))
             {
                Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcElementType", ElementType, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "IfcElementType", ElementType, Id);
             }
          }
       }

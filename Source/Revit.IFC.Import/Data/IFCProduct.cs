@@ -1,4 +1,4 @@
-﻿//
+//
 // Revit IFC Import library: this library works with Autodesk(R) Revit(R) to import IFC files.
 // Copyright (C) 2013  Autodesk, Inc.
 // 
@@ -112,19 +112,9 @@ namespace Revit.IFC.Import.Data
          IFCAnyHandle ifcProductRepresentation = IFCImportHandleUtil.GetOptionalInstanceAttribute(ifcProduct, "Representation");
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcProductRepresentation))
          {
-            // IFCRepresentationItem should know that it is processing something for Hybrid IFC Imports.
-            // Then it will create IFCHybridRepresentationItems, which are placeholders for body geometry created via AnyCAD.
-            // This is so data for Representation Item will still exist, even if legacy geometry does not.
-            if ((Importer.TheOptions.IsHybridImport) && (Importer.TheHybridInfo?.HybridMap?.ContainsKey(GlobalId) ?? false))
-            {
-               Importer.TheHybridInfo.RepresentationsAlreadyCreated = true;
-            }
-
-            ProductRepresentation = IFCProductRepresentation.ProcessIFCProductRepresentation(ifcProductRepresentation);
-
-            if ((Importer.TheOptions.IsHybridImport) && (Importer.TheHybridInfo?.RepresentationsAlreadyCreated ?? false))
-            {
-               Importer.TheHybridInfo.RepresentationsAlreadyCreated = false;
+            using (RepresentationsAlreadyCreatedSetter setter = new RepresentationsAlreadyCreatedSetter(GlobalId))
+            { 
+               ProductRepresentation = IFCProductRepresentation.ProcessIFCProductRepresentation(ifcProductRepresentation);
             }
          }
       }
@@ -188,14 +178,14 @@ namespace Revit.IFC.Import.Data
             }
 
             if (ifcPresentationLayer != null)
-               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcPresentationLayer", ifcPresentationLayer, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "IfcPresentationLayer", ifcPresentationLayer, Id);
 
             // Set the container name of the element.
             string containerName = ContainingStructure?.Name;
             if (containerName != null)
             {
-               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcSpatialContainer", containerName, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcSpatialContainer GUID", ContainingStructure.GlobalId, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "IfcSpatialContainer", containerName, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "IfcSpatialContainer GUID", ContainingStructure.GlobalId, Id);
             }
          }
       }
@@ -308,6 +298,18 @@ namespace Revit.IFC.Import.Data
          return true;
       }
 
+      private Transform CalculateLocalCoordinateSystem()
+      {
+         Transform lcs = IFCImportFile.TheFile.IFCProject.WorldCoordinateSystem;
+         if (lcs == null)
+            return ObjectLocation?.TotalTransform ?? Transform.Identity;
+
+         if (ObjectLocation != null)
+            return lcs.Multiply(ObjectLocation.TotalTransform);
+
+         return lcs;
+      }
+
       /// <summary>
       /// Creates or populates Revit elements based on the information contained in this class.
       /// </summary>
@@ -362,28 +364,10 @@ namespace Revit.IFC.Import.Data
             // IFCImportShapeEditScope will not create Body geometry for Hybrid IFC Import, but it may need to create other geometry.
             using (IFCImportShapeEditScope shapeEditScope = IFCImportShapeEditScope.Create(doc, this))
             {
-               shapeEditScope.GraphicsStyleId = GraphicsStyleId;
-               shapeEditScope.CategoryId = CategoryId;
+               Transform lcs = CalculateLocalCoordinateSystem();
+
                shapeEditScope.PreventInstances = preventInstances;
                
-               // The name can be added as well. but it is usually less useful than 'oid'
-               string myId = GlobalId; // + "(" + Name + ")";
-
-               Transform lcs = IFCImportFile.TheFile.IFCProject.WorldCoordinateSystem;
-               if (lcs == null)
-                  lcs = (ObjectLocation != null) ? ObjectLocation.TotalTransform : Transform.Identity;
-               else if (ObjectLocation != null)
-                  lcs = lcs.Multiply(ObjectLocation.TotalTransform);
-
-               // If we are not applying transforms to the geometry, then pass in the identity matrix.
-               // Lower down this method we then pass lcs to the consumer element, so that it can apply
-               // the transform as required.
-               Transform transformToUse = Importer.TheProcessor.ApplyTransforms ? lcs : Transform.Identity;
-               if (Importer.TheOptions.IsHybridImport && (Importer.TheHybridInfo != null))
-               {
-                  transformToUse = transformToUse.Multiply(Importer.TheHybridInfo.LargeCoordinateTransform);
-               }
-
                // Hybrid Import only:   An IfcProduct whose DirectShape will be a container might not have a DirectShape created yet.
                // If this is the case, create an empty DirectShape for the container.
                // If so, create an empty DirectShape to hold container Geometry.
@@ -395,11 +379,22 @@ namespace Revit.IFC.Import.Data
                      Importer.TheLog.LogComment(Id, $"Creating Empty Container for {GlobalId}:{CreatedElementId}", false);
                   }
                }
-               
-               // For Hybrid Import Containers, there may be the possibility that there is no valid top-level Geometry.  In that
-               // case, don't create the ProductRepresentation.
+
                if (HasValidTopLevelGeometry())
                {
+                  // If we are not applying transforms to the geometry, then pass in the identity matrix.
+                  // Lower down this method we then pass lcs to the consumer element, so that it can apply
+                  // the transform as required.
+                  Transform transformToUse = Importer.TheProcessor.ApplyTransforms ? lcs : Transform.Identity;
+                  if (Importer.TheOptions.IsHybridImport && (
+                     Importer.TheHybridInfo != null))
+                  {
+                     transformToUse.Origin += Importer.TheHybridInfo.LargeCoordinateOriginOffset;
+                  }
+
+                  // The name can be added as well. but it is usually less useful than 'oid'
+                  string myId = GlobalId; // + "(" + Name + ")";
+
                   ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, myId);
                }
 
@@ -407,14 +402,13 @@ namespace Revit.IFC.Import.Data
                // geometry, but it will contain parameters that are needed for the DirectShape imported for Hybrid IFC Import.
                if (Importer.TheOptions.IsHybridImport && GlobalId != null)
                {
-                  // "Create" a DirectShape Element.
-                  // This is for those Elements imported via the ATF Pipeline, or for those Elements created above simply to hold an empty container.
-                  ElementId hybridElementId = ElementId.InvalidElementId;
-                  if (Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out hybridElementId) ?? false)
+                  if ((Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out ElementId hybridElementId) ?? false) &&
+                     hybridElementId != ElementId.InvalidElementId)
                   {
-                     // If GlobalId is in the HybridMap, handle Hybrid Product Creation from Hybrid Import.
+                     // "Create" a DirectShape Element.
+                     // This is for those Elements imported via the ATF Pipeline, or for those Elements created above simply to hold an empty container.
+                     CreatedGeometry = Importer.TheHybridInfo.HandleHybridProductCreation(shapeEditScope, this, ref hybridElementId);
                      CreatedElementId = hybridElementId;
-                     CreatedElementId = Importer.TheHybridInfo.HandleHybridProductCreation(shapeEditScope, this);
                   }
                }
 
@@ -443,7 +437,9 @@ namespace Revit.IFC.Import.Data
                         DirectShape shape = Importer.TheCache.UseElementByGUID<DirectShape>(doc, GlobalId);
 
                         if (shape == null)
-                           shape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, null, Id, EntityType);
+                        {
+                           shape = IFCElementUtil.CreateElement(doc, GetCategoryId(doc), GlobalId, null, Id, EntityType);
+                        }
 
                         List<GeometryObject> directShapeGeometries = new List<GeometryObject>();
                         foreach (IFCSolidInfo geometryObject in Solids)

@@ -140,7 +140,7 @@ namespace Revit.IFC.Import.Data
                   geomObjs.Add(solid.GeometryObject);
             }
 
-            DirectShape buildingElementProxyShape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, geomObjs, Id, EntityType);
+            DirectShape buildingElementProxyShape = IFCElementUtil.CreateElement(doc, GetCategoryId(doc), GlobalId, geomObjs, Id, EntityType);
             if (buildingElementProxyShape != null)
             {
                CreatedElementId = buildingElementProxyShape.Id;

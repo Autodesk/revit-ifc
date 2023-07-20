@@ -219,7 +219,7 @@ namespace Revit.IFC.Import.Data
                   }
                }
 
-               DirectShape directShape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, geometryObjects, Id, EntityType);
+               DirectShape directShape = IFCElementUtil.CreateElement(doc, GetCategoryId(doc), GlobalId, geometryObjects, Id, EntityType);
                if (directShape != null)
                {
                   CreatedElementId = directShape.Id;

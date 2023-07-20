@@ -70,12 +70,18 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// The id of the associated graphics style, if any.
       /// </summary>
-      public ElementId GraphicsStyleId { get; set; } = ElementId.InvalidElementId;
+      public ElementId GraphicsStyleId
+      {
+         get { return Creator?.GetGraphicsStyleId(Document) ?? ElementId.InvalidElementId; }
+      }
 
       /// <summary>
       /// The id of the associated category.
       /// </summary>
-      public ElementId CategoryId { get; set; } = ElementId.InvalidElementId;
+      public ElementId CategoryId
+      {
+         get { return Creator?.GetCategoryId(Document) ?? ElementId.InvalidElementId; }
+      }
 
 
       private void PushMaterialId(ElementId materialId)

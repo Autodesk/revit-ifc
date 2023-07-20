@@ -141,7 +141,9 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterGroupMap">The parameters of the element.  Cached for performance.</param>
       /// <param name="quantityFullName">The name of the containing quantity set with quantity name.</param>
       /// <param name="createdParameters">The names of the created parameters.</param>
-      public override void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap, string quantityFullName, ISet<string> createdParameters)
+      public override void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, 
+         IFCParameterSetByGroup parameterGroupMap, string quantityFullName, ISet<string> createdParameters,
+         ParametersToSet parametersToSet)
       {
          double baseValue = 0.0;
          IFCDataPrimitiveType type = Value.PrimitiveType;
@@ -194,7 +196,7 @@ namespace Revit.IFC.Import.Data
                   specTypeId = IFCDataUtil.GetUnitTypeFromData(Value, SpecTypeId.Number);
                }
 
-               bool created = IFCPropertySet.AddParameterDouble(doc, element, category, objDef, parameterName, specTypeId, unitsTypeId, doubleValueToUse, Id);
+               bool created = parametersToSet.AddParameterDouble(doc, element, category, objDef, parameterName, specTypeId, unitsTypeId, doubleValueToUse, Id);
                if (created)
                   createdParameters.Add(parameterName);
 
@@ -206,10 +208,10 @@ namespace Revit.IFC.Import.Data
          switch (existingParameter.StorageType)
          {
             case StorageType.String:
-               existingParameter.Set(doubleValueToUse.ToString());
+               parametersToSet.AddStringParameter(existingParameter, doubleValueToUse.ToString());
                break;
             case StorageType.Double:
-               existingParameter.Set(doubleValueToUse);
+               parametersToSet.AddDoubleParameter(existingParameter, doubleValueToUse);
                break;
             default:
                setValue = false;
