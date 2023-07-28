@@ -257,6 +257,26 @@ namespace Revit.IFC.Common.Utility
       /// </summary>
       /// <param name="schemaFile">the IFC schema file name (without extension). Caller must make sure it is the supported schema file</param>
       /// <returns>the tree, or null if the schema file is not found</returns>
+      static public IfcSchemaEntityTree GetEntityDictFor(string schemaFile)
+      {
+         if (m_IFCSchemaDict.ContainsKey(schemaFile))
+            return m_IFCSchemaDict[schemaFile];
+
+         // if not found, process the file and add into the static dictionary
+         IfcSchemaEntityTree entityTree = PopulateEntityDictFor(schemaFile);
+         if (entityTree == null)
+            return null;
+
+         m_IFCSchemaDict.Add(schemaFile, entityTree);
+         m_IFCEntityPredefTypeDict.Add(schemaFile, entityTree.PredefinedTypeEnumDict);
+         return entityTree;
+      }
+
+      /// <summary>
+      /// Get the IFC Entity Dictionary for the given IFC version specified by the schema file name (without extension)
+      /// </summary>
+      /// <param name="schemaFile">the IFC schema file name (without extension). Caller must make sure it is the supported schema file</param>
+      /// <returns>the tree, or null if the schema file is not found</returns>
       static public IfcSchemaEntityTree GetEntityDictFor(string schemaFile, string schemaLoc = null)
       {
          schemaFile = schemaFile.ToUpper();

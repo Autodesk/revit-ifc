@@ -46,7 +46,7 @@ namespace Revit.IFC.Export.Exporter
          if (catId == new ElementId(BuiltInCategory.OST_Gutter))
             ExportGutter(exporterIFC, hostedSweep, geometryElement, productWrapper);
          else
-            ProxyElementExporter.Export(exporterIFC, hostedSweep, geometryElement, productWrapper);
+            GenericElementExporter.ExportElement(exporterIFC, hostedSweep, geometryElement, productWrapper);
       }
 
       /// <summary>
