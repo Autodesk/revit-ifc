@@ -28,7 +28,7 @@
         </Grid.ColumnDefinitions>
         <Label Content="{x:Static p:Resources.Purpose}" Height="28" HorizontalAlignment="Left" Margin="21,10,0,0" x:Name="labelPurpose" VerticalAlignment="Top" Width="147"/>
         <Label Content="{x:Static p:Resources.UserDefinedPurpose}" Height="28" HorizontalAlignment="Left" Margin="21,43,0,0" x:Name="labelUserDefinedPurpose" VerticalAlignment="Top" Width="195" />
-        <TextBox Text="{Binding UserDefinedPurpose, UpdateSourceTrigger=PropertyChanged}" LostFocus="UserDefinedPurposeTextBox_LostFocus" Height="23" Margin="14,45,10,0" x:Name="UserDefinedPurposeTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" ToolTip="Entering value here will reset Purpose to &quot;USERDEFINED&quot;" Grid.Column="1"/>
+        <TextBox Text="{Binding UserDefinedPurpose, UpdateSourceTrigger=PropertyChanged}" LostFocus="UserDefinedPurposeTextBox_LostFocus" Height="23" Margin="14,45,10,0" x:Name="UserDefinedPurposeTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" ToolTip="{x:Static p:Resources.AddressInformationTooltip}" Grid.Column="1"/>
         <Label Content="{x:Static p:Resources.Description}" Height="28" HorizontalAlignment="Left" Margin="21,75,0,0" x:Name="labelDescription" VerticalAlignment="Top" Width="152"/>
         <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Height="23" HorizontalAlignment="Stretch" Margin="15,80,10,0" x:Name="DescriptionTextBox" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Column="1"/>
         <Label Content="{x:Static p:Resources.AddressLine1}" Height="28" HorizontalAlignment="Left" Margin="21,110,0,0" x:Name="labelAddressLine1" VerticalAlignment="Top" Width="152"/>

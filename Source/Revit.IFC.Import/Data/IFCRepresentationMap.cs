@@ -94,6 +94,15 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Determine if the IFCRepresentationMap only has at least 1 IFCHybridInformation.
+      /// </summary>
+      /// <returns>True if the IFCRepresentationMap only has at least 1 IFCHybridInformation.</returns>
+      public bool IsHybridOnly()
+      {
+         return MappedRepresentation?.IsHybridOnly() ?? false;
+      }
+
+      /// <summary>
       /// Create geometry for a particular representation map.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
@@ -168,7 +177,8 @@ namespace Revit.IFC.Import.Data
                   if (directShapeType == null)
                   {
                      string directShapeTypeName = Id.ToString();
-                     directShapeType = IFCElementUtil.CreateElementType(doc, directShapeTypeName, shapeEditScope.CategoryId, Id, null, EntityType);
+                     directShapeType = IFCElementUtil.CreateElementType(doc, directShapeTypeName, 
+                        shapeEditScope.CategoryId, Id, null, EntityType);
                      typeId = Id;
                   }
 

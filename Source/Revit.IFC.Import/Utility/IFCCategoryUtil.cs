@@ -396,10 +396,14 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcAirToAirHeatRecovery] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcAirToAirHeatRecoveryType] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcAlarmType] = BuiltInCategory.OST_GenericModel;
-         m_EntityTypeToCategory[IFCEntityType.IfcAlignment] = BuiltInCategory.OST_Alignments;
-         m_EntityTypeToCategory[IFCEntityType.IfcAlignmentHorizontal] = BuiltInCategory.OST_Alignments;
-         m_EntityTypeToCategory[IFCEntityType.IfcAlignmentSegment] = BuiltInCategory.OST_Alignments;
-         m_EntityTypeToCategory[IFCEntityType.IfcAlignmentVertical] = BuiltInCategory.OST_Alignments;
+
+         // NOTE: We do have BuiltInCategory.OST_Alignments, and you can create a DirectShape of that type, but the
+         // Alignment update code isn't very happy about it.  So we will map to generic model for now.
+         m_EntityTypeToCategory[IFCEntityType.IfcAlignment] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcAlignmentHorizontal] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcAlignmentSegment] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcAlignmentVertical] = BuiltInCategory.OST_GenericModel;
+         
          m_EntityTypeToCategory[IFCEntityType.IfcAnnotation] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcAudioVisualAppliance] = BuiltInCategory.OST_AudioVisualDevices;
          m_EntityTypeToCategory[IFCEntityType.IfcAudioVisualApplianceType] = BuiltInCategory.OST_AudioVisualDevices;
@@ -432,8 +436,8 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcControllerType] = BuiltInCategory.OST_SpecialityEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcCovering] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcCoveringType] = BuiltInCategory.OST_GenericModel;
-         m_EntityTypeToCategory[IFCEntityType.IfcCurtainWall] = BuiltInCategory.OST_CurtaSystem;
-         m_EntityTypeToCategory[IFCEntityType.IfcCurtainWallType] = BuiltInCategory.OST_CurtaSystem;
+         m_EntityTypeToCategory[IFCEntityType.IfcCurtainWall] = BuiltInCategory.OST_Walls;
+         m_EntityTypeToCategory[IFCEntityType.IfcCurtainWallType] = BuiltInCategory.OST_Walls;
          m_EntityTypeToCategory[IFCEntityType.IfcDamper] = BuiltInCategory.OST_DuctAccessory;
          m_EntityTypeToCategory[IFCEntityType.IfcDamperType] = BuiltInCategory.OST_DuctAccessory;
          m_EntityTypeToCategory[IFCEntityType.IfcDiscreteAccessory] = BuiltInCategory.OST_SpecialityEquipment;
@@ -526,7 +530,11 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcRampType] = BuiltInCategory.OST_Ramps;
          m_EntityTypeToCategory[IFCEntityType.IfcRampFlight] = BuiltInCategory.OST_Ramps;
          m_EntityTypeToCategory[IFCEntityType.IfcRampFlightType] = BuiltInCategory.OST_Ramps;
-         m_EntityTypeToCategory[IFCEntityType.IfcReferent] = BuiltInCategory.OST_Alignments;
+
+         // NOTE: We do have BuiltInCategory.OST_Alignments, and you can create a DirectShape of that type, but the
+         // Alignment update code isn't very happy about it.  So we will map to generic model for now.
+         m_EntityTypeToCategory[IFCEntityType.IfcReferent] = BuiltInCategory.OST_GenericModel;
+
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingBar] = BuiltInCategory.OST_Rebar;
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingBarType] = BuiltInCategory.OST_Rebar;
          m_EntityTypeToCategory[IFCEntityType.IfcReinforcingMesh] = BuiltInCategory.OST_FabricAreas;
@@ -702,7 +710,7 @@ namespace Revit.IFC.Import.Utility
             if (string.IsNullOrWhiteSpace(ifcClassName))
                continue;
             IFCEntityType ifcClassType;
-            if (!Enum.TryParse<IFCEntityType>(ifcClassName, true, out ifcClassType))
+            if (!Enum.TryParse(ifcClassName, true, out ifcClassType))
             {
                Importer.TheLog.LogWarning(-1, "Unknown class name in IFC entity to category mapping file: " + ifcClassName, true);
                continue;

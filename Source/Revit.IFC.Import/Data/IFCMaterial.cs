@@ -87,7 +87,7 @@ namespace Revit.IFC.Import.Data
          if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x3))
             hasRepresentation = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcMaterial, "HasRepresentation");
 
-         if (hasRepresentation != null && hasRepresentation.Count == 1)
+         if ((hasRepresentation?.Count ?? 0) == 1)
          {
             if (!IFCAnyHandleUtil.IsSubTypeOf(hasRepresentation[0], IFCEntityType.IfcMaterialDefinitionRepresentation))
                Importer.TheLog.LogUnexpectedTypeError(hasRepresentation[0], IFCEntityType.IfcMaterialDefinitionRepresentation, false);
@@ -108,7 +108,7 @@ namespace Revit.IFC.Import.Data
          if (revitMaterialName != null)
             return revitMaterialName;
 
-         return String.Format(Resources.IFCDefaultMaterialName, id);
+         return string.Format(Resources.IFCDefaultMaterialName, id);
       }
 
       /// <summary>
@@ -116,8 +116,7 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       public IList<IFCMaterial> GetMaterials()
       {
-         IList<IFCMaterial> materials = new List<IFCMaterial>();
-         materials.Add(this);
+         IList<IFCMaterial> materials = new List<IFCMaterial>() { this };
          return materials;
       }
 

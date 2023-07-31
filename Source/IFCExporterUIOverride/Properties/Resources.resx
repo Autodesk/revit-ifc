@@ -959,4 +959,19 @@
   <data name="IFCSG" xml:space="preserve">
     <value>IFC-SG Regulatory Requirements View</value>
   </data>
+  <data name="AddressInformationTooltip" xml:space="preserve">
+    <value>Entering a value here will reset the Purpose field to "USERDEFINED".</value>
+  </data>
+  <data name="ExportHostAsSingleEntityTooltip" xml:space="preserve">
+    <value>If this option is checked, don't create a container for floors and roofs unless exporting parts.</value>
+  </data>
+  <data name="TriangulationOnlyTooltip" xml:space="preserve">
+    <value>Use this option if any tessellated geometry should remain as triangulated faces, or if the export performance is affected.</value>
+  </data>
+  <data name="UseTypeNameOnlyTooltip" xml:space="preserve">
+    <value>Use this option to export the IFC type name as the Revit type name without the family name.</value>
+  </data>
+  <data name="UseVisibleRevitNameTooltip" xml:space="preserve">
+    <value>Use this option to export IFC entity name as the visible Revit name.</value>
+  </data>
 </root>

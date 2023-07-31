@@ -173,6 +173,17 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public IDictionary<string, ElementId> GridNameToElementMap { get; } = new Dictionary<string, ElementId>();
 
+      /// <summary>
+      /// The view plane type if, if ViewPlanTypeIdInitialized is true and we found one.
+      /// </summary>
+      public ElementId ViewPlanTypeId { get; set; } = ElementId.InvalidElementId;
+
+      /// <summary>
+      /// Returns true if we have tried to set ViewPlanTypeId.  ViewPlanTypeId may or may not have a valid value.
+      /// </summary>
+      public bool ViewPlanTypeIdInitialized { get; set; } = false;
+
+
       private bool HavePreProcessedGrids { get; set; } = false;
 
       /// <summary>
@@ -220,11 +231,13 @@ namespace Revit.IFC.Import.Utility
 
          // These are the only element types currently created in .NET code.  This list needs to be updated when a new
          // type is created.
-         List<Type> supportedElementTypes = new List<Type>();
-         supportedElementTypes.Add(typeof(DirectShape));
-         supportedElementTypes.Add(typeof(DirectShapeType));
-         supportedElementTypes.Add(typeof(Level));
-         supportedElementTypes.Add(typeof(Grid));
+         List<Type> supportedElementTypes = new List<Type>()
+         {
+            typeof(DirectShape),
+            typeof(DirectShapeType),
+            typeof(Level),
+            typeof(Grid)
+         };
 
          ElementMulticlassFilter multiclassFilter = new ElementMulticlassFilter(supportedElementTypes);
          collector.WherePasses(multiclassFilter);

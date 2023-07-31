@@ -72,6 +72,10 @@ namespace Revit.IFC.Import.Data
 
          LayerAssignment = IFCPresentationLayerAssignment.GetTheLayerAssignment(item);
 
+         // Don't bother processing styled items we will never use.
+         if (this is IFCHybridRepresentationItem)
+            return;
+
          // IFC2x has a different representation for styled items which we don't support.
          ICollection<IFCAnyHandle> styledByItems = null;
          if (Importer.TheCache.StyledByItems.TryGetValue(item, out styledByItems))
@@ -213,7 +217,6 @@ namespace Revit.IFC.Import.Data
 
          if (skipBodyGeometry)
          {
-            Importer.TheLog.LogComment(ifcRepresentationItem.Id, "Hybrid Import Adding Dummy IfcRepresentationItem, since geometry is already imported", true);
             return IFCHybridRepresentationItem.ProcessIFCHybridRepresentationItem(ifcRepresentationItem);
          }
 

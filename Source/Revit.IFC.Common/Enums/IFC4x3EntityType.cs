@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace Revit.IFC.Common.Enums.IFC4x3
 {
    /// <summary>

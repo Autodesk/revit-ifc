@@ -585,29 +585,44 @@ namespace Revit.IFC.Import.Data
             return;
 
          Parameter originalImporterVersion = projInfo.LookupParameter("Revit Importer Version");
-         if (originalTimeStampParam != null && originalTimeStampParam.StorageType != StorageType.String)
+         if (originalImporterVersion != null && originalImporterVersion.StorageType != StorageType.String)
             return;
 
+         Parameter originalImportMethod = projInfo.LookupParameter(IFCImportOptions.ImportMethodParameter);
+         if (originalImportMethod != null && originalImportMethod.StorageType != StorageType.String)
+            return;
+         
          Category category = IFCPropertySet.GetCategoryForParameterIfValid(projInfo, -1);
-         if (originalFileName != null)
-            originalFileName.Set(ifcFileName);
-         else
-            IFCPropertySet.AddParameterString(doc, projInfo, category, TheFile.IFCProject, "Original IFC File Name", ifcFileName, -1);
 
-         if (originalFileSizeParam != null)
-            originalFileSizeParam.Set(ifcFileLength.ToString());
-         else
-            IFCPropertySet.AddParameterString(doc, projInfo, category, TheFile.IFCProject, "Original IFC File Size", ifcFileLength.ToString(), -1);
+         using (ParameterSetter setter = new ParameterSetter())
+         {
+            ParametersToSet parametersToSet = setter.ParametersToSet;
 
-         if (originalTimeStampParam != null)
-            originalTimeStampParam.Set(ticks.ToString());
-         else
-            IFCPropertySet.AddParameterString(doc, projInfo, category, TheFile.IFCProject, "Revit File Last Updated", ticks.ToString(), -1);
+            if (originalFileName != null)
+               parametersToSet.AddStringParameter(originalFileName, ifcFileName);
+            else
+               parametersToSet.AddStringParameter(doc, projInfo, category, TheFile.IFCProject, "Original IFC File Name", ifcFileName, -1);
 
-         if (originalImporterVersion != null)
-            originalImporterVersion.Set(IFCImportOptions.ImporterVersion);
-         else
-            IFCPropertySet.AddParameterString(doc, projInfo, category, TheFile.IFCProject, "Revit Importer Version", IFCImportOptions.ImporterVersion, -1);
+            if (originalFileSizeParam != null)
+               parametersToSet.AddStringParameter(originalFileSizeParam, ifcFileLength.ToString());
+            else
+               parametersToSet.AddStringParameter(doc, projInfo, category, TheFile.IFCProject, "Original IFC File Size", ifcFileLength.ToString(), -1);
+
+            if (originalTimeStampParam != null)
+               parametersToSet.AddStringParameter(originalTimeStampParam, ticks.ToString());
+            else
+               parametersToSet.AddStringParameter(doc, projInfo, category, TheFile.IFCProject, "Revit File Last Updated", ticks.ToString(), -1);
+
+            if (originalImporterVersion != null)
+               parametersToSet.AddStringParameter(originalImporterVersion, IFCImportOptions.ImporterVersion);
+            else
+               parametersToSet.AddStringParameter(doc, projInfo, category, TheFile.IFCProject, "Revit Importer Version", IFCImportOptions.ImporterVersion, -1);
+
+            if (originalImportMethod != null)
+               parametersToSet.AddStringParameter(originalImportMethod, Importer.TheOptions.CurrentImportMethod.ToString());
+            else
+               parametersToSet.AddStringParameter(doc, projInfo, category, TheFile.IFCProject, IFCImportOptions.ImportMethodParameter, Importer.TheOptions.CurrentImportMethod.ToString(), -1);
+         }
       }
 
       private bool DontDeleteSpecialElement(ElementId elementId)
@@ -638,6 +653,9 @@ namespace Revit.IFC.Import.Data
 
             foreach (ElementId elementId in Importer.TheCache.GUIDToElementMap.Values)
             {
+               if (Importer.TheHybridInfo?.HybridElements.Contains(elementId) ?? false)
+                  continue;
+
                if (DontDeleteSpecialElement(elementId))
                   continue;
 
@@ -653,6 +671,9 @@ namespace Revit.IFC.Import.Data
 
             foreach (ElementId elementId in Importer.TheCache.GridNameToElementMap.Values)
             {
+               if (Importer.TheHybridInfo?.HybridElements.Contains(elementId) ?? false)
+                  continue;
+
                Element element = doc.GetElement(elementId);
                if (element == null)
                   continue;

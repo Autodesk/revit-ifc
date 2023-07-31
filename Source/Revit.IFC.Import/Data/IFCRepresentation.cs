@@ -74,6 +74,24 @@ namespace Revit.IFC.Import.Data
 
       }
 
+      /// <summary>
+      /// Determine if the IFCRepresentationMap only has at least 1 IFCHybridInformation.
+      /// </summary>
+      /// <returns>True if the IFCRepresentationMap only has at least 1 IFCHybridInformation.</returns>
+      public bool IsHybridOnly()
+      {
+         if ((RepresentationItems?.Count ?? 0) == 0)
+            return false;
+
+         foreach (IFCRepresentationItem item in RepresentationItems)
+         {
+            if (!(item is IFCHybridRepresentationItem))
+               return false;
+         }
+
+         return true;
+      }
+
       private IFCRepresentationIdentifier GetRepresentationIdentifier(string identifier, IFCAnyHandle ifcRepresentation)
       {
          if (Enum.TryParse(identifier, true, out IFCRepresentationIdentifier ifcRepresentationIdentifier))
@@ -139,19 +157,13 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcRepresentation);
 
-         IFCAnyHandle representationContext = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcRepresentation, "ContextOfItems", false);
-         if (representationContext != null)
-            Context = IFCRepresentationContext.ProcessIFCRepresentationContext(representationContext);
-
          string identifier = IFCImportHandleUtil.GetOptionalStringAttribute(ifcRepresentation, "RepresentationIdentifier", null);
          Identifier = GetRepresentationIdentifier(identifier, ifcRepresentation);
 
-         RepresentationType = IFCImportHandleUtil.GetOptionalStringAttribute(ifcRepresentation, "RepresentationType", null);
+         LayerAssignment = IFCPresentationLayerAssignment.GetTheLayerAssignment(ifcRepresentation);
 
          HashSet<IFCAnyHandle> items =
-             IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcRepresentation, "Items");
-
-         LayerAssignment = IFCPresentationLayerAssignment.GetTheLayerAssignment(ifcRepresentation);
+            IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcRepresentation, "Items");
 
          if (items == null)
          {
@@ -195,10 +207,21 @@ namespace Revit.IFC.Import.Data
                {
                   Importer.TheLog.LogError(item.StepId, ex.Message, false);
                }
+
                if (repItem != null)
                   RepresentationItems.Add(repItem);
             }
          }
+
+         // If we have a body representation and we have already gone through Hybrid, skip the rest of the work here.
+         if (Identifier == IFCRepresentationIdentifier.Body && (Importer.TheHybridInfo?.RepresentationsAlreadyCreated ?? false))
+            return;
+
+         IFCAnyHandle representationContext = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcRepresentation, "ContextOfItems", false);
+         if (representationContext != null)
+            Context = IFCRepresentationContext.ProcessIFCRepresentationContext(representationContext);
+
+         RepresentationType = IFCImportHandleUtil.GetOptionalStringAttribute(ifcRepresentation, "RepresentationType", null);
       }
 
       /// <summary>

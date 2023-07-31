@@ -24,6 +24,8 @@ using Autodesk.Revit.DB;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Import.Utility;
+using Revit.IFC.Import.Core;
+using System.Runtime.Remoting;
 
 namespace Revit.IFC.Import.Data
 {
@@ -114,6 +116,18 @@ namespace Revit.IFC.Import.Data
          return false;
       }
 
+      private bool AddStringTypeParameter(bool multilineTableProperty, Document doc, Element element, Category category,
+         IFCObjectDefinition objDef, string parameterName, string stringValueToUse, ParametersToSet parametersToSet)
+      {
+         if (multilineTableProperty)
+         {
+            return parametersToSet.AddParameterMultilineString(doc, element, category, objDef, parameterName,
+               stringValueToUse, Id);
+         }
+
+         return parametersToSet.AddStringParameter(doc, element, category, objDef, parameterName, stringValueToUse, Id);
+      }
+
       /// <summary>
       /// Create a property for a given element.
       /// </summary>
@@ -123,7 +137,9 @@ namespace Revit.IFC.Import.Data
       /// <param name="parameterMap">The parameters of the element.  Cached for performance.</param>
       /// <param name="propertyFullName">The name of the containing property set.</param>
       /// <param name="createdParameters">The names of the created parameters.</param>
-      public void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, IFCParameterSetByGroup parameterGroupMap, string propertyFullName, ISet<string> createdParameters)
+      public void Create(Document doc, Element element, Category category, IFCObjectDefinition objDef, 
+         IFCParameterSetByGroup parameterGroupMap, string propertyFullName, ISet<string> createdParameters,
+         ParametersToSet parametersToSet)
       {
          // Try to get the single value from the property.  If we can't get a single value, get it as a string.
          IFCPropertyValue propertyValueToUse = null;
@@ -258,25 +274,26 @@ namespace Revit.IFC.Import.Data
                case IFCDataPrimitiveType.String:
                case IFCDataPrimitiveType.Enumeration:
                case IFCDataPrimitiveType.Binary:
-                     created = multilineTableProperty ? IFCPropertySet.AddParameterMultilineString(doc, element, category, objDef, parameterName, stringValueToUse, Id):
-                                                        IFCPropertySet.AddParameterString(doc, element, category, objDef, parameterName, stringValueToUse, Id);
+                  created = AddStringTypeParameter(multilineTableProperty, doc, element, category,
+                     objDef, parameterName, stringValueToUse, parametersToSet);
                   break;
                case IFCDataPrimitiveType.Integer:
-                  created = IFCPropertySet.AddParameterInt(doc, element, category, objDef, parameterName, intValueToUse.Value, Id);
+                  created = parametersToSet.AddParameterInt(doc, element, category, objDef, parameterName, 
+                     intValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Boolean:
-                  created = IFCPropertySet.AddParameterBoolean(doc, element, category, objDef, parameterName, boolValueToUse.Value, Id);
+                  created = parametersToSet.AddParameterBoolean(doc, element, category, objDef, parameterName, boolValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Logical:
                   if (logicalValueToUse != IFCLogical.Unknown)
-                     created = IFCPropertySet.AddParameterBoolean(doc, element, category, objDef, parameterName, (logicalValueToUse == IFCLogical.True), Id);
+                     created = parametersToSet.AddParameterBoolean(doc, element, category, objDef, parameterName, (logicalValueToUse == IFCLogical.True), Id);
                   break;
                case IFCDataPrimitiveType.Number:
                case IFCDataPrimitiveType.Double:
-                  created = IFCPropertySet.AddParameterDouble(doc, element, category, objDef, parameterName, specTypeId, unitsTypeId, doubleValueToUse.Value, Id);
+                  created = parametersToSet.AddParameterDouble(doc, element, category, objDef, parameterName, specTypeId, unitsTypeId, doubleValueToUse.Value, Id);
                   break;
                case IFCDataPrimitiveType.Instance:
-                  created = IFCPropertySet.AddParameterElementId(doc, element, category, objDef, parameterName, elementIdValueToUse, Id);
+                  created = parametersToSet.AddParameterElementId(doc, element, category, objDef, parameterName, elementIdValueToUse, Id);
                   break;
             }
 
@@ -286,7 +303,6 @@ namespace Revit.IFC.Import.Data
             return;
          }
 
-         bool couldSetValue = false;
          switch (existingParameter.StorageType)
          {
             case StorageType.String:
@@ -296,20 +312,20 @@ namespace Revit.IFC.Import.Data
                      case IFCDataPrimitiveType.String:
                      case IFCDataPrimitiveType.Enumeration:
                      case IFCDataPrimitiveType.Binary:
-                        couldSetValue = existingParameter.Set(stringValueToUse);
+                        parametersToSet.AddStringParameter(existingParameter, stringValueToUse);
                         break;
                      case IFCDataPrimitiveType.Integer:
-                        couldSetValue = existingParameter.Set(intValueToUse.Value.ToString());
+                        parametersToSet.AddStringParameter(existingParameter, intValueToUse.Value.ToString());
                         break;
                      case IFCDataPrimitiveType.Boolean:
-                        couldSetValue = existingParameter.Set(boolValueToUse.Value ? "True" : "False");
+                        parametersToSet.AddStringParameter(existingParameter, boolValueToUse.Value ? "True" : "False");
                         break;
                      case IFCDataPrimitiveType.Logical:
-                        couldSetValue = existingParameter.Set(logicalValueToUse.ToString());
+                        parametersToSet.AddStringParameter(existingParameter, logicalValueToUse.ToString());
                         break;
                      case IFCDataPrimitiveType.Number:
                      case IFCDataPrimitiveType.Double:
-                        couldSetValue = existingParameter.Set(doubleValueToUse.ToString());
+                        parametersToSet.AddStringParameter(existingParameter, doubleValueToUse.ToString());
                         break;
                      default:
                         break;
@@ -318,26 +334,23 @@ namespace Revit.IFC.Import.Data
                break;
             case StorageType.Integer:
                if (dataType == IFCDataPrimitiveType.Integer)
-                  couldSetValue = existingParameter.Set(intValueToUse.Value);
+                  parametersToSet.AddIntegerParameter(existingParameter, intValueToUse.Value);
                else if (dataType == IFCDataPrimitiveType.Boolean)
-                  couldSetValue = existingParameter.Set(boolValueToUse.Value ? 1 : 0);
-               else if (dataType == IFCDataPrimitiveType.Logical)
-                  couldSetValue = (logicalValueToUse == IFCLogical.Unknown) ? true : existingParameter.Set((logicalValueToUse == IFCLogical.True) ? 1 : 0);
+                  parametersToSet.AddIntegerParameter(existingParameter, boolValueToUse.Value ? 1 : 0);
+               else if (dataType == IFCDataPrimitiveType.Logical && logicalValueToUse != IFCLogical.Unknown)
+                  parametersToSet.AddIntegerParameter(existingParameter, (logicalValueToUse == IFCLogical.True) ? 1 : 0);
                break;
             case StorageType.Double:
                if (dataType == IFCDataPrimitiveType.Double)
-                  couldSetValue = existingParameter.Set(doubleValueToUse.Value);
+                  parametersToSet.AddDoubleParameter(existingParameter, doubleValueToUse.Value);
                else if (dataType == IFCDataPrimitiveType.Integer)
-                  couldSetValue = existingParameter.Set(intValueToUse.Value);
+                  parametersToSet.AddDoubleParameter(existingParameter, intValueToUse.Value);
                else if (dataType == IFCDataPrimitiveType.Boolean)
-                  couldSetValue = existingParameter.Set(boolValueToUse.Value ? 1 : 0);
+                  parametersToSet.AddDoubleParameter(existingParameter, boolValueToUse.Value ? 1 : 0);
                else if ((dataType == IFCDataPrimitiveType.Logical) && (logicalValueToUse != IFCLogical.Unknown))
-                  couldSetValue = existingParameter.Set((logicalValueToUse == IFCLogical.True) ? 1 : 0);
+                  parametersToSet.AddDoubleParameter(existingParameter, (logicalValueToUse == IFCLogical.True) ? 1 : 0);
                break;
          }
-
-         if (!couldSetValue)
-            Importer.TheLog.LogError(Id, "Couldn't create parameter: " + Name + " of storage type: " + existingParameter.StorageType.ToString(), false);
       }
    }
 }
