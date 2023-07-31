@@ -14,6 +14,10 @@
 #	Pressure, Ratio, Real, Text, ThermalTransmittance, ThermodynamicTemperature, Volume, 
 #	VolumetricFlowRate
 # 
+# Since 23.3.0, type properties are not exported in case they are not specified in the user-defined property sets file.
+#	To export type properties for the IFCElement, for example, 
+#	a user should include "IFCElementType" in the proper .txt file.
+#
 # Example property set definition for COBie:
 #
 #PropertySet:	COBie_Specification	T	IfcElementType

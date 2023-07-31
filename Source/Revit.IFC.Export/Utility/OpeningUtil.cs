@@ -485,24 +485,19 @@ namespace Revit.IFC.Export.Utility
             lcs = GeometryUtil.CreateTransformFromPlane(curveLoops[0].GetPlane());
          }
 
-         ElementId catId = CategoryUtil.GetSafeCategoryId(insertElement);
-
          if (extrusionData.ScaledExtrusionLength < MathUtil.Eps())
          {
-            double thickness = 0.0;
-            if (hostElement is Floor)
-               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM, out thickness);
-            else if (hostElement is RoofBase)
-               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM, out thickness);
-            else if (hostElement is Ceiling)
-               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.CEILING_THICKNESS, out thickness);
+            double extrusionLength = 0.0;
+            if (hostElement is Floor || hostElement is RoofBase || hostElement is Ceiling)
+               extrusionLength = CalculateOpeningExtrusionInFloorRoofOrCeiling(hostElement, extrusionData);
 
-            if (thickness < MathUtil.Eps())
+            if (extrusionLength < MathUtil.Eps())
                return null;
 
-            extrusionData.ScaledExtrusionLength = UnitUtil.ScaleLength(thickness);
+            extrusionData.ScaledExtrusionLength = UnitUtil.ScaleLength(extrusionLength);
          }
 
+         ElementId catId = CategoryUtil.GetSafeCategoryId(insertElement);
          IFCAnyHandle openingHnd = null;
          IFCAnyHandle openingProdRepHnd = RepresentationUtil.CreateExtrudedProductDefShape(exporterIFC, insertElement, catId,
              curveLoops, lcs, extrusionData.ExtrusionDirection, extrusionData.ScaledExtrusionLength);
@@ -595,6 +590,44 @@ namespace Revit.IFC.Export.Utility
          }
 
          return isLinearWall;
+      }
+
+      /// <summary>
+      /// Calculates extrusion length for openings in floor roof or ceiling based on the element thickness for not sloped elements, 
+      /// and based on bounding box for sloped. Also defines the extrusion direction for sloped elements.
+      /// </summary>
+      /// <param name="hostElement">The host element.</param>
+      /// <param name="extrusionData">The opening extrusion data</param>
+      /// <returns>The extrusion length</returns>
+      private static double CalculateOpeningExtrusionInFloorRoofOrCeiling(Element hostElement, IFCExtrusionData extrusionData)
+      {
+         double extrusionLength = 0.0;
+         //Use the element thickness for not sloped elements, if the host element is sloped, the extrusions of the resulting opening will not intersect the host element.  
+         //To handle such cases using bounding box height instead of thickness.
+         //
+         double slopeValue = 0.0;
+         ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_SLOPE, out slopeValue);
+         if (MathUtil.IsAlmostZero(slopeValue))
+         {
+            if (hostElement is Floor)
+               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM, out extrusionLength);
+            else if (hostElement is RoofBase)
+               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM, out extrusionLength);
+            else if (hostElement is Ceiling)
+               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.CEILING_THICKNESS, out extrusionLength);
+         }
+         else
+         {
+            BoundingBoxXYZ hostElementBoundingBox = hostElement.get_BoundingBox(hostElement.Document.GetElement(hostElement.OwnerViewId) as View);
+            extrusionLength = hostElementBoundingBox.Max.Z - hostElementBoundingBox.Min.Z;
+
+            //Need to recheck the ExtrusionDirection.
+            //If slope is positive value the host it will be above.
+            //
+            extrusionData.ExtrusionDirection = (slopeValue > 0) ? XYZ.BasisZ : -XYZ.BasisZ;
+         }
+
+         return extrusionLength;
       }
    }
 }
