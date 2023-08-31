@@ -1,23 +1,23 @@
 # IFC for Revit and Navisworks (revit-ifc)
 
-This is the .NET code used by Revit and Revit LT 2019 and later to support IFC. The open source version overrides the standard version shipped with Revit and its updates. This contains the source code for Link IFC, IFC export, and the IFC export UI.  This also works to improve Navisworks import.
+This is the .NET code used by Revit and Revit LT 2019 and later to support IFC. The open-source version overrides the standard version shipped with Revit and its updates. This contains the source code for Link IFC, IFC export, and the IFC export UI. This also works to improve Navisworks import.
 
 _An archive of the original SourceForge forums can be found [here](https://sourceforge.net/p/ifcexporter/discussion/)._
 
 ***Note: The most current annual version and two previous versions are supported with fixes/changes. Older versions will not be supported.***
 
 ## Releases
-The latest addon downloads and Release Notes can be found here: [Releases](https://github.com/Autodesk/revit-ifc/releases). New versions of the addon, from 2023 and later, should also be available in the Autodesk Desktop App (ADA) per your user and license settings.
+The latest addon downloads and Release Notes can be found here: [Releases](https://github.com/Autodesk/revit-ifc/releases). New versions of the addon, from 2023 and later, should also be available in the Autodesk Desktop App (ADA) as per your user and license settings.
 
 ## Help
-Links to multilingial versions of the Revit IFC Manual V2.0 can be found here: [Revit Blog](https://blogs.autodesk.com/revit/2022/02/09/now-available-revit-ifc-manual-version-2-0/)
-### Product Doumentation (English)
+Links to multilingual versions of the Revit IFC Manual V2.0 can be found here: [Revit Blog](https://blogs.autodesk.com/revit/2022/02/09/now-available-revit-ifc-manual-version-2-0/)
+### Product Documentation (English)
 - [IFC in Revit 2024](https://help.autodesk.com/view/RVT/2024/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 - [IFC in Revit 2023](https://help.autodesk.com/view/RVT/2023/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 - [IFC in Revit 2022](https://help.autodesk.com/view/RVT/2022/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 
-## Issue Submittal Templates
-When submitting an Issue, users will be asked to chose between the following submittal templates:
+## Issue Submission Templates
+When submitting an Issue, users will be asked to choose between the following submission templates:
 - **Problem Report [PR]**: _is a "bug", error, or issue found during the use of any aspect of the IFC functionality._
 - **Enhancement Request [ENH]**: _a proposed change to improve functionality, user interface (UI), and/or experience (UX)_
 - **Inquiry [INQ]**: _a question about functionality and/or UI/UX but not a Problem or an Enhancement_
@@ -25,7 +25,7 @@ When submitting an Issue, users will be asked to chose between the following sub
 This will assist the development team with triaging and prioritizing reports.
 
 ## Labels
-GitHub labels are used to classify the nature of the Issue and help developers group, sort, and prioritize them. <!-- The **Triage** label is automatically added when reporting an issue.--> Reporting users and staff can add/edit labels. To make the triage and reporting process faster and easier (may also mean getting your issues addressed with higher priority), please use the **Labels** to classify the nature of the Issue to the best of your knowledge.
+GitHub labels are used to classify the nature of the Issue and help developers group, sort, and prioritize them. <!-- The **Triage** label is automatically added when reporting an issue.--> Reporting users and staff can add or edit labels. To make the triage and reporting process faster and easier (may also mean getting your issues addressed with higher priority), please use the **Labels** to classify the nature of the Issue to the best of your knowledge.
 
 ### Version Label
 - 2024
@@ -61,5 +61,5 @@ More Labels of this type can be added as needed/requested by users and developer
 Ideally, each Issue should include Version and Component labels from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. Developers may also add an internal Autodesk Jira number/link to an Issue, but this is for internal reference and tracking only and not accessible to the general public.
 
 ## License
-The Revit IFC open source uses the Lesser General Public License version 2.0 (LGPLv2).  It relies on ANTLR 4 which uses the BSD license.
-It also includes Autodesk.SteelConnections.ASIFC.DLL, which is a proprietary file owned by Autodesk and licensed under the Autodesk Terms of Use. By using this DLL, you agree to the Autodesk Terms of Use (https://www.autodesk.com/company/terms-of-use/en/general-terms) and the Autodesk Privacy Statement (https://www.autodesk.com/company/legal-notices-trademarks/privacy-statement). You may only use this DLL with the Revit IFC open-source project. Autodesk.SteelConnections.ASIFC.DLL is provided as-is.  
+The Revit IFC open source uses the Lesser General Public License version 2.0 (LGPLv2). It relies on ANTLR 4, which uses the BSD license.
+It also includes Autodesk.SteelConnections.ASIFC.DLL, which is a proprietary file owned by Autodesk and licensed under the Autodesk Terms of Use. By using this DLL, you agree to the Autodesk Terms of Use (https://www.autodesk.com/company/terms-of-use/en/general-terms) and the Autodesk Privacy Statement (https://www.autodesk.com/company/legal-notices-trademarks/privacy-statement). You may only use this DLL with the Revit IFC open-source project. Autodesk.SteelConnections.ASIFC.DLL is provided as-is.
