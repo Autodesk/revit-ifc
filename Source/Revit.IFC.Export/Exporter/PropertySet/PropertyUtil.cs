@@ -4918,7 +4918,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             scaledWidth = UnitUtil.ScaleLength(wallElement.Width);
             if (!MathUtil.IsAlmostZero(scaledWidth))
             {
-               if (widthAsComplexQty == null)
+               if ((widthAsComplexQty?.Count ?? 0) == 0)
                {
                   IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Width", null, null, scaledWidth);
                   quantityHnds.Add(quantityHnd);

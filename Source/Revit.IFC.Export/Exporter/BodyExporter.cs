@@ -22,8 +22,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Autodesk.Revit.DB.Mechanical;
-using Autodesk.Revit.DB.Plumbing;
 using Revit.IFC.Export.Properties;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Utility;
@@ -675,7 +673,7 @@ namespace Revit.IFC.Export.Exporter
       // This is a simplified routine for solids that are composed of planar faces with polygonal edges.  This
       // allows us to use the edges as the boundaries of the faces.
       private static bool ExportPlanarBodyIfPossible(ExporterIFC exporterIFC, Solid solid,
-          IList<HashSet<IFCAnyHandle>> currentFaceHashSetList)
+          IList<HashSet<IFCAnyHandle>> currentFaceHashSetList, Transform lcs)
       {
          IFCFile file = exporterIFC.GetFile();
 
@@ -717,7 +715,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      if (!vertexCache.TryGetValue(curvePoints[idx], out IFCAnyHandle pointHandle))
                      {
-                        XYZ pointScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, curvePoints[idx]);
+                        XYZ pointScaled = TransformAndScalePoint(exporterIFC, curvePoints[idx], lcs);
                         pointHandle = ExporterUtil.CreateCartesianPoint(file, pointScaled);
                         vertexCache[curvePoints[idx]] = pointHandle;
                      }
@@ -2553,7 +2551,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       private static bool ExportBodyAsSolid(ExporterIFC exporterIFC, Element element, BodyExporterOptions options,
-          IList<HashSet<IFCAnyHandle>> currentFaceHashSetList, GeometryObject geomObject)
+          IList<HashSet<IFCAnyHandle>> currentFaceHashSetList, GeometryObject geomObject, Transform lcs)
       {
          IFCFile file = exporterIFC.GetFile();
          Document document = element.Document;
@@ -2561,7 +2559,7 @@ namespace Revit.IFC.Export.Exporter
             return false;
 
          Solid solid = geomObject as Solid;
-         if (ExportPlanarBodyIfPossible(exporterIFC, solid, currentFaceHashSetList))
+         if (ExportPlanarBodyIfPossible(exporterIFC, solid, currentFaceHashSetList, lcs))
             return true;
 
          SolidOrShellTessellationControls tessellationControlsOriginal = options.TessellationControls;
@@ -2643,7 +2641,7 @@ namespace Revit.IFC.Export.Exporter
             for (int ii = 0; ii < numberOfVertices; ii++)
             {
                XYZ vertex = component.GetVertex(ii);
-               XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
+               XYZ vertexScaled = TransformAndScalePoint(exporterIFC, vertex, lcs);
                coordList.Add(new List<double>(3) { vertexScaled.X, vertexScaled.Y, vertexScaled.Z });
             }
          }
@@ -2653,7 +2651,7 @@ namespace Revit.IFC.Export.Exporter
             for (int ii = 0; ii < numberOfVertices; ii++)
             {
                XYZ vertex = component.GetVertex(ii);
-               XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, vertex);
+               XYZ vertexScaled = TransformAndScalePoint(exporterIFC, vertex, lcs);
                IFCAnyHandle vertexHandle = ExporterUtil.CreateCartesianPoint(file, vertexScaled);
                vertexHandles.Add(vertexHandle);
             }
@@ -2677,6 +2675,11 @@ namespace Revit.IFC.Export.Exporter
             }
          }
          currentFaceHashSetList.Add(currentFaceSet);
+
+         // Call GC.KeepAlive(solidFacetation) at this point to maintain a reference to solidFacetation
+         // and prevent the object deletion by the garbage collector after try-catch block.
+         GC.KeepAlive(solidFacetation);
+
          return true;
       }
 
@@ -2692,16 +2695,15 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
          Document document = element.Document;
 
-         // Can't use the optimization functions below if we already have partially populated our body items with extrusions.
+         // Can't resetMaterials if we already have partially populated our body items with extrusions (canExportSolidModelRep)
          int numExtrusions = bodyItems.Count;
-
+         bool resetMaterials = (numExtrusions == 0);
          IList<HashSet<IFCAnyHandle>> currentFaceHashSetList = new List<HashSet<IFCAnyHandle>>();
          IList<int> startIndexForObject = new List<int>();
 
-         BodyData bodyData = BodyData.Create(bodyDataIn);
+         BodyData bodyData = BodyData.Create(bodyDataIn, resetMaterials);
 
          IList<ElementId> materialIds = new List<ElementId>();
-         bodyData.MaterialIds = materialIds;
 
          bool isCoarse = (options.TessellationLevel == BodyExporterOptions.BodyTessellationLevel.Coarse);
 
@@ -2718,7 +2720,7 @@ namespace Revit.IFC.Export.Exporter
             int brepIndex = selectiveBRepExport ? exportAsBRep[index].Key : index;
             SimpleSweptSolidAnalyzer currAnalyzer = selectiveBRepExport ? exportAsBRep[index].Value : null;
 
-            GeometryObject geomObject = selectiveBRepExport ? splitGeometryList[brepIndex] : splitGeometryList[index];
+            GeometryObject geomObject = splitGeometryList[brepIndex];
 
             // A simple test to see if the geometry is a valid solid.  This will save a lot of time in CanCreateClosedShell later.
             if (exportAsBReps && (geomObject is Solid))
@@ -2743,6 +2745,7 @@ namespace Revit.IFC.Export.Exporter
 
             ElementId materialId = SetBestMaterialIdInExporter(geomObject, element, overrideMaterialId, exporterIFC);
             materialIds.Add(materialId);
+            bodyData.AddMaterial(materialId);
 
             bool alreadyExported = false;
 
@@ -2775,18 +2778,18 @@ namespace Revit.IFC.Export.Exporter
                }
             }
 
+            // When geometry from symbol is used and the object is part of the Assembly, the transform needs to be Identity matrix
+            Transform trfToUse = null;
+            if (instanceGeometry)
+               trfToUse = GeometryUtil.GetScaledTransform(exporterIFC);
+            else if (!instanceGeometry && element.AssemblyInstanceId != ElementId.InvalidElementId)
+               trfToUse = Transform.Identity;
+
             // If we are using the Reference View, try a triangulated face set.
             // In theory, we could export a tessellated face set for geometry in the Design Transfer View that failed above.
             // However, FacetedBReps do hold more information (and aren't only triangles).
             if (!alreadyExported && canExportAsTessellatedFaceSet)
             {
-               // When geometry from symbol is used and the object is part of the Assembly, the transform needs to be Identity matrix
-               Transform trfToUse = null;
-               if (instanceGeometry)
-                  trfToUse = GeometryUtil.GetScaledTransform(exporterIFC);
-               else if (!instanceGeometry && element.AssemblyInstanceId != ElementId.InvalidElementId)
-                  trfToUse = Transform.Identity;
-
                IList<IFCAnyHandle> triangulatedBodyItems = ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geomObject, trfToUse);
                if (triangulatedBodyItems != null && triangulatedBodyItems.Count > 0)
                {
@@ -2808,7 +2811,7 @@ namespace Revit.IFC.Export.Exporter
             // If the above options do not generate any body, do the traditional step for Brep
             if (!alreadyExported && (exportAsBReps || isCoarse))
             {
-               alreadyExported = ExportBodyAsSolid(exporterIFC, element, options, currentFaceHashSetList, geomObject);
+               alreadyExported = ExportBodyAsSolid(exporterIFC, element, options, currentFaceHashSetList, geomObject, trfToUse);
             }
 
             // If all else fails, use the internal routine to go through the faces.  This will likely create a surface model.

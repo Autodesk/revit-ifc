@@ -799,4 +799,85 @@
   <data name="ER_StructuralShort" xml:space="preserve">
     <value>Structural</value>
   </data>
+  <data name="AngleTrueNorth" xml:space="preserve">
+    <value>Angle depuis le nord géographique</value>
+  </data>
+  <data name="CollapseAll" xml:space="preserve">
+    <value>Tout refermer</value>
+  </data>
+  <data name="DeleteOldConfiguration" xml:space="preserve">
+    <value>Supprimer l'ancienne configuration</value>
+  </data>
+  <data name="Eastings" xml:space="preserve">
+    <value>Coordonnées Est</value>
+  </data>
+  <data name="Elevation" xml:space="preserve">
+    <value>Façade</value>
+  </data>
+  <data name="ExcludeEntitySelection" xml:space="preserve">
+    <value>Entités à exporter...</value>
+  </data>
+  <data name="ExpandAll" xml:space="preserve">
+    <value>Tout déployer</value>
+  </data>
+  <data name="GeodeticDatum" xml:space="preserve">
+    <value>Données géodésiques</value>
+  </data>
+  <data name="GeoReference" xml:space="preserve">
+    <value>Référence géographique</value>
+  </data>
+  <data name="HelpAssignIfcEntity" xml:space="preserve">
+    <value>Comment attribuer une entité IFC et un type prédéfini ?</value>
+  </data>
+  <data name="HelpSelectEntityForExport" xml:space="preserve">
+    <value>Comment les sélections d’entités IFC affectent-elles l’export ?</value>
+  </data>
+  <data name="IFCSchemaVersion" xml:space="preserve">
+    <value>Version du schéma IFC</value>
+  </data>
+  <data name="InternalCoordinatesInTN" xml:space="preserve">
+    <value>Origine interne orientée vers le nord géographique</value>
+  </data>
+  <data name="MultipleAssignments" xml:space="preserve">
+    <value>Affectations multiples trouvées dans les objets sélectionnés.</value>
+  </data>
+  <data name="NoPredefinedType" xml:space="preserve">
+    <value>L'entité n'a pas de type prédéfini</value>
+  </data>
+  <data name="Northings" xml:space="preserve">
+    <value>Coordonnées Nord</value>
+  </data>
+  <data name="Override" xml:space="preserve">
+    <value>Ecraser</value>
+  </data>
+  <data name="PredefinedTypeSelection" xml:space="preserve">
+    <value>Sélection du type prédéfini</value>
+  </data>
+  <data name="ProjectedCRSDesc" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="ProjectInTN" xml:space="preserve">
+    <value>Point de base du projet orienté vers le nord géographique</value>
+  </data>
+  <data name="ProjectSite" xml:space="preserve">
+    <value>Site du projet</value>
+  </data>
+  <data name="ResetToOriginals" xml:space="preserve">
+    <value>Réinitialiser</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>Sauvegarder les modifications</value>
+  </data>
+  <data name="SaveConfigurationChanges" xml:space="preserve">
+    <value>Enregistrer les modifications apportées à la configuration de l'export IFC</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Recherche</value>
+  </data>
+  <data name="UseTypeNameOnlyForIfcType" xml:space="preserve">
+    <value>Utiliser le nom du type uniquement pour le nom du type IFC</value>
+  </data>
+  <data name="UseVisibleRevitNameAsEntityName" xml:space="preserve">
+    <value>Utiliser le nom Revit visible comme nom de l'IFCEntity</value>
+  </data>
 </root>

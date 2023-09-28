@@ -485,11 +485,12 @@ namespace Revit.IFC.Export.Utility
             lcs = GeometryUtil.CreateTransformFromPlane(curveLoops[0].GetPlane());
          }
 
+         Transform transformToUse = lcs;
          if (extrusionData.ScaledExtrusionLength < MathUtil.Eps())
          {
             double extrusionLength = 0.0;
             if (hostElement is Floor || hostElement is RoofBase || hostElement is Ceiling)
-               extrusionLength = CalculateOpeningExtrusionInFloorRoofOrCeiling(hostElement, extrusionData);
+               extrusionLength = CalculateOpeningExtrusionInFloorRoofOrCeiling(hostElement, extrusionData, transformToUse);
 
             if (extrusionLength < MathUtil.Eps())
                return null;
@@ -500,7 +501,7 @@ namespace Revit.IFC.Export.Utility
          ElementId catId = CategoryUtil.GetSafeCategoryId(insertElement);
          IFCAnyHandle openingHnd = null;
          IFCAnyHandle openingProdRepHnd = RepresentationUtil.CreateExtrudedProductDefShape(exporterIFC, insertElement, catId,
-             curveLoops, lcs, extrusionData.ExtrusionDirection, extrusionData.ScaledExtrusionLength);
+             curveLoops, transformToUse, extrusionData.ExtrusionDirection, extrusionData.ScaledExtrusionLength);
 
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(openingProdRepHnd))
          {
@@ -572,7 +573,7 @@ namespace Revit.IFC.Export.Utility
          return insertHostId == hostElement.Id;
       }
 
-      static bool GetOpeningDirections(Element hostElem, out XYZ perpToWall, out XYZ wallAxis)
+      public static bool GetOpeningDirections(Element hostElem, out XYZ perpToWall, out XYZ wallAxis)
       {
          bool isLinearWall = false;
          perpToWall = new XYZ(0, 0, 0);
@@ -598,8 +599,9 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="hostElement">The host element.</param>
       /// <param name="extrusionData">The opening extrusion data</param>
+      /// <param name="lcs">The local coordinate system of the base of the extrusion for updating if the extrusion length based on bounding box.</param>
       /// <returns>The extrusion length</returns>
-      private static double CalculateOpeningExtrusionInFloorRoofOrCeiling(Element hostElement, IFCExtrusionData extrusionData)
+      private static double CalculateOpeningExtrusionInFloorRoofOrCeiling(Element hostElement, IFCExtrusionData extrusionData, Transform lcs)
       {
          double extrusionLength = 0.0;
          //Use the element thickness for not sloped elements, if the host element is sloped, the extrusions of the resulting opening will not intersect the host element.  
@@ -625,6 +627,11 @@ namespace Revit.IFC.Export.Utility
             //If slope is positive value the host it will be above.
             //
             extrusionData.ExtrusionDirection = (slopeValue > 0) ? XYZ.BasisZ : -XYZ.BasisZ;
+
+            // Need to change extrusion plane Z coordinate to bounding box Z if the element is sloped
+            // because opening should cut bounding box completely.
+            double extrusionOriginZ = (slopeValue > 0) ? hostElementBoundingBox.Min.Z : hostElementBoundingBox.Max.Z;
+            lcs.Origin = new XYZ(lcs.Origin.X, lcs.Origin.Y, extrusionOriginZ);
          }
 
          return extrusionLength;

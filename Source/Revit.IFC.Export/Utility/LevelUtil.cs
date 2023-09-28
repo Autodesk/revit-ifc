@@ -310,6 +310,13 @@ namespace Revit.IFC.Export.Utility
                return level.Id;
          }
 
+         if (elem is SlabEdge)
+         {
+            ElementId levelId = ExporterCacheManager.LevelInfoCache.GetSlabEdgeLevelId(elem.Id);
+            if (levelId != ElementId.InvalidElementId)
+               return levelId;
+         }
+
          return elem.LevelId;
       }
 

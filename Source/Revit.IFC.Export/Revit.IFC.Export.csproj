@@ -105,6 +105,7 @@
     <Compile Include="Exporter\PropertySet\Calculators\GrossCeilingAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\GrossCrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\GrossFloorAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\GrossSideAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\IsExternalCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\ISOCD3766ShapeParameterRCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\LongitudinalBarNominalDiameter.cs" />
@@ -114,6 +115,7 @@
     <Compile Include="Exporter\PropertySet\Calculators\NetAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NetCrossSectionAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NetFloorAreaCalculator.cs" />
+    <Compile Include="Exporter\PropertySet\Calculators\NetSideAreaCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NosingLengthCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfRiserCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\NumberOfTreadsCalculator.cs" />
