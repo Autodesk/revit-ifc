@@ -112,6 +112,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          {
             ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.STAIRS_ATTR_TREAD_WIDTH, out m_Width);
          }
+         else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcCurtainWall))
+         {
+            m_Width = (element as Wall)?.Width ?? 0.0;
+         }
 
          m_Width = UnitUtil.ScaleLength(m_Width);
          if (m_Width > MathUtil.Eps())

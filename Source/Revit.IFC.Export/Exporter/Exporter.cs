@@ -1831,9 +1831,8 @@ namespace Revit.IFC.Export.Exporter
                if ((materialSetLayerUsage.Value?.Count ?? 0) == 0)
                   continue;
 
-               string hash = ExporterCacheManager.MaterialSetUsageCache.GetHash(materialSetLayerUsage.Key);
                string guid = GUIDUtil.GenerateIFCGuidFrom(
-                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelAssociatesMaterial, hash));
+                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelAssociatesMaterial, ExporterUtil.GetGlobalId(materialSetLayerUsage.Value.First())));
                IFCInstanceExporter.CreateRelAssociatesMaterial(file, guid, ownerHistory,
                   null, null, materialSetLayerUsage.Value,
                   materialSetLayerUsage.Key);

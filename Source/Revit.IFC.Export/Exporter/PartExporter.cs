@@ -1090,6 +1090,7 @@ namespace Revit.IFC.Export.Exporter
          {
             case (long)BuiltInCategory.OST_Walls:
             case (long)BuiltInCategory.OST_Columns:
+            case (long)BuiltInCategory.OST_Ceilings:
             case (long)BuiltInCategory.OST_Floors:
             case (long)BuiltInCategory.OST_Roofs:
                return IFCExtrusionAxes.TryZ;
@@ -1114,6 +1115,7 @@ namespace Revit.IFC.Export.Exporter
          {
             case IFCEntityType.IfcWall:
             case IFCEntityType.IfcColumn:
+            case IFCEntityType.IfcCovering:
             case IFCEntityType.IfcSlab:
             case IFCEntityType.IfcRoof:
                return IFCExtrusionAxes.TryZ;

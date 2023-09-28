@@ -138,6 +138,7 @@ namespace Revit.IFC.Export.Exporter
          ShapeRepresentationType = bodyData.ShapeRepresentationType;
          OffsetTransform = bodyData.OffsetTransform;
          MaterialIds = bodyData.MaterialIds;
+         RepresentationItemInfo = bodyData.RepresentationItemInfo;
       }
 
       /// <summary>
@@ -185,14 +186,16 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Static function to create a new copy of BodyData but resetting the MaterialIds
+      /// Static function to create a new copy of BodyData
       /// </summary>
       /// <param name="bodyDataIn">the input BodyData</param>
-      /// <returns>the new copy of BodyData with cleared MaterialIds</returns>
-      public static BodyData Create(BodyData bodyDataIn)
+      /// <param name="resetMaterials">indicates whether we want to clear the MaterialIds </param>
+      /// <returns>the new copy of BodyData</returns>
+      public static BodyData Create(BodyData bodyDataIn, bool resetMaterials)
       {
          BodyData retBodyData = new BodyData(bodyDataIn);   // create a new copy of bodyDataIn
-         retBodyData.MaterialIds.Clear();                // Clear the MaterialIdsList
+         if (resetMaterials)
+            retBodyData.MaterialIds.Clear();
          return retBodyData;
       }
    }

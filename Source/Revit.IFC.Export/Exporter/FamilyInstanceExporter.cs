@@ -1230,25 +1230,7 @@ namespace Revit.IFC.Export.Exporter
                         instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
                            wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
 
-                        IFCAnyHandle placementToUse = localPlacement;
-                        if (!useInstanceGeometry)
-                        {
-                           bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
-                           if (needToCreateOpenings)
-                           {
-                              Transform openingTrf = new Transform(originalTrf);
-                              Transform extraRot = new Transform(originalTrf) { Origin = XYZ.Zero };
-                              openingTrf = openingTrf.Multiply(extraRot);
-                              openingTrf = openingTrf.Multiply(typeInfo.StyleTransform);
-
-                              XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
-                              IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
-                                 openingTrf.get_Basis(2), openingTrf.get_Basis(0));
-                              IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
-                              GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
-                              placementToUse = openingPlacement;
-                           }
-                        }
+                        IFCAnyHandle placementToUse = GetPlacementToUse(file, instanceHandle, localPlacement, extraParams, originalTrf, typeInfo.StyleTransform, useInstanceGeometry);
 
                         OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
                               exporterIFC, placementToUse, setter, wrapper);
@@ -1339,8 +1321,12 @@ namespace Revit.IFC.Export.Exporter
                         instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
                            wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
 
-                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
-                              exporterIFC, localPlacement, setter, wrapper);
+                        IFCAnyHandle placementToUse = GetPlacementToUse(file, instanceHandle, localPlacement, extraParams, originalTrf,
+                           typeInfo.StyleTransform, useInstanceGeometry);
+                        Transform offsetTransformToUse = GetOffsetTransformtoUse(offsetTransform, setter.Offset, useInstanceGeometry);
+
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransformToUse,
+                              exporterIFC, placementToUse, setter, wrapper);
 
                         if (RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
                         {
@@ -1412,37 +1398,10 @@ namespace Revit.IFC.Export.Exporter
                               ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
                         }
 
-                        IFCAnyHandle placementToUse = localPlacement;
-                        if (!useInstanceGeometry)
-                        {
-                           bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
-                           if (needToCreateOpenings)
-                           {
-                              Transform openingTrf = new Transform(originalTrf);
-                              Transform extraRot = new Transform(originalTrf) { Origin = XYZ.Zero };
-                              openingTrf = openingTrf.Multiply(extraRot);
-                              openingTrf = openingTrf.Multiply(typeInfo.StyleTransform);
+                        IFCAnyHandle placementToUse = GetPlacementToUse(file, instanceHandle, localPlacement, extraParams, originalTrf,
+                           typeInfo.StyleTransform, useInstanceGeometry);
+                        Transform offsetTransformToUse = GetOffsetTransformtoUse(offsetTransform, setter.Offset, useInstanceGeometry);
 
-                              XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
-                              IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
-                                 openingTrf.get_Basis(2), openingTrf.get_Basis(0));
-                              IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
-                              GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
-                              placementToUse = openingPlacement;
-                           }
-                        }
-
-                        Transform offsetTransformToUse = null;
-                        if (useInstanceGeometry && !MathUtil.IsAlmostZero(setter.Offset))
-                        {
-                           XYZ offsetOrig = -XYZ.BasisZ * setter.Offset;
-                           Transform setterOffset = Transform.CreateTranslation(offsetOrig);
-                           offsetTransformToUse = offsetTransform.Multiply(setterOffset);
-                        }
-                        else
-                        {
-                           offsetTransformToUse = offsetTransform;
-                        }
                         OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransformToUse,
                            exporterIFC, placementToUse, setter, wrapper);
                         break;
@@ -1758,6 +1717,44 @@ namespace Revit.IFC.Export.Exporter
             return null;
 
          return potentialCurves[0];
+      }
+
+      private static IFCAnyHandle GetPlacementToUse(IFCFile file, IFCAnyHandle instanceHandle, IFCAnyHandle localPlacement, IFCExportBodyParams extraParams, Transform originalTrf, Transform styleTransform, bool useInstanceGeometry)
+      {
+         IFCAnyHandle placementToUse = localPlacement;
+         if (!useInstanceGeometry)
+         {
+            bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
+            if (needToCreateOpenings)
+            {
+               Transform openingTrf = new Transform(originalTrf);
+               Transform extraRot = new Transform(originalTrf) { Origin = XYZ.Zero };
+               openingTrf = openingTrf.Multiply(extraRot);
+               openingTrf = openingTrf.Multiply(styleTransform);
+
+               XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
+               IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
+                  openingTrf.get_Basis(2), openingTrf.get_Basis(0));
+               IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
+               GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
+               placementToUse = openingPlacement;
+            }
+         }
+
+         return placementToUse;
+      }
+
+      private static Transform GetOffsetTransformtoUse(Transform offsetTransform, double offset, bool useInstanceGeometry)
+      {
+         Transform offsetTransformToUse = offsetTransform;
+         if (useInstanceGeometry && !MathUtil.IsAlmostZero(offset))
+         {
+            XYZ offsetOrig = -XYZ.BasisZ * offset;
+            Transform setterOffset = Transform.CreateTranslation(offsetOrig);
+            offsetTransformToUse = offsetTransform.Multiply(setterOffset);
+         }
+
+         return offsetTransformToUse;
       }
 
 #if DEBUG

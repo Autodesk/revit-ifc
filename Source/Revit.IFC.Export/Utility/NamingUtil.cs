@@ -789,7 +789,7 @@ namespace Revit.IFC.Export.Utility
             if (comma < space)
             {
                foundComma = true;
-               index = -1; // start inserting at the beginning again.
+               index = 0; // start inserting at the beginning again.
                space = comma;
             }
 

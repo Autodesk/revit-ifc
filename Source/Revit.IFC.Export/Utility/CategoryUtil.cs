@@ -157,17 +157,8 @@ namespace Revit.IFC.Export.Utility
       public static IFCAnyHandle CreateMaterialLayerSetUsage(IFCFile file, IFCAnyHandle materialLayerSet, IFCLayerSetDirection direction,
           IFCDirectionSense directionSense, double offset)
       {
-         string materialLayerSetName = IFCAnyHandleUtil.GetStringAttribute(materialLayerSet, "LayerSetName");
-         string hash = materialLayerSetName + ":" + direction.ToString() + ":" +
-            directionSense.ToString() + ":" + offset.ToString();
-         IFCAnyHandle matSetUsage = ExporterCacheManager.MaterialSetUsageCache.GetHandle(hash);
-         if (matSetUsage == null)
-         {
-            matSetUsage = IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet,
-               direction, directionSense, offset);
-            ExporterCacheManager.MaterialSetUsageCache.AddHash(matSetUsage, hash);
-         }
-         return matSetUsage;
+         return IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet,
+            direction, directionSense, offset);
       }
 
       public static IFCAnyHandle CreateMaterialProfileSetUsage(IFCFile file, 

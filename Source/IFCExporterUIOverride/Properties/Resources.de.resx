@@ -571,7 +571,7 @@
     <value>Neue Export Einstellungen</value>
   </data>
   <data name="DeleteSelectedSetup" xml:space="preserve">
-    <value>Löschen</value>
+    <value>Ausgewählte Einstellung löschen.</value>
   </data>
   <data name="Next" xml:space="preserve">
     <value>Weiter…</value>
@@ -640,7 +640,7 @@
     <value>IFC4 Reference View</value>
   </data>
   <data name="Help" xml:space="preserve">
-    <value>Wie gebe ich eine Export Einstellungen an</value>
+    <value>Wie gebe ich eine Export Einstellungen an?</value>
   </data>
   <data name="ExportSpecificSchedules" xml:space="preserve">
     <value>Nur Bauteillisten mit IFC, Pset oder Allgemein im Titel exportieren</value>
@@ -730,7 +730,7 @@
     <value>Anforderung für Austausch</value>
   </data>
   <data name="ExportSelectedSetup" xml:space="preserve">
-    <value>Aktuelle Einstellungen speichern</value>
+    <value>Aktuelle Einstellungen speichern ...</value>
   </data>
   <data name="InternalCoordinates" xml:space="preserve">
     <value>Interne Koordinaten</value>
@@ -794,5 +794,86 @@
   </data>
   <data name="ER_StructuralShort" xml:space="preserve">
     <value>Structural</value>
+  </data>
+  <data name="GeoReference" xml:space="preserve">
+    <value>Geografische Referenz</value>
+  </data>
+  <data name="HelpAssignIfcEntity" xml:space="preserve">
+    <value>Wie kann ich die IFC-Klasse und den vordefinierten Typ zuordnen?</value>
+  </data>
+  <data name="ExpandAll" xml:space="preserve">
+    <value>Alle ausklappen</value>
+  </data>
+  <data name="ExcludeEntitySelection" xml:space="preserve">
+    <value>Zu exportierende IFC-Klassen ...</value>
+  </data>
+  <data name="Elevation" xml:space="preserve">
+    <value>Höhe</value>
+  </data>
+  <data name="Eastings" xml:space="preserve">
+    <value>Rechtswert</value>
+  </data>
+  <data name="Northings" xml:space="preserve">
+    <value>Hochwert</value>
+  </data>
+  <data name="AngleTrueNorth" xml:space="preserve">
+    <value>Winkel vom geografischen Norden</value>
+  </data>
+  <data name="CollapseAll" xml:space="preserve">
+    <value>Alle zusammenklappen</value>
+  </data>
+  <data name="DeleteOldConfiguration" xml:space="preserve">
+    <value>Alte Konfiguration löschen</value>
+  </data>
+  <data name="GeodeticDatum" xml:space="preserve">
+    <value>Geodätisches Datum</value>
+  </data>
+  <data name="HelpSelectEntityForExport" xml:space="preserve">
+    <value>Wie wirken sich die Auswahl der zu exportierenden IFC-Klassen auf den Export?</value>
+  </data>
+  <data name="IFCSchemaVersion" xml:space="preserve">
+    <value>IFC Schema Version</value>
+  </data>
+  <data name="InternalCoordinatesInTN" xml:space="preserve">
+    <value>Interne Koordinaten an den geografischen Norden orientiert</value>
+  </data>
+  <data name="MultipleAssignments" xml:space="preserve">
+    <value>Mehrfache Zuweisung wurde bei den ausgewählten Objekten gefunden !</value>
+  </data>
+  <data name="NoPredefinedType" xml:space="preserve">
+    <value>IFC-Klasse besitzt keinen vordefinierten Typ</value>
+  </data>
+  <data name="Override" xml:space="preserve">
+    <value>Überschreiben</value>
+  </data>
+  <data name="PredefinedTypeSelection" xml:space="preserve">
+    <value>Auswahl des vordefinierten Typs</value>
+  </data>
+  <data name="ProjectedCRSDesc" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="ProjectInTN" xml:space="preserve">
+    <value>Projektbasispunkt an den geografischen Norden orientiert</value>
+  </data>
+  <data name="ProjectSite" xml:space="preserve">
+    <value>Vermessungspunkt</value>
+  </data>
+  <data name="UseTypeNameOnlyForIfcType" xml:space="preserve">
+    <value>Den Typnamen nur für IFC-Typnamen verwenden</value>
+  </data>
+  <data name="UseVisibleRevitNameAsEntityName" xml:space="preserve">
+    <value>Sichtbaren Namen in Revit als IFC-Entitätsname verwenden</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Suchen</value>
+  </data>
+  <data name="SaveConfigurationChanges" xml:space="preserve">
+    <value>Änderungen in die IFC-Exporteinrichtung speichern</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>Änderungen speichern</value>
+  </data>
+  <data name="ResetToOriginals" xml:space="preserve">
+    <value>Zurücksetzen</value>
   </data>
 </root>
