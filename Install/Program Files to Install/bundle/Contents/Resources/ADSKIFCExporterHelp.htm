@@ -236,6 +236,43 @@ working on expanding and eventually removing this limit, and we will be tracking
 <p>or if you have an inquiry specific to this add-in, send us an e-mail to: <a href="mailto:Revit.apps@autodesk.com">Revit.apps@autodesk.com</a></p>
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
+<div class="version">24.2.0.49</div><div class="versioninfo-bullet">
+      <br><p>
+         General:
+			<ul>
+				<li>This is the major update of IFC Exporter for Revit 2024. 
+				<li>It contains a various improvements and bug fixes for the basic Revit 2024. 
+			</ul>	
+       </p>
+	   <br>
+	   <p>
+	    Improvements:
+			<ul>
+				<li>Added export of the floor slab edge level.
+				<li>Added Width as an exported quantity to IFC for some assembly-based walls.
+				<li>Implemented IfcMaterialLayerSetUsage assigning to a single occurence.
+				<li>Improved export of sloped slabs.
+				<li>Improved stability when exporting projects to IFC with non-standard Author information in Project Standards.
+				<li>Updated French and German localization resources
+			</ul>
+		</p>
+		<br>
+		<p>
+         Bug Fixes:
+			<ul>
+				<li>Fixed an unexpected error during file export.
+				<li>Fixed bug with inverted geometry after export of parts as ceilings.
+				<li>Fixed bug with swapped Height and Width values of opening in Base Quantities in exported IFC.
+				<li>Fixed export of NetSideArea, GrossSideArea, Height and Width to IFC4 QTO for curtain walls.
+				<li>Fixed geometry transformation for some cases.
+				<li>Fixed missing material associations for solid model bodies.
+				<li>Fixed openings local placement export.
+			</ul>
+		</p>
+		<br>
+	</div>
+	<br>
+
 <div class="version">24.1.1.6</div><div class="versioninfo-bullet">
       <br><p>
          General:
@@ -246,7 +283,7 @@ working on expanding and eventually removing this limit, and we will be tracking
        </p>
 	   <br>
 	   <p>
-	    Bug Fixes:
+	    Improvements:
 			<ul>
 				<li>The default import processor has been changed to Hybrid
 			</ul>
