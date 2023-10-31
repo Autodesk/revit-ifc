@@ -1,4 +1,4 @@
-﻿//
+//
 // BIM IFC library: this library works with Autodesk(R) Revit(R) to export IFC files containing model geometry.
 // Copyright (C) 2012  Autodesk, Inc.
 // 
@@ -45,10 +45,20 @@ namespace Revit.IFC.Export.Exporter
          //Reveals are exported as openings with wall exporter.
          if (wallSweepInfo.WallSweepType == WallSweepType.Reveal)
             return;
-
-         if (!ProxyElementExporter.Export(exporterIFC, wallSweep, geometryElement, productWrapper))
+         // Get current document from WallSweep element
+         var doc = wallSweep.Document;
+         // Get profile family of wall sweep
+         var profileElement = doc.GetElement(wallSweepInfo.ProfileId);
+         // Get export type of profile element
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, profileElement, out var ifcEnumType);
+         // Create a generic Export-Type
+         IFCExportInfoPair genericExportType = new IFCExportInfoPair(exportType.ExportInstance, exportType.ExportType, ifcEnumType);
+         // Set value with pair
+         genericExportType.SetValueWithPair(exportType.ExportInstance, ifcEnumType);
+         // Check if it should be exported as IfcBuildingElementProxy
+         if (!ProxyElementExporter.Export(exporterIFC, wallSweep, geometryElement, productWrapper, exportType: genericExportType))
             return;
-
+         // If not as IfcElementBuildingProxy then with its correct type.
          HostObjectExporter.ExportHostObjectMaterials(exporterIFC, wallSweep, productWrapper.GetAnElement(),
              geometryElement, productWrapper,
              ElementId.InvalidElementId, Toolkit.IFCLayerSetDirection.Axis2, null, null);
