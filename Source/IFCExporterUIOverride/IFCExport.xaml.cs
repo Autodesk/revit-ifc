@@ -248,6 +248,8 @@ namespace BIM.IFC.Export.UI
          SetParent(app.MainWindowHandle);
 
          InitializeComponent();
+         // When user press escape key it will close the window
+         PreviewKeyDown += (s, e) => { if (e.Key == System.Windows.Input.Key.Escape) Close(); };
 
          currentSelectedSetup.SelectionChanged -= currentSelectedSetup_SelectionChanged;
 
@@ -436,6 +438,7 @@ namespace BIM.IFC.Export.UI
          IFCExportConfiguration selectedConfig = GetSelectedConfiguration();
          IFCExportConfigurationsMap configurationsMap = new IFCExportConfigurationsMap(m_configMap);
          IFCExporterUIWindow editorWindow = new IFCExporterUIWindow(configurationsMap, selectedConfig.Name);
+         editorWindow.PreviewKeyDown += (s,e) => { if (e.Key == System.Windows.Input.Key.Escape) editorWindow.Close(); };
 
          // the SelectionChanged event will be temporary disabled when the Modify Config Window is active 
          //   (it is particularly useful for COBie v2.4 setup to avoid the function is called repeatedly) 
