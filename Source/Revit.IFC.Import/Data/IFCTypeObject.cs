@@ -121,6 +121,18 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Get the category id for an object from another object.
+      /// </summary>
+      /// <param name="doc">The document.</param>
+      /// <param name="objDef">The other IFCObjectDefinition.</param>
+      /// <remarks>This is intended for IFCTypeObjects to have the same category id as their entities.</remarks>
+      public void CalculateCategoryAndGStyleIdsFromObject(Document doc, IFCObject obj)
+      {
+         CategoryIdCache = obj.GetCategoryId(doc);
+         GraphicsStyleIdCache = obj.GetGraphicsStyleId(doc);
+      }
+
+      /// <summary>
       /// Processes IfcTypeObject attributes.
       /// </summary>
       /// <param name="ifcTypeObject">The IfcTypeObject handle.</param>
@@ -180,24 +192,34 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
-         DirectShapeType shapeType = Importer.TheCache.UseElementByGUID<DirectShapeType>(doc, GlobalId);
-
-         if (shapeType == null)
+         // If we're "Creating" an Element from an IFCTypeObject during Hybrid IFC Import, then that will already have been imported as a DirectShapeType
+         // So use that instead of creating a whole new DirectShapeType.
+         ElementId directShapeTypeId = ElementId.InvalidElementId;
+         if (Importer.TheOptions.IsHybridImport && (Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out directShapeTypeId) ?? false))
          {
-            shapeType = IFCElementUtil.CreateElementType(doc, GetVisibleName(), CategoryId, Id, GlobalId, EntityType);
+            CreatedElementId = directShapeTypeId;
          }
          else
          {
-            // If we used the element from the cache, we want to make sure that the IFCRepresentationMap can access it
-            // instead of creating a new element.
-            Importer.TheCache.CreatedDirectShapeTypes[Id] = shapeType.Id;
-            shapeType.SetShape(new List<GeometryObject>());
+            DirectShapeType shapeType = Importer.TheCache.UseElementByGUID<DirectShapeType>(doc, GlobalId);
+
+            if (shapeType == null)
+            {
+               shapeType = IFCElementUtil.CreateElementType(doc, GetVisibleName(), GetCategoryId(doc), Id, GlobalId, EntityType);
+            }
+            else
+            {
+               // If we used the element from the cache, we want to make sure that the IFCRepresentationMap can access it
+               // instead of creating a new element.
+               Importer.TheCache.CreatedDirectShapeTypes[Id] = shapeType.Id;
+               shapeType.SetShape(new List<GeometryObject>());
+            }
+
+            if (shapeType == null)
+               throw new InvalidOperationException("Couldn't create DirectShapeType for IfcTypeObject.");
+
+            CreatedElementId = shapeType.Id;
          }
-
-         if (shapeType == null)
-            throw new InvalidOperationException("Couldn't create DirectShapeType for IfcTypeObject.");
-
-         CreatedElementId = shapeType.Id;
 
          base.Create(doc);
 

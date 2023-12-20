@@ -52,36 +52,62 @@ namespace Revit.IFC.Import.Data
       {
       }
 
+      private IFCShapeBuilderType GetShapeBuilderType()
+      {
+         foreach (IFCConnectedFaceSet faceSet in Shells)
+         {
+            if (faceSet?.Faces?.Count == 0)
+               continue;
+
+            foreach (IFCFace face in faceSet.Faces)
+            {
+               if ((face is IFCAdvancedFace) &&
+                  (!((face as IFCAdvancedFace).FaceSurface is IFCPlane)))
+                  return IFCShapeBuilderType.BrepBuilder;
+            }
+         }
+
+         return IFCShapeBuilderType.TessellatedShapeBuilder;
+      }
+
       /// <summary>
       /// Return geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The shape edit scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>The created geometry.</returns>
       /// <remarks>As this doesn't inherit from IfcSolidModel, this is a non-virtual CreateGeometry function.</remarks>
-      protected IList<GeometryObject> CreateGeometry(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected IList<GeometryObject> CreateGeometry(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          if (Shells.Count == 0)
             return null;
 
-         IList<GeometryObject> geomObjs = null;
+         IFCShapeBuilderType initialBuilderType = GetShapeBuilderType();
+         int numPasses = (initialBuilderType == IFCShapeBuilderType.BrepBuilder) ? 2 : 1;
 
-         using (BuilderScope bs = shapeEditScope.InitializeBuilder(IFCShapeBuilderType.TessellatedShapeBuilder))
+         for (int ii = 0; ii < numPasses; ii++)
          {
-            TessellatedShapeBuilderScope tsBuilderScope = bs as TessellatedShapeBuilderScope;
-            tsBuilderScope.StartCollectingFaceSet();
+            IFCShapeBuilderType builderType = (ii == 0) ? initialBuilderType :
+               IFCShapeBuilderType.TessellatedShapeBuilder;
+             
+            using (BuilderScope builderScope = shapeEditScope.InitializeBuilder(builderType))
+            {
+               builderScope.StartCollectingFaceSet(BRepType.OpenShell);
 
-            foreach (IFCConnectedFaceSet faceSet in Shells)
-               faceSet.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+               foreach (IFCConnectedFaceSet faceSet in Shells)
+               {
+                  faceSet.CreateShape(shapeEditScope, scaledLcs, guid);
+               }
 
-            geomObjs = tsBuilderScope.CreateGeometry(guid);
+               IList<GeometryObject> geomObjs = builderScope.CreateGeometry(guid);
+               if (geomObjs?.Count > 0)
+                  return geomObjs;
+            }
          }
-         if (geomObjs == null || geomObjs.Count == 0)
-            return null;
 
-         return geomObjs;
+         return null;
       }
 
       override protected void Process(IFCAnyHandle ifcFaceBasedSurfaceModel)
@@ -104,18 +130,18 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
          // Ignoring Inner shells for now.
          if (Shells.Count != 0)
          {
             // This isn't an inherited function; see description for more details.
-            IList<GeometryObject> createdGeometries = CreateGeometry(shapeEditScope, lcs, scaledLcs, guid);
+            IList<GeometryObject> createdGeometries = CreateGeometry(shapeEditScope, scaledLcs, guid);
             if (createdGeometries != null)
             {
                foreach (GeometryObject createdGeometry in createdGeometries)

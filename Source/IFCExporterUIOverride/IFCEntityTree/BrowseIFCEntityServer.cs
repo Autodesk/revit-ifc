@@ -14,17 +14,87 @@ namespace BIM.IFC.Export.UI.IFCEntityTree
 {
    public class BrowseIFCEntityServer : IIFCEntityTreeUIServer
    {
+      private (bool, string, string) ShowDialogCommon(bool showTypeNodeOnly,
+         string preSelectEnt, string preSelectPDef, IFCExternalServiceUIData data)
+      {
+         EntityTree theTree = new EntityTree(showTypeNodeOnly,
+         preSelectEntity: preSelectEnt, preSelectPdef: preSelectPDef);
+
+         bool? ret = theTree.ShowDialog();
+         if (ret.HasValue && ret.Value == true)
+         {
+            string selEntity = theTree.GetSelectedEntity();
+            string selPDef = theTree.GetSelectedPredefinedType();
+            data.IsReset = theTree.isReset;
+            return (true, selEntity, selPDef);
+         }
+
+         return (false, null, null);
+      }
+
       /// <summary>
-      /// Launch the IFC Entity tree browser
+      /// Launches the IFC Entity tree browser.
       /// </summary>
-      /// <param name="data"></param>
-      /// <returns>status</returns>
+      /// <param name="data">The IFCExternalServiceUIData from the native code.</param>
+      /// <returns>The return status of the dialog window.</returns>
       public bool ShowDialog(IFCExternalServiceUIData data)
       {
          HashSet<string> assignedEntities = new HashSet<string>();
          HashSet<string> assignedPredef = new HashSet<string>();
          string preSelectEnt = null;
          string preSelectPDef = null;
+
+         Document document = data.Document;
+         if (document == null)
+            return false;
+
+         if (document.IsFamilyDocument)
+         {
+            using (Transaction tr = new Transaction(document))
+            {
+               try
+               {
+                  tr.Start("IFC Entity Selection");
+               }
+               catch { }
+
+               FamilyManager familyManager = document.FamilyManager;
+               FamilyType familyType = familyManager.CurrentType;
+
+               FamilyParameter exportTypeAs = familyManager?.get_Parameter(BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE_AS);
+               FamilyParameter exportPredefinedTypeAs = familyManager?.get_Parameter(BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE_TYPE);
+
+               if ((exportTypeAs?.StorageType != StorageType.String) ||
+                  (exportPredefinedTypeAs?.StorageType != StorageType.String))
+                  return false;
+
+               preSelectEnt = familyType?.AsString(exportTypeAs);
+               preSelectPDef = familyType?.AsString(exportPredefinedTypeAs);
+
+               (bool ret, string selEntity, string selPDef) =
+                  ShowDialogCommon(true, preSelectEnt, preSelectPDef, data);
+
+               if (ret)
+               {
+                  if (data.ParamId.Value == (long)BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE_AS)
+                  {
+                     familyManager.Set(exportPredefinedTypeAs, selPDef);
+                     data.SelectedIFCItem = selEntity;
+                  }
+                  else if (data.ParamId.Value == (long)BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE_TYPE)
+                  {
+                     familyManager.Set(exportTypeAs, selEntity);
+                     data.SelectedIFCItem = selPDef;
+                  }
+               }
+
+               if (tr.HasStarted())
+                  tr.Commit();
+
+               return true;
+            }
+         }
+
          foreach (ElementId elemId in data.GetRevitElementIds())
          {
             Element elem = data.Document.GetElement(elemId);
@@ -54,7 +124,7 @@ namespace BIM.IFC.Export.UI.IFCEntityTree
          if (assignedPredef.Count == 1 && !assignedPredef.First().Equals("<null>"))
             preSelectPDef = assignedPredef.First();
 
-         using (Transaction tr = new Transaction(data.Document))
+         using (Transaction tr = new Transaction(document))
          {
             try
             {
@@ -62,32 +132,29 @@ namespace BIM.IFC.Export.UI.IFCEntityTree
             }
             catch {}
 
-            bool showTypeNodeOnly = data.ParamId.IntegerValue == (int)BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE_AS
-                                    || data.ParamId.IntegerValue == (int)BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE_TYPE;
-            EntityTree theTree = new EntityTree(showTypeNodeOnly, preSelectEntity: preSelectEnt, preSelectPdef: preSelectPDef);
+            bool showTypeNodeOnly = data.ParamId.Value == (long)BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE_AS
+                                    || data.ParamId.Value == (long)BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE_TYPE;
 
-            bool? ret = theTree.ShowDialog();
-            if (ret.HasValue && ret.Value == true)
+            (bool ret, string selEntity, string selPDef) =
+               ShowDialogCommon(showTypeNodeOnly, preSelectEnt, preSelectPDef, data);
+
+            if (ret)
             {
-               string selEntity = theTree.GetSelectedEntity();
-               string selPDef = theTree.GetSelectedPredefinedType();
-               data.IsReset = theTree.isReset;
-
                foreach (ElementId elemId in data.GetRevitElementIds())
                {
                   Element elem = data.Document.GetElement(elemId);
                   if (elem == null)
                      continue;
 
-                  if (data.ParamId.IntegerValue == (int)BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE_AS
-                     || data.ParamId.IntegerValue == (int)BuiltInParameter.IFC_EXPORT_ELEMENT_AS)
+                  if (data.ParamId.Value == (long)BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE_AS
+                     || data.ParamId.Value == (long)BuiltInParameter.IFC_EXPORT_ELEMENT_AS)
                   {
                      BuiltInParameter paramName = (elem is ElementType) ? BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE_TYPE : BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE;
                      elem?.get_Parameter(paramName)?.Set(selPDef);
                      data.SelectedIFCItem = selEntity;
                   }
-                  else if (data.ParamId.IntegerValue == (int)BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE_TYPE
-                     || data.ParamId.IntegerValue == (int)BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE)
+                  else if (data.ParamId.Value == (long)BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE_TYPE
+                     || data.ParamId.Value == (long)BuiltInParameter.IFC_EXPORT_PREDEFINEDTYPE)
                   {
                      BuiltInParameter paramName = (elem is ElementType) ? BuiltInParameter.IFC_EXPORT_ELEMENT_TYPE_AS : BuiltInParameter.IFC_EXPORT_ELEMENT_AS;
                      elem?.get_Parameter(paramName)?.Set(selEntity);

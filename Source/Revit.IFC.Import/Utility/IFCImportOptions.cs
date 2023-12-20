@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Import.Core;
@@ -78,13 +79,32 @@ namespace Revit.IFC.Import.Utility
       }
 
       /// <summary>
+      /// Choice of Import Method stored to ProjectInfo.
+      /// </summary>
+      public enum ImportMethod
+      {
+         Hybrid,
+         Legacy
+      }
+
+      /// <summary>
+      /// Simply returns whether the CurrentImportMethod is Hybrid or Legacy.  Useful when checking for previous import.
+      /// </summary>
+      public ImportMethod CurrentImportMethod => IsHybridImport ? ImportMethod.Hybrid : ImportMethod.Legacy;
+
+      /// <summary>
+      /// Defines parameter storing Import Method in ProjectInfo.
+      /// </summary>
+      public static string ImportMethodParameter => "Import Method";
+
+      /// <summary>
       /// If true, does an import optimized for performance that minimizes unnecessary functionality.
       /// </summary>
       public bool UseStreamlinedOptions { get; protected set; } = false;
 
       /// <summary>
       /// If we are linking, specify the file name of the intermediate Revit file.  This can be null, and
-      /// the .NET code will detemine the file name.
+      /// the .NET code will determine the file name.
       /// </summary>
       public string RevitLinkFileName { get; protected set; } = null;
 
@@ -178,11 +198,18 @@ namespace Revit.IFC.Import.Utility
 
       public IIFCFileProcessor Processor { get; protected set; }
 
+      /// <summary>
+      /// Indicates whether the current IFC Import is Hybrid or not.
+      /// True:  Hybrid (legacy + AnyCAD)
+      /// False:  legacy only
+      /// </summary>
+      public bool IsHybridImport { get; set; } = false;
+
       protected IFCImportOptions()
       {
       }
 
-      protected IFCImportOptions(IDictionary<String, String> options)
+      protected IFCImportOptions(IDictionary<string, string> options, string ifcFileName, Document doc)
       {
          // "Intent": covers what the import operation is intended to create.
          // The two options are:
@@ -194,7 +221,7 @@ namespace Revit.IFC.Import.Utility
          if (!string.IsNullOrWhiteSpace(intent))
          {
             IFCImportIntent intentTemp;
-            if (!Enum.TryParse<IFCImportIntent>(intent, out intentTemp))
+            if (!Enum.TryParse(intent, out intentTemp))
                intentTemp = IFCImportIntent.Reference;
             Intent = intentTemp;
          }
@@ -207,7 +234,7 @@ namespace Revit.IFC.Import.Utility
          if (!string.IsNullOrWhiteSpace(action))
          {
             IFCImportAction actionTemp;
-            if (!Enum.TryParse<IFCImportAction>(action, out actionTemp))
+            if (!Enum.TryParse(action, out actionTemp))
                actionTemp = IFCImportAction.Open;
             Action = actionTemp;
          }
@@ -288,16 +315,36 @@ namespace Revit.IFC.Import.Utility
 
          if (Processor == null)
             Processor = new IFCDefaultProcessor();
+
+         ImportIFCOptions importIFCOptions = ImportIFCOptions.GetImportIFCOptions();
+         string linkProcessor = importIFCOptions.LinkProcessor;
+
+         string revitVersion = doc.Application.VersionBuild;
+         if (revitVersion.StartsWith("24.0"))
+         {
+            // For Revit 24.0.x, only use hybrid import if revit.ini has "AnyCAD" set.
+            IsHybridImport = (string.Compare(linkProcessor, "AnyCAD", true) == 0) &&
+               (ifcFileName.EndsWith(".ifc")) && (Processor is IFCDefaultProcessor);
+         }
+         else
+         {
+            // For Revit 24.1.x
+            // Use hybrid import if revit.ini does not have "Legacy" in it and we are using
+            // the default (Revit) processor.  For other processors (e.g., Navis), revert
+            // to Legacy.
+            IsHybridImport = (string.Compare(linkProcessor, "Legacy", true) != 0) &&
+               (Processor is IFCDefaultProcessor);
+         }
       }
 
       /// <summary>
-      /// Populate a new IFCImportOptions class with values based on the opions passed in by the user.
+      /// Populate a new IFCImportOptions class with values based on the options passed in by the user.
       /// </summary>
       /// <param name="options">The user-set options for this import.</param>
       /// <returns>The new IFCImportOptions class.</returns>
-      static public IFCImportOptions Create(IDictionary<String, String> options)
+      static public IFCImportOptions Create(IDictionary<string, string> options, string ifcFileName, Document doc)
       {
-         return new IFCImportOptions(options);
+         return new IFCImportOptions(options, ifcFileName, doc);
       }
    }
 }

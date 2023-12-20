@@ -95,6 +95,7 @@
     <Compile Include="IFCFileHeaderInformationUI.xaml.cs">
       <DependentUpon>IFCFileHeaderInformationUI.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IFCLinkedFileExportAs.cs" />
     <Compile Include="IFCPhaseAttributes.cs" />
     <Compile Include="IFCPropertySets.cs" />
     <Compile Include="IFCRenameExportSetup.xaml.cs">

@@ -5,6 +5,7 @@ using System.Text;
 using Autodesk.Revit.DB;
 
 using Revit.IFC.Export.Utility;
+using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Toolkit
 {
@@ -33,45 +34,33 @@ namespace Revit.IFC.Export.Toolkit
 
          if (typeName != null || defaultValue != null)
          {
-            try
+            IFCVersion ifcVer = IFCVersion.Default;
+            if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3)
+               //desiredTypeExtra = "IFC4x3.";
+               ifcVer = IFCVersion.IFC4x3;
+            else if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+               //desiredTypeExtra = "IFC4.";
+               ifcVer = IFCVersion.IFC4;
+            else if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3)
+               ifcVer = IFCVersion.IFC2x3;
+            else if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+               ifcVer = IFCVersion.IFC2x2;
+            else
             {
-               string toolkitName = "Revit.IFC.Export.Toolkit.";
-               string desiredTypeExtra = null;
-               if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
-                  desiredTypeExtra = "IFC4.";
-               else
-               {
-                  // For IFC2x3, the enum uses Ifc...Type, but in some cases there is no associated type.
-                  if (!(theTypeEnumStr.Length > 4 && theTypeEnumStr.Substring(theTypeEnumStr.Length - 4, 4).Equals("TYPE", StringComparison.InvariantCultureIgnoreCase)))
-                     theTypeEnumStr = theTypeEnumStr + "Type";
-               }
-
-               string desiredType = toolkitName + desiredTypeExtra + theTypeEnumStr;
-               Type theTypeEnum = Type.GetType(desiredType, false, true);
-               
-               if (theTypeEnum == null)
-               {
-                  if (ProcessRuleExceptions(ref theTypeEnumStr))
-                  {
-                     desiredType = toolkitName + desiredTypeExtra + theTypeEnumStr;
-                     theTypeEnum = Type.GetType(desiredType, false, true);
-                  }
-
-                  // In this case, the entity doesn't have a predefined type.
-                  if (theTypeEnum == null)
-                     return null;
-               }
-                 
-
-               if (theTypeEnum != null && !string.IsNullOrEmpty(typeName))
-                  enumValue = Enum.Parse(theTypeEnum, typeName, true).ToString();
+               // Default to
+               ifcVer = IFCVersion.IFC4;
             }
-            catch
+
+            IfcSchemaEntityTree schemaTree = IfcSchemaEntityTree.GetEntityDictFor(ifcVer);
+            if (schemaTree != null && typeName != null)
             {
+               IList<string> pdefTypeList = IfcSchemaEntityTree.GetPredefinedTypeList(schemaTree, theTypeEnumStr);
+               if (pdefTypeList != null && pdefTypeList.Contains(typeName, StringComparer.InvariantCultureIgnoreCase))
+                  enumValue = typeName;
             }
          }
 
-         if (String.IsNullOrEmpty(enumValue) && !String.IsNullOrEmpty(defaultValue))
+         if (string.IsNullOrEmpty(enumValue) && !string.IsNullOrEmpty(defaultValue))
             return defaultValue;
 
          return enumValue;

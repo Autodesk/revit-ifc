@@ -624,33 +624,42 @@ namespace Revit.IFC.Import.Data
 
          return extrusionSolid;
       }
-
-      private Mesh GetMeshBackup(IFCImportShapeEditScope shapeEditScope, IList<CurveLoop> loops,
-         XYZ scaledExtrusionDirection, double currDepth)
+      
+      private GeometryObject GetMeshBackup(IFCImportShapeEditScope shapeEditScope, IList<CurveLoop> loops,
+         XYZ scaledExtrusionDirection, double currDepth, string guid)
       {
          if (shapeEditScope.MustCreateSolid())
             return null;
             
-         Importer.TheLog.LogError(Id, "Extrusion has an invalid definition for a solid; reverting to mesh.", false);
+         try
+         {
+            MeshFromGeometryOperationResult meshResult = TessellatedShapeBuilder.CreateMeshByExtrusion(
+               loops, scaledExtrusionDirection, currDepth, GetMaterialElementId(shapeEditScope));
 
-         MeshFromGeometryOperationResult meshResult = TessellatedShapeBuilder.CreateMeshByExtrusion(
-            loops, scaledExtrusionDirection, currDepth, GetMaterialElementId(shapeEditScope));
+            // Will throw if mesh is not available
+            Mesh mesh = meshResult.GetMesh();
+            Importer.TheLog.LogError(Id, "Extrusion has an invalid definition for a solid; reverting to mesh.", false);
 
-         // will throw if mesh is not available
-         return meshResult.GetMesh();
+            return mesh;
+         }
+         catch
+         {
+            Importer.TheLog.LogError(Id, "Extrusion has an invalid definition for a solid or mesh, ignoring.", false);
+         }
+
+         return null;
       }
 
-   /// <summary>
-   /// Return geometry for a particular representation item.
-   /// </summary>
-   /// <param name="shapeEditScope">The shape edit scope.</param>
-   /// <param name="lcs">Local coordinate system for the geometry.</param>
-   /// <param name="guid">The guid of an element for which represntation is being created.</param>
-   /// <returns>One or more created geometries.</returns>
-   /// <remarks>The scaledLcs is only partially supported in this routine; it allows scaling the depth of the extrusion,
-   /// which is commonly found in ACA files.</remarks>
-   protected override IList<GeometryObject> CreateGeometryInternal(
-            IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      /// <summary>
+      /// Return geometry for a particular representation item.
+      /// </summary>
+      /// <param name="shapeEditScope">The shape edit scope.</param>
+      /// <param name="guid">The guid of an element for which represntation is being created.</param>
+      /// <returns>One or more created geometries.</returns>
+      /// <remarks>The scaledLcs is only partially supported in this routine; it allows scaling the depth of the extrusion,
+      /// which is commonly found in ACA files.</remarks>
+      protected override IList<GeometryObject> CreateGeometryInternal(
+         IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
          if (Direction == null)
          {
@@ -658,19 +667,18 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         Transform origLCS = (lcs == null) ? Transform.Identity : lcs;
          Transform origScaledLCS = (scaledLcs == null) ? Transform.Identity : scaledLcs;
 
-         Transform unscaledExtrusionPosition = (Position == null) ? origLCS : origLCS.Multiply(Position);
          Transform scaledExtrusionPosition = (Position == null) ? origScaledLCS : origScaledLCS.Multiply(Position);
 
          XYZ scaledExtrusionDirection = scaledExtrusionPosition.OfVector(Direction);
 
-         ISet<IList<CurveLoop>> disjointLoops = GetTransformedCurveLoops(unscaledExtrusionPosition, scaledExtrusionPosition);
+         ISet<IList<CurveLoop>> disjointLoops = GetTransformedCurveLoops(scaledExtrusionPosition);
          if (disjointLoops == null || disjointLoops.Count() == 0)
             return null;
 
          IList<GeometryObject> extrusions = new List<GeometryObject>();
+         double shortCurveTol = IFCImportFile.TheFile.ShortCurveTolerance;
 
          foreach (IList<CurveLoop> originalLoops in disjointLoops)
          {
@@ -687,15 +695,80 @@ namespace Revit.IFC.Import.Data
                   continue;
                }
 
-               if (originalLoop.Count() > 0)
+               int numOriginalCurves = originalLoop.Count();
+               if (numOriginalCurves > 0)
                {
+                  Curve firstSegment = originalLoop.First();
+                  Curve lastSegment = originalLoop.Last();
+                  Curve modifiedLastSegment = lastSegment;
+
+                  XYZ startPoint = firstSegment.GetEndPoint(0);
+                  XYZ endPoint = lastSegment.GetEndPoint(1);
+
+                  double gap = endPoint.DistanceTo(startPoint);
+                  if (gap < shortCurveTol)
+                  {
+                     // We will "borrow" some of the last segment to make space for the
+                     // repair.  This could be done in a slightly better way, but this should
+                     // be good enough for the cases we've seen.  If we need to improve
+                     // the heuristic, we can.
+                     IList<XYZ> lastPoints = lastSegment.Tessellate();
+                     int count = lastPoints.Count();
+                     for (int jj = count - 2; jj >= 0; jj--)
+                     {
+                        if (lastPoints[jj].DistanceTo(startPoint) < shortCurveTol)
+                           continue;
+
+                        try
+                        {
+                           if (jj > 0)
+                           {
+                              IntersectionResult result = lastSegment.Project(lastPoints[jj]);
+                              modifiedLastSegment = lastSegment.Clone();
+                              modifiedLastSegment.MakeBound(lastSegment.GetEndParameter(0), result.Parameter);
+                           }
+                           else
+                           {
+                              modifiedLastSegment = null;
+                           }
+                           endPoint = lastPoints[jj];
+                           break;
+                        }
+                        catch
+                        {
+                        }
+                     }
+                  }
+
                   try
                   {
                      // We will attempt to close the loop to make it usable.
-                     XYZ startPoint = originalLoop.First().GetEndPoint(0);
-                     XYZ endPoint = originalLoop.Last().GetEndPoint(1);
+                     CurveLoop healedCurveLoop = null;
+                     if (modifiedLastSegment == lastSegment)
+                     {
+                        healedCurveLoop = CurveLoop.CreateViaCopy(originalLoop);
+                     }
+                     else
+                     {
+                        int loopIndex = 0;
+                        healedCurveLoop = new CurveLoop();
+                        foreach (Curve originalCurve in originalLoop)
+                        {
+                           if (loopIndex < numOriginalCurves - 1)
+                           {
+                              healedCurveLoop.Append(originalCurve);
+                              loopIndex++;
+                              continue;
+                           }
+
+                           if (modifiedLastSegment == null)
+                              break;
+
+                           healedCurveLoop.Append(modifiedLastSegment);
+                        }
+                     }
+
                      Line closingLine = Line.CreateBound(endPoint, startPoint);
-                     CurveLoop healedCurveLoop = CurveLoop.CreateViaCopy(originalLoop);
                      healedCurveLoop.Append(closingLine);
                      loops.Add(healedCurveLoop);
                      Importer.TheLog.LogWarning(Id, "Extrusion has an open profile loop, fixing.", false);
@@ -757,7 +830,8 @@ namespace Revit.IFC.Import.Data
             }
             catch (Exception ex)
             {
-               extrusionObject = GetMeshBackup(shapeEditScope, loops, scaledExtrusionDirection, currDepth);
+               extrusionObject = GetMeshBackup(shapeEditScope, loops, scaledExtrusionDirection,
+                  currDepth, guid);
                if (extrusionObject == null)
                   throw ex;
             }
@@ -770,7 +844,8 @@ namespace Revit.IFC.Import.Data
                }
                else
                {
-                  Mesh meshBackup = GetMeshBackup(shapeEditScope, loops, scaledExtrusionDirection, currDepth);
+                  GeometryObject meshBackup = GetMeshBackup(shapeEditScope, loops, 
+                     scaledExtrusionDirection, currDepth, guid);
                   if (meshBackup != null)
                      extrusions.Add(meshBackup);
                }
@@ -784,14 +859,14 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
-         IList<GeometryObject> extrudedGeometries = CreateGeometryInternal(shapeEditScope, lcs, scaledLcs, guid);
+         IList<GeometryObject> extrudedGeometries = CreateGeometryInternal(shapeEditScope, scaledLcs, guid);
          if (extrudedGeometries != null)
          {
             foreach (GeometryObject extrudedGeometry in extrudedGeometries)

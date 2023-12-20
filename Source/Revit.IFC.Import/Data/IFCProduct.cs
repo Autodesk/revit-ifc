@@ -1,4 +1,4 @@
-﻿//
+//
 // Revit IFC Import library: this library works with Autodesk(R) Revit(R) to import IFC files.
 // Copyright (C) 2013  Autodesk, Inc.
 // 
@@ -38,7 +38,7 @@ namespace Revit.IFC.Import.Data
       public IFCVoidInfo(IFCSolidInfo solid)
          : base(solid.Id, solid.GeometryObject)
       {
-         this.RepresentationType = solid.RepresentationType;
+         this.RepresentationIdentifier = solid.RepresentationIdentifier;
       }
    }
 
@@ -111,7 +111,12 @@ namespace Revit.IFC.Import.Data
 
          IFCAnyHandle ifcProductRepresentation = IFCImportHandleUtil.GetOptionalInstanceAttribute(ifcProduct, "Representation");
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ifcProductRepresentation))
-            ProductRepresentation = IFCProductRepresentation.ProcessIFCProductRepresentation(ifcProductRepresentation);
+         {
+            using (RepresentationsAlreadyCreatedSetter setter = new RepresentationsAlreadyCreatedSetter(GlobalId))
+            { 
+               ProductRepresentation = IFCProductRepresentation.ProcessIFCProductRepresentation(ifcProductRepresentation);
+            }
+         }
       }
 
       static public BoundingBoxXYZ ProjectScope { get; set; } = null;
@@ -173,21 +178,24 @@ namespace Revit.IFC.Import.Data
             }
 
             if (ifcPresentationLayer != null)
-               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcPresentationLayer", ifcPresentationLayer, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "IfcPresentationLayer", ifcPresentationLayer, Id);
 
             // Set the container name of the element.
             string containerName = ContainingStructure?.Name;
             if (containerName != null)
             {
-               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcSpatialContainer", containerName, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcSpatialContainer GUID", ContainingStructure.GlobalId, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "IfcSpatialContainer", containerName, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "IfcSpatialContainer GUID", ContainingStructure.GlobalId, Id);
             }
          }
       }
 
       /// <summary>
-      /// Private function to determine whether an IFCProduct directly contains vaoid geometry.
+      /// Private function to determine whether an IFCProduct directly contains valid geometry.
       /// </summary>
+      /// <remarks>
+      /// For Hybrid IFC Import, ProductRepresentation should still exist and be valid.
+      /// </remarks>
       /// <returns>True if the IFCProduct directly contains valid geometry.</returns>
       private bool HasValidTopLevelGeometry()
       {
@@ -229,7 +237,7 @@ namespace Revit.IFC.Import.Data
       protected override bool CutSolidByVoids(IFCSolidInfo solidInfo)
       {
          // We only cut "Body" representation items.
-         if (solidInfo.RepresentationType != IFCRepresentationIdentifier.Body)
+         if (solidInfo.RepresentationIdentifier != IFCRepresentationIdentifier.Body)
             return true;
 
          IList<IFCVoidInfo> voidsToUse = null;
@@ -268,13 +276,16 @@ namespace Revit.IFC.Import.Data
                continue;
             }
 
-            var voidTransform = voidInfo.TotalTransform;
+            Transform voidTransform = voidInfo.TotalTransform;
 
-            if (voidTransform != null && voidTransform.IsIdentity == false)
+            if (voidTransform != null)
             {
                // Transform the void into the space of the solid.
-               var t = ObjectLocation.TotalTransform.Inverse.Multiply(voidTransform);
-               voidObject = SolidUtils.CreateTransformed(voidObject, t);
+               Transform voidToSolidTrf = ObjectLocation.TotalTransform.Inverse.Multiply(voidTransform);
+               if (voidToSolidTrf.IsIdentity == false)
+               {
+                  voidObject = SolidUtils.CreateTransformed(voidObject, voidToSolidTrf);
+               }
             }
 
             solidInfo.GeometryObject = IFCGeometryUtil.ExecuteSafeBooleanOperation(solidInfo.Id, voidInfo.Id,
@@ -285,6 +296,18 @@ namespace Revit.IFC.Import.Data
          }
 
          return true;
+      }
+
+      private Transform CalculateLocalCoordinateSystem()
+      {
+         Transform lcs = IFCImportFile.TheFile.IFCProject.WorldCoordinateSystem;
+         if (lcs == null)
+            return ObjectLocation?.TotalTransform ?? Transform.Identity;
+
+         if (ObjectLocation != null)
+            return lcs.Multiply(ObjectLocation.TotalTransform);
+
+         return lcs;
       }
 
       /// <summary>
@@ -333,102 +356,140 @@ namespace Revit.IFC.Import.Data
                }
             }
          }
-         if (HasValidTopLevelGeometry())
+
+         // If this entity will be a container DirectShape, it may not have any valid top-level geometry at this time.
+         // Detect the situation and allow Element Creation to proceed for Hybrid Import only.
+         if (HasValidTopLevelGeometry() || IsHybridImportContainer())
          {
+            // IFCImportShapeEditScope will not create Body geometry for Hybrid IFC Import, but it may need to create other geometry.
             using (IFCImportShapeEditScope shapeEditScope = IFCImportShapeEditScope.Create(doc, this))
             {
-               shapeEditScope.GraphicsStyleId = GraphicsStyleId;
-               shapeEditScope.CategoryId = CategoryId;
+               Transform lcs = CalculateLocalCoordinateSystem();
+
                shapeEditScope.PreventInstances = preventInstances;
                
-               // The name can be added as well. but it is usually less useful than 'oid'
-               string myId = GlobalId; // + "(" + Name + ")";
-
-               Transform lcs = IFCImportFile.TheFile.IFCProject.WorldCoordinateSystem;
-               if (lcs == null)
-                  lcs = (ObjectLocation != null) ? ObjectLocation.TotalTransform : Transform.Identity;
-               else if (ObjectLocation != null)
-                  lcs = lcs.Multiply(ObjectLocation.TotalTransform);
-
-               // If we are not applying transforms to the geometry, then pass in the identity matrix.
-               // Lower down this method we then pass lcs to the consumer element, so that it can apply
-               // the transform as required.
-               Transform transformToUse = Importer.TheProcessor.ApplyTransforms ? lcs : Transform.Identity;
-               ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, transformToUse, myId);
-
-               int numSolids = Solids.Count;
-               // Attempt to cut each solid with each void.
-               for (int solidIdx = 0; solidIdx < numSolids; solidIdx++)
-               {
-                  if (!CutSolidByVoids(Solids[solidIdx]))
+               // Hybrid Import only:   An IfcProduct whose DirectShape will be a container might not have a DirectShape created yet.
+               // If this is the case, create an empty DirectShape for the container.
+               // If so, create an empty DirectShape to hold container Geometry.
+               if (Importer.TheOptions.IsHybridImport && (Importer.TheHybridInfo?.HybridMap != null))
+               { 
+                  if (IsHybridImportContainer() && !Importer.TheHybridInfo.HybridMap.ContainsKey(GlobalId))
                   {
-                     Solids.RemoveAt(solidIdx);
-                     solidIdx--;
-                     numSolids--;
+                     CreatedElementId = Importer.TheHybridInfo.CreateEmptyContainer(this);
+                     Importer.TheLog.LogComment(Id, $"Creating Empty Container for {GlobalId}:{CreatedElementId}", false);
                   }
                }
 
-               bool addedCurves = shapeEditScope.AddPlanViewCurves(FootprintCurves, Id);
-
-               if ((numSolids > 0 || addedCurves))
+               if (HasValidTopLevelGeometry())
                {
-                  if (GlobalId != null)
+                  // If we are not applying transforms to the geometry, then pass in the identity matrix.
+                  // Lower down this method we then pass lcs to the consumer element, so that it can apply
+                  // the transform as required.
+                  Transform transformToUse = Importer.TheProcessor.ApplyTransforms ? lcs : Transform.Identity;
+                  if (Importer.TheOptions.IsHybridImport && (
+                     Importer.TheHybridInfo != null))
                   {
-                     // If the GlobalId is null, this is a fake IfcProduct that we don't want to create into a DirectShape, or
-                     // add to the caches in any way.  We only wanted to gather its geometry.
-                     DirectShape shape = Importer.TheCache.UseElementByGUID<DirectShape>(doc, GlobalId);
+                     transformToUse.Origin += Importer.TheHybridInfo.LargeCoordinateOriginOffset;
+                  }
 
-                     if (shape == null)
-                        shape = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, null, Id, EntityType);
+                  // The name can be added as well. but it is usually less useful than 'oid'
+                  string myId = GlobalId; // + "(" + Name + ")";
 
-                     List<GeometryObject> directShapeGeometries = new List<GeometryObject>();
-                     foreach (IFCSolidInfo geometryObject in Solids)
+                  ProductRepresentation.CreateProductRepresentation(shapeEditScope, transformToUse, myId);
+               }
+
+               // Everything up to this point needs to be done for Hybrid IFC Import as well.  The Product Representation will not contain
+               // geometry, but it will contain parameters that are needed for the DirectShape imported for Hybrid IFC Import.
+               if (Importer.TheOptions.IsHybridImport && GlobalId != null)
+               {
+                  if ((Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out ElementId hybridElementId) ?? false) &&
+                     hybridElementId != ElementId.InvalidElementId)
+                  {
+                     // "Create" a DirectShape Element.
+                     // This is for those Elements imported via the ATF Pipeline, or for those Elements created above simply to hold an empty container.
+                     CreatedGeometry = Importer.TheHybridInfo.HandleHybridProductCreation(shapeEditScope, this, ref hybridElementId);
+                     CreatedElementId = hybridElementId;
+                  }
+               }
+
+               if (CreatedElementId == ElementId.InvalidElementId)
+               { 
+                  int numSolids = Solids.Count;
+                  // Attempt to cut each solid with each void.
+                  for (int solidIdx = 0; solidIdx < numSolids; solidIdx++)
+                  {
+                     if (!CutSolidByVoids(Solids[solidIdx]))
                      {
-                        // We need to check if the solid created is good enough for DirectShape.  If not, warn and use a fallback Mesh.
-                        GeometryObject currObject = geometryObject.GeometryObject;
-                        if (currObject is Solid)
+                        Solids.RemoveAt(solidIdx);
+                        solidIdx--;
+                        numSolids--;
+                     }
+                  }
+
+                  bool addedCurves = shapeEditScope.AddPlanViewCurves(FootprintCurves, Id);
+
+                  if ((numSolids > 0 || addedCurves))
+                  {
+                     if (GlobalId != null)
+                     {
+                        // If the GlobalId is null, this is a fake IfcProduct that we don't want to create into a DirectShape, or
+                        // add to the caches in any way.  We only wanted to gather its geometry.
+                        DirectShape shape = Importer.TheCache.UseElementByGUID<DirectShape>(doc, GlobalId);
+
+                        if (shape == null)
                         {
-                           Solid solid = currObject as Solid;
-                           if (!shape.IsValidGeometry(solid))
+                           shape = IFCElementUtil.CreateElement(doc, GetCategoryId(doc), GlobalId, null, Id, EntityType);
+                        }
+
+                        List<GeometryObject> directShapeGeometries = new List<GeometryObject>();
+                        foreach (IFCSolidInfo geometryObject in Solids)
+                        {
+                           // We need to check if the solid created is good enough for DirectShape.  If not, warn and use a fallback Mesh.
+                           GeometryObject currObject = geometryObject.GeometryObject;
+                           if (currObject is Solid)
                            {
-                              Importer.TheLog.LogWarning(Id, "Couldn't create valid solid, reverting to mesh.", false);
-                              directShapeGeometries.AddRange(IFCGeometryUtil.CreateMeshesFromSolid(solid));
-                              currObject = null;
+                              Solid solid = currObject as Solid;
+                              if (!shape.IsValidGeometry(solid))
+                              {
+                                 Importer.TheLog.LogWarning(Id, "Couldn't create valid solid, reverting to mesh.", false);
+                                 directShapeGeometries.AddRange(IFCGeometryUtil.CreateMeshesFromSolid(solid));
+                                 currObject = null;
+                              }
+                           }
+
+                           if (currObject != null)
+                              directShapeGeometries.Add(currObject);
+                        }
+
+                        // We will use the first IfcTypeObject id, if it exists.  In general, there should be 0 or 1.
+                        IFCTypeObject typeObjectToUse = null;
+                        foreach (IFCTypeObject typeObject in TypeObjects)
+                        {
+                           if (typeObject.IsValidForCreation && typeObject.CreatedElementId != ElementId.InvalidElementId)
+                           {
+                              typeObjectToUse = typeObject;
+                              break;
                            }
                         }
 
-                        if (currObject != null)
-                           directShapeGeometries.Add(currObject);
-                     }
-
-                     // We will use the first IfcTypeObject id, if it exists.  In general, there should be 0 or 1.
-                     IFCTypeObject typeObjectToUse = null;
-                     foreach (IFCTypeObject typeObject in TypeObjects)
-                     {
-                        if (typeObject.IsValidForCreation && typeObject.CreatedElementId != ElementId.InvalidElementId)
+                        if (!Importer.TheProcessor.PostProcessProduct(Id, typeObjectToUse?.Id, lcs,
+                           directShapeGeometries))
                         {
-                           typeObjectToUse = typeObject;
-                           break;
+                           if (shape != null)
+                           {
+                              shape.SetShape(directShapeGeometries);
+                              shapeEditScope.SetPlanViewRep(shape);
+
+                              if (typeObjectToUse != null && typeObjectToUse.CreatedElementId != ElementId.InvalidElementId)
+                                 shape.SetTypeId(typeObjectToUse.CreatedElementId);
+                           }
                         }
+
+                        PresentationLayerNames.UnionWith(shapeEditScope.PresentationLayerNames);
+
+                        CreatedElementId = shape.Id;
+                        CreatedGeometry = directShapeGeometries;
                      }
-
-                     if (!Importer.TheProcessor.PostProcessProduct(Id, typeObjectToUse?.Id, lcs, 
-                        directShapeGeometries))
-                     {
-                        if (shape != null)
-                        {
-                           shape.SetShape(directShapeGeometries);
-                           shapeEditScope.SetPlanViewRep(shape);
-
-                           if (typeObjectToUse != null && typeObjectToUse.CreatedElementId != ElementId.InvalidElementId)
-                              shape.SetTypeId(typeObjectToUse.CreatedElementId);
-                        }
-                     }
-
-                     PresentationLayerNames.UnionWith(shapeEditScope.PresentationLayerNames);
-
-                     CreatedElementId = shape.Id;
-                     CreatedGeometry = directShapeGeometries;
                   }
                }
             }
@@ -499,6 +560,9 @@ namespace Revit.IFC.Import.Data
 
             if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcDistributionPort))
                return IFCDistributionPort.ProcessIFCDistributionPort(ifcProduct);
+
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcProduct, IFCEntityType.IfcAnnotation))
+               return IFCAnnotation.ProcessIFCAnnotation(ifcProduct);
          }
          catch (Exception ex)
          {

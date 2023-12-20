@@ -58,7 +58,7 @@ namespace Revit.IFC.Export.Exporter
 
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
             {
-               using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
                   ecData.SetLocalPlacement(setter.LocalPlacement);
 
@@ -99,7 +99,7 @@ namespace Revit.IFC.Export.Exporter
                   // TODO: to allow shared geometry for Piles. For now, Pile export will not use shared geometry
                   if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
                   {
-                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
+                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(type, pile);
                   }
                   if (exportParts)

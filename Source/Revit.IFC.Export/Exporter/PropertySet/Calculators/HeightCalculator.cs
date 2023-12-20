@@ -26,6 +26,7 @@ using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
 using Revit.IFC.Export.Toolkit;
 
 namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
@@ -54,25 +55,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       }
 
       /// <summary>
-      /// Calculates height for a railing
+      /// Calculates height for a Revit element.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
-      /// </param>
-      /// <param name="element">
-      /// The element to calculate the value.
-      /// </param>
-      /// <param name="elementType">
-      /// The element type.
-      /// </param>
-      /// <returns>
-      /// True if the operation succeed, false otherwise.
-      /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <returns>True if the operation succeed, false otherwise.</returns>
+      public override bool Calculate(ExporterIFC exporterIFC, 
+         IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, 
+         EntryMap entryMap)
       {
+         m_Height = 0.0;
          if (element == null)
             return false;
 
@@ -83,6 +77,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             m_Height = UnitUtil.ScaleLength(railingType.TopRailHeight);
             return true;
          }
+
+         double eps = MathUtil.Eps();
 
          // For ProvisionForVoid
          ShapeCalculator shapeCalculator = ShapeCalculator.Instance;
@@ -96,25 +92,48 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                   // This is already scaled.
                   double? height = IFCAnyHandleUtil.GetDoubleAttribute(rectProfile, "YDim");
                   m_Height = height.HasValue ? height.Value : 0.0;
-                  if (m_Height > MathUtil.Eps())
+                  if (m_Height > eps)
                      return true;
                }
             }
          }
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Height) == null)
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out m_Height);
+         ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
+         IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
 
-         m_Height = UnitUtil.ScaleLength(m_Height);
-         if (m_Height > MathUtil.Eps())
+         m_Height = 0.0;
+         if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcDoor) || categoryId == new ElementId(BuiltInCategory.OST_Doors))
+         {
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_HEIGHT, out m_Height);
+         }
+         else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcWindow) || categoryId == new ElementId(BuiltInCategory.OST_Windows))
+         {
+            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_HEIGHT, out m_Height);
+         }
+         else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcCurtainWall))
+         {
+            BoundingBoxXYZ boundingBox = (element as Wall).get_BoundingBox(null);
+            if (boundingBox != null)
+               m_Height = boundingBox.Max.Z - boundingBox.Min.Z;
+         }
+
+         if (m_Height > eps)
+         {
+            m_Height = UnitUtil.ScaleLength(m_Height);
             return true;
+         }
+
+         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Height, entryMap.CompatibleRevitParameterName);
+
+         if (m_Height > eps)
+         {
+            m_Height = UnitUtil.ScaleLength(m_Height);
+            return true;
+         }
 
          // For other elements
-         if (extrusionCreationData == null)
-            return false;
-
-         m_Height = extrusionCreationData.ScaledHeight;
-         return m_Height > MathUtil.Eps();
+         m_Height = extrusionCreationData?.ScaledHeight ?? 0.0;
+         return m_Height > eps;
       }
 
       /// <summary>

@@ -78,32 +78,42 @@ namespace Revit.IFC.Import.Data
             !baseCurve.IsCyclic);
       }
 
-      private bool SafelyBoundCurve(Curve curve, double param1, double param2)
+      private Curve SafelyBoundCurve(Curve baseCurve, bool sameSense, double param1, double param2)
       {
-         if (curve == null)
-            return false;
+         if (baseCurve == null)
+            return null;
 
+         double length = param2 - param1;
+         bool tooShort = length <= IFCImportFile.TheFile.ShortCurveTolerance;
          try
          {
-            curve.MakeBound(param1, param2);
-            return true;
+            if (!tooShort)
+            {
+               Curve curve = sameSense ? baseCurve.Clone() : baseCurve.CreateReversed();
+               curve.MakeBound(param1, param2);
+               return curve;
+            }
          }
          catch
          {
-            BackupCurveStartLocation = curve.Evaluate(param1, false);
-            BackupCurveEndLocation = curve.Evaluate(param2, false);
          }
 
-         return false;
+         if (tooShort)
+         {
+            string lengthAsString = IFCUnitUtil.FormatLengthAsString(length);
+            Importer.TheLog.LogError(Id, "curve length of " + lengthAsString + " is invalid, ignoring.", false);
+         }
+
+         BackupCurveStartLocation = baseCurve.Evaluate(param1, false);
+         BackupCurveEndLocation = baseCurve.Evaluate(param2, false);
+         return null;
       }
 
       protected override void Process(IFCAnyHandle ifcCurve)
       {
          base.Process(ifcCurve);
 
-         bool found = false;
-
-         bool sameSense = IFCImportHandleUtil.GetRequiredBooleanAttribute(ifcCurve, "SenseAgreement", out found);
+         bool sameSense = IFCImportHandleUtil.GetRequiredBooleanAttribute(ifcCurve, "SenseAgreement", out bool found);
          if (!found)
             sameSense = true;
 
@@ -187,8 +197,8 @@ namespace Revit.IFC.Import.Data
             }
             else
             {
-               curve = baseCurve.Clone();
-               if (!SafelyBoundCurve(curve, param1, param2))
+               curve = SafelyBoundCurve(baseCurve, true, param1, param2);
+               if (curve == null)
                   return;
             }
          }
@@ -201,27 +211,10 @@ namespace Revit.IFC.Import.Data
                sameSense = !sameSense;
             }
 
-            Curve copyCurve = baseCurve.Clone();
-
-            double length = param2 - param1;
-            if (length <= IFCImportFile.TheFile.ShortCurveTolerance)
-            {
-               string lengthAsString = IFCUnitUtil.FormatLengthAsString(length);
-               Importer.TheLog.LogError(Id, "curve length of " + lengthAsString + " is invalid, ignoring.", false);
+            
+            curve = SafelyBoundCurve(baseCurve, sameSense, param1, param2);
+            if (curve == null)
                return;
-            }
-
-            if (!SafelyBoundCurve(copyCurve, param1, param2))
-               return;
-
-            if (sameSense)
-            {
-               curve = copyCurve;
-            }
-            else
-            {
-               curve = copyCurve.CreateReversed();
-            }
          }
 
          CurveLoop curveLoop = new CurveLoop();

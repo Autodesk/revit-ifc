@@ -48,7 +48,7 @@ namespace Revit.IFC.Export.Exporter
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(boundingBoxItem))
             return null;
 
-         IFCAnyHandle contextOfItems = exporterIFC.Get3DContextHandle("Box");
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Box);
          return RepresentationUtil.CreateBoundingBoxRep(exporterIFC, contextOfItems, boundingBoxItem);
       }
 

@@ -94,7 +94,7 @@ namespace Revit.IFC.Export.Exporter
 
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
             {
-               using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
                   ecData.SetLocalPlacement(setter.LocalPlacement);
 
@@ -127,7 +127,7 @@ namespace Revit.IFC.Export.Exporter
                   // TODO: to allow shared geometry for Footings. For now, Footing export will not use shared geometry
                   if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
                   {
-                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
+                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
                      ExporterCacheManager.TypeRelationsCache.Add(type, footing);
                   }
 
@@ -177,7 +177,7 @@ namespace Revit.IFC.Export.Exporter
          if (String.Compare(newValue, "STRIPFOOTING", true) == 0)
             return "STRIP_FOOTING";
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
             if (String.Compare(newValue, "CAISSONFOUNDATION", true) == 0)
                return "CAISSON_FOUNDATION";

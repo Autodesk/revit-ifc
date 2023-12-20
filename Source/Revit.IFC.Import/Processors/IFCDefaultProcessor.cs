@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using Autodesk.Revit.DB;
 using Revit.IFC.Import.Core;
+using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import
 {
@@ -60,7 +62,8 @@ namespace Revit.IFC.Import
          return null;
       }
 
-      public void SetStringParameter(Element element, int objDefId, BuiltInParameter parameterId, string value, bool allowUnfound)
+      public void SetElementStringParameter(Element element, int objDefId, BuiltInParameter parameterId, string value, 
+         bool allowUnfound, ParametersToSet parametersToSet)
       {
          Parameter parameter = element?.get_Parameter(parameterId);
          if (parameter == null)
@@ -82,7 +85,13 @@ namespace Revit.IFC.Import
             return;
          }
 
-         parameter.Set(value);
+         parametersToSet.AddStringParameter(parameter, value);
+      }
+
+      public void SetStringParameter(Element element, int objDefId, BuiltInParameter parameterId, string value, bool allowUnfound)
+      {
+         // No longer used.
+         return;
       }
 
       public bool PostProcessRepresentationMap(int typeId, 

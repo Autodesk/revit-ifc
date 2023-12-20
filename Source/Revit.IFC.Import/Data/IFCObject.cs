@@ -80,6 +80,7 @@ namespace Revit.IFC.Import.Data
                IFCEntityType.IfcPile,
                IFCEntityType.IfcRailing,
                IFCEntityType.IfcRamp,
+               IFCEntityType.IfcReinforcingBar,
                IFCEntityType.IfcRoof,
                IFCEntityType.IfcSlab,
                IFCEntityType.IfcStair,
@@ -146,17 +147,18 @@ namespace Revit.IFC.Import.Data
          // "PredefinedType" is the default name of the field.
          // For IFC2x3, some entities have a "ShapeType" instead of a "PredefinedType", which we will check below.
          string predefinedTypeName = "PredefinedType";
-
-         if (EntityType == IFCEntityType.IfcDistributionPort)
-            predefinedTypeName = "FlowDirection";
-         else if (!IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
+         if (!IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete))
          {
             // The following have "PredefinedType", but are out of scope for now:
             // IfcCostSchedule, IfcOccupant, IfcProjectOrder, IfcProjectOrderRecord, IfcServiceLifeFactor
             // IfcStructuralAnalysisModel, IfcStructuralCurveMember, IfcStructuralLoadGroup, IfcStructuralSurfaceMember
-            if ((EntityType == IFCEntityType.IfcRamp) ||
-                (EntityType == IFCEntityType.IfcRoof) ||
-                (EntityType == IFCEntityType.IfcStair))
+            if (EntityType == IFCEntityType.IfcDistributionPort)
+               predefinedTypeName = "FlowDirection";
+            else if (EntityType == IFCEntityType.IfcReinforcingBar)
+               predefinedTypeName = "BarRole";
+            else if ((EntityType == IFCEntityType.IfcRamp) ||
+                     (EntityType == IFCEntityType.IfcRoof) ||
+                     (EntityType == IFCEntityType.IfcStair))
                predefinedTypeName = "ShapeType";
          }
 
@@ -209,6 +211,27 @@ namespace Revit.IFC.Import.Data
                }
                else if (IFCAnyHandleUtil.IsSubTypeOf(isDefinedByHandle, IFCEntityType.IfcRelDefinesByType))
                {
+                  // For Hybrid IFC Import, preprocess IFCRelDefinesByType.
+                  // Need to do this because the TypeObject should have a GlobalId --> DirectShapeType before Revit calls ProcessIFCTypeObject.
+                  // This will add an entry to the HybridMap (IFCTypeObject GlobalId --> DirectShapeType ElementId) so Revit will know later that it doesn't need
+                  // to create a new DirectShapeType, and which DirectShapeType to use.
+                  if (Importer.TheOptions.IsHybridImport && (Importer.TheHybridInfo?.HybridMap?.ContainsKey(GlobalId) ?? false))
+                  {
+                     IFCAnyHandle typeObject = IFCAnyHandleUtil.GetInstanceAttribute(isDefinedByHandle, "RelatingType");
+
+                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(typeObject))
+                     {
+                        Importer.TheLog.LogNullError(IFCEntityType.IfcTypeObject);
+                     }
+
+                     if (!IFCAnyHandleUtil.IsSubTypeOf(typeObject, IFCEntityType.IfcTypeObject))
+                     {
+                        Importer.TheLog.LogUnhandledSubTypeError(typeObject, IFCEntityType.IfcTypeObject, false);
+                     }
+
+                     Importer.TheHybridInfo.AddTypeToHybridMap(GlobalId, typeObject);
+                  }
+
                   ProcessIFCRelDefinesByType(isDefinedByHandle);
                }
                else
@@ -296,7 +319,7 @@ namespace Revit.IFC.Import.Data
             if (!string.IsNullOrWhiteSpace(objectTypeOverride))
             {
                Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, this, "ObjectTypeOverride", objectTypeOverride, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "ObjectTypeOverride", objectTypeOverride, Id);
             }
          }
       }

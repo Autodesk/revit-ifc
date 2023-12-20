@@ -37,23 +37,16 @@ namespace Revit.IFC.Import.Utility
    /// </summary>
    public class BrepBuilderScope : BuilderScope
    {
-      private BRepBuilder m_BrepBuilder = null;
+      private BRepBuilderGeometryId CurrentBrepBuilderFace { get; set; } = null;
 
-      private BRepBuilderGeometryId m_CurrentBrepBuilderFace = null;
+      private BRepBuilderGeometryId CurrentBrepBuilderLoop { get; set; } = null;
 
-      private BRepBuilderGeometryId m_CurrentBrepBuilderLoop = null;
-
-      private Dictionary<int, BRepBuilderGeometryId> m_EdgeIdToBrepId = new Dictionary<int, BRepBuilderGeometryId>();
+      private Dictionary<int, BRepBuilderGeometryId> EdgeIdToBrepId { get; set; } = new Dictionary<int, BRepBuilderGeometryId>();
 
       /// <summary>
       /// The BrepBuilder that is used to build the IfcAdvancedBrep geometry
       /// </summary>
-      public BRepBuilder BrepBuilder
-      {
-         get { return m_BrepBuilder; }
-         protected set { m_BrepBuilder = value; }
-      }
-
+      public BRepBuilder BrepBuilder { get; protected set; } = null;
       public BrepBuilderScope(IFCImportShapeEditScope container)
          : base(container)
       {
@@ -66,14 +59,14 @@ namespace Revit.IFC.Import.Utility
       /// <returns>True if there exists an active face, false otherwise</returns>
       public bool HaveActiveFace()
       {
-         return m_CurrentBrepBuilderFace != null;
+         return CurrentBrepBuilderFace != null;
       }
 
       /// <summary>
       /// Start collecting faces to create a BRep solid.
       /// </summary>
       /// <param name="brepType">The expected type of the geometry being built.</param>
-      public void StartCollectingFaceSet(BRepType brepType)
+      public override void StartCollectingFaceSet(BRepType brepType)
       {
          BrepBuilder = new BRepBuilder(brepType);
          BrepBuilder.SetAllowShortEdges();
@@ -88,7 +81,7 @@ namespace Revit.IFC.Import.Utility
       /// <param name="localTransform">The local transform</param>
       public void StartCollectingFace(IFCSurface surface, Transform localTransform, bool orientation, ElementId materialId)
       {
-         if (m_CurrentBrepBuilderFace != null)
+         if (CurrentBrepBuilderFace != null)
          {
             throw new InvalidOperationException("StopCollectingFaceForBrepBuilder for previous face hasn't been called yet");
          }
@@ -107,9 +100,9 @@ namespace Revit.IFC.Import.Utility
                throw new InvalidOperationException("Couldn't create surface for the current face.");
             surfaceGeometry = BRepBuilderSurfaceGeometry.Create(transformedSurface, null);
          }
-         m_CurrentBrepBuilderFace = m_BrepBuilder.AddFace(surfaceGeometry, bReversed);
+         CurrentBrepBuilderFace = BrepBuilder.AddFace(surfaceGeometry, bReversed);
          FaceMaterialId = materialId;
-         BrepBuilder.SetFaceMaterialId(m_CurrentBrepBuilderFace, FaceMaterialId);
+         BrepBuilder.SetFaceMaterialId(CurrentBrepBuilderFace, FaceMaterialId);
       }
 
       private BRepBuilderSurfaceGeometry StartCollectingNURBSFace(IFCBSplineSurfaceWithKnots bSplineSurfaceWithKnots, Transform localTransform)
@@ -153,18 +146,18 @@ namespace Revit.IFC.Import.Utility
 
       private void StopCollectingFaceInternal(bool isValid)
       {
-         if (m_BrepBuilder == null)
+         if (BrepBuilder == null)
             throw new InvalidOperationException("StartCollectingFaceSet has not been called");
 
          if (isValid)
          {
-            if (m_CurrentBrepBuilderFace == null)
+            if (CurrentBrepBuilderFace == null)
                throw new InvalidOperationException("StartCollectingFaceForBrepBuilder hasn't been called yet");
 
-            m_BrepBuilder.FinishFace(m_CurrentBrepBuilderFace);
+            BrepBuilder.FinishFace(CurrentBrepBuilderFace);
          }
 
-         m_CurrentBrepBuilderFace = null;
+         CurrentBrepBuilderFace = null;
       }
 
       /// <summary>
@@ -189,25 +182,25 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public void InitializeNewLoop()
       {
-         if (m_BrepBuilder == null)
+         if (BrepBuilder == null)
          {
             throw new InvalidOperationException("StartCollectingFaceSet has not been called");
          }
-         if (m_CurrentBrepBuilderFace == null)
+         if (CurrentBrepBuilderFace == null)
          {
             throw new InvalidOperationException("StartCollectingFaceForBrepBuilder has not been called");
          }
 
-         if (m_CurrentBrepBuilderLoop != null)
+         if (CurrentBrepBuilderLoop != null)
          {
             // We could allow several active faces, with each face having a loop being actively constructed, but the current
-            // design, with a single m_CurrentBrepBuilderFace and a single m_CurrentBrepBuilderLoop, apparently imposes the
+            // design, with a single CurrentBrepBuilderFace and a single CurrentBrepBuilderLoop, apparently imposes the
             // stricter requirement that faces are constructed one at a time, and for each face, its loops are constructed
             // one at a time.
             throw new InvalidOperationException("InitializeNewLoop has already been called - only one loop may be active at a time.");
          }
 
-         m_CurrentBrepBuilderLoop = m_BrepBuilder.AddLoop(m_CurrentBrepBuilderFace);
+         CurrentBrepBuilderLoop = BrepBuilder.AddLoop(CurrentBrepBuilderFace);
       }
 
       /// <summary>
@@ -216,24 +209,24 @@ namespace Revit.IFC.Import.Utility
       /// <param name="isValid">We are finishing a valid loop if true.</param>
       public void StopConstructingLoop(bool isValid)
       {
-         if (m_BrepBuilder == null)
+         if (BrepBuilder == null)
          {
             throw new InvalidOperationException("StartCollectingFaceSet has not been called");
          }
-         if (m_CurrentBrepBuilderFace == null)
+         if (CurrentBrepBuilderFace == null)
          {
             throw new InvalidOperationException("StartCollectingFaceForBrepBuilder has not been called");
          }
 
-         if (m_CurrentBrepBuilderLoop == null)
+         if (CurrentBrepBuilderLoop == null)
          {
             throw new InvalidOperationException("InitializeNewLoop has not been called");
          }
 
          if (isValid)
-            m_BrepBuilder.FinishLoop(m_CurrentBrepBuilderLoop);
+            BrepBuilder.FinishLoop(CurrentBrepBuilderLoop);
 
-         m_CurrentBrepBuilderLoop = null;
+         CurrentBrepBuilderLoop = null;
       }
 
       /// <summary>
@@ -247,14 +240,13 @@ namespace Revit.IFC.Import.Utility
       /// <returns>true if the edge is successfully added to the boundary</returns>
       public bool AddOrientedEdgeToTheBoundary(int id, Curve curve, XYZ startPoint, XYZ endPoint, bool orientation)
       {
-         if (m_CurrentBrepBuilderLoop == null)
+         if (CurrentBrepBuilderLoop == null)
             throw new InvalidOperationException("StartCollectingLoopForBrepBuilder hasn't been called");
 
          BRepBuilderGeometryId edgeId = null;
-
-         if (m_EdgeIdToBrepId.ContainsKey(id) && m_EdgeIdToBrepId[id] != null)
+         if (EdgeIdToBrepId.ContainsKey(id) && EdgeIdToBrepId[id] != null)
          {
-            edgeId = m_EdgeIdToBrepId[id];
+            edgeId = EdgeIdToBrepId[id];
          }
          else
          {
@@ -328,18 +320,20 @@ namespace Revit.IFC.Import.Utility
                return false;
             }
 
-            edgeId = m_BrepBuilder.AddEdge(edge);
-            m_EdgeIdToBrepId.Add(id, edgeId);
+            edgeId = BrepBuilder.AddEdge(edge);
+            EdgeIdToBrepId.Add(id, edgeId);
          }
+
          try
          {
-            m_BrepBuilder.AddCoEdge(m_CurrentBrepBuilderLoop, edgeId, !orientation);
+            BrepBuilder.AddCoEdge(CurrentBrepBuilderLoop, edgeId, !orientation);
+            return true;
          }
          catch
          {
-            return false;
          }
-         return true;
+
+         return false;
       }
 
       /// <summary>
@@ -347,12 +341,12 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       /// <param name="guid">The Guid associated with the geometry.</param>
       /// <returns>A list of GeometryObjects, possibly empty.</returns>
-      public IList<GeometryObject> CreateGeometry()
+      public override IList<GeometryObject> CreateGeometry(string guid = null)
       {
          BRepBuilderOutcome outcome = BRepBuilderOutcome.Failure;
          try
          {
-            outcome = m_BrepBuilder.Finish();
+            outcome = BrepBuilder.Finish();
          }
          catch
          {
@@ -363,7 +357,7 @@ namespace Revit.IFC.Import.Utility
             return null;
 
          IList<GeometryObject> geomObjects = new List<GeometryObject>();
-         geomObjects.Add(m_BrepBuilder.GetResult());
+         geomObjects.Add(BrepBuilder.GetResult());
 
          return geomObjects;
       }

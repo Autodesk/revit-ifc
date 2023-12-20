@@ -94,15 +94,23 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Determine if the IFCRepresentationMap only has at least 1 IFCHybridInformation.
+      /// </summary>
+      /// <returns>True if the IFCRepresentationMap only has at least 1 IFCHybridInformation.</returns>
+      public bool IsHybridOnly()
+      {
+         return MappedRepresentation?.IsHybridOnly() ?? false;
+      }
+
+      /// <summary>
       /// Create geometry for a particular representation map.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <remarks>For this function, if lcs is null, we will create a library item for the geometry.</remarks>
-      public void CreateShape(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      public void CreateShape(IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
-         bool creatingLibraryDefinition = (lcs == null);
+         bool creatingLibraryDefinition = (scaledLcs == null);
 
          if (MappedRepresentation != null)
          {
@@ -113,20 +121,9 @@ namespace Revit.IFC.Import.Data
                   return;
             }
 
-            Transform mappingTransform = null;
-            if (lcs == null)
-               mappingTransform = MappingOrigin;
-            else
-            {
-               if (MappingOrigin == null)
-                  mappingTransform = lcs;
-               else
-                  mappingTransform = lcs.Multiply(MappingOrigin);
-            }
-
             Transform scaledMappingTransform = null;
             if (scaledLcs == null)
-               scaledMappingTransform = mappingTransform;
+               scaledMappingTransform = MappingOrigin;
             else
             {
                if (MappingOrigin == null)
@@ -138,7 +135,7 @@ namespace Revit.IFC.Import.Data
             int numExistingSolids = shapeEditScope.Creator.Solids.Count;
             int numExistingCurves = shapeEditScope.Creator.FootprintCurves.Count;
 
-            MappedRepresentation.CreateShape(shapeEditScope, mappingTransform, scaledMappingTransform, guid);
+            MappedRepresentation.CreateShape(shapeEditScope, scaledMappingTransform, guid);
 
             if (creatingLibraryDefinition)
             {
@@ -180,7 +177,8 @@ namespace Revit.IFC.Import.Data
                   if (directShapeType == null)
                   {
                      string directShapeTypeName = Id.ToString();
-                     directShapeType = IFCElementUtil.CreateElementType(doc, directShapeTypeName, shapeEditScope.CategoryId, Id, null, EntityType);
+                     directShapeType = IFCElementUtil.CreateElementType(doc, directShapeTypeName, 
+                        shapeEditScope.CategoryId, Id, null, EntityType);
                      typeId = Id;
                   }
 

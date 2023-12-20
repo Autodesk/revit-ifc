@@ -90,6 +90,13 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// IfcElements are allowed to serve as Containers whose DirectShapes will contain
+      /// Geometry from other DirectShapes.
+      /// </summary>
+      /// <returns>True. This will always be true for IfcElements.</returns>
+      public override bool IsAllowedToAggregateGeometry() => true;
+ 
+      /// <summary>
       /// Default constructor.
       /// </summary>
       protected IFCElement()
@@ -148,18 +155,47 @@ namespace Revit.IFC.Import.Data
 
          if (checkPorts)
          {
-            ICollection<IFCAnyHandle> hasPorts = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcElement, "HasPorts");
-            if (hasPorts != null)
+            // Since IFC4 the inverse attribute 'HasPorts' is deprecated.
+            // Relationship to ports, contained within the IfcDistributionElement is now realized by the inverse relationship NestedBy referencing IfcRelNests.
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4))
             {
-               foreach (IFCAnyHandle hasPort in hasPorts)
+               ICollection<IFCAnyHandle> isNestedBy = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcElement, "IsNestedBy");
+               if (isNestedBy != null)
                {
-                  IFCAnyHandle relatingPort = IFCAnyHandleUtil.GetInstanceAttribute(hasPort, "RelatingPort");
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(relatingPort))
-                     continue;
+                  foreach (IFCAnyHandle relNests in isNestedBy)
+                  {
+                     ICollection<IFCAnyHandle> relatedObjects = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(relNests, "RelatedObjects");
+                     if (relatedObjects == null)
+                        continue;
 
-                  IFCPort port = IFCPort.ProcessIFCPort(relatingPort);
-                  if (port != null)
-                     Ports.Add(port);
+                     foreach (IFCAnyHandle relatedObject in relatedObjects)
+                     {
+                        if (IFCAnyHandleUtil.IsNullOrHasNoValue(relatedObject) ||
+                            !IFCAnyHandleUtil.IsSubTypeOf(relatedObject, IFCEntityType.IfcDistributionPort))
+                           continue;
+
+                        IFCPort port = IFCPort.ProcessIFCPort(relatedObject);
+                        if (port != null)
+                           Ports.Add(port);
+                     }
+                  }
+               }
+            }
+            else
+            {
+               ICollection<IFCAnyHandle> hasPorts = IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcElement, "HasPorts");
+               if (hasPorts != null)
+               {
+                  foreach (IFCAnyHandle hasPort in hasPorts)
+                  {
+                     IFCAnyHandle relatingPort = IFCAnyHandleUtil.GetInstanceAttribute(hasPort, "RelatingPort");
+                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(relatingPort))
+                        continue;
+
+                     IFCPort port = IFCPort.ProcessIFCPort(relatingPort);
+                     if (port != null)
+                        Ports.Add(port);
+                  }
                }
             }
          }
@@ -181,7 +217,7 @@ namespace Revit.IFC.Import.Data
             // Set "Tag" parameter.
             string ifcTag = Tag;
             if (!string.IsNullOrWhiteSpace(ifcTag))
-               IFCPropertySet.AddParameterString(doc, element, category, this, "IfcTag", ifcTag, Id);
+               ParametersToSet.AddStringParameter(doc, element, category, this, "IfcTag", ifcTag, Id);
 
             IFCFeatureElementSubtraction ifcFeatureElementSubtraction = FillsOpening;
             if (ifcFeatureElementSubtraction != null)
@@ -189,8 +225,8 @@ namespace Revit.IFC.Import.Data
                IFCElement ifcElement = ifcFeatureElementSubtraction.VoidsElement;
                if (ifcElement != null)
                {
-                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcContainedInHost", ifcElement.Name, Id);
-                  IFCPropertySet.AddParameterString(doc, element, category, this, "IfcContainedInHostGUID", ifcElement.GlobalId, Id);
+                  ParametersToSet.AddStringParameter(doc, element, category, this, "IfcContainedInHost", ifcElement.Name, Id);
+                  ParametersToSet.AddStringParameter(doc, element, category, this, "IfcContainedInHostGUID", ifcElement.GlobalId, Id);
                }
             }
 
@@ -205,13 +241,13 @@ namespace Revit.IFC.Import.Data
                if (!string.IsNullOrWhiteSpace(name))
                {
                   string parameterName = "IfcElement HasPorts Name " + ((numPorts == 0) ? "" : (numPorts + 1).ToString());
-                  IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, name, Id);
+                  ParametersToSet.AddStringParameter(doc, element, category, this, parameterName, name, Id);
                }
 
                if (!string.IsNullOrWhiteSpace(guid))
                {
                   string parameterName = "IfcElement HasPorts IfcGUID " + ((numPorts == 0) ? "" : (numPorts + 1).ToString());
-                  IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, guid, Id);
+                  ParametersToSet.AddStringParameter(doc, element, category, this, parameterName, guid, Id);
                }
 
                numPorts++;
@@ -308,6 +344,8 @@ namespace Revit.IFC.Import.Data
                return IFCElementAssembly.ProcessIFCElementAssembly(ifcElement);
             if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcElementComponent))
                return IFCElementComponent.ProcessIFCElementComponent(ifcElement);
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcElement, IFCEntityType.IfcGeotechnicalElement))
+               return IFCGeotechnicalElement.ProcessIFCGeotechnicalElement(ifcElement);
 
             return new IFCElement(ifcElement);
          }

@@ -61,6 +61,33 @@ namespace Revit.IFC.Import.Data
          Process(item);
       }
 
+      private bool ValidatePnIndex(IList<int> pnIndex)
+      {
+         int numCoords = Coordinates?.CoordList?.Count ?? 0;
+         if (numCoords == 0)
+            return false;
+
+         int pnIndexSize = pnIndex?.Count ?? 0;
+         if (pnIndexSize == 0)
+            return false;
+
+         // Sanity check.  We know of examples where this data is completely wrong in IFC
+         // files.  In this case, we will set it to null.
+         foreach (List<int> triIndex in CoordIndex)
+         {
+            for (int ii = 0; ii < 3; ++ii)
+            {
+               if (triIndex[ii] > pnIndexSize)
+               {
+                  Importer.TheLog.LogError(Id, "Invalid PnIndex for this triangulation, ignoring.", false);
+                  return false;
+               }
+            }
+         }
+
+         return true;
+      }
+
       /// <summary>
       /// Process IfcTriangulatedFaceSet instance
       /// </summary>
@@ -91,9 +118,10 @@ namespace Revit.IFC.Import.Data
             if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4))
             {
                IList<int> pnIndex = IFCAnyHandleUtil.GetAggregateIntAttribute<List<int>>(ifcTriangulatedFaceSet, "PnIndex");
-               if (pnIndex != null)
-                  if (pnIndex.Count > 0)
-                     PnIndex = pnIndex;
+               if (ValidatePnIndex(pnIndex))
+               {
+                  PnIndex = pnIndex;
+               }
             }
          }
          catch (Exception ex)
@@ -105,7 +133,8 @@ namespace Revit.IFC.Import.Data
          }
       }
 
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          if (CoordIndex == null)
          {
@@ -115,31 +144,32 @@ namespace Revit.IFC.Import.Data
 
          using (BuilderScope bs = shapeEditScope.InitializeBuilder(IFCShapeBuilderType.TessellatedShapeBuilder))
          {
-            base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+            base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
             TessellatedShapeBuilderScope tsBuilderScope = bs as TessellatedShapeBuilderScope;
 
             tsBuilderScope.StartCollectingFaceSet();
 
+            ElementId materialElementId = GetMaterialElementId(shapeEditScope);
+
             // Create triangle face set from CoordIndex. We do not support the Normals yet at this point
+            int numCoords = Coordinates.CoordList.Count;
             foreach (List<int> triIndex in CoordIndex)
             {
                // This is a defensive check in an unlikely situation that the index is larger than the data
-               if (triIndex[0] > Coordinates.CoordList.Count || triIndex[1] > Coordinates.CoordList.Count || triIndex[2] > Coordinates.CoordList.Count)
+               if (triIndex[0] > numCoords || triIndex[1] > numCoords || triIndex[2] > numCoords)
                {
                   continue;
                }
 
                // This is already triangulated, so no need to attempt triangulation here.
-               tsBuilderScope.StartCollectingFace(GetMaterialElementId(shapeEditScope), false);
+               tsBuilderScope.StartCollectingFace(materialElementId, false);
 
                IList<XYZ> loopVertices = new List<XYZ>();
 
                for (int ii = 0; ii < 3; ++ii)
                {
-                  int actualVIdx = triIndex[ii] - 1;
-                  if (PnIndex != null)
-                     actualVIdx = PnIndex[actualVIdx] - 1;
+                  int actualVIdx = (PnIndex?[triIndex[ii]-1] ?? triIndex[ii]) - 1;
                   XYZ vv = Coordinates.CoordList[actualVIdx];
                   loopVertices.Add(vv);
                }

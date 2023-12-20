@@ -43,11 +43,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// Calculates the area.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          double height = 0.0;
          double width = 0.0;
@@ -64,9 +64,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                return true;
             }
          }
-
          // Work for Window element
-         if (categoryId == new ElementId(BuiltInCategory.OST_Windows))
+         else if (categoryId == new ElementId(BuiltInCategory.OST_Windows))
          {
             if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_HEIGHT, out height) != null) &&
                   (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_WIDTH, out width) != null))
@@ -75,11 +74,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                return true;
             }
          }
+         else if (categoryId == new ElementId(BuiltInCategory.OST_Ceilings) || categoryId == new ElementId(BuiltInCategory.OST_Floors)
+            || element is Floor)
+         {
+            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED, out height) != null)
+            {
+               m_Area = UnitUtil.ScaleArea(height * width);
+               return true;
+            }
+         }
 
          // If no value from the above, consider the parameter override
-         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area) != null)
-               || (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out m_Area) != null)
-               || (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "IfcQtyArea", out m_Area) != null))   // IfcQty* is deprecated
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyArea") != null)
          {
             m_Area = UnitUtil.ScaleArea(m_Area);
             if (m_Area > MathUtil.Eps() * MathUtil.Eps())
@@ -87,10 +93,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // Work for Space element or other element that has extrusion
-         if (extrusionCreationData == null)
-            return false;
-
-         m_Area = extrusionCreationData.ScaledArea;
+         m_Area = extrusionCreationData?.ScaledArea ?? 0.0;
          return m_Area > MathUtil.Eps() * MathUtil.Eps();
       }
 

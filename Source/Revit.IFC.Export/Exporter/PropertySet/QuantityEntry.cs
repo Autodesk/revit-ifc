@@ -111,25 +111,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public string MethodOfMeasurement { get; set; } = String.Empty;
 
       /// <summary>
-      /// If true, don't use the internal Revit parameter of the same name.
-      /// </summary>
-      /// <remarks>
-      /// This is intended to be used when the internal Revit parameter of the same name 
-      /// (depending on localization) has a different calculation than the IFC parameter.
-      /// </remarks>
-      public bool IgnoreInternalValue { get; set; } = false;
-
-      /// <summary>
       /// Process to create element quantity.
       /// </summary>
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="element">The element of which this property is created for.</param>
       /// <param name="elementType">The element type of which this quantity is created for.</param>
       /// <returns>The created quantity handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC,
-         IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType)
+         IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType)
       {
          foreach (QuantityEntryMap entry in Entries)
          {

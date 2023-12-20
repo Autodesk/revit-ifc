@@ -120,20 +120,19 @@ namespace Revit.IFC.Import.Data
       {
          base.CreateParametersInternal(doc, element);
 
+         if (element == null)
+            return;
 
-         if (element != null)
+         // Set "ObjectTypeOverride" parameter.
+         string longName = LongName;
+         if (!string.IsNullOrWhiteSpace(longName))
          {
-            // Set "ObjectTypeOverride" parameter.
-            string longName = LongName;
-            if (!string.IsNullOrWhiteSpace(longName))
-            {
-               string parameterName = "LongNameOverride";
-               if (element is ProjectInfo)
-                  parameterName = EntityType.ToString() + " " + parameterName;
+            string parameterName = "LongNameOverride";
+            if (element is ProjectInfo)
+               parameterName = EntityType.ToString() + " " + parameterName;
 
-               Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
-               IFCPropertySet.AddParameterString(doc, element, category, this, parameterName, longName, Id);
-            }
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+            ParametersToSet.AddStringParameter(doc, element, category, this, parameterName, longName, Id);
          }
       }
 
@@ -245,6 +244,49 @@ namespace Revit.IFC.Import.Data
                XYZ.IsWithinLengthLimits(relativeOrigin - ProjectScope.Min))
             {
                ObjectLocation.RelativeTransform.Origin -= ProjectScope.Min;
+            }
+         }
+      }
+
+      protected void CreatePostalParameters(Document doc, Element element, IFCPostalAddress postalAddress)
+      {
+         if (element is ProjectInfo && postalAddress != null)
+         {
+            Category category = IFCPropertySet.GetCategoryForParameterIfValid(element, Id);
+            string typeName = EntityType.ToString() + " ";
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Purpose))
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Purpose", postalAddress.Purpose, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Description))
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Description", postalAddress.Description, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.UserDefinedPurpose))
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "UserDefinedPurpose", postalAddress.UserDefinedPurpose, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.InternalLocation))
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "InternalLocation", postalAddress.InternalLocation, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.PostalBox))
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "PostalBox", postalAddress.PostalBox, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Town))
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Town", postalAddress.Town, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Region))
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Region", postalAddress.Region, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.PostalCode))
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "PostalCode", postalAddress.PostalCode, Id);
+
+            if (!string.IsNullOrWhiteSpace(postalAddress.Country))
+               ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "Country", postalAddress.Country, Id);
+
+            if (postalAddress.AddressLines != null)
+            {
+               string jointAddress = string.Join(", ", postalAddress.AddressLines);
+               if (!string.IsNullOrWhiteSpace(jointAddress))
+                  ParametersToSet.AddStringParameter(doc, element, category, this, typeName + "AddressLines", jointAddress, Id);
             }
          }
       }

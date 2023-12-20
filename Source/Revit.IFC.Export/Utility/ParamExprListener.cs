@@ -278,11 +278,12 @@ namespace Revit.IFC.Export.Utility
             var spParCtx = context.GetChild(0) as ParamExprGrammarParser.Special_paramContext;
             if (spParCtx.ELEMENTID() != null)
             {
-               nodeP.nodePropertyValue = RevitElement.Id.IntegerValue;
+               nodeP.nodePropertyValue = RevitElement.Id.Value;
             }
             else if (spParCtx.RUNNINGNUMBER() != null)
             {
-               var key = new Tuple<string, string>(RevitElement.Category.Name, RevitParameterName);
+               string categoryName = CategoryUtil.GetCategoryName(RevitElement);
+               var key = new Tuple<string, string>(categoryName, RevitParameterName);
                int lastNumber;
                if (LastRunningNumberCollection.ContainsKey(key))
                {

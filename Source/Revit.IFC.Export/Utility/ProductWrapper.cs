@@ -23,6 +23,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Toolkit;
 
@@ -57,12 +58,13 @@ namespace Revit.IFC.Export.Utility
          ExporterIFC = exporterIFC;
       }
 
-      private void RegisterHandleWithElement(Element element, IFCAnyHandle handle, IFCExportInfoPair exportType = null)
+      private void RegisterHandleWithElement(Element element, IFCAnyHandle handle, 
+         IFCExportInfoPair exportType = null)
       {
          if (element == null || IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
             return;
-         HashSet<IFCAnyHandle> propertySetToCreate = null;
-         if (!PropertySetsToCreate.TryGetValue(element, out propertySetToCreate))
+         
+         if (!PropertySetsToCreate.TryGetValue(element, out HashSet<IFCAnyHandle> propertySetToCreate))
          {
             propertySetToCreate = new HashSet<IFCAnyHandle>();
             PropertySetsToCreate[element] = propertySetToCreate;
@@ -222,10 +224,11 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="element">The element.</param>
       /// <param name="handle">The handle.</param>
-      public void AddElement(Element element, IFCAnyHandle handle, IFCExportInfoPair exportType)
+      public void AddElement(Element element, IFCAnyHandle handle, IFCExportInfoPair exportType, bool register = true)
       {
          CreatedHandles.Add(handle);
-         RegisterHandleWithElement(element, handle, exportType);
+         if (register)
+            RegisterHandleWithElement(element, handle, exportType);
       }
 
       /// <summary>
@@ -236,15 +239,17 @@ namespace Revit.IFC.Export.Utility
       /// <param name="setter">The placement setter.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      public void AddElement(Element element, IFCAnyHandle handle, PlacementSetter setter, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
+      public void AddElement(Element element, IFCAnyHandle handle, PlacementSetter setter, IFCExportBodyParams data, bool relateToLevel, 
+         IFCExportInfoPair exportType, bool register = true)
       {
          // There is a bug in the internal AddElement that requires us to do a levelInfo null check here.
          IFCLevelInfo levelInfo = setter.LevelInfo;
          bool actuallyRelateToLevel = relateToLevel && (levelInfo != null);
-         InternalWrapper.AddElement(handle, levelInfo, data, actuallyRelateToLevel);
+         InternalWrapper.AddElement(handle, levelInfo, data?.Data, actuallyRelateToLevel);
          if (levelInfo == null && relateToLevel)
             ExporterCacheManager.LevelInfoCache.OrphanedElements.Add(handle);
-         RegisterHandleWithElement(element, handle, exportType);
+         if (register)
+            RegisterHandleWithElement(element, handle, exportType);
       }
 
       /// <summary>
@@ -255,14 +260,16 @@ namespace Revit.IFC.Export.Utility
       /// <param name="levelInfo">The level information.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      public void AddElement(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
+      public void AddElement(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExportBodyParams data, bool relateToLevel, 
+         IFCExportInfoPair exportType, bool register = true)
       {
          // There is a bug in the internal AddElement that requires us to do a levelInfo null check here.
          bool actuallyRelateToLevel = relateToLevel && (levelInfo != null);
-         InternalWrapper.AddElement(handle, levelInfo, data, actuallyRelateToLevel);
+         InternalWrapper.AddElement(handle, levelInfo, data?.Data, actuallyRelateToLevel);
          if (levelInfo == null && relateToLevel)
             ExporterCacheManager.LevelInfoCache.OrphanedElements.Add(handle);
-         RegisterHandleWithElement(element, handle, exportType);
+         if (register)
+            RegisterHandleWithElement(element, handle, exportType);
       }
 
       /// <summary>
@@ -273,10 +280,10 @@ namespace Revit.IFC.Export.Utility
       /// <param name="levelInfo">The level information.</param>
       /// <param name="data">The extrusion creation data (can be null.)</param>
       /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
-      public void AddSpace(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExtrusionCreationData data, bool relateToLevel, IFCExportInfoPair exportType)
+      public void AddSpace(Element element, IFCAnyHandle handle, IFCLevelInfo levelInfo, IFCExportBodyParams data, bool relateToLevel, IFCExportInfoPair exportType)
       {
          bool actuallyRelateToLevel = relateToLevel && (levelInfo != null);
-         InternalWrapper.AddSpace(handle, levelInfo, data, actuallyRelateToLevel);
+         InternalWrapper.AddSpace(handle, levelInfo, data?.Data, actuallyRelateToLevel);
          if (levelInfo == null && relateToLevel)
             ExporterCacheManager.LevelInfoCache.OrphanedSpaces.Add(handle);
          RegisterHandleWithElement(element, handle, exportType);
@@ -353,9 +360,9 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="handle">The handle.</param>
       /// <returns>The extrusion creation data, or null.</returns>
-      public IFCExtrusionCreationData FindExtrusionCreationParameters(IFCAnyHandle handle)
+      public IFCExportBodyParams FindExtrusionCreationParameters(IFCAnyHandle handle)
       {
-         return InternalWrapper.FindExtrusionCreationParameters(handle);
+         return new IFCExportBodyParams(InternalWrapper.FindExtrusionCreationParameters(handle));
       }
 
       /// <summary>
@@ -392,7 +399,7 @@ namespace Revit.IFC.Export.Utility
          {
             foreach (var propertySetToCreate in PropertySetsToCreate)
             {
-               PropertyUtil.CreateInternalRevitPropertySets(ExporterIFC, propertySetToCreate.Key, propertySetToCreate.Value);
+               PropertyUtil.CreateInternalRevitPropertySets(ExporterIFC, propertySetToCreate.Key, propertySetToCreate.Value, false);
             }
 
             foreach (var elementTypeHandle in ElementTypeHandles)

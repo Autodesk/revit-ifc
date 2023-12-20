@@ -83,13 +83,12 @@ namespace Revit.IFC.Import.Data
       /// Return geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The shape edit scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
       /// <returns>The created geometry.</returns>
       /// <remarks>As this doesn't inherit from IfcSolidModel, this is a non-virtual CreateSolid function.</remarks>
       protected IList<GeometryObject> CreateGeometry(
-            IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+         IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
          if (Shells.Count == 0)
             return null;
@@ -118,7 +117,7 @@ namespace Revit.IFC.Import.Data
 
                   foreach (IFCConnectedFaceSet faceSet in Shells)
                   {
-                     faceSet.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+                     faceSet.CreateShape(shapeEditScope, scaledLcs, guid);
                   }
 
                   // If we are on our first pass, try again.  If we are on our second pass, warn and create the best geometry we can.
@@ -173,17 +172,16 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
-         base.CreateShapeInternal(shapeEditScope, lcs, scaledLcs, guid);
+         base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
 
          // Ignoring Inner shells for now.
          if (Shells.Count != 0)
          {
-            IList<GeometryObject> createdGeometries = CreateGeometry(shapeEditScope, lcs, scaledLcs, guid);
+            IList<GeometryObject> createdGeometries = CreateGeometry(shapeEditScope, scaledLcs, guid);
             if (createdGeometries != null)
             {
                foreach (GeometryObject createdGeometry in createdGeometries)

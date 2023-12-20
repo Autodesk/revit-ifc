@@ -32,44 +32,47 @@ namespace Revit.IFC.Export.Utility
    public class ParameterCache
    {
       /// <summary>
-      /// List of property sets.
-      /// </summary>
-      private List<IList<PropertySetDescription>> m_PropertySets;
-
-      /// <summary>
-      /// List of quantities.
-      /// </summary>
-      private List<IList<QuantityDescription>> m_Quantities;
-
-      /// <summary>
       /// Constructs a default ParameterCache object.
       /// </summary>
       public ParameterCache()
       {
-         m_PropertySets = new List<IList<PropertySetDescription>>();
-         m_Quantities = new List<IList<QuantityDescription>>();
       }
+
+      /// <summary>
+      /// The indices into the PropertySets list of lists that indicates which sets of
+      /// parameters are applicable for both instance and type.
+      /// </summary>
+      /// <remarks>
+      /// This is a simplification that allows us to greatly refactor the property set
+      /// code while not doing an even bigger refactoring of how property set definitions
+      /// are created.
+      /// </remarks>
+      public IList<int> InstanceAndTypePsetIndices { get; set; } = new List<int>();
+
+      /// <summary>
+      /// The list of predefined property sets.
+      /// </summary>
+      public IList<IList<PreDefinedPropertySetDescription>> PreDefinedPropertySets 
+         { get; private set; } = new List<IList<PreDefinedPropertySetDescription>>();
 
       /// <summary>
       /// The list of property sets.
       /// </summary>
-      public IList<IList<PropertySetDescription>> PropertySets
-      {
-         get
-         {
-            return m_PropertySets;
-         }
-      }
+      public IList<IList<PropertySetDescription>> PropertySets 
+         { get; private set; } = new List<IList<PropertySetDescription>>();
 
       /// <summary>
       /// The list of quantities.
       /// </summary>
-      public IList<IList<QuantityDescription>> Quantities
+      public IList<IList<QuantityDescription>> Quantities 
+         { get; private set; } = new List<IList<QuantityDescription>>();
+
+      public void Clear()
       {
-         get
-         {
-            return m_Quantities;
-         }
+         InstanceAndTypePsetIndices.Clear();
+         PreDefinedPropertySets.Clear();
+         PropertySets.Clear();
+         Quantities.Clear();
       }
    }
 }

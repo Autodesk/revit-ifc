@@ -187,7 +187,7 @@ namespace Revit.IFC.Import.Data
                {
                   curveSegments.AddRange(newCurves);
                   // If we had a gap, we weren't able to correct it before getting new curves.
-                  shortGapRepairer.ClearGapInformation();
+                  shortGapRepairer.ClearGapInformation(true);
                }
                else
                {
@@ -216,7 +216,8 @@ namespace Revit.IFC.Import.Data
             XYZ curveLoopStartPoint = curveSegments[0].GetEndPoint(0);
             XYZ curveLoopEndPoint = curveSegments[0].GetEndPoint(1);
 
-            double vertexEps = IFCImportFile.TheFile.VertexTolerance;
+            // Internal code checks for gaps between curves at 1/10th of the vertex tolerance.
+            double vertexEps = IFCImportFile.TheFile.VertexTolerance / 10.0;
 
             // This is intended to be "relatively large".  The idea here is that the user would rather have the information presented
             // than thrown away because of a gap that is architecturally insignificant.
@@ -428,13 +429,54 @@ namespace Revit.IFC.Import.Data
 
                      // Can't add a line to fix a gap that is smaller than the short curve tolerance.
                      // In the future, we may fix this gap by intersecting the two curves and extending one of them.
-                     if (minGap < shortCurveTol + MathUtil.Eps())
-                        Importer.TheLog.LogError(Id, "IfcCompositeCurve contains a gap between two non-linear segments that is too short to be repaired by a connecting segment.", true);
+                     XYZ repairStartPoint = curveSegments[ii].GetEndPoint(1);
+                     XYZ repairEndPoint = null;
+                     if (minGap > shortCurveTol)
+                     {
+                        repairEndPoint = originalCurveLoopStartPoint;
+                     }
+                     else
+                     {
+                        // We will take from the "next" curve by tessellating it.
+                        IList<XYZ> tessellatedPoints = curveSegments[0].Tessellate();
+                        int count = tessellatedPoints.Count;
+                        for (int jj = 1; jj < count; jj++)
+                        {
+                           try
+                           {
+                              repairEndPoint = tessellatedPoints[jj];
+                              double currGap = repairStartPoint.DistanceTo(repairEndPoint);
+                              if (currGap <= shortCurveTol)
+                                 continue;
 
-                     Line repairLine = Line.CreateBound(curveSegments[ii].GetEndPoint(1), originalCurveLoopStartPoint);
-                     curveSegments.Insert(0, repairLine);
-                     ii++; // Skip the repair line as we've already "added" it and the non-linear curve to our growing loop.
-                     numSegments++;
+                              if (jj < count - 1)
+                              {
+                                 IntersectionResult result = curveSegments[0].Project(repairEndPoint);
+                                 curveSegments[0].MakeBound(result.Parameter, curveSegments[0].GetEndParameter(1));
+                              }
+                              else
+                              {
+                                 ii--;
+                                 numSegments--;
+                                 curveSegments.RemoveAt(0);
+                              }
+                              break;
+                           }
+                           catch
+                           {
+                              repairEndPoint = null;
+                           }
+                        }
+                     }
+
+                     if (repairEndPoint != null)
+                     {
+                        Line repairLine = Line.CreateBound(repairStartPoint, repairEndPoint);
+                        curveSegments.Insert(0, repairLine);
+                        ii++; // Skip the repair line as we've already "added" it and the non-linear curve to our growing loop.
+                        numSegments++;
+                        createdRepairLine = true;
+                     }
                   }
 
                   // Either canRepairFirst was already true, or canRepairNext was true and we added it to the front of the loop, 

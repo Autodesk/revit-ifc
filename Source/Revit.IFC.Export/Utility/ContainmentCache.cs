@@ -54,8 +54,9 @@ namespace Revit.IFC.Export.Utility
       {
          if (!Cache.TryGetValue(container, out HashSet<IFCAnyHandle> containedItems))
          {
-            ContainerGUIDs[container] = guid ?? 
-               GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRelContainedInSpatialStructure, container);
+            ContainerGUIDs[container] = guid ??
+               GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelContainedInSpatialStructure, container));
             containedItems = new HashSet<IFCAnyHandle>();
             Cache[container] = containedItems;
          }

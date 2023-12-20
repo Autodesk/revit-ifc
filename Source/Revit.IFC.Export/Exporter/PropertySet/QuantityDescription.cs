@@ -67,55 +67,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
-      /// Add an entry to the quantity map.
-      /// </summary>
-      /// <param name="name">The name of the quantity.</param>
-      /// <param name="quantityType">The type of the quantity (e.g., area).</param>
-      /// <param name="calculator">The PropertyCalculator that can generate the quantity value.</param>
-      /// <param name="ignoreInternalValue">If true, don't use the internal Revit parameter of the same name.</param>
-      /// <remarks>
-      /// <paramref name="ignoreInternalValue"/> is intended to be used when the internal Revit 
-      /// parameter of the same name (depending on localization) has a different calculation than
-      /// the IFC parameter.
-      /// </remarks>
-      public QuantityEntry AddEntry(string name, QuantityType quantityType, 
-         PropertyCalculator calculator, bool ignoreInternalValue = false)
-      {
-         QuantityEntry ifcQE = new QuantityEntry(name);
-         ifcQE.QuantityType = quantityType;
-         ifcQE.PropertyCalculator = calculator;
-         ifcQE.IgnoreInternalValue = ignoreInternalValue;
-         AddEntry(ifcQE);
-         return ifcQE;
-      }
-
-      /// <summary>
-      /// Add an entry to the quantity map.
-      /// </summary>
-      /// <param name="entry">The entry to add.</param>
-      public QuantityEntry AddEntry(string name, string revitName, QuantityType quantityType, PropertyCalculator calculator)
-      {
-         QuantityEntry ifcQE = new QuantityEntry(revitName, name);
-         ifcQE.QuantityType = quantityType;
-         ifcQE.PropertyCalculator = calculator;
-         AddEntry(ifcQE);
-         return ifcQE;
-      }
-
-      /// <summary>
-      /// Add an entry to the quantity map.
-      /// </summary>
-      /// <param name="entry">The entry to add.</param>
-      public QuantityEntry AddEntry(string name, BuiltInParameter parameterName, QuantityType quantityType, PropertyCalculator calculator)
-      {
-         QuantityEntry ifcQE = new QuantityEntry(name, parameterName);
-         ifcQE.QuantityType = quantityType;
-         ifcQE.PropertyCalculator = calculator;
-         AddEntry(ifcQE);
-         return ifcQE;
-      }
-
-      /// <summary>
       /// Creates handles for the quantities.
       /// </summary>
       /// <param name="file">The IFC file.</param>
@@ -124,7 +75,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elementToUse">The base element.</param>
       /// <param name="elemTypeToUse">The base element type.</param>
       /// <returns>A set of quantities handles.</returns>
-      public HashSet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExtrusionCreationData ifcParams, Element elementToUse, ElementType elemTypeToUse)
+      public HashSet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams ifcParams, Element elementToUse, ElementType elemTypeToUse)
       {
          HashSet<IFCAnyHandle> props = new HashSet<IFCAnyHandle>();
          foreach (QuantityEntry entry in Entries)

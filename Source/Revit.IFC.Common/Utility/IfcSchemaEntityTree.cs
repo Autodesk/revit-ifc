@@ -35,6 +35,8 @@ namespace Revit.IFC.Common.Utility
       static string Ifc2x2Schema = "IFC2X2_ADD1";
       static string Ifc2x3Schema = "IFC2X3_TC1";
       static string Ifc4Schema = "IFC4";
+      static string Ifc4RV = "IFC4RV";
+      static string Ifc4x3Schema = "IFC4X3";
 
       /// <summary>
       /// Reset the static Dictionary and Set. To be done before parsing another IFC schema
@@ -220,8 +222,14 @@ namespace Revit.IFC.Common.Utility
                break;
             case IFCVersion.IFC4:
             case IFCVersion.IFC4DTV:
-            case IFCVersion.IFC4RV:
                schemaFile = Ifc4Schema;
+               break;
+            case IFCVersion.IFC4RV:
+            case IFCVersion.IFCSG:
+               schemaFile = Ifc4RV;
+               break;
+            case IFCVersion.IFC4x3:
+               schemaFile = Ifc4x3Schema;
                break;
             default:
                schemaFile = Ifc4Schema;
@@ -248,6 +256,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>the tree, or null if the schema file is not found</returns>
       static public IfcSchemaEntityTree GetEntityDictFor(string schemaFile, string schemaLoc = null)
       {
+         schemaFile = schemaFile.ToUpper();
          if (m_IFCSchemaDict.ContainsKey(schemaFile))
             return m_IFCSchemaDict[schemaFile];
 
@@ -313,7 +322,7 @@ namespace Revit.IFC.Common.Utility
 
          foreach (FileInfo fileInfo in dirInfo.GetFiles("*.xsd"))
          {
-            string schemaId = Path.GetFileNameWithoutExtension(fileInfo.Name);
+            string schemaId = Path.GetFileNameWithoutExtension(fileInfo.Name).ToUpper();
             if (!schemaProcessed.Contains(fileInfo.Name) && !m_IFCSchemaDict.ContainsKey(schemaId))
             {
                IfcSchemaEntityTree entityTree = new IfcSchemaEntityTree();
@@ -384,11 +393,30 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
-      /// Find a Non ABS supertype entity from the input type name
+      /// Generate the Entity type name corresponding to an instance.
       /// </summary>
-      /// <param name="context">the IFC schema context</param>
-      /// <param name="typeName">the type name</param>
-      /// <returns>the non-abs supertype instance node</returns>
+      /// <param name="instanceName">The instance name.</param>
+      /// <returns>The type name.</returns>
+      /// <remarks>
+      /// This is done in a heuristic fashion, so we will need to 
+      /// make sure exceptions are dealt with.
+      /// </remarks>
+      public static string GetTypeNameFromInstanceName(string instanceName)
+      {
+         // Deal with exceptions.
+         if (string.Compare(instanceName, "IfcProduct", true) == 0)
+            return "IfcTypeProduct";
+         else if (string.Compare(instanceName, "IfcObject", true) == 0)
+            return "IfcTypeObject";
+         return instanceName + "Type";
+      }
+      
+      /// <summary>
+       /// Find a Non ABS supertype entity from the input type name
+       /// </summary>
+       /// <param name="context">the IFC schema context</param>
+       /// <param name="typeName">the type name</param>
+       /// <returns>the non-abs supertype instance node</returns>
       static public IfcSchemaEntityNode FindNonAbsInstanceSuperType(string context, string typeName)
       {
          IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
@@ -404,7 +432,10 @@ namespace Revit.IFC.Common.Utility
             return res;
          }
 
-         string theTypeName = typeName.Substring(typeName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ? typeName : typeName + "Type";
+         string theTypeName =
+            typeName.Substring(typeName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ?
+            typeName : GetTypeNameFromInstanceName(typeName); 
+         
          IfcSchemaEntityNode entNode = ifcEntitySchemaTree.Find(theTypeName);
          if (entNode != null)
          {

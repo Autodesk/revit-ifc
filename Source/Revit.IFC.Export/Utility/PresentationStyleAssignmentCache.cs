@@ -59,7 +59,8 @@ namespace Revit.IFC.Export.Utility
             // Make sure the handle isn't stale.
             try
             {
-               bool isPSA = IFCAnyHandleUtil.IsSubTypeOf(presentationStyleAssignment, IFCEntityType.IfcPresentationStyleAssignment);
+               bool isPSA = (IFCAnyHandleUtil.IsSubTypeOf(presentationStyleAssignment, IFCEntityType.IfcPresentationStyleAssignment)
+                          || IFCAnyHandleUtil.IsSubTypeOf(presentationStyleAssignment, IFCEntityType.IfcPresentationStyle));
                if (isPSA)
                   return presentationStyleAssignment;
             }
