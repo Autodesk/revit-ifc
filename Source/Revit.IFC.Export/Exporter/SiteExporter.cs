@@ -206,7 +206,7 @@ namespace Revit.IFC.Export.Exporter
             // Get elevation for site.
             IFCAnyHandle relativePlacement = null;
             IFCAnyHandle localPlacement = null;
-            if (!ExporterCacheManager.ExportOptionsCache.ExportingLink)
+            if (ExporterUtil.ExportingHostModel())
             {
                if (ExporterCacheManager.ExportOptionsCache.IncludeSiteElevation)
                   unscaledElevation = 0.0;

@@ -72,42 +72,27 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Creates or populates Revit elements based on the information contained in this class.
+      /// Indicates whether duplicate geometry should be created for IFCZone.
+      /// This is governed by an IFC Importer option:  CreateDuplicateZoneGeometry.
       /// </summary>
-      /// <param name="doc">The document.</param>
-      protected override void Create(Document doc)
+      /// <returns>True if creating duplicate geometry option set, False otherwise.</returns>
+      public override bool ContainerDuplicatesGeometry() { return Importer.TheOptions.CreateDuplicateZoneGeometry; }
+
+      /// <summary>
+      /// Indicates which IFC entities should be used when creating duplicate geometry.
+      /// </summary>
+      /// <param name="entity">An IFC entity for filtering.</param>
+      /// <returns>True if the IFC entity geometry should be duplicated, False otherwise.</returns>
+      public override bool ContainerFilteredEntity(IFCEntity entity)
       {
-         // If we created an element above, then we will set the shape of it to be the same of the shapes of the contained spaces.
-         IList<GeometryObject> geomObjs = new List<GeometryObject>();
-
-         // CreateDuplicateZoneGeometry is currently an API-only option (no UI), set to true by default.
-         if (Importer.TheOptions.CreateDuplicateZoneGeometry)
-         {
-            foreach (IFCObjectDefinition objDef in RelatedObjects)
-            {
-               if (!(objDef is IFCSpace))
-                  continue;
-
-               // This lets us create a copy of the space geometry with the Zone graphics style.
-               IList<IFCSolidInfo> solids = IFCElement.CloneElementGeometry(doc, objDef as IFCProduct, this, false);
-               if (solids != null)
-               {
-                  foreach (IFCSolidInfo solidGeom in solids)
-                  {
-                     geomObjs.Add(solidGeom.GeometryObject);
-                  }
-               }
-            }
-         }
-
-         DirectShape zoneElement = IFCElementUtil.CreateElement(doc, CategoryId, GlobalId, geomObjs, Id, EntityType);
-         if (zoneElement != null)
-         {
-            CreatedElementId = zoneElement.Id;
-            CreatedGeometry = geomObjs;
-         }
-
-         base.Create(doc);
+         return (entity is IFCSpace);
       }
+
+      /// <summary>
+      /// Indicates whether we should create a separate DirectShape Element for this IFC entity.
+      /// For IfcZone, a DirectShape should be created.
+      /// </summary>
+      /// <returns>True if a DirectShape container is created, False otherwise.</returns>
+      public override bool CreateContainer() { return true; }
    }
 }

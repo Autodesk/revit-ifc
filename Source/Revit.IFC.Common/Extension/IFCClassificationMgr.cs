@@ -237,7 +237,7 @@ namespace Revit.IFC.Common.Extensions
                }
                catch
                {
-                  ifcClassificationSaved[noClass].ClassificationEditionDate = DateTime.Now;
+                  ifcClassificationSaved[noClass].ClassificationEditionDate = DateTime.Now.Date;
                }
 
                ifcClassificationSaved[noClass].ClassificationLocation = savedClassification.Get<string>(schema.GetField(s_ClassificationLocation));

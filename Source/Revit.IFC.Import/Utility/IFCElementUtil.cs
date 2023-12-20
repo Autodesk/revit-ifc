@@ -131,7 +131,7 @@ namespace Revit.IFC.Import.Utility
 
          // This is used in some places to create something not related to an IFCEntity
          if (!Importer.TheProcessor.CreateOrUpdateElement(id, dataGUID, entityType.ToString(), 
-            categoryId.IntegerValue, geomObjs))
+            categoryId.Value, geomObjs))
          {
             if (geomObjs != null)
                directShape?.SetShape(geomObjs);
@@ -153,11 +153,11 @@ namespace Revit.IFC.Import.Utility
       {
          DirectShapeTypeOptions options = new DirectShapeTypeOptions();
          options.AllowDuplicateNames = true;
-         ElementId validCategoryId = IFCElementUtil.GetDSValidCategoryId(doc, categoryId, id);
+         ElementId validCategoryId = GetDSValidCategoryId(doc, categoryId, id);
          DirectShapeType directShapeType = DirectShapeType.Create(doc, name, validCategoryId, options);
          Importer.TheCache.CreatedDirectShapeTypes[id] = directShapeType.Id;
 
-         Importer.TheProcessor.CreateElementType(id, guid, entityType.ToString(), validCategoryId.IntegerValue);
+         Importer.TheProcessor.CreateElementType(id, guid, entityType.ToString(), validCategoryId.Value);
 
          return directShapeType;
       }

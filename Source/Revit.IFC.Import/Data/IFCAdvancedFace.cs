@@ -36,23 +36,35 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation item.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      protected override void CreateShapeInternal(IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
+         if (shapeEditScope.BuilderType == IFCShapeBuilderType.TessellatedShapeBuilder)
+         {
+            if (FaceSurface is IFCPlane)
+            {
+               // This is a backup attempt, potentially reset IsValidForCreation flag.
+               IsValidForCreation = true;
+               base.CreateShapeInternal(shapeEditScope, scaledLcs, guid);
+               return;
+            }
+         }
+
          if (shapeEditScope.BuilderType != IFCShapeBuilderType.BrepBuilder)
          {
-            throw new InvalidOperationException("AdvancedFace can only be created using BrepBuilder");
+            Importer.TheLog.LogError(Id, "Couldn't process face, ignoring.", false);
+            IsValidForCreation = false;
+            return;
          }
 
          // We may revisit this face on a second pass, after a first attempt to create a Solid failed.  Ignore this face.
          if (!IsValidForCreation)
             return;
 
-         BrepBuilderScope brepBuilderScope = shapeEditScope.BuilderScope as BrepBuilderScope;
+         Transform localTransform = scaledLcs ?? Transform.Identity;
 
-         Transform localTransform = lcs != null ? lcs : Transform.Identity;
+         BrepBuilderScope brepBuilderScope = shapeEditScope.BuilderScope as BrepBuilderScope;
 
          brepBuilderScope.StartCollectingFace(FaceSurface, localTransform, SameSense, GetMaterialElementId(shapeEditScope));
 
@@ -62,7 +74,7 @@ namespace Revit.IFC.Import.Data
             {
                brepBuilderScope.InitializeNewLoop();
 
-               faceBound.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+               faceBound.CreateShape(shapeEditScope, scaledLcs, guid);
                IsValidForCreation = faceBound.IsValidForCreation || (!brepBuilderScope.HaveActiveFace());
 
                brepBuilderScope.StopConstructingLoop(IsValidForCreation);

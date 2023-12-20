@@ -105,7 +105,8 @@ namespace Revit.IFC.Export.Exporter
 
          string ifcEnumTypeAsString = IFCAnyHandleUtil.GetEnumerationAttribute(origRailing, "PredefinedType");
 
-         string copyGUID = GUIDUtil.GenerateIFCGuidFrom(IFCEntityType.IfcRailing, index.ToString(), origRailing);
+         string copyGUID = GUIDUtil.GenerateIFCGuidFrom(
+            GUIDUtil.CreateGUIDString(IFCEntityType.IfcRailing, index.ToString(), origRailing));
          IFCAnyHandle copyOwnerHistory = IFCAnyHandleUtil.GetInstanceAttribute(origRailing, "OwnerHistory");
 
          return IFCInstanceExporter.CreateRailing(exporterIFC, elem, copyGUID, copyOwnerHistory, newLocalPlacement, newProdRep, ifcEnumTypeAsString);
@@ -179,6 +180,20 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// Creates a type handle for the railing element.
+      /// </summary>
+      /// <param name="element">The railing element to be exported.</param>
+      /// <param name="file">The IFC file handle.</param>
+      /// <param name="exportInfo">The export information of the railing element.</param>
+      /// <param name="productWrapper">The ProductWrapper.</param>
+      /// <param name="railingHandle">The IfcRailing handle to be exported.</param>
+      private static void CreateTypeHandle(IFCExportInfoPair exportInfo, Element element, IFCFile file, ProductWrapper productWrapper, IFCAnyHandle railingHandle)
+      {
+         IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
+         ExporterCacheManager.TypeRelationsCache.Add(typeHnd, railingHandle);
+      }
+
+      /// <summary>
       /// Collects the sub-elements of a Railing, to prevent double export.
       /// </summary>
       /// <param name="railingElem">
@@ -225,7 +240,7 @@ namespace Revit.IFC.Export.Exporter
 
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
             {
-               using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
                   IFCAnyHandle localPlacement = setter.LocalPlacement;
                   StairRampContainerInfo stairRampInfo = null;
@@ -325,6 +340,8 @@ namespace Revit.IFC.Export.Exporter
 
                   IFCAnyHandle railing = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, element, instanceGUID, ownerHistory,
                             ecData.GetLocalPlacement(), prodRep);
+
+                  CreateTypeHandle(exportInfo, element, file, productWrapper, railing);
 
                   bool associateToLevel = (hostId == ElementId.InvalidElementId);
 

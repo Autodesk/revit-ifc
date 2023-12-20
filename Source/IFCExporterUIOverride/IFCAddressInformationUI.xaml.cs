@@ -46,16 +46,12 @@ namespace BIM.IFC.Export.UI
       private IFCAddress m_newAddress = new IFCAddress();
       private IFCAddressItem m_newAddressItem = new IFCAddressItem();
       private IFCAddressItem m_savedAddressItem = new IFCAddressItem();
+      private IFCExportConfiguration m_parentConfiguration = null;
 
       private string getUserDefinedStringFromIFCPurposeList()
       {
          return ifcPurposeList[4];
       }
-
-      /// <summary>
-      /// The file to store the previous window bounds.
-      /// </summary>
-      string m_SettingFile = "IFCAddressInformationUIWindowSettings_v30.txt";    // update the file when resize window bounds.
 
       /// <summary>
       /// initialization of IFCAssignemt class
@@ -64,8 +60,11 @@ namespace BIM.IFC.Export.UI
       public IFCAddressInformation(IFCExportConfiguration configuration)
       {
          InitializeComponent();
+         m_parentConfiguration = configuration;
 
-         m_newAddressItem = configuration.ProjectAddress;
+         if ((configuration.ProjectAddress.HasData() && !m_newAddressItem.HasData()) 
+            || (configuration.ProjectAddress.HasData() && m_newAddressItem.HasData() && !configuration.ProjectAddress.isUnchanged(m_newAddressItem)))
+            m_newAddressItem = configuration.ProjectAddress;
 
          // This is a short list, so we just do an O(n) search.
          int numItems = ifcPurposeList.Count();
@@ -78,27 +77,15 @@ namespace BIM.IFC.Export.UI
             }
          }
 
-         // Initialize options from the m_newAddressItem
-         Checkbox_AssignToBuilding.IsChecked = m_newAddressItem.AssignAddressToBuilding;
-         Checkbox_AssignToSite.IsChecked = m_newAddressItem.AssignAddressToSite;
-         UpdateProjInfocheckBox.IsChecked = m_newAddressItem.UpdateProjectInformation;
-
+         // Initialize options from the configuration
+         Checkbox_AssignToBuilding.IsChecked = configuration.ProjectAddress.AssignAddressToBuilding;
+         Checkbox_AssignToSite.IsChecked = configuration.ProjectAddress.AssignAddressToSite;
+         UpdateProjInfocheckBox.IsChecked = configuration.ProjectAddress.UpdateProjectInformation;
       }
 
       private void OnInit(object sender, RoutedEventArgs e)
       {
          DataContext = m_newAddressItem;
-      }
-
-      /// <summary>
-      /// Saves the window bounds when close the window.
-      /// </summary>
-      /// <param name="sender">The source of the event.</param>
-      /// <param name="e">Event arguments that contains the event data.</param>
-      private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-      {
-         // Save restore bounds for the next time this window is opened
-         IFCUISettings.SaveWindowBounds(m_SettingFile, this.RestoreBounds);
       }
 
       /// <summary>
@@ -228,7 +215,7 @@ namespace BIM.IFC.Export.UI
 
             transaction.Commit();
          }
-
+         m_parentConfiguration.ProjectAddress = m_newAddressItem;
          Close();
       }
 

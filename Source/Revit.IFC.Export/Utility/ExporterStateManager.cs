@@ -33,13 +33,14 @@ using Revit.IFC.Common.Enums;
 namespace Revit.IFC.Export.Utility
 {
    /// <summary>
-   /// Manages state information for the current export session.  Intended to eventually replace ExporterIFC for most state operations.
+   /// Manages state information for the current export session.  Intended to eventually replace 
+   /// ExporterIFC for most state operations.
    /// </summary>
    public class ExporterStateManager
    {
-      static IList<string> m_CADLayerOverrides;
+      static IList<string> CADLayerOverrides { get; set; } = new List<string>();
 
-      static int m_RangeIndex;
+      static int RangeIndex { get; set; }
 
       /// <summary>
       /// A utility class that manages keeping track of a sub-element index for ranges for splitting walls and columns.  
@@ -52,7 +53,7 @@ namespace Revit.IFC.Export.Utility
          /// </summary>
          public void IncreaseRangeIndex()
          {
-            m_RangeIndex++;
+            RangeIndex++;
          }
 
          /// <summary>
@@ -72,7 +73,7 @@ namespace Revit.IFC.Export.Utility
          /// </summary>
          public void Dispose()
          {
-            m_RangeIndex = 0;
+            RangeIndex = 0;
          }
 
          #endregion
@@ -82,7 +83,7 @@ namespace Revit.IFC.Export.Utility
       /// Preserve the element parameter cache after the element export, as it will be used again.
       /// This should be checked before it is overridden
       /// </summary>
-      static Element m_CurrentElementToPreserveParameterCache = null;
+      static Element CurrentElementToPreserveParameterCache = null;
 
       /// <summary>
       /// Determines whether this elements parameter cache should be removed after this element is exported.
@@ -91,33 +92,34 @@ namespace Revit.IFC.Export.Utility
       /// <param name="preserve">True to preserve, false otherwise.</param>
       static public void PreserveElementParameterCache(Element element, bool preserve)
       {
-         m_CurrentElementToPreserveParameterCache = preserve ? element : null;
+         CurrentElementToPreserveParameterCache = preserve ? element : null;
       }
 
       static public bool ShouldPreserveElementParameterCache(Element element)
       {
-         return (m_CurrentElementToPreserveParameterCache == element);
+         return (CurrentElementToPreserveParameterCache == element);
       }
 
       /// <summary>
-      /// Skip the "CanElementBeExported" function for cached elements that have already passed the test.
+      /// Skip the "CanElementBeExported" function for cached elements that have already passed the
+      /// test.
       /// </summary>
-      static bool m_CanExportElementOverride = false;
+      public static bool CanExportElementOverride { get; private set; } = false;
 
       /// <summary>
       /// A utility class that skips the "CanElementBeExported" function for cached elements that have already passed the test.
       /// </summary>
       public class ForceElementExport : IDisposable
       {
-         bool m_OldCanExportElementOverride;
+         bool OldCanExportElementOverride { get; set; } = false;
 
          /// <summary>
          /// The constructor that sets forced element export to be true.
          /// </summary>
          public ForceElementExport()
          {
-            m_OldCanExportElementOverride = m_CanExportElementOverride;
-            m_CanExportElementOverride = true;
+            OldCanExportElementOverride = CanExportElementOverride;
+            CanExportElementOverride = true;
          }
 
          /// <summary>
@@ -125,25 +127,18 @@ namespace Revit.IFC.Export.Utility
          /// </summary>
          public void Dispose()
          {
-            m_CanExportElementOverride = m_OldCanExportElementOverride;
+            CanExportElementOverride = OldCanExportElementOverride;
          }
       }
 
-      /// <summary>
-      /// If true, skip the CanExportElement() check and export the element.
-      /// </summary>
-      /// <returns>True if the element should be exported.</returns>
-      static public bool CanExportElementOverride()
-      {
-         return m_CanExportElementOverride;
-      }
+      static public ElementId CurrentLinkId { get; set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// A utility class that manages pushing and popping CAD layer overrides for containers.  Intended to be using with "using" keyword.
       /// </summary>
       public class CADLayerOverrideSetter : IDisposable
       {
-         bool m_ValidString = false;
+         bool ValidString = false;
 
          /// <summary>
          /// The constructor that sets the current CAD layer override string.  Will do nothing if the string in invalid or null.
@@ -154,7 +149,7 @@ namespace Revit.IFC.Export.Utility
             if (!string.IsNullOrWhiteSpace(overrideString))
             {
                ExporterStateManager.PushCADLayerOverride(overrideString);
-               m_ValidString = true;
+               ValidString = true;
             }
          }
 
@@ -165,23 +160,13 @@ namespace Revit.IFC.Export.Utility
          /// </summary>
          public void Dispose()
          {
-            if (m_ValidString)
+            if (ValidString)
             {
                ExporterStateManager.PopCADLayerOverride();
             }
          }
 
          #endregion
-      }
-
-      static private IList<string> CADLayerOverrides
-      {
-         get
-         {
-            if (m_CADLayerOverrides == null)
-               m_CADLayerOverrides = new List<string>();
-            return m_CADLayerOverrides;
-         }
       }
 
       static private void PushCADLayerOverride(string overrideString)
@@ -216,7 +201,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The current range index, or 0 if there are no ranges.</returns>
       static public int GetCurrentRangeIndex()
       {
-         return m_RangeIndex;
+         return RangeIndex;
       }
 
       /// <summary>
@@ -224,8 +209,9 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static public void Clear()
       {
-         m_CADLayerOverrides = null;
-         m_RangeIndex = 0;
+         CADLayerOverrides.Clear();
+         RangeIndex = 0;
+         CurrentLinkId = ElementId.InvalidElementId;
       }
    }
 }

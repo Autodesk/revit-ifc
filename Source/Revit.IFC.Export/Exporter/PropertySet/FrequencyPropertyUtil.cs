@@ -60,7 +60,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           string revitParameterName, string ifcPropertyName, PropertyValueType valueType)
       {
          double propertyValue;
-         if (ParameterUtil.GetDoubleValueFromElement(elem, null, revitParameterName, out propertyValue) != null)
+         if (ParameterUtil.GetDoubleValueFromElement(elem, revitParameterName, out propertyValue) != null)
          {
             if (valueType == PropertyValueType.BoundedValue)
             {

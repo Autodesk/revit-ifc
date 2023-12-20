@@ -21,6 +21,7 @@ using Revit.IFC.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Controls;
 
 
 namespace BIM.IFC.Export.UI
@@ -44,7 +45,12 @@ namespace BIM.IFC.Export.UI
       {
          InitializeComponent();
          m_newClassification = configuration.ClassificationSettings;
-         datePicker1.SelectedDate = DateTime.Today;
+
+         if (m_newClassification.ClassificationEditionDate <= DateTime.MinValue || m_newClassification.ClassificationEditionDate >= DateTime.MaxValue)
+         {
+            m_newClassification.ClassificationEditionDate = DateTime.Now.Date;
+         }
+         datePicker1.SelectedDate = m_newClassification.ClassificationEditionDate.Date;
       }
 
       /// <summary>
@@ -71,6 +77,10 @@ namespace BIM.IFC.Export.UI
             if (!m_newClassification.AreMandatoryFieldsFilled())
             {
                fillMandatoryFields(m_newClassification);
+            }
+            if (datePicker1?.SelectedDate != null)
+            {
+               m_newClassification.ClassificationEditionDate = datePicker1.SelectedDate.Value.Date;
             }
             IFCClassificationMgr.UpdateClassification(IFCCommandOverrideApplication.TheDocument, m_newClassification);
          }
@@ -122,11 +132,14 @@ namespace BIM.IFC.Export.UI
          {
             m_savedClassification = m_newClassification.Clone();
          }
+      }
 
-         if (m_newClassification.ClassificationEditionDate <= DateTime.MinValue || m_newClassification.ClassificationEditionDate >= DateTime.MaxValue)
+      private void datePicker1_SelectedDateChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+      {
+         var picker = sender as DatePicker;
+         if (picker?.SelectedDate != null)
          {
-            DateTime today = DateTime.Now;
-            m_newClassification.ClassificationEditionDate = today;
+            m_newClassification.ClassificationEditionDate = picker.SelectedDate.Value.Date; // Picker only use the Date
          }
       }
    }

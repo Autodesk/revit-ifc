@@ -1702,6 +1702,44 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Get the base representation in case of MappedItem
+      /// </summary>
+      /// <param name="representation">the representation</param>
+      /// <returns>the base representation type</returns>
+      /// <exception cref="ArgumentException"></exception>
+      public static string GetBaseRepresentationType(IFCAnyHandle representation)
+      {
+         if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
+            throw new ArgumentException("The operation is not valid for this handle.");
+
+         IFCData ifcData = representation.GetAttribute("RepresentationType");
+         if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
+         {
+            string repType = ifcData.AsString();
+            if (repType.Equals("MappedRepresentation", StringComparison.InvariantCultureIgnoreCase))
+            {
+               HashSet<IFCAnyHandle> mapItems = GetItems(representation);
+               if (mapItems.Count > 0)
+               {
+                  // The mapped representation should be of the same type. Use the first one will suffice
+                  IFCAnyHandle mapSrc = GetInstanceAttribute(mapItems.First(), "MappingSource");
+                  if (!IsNullOrHasNoValue(mapSrc))
+                  {
+                     IFCAnyHandle mapRep = GetInstanceAttribute(mapSrc, "MappedRepresentation");
+                     if (!IsNullOrHasNoValue(mapRep))
+                     {
+                        repType = GetRepresentationType(mapRep);
+                     }
+                  }
+               }
+            }
+            return repType;
+         }
+
+         return null;
+      }
+
+      /// <summary>
       /// Gets set of Items of a representation handle.
       /// </summary>
       /// <param name="representation">The representation handle.</param>
@@ -1818,30 +1856,6 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
-      /// Add RelatedObjects into IfcRelAssociates
-      /// </summary>
-      /// <param name="relAssociates">The IfcRelAssociates entity</param>
-      /// <param name="related">The entity handle to be added to the RelatedObjects attribute</param>
-      public static void AssociatesAddRelated(IFCAnyHandle relAssociates, IFCAnyHandle related)
-      {
-         if (related == null)
-            throw new ArgumentNullException("IfcRelAssociates related");
-
-         if (!IsSubTypeOf(relAssociates, IFCEntityType.IfcRelAssociatesClassification))
-            throw new ArgumentException("The operation is not valid for this handle.");
-
-         IFCAggregate aggregate = relAssociates.GetAttribute("RelatedObjects").AsAggregate();
-         if (aggregate == null)
-         {
-            relAssociates.SetAttribute("RelatedObjects", new List<IFCAnyHandle>() { related });
-         }
-         else
-         {
-            aggregate.Add(IFCData.CreateIFCAnyHandle(related));
-         }
-      }
-
-      /// <summary>
       /// Gets Name of an IfcProductDefinitionShape handle.
       /// </summary>
       /// <param name="representation">The IfcProductDefinitionShape.</param>
@@ -1922,7 +1936,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if it is null or has no value, false otherwise.</returns>
       public static bool IsNullOrHasNoValue(IFCAnyHandle handle)
       {
-         return handle == null || !handle.HasValue;
+         return !(handle?.HasValue ?? false);
       }
 
       /// <summary>
@@ -1937,6 +1951,25 @@ namespace Revit.IFC.Common.Utility
             return false;
 
          return handle.IsTypeOf(GetIFCEntityTypeName(type));
+      }
+
+      /// <summary>
+      /// Checks if the handle is an entity of exactly one of the given type (not including its sub-types).
+      /// </summary>
+      /// <param name="handle">The handle to be checked.</param>
+      /// <param name="types">The entity types to be checked against.</param>
+      /// <returns>True if the handle entity is an entity one of the given type (not including its sub-types).</returns>
+      public static bool IsTypeOneOf(IFCAnyHandle handle, ISet<IFCEntityType> types)
+      {
+         if (IsNullOrHasNoValue(handle) || types == null)
+            return false;
+
+         foreach (var entityType in types)
+         {
+            if (handle.IsTypeOf(GetIFCEntityTypeName(entityType)))
+               return true;
+         }
+         return false;
       }
 
       /// <summary>

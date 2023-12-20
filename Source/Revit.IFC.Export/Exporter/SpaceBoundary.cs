@@ -19,7 +19,9 @@
 
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Toolkit;
+using Revit.IFC.Export.Utility;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -39,9 +41,11 @@ namespace Revit.IFC.Export.Exporter
       public ElementId SpatialElementId { get; private set; } = ElementId.InvalidElementId;
 
       /// <summary>
-      /// The id of the element which forms the boundary.
+      /// The id of the non-spatial element which forms the boundary.
       /// </summary>
-      public ElementId BuildingElementId { get; private set; } = ElementId.InvalidElementId;
+      /// <remarks>For a virtual boundary, this will still be supplied, and will be
+      /// the element id of the CurveElement.</remarks>
+      public ElementId NonSpatialElementId { get; private set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// The level id.
@@ -64,6 +68,25 @@ namespace Revit.IFC.Export.Exporter
       public IFCInternalOrExternal InternalOrExternal { get; private set; } = IFCInternalOrExternal.Internal;
 
       /// <summary>
+      /// Generate a Hash Code for this space boundary.
+      /// </summary>
+      /// <returns>A mostly unique string to identify this space boundary.</returns>
+      public string GetBoundaryHashCode()
+      {
+         if (!string.IsNullOrEmpty(Name))
+            return SpatialElementId.ToString() + ":" + Name;
+
+         // TODO_GUID: ConnectionGeometryHandle isn't very stable.  Can we expand how boundaries
+         // are named?
+         return SpatialElementId.ToString() + ":" +
+            NonSpatialElementId.ToString() + ":" +
+            LevelId.ToString() + ":" +
+            SpaceBoundaryType.ToString() +
+            InternalOrExternal.ToString() +
+            ConnectionGeometryHandle.Id;
+      }
+
+      /// <summary>
       /// Constructs a default SpaceBoundary object.
       /// </summary>
       public SpaceBoundary() { }
@@ -73,18 +96,18 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="name">The optional name of the space boundary.</param>
       /// <param name="spatialElementId">The spatial element id.</param>
-      /// <param name="buildingElementId">The building element id.</param>
+      /// <param name="nonSpatialElementId">The building or curve element id.</param>
       /// <param name="levelId">The level element id.</param>
       /// <param name="connectionGeometry">The connection geometry handle.</param>
       /// <param name="type">The type of the space boundary.</param>
       /// <param name="isExternal">Indicates if the space boundary is external or not.</param>
-      public SpaceBoundary(string name, ElementId spatialElementId, ElementId buildingElementId,
-         ElementId levelId, IFCAnyHandle connectionGeometry, IFCPhysicalOrVirtual type,
-         IFCInternalOrExternal internalOrExternal)
+      public SpaceBoundary(string name, ElementId spatialElementId, ElementId nonSpatialElementId,
+         ElementId levelId, IFCAnyHandle connectionGeometry, 
+         IFCPhysicalOrVirtual type, IFCInternalOrExternal internalOrExternal)
       {
          Name = name;
          SpatialElementId = spatialElementId;
-         BuildingElementId = buildingElementId;
+         NonSpatialElementId = nonSpatialElementId;
          ConnectionGeometryHandle = connectionGeometry;
          SpaceBoundaryType = type;
          InternalOrExternal = internalOrExternal;

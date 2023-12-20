@@ -97,31 +97,7 @@ namespace Revit.IFC.Export.Utility
          if (!Cache.TryGetValue(handle, out ISet<IFCAnyHandle> cacheHandles))
             return null;
 
-         IList<IFCAnyHandle> refObjToDel = new List<IFCAnyHandle>();
-         foreach (IFCAnyHandle cacheHandle in cacheHandles)
-         {
-
-            if (ExporterCacheManager.HandleToDeleteCache.Contains(cacheHandle))
-            {
-               refObjToDel.Add(cacheHandle);
-            }
-            else if (IFCAnyHandleUtil.IsNullOrHasNoValue(cacheHandle))
-            {
-               // If we get to these lines of code, then there is an error somewhere
-               // where we deleted a handle but didn't properly mark it as deleted.
-               // This should be investigated, but this will at least not prevent
-               // the export.
-               ExporterCacheManager.HandleToDeleteCache.Add(cacheHandle);
-               refObjToDel.Add(cacheHandle);
-            }
-         }
-
-         foreach (IFCAnyHandle refObjHandle in refObjToDel)
-         {
-            cacheHandles.Remove(refObjHandle);
-         }
-
-         return cacheHandles;
+         return ExporterUtil.CleanRefObjects(cacheHandles);
       }
    }
 }

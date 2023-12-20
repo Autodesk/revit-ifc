@@ -31,93 +31,40 @@ using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
-   public enum IFCRepresentationIdentifier
-   {
-      Axis,
-      Body,
-      Box,
-      FootPrint,
-      Style,
-      CoG,  // Center of gravity
-      BodyFallback,
-      Unhandled
-   }
-
    /// <summary>
    /// Represents an IfcRepresentation.
    /// </summary>
    public class IFCRepresentation : IFCEntity
    {
-      protected IFCRepresentationContext m_RepresentationContext = null;
-
-      protected IFCRepresentationIdentifier m_Identifier = IFCRepresentationIdentifier.Unhandled;
-
-      protected string m_RepresentationType = null;
-
-      protected IList<IFCRepresentationItem> m_RepresentationItems = null;
-
-      // Special holder for "Box" representation type only.
-      protected BoundingBoxXYZ m_BoundingBox = null;
-
-      protected IFCPresentationLayerAssignment m_LayerAssignment = null;
-
       /// <summary>
       /// The related IfcRepresentationContext.
       /// </summary>
-      public IFCRepresentationContext Context
-      {
-         get { return m_RepresentationContext; }
-         protected set { m_RepresentationContext = value; }
-      }
+      public IFCRepresentationContext Context { get; protected set; } = null;
 
       /// <summary>
       /// The optional representation identifier.
       /// </summary>
-      public IFCRepresentationIdentifier Identifier
-      {
-         get { return m_Identifier; }
-         protected set { m_Identifier = value; }
-      }
+      public IFCRepresentationIdentifier Identifier { get; protected set; } = IFCRepresentationIdentifier.Other;
 
       /// <summary>
       /// The optional representation type.
       /// </summary>
-      public string Type
-      {
-         get { return m_RepresentationType; }
-         protected set { m_RepresentationType = value; }
-      }
-
-      /// <summary>
-      /// The bounding box, only valid for "Box" representation type.
-      /// </summary>
-      public BoundingBoxXYZ BoundingBox
-      {
-         get { return m_BoundingBox; }
-         protected set { m_BoundingBox = value; }
-      }
+      public string RepresentationType { get; protected set; } = null;
 
       /// <summary>
       /// The representations of the product.
       /// </summary>
-      public IList<IFCRepresentationItem> RepresentationItems
-      {
-         get
-         {
-            if (m_RepresentationItems == null)
-               m_RepresentationItems = new List<IFCRepresentationItem>();
-            return m_RepresentationItems;
-         }
-      }
+      public IList<IFCRepresentationItem> RepresentationItems { get; protected set; } = new List<IFCRepresentationItem>();
+
+      /// <summary>
+      /// The bounding box, only valid for "Box" representation type.
+      /// </summary>
+      public BoundingBoxXYZ BoundingBox { get; protected set; } = null;
 
       /// <summary>
       /// The associated layer assignment of the representation item, if any.
       /// </summary>
-      public IFCPresentationLayerAssignment LayerAssignment
-      {
-         get { return m_LayerAssignment; }
-         protected set { m_LayerAssignment = value; }
-      }
+      public IFCPresentationLayerAssignment LayerAssignment { get; protected set; } = null;
 
       /// <summary>
       /// Default constructor.
@@ -127,36 +74,50 @@ namespace Revit.IFC.Import.Data
 
       }
 
+      /// <summary>
+      /// Determine if the IFCRepresentationMap only has at least 1 IFCHybridInformation.
+      /// </summary>
+      /// <returns>True if the IFCRepresentationMap only has at least 1 IFCHybridInformation.</returns>
+      public bool IsHybridOnly()
+      {
+         if ((RepresentationItems?.Count ?? 0) == 0)
+            return false;
+
+         foreach (IFCRepresentationItem item in RepresentationItems)
+         {
+            if (!(item is IFCHybridRepresentationItem))
+               return false;
+         }
+
+         return true;
+      }
+
       private IFCRepresentationIdentifier GetRepresentationIdentifier(string identifier, IFCAnyHandle ifcRepresentation)
       {
+         if (Enum.TryParse(identifier, true, out IFCRepresentationIdentifier ifcRepresentationIdentifier))
+         {
+            return ifcRepresentationIdentifier;
+         }
+
+         // Special cases below.
          // Sorted by order of expected occurences.
          // NOTE: This list includes invalid or obsolete identifiers found in real IFC files. 
-         if ((string.Compare(identifier, "Body", true) == 0) ||
-             (string.Compare(identifier, "Facetation", true) == 0) ||
+         if ((string.Compare(identifier, "Facetation", true) == 0) ||
              string.IsNullOrWhiteSpace(identifier))
             return IFCRepresentationIdentifier.Body;
-         if (string.Compare(identifier, "Axis", true) == 0)
-            return IFCRepresentationIdentifier.Axis;
-         if ((string.Compare(identifier, "Box", true) == 0) ||
-            (string.Compare(identifier, "BoundingBox", true) == 0))
+         if (string.Compare(identifier, "BoundingBox", true) == 0)
             return IFCRepresentationIdentifier.Box;
-         if ((string.Compare(identifier, "FootPrint", true) == 0) ||
-             (string.Compare(identifier, "Annotation", true) == 0) ||
+         if ((string.Compare(identifier, "Annotation", true) == 0) ||
              (string.Compare(identifier, "Profile", true) == 0) ||
              (string.Compare(identifier, "Plan", true) == 0))
             return IFCRepresentationIdentifier.FootPrint;
-         if (string.Compare(identifier, "Style", true) == 0 ||
-             IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentation, IFCEntityType.IfcStyledRepresentation))
+         if (IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentation, IFCEntityType.IfcStyledRepresentation))
             return IFCRepresentationIdentifier.Style;
-         if (string.Compare(identifier, "CoG", true) == 0)
-            return IFCRepresentationIdentifier.CoG;
          if (string.Compare(identifier, "Body-Fallback", true) == 0)
             return IFCRepresentationIdentifier.BodyFallback;
 
          Importer.TheLog.LogWarning(ifcRepresentation.StepId, "Found unknown representation type: " + identifier, false);
-
-
-         return IFCRepresentationIdentifier.Unhandled;
+         return IFCRepresentationIdentifier.Other;
       }
 
       private bool NotAllowedInRepresentation(IFCAnyHandle item)
@@ -164,8 +125,15 @@ namespace Revit.IFC.Import.Data
          switch (Identifier)
          {
             case IFCRepresentationIdentifier.Axis:
-               return !(IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcCurve) ||
+               bool isNotAllowed = !(IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcCurve) ||
                    IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcMappedItem));
+
+               if (IFCAnyHandleUtil.IsSubTypeOf(item, IFCEntityType.IfcGeometricSet))
+               {
+                  isNotAllowed = false;
+                  Importer.TheLog.LogWarning(item.StepId, "Axis representation has a disallowed IfcGeometricSet, processing.", true);
+               }
+               return isNotAllowed;
             case IFCRepresentationIdentifier.Body:
                return false;
             case IFCRepresentationIdentifier.Box:
@@ -189,19 +157,13 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcRepresentation);
 
-         IFCAnyHandle representationContext = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcRepresentation, "ContextOfItems", false);
-         if (representationContext != null)
-            Context = IFCRepresentationContext.ProcessIFCRepresentationContext(representationContext);
-
          string identifier = IFCImportHandleUtil.GetOptionalStringAttribute(ifcRepresentation, "RepresentationIdentifier", null);
          Identifier = GetRepresentationIdentifier(identifier, ifcRepresentation);
 
-         Type = IFCImportHandleUtil.GetOptionalStringAttribute(ifcRepresentation, "RepresentationType", null);
+         LayerAssignment = IFCPresentationLayerAssignment.GetTheLayerAssignment(ifcRepresentation);
 
          HashSet<IFCAnyHandle> items =
-             IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcRepresentation, "Items");
-
-         LayerAssignment = IFCPresentationLayerAssignment.GetTheLayerAssignment(ifcRepresentation);
+            IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcRepresentation, "Items");
 
          if (items == null)
          {
@@ -245,10 +207,21 @@ namespace Revit.IFC.Import.Data
                {
                   Importer.TheLog.LogError(item.StepId, ex.Message, false);
                }
+
                if (repItem != null)
                   RepresentationItems.Add(repItem);
             }
          }
+
+         // If we have a body representation and we have already gone through Hybrid, skip the rest of the work here.
+         if (Identifier == IFCRepresentationIdentifier.Body && (Importer.TheHybridInfo?.RepresentationsAlreadyCreated ?? false))
+            return;
+
+         IFCAnyHandle representationContext = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcRepresentation, "ContextOfItems", false);
+         if (representationContext != null)
+            Context = IFCRepresentationContext.ProcessIFCRepresentationContext(representationContext);
+
+         RepresentationType = IFCImportHandleUtil.GetOptionalStringAttribute(ifcRepresentation, "RepresentationType", null);
       }
 
       /// <summary>
@@ -291,10 +264,9 @@ namespace Revit.IFC.Import.Data
       /// Create geometry for a particular representation.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      public void CreateShape(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      public void CreateShape(IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
          // Special handling for Box representation.  We may decide to create an IFCBoundingBox class and stop this special treatment.
          if (BoundingBox != null)
@@ -310,7 +282,7 @@ namespace Revit.IFC.Import.Data
             {
                foreach (IFCRepresentationItem representationItem in RepresentationItems)
                {
-                  representationItem.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+                  representationItem.CreateShape(shapeEditScope, scaledLcs, guid);
                }
             }
          }

@@ -47,13 +47,11 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="RevitAPI, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPI.dll</HintPath>
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPIIFC.dll</HintPath>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Web.Extensions" />
@@ -61,10 +59,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Enums\CommonEnum.cs" />
+    <Compile Include="Enums\IFC2X2_ADD1EntityType.cs" />
+    <Compile Include="Enums\IFC2X3_TC1EntityType.cs" />
     <Compile Include="Enums\IFC2xEntityType.cs" />
     <Compile Include="Enums\IFC4EntityType.cs" />
-    <Compile Include="Enums\IFC4x1EntityType.cs" />
-    <Compile Include="Enums\IFC4x2EntityType.cs" />
     <Compile Include="Enums\IFC4x3EntityType.cs" />
     <Compile Include="Enums\IFCEntityType.cs" />
     <Compile Include="Enums\IFCKnownMVDAndER.cs" />
@@ -80,6 +78,7 @@
     <Compile Include="Utility\COBieProjectInfo.cs" />
     <Compile Include="Utility\CoordReferenceInfo.cs" />
     <Compile Include="Utility\DirectoryUtil.cs" />
+    <Compile Include="Utility\ElementComparer.cs" />
     <Compile Include="Utility\IFCAnyHandleUtil.cs" />
     <Compile Include="Utility\IFCCompatibilityType.cs" />
     <Compile Include="Utility\IFCEntityTrie.cs" />
@@ -115,7 +114,7 @@
   </ItemGroup>
   <Import Project=".\Revit.IFC.Common.props" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2024.bundle\Contents\2024\" /F /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

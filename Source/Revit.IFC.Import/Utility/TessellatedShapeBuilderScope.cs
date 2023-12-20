@@ -185,7 +185,7 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Start collecting faces to create a BRep solid.
       /// </summary>
-      public void StartCollectingFaceSet()
+      public override void StartCollectingFaceSet(BRepType brepType = BRepType.OpenShell)
       {
          if (TessellatedShapeBuilder == null)
             TessellatedShapeBuilder = new TessellatedShapeBuilder();
@@ -418,6 +418,10 @@ namespace Revit.IFC.Import.Utility
             int count = interiorLoop.Item2;
             if (count >= 3)
                TessellatedFaceBoundary.Add(loopVertices.GetRange(startIndex, count));
+            if (startIndex + count > adjustedLoopVertices.Count)
+            {
+               count = adjustedLoopVertices.Count - startIndex;
+            }
             adjustedLoopVertices.RemoveRange(startIndex, count);
          }
 
@@ -543,7 +547,9 @@ namespace Revit.IFC.Import.Utility
          TessellatedShapeBuilderOutcome outcome;
          IList<GeometryObject> geomObjects = CreateGeometryObjects(guid, out invalidData, out outcome);
 
-         // We won't log a message here as we expect the receiver to warn as necessary.
+         if(invalidData)
+            Importer.TheLog.LogWarning(CreatorId(), "Couldn't create mesh.", false);
+
          return geomObjects;
       }
 
@@ -561,7 +567,9 @@ namespace Revit.IFC.Import.Utility
          TessellatedShapeBuilderOutcome outcome;
          IList<GeometryObject> geomObjects = CreateGeometryObjects(guid, out invalidData, out outcome);
 
-         // We won't log a message here as we expect the receiver to warn as necessary.
+         if (invalidData)
+            Importer.TheLog.LogWarning(CreatorId(), "Couldn't create solid or mesh.", false);
+
          return geomObjects;
       }
 
@@ -570,7 +578,7 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       /// <param name="guid">The Guid associated with the geometry.</param>
       /// <returns>A list of GeometryObjects, possibly empty.</returns>
-      public IList<GeometryObject> CreateGeometry(string guid)
+      public override IList<GeometryObject> CreateGeometry(string guid)
       {
          if (TargetGeometry == TessellatedShapeBuilderTarget.AnyGeometry && FallbackGeometry == TessellatedShapeBuilderFallback.Mesh)
             return CreateSolidOrMesh(guid);

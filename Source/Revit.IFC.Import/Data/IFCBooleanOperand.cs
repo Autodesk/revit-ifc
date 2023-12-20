@@ -34,14 +34,29 @@ namespace Revit.IFC.Import.Data
             return null;
          }
 
-         if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcBooleanResult))
-            return IFCBooleanResult.ProcessIFCBooleanResult(ifcBooleanOperand);
-         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcHalfSpaceSolid))
-            return IFCHalfSpaceSolid.ProcessIFCHalfSpaceSolid(ifcBooleanOperand);
-         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcSolidModel))
-            return IFCSolidModel.ProcessIFCSolidModel(ifcBooleanOperand);
-         else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcCsgPrimitive3D))
-            return IFCCsgPrimitive3D.ProcessIFCCsgPrimitive3D(ifcBooleanOperand);
+         // If Hybrid IFC Import is in progress, make sure that the correct RepresentationItem is created.
+         if (Importer.TheOptions.IsHybridImport && (Importer.TheHybridInfo?.RepresentationsAlreadyCreated ?? false))
+         {
+            // Check for Subtypes that Legacy Import would otherwise process.
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcBooleanResult) ||
+                IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcHalfSpaceSolid) ||
+                IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcSolidModel) ||
+                IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcCsgPrimitive3D))
+            {
+               return IFCHybridRepresentationItem.ProcessIFCHybridRepresentationItem(ifcBooleanOperand);
+            }
+         }
+         else
+         {
+            if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcBooleanResult))
+               return IFCBooleanResult.ProcessIFCBooleanResult(ifcBooleanOperand);
+            else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcHalfSpaceSolid))
+               return IFCHalfSpaceSolid.ProcessIFCHalfSpaceSolid(ifcBooleanOperand);
+            else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcSolidModel))
+               return IFCSolidModel.ProcessIFCSolidModel(ifcBooleanOperand);
+            else if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcBooleanOperand, IFCEntityType.IfcCsgPrimitive3D))
+               return IFCCsgPrimitive3D.ProcessIFCCsgPrimitive3D(ifcBooleanOperand);
+         }
 
          Importer.TheLog.LogUnhandledSubTypeError(ifcBooleanOperand, "IfcBooleanOperand", true);
          return null;

@@ -253,7 +253,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       ComplexNumber,
       ThermalResistance,
       Numeric,
-      ElectricCapacitance
+      ElectricCapacitance,
+      URIReference,
+      Acceleration,
+      SoundPowerLevel,
+      IntegerCountRate,
+      IfcDocumentReference,
+      ElectricCharge,
+      Inductance,
+      AngularVelocity,
+      IfcCostValue,
+      IfcRelaxation,
+      ElectricalResistivity,
+      FrictionLoss,
+      LinearMoment,
+      LinearStiffness
    }
 
    /// <summary>
@@ -359,7 +373,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          Parameter parameter = null;
          if (ParameterUtils.IsBuiltInParameter(paramId))
          {
-            parameter = element.get_Parameter((BuiltInParameter)paramId.IntegerValue);
+            parameter = element.get_Parameter((BuiltInParameter)paramId.Value);
          }
          else
          {
@@ -391,14 +405,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="file">The IFC file.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="owningPsetName">Name of Property Set this entry belongs to .</param>
-      /// <param name="extrusionCreationData">The IFCExtrusionCreationData.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
       /// <param name="elementOrConnector">The element or connector of which this property is created for.</param>
       /// <param name="elementType">The element type of which this property is created for.</param>
       /// <param name="handle">The handle for which this property is created for.</param>
+      /// <param name="lookInType">True if it's appropriate to look for value in element type.</param>
       /// <returns>The created property handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
-         IFCExtrusionCreationData extrusionCreationData, ElementOrConnector elementOrConnector,
-         ElementType elementType, IFCAnyHandle handle, bool fromSchedule=false)
+         IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector,
+         ElementType elementType, IFCAnyHandle handle, bool lookInType = false)
       {
          // if CombinedParameterData, then we have to recreate the parameter value, since there is no
          // API for this.
@@ -412,7 +427,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName,
                extrusionCreationData, elementOrConnector, elementType, handle, PropertyType,
-               PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName, fromSchedule);
+               PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName,
+               lookInType);
             if (propHnd != null)
                return propHnd;
          }
@@ -857,7 +873,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                {
                   bool assigned = true;
                   ForgeTypeId type = parameterDefinition.GetDataType();
-                  if (type == SpecTypeId.Angle)
+                  if (type == SpecTypeId.Acceleration)
+                  {
+                     propertyType = PropertyType.Acceleration;
+                  }
+                  else if (type == SpecTypeId.Angle ||
+                     type == SpecTypeId.Rotation ||
+                     type == SpecTypeId.RotationAngle)
                   {
                      propertyType = PropertyType.PlaneAngle;
                   }
@@ -871,6 +893,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   else if (type == SpecTypeId.BarDiameter ||
                      type == SpecTypeId.CrackWidth ||
                      type == SpecTypeId.Displacement ||
+                     type == SpecTypeId.Distance ||
                      type == SpecTypeId.CableTraySize ||
                      type == SpecTypeId.ConduitSize ||
                      type == SpecTypeId.Length ||
@@ -878,6 +901,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      type == SpecTypeId.DuctLiningThickness ||
                      type == SpecTypeId.DuctSize ||
                      type == SpecTypeId.HvacRoughness ||
+                     type == SpecTypeId.PipeDimension ||
                      type == SpecTypeId.PipeInsulationThickness ||
                      type == SpecTypeId.PipeSize ||
                      type == SpecTypeId.PipingRoughness ||
@@ -903,6 +927,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.ElectricalEfficacy;
                   }
+                  else if (type == SpecTypeId.Energy ||
+                     type == SpecTypeId.HvacEnergy)
+                  {
+                     propertyType = PropertyType.Energy;
+                  }
                   else if (type == SpecTypeId.LuminousIntensity)
                   {
                      propertyType = PropertyType.LuminousIntensity;
@@ -915,6 +944,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      type == SpecTypeId.ElectricalPower ||
                      type == SpecTypeId.Wattage ||
                      type == SpecTypeId.CoolingLoad ||
+                     type == SpecTypeId.HeatGain ||
                      type == SpecTypeId.HeatingLoad ||
                      type == SpecTypeId.HvacPower)
                   {
@@ -928,9 +958,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.ElectricVoltage;
                   }
-                  else if (type == SpecTypeId.ElectricalFrequency)
+                  else if (type == SpecTypeId.ElectricalResistivity)
+                  {
+                     propertyType = PropertyType.ElectricalResistivity;
+                  }
+                  else if (type == SpecTypeId.ElectricalFrequency ||
+                     type == SpecTypeId.StructuralFrequency)
                   {
                      propertyType = PropertyType.Frequency;
+                  }
+                  else if (type == SpecTypeId.HvacFriction)
+                  {
+                     propertyType = PropertyType.FrictionLoss;
                   }
                   else if (type == SpecTypeId.LuminousFlux)
                   {
@@ -946,7 +985,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.ThermalTransmittance;
                   }
-                  else if (type == SpecTypeId.Force)
+                  else if (type == SpecTypeId.Force ||
+                     type == SpecTypeId.Weight)
                   {
                      propertyType = PropertyType.Force;
                   }
@@ -961,7 +1001,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.Pressure;
                   }
-                  else if (type == SpecTypeId.MassDensity)
+                  else if (type == SpecTypeId.MassDensity ||
+                     type == SpecTypeId.HvacDensity)
                   {
                      propertyType = PropertyType.MassDensity;
                   }
@@ -972,13 +1013,118 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.Volume;
                   }
-                  else if (type == SpecTypeId.PipingMassPerTime)
+                  else if (type == SpecTypeId.PipingMassPerTime ||
+                     type == SpecTypeId.HvacMassPerTime)
                   {
                      propertyType = PropertyType.MassFlowRate;
                   }
                   else if (type == SpecTypeId.AngularSpeed)
                   {
                      propertyType = PropertyType.RotationalFrequency;
+                  }
+                  else if (type == SpecTypeId.MassPerUnitArea && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+                  {
+                     propertyType = PropertyType.AreaDensity;
+                  }
+                  else if (type == SpecTypeId.HvacViscosity ||
+                     type == SpecTypeId.PipingViscosity)
+                  {
+                     propertyType = PropertyType.DynamicViscosity;
+                  }
+                  else if (type == SpecTypeId.SpecificHeatOfVaporization)
+                  {
+                     propertyType = PropertyType.HeatingValue;
+                  }
+                  else if (type == SpecTypeId.PipingDensity)
+                  {
+                     propertyType = PropertyType.IonConcentration;
+                  }
+                  else if (type == SpecTypeId.IsothermalMoistureCapacity)
+                  {
+                     propertyType = PropertyType.IsothermalMoistureCapacity;
+                  }
+                  else if (type == SpecTypeId.HvacPowerDensity)
+                  {
+                     propertyType = PropertyType.HeatFluxDensity;
+                  }
+                  else if (type == SpecTypeId.HvacVelocity ||
+                     type == SpecTypeId.PipingVelocity ||
+                     type == SpecTypeId.StructuralVelocity ||
+                     type == SpecTypeId.Speed)
+                  {
+                     propertyType = PropertyType.LinearVelocity;
+                  }
+                  else if (type == SpecTypeId.LinearForce ||
+                     type == SpecTypeId.WeightPerUnitLength)
+                  {
+                     propertyType = PropertyType.LinearForce;
+                  }
+                  else if (type == SpecTypeId.LinearMoment)
+                  {
+                     propertyType = PropertyType.LinearMoment;
+                  }
+                  else if (type == SpecTypeId.Mass ||
+                     type == SpecTypeId.PipingMass)
+                  {
+                     propertyType = PropertyType.Mass;
+                  }
+                  else if (type == SpecTypeId.MassPerUnitLength ||
+                     type == SpecTypeId.PipeMassPerUnitLength)
+                  {
+                     propertyType = PropertyType.MassPerLength;
+                  }
+                  else if (type == SpecTypeId.Diffusivity)
+                  {
+                     propertyType = PropertyType.MoistureDiffusivity;
+                  }
+                  else if (type == SpecTypeId.Moment)
+                  {
+                     propertyType = PropertyType.Torque;
+                  }
+                  else if (type == SpecTypeId.MomentOfInertia)
+                  {
+                     propertyType = PropertyType.MomentOfInertia;
+                  }
+                  else if (type == SpecTypeId.AreaForce)
+                  {
+                     propertyType = PropertyType.PlanarForce;
+                  }
+                  else if (type == SpecTypeId.SpecificHeat)
+                  {
+                     propertyType = PropertyType.SpecificHeatCapacity;
+                  }
+                  else if (type == SpecTypeId.ThermalConductivity)
+                  {
+                     propertyType = PropertyType.ThermalConductivity;
+                  }
+                  else if (type == SpecTypeId.ThermalExpansionCoefficient)
+                  {
+                     propertyType = PropertyType.ThermalExpansionCoefficient;
+                  }
+                  else if (type == SpecTypeId.ThermalResistance)
+                  {
+                     propertyType = PropertyType.ThermalResistance;
+                  }
+                  else if (type == SpecTypeId.Time ||
+                     type == SpecTypeId.Period)
+                  {
+                     propertyType = PropertyType.Time;
+                  }
+                  else if (type == SpecTypeId.Permeability)
+                  {
+                     propertyType = PropertyType.VaporPermeability;
+                  }
+                  else if (type == SpecTypeId.PointSpringCoefficient)
+                  {
+                     propertyType = PropertyType.LinearStiffness;
+                  }
+                  else if (type == SpecTypeId.Pulsation)
+                  {
+                     propertyType = PropertyType.AngularVelocity;
+                  }
+                  else if (type == SpecTypeId.WarpingConstant)
+                  {
+                     propertyType = PropertyType.WarpingConstant;
                   }
                   else
                   {

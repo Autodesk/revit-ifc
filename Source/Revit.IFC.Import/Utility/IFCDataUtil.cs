@@ -40,26 +40,43 @@ namespace Revit.IFC.Import.Utility
       {
          m_MeasureCache = new SortedDictionary<string, ForgeTypeId>(StringComparer.InvariantCultureIgnoreCase);
 
+         m_MeasureCache["IfcAccelerationMeasure"] = SpecTypeId.Acceleration;
+         m_MeasureCache["IfcAngularVelocityMeasure"] = SpecTypeId.Pulsation;         
+         m_MeasureCache["IfcAreaDensityMeasure"] = SpecTypeId.MassPerUnitArea;
          m_MeasureCache["IfcAreaMeasure"] = SpecTypeId.Area;
          m_MeasureCache["IfcCountMeasure"] = SpecTypeId.Number;
          m_MeasureCache["IfcElectricCurrentMeasure"] = SpecTypeId.Current;
          m_MeasureCache["IfcElectricVoltageMeasure"] = SpecTypeId.ElectricalPotential;
+         m_MeasureCache["IfcEnergyMeasure"] = SpecTypeId.Energy;
+         m_MeasureCache["IfcDynamicViscosityMeasure"] = SpecTypeId.HvacViscosity;
          m_MeasureCache["IfcForceMeasure"] = SpecTypeId.Force;
          m_MeasureCache["IfcFrequencyMeasure"] = SpecTypeId.ElectricalFrequency;
-         m_MeasureCache["IfcLengthMeasure"] = SpecTypeId.Length;
+         m_MeasureCache["IfcHeatFluxDensityMeasure"] = SpecTypeId.HvacPowerDensity;
+         m_MeasureCache["IfcHeatingValueMeasure"] = SpecTypeId.SpecificHeatOfVaporization;
          m_MeasureCache["IfcIlluminanceMeasure"] = SpecTypeId.Illuminance;
          m_MeasureCache["IfcInteger"] = SpecTypeId.Number;
+         m_MeasureCache["IfcIonConcentrationMeasure"] = SpecTypeId.PipingDensity;
+         m_MeasureCache["IfcIsothermalMoistureCapacityMeasure"] = SpecTypeId.IsothermalMoistureCapacity;
+         m_MeasureCache["IfcLengthMeasure"] = SpecTypeId.Length;
+         m_MeasureCache["IfcLinearForceMeasure"] = SpecTypeId.LinearForce;
+         m_MeasureCache["IfcLinearMomentMeasure"] = SpecTypeId.LinearMoment;
+         m_MeasureCache["IfcLinearStiffnessMeasure"] = SpecTypeId.PointSpringCoefficient;
          m_MeasureCache["IfcLinearVelocityMeasure"] = SpecTypeId.HvacVelocity;
          m_MeasureCache["IfcLuminousFluxMeasure"] = SpecTypeId.LuminousFlux;
          m_MeasureCache["IfcLuminousIntensityMeasure"] = SpecTypeId.LuminousIntensity;
          m_MeasureCache["IfcMassFlowRateMeasure"] = SpecTypeId.PipingMassPerTime;
          m_MeasureCache["IfcMassMeasure"] = SpecTypeId.Mass;
          m_MeasureCache["IfcMassDensityMeasure"] = SpecTypeId.MassDensity;
+         m_MeasureCache["IfcMassPerLengthMeasure"] = SpecTypeId.MassPerUnitLength;
+         m_MeasureCache["IfcModulusOfElasticityMeasure"] = SpecTypeId.Stress;
+         m_MeasureCache["IfcMoistureDiffusivityMeasure"] = SpecTypeId.Diffusivity;
+         m_MeasureCache["IfcMomentofInertiaMeasure"] = SpecTypeId.MomentOfInertia;
          m_MeasureCache["IfcMonetaryMeasure"] = SpecTypeId.Currency;
          m_MeasureCache["IfcNormalisedRatioMeasure"] = SpecTypeId.Number;
          m_MeasureCache["IfcNumericMeasure"] = SpecTypeId.Number;
          m_MeasureCache["IfcPositiveRatioMeasure"] = SpecTypeId.Number;
          m_MeasureCache["IfcPositiveLengthMeasure"] = SpecTypeId.Length;
+         m_MeasureCache["IfcPlanarForceMeasure"] = SpecTypeId.AreaForce;
          m_MeasureCache["IfcPlaneAngleMeasure"] = SpecTypeId.Angle;
          m_MeasureCache["IfcPositivePlaneAngleMeasure"] = SpecTypeId.Angle;
          m_MeasureCache["IfcPowerMeasure"] = SpecTypeId.HvacPower;
@@ -69,12 +86,19 @@ namespace Revit.IFC.Import.Utility
          m_MeasureCache["IfcRotationalFrequencyMeasure"] = SpecTypeId.AngularSpeed;
          m_MeasureCache["IfcSoundPowerMeasure"] = SpecTypeId.Wattage;
          m_MeasureCache["IfcSoundPressureMeasure"] = SpecTypeId.HvacPressure;
+         m_MeasureCache["IfcSpecificHeatCapacityMeasure"] = SpecTypeId.SpecificHeat;
          m_MeasureCache["IfcTimeMeasure"] = SpecTypeId.Time;
          m_MeasureCache["IfcTimeStamp"] = SpecTypeId.Number;  // No unit type for time in Revit.
+         m_MeasureCache["IfcThermalConductivityMeasure"] = SpecTypeId.ThermalConductivity; 
+         m_MeasureCache["IfcThermalExpansionCoefficientMeasure"] = SpecTypeId.ThermalExpansionCoefficient;
          m_MeasureCache["IfcThermalTransmittanceMeasure"] = SpecTypeId.HeatTransferCoefficient;
+         m_MeasureCache["IfcThermalResistanceMeasure"] = SpecTypeId.ThermalResistance;
          m_MeasureCache["IfcThermodynamicTemperatureMeasure"] = SpecTypeId.HvacTemperature;
+         m_MeasureCache["IfcTorqueMeasure"] = SpecTypeId.Moment;
+         m_MeasureCache["IfcVaporPermeabilityMeasure"] = SpecTypeId.Permeability;
          m_MeasureCache["IfcVolumeMeasure"] = SpecTypeId.Volume;
          m_MeasureCache["IfcVolumetricFlowRateMeasure"] = SpecTypeId.AirFlow;
+         m_MeasureCache["IfcWarpingConstantMeasure"] = SpecTypeId.WarpingConstant;
       }
 
       static public IDictionary<string, ForgeTypeId> MeasureCache

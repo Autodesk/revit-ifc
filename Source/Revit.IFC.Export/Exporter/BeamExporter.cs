@@ -240,9 +240,12 @@ namespace Revit.IFC.Export.Exporter
 
          if (axis_items.Count > 0)
          {
-            string identifierOpt = "Axis";   // This is by IFC2x2+ convention.
-            IFCAnyHandle axisRep = RepresentationUtil.CreateShapeRepresentation(exporterIFC, element, catId, exporterIFC.Get3DContextHandle(identifierOpt),
-               identifierOpt, representationTypeOpt, axis_items);
+            IFCRepresentationIdentifier identifier = IFCRepresentationIdentifier.Axis;
+            string identifierOpt = identifier.ToString();   // This is by IFC2x2+ convention.
+            IFCAnyHandle contextHandle3d = ExporterCacheManager.Get3DContextHandle(identifier);
+            IFCAnyHandle axisRep = RepresentationUtil.CreateShapeRepresentation(exporterIFC, 
+               element, catId, contextHandle3d, identifierOpt, representationTypeOpt, 
+               axis_items);
             return axisRep;
          }
 
@@ -259,8 +262,9 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="axisInfo">The beam axis information.</param>
       /// <returns>The BeamBodyAsExtrusionInfo class which contains the created handle (if any) and other information, or null.</returns>
       private static BeamBodyAsExtrusionInfo CreateBeamGeometryAsExtrusion(ExporterIFC exporterIFC, Element element, ElementId catId,
-            IList<GeometryObject> geomObjects, BeamAxisInfo axisInfo)
+            IList<GeometryObject> geomObjects, BeamAxisInfo axisInfo, out IFCExportBodyParams extrusionData)
       {
+         extrusionData = null;
          // If we have a beam with a Linear location line that only has one solid geometry,
          // we will try to use the ExtrusionAnalyzer to generate an extrusion with 0 or more clippings.
          // This code is currently limited in that it will not process beams with openings, so we
@@ -292,7 +296,7 @@ namespace Revit.IFC.Export.Exporter
          info.RepresentationHandle = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, element, false,
              catId, solid, beamExtrusionBasePlane, orientTrf.Origin, beamDirection, null, 
              out extraClippingData,
-             out footPrintInfo, out materialAndProfile, addInfo: addInfo, profileName: profileName);
+             out footPrintInfo, out materialAndProfile, out extrusionData, addInfo: addInfo, profileName: profileName);
          if (extraClippingData.CompletelyClipped)
          {
             info.DontExport = true;
@@ -434,7 +438,7 @@ namespace Revit.IFC.Export.Exporter
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientTrf, overrideContainerId, overrideContainerHnd))
             {
                IFCAnyHandle localPlacement = setter.LocalPlacement;
-               using (IFCExtrusionCreationData extrusionCreationData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams extrusionCreationData = new IFCExportBodyParams())
                {
                   extrusionCreationData.SetLocalPlacement(localPlacement);
                   if (canExportAxis && (orientTrf.BasisX != null))
@@ -470,9 +474,10 @@ namespace Revit.IFC.Export.Exporter
 
                   // The representation handle generated from one of the methods below.
                   BeamBodyAsExtrusionInfo extrusionInfo = null;
+                  IFCExportBodyParams extrusionData = null;
                   if (tryToCreateBeamGeometryAsExtrusion)
                   {
-                     extrusionInfo = CreateBeamGeometryAsExtrusion(exporterIFC, element, catId, geomObjects, axisInfo);
+                     extrusionInfo = CreateBeamGeometryAsExtrusion(exporterIFC, element, catId, geomObjects, axisInfo, out extrusionData);
                      if (useFamilySymbolGeometry)
                         ExporterCacheManager.CanExportBeamGeometryAsExtrusionCache[beamTypeId] = (extrusionInfo != null);
                   }
@@ -481,6 +486,12 @@ namespace Revit.IFC.Export.Exporter
                   {
                      dontExport = true;
                      return null;
+                  }
+
+                  if (extrusionData != null)
+                  {
+                     extrusionCreationData.ScaledLength = extrusionData.ScaledLength;
+                     extrusionCreationData.ScaledOuterPerimeter = extrusionData.ScaledOuterPerimeter;
                   }
 
                   IFCAnyHandle repHnd = extrusionInfo?.RepresentationHandle;

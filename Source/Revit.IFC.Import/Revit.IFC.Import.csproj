@@ -39,7 +39,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <Prefer32Bit>false</Prefer32Bit>
     <PlatformTarget>x64</PlatformTarget>
-    <OutputPath>bin\Debugx64\</OutputPath>
+    <OutputPath>C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2024.bundle\Contents\2024\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <Prefer32Bit>false</Prefer32Bit>
@@ -50,15 +50,15 @@
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=9ea901ae1ee158aa, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\ThirdParty\ICSharpCode\ICSharpCode.SharpZipLib.DLL</HintPath>
-      <Private>False</Private>
+      <Private>true</Private>
     </Reference>
-    <Reference Include="RevitAPI, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPI, Version=24.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=23.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="RevitAPIIFC, Version=24.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Autodesk\Revit 2023\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -67,8 +67,10 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\IFCAddress.cs" />
     <Compile Include="Data\IFCAdvancedBrep.cs" />
     <Compile Include="Data\IFCAdvancedFace.cs" />
+    <Compile Include="Data\IFCAnnotation.cs" />
     <Compile Include="Data\IFCApplication.cs" />
     <Compile Include="Data\IFCBlock.cs" />
     <Compile Include="Data\IFCBooleanOperand.cs" />
@@ -82,12 +84,14 @@
     <Compile Include="Data\IFCBuildingElement.cs" />
     <Compile Include="Data\IFCBuildingElementComponent.cs" />
     <Compile Include="Data\IFCBuildingElementPart.cs" />
+    <Compile Include="Data\IFCBuildingElementProxy.cs" />
     <Compile Include="Data\IFCBuildingStorey.cs" />
     <Compile Include="Data\IFCCartesianPointList3D.cs" />
     <Compile Include="Data\IFCCartesianTransformOperator.cs" />
     <Compile Include="Data\IFCCircle.cs" />
     <Compile Include="Data\IFCClosedShell.cs" />
     <Compile Include="Data\IFCColourRgb.cs" />
+    <Compile Include="Data\IFCColourRgbList.cs" />
     <Compile Include="Data\IFCColourSpecification.cs" />
     <Compile Include="Data\IFCCompositeCurve.cs" />
     <Compile Include="Data\IFCConic.cs" />
@@ -98,9 +102,11 @@
     <Compile Include="Data\IFCCylindricalSurface.cs" />
     <Compile Include="Data\IFCDerivedProfileDef.cs" />
     <Compile Include="Data\IFCDistributionPort.cs" />
+    <Compile Include="Data\IFCDistributionSystem.cs" />
     <Compile Include="Data\IFCDoorLiningProperties.cs" />
     <Compile Include="Data\IFCDoorPanelProperties.cs" />
     <Compile Include="Data\IFCDoorStyle.cs" />
+    <Compile Include="Data\IFCDoorType.cs" />
     <Compile Include="Data\IFCDoorWindowPropertyBase.cs" />
     <Compile Include="Data\IFCEdge.cs" />
     <Compile Include="Data\IFCEdgeCurve.cs" />
@@ -122,11 +128,15 @@
     <Compile Include="Data\IFCFeatureElement.cs" />
     <Compile Include="Data\IFCFeatureElementSubtraction.cs" />
     <Compile Include="Data\IFCGeometricSet.cs" />
+    <Compile Include="Data\IFCGeotechnicalElement.cs" />
+    <Compile Include="Data\IFCGeotechnicalStratum.cs" />
     <Compile Include="Data\IFCGrid.cs" />
     <Compile Include="Data\IFCGridAxis.cs" />
     <Compile Include="Data\IFCGroup.cs" />
     <Compile Include="Data\IFCHalfSpaceSolid.cs" />
+    <Compile Include="Data\IFCHybridRepresentationItem.cs" />
     <Compile Include="Data\IFCImportFile.cs" />
+    <Compile Include="Data\IFCIndexedColourMap.cs" />
     <Compile Include="Data\IFCIndexedPolyCurve.cs" />
     <Compile Include="Data\IFCIndexedPolygonalFace.cs" />
     <Compile Include="Data\IFCLine.cs" />
@@ -154,6 +164,7 @@
     <Compile Include="Data\IFCOpeningElement.cs" />
     <Compile Include="Data\IFCOrientedEdge.cs" />
     <Compile Include="Data\IFCOwnerHistory.cs" />
+    <Compile Include="Data\IFCPhysicalComplexQuantity.cs" />
     <Compile Include="Data\IFCPhysicalQuantity.cs" />
     <Compile Include="Data\IFCPhysicalSimpleQuantity.cs" />
     <Compile Include="Data\IFCPlane.cs" />
@@ -161,6 +172,7 @@
     <Compile Include="Data\IFCPolyline.cs" />
     <Compile Include="Data\IFCPolyLoop.cs" />
     <Compile Include="Data\IFCPort.cs" />
+    <Compile Include="Data\IFCPostalAddress.cs" />
     <Compile Include="Data\IFCPresentationLayerAssignment.cs" />
     <Compile Include="Data\IFCPresentationLayerWithStyle.cs" />
     <Compile Include="Data\IFCPresentationStyle.cs" />
@@ -170,6 +182,7 @@
     <Compile Include="Data\IFCProfileDef.cs" />
     <Compile Include="Data\IFCPropertyBoundedValue.cs" />
     <Compile Include="Data\IFCPropertySetDefinition.cs" />
+    <Compile Include="Data\IFCPropertyTableValue.cs" />
     <Compile Include="Data\IFCProxy.cs" />
     <Compile Include="Data\IFCRationalBSplineSurfaceWithKnots.cs" />
     <Compile Include="Data\IFCRepresentation.cs" />
@@ -178,9 +191,13 @@
     <Compile Include="Data\IFCRepresentationMap.cs" />
     <Compile Include="Data\IFCRevolvedAreaSolid.cs" />
     <Compile Include="Data\IFCRoot.cs" />
+    <Compile Include="Data\IFCSectionedSolid.cs" />
+    <Compile Include="Data\IFCSectionedSolidHorizontal.cs" />
+    <Compile Include="Data\IFCSectionedSurface.cs" />
     <Compile Include="Data\IFCShellBasedSurfaceModel.cs" />
     <Compile Include="Data\IFCSite.cs" />
     <Compile Include="Data\IFCSolidModel.cs" />
+    <Compile Include="Data\IFCSolidStratum.cs" />
     <Compile Include="Data\IFCSpace.cs" />
     <Compile Include="Data\IFCSpatialStructureElement.cs" />
     <Compile Include="Data\IFCStyledItem.cs" />
@@ -207,6 +224,7 @@
     <Compile Include="Data\IFCWindowPanelProperties.cs" />
     <Compile Include="Data\IFCZone.cs" />
     <Compile Include="Data\IIFCMaterialSelect.cs" />
+    <Compile Include="Data\IFCPresentationItem.cs" />
     <Compile Include="Enums\IFCEnums.cs" />
     <Compile Include="Enums\IFCSchemaVersion.cs" />
     <Compile Include="Enums\IFCShapeBuilderType.cs" />
@@ -238,6 +256,7 @@
     <Compile Include="Utility\IFCDataUtil.cs" />
     <Compile Include="Utility\IFCElementUtil.cs" />
     <Compile Include="Utility\IFCGUIDUtil.cs" />
+    <Compile Include="Utility\IFCImportHybridInfo.cs" />
     <Compile Include="Utility\IFCImportCache.cs" />
     <Compile Include="Utility\IFCImportHandleUtil.cs" />
     <Compile Include="Utility\IFCImportLog.cs" />
@@ -250,6 +269,7 @@
     <Compile Include="Utility\IFCParameterSetByGroup.cs" />
     <Compile Include="Utility\IFCSolidInfo.cs" />
     <Compile Include="Utility\IFCUnitUtil.cs" />
+    <Compile Include="Utility\ParametersToSet.cs" />
     <Compile Include="Utility\ProcessIFCRelation.cs" />
     <Compile Include="Utility\TessellatedShapeBuilderScope.cs" />
   </ItemGroup>
@@ -300,7 +320,8 @@
     -->
   <Import Project=".\Revit.IFC.Import.props" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2023.bundle\Contents\2023\" /F /R /Y /I</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

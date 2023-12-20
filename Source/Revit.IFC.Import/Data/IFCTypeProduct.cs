@@ -24,6 +24,8 @@ using System.Text;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Import.Enums;
+using Revit.IFC.Import.Utility;
 
 namespace Revit.IFC.Import.Data
 {
@@ -83,7 +85,7 @@ namespace Revit.IFC.Import.Data
             return;
          }
 
-         string repType = representationMap.MappedRepresentation.Type;
+         string repType = representationMap.MappedRepresentation.RepresentationType;
          if (repType == null)
             repType = string.Empty;
 
@@ -114,21 +116,24 @@ namespace Revit.IFC.Import.Data
 
          Tag = IFCAnyHandleUtil.GetStringAttribute(ifcTypeProduct, "Tag");
 
-         IList<IFCAnyHandle> representationMapsHandle = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcTypeProduct, "RepresentationMaps");
-         if (representationMapsHandle != null && representationMapsHandle.Count > 0)
+         using (RepresentationsAlreadyCreatedSetter setter = new RepresentationsAlreadyCreatedSetter(GlobalId))
          {
-            foreach (IFCAnyHandle representationMapHandle in representationMapsHandle)
+            IList<IFCAnyHandle> representationMapsHandle = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcTypeProduct, "RepresentationMaps");
+            if (representationMapsHandle?.Count > 0)
             {
-               IFCRepresentationMap representationMap = IFCRepresentationMap.ProcessIFCRepresentationMap(representationMapHandle);
-               if (representationMap != null)
+               foreach (IFCAnyHandle representationMapHandle in representationMapsHandle)
                {
-                  RepresentationMaps.Add(representationMap);
+                  IFCRepresentationMap representationMap = IFCRepresentationMap.ProcessIFCRepresentationMap(representationMapHandle);
+                  if (representationMap != null)
+                  {
+                     RepresentationMaps.Add(representationMap);
 
-                  // Traditionally we would create a "dummy" DirectShapeType for each IfcRepresentationMap.  In the case where the IfcRepresentationMap is not used by another other IfcTypeProduct, 
-                  // we would like to stop creating the "dummy" DirectShapeType and store the geometry in the DirectShapeType associated with the IfcTypeProduct.  However, IfcRepresentationMap 
-                  // does not have an INVERSE relationship to its IfcTypeProduct(s), at least in IFC2x3.
-                  // As such, we keep track of the IfcRepresentationMaps that have the relationship described above for future correspondence.
-                  RegisterRepresentationMapWithTypeProject(representationMap, this);
+                     // Traditionally we would create a "dummy" DirectShapeType for each IfcRepresentationMap.  In the case where the IfcRepresentationMap is not used by another other IfcTypeProduct, 
+                     // we would like to stop creating the "dummy" DirectShapeType and store the geometry in the DirectShapeType associated with the IfcTypeProduct.  However, IfcRepresentationMap 
+                     // does not have an INVERSE relationship to its IfcTypeProduct(s), at least in IFC2x3.
+                     // As such, we keep track of the IfcRepresentationMaps that have the relationship described above for future correspondence.
+                     RegisterRepresentationMapWithTypeProject(representationMap, this);
+                  }
                }
             }
          }
@@ -150,6 +155,10 @@ namespace Revit.IFC.Import.Data
          IFCEntity typeProduct;
          if (IFCImportFile.TheFile.EntityMap.TryGetValue(ifcTypeProduct.StepId, out typeProduct))
             return (typeProduct as IFCTypeProduct);
+
+         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4Obsolete) && 
+            IFCAnyHandleUtil.IsValidSubTypeOf(ifcTypeProduct, IFCEntityType.IfcDoorType))
+               return IFCDoorType.ProcessIFCDoorType(ifcTypeProduct);
 
          if (IFCAnyHandleUtil.IsValidSubTypeOf(ifcTypeProduct, IFCEntityType.IfcDoorStyle))
             return IFCDoorStyle.ProcessIFCDoorStyle(ifcTypeProduct);

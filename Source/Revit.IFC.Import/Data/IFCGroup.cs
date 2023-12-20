@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
@@ -137,6 +138,97 @@ namespace Revit.IFC.Import.Data
          }
 
          return new IFCGroup(ifcGroup);
+      }
+
+      /// <summary>
+      /// Indicates whether created DirectShape container should also duplicate geometry (or contain references to geometry), or not.
+      /// In most cases, this should be true, but there is previous behavior where this is governed by an API option.
+      /// Default is true.
+      /// </summary>
+      /// <returns>True if DirectShape should create geometry, False otherwise.</returns>
+      public virtual bool ContainerDuplicatesGeometry() { return true; }
+
+      /// <summary>
+      /// Filters contained Elements that should be considered when constructing geometry for container DirectShape.
+      /// Defaults to just IFCProduct.
+      /// </summary>
+      /// <param name="entity">IFCEntity for consideration as part of geometry for DIrectShape.</param>
+      /// <returns>True if IFCEntity should be part of geometry, False otherwise.</returns>
+      public virtual bool ContainerFilteredEntity(IFCEntity entity)
+      {
+         return entity is IFCProduct;
+      }
+
+      /// <summary>
+      /// Indicates whether there should be a DirectShape container created for this IFCGroup or not.
+      /// Defaults to false.
+      /// </summary>
+      /// <returns>True if Direct Shape should be created, False otherwise.</returns>
+      public virtual bool CreateContainer() { return false; }
+
+      /// <summary>
+      /// Create a DirectShape container for an IFC Group if the specific IFC Group requests it.
+      /// CreateContainer() -- indicates that the IFC Group may have a DirectShape.
+      /// ContainerDuplicatesGeometry() -- Indicates that not only should a DirectShape be created, it should also have geometry.
+      ///    This should be true in most cases, but can be governed by a specific API option (e.g., with IFCZones).
+      /// ContainerFilteredEntity() -- This allows the IFCGroup to filter certain IFCEntities (e.g., only IFCZones consider IFCSpaces).
+      /// </summary>
+      /// <param name="doc">Document containing new DirectShape.</param>
+      protected override void Create(Document doc)
+      {
+         // Only create DirectShape container when the specific IFC Group requests it.
+         //
+         if (CreateContainer())
+         {
+            // Hybrid IFC Import will duplicate geometry by creating references to the geometry.
+            if (Importer.TheOptions.IsHybridImport)
+            {
+               CreatedElementId = Importer.TheHybridInfo?.CreateContainer(this);
+            }
+            else
+            {
+               IList<GeometryObject> geometryObjects = new List<GeometryObject>();
+
+               // As strange as it sounds, current behavior is for some IFCGroups to have no geometry.
+               // If this is the case, do not create geometry.
+               // 
+               if (ContainerDuplicatesGeometry())
+               {
+                  foreach (IFCObjectDefinition relatedObject in RelatedObjects)
+                  {
+                     // In some cases, only certain IFC entities are considered candidates for geometry
+                     // cloning.
+                     //
+                     if (ContainerFilteredEntity(relatedObject))
+                     {
+                        IFCProduct relatedProduct = relatedObject as IFCProduct;
+                        if (relatedProduct != null)
+                        {
+                           // Clone the underlying Geometry
+                           //
+                           IList<IFCSolidInfo> solids = IFCElement.CloneElementGeometry(doc, relatedProduct, this, false);
+                           if (solids != null)
+                           {
+                              foreach (IFCSolidInfo solid in solids)
+                              {
+                                 geometryObjects.Add(solid.GeometryObject);
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+
+               DirectShape directShape = IFCElementUtil.CreateElement(doc, GetCategoryId(doc), GlobalId, geometryObjects, Id, EntityType);
+               if (directShape != null)
+               {
+                  CreatedElementId = directShape.Id;
+                  CreatedGeometry = geometryObjects;
+               }
+            }
+         }
+
+         base.Create(doc);
       }
    }
 }

@@ -58,7 +58,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// The ExporterIFC object.
       /// </param>
       /// <param name="extrusionCreationData">
-      /// The IFCExtrusionCreationData.
+      /// The IFCExportBodyParams.
       /// </param>
       /// <param name="element">
       /// The element to calculate the value.
@@ -69,7 +69,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExtrusionCreationData extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          Parameter rollPar = element.get_Parameter(BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE);
          if (rollPar != null)
@@ -83,8 +83,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // For other elements with ExtrusionData. Parameter will take precedence (override)
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Roll) == null)
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName, out m_Roll);
+         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Roll, entryMap.CompatibleRevitParameterName);
          m_Roll = UnitUtil.ScaleAngle(m_Roll);
          if (m_Roll > MathUtil.Eps())
             return true;

@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 
 namespace Revit.IFC.Export.Exporter
@@ -30,6 +31,7 @@ namespace Revit.IFC.Export.Exporter
       private IFCAnyHandle m_AssemblyInstanceHandle = null;
 
       private HashSet<IFCAnyHandle> m_ElementHandles = new HashSet<IFCAnyHandle>();
+      public ElementId AssignedLevelId { get; set; }
 
       /// <summary>
       /// The Assembly Instance handle.

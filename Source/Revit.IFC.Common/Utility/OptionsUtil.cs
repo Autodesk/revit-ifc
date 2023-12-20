@@ -23,6 +23,7 @@ using System.Xml;
 using System.IO;
 using Autodesk.Revit.DB;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.Common.Extensions;
 
 namespace Revit.IFC.Common.Utility
 {
@@ -189,12 +190,22 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Identifies if the IFC schema version is older than IFC 4x3
+      /// </summary>
+      /// <param name="fileVersion">The file version</param>
+      public static bool ExportAsOlderThanIFC4x3(IFCVersion fileVersion)
+      {
+         return ExportAs2x2(fileVersion) || ExportAs2x3(fileVersion) || ExportAs4(fileVersion);
+      }
+
+      /// <summary>
       /// Identifies if the IFC schema version being exported is IFC 4.
       /// </summary>
       /// <param name="fileVersion">The file version</param>
       public static bool ExportAs4 (IFCVersion fileVersion)
       {
-         return (fileVersion == IFCVersion.IFC4) || (fileVersion == IFCVersion.IFC4RV) || (fileVersion == IFCVersion.IFC4DTV);
+         return (fileVersion == IFCVersion.IFC4) || (fileVersion == IFCVersion.IFC4RV) || (fileVersion == IFCVersion.IFC4DTV) ||
+            (fileVersion == IFCVersion.IFCSG);
       }
 
       /// <summary>
@@ -222,7 +233,7 @@ namespace Revit.IFC.Common.Utility
       /// <param name="fileVersion">The file version</param>
       public static bool ExportAs4ReferenceView (IFCVersion fileVersion)
       {
-         return (fileVersion == IFCVersion.IFC4RV);
+         return (fileVersion == IFCVersion.IFC4RV) || (fileVersion == IFCVersion.IFCSG);
       }
 
       /// <summary>
@@ -244,6 +255,11 @@ namespace Revit.IFC.Common.Utility
          return (fileVersion == IFCVersion.IFC4);
       }
 
+      /// <summary>
+      /// Option to export to IFC4x3 schema
+      /// </summary>
+      /// <param name="fileVersion">the file version</param>
+      /// <returns></returns>
       public static bool ExportAs4x3(IFCVersion fileVersion)
       {
          return (fileVersion == IFCVersion.IFC4x3);
@@ -518,5 +534,10 @@ namespace Revit.IFC.Common.Utility
             || ifcVersion == IFCVersion.IFCBCA
             || ifcVersion == IFCVersion.IFCCOBIE);
       }
+
+      /// <summary>
+      /// IFC File header using Options instead of Extensible Storage
+      /// </summary>
+      public static IFCFileHeaderItem FileHeaderIFC { get; set; } = new IFCFileHeaderItem();
    }
 }

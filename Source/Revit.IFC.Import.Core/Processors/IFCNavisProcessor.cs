@@ -130,7 +130,7 @@ namespace Revit.IFC.Import.Core
             // The main reason for needing to do it here is because we have newLcs calculated, but we haven't yet got 
             // and IElement for the entity, so first create one.
 
-            var instEle = CreateElement(creatorId, globalId, entityTypeAsString, categoryId.IntegerValue);
+            var instEle = CreateElement(creatorId, globalId, entityTypeAsString, categoryId.Value);
             instEle.SetGeometry(typeEle, newLcs);
          }
       }

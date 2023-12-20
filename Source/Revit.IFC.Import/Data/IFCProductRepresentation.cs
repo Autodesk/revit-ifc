@@ -147,24 +147,28 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Returns true if there is anything to create.
+      /// Returns true if ProductRepresentation is Valid.
       /// </summary>
+      /// <remarks>
+      /// In the case of non-Hybrid IFC Import, validity is defined as the Product Representation having at least one RepresentationItem.
+      /// In the case of Hybrid IFC Import, validity is defined as always true.
+      /// </remarks>
       /// <returns>Returns true if there is anything to create, false otherwise.</returns>
       public bool IsValid()
       {
          // TODO: We are not creating a shape if there is no representation for the shape.  We may allow this for specific entity types,
          // such as doors or windows.
-         return (Representations != null && Representations.Count != 0);
+         return (Importer.TheOptions.IsHybridImport || ((Representations?.Count ?? 0) > 0));
       }
 
       /// <summary>
       /// Creates or populates Revit elements based on the information contained in this class.
       /// </summary>
       /// <param name="doc">The document.</param>
-      /// <param name="lcs">Local coordinate system for the geometry, without scale.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
       /// <param name="guid">The guid of an element for which represntation is being created.</param>
-      public void CreateProductRepresentation(IFCImportShapeEditScope shapeEditScope, Transform lcs, Transform scaledLcs, string guid)
+      public void CreateProductRepresentation(IFCImportShapeEditScope shapeEditScope, 
+         Transform scaledLcs, string guid)
       {
          // Partially sort the representations so that we create: Body, Box, then the rest of the representations in that order.
          // This allows us to skip Box representations if any of the Body representations create 3D geometry.  Until we have UI in place, 
@@ -215,7 +219,7 @@ namespace Revit.IFC.Import.Data
                shapeEditScope.Creator.Solids.Count > 0)
                continue;
 
-            representation.CreateShape(shapeEditScope, lcs, scaledLcs, guid);
+            representation.CreateShape(shapeEditScope, scaledLcs, guid);
          }
       }
 

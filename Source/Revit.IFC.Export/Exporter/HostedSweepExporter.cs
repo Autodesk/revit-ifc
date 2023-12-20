@@ -34,7 +34,7 @@ namespace Revit.IFC.Export.Exporter
    class HostedSweepExporter
    {
       /// <summary>
-      /// Exports a hosted weep.
+      /// Exports a hosted sweep.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="hostedSweep">The hosted sweep element.</param>
@@ -46,7 +46,7 @@ namespace Revit.IFC.Export.Exporter
          if (catId == new ElementId(BuiltInCategory.OST_Gutter))
             ExportGutter(exporterIFC, hostedSweep, geometryElement, productWrapper);
          else
-            ProxyElementExporter.Export(exporterIFC, hostedSweep, geometryElement, productWrapper);
+            GenericElementExporter.ExportElement(exporterIFC, hostedSweep, geometryElement, productWrapper);
       }
 
       /// <summary>
@@ -73,7 +73,7 @@ namespace Revit.IFC.Export.Exporter
 
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
             {
-               using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
+               using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
                   ecData.SetLocalPlacement(setter.LocalPlacement);
 

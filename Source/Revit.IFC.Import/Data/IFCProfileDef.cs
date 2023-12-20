@@ -106,9 +106,22 @@ namespace Revit.IFC.Import.Data
             return false;
          }
 
-         foreach (Curve curveToAppend in curvesToAppend)
+         try
          {
-            curveLoop.Append(curveToAppend);
+            foreach (Curve curveToAppend in curvesToAppend)
+            {
+               curveLoop.Append(curveToAppend);
+            }
+         }
+         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+         {
+            if (ex == null || ex.Message == null || !ex.Message.Contains("discontinuous"))
+               throw ex;
+
+            // Returning false allows the calling code to try a backup for the curve loop,
+            // in cases where the issue arises from filleting, for example.
+            segments.Clear();
+            return false;
          }
 
          segments.Clear();
@@ -160,8 +173,6 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCCompositeProfile : IFCProfileDef
    {
-      private IList<IFCProfileDef> m_Profiles = null;
-
       /// <summary>
       /// Default constructor.
       /// </summary>
@@ -218,15 +229,7 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// Get the list of contained profiles.
       /// </summary>
-      public IList<IFCProfileDef> Profiles
-      {
-         get
-         {
-            if (m_Profiles == null)
-               m_Profiles = new List<IFCProfileDef>();
-            return m_Profiles;
-         }
-      }
+      public IList<IFCProfileDef> Profiles { get; } = new List<IFCProfileDef>();
    }
 
    // We may create more subclasses if we want to preserve the original parametric data.
@@ -808,7 +811,7 @@ namespace Revit.IFC.Import.Data
       private void ProcessIFCIShapeProfileDef(IFCAnyHandle profileDef)
       {
          bool found = false;
-         double width = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(profileDef, "OverallWidth", out found);
+         double bottomWidth = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(profileDef, "OverallWidth", out found);
          if (!found)
             return;
 
@@ -820,54 +823,79 @@ namespace Revit.IFC.Import.Data
          if (!found)
             return;
 
-         double flangeThickness = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(profileDef, "FlangeThickness", out found);
+         double bottomFlangeThickness = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(profileDef, "FlangeThickness", out found);
          if (!found)
             return;
 
-         double filletRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "FilletRadius", 0.0);
-         bool hasFillet = !MathUtil.IsAlmostZero(filletRadius);
+         double bottomFilletRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "FilletRadius", 0.0);
 
-         // take advantage of X/Y symmetries below.
+         double? optTopWidth = null;
+         double? optTopFlangeThickness = null;
+         double? optTopFilletRadius = null;
+
+         if (IFCAnyHandleUtil.IsValidSubTypeOf(profileDef, IFCEntityType.IfcAsymmetricIShapeProfileDef))
+         {
+            optTopWidth = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "TopFlangeWidth");
+            optTopFlangeThickness = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "TopFlangeThickness");
+            optTopFilletRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "TopFlangeFilletRadius");
+            // TODO: support CentreOfGravityInY.
+         }
+
+         double topWidth = optTopWidth.GetValueOrDefault(bottomWidth);
+         double topFlangeThickness = optTopFlangeThickness.GetValueOrDefault(bottomFlangeThickness);
+         double topFilletRadius = optTopFilletRadius.GetValueOrDefault(bottomFilletRadius);
+
+         bool hasTopFillet = !MathUtil.IsAlmostZero(topFilletRadius);
+         bool hasBottomFillet = !MathUtil.IsAlmostZero(bottomFilletRadius);
+         if (hasTopFillet ^ hasBottomFillet)
+         {
+            Importer.TheLog.LogWarning(Id, 
+               "If fillets are specified for IfcAsymmetricIShapeProfileDef, both fillet radii are required. Ignoring.",
+               false);
+            hasTopFillet = hasBottomFillet = false;
+         }
+
+         // We start with the bottom left corner and proceed counter-clockwise.
          XYZ[] iShapePoints = new XYZ[12] {
-                new XYZ(-width/2.0, -depth/2.0, 0.0),
-                new XYZ(width/2.0, -depth/2.0, 0.0),
-                new XYZ(width/2.0, -depth/2.0 + flangeThickness, 0.0),
-                new XYZ(webThickness/2.0, -depth/2.0 + flangeThickness, 0.0),
+            new XYZ(-bottomWidth/2.0,  -depth/2.0, 0.0),   // bottom left
+            new XYZ( bottomWidth/2.0,  -depth/2.0, 0.0),   // bottom right
+            new XYZ( bottomWidth/2.0,  -depth/2.0 + bottomFlangeThickness, 0.0), // bottom right top of flange
+            new XYZ( webThickness/2.0, -depth/2.0 + bottomFlangeThickness, 0.0), // bottom middle right top of flange
+      
+            new XYZ( webThickness/2.0,  depth/2.0 - topFlangeThickness, 0.0), // top middle right bottom of flange
+            new XYZ( topWidth/2.0,      depth/2.0 - topFlangeThickness, 0.0), // top right bottom of flange
+            new XYZ( topWidth/2.0,      depth/2.0, 0.0), // top right
+            new XYZ(-topWidth/2.0,      depth/2.0, 0.0), // top left
+      
+            new XYZ(-topWidth/2.0,      depth/2.0 - topFlangeThickness, 0.0), // top left bottom of flange
+            new XYZ(-webThickness/2.0,  depth/2.0 - topFlangeThickness, 0.0), // top middle left bottom of flange
+            new XYZ(-webThickness/2.0, -depth/2.0 + bottomFlangeThickness, 0.0), // bottom middle left top of flange
+            new XYZ(-bottomWidth/2.0,  -depth/2.0 + bottomFlangeThickness, 0.0) // bottom left top of flange
+         };
 
-                new XYZ(webThickness/2.0, -(-depth/2.0 + flangeThickness), 0.0),
-                new XYZ(width/2.0, -(-depth/2.0 + flangeThickness), 0.0),
-                new XYZ(width/2.0, depth/2.0, 0.0),
-                new XYZ(-width/2.0, depth/2.0, 0.0),
-
-                new XYZ(-width/2.0,  -(-depth/2.0 + flangeThickness), 0.0),
-                new XYZ(-webThickness/2.0,  -(-depth/2.0 + flangeThickness), 0.0),
-                new XYZ(-webThickness/2.0,  -depth/2.0 + flangeThickness, 0.0),
-                new XYZ(-width/2.0,  -depth/2.0 + flangeThickness, 0.0)
-            };
-
-         if (hasFillet)
+         if (hasTopFillet && hasBottomFillet)
          {
             OuterCurve = new CurveLoop();
             XYZ[] iFilletPoints = new XYZ[8] {
-                    new XYZ(iShapePoints[3][0] + filletRadius, iShapePoints[3][1], 0.0),
-                    new XYZ(iShapePoints[3][0], iShapePoints[3][1] + filletRadius, 0.0),
-                    new XYZ(iShapePoints[4][0], iShapePoints[4][1] - filletRadius, 0.0),
-                    new XYZ(iShapePoints[4][0] + filletRadius, iShapePoints[4][1], 0.0),
-                    new XYZ(iShapePoints[9][0] - filletRadius, iShapePoints[9][1], 0.0),
-                    new XYZ(iShapePoints[9][0], iShapePoints[9][1] - filletRadius, 0.0),
-                    new XYZ(iShapePoints[10][0], iShapePoints[10][1] + filletRadius, 0.0),
-                    new XYZ(iShapePoints[10][0] - filletRadius, iShapePoints[10][1], 0.0)
-                };
+               new XYZ( iShapePoints[3][0] + bottomFilletRadius, iShapePoints[3][1], 0.0 ), // bottom right  
+               new XYZ( iShapePoints[3][0], iShapePoints[3][1] + bottomFilletRadius, 0.0 ), // bottom right
+               new XYZ( iShapePoints[4][0], iShapePoints[4][1] - topFilletRadius, 0.0 ), // top right
+               new XYZ( iShapePoints[4][0] + topFilletRadius, iShapePoints[4][1], 0.0 ), // top right
+               new XYZ( iShapePoints[9][0] - topFilletRadius, iShapePoints[9][1], 0.0 ), // top left
+               new XYZ( iShapePoints[9][0], iShapePoints[9][1] - topFilletRadius, 0.0 ), // top left
+               new XYZ( iShapePoints[10][0], iShapePoints[10][1] + bottomFilletRadius, 0.0 ), // bottom left
+               new XYZ( iShapePoints[10][0] - bottomFilletRadius, iShapePoints[10][1], 0.0 ) // bottom left
+            };
 
             XYZ[] iFilletCtr = new XYZ[4] {
-                    new XYZ(iShapePoints[3][0] + filletRadius, iShapePoints[3][1] + filletRadius, 0.0),
-                    new XYZ(iShapePoints[4][0] + filletRadius, iShapePoints[4][1] - filletRadius, 0.0),
-                    new XYZ(iShapePoints[9][0] - filletRadius, iShapePoints[9][1] - filletRadius, 0.0),
-                    new XYZ(iShapePoints[10][0] - filletRadius, iShapePoints[10][1] + filletRadius, 0.0)
-                };
+               new XYZ( iShapePoints[3][0] + bottomFilletRadius, iShapePoints[3][1] + bottomFilletRadius, 0.0 ),
+               new XYZ( iShapePoints[4][0] + topFilletRadius, iShapePoints[4][1] - topFilletRadius, 0.0 ),
+               new XYZ( iShapePoints[9][0] - topFilletRadius, iShapePoints[9][1] - topFilletRadius, 0.0 ),
+               new XYZ( iShapePoints[10][0] - bottomFilletRadius, iShapePoints[10][1] + bottomFilletRadius, 0.0 )
+            };
 
             // need to flip all fillets.
-            double[][] filletRanges = new double[4][] 
+            double[][] filletRanges = new double[4][]
             {
                new double[2] { Math.PI, 3.0*Math.PI/2 },
                new double[2] { Math.PI/2.0, Math.PI },
@@ -875,32 +903,34 @@ namespace Revit.IFC.Import.Data
                new double[2] { 3.0*Math.PI/2, 2.0*Math.PI }
             };
 
-            IList<IIFCProfileSegment> segments = new List<IIFCProfileSegment>();
-            segments.Add(new IFCProfileLineSegment(iShapePoints[0], iShapePoints[1]));
-            segments.Add(new IFCProfileLineSegment(iShapePoints[1], iShapePoints[2]));
-            segments.Add(new IFCProfileLineSegment(iShapePoints[2], iFilletPoints[0]));
-            segments.Add(new IFCProfileXYArcSegment(iFilletCtr[0], filletRadius, filletRanges[0][0], filletRanges[0][1], true));
-            segments.Add(new IFCProfileLineSegment(iFilletPoints[1], iFilletPoints[2]));
-            segments.Add(new IFCProfileXYArcSegment(iFilletCtr[1], filletRadius, filletRanges[1][0], filletRanges[1][1], true));
-            segments.Add(new IFCProfileLineSegment(iFilletPoints[3], iShapePoints[5]));
-            segments.Add(new IFCProfileLineSegment(iShapePoints[5], iShapePoints[6]));
-            segments.Add(new IFCProfileLineSegment(iShapePoints[6], iShapePoints[7]));
-            segments.Add(new IFCProfileLineSegment(iShapePoints[7], iShapePoints[8]));
-            segments.Add(new IFCProfileLineSegment(iShapePoints[8], iFilletPoints[4]));
-            segments.Add(new IFCProfileXYArcSegment(iFilletCtr[2], filletRadius, filletRanges[2][0], filletRanges[2][1], true));
-            segments.Add(new IFCProfileLineSegment(iFilletPoints[5], iFilletPoints[6]));
-            segments.Add(new IFCProfileXYArcSegment(iFilletCtr[3], filletRadius, filletRanges[3][0], filletRanges[3][1], true));
-            segments.Add(new IFCProfileLineSegment(iFilletPoints[7], iShapePoints[11]));
-            segments.Add(new IFCProfileLineSegment(iShapePoints[11], iShapePoints[0]));
+            IList<IIFCProfileSegment> segments = new List<IIFCProfileSegment>()
+            {
+               new IFCProfileLineSegment(iShapePoints[0], iShapePoints[1]),
+               new IFCProfileLineSegment(iShapePoints[1], iShapePoints[2]),
+               new IFCProfileLineSegment(iShapePoints[2], iFilletPoints[0]),
+               new IFCProfileXYArcSegment(iFilletCtr[0], bottomFilletRadius, filletRanges[0][0], filletRanges[0][1], true),
+               new IFCProfileLineSegment(iFilletPoints[1], iFilletPoints[2]),
+               new IFCProfileXYArcSegment(iFilletCtr[1], topFilletRadius, filletRanges[1][0], filletRanges[1][1], true),
+               new IFCProfileLineSegment(iFilletPoints[3], iShapePoints[5]),
+               new IFCProfileLineSegment(iShapePoints[5], iShapePoints[6]),
+               new IFCProfileLineSegment(iShapePoints[6], iShapePoints[7]),
+               new IFCProfileLineSegment(iShapePoints[7], iShapePoints[8]),
+               new IFCProfileLineSegment(iShapePoints[8], iFilletPoints[4]),
+               new IFCProfileXYArcSegment(iFilletCtr[2], topFilletRadius, filletRanges[2][0], filletRanges[2][1], true),
+               new IFCProfileLineSegment(iFilletPoints[5], iFilletPoints[6]),
+               new IFCProfileXYArcSegment(iFilletCtr[3], bottomFilletRadius, filletRanges[3][0], filletRanges[3][1], true),
+               new IFCProfileLineSegment(iFilletPoints[7], iShapePoints[11]),
+               new IFCProfileLineSegment(iShapePoints[11], iShapePoints[0])
+            };
 
             if (!AppendSegmentsToCurveLoop(OuterCurve, segments))
             {
                Importer.TheLog.LogError(Id, "Couldn't process filleted IfcIShapeProfileDef, removing fillet.", false);
-               hasFillet = false;
+               hasTopFillet = hasBottomFillet = false;
             }
          }
 
-         if (!hasFillet)
+         if (!hasTopFillet || !hasBottomFillet)
          {
             OuterCurve = CreateProfilePolyCurveLoop(iShapePoints);
          }
@@ -1296,22 +1326,13 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCSimpleProfile : IFCProfileDef
    {
-      private CurveLoop m_OuterCurve = null;
-
-      private IList<CurveLoop> m_InnerCurves = null;
-
-      // This is only valid for IFCParameterizedProfile.  We place it here to be at the same level as the CurveLoops,
-      // so that they can be transformed in a consisent matter.
-      private Transform m_Position = null;
-
       /// <summary>
       /// The location (origin and rotation) of the parametric profile.
       /// </summary>
-      public Transform Position
-      {
-         get { return m_Position; }
-         protected set { m_Position = value; }
-      }
+      /// <remarks>This is only valid for IFCParameterizedProfile.  We place it here to be at the 
+      /// same level as the CurveLoops, so that they can be transformed in a consisent matter.
+      /// </remarks>
+      public Transform Position { get; protected set; } = null;
 
       private void ProcessIFCArbitraryOpenProfileDef(IFCAnyHandle profileDef)
       {
@@ -1547,25 +1568,19 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// Get the one outer curve loop, iff there is only one.
+      /// </summary>
+      /// <returns>The one outer curve loop, or null if there is not exactly 1.</returns>
+      public CurveLoop GetTheOuterCurveLoop() {  return OuterCurve; }
+
+      /// <summary>
       /// Get the outer curve loop.
       /// </summary>
-      public CurveLoop OuterCurve
-      {
-         get { return m_OuterCurve; }
-         protected set { m_OuterCurve = value; }
-      }
+      protected CurveLoop OuterCurve { get; set; } = null;
 
       /// <summary>
       /// Get the list of inner curve loops.
       /// </summary>
-      public IList<CurveLoop> InnerCurves
-      {
-         get
-         {
-            if (m_InnerCurves == null)
-               m_InnerCurves = new List<CurveLoop>();
-            return m_InnerCurves;
-         }
-      }
+      public IList<CurveLoop> InnerCurves { get; } = new List<CurveLoop>();
    }
 }

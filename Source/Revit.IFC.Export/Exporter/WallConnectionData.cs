@@ -18,9 +18,6 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Toolkit;
@@ -33,150 +30,85 @@ namespace Revit.IFC.Export.Exporter
    public class WallConnectionData
    {
       /// <summary>
-      /// The first connection element id.
-      /// </summary>
-      private ElementId m_FirstId;
-
-      /// <summary>
-      /// The second connection element id.
-      /// </summary>
-      private ElementId m_SecondId;
-
-      /// <summary>
-      /// The first connection type.
-      /// </summary>
-      private IFCConnectionType m_FirstConnectionType;
-
-      /// <summary>
-      /// The second connection type.
-      /// </summary>
-      private IFCConnectionType m_SecondConnectionType;
-
-      /// <summary>
-      /// The connection geometry handle.
-      /// </summary>
-      private IFCAnyHandle m_ConnectionGeometry;
-
-      /// <summary>
       /// Registers a connection between a wall and another element.
       /// </summary>
-      /// <param name="firstId">
-      /// The first element id. This can be a wall or a column.
-      /// </param>
-      /// <param name="secondId">
-      /// The second element id.  This can be a wall or a column.
-      /// </param>
-      /// <param name="firstConnectionType">
-      /// The connection type for the first connected element.
-      /// </param>
-      /// <param name="secondConnectionType">
-      /// The connection type for the second connected element.
-      /// </param>
-      /// <param name="connectionGeometry">
-      /// The IfcConnectionGeometry handle related to the connection.  A valueless handle is also permitted.
-      /// </param>
+      /// <param name="firstId">The first element id. This can be a wall or a column.</param>
+      /// <param name="secondId">The second element id.  This can be a wall or a column.</param>
+      /// <param name="firstConnectionType">The connection type for the first connected element.</param>
+      /// <param name="secondConnectionType">The connection type for the second connected element.</param>
+      /// <param name="connectionGeometry">The IfcConnectionGeometry handle related to the connection.  A valueless handle is also permitted.</param>
       public WallConnectionData(ElementId firstId, ElementId secondId, IFCConnectionType firstConnectionType,
          IFCConnectionType secondConnectionType, IFCAnyHandle connectionGeometry)
       {
          if (firstId < secondId)
          {
-            this.m_FirstId = firstId;
-            this.m_SecondId = secondId;
-            this.m_FirstConnectionType = firstConnectionType;
-            this.m_SecondConnectionType = secondConnectionType;
+            FirstId = firstId;
+            SecondId = secondId;
+            FirstConnectionType = firstConnectionType;
+            SecondConnectionType = secondConnectionType;
          }
          else
          {
-            this.m_FirstId = secondId;
-            this.m_SecondId = firstId;
-            this.m_FirstConnectionType = secondConnectionType;
-            this.m_SecondConnectionType = firstConnectionType;
+            FirstId = secondId;
+            SecondId = firstId;
+            FirstConnectionType = secondConnectionType;
+            SecondConnectionType = firstConnectionType;
          }
 
-         this.m_ConnectionGeometry = connectionGeometry;
+         ConnectionGeometry = connectionGeometry;
       }
 
       /// <summary>
       /// The first connection element id.
       /// </summary>
-      public ElementId FirstId
-      {
-         get { return m_FirstId; }
-      }
+      public ElementId FirstId { get; private set; }
 
       /// <summary>
       /// The second connection element id.
       /// </summary>
-      public ElementId SecondId
-      {
-         get { return m_SecondId; }
-      }
+      public ElementId SecondId { get; private set; }
 
       /// <summary>
       /// The first connection type.
       /// </summary>
-      public IFCConnectionType FirstConnectionType
-      {
-         get { return m_FirstConnectionType; }
-      }
+      public IFCConnectionType FirstConnectionType { get; private set; }
 
       /// <summary>
       /// The second connection type.
       /// </summary>
-      public IFCConnectionType SecondConnectionType
-      {
-         get { return m_SecondConnectionType; }
-      }
+      public IFCConnectionType SecondConnectionType { get; private set; }
 
       /// <summary>
       /// The connection geometry handle.
       /// </summary>
-      public IFCAnyHandle ConnectionGeometry
-      {
-         get { return m_ConnectionGeometry; }
-      }
+      public IFCAnyHandle ConnectionGeometry { get; private set; }
 
       /// <summary>
       /// Override operator ==.
       /// </summary>
-      /// <param name="first">
-      /// The WallConnectionData.
-      /// </param>
-      /// <param name="second">
-      /// The other WallConnectionData.
-      /// </param>
-      /// <returns>
-      /// True if they are equal, false otherwise.
-      /// </returns>
+      /// <param name="first">The WallConnectionData.</param>
+      /// <param name="second">The other WallConnectionData.</param>
+      /// <returns>True if they are equal, false otherwise.</returns>
       static public bool operator ==(WallConnectionData first, WallConnectionData second)
       {
          Object lhsObject = first;
          Object rhsObject = second;
          if (null == lhsObject)
-         {
-            if (null == rhsObject)
-               return true;
-            return false;
-         }
+            return (null == rhsObject);
+         
          if (null == rhsObject)
             return false;
 
-         return first.m_FirstId == second.m_FirstId && first.m_SecondId == second.m_SecondId &&
-            first.m_FirstConnectionType == second.m_FirstConnectionType && first.m_SecondConnectionType == second.m_SecondConnectionType;
+         return first.FirstId == second.FirstId && first.SecondId == second.SecondId &&
+            first.FirstConnectionType == second.FirstConnectionType && first.SecondConnectionType == second.SecondConnectionType;
       }
 
       /// <summary>
       /// Override operator !=.
       /// </summary>
-      /// <param name="first">
-      /// The WallConnectionData.
-      /// </param>
-      /// <param name="second">
-      /// The other WallConnectionData.
-      /// </param>
-      /// <returns>
-      /// True if they are not equal, false otherwise.
-      /// </returns>
+      /// <param name="first">The WallConnectionData.</param>
+      /// <param name="second">The other WallConnectionData.</param>
+      /// <returns>True if they are not equal, false otherwise.</returns>
       static public bool operator !=(WallConnectionData first, WallConnectionData second)
       {
          return !(first == second);
@@ -185,12 +117,8 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Override method Equals.
       /// </summary>
-      /// <param name="obj">
-      /// The WallConnectionData object.
-      /// </param>
-      /// <returns>
-      /// True if they are equal, false otherwise.
-      /// </returns>
+      /// <param name="obj">The WallConnectionData object.</param>
+      /// <returns>True if they are equal, false otherwise.</returns>
       public override bool Equals(object obj)
       {
          if (null == obj)
@@ -211,12 +139,10 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Override method GetHashCode.
       /// </summary>
-      /// <returns>
-      /// The hash code.
-      /// </returns>
+      /// <returns>The hash code.</returns>
       public override int GetHashCode()
       {
-         return m_FirstId.GetHashCode() ^ m_SecondId.GetHashCode();
+         return FirstId.GetHashCode() ^ SecondId.GetHashCode();
       }
    }
 }

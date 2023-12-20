@@ -85,6 +85,12 @@ namespace Revit.IFC.Import.Utility
 
          foreach (IFCAnyHandle relatedObject in relatedObjects)
          {
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(relatedObject))
+            {
+               Importer.TheLog.LogError(ifcRelAssignsOrAggregates.Id, "Invalid relation found, ignoring.", false);
+               continue;
+            }
+
             if (relatedObject.Id == relatedTo.Id)
             {
                Importer.TheLog.LogError(ifcRelAssignsOrAggregates.Id, "An objected is related to itself, ignoring.", false);
@@ -99,6 +105,28 @@ namespace Revit.IFC.Import.Utility
                else
                   objectDefinition.Decomposes = relatedTo;
                relatedObjectSet.Add(objectDefinition);
+            }
+         }
+
+         if (Importer.TheOptions.IsHybridImport && Importer.TheHybridInfo != null &&
+             IFCAnyHandleUtil.IsTypeOf(ifcRelAssignsOrAggregates, IFCEntityType.IfcRelAggregates) &&
+             (relatedTo is IFCElement ifcElementRelatedTo))
+         {
+            if (Importer.TheHybridInfo.ContainerMap == null)
+            {
+               Importer.TheHybridInfo.ContainerMap = new Dictionary<int, HashSet<IFCObjectDefinition>>();
+            }
+
+            HashSet<IFCObjectDefinition> containedObjectDefinitions = null;
+            if (Importer.TheHybridInfo.ContainerMap.TryGetValue(ifcElementRelatedTo.Id, out containedObjectDefinitions))
+            {
+               containedObjectDefinitions.UnionWith(relatedObjectSet);
+            }
+            else
+            {
+               containedObjectDefinitions = new HashSet<IFCObjectDefinition>();
+               containedObjectDefinitions.UnionWith(relatedObjectSet);
+               Importer.TheHybridInfo.ContainerMap.Add(ifcElementRelatedTo.Id, containedObjectDefinitions);
             }
          }
 
@@ -141,6 +169,24 @@ namespace Revit.IFC.Import.Utility
          }
 
          return IFCAnyHandleUtil.GetStringAttribute(ifcRelAssigns, "RelatedObjectsType");
+      }
+
+      /// <summary>
+      /// Gets the relating IFCObjectDefinition associated via an IfcRelNests handle.
+      /// </summary>
+      /// <param name="ifcRelNests">The IfcRelNests handle.</param>
+      /// <returns>The IFCObjectDefinition class corresponding to the IFCObjectDefinition handle, if any.</returns>
+      static public IFCObjectDefinition ProcessRelatingObject(IFCAnyHandle ifcRelNests)
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcRelNests))
+            return null;
+
+         IFCAnyHandle ifcRelatedElement = IFCAnyHandleUtil.GetInstanceAttribute(ifcRelNests, "RelatingObject");
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcRelatedElement))
+            return null;
+
+         IFCObjectDefinition relatedElement = IFCObjectDefinition.ProcessIFCObjectDefinition(ifcRelatedElement);
+         return relatedElement;
       }
 
       /// <summary>

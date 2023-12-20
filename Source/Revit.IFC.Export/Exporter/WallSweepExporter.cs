@@ -33,7 +33,7 @@ namespace Revit.IFC.Export.Exporter
    class WallSweepExporter
    {
       /// <summary>
-      /// Exports a wall swepp.
+      /// Exports a wall sweep.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="wallSweep">The WallSweep.</param>
@@ -46,7 +46,7 @@ namespace Revit.IFC.Export.Exporter
          if (wallSweepInfo.WallSweepType == WallSweepType.Reveal)
             return;
 
-         if (!ProxyElementExporter.Export(exporterIFC, wallSweep, geometryElement, productWrapper))
+         if (!GenericElementExporter.ExportElement(exporterIFC, wallSweep, geometryElement, productWrapper))
             return;
 
          HostObjectExporter.ExportHostObjectMaterials(exporterIFC, wallSweep, productWrapper.GetAnElement(),

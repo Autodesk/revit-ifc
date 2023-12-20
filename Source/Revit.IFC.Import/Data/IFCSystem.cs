@@ -69,6 +69,10 @@ namespace Revit.IFC.Import.Data
          if (cachedIFCSystem != null)
             return cachedIFCSystem as IFCSystem;
 
+         if (IFCAnyHandleUtil.IsSubTypeOf(ifcSystem, IFCEntityType.IfcDistributionSystem))
+         {
+            return IFCDistributionSystem.ProcessIFCDistributionSystem(ifcSystem);
+         }
          return new IFCSystem(ifcSystem);
       }
    }

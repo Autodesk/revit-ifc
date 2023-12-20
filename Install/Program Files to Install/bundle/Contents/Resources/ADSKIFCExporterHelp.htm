@@ -67,9 +67,9 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 <body>
 <div id="heading">
 	<div id="plugin-icon"><img width=85 height=85 id="Rectangle 3" src="IFCExporter.png"></div>
-	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2021</h1></div>
+	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2024</h1></div>
 	<p id="plugin-description">
-	This application seamlessly replaces the built-in IFC capabilities of Revit 2021.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
+	This application seamlessly replaces the built-in IFC capabilities of Revit 2024.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
     </p>
 </div>
 
@@ -81,7 +81,7 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 	<div class="command name">Revit IFC</div>
 	<div class="command description">
     <p> 
-    Revit IFC 2021 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
+    Revit IFC 2024 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
     Source contributors.  While this app is not necessary for IFC support, it is recommended that users that depend on the quality of their IFC 
     download this app and keep it up-to-date, as new enhancements and defect fixes are added,  For more information on IFC, 
     please visit the <a href="http://buildingsmart.com/standards/ifc" target=_blank>buildingSMART website</a> or the Revit wiki.
@@ -236,312 +236,148 @@ working on expanding and eventually removing this limit, and we will be tracking
 <p>or if you have an inquiry specific to this add-in, send us an e-mail to: <a href="mailto:Revit.apps@autodesk.com">Revit.apps@autodesk.com</a></p>
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
+<div class="version">24.2.0.49</div><div class="versioninfo-bullet">
+      <br><p>
+         General:
+			<ul>
+				<li>This is the major update of IFC Exporter for Revit 2024. 
+				<li>It contains a various improvements and bug fixes for the basic Revit 2024. 
+			</ul>	
+       </p>
+	   <br>
+	   <p>
+	    Improvements:
+			<ul>
+				<li>Added export of the floor slab edge level.
+				<li>Added Width as an exported quantity to IFC for some assembly-based walls.
+				<li>Implemented IfcMaterialLayerSetUsage assigning to a single occurence.
+				<li>Improved export of sloped slabs.
+				<li>Improved stability when exporting projects to IFC with non-standard Author information in Project Standards.
+				<li>Updated French and German localization resources
+			</ul>
+		</p>
+		<br>
+		<p>
+         Bug Fixes:
+			<ul>
+				<li>Fixed an unexpected error during file export.
+				<li>Fixed bug with inverted geometry after export of parts as ceilings.
+				<li>Fixed bug with swapped Height and Width values of opening in Base Quantities in exported IFC.
+				<li>Fixed export of NetSideArea, GrossSideArea, Height and Width to IFC4 QTO for curtain walls.
+				<li>Fixed geometry transformation for some cases.
+				<li>Fixed missing material associations for solid model bodies.
+				<li>Fixed openings local placement export.
+			</ul>
+		</p>
+		<br>
+	</div>
+	<br>
+
+<div class="version">24.1.1.6</div><div class="versioninfo-bullet">
+      <br><p>
+         General:
+			<ul>
+				<li>This is the minor update of IFC Exporter for Revit 2024. 
+				<li>It contains a various improvements and bug fixes for the basic Revit 2024. 
+			</ul>	
+       </p>
+	   <br>
+	   <p>
+	    Improvements:
+			<ul>
+				<li>The default import processor has been changed to Hybrid
+			</ul>
+		</p>
+		<br>
+		<p>
+         Bug Fixes:
+			<ul>
+				<li>Fixed a bunch of potential bugs related to the compatibility with older Revit versions.
+				<li>Fix sketch-based openings in sloped slabs.
+				<li>Fixed placement of some specific wall sweep elements.
+			</ul>
+		</p>
+		<br>
+	</div>
+	<br>
+
+<div class="version">24.1.0.22</div><div class="versioninfo-bullet">
+      <br><p>
+         General:
+			<ul>
+				<li>This is the first version of IFC Exporter for Revit 2024. 
+				<li>It contains a various improvements and bug fixes for the basic Revit 2024. 
+			</ul>	
+       </p>
+	   <br>
+	   <p>
+         Improvements:
+			<ul>
+				<li>Added IFC2x3 Qto sets.
+				<li>Added material shared parameters export.
+				<li>Added the BarRole attribute when exporting IfcReinforcingBars to IFC.
+				<li>Added type entities for rebar and assemblies when exporting to IFC.
+				<li>Added support for exporting predefined types when exporting spaces to IFC4+.
+				<li>Added support of new measure units.
+				<li>Allowed export of rebar with slightly invalid transforms to IFC.
+				<li>Implemented exporting user defined parameters of 'Real' type as IfcReal with Revit display values.
+				<li>Implemented exporting of IfcRailingType entity.
+				<li>Implemented support of all 4 Revit velocity data types on export.
+				<li>Improved display of openings when export or linking in IFC files.
+				<li>Improved calculation of the linked levels elevation.
+				<li>Improved export of IfcPropertyEnumeratedValue.
+				<li>Improved export of insulation and lining as anything.
+				<li>Improved export of projects to IFC that contained family instances with invalid placements.
+				<li>Improved how classifications are viewed in certain older external applications when exporting to IFC.
+				<li>Improved list/bounded/table user defined properties values export for Instances and Types.
+				<li>Improved placement of federated (and some separate) links.
+				<li>Improved processing of representation items.
+				<li>Improved support for exporting advanced BReps to IFC if the unofficial IFC4 Design Transfer View is used.
+				<li>Improved the behavior for export of elements split by levels.
+				<li>Improved user defined property set mapping, especially for IFC2x3 entities that previously had no type entity exported.
+				<li>Updated 4x3 enums according to IFC4.3.1.0 Documentation.
+			</ul>
+		</p>
+		<br>
+		<p>
+         Bug Fixes:
+			<ul>
+				<li>Corrected the value for many MEP parameters exported to IFC.
+				<li>Fixed colour for exported pipe fitting.
+				<li>Fixed inconsistent IfcMaterialConstituent naming.
+				<li>Fixed export of a user-defined structural element type.
+				<li>Fixed export of IfcFurnitureType.AssemblyPlace attribute.
+				<li>Fixed export of IFC properties associated with the top-level IfcProject entity.
+				<li>Fixed export of materials from hosted wall sweep.
+				<li>Fixed export of material layer parameters of a ceiling element.
+				<li>Fixed export of user defined properties for roofs.
+				<li>Fixed export of some assemblies to IFC that resulted in orphaned entities.
+				<li>Fixed export of stairs layer name.
+				<li>Fixed IFC Classification export.
+				<li>Fixed IFCMEASUREWITHUNIT. 
+				<li>Fixed log file creation for linking.
+				<li>Fixed the calculation of the height parameter for some railings in metric projects when a previous value had been calculated that wasn't applicable to this railing.
+				<li>Fixed the issue when IfcCovering sill's body was exported as Brep instead of SweptSolid.
+				<li>Fixed the processing of openings when exporting a wall as shape aspects (components).
+				<li>Fixed the slope common property set parameter calculation when exporting some stringers to IFC.
+				<li>Fixed issue with IfcCountMeasure value in IFC4x3.
+				<li>Fixed Revit Data types export.
+				<li>Fixed window opening misalignment.
+				<li>Removed the use of several Revit built-in parameters when exporting IFC properties that have the same name but are different.
+			</ul>
+		</p>
+		<br>
+	</div>
+	<br>
+
 <div class="versionset">
-   <div class="version">21.2.1.0</div><div class="versioninfo-bullet">
-      <br><p>
-         General:
-			<ul>
-            <li>This is a minor update to release 21.2.0.0 and one improvement that adds basic support to export Area object as IfcSpatialZone
-			</ul>	
-         <br>
-       <p>
-         Bugfix:
-			<ul>
-				<li>Fixed error during export for a specific object that became invalid in the export process with "Store the IFC GUID in an element after export" option
-				<li>User defined property set can now be exported for IfcGeographiCElement
-				<li>Fixed export failure when ZoneClassificationName is set to Room for exporting IfcZone
-				<li>Corrected GrossVolume quantity information with the correct unit
-			</ul>
-
-	</div>
-	<br>
-	
-   <div class="version">21.2.0.0</div><div class="versioninfo-bullet">
-      <br>
-	<div class="row">
-		<div class="column">
-			<img width=300 src="Software Certification Certificate Revit - Architectural export ER.png" alt=Icon>
-		</div>
-		<div class="column">
-			<img width=300 src="Software Certification Certificate Revit - Structural export ER.png" alt=Icon>
-		</div>
-	</div>
-
-	</br>
-      <br><p>
-         General:
-			<ul>
-				<li>This version marks a significant milestone for IFC Exporter as it is now IFC4 Reference View certified (for Architectural Export and Structural Export Exchange Requirements)
-			</ul>	
-         <br>
-       <p>
-         New Features/Improvements:
-			<ul>
-				<li>Support exporting IfcGroup using ZoneGroupName parameter
-				<li>Improved heuristic for assigning color to polygonal face sets
-				<li>Improved handling to support for direct export of polygonal face geometry in IFC4
-				<li>Support for IfcShapeAspect in other objects that have part geometries
-				<li>Improved handling of Complex Property in the PropertySet definition
-				<li>General improvements to support IFC4 based geo-referencing information with addition UI in export, and integration to the information found inside Revit file (usually comes from AutoCAD or Civil3D)
-				<li>Reorganize the location for Exchange Requirement setting in the header of IFC File to be less hidden (now located right after the IFC version in export option UI)
-				<li>Updates shared parameter definitions and Property set definitions based on the latest IFC4 (4.4.0.2.2) specifications
-				<li>Support allowing a predefined type for standard walls on export
-				<li>General improvements dealing with objects with many holes
-			</ul>
-		</p>
-			<br>
-     <p>
-         Bug Fixes:
-			<p>
-			Export bug fixes:
-			<ul>
-				<li>Fixed exporting issue for a Ceiling containing Arc geometry
-				<li>Fixed issue with duplicate steel connection geometries or missing connection
-				<li>Fixed issue with IFC export - steel connection \ steel connection elements missing or wrongly exported
-				<li>Fixed issue on missing ceiling geometries in IFC4 RV export mode
-				<li>Fixed issue on objects with Parts that is below the first (lowest) level
-				<li>Fixed issue with export Roof in some cases
-				<li>Fixed crash issue if the "Rasters" are set to be exported to "IFCGrid"
-				<li>Fixed issue with IFC option "export links as separate models" causes wrong object placement
-				<li>Improved export Parts functionality
-				<li>Fixed issue that IFC Version doesn't update when changing the "In-Session setup"
-				<li>Fixed IsExternal calculation on element types to correctly determine value
-				<li>New shared parameter assigned to Curtain walls is now exported when exporting from Revit to Navisworks
-				<li>Update category mapping to deal with IfcSpaceTypes and IfcOpeningTypes
-				<li>Fixed issue with incorrect slab thickness when Opening IFC in Revit
-				<li>Fixed some issues on export with different coordinate base
-				<li>Fixed some issues on exporting Wall elements
-				<li>Improved handling reserved Windows name
-				<li>Export HVAC_HEAT_GAIN with current units (Watts)
-				<li>Removed duplicate base quantity NetSideArea exported for walls
-				<li>Improved export with the Property Set option "Export schedules as property sets"
-				<li>Fixed issue with IFC4 Reference view, which fails for some models from Factory Live
-				<li>Update the CSIORG link in the IFC exporter
-				<li>Changed IfcGeometricRepresentationContext from "Annotation" to "Plan"
-				<li>ClassificationCode(2) is now processed during export even if ClassificationCode is missing
-				<li>Corrected Area quantity property of doors
-				<li>Improved Materials export, that works for some floors but not others of the same type
-				<li>Fixed issue with wrong Base Quantity information in some scenarios in IFC export 2x3 Coordination View
-				<li>Fixed issues with warnings are shown when exporting to IFC4RV in some models
-				<li>Improved Railings import to Revit via IFC
-				<li>Properly convert this Flow_Rate parameter on Export
-				<li>Corrected 2D CurtainWall door swing on IFC Export
-				<li>Nested curtain wall element now will get proper parameters while export to IFC
-				<li>IFC-Export configuration will now remember the previous settings including: "Project Origin/Coordinate Base"
-				<li>Improved exporting of Material parameter
-				<li>Improved IFC4 RV Exchange Requirement, which may be missing when File Header is not initialized
-				<li>Support allowing a predefined type for standard railings on export
-				<li>Fixed IFC4 "opening as recess" code for ReinforcingMesh case
-				<li>Fixed issue with IFC export where some geometries are exported slightly longer extrusion
-			</ul>
-			</p>
-			<p>
-			Import bug fixes:
-			<ul>
-				<li>Improved Rebar import
-				<li>Improved import of Windows that are not cutting a wall in a linked or opened IFC
-				<li>Recognize the angle between Project North and Survey Point properly in Revit IFC import/link
-				<li>Improved import of Columns that may be placed in the wrong location on IFC Link in some cases
-				<li>Improved import of beam cover
-				<li>Fixed issue with Certain Tekla IFC geometry not visible when using Link IFC
-				<li>Improved link IFC that may have incorrect geometry imported for some cases
-				<li>Improved Link IFC file in Revit that in some cases failed with the model empty and an error appears in log file
-				<li>Fixed issue with translation IFC having mm units using Revit IFC loader makes default model view small unexpectedly on LMV
-				<li>Fixed issue related to invalid/corrupt IFC files that "load" without any errors
-				<li>Improved link IFC file properly inside Revit 2020
-				<li>Grids placed by IFCOFFSETCURVE2D will be placed at open IFC in the correct unit
-				<li>Fixed issue with multiple versions of the same IFC file get loaded into Revit Cloud Worksharing Host resulting in duplicate geometry
-				<li>Improve the structure in Link IFC that may end up upside down
-				<li>Fixed missing material information upon import IFC
-				<li>Recreate IFC/Import_Quantities/Import_Quantities.txt
-				<li>Support IfcGridPlacement for Link IFC
-				<li>Avoid duplicate instance and type names when linking in an IFC file
-				<li>Improved creation of Geometry which may be missing for some IFC models
-				<li>Fixed issue for some IFC files that failed to show in BIM 360 viewer
-				<li>IFC link - model is now correctly positioned when there is rotation component in IFCSite local placement
-				<li>Improved issue due to "bad" data involving Wall with zero thickness inside the IFC file that caused differences between IFC from Allplan opened/imported vs linked in Revit
-				<li>Improved handling of detailed geometry containing IfcAdvancedBrep in REVIT 2020 and 2021
-				<li>Improved slab elements import which may be missing in some IFC file
-				<li>Corrected IfcPort ConnectedTo IfcGUID information that contained its own GUID instead of the GUID of its connected Port
-			</ul></p>
-			<br>
-      	<p>
-         Known Issues/additional notes:
-			<ul>
-				<li>This release still contains issue that Steel Connections may not be exported correctly
-				<li>Export configuration "IFC2x2 ePlan Check" has been removed as it is already obsolete. If there is any saved configuration, the option will be automatically assign to IFC2x3 as default
-			</ul>
-
-	</div>
-	<br>
-
-   <div class="version">21.1.0.0</div><div class="versioninfo-bullet">
-
-      <br><p>
-         General:
-			<ul>
-            <li>This version contains multiple updates and improvements over the default Revit IFC for Revit 2021 out-of-the-box.
-            <li>The main features are a lot of works done towards IFC4 RV 1.2 certification (currently for Architecture). It is still work in progress though most of the requirements have been implemented in this version.
-				<li>The shared parameter files have been consolidated to only 2 files one for the Instance and the other one for the Type (with [Type] suffix). The file contains special parameters influencing exporter behavior and automatically collected parameters from IFC property set definitions (collections from IFC2x2, IFC2x3, and IFC4)
-				<li>Various improvements for consistent geometry (conforming to Euler formula)
-			</ul>	
-         <br>
-       <p>
-         New Features:
-			<ul>
-				<li>Ability to override element container using IfcSpatialContainer. Valid values: IFCSITE, IFCBUILDING, or any valid Level name
-				<li>IFC Material Layer information can be added to Revit Material using a set of parameters: IfcMaterialLayer.IsVentilated, IfcMaterialLayer.Name, IfcMaterialLayer.Priority, IfcMaterialLayer.Description, IfcMaterialLayer.Category
-				<li>IfcName can also be assigned to Revit Material that will override the name of the material upon export
-				<li>Pset_SiteCommon can be exported with special parameters attached top Project Information when there is no object exported as Site geometry. The parameters are prefixed with "Pset_SiteCommon."
-				<li>Better support for custom Ramps. Export will try to detect flights and landings for the custom Ramp. Specific property sets for the the flights and landings can be assigned to the custom Ramp or Stair object using special parameters that are prefixed with "Pset_rampFlightCommon." and "PsetSlabCommon." (for landing). The parameters can be appended with (#). # represents a number that follow sorting order from bottom up
-				<li>Option "Export of rooms in 3D views" in current view is now extended to support Area
-				<li>General improvements for IFC4 file import to Revit
-				<li>Support IFC4 IfcMaterialConstituentSet for export
-				<li>Check validity of the content of IfcGUID parameter for export
-				<li>Update support for IFC4-Add2-TC1 schema version
-				<li>Support Global Project Positioning information from Project base point and Map projection information for GIS integration
-			</ul>
-		</p>
-			<br>
-     <p>
-         Bug Fixes:
-			<p>
-			Export bug fixes:
-			<ul>
-				<li>Corrected issue with presentation colors in IFC4 RV export
-				<li>Option <strong>Include Steel Elements</strong> might not work properly in the past. It is now working. 
-				<li>Fixed issue with copy of standard export configuration is not editable
-				<li>Fixed issue that export of IfcRampFlight always gets a new GUID
-				<li>Fixed issue related to steel elements do not respect "Export only elements in visible view" option
-				<li>Improved export of rebars, which in some cases were not exported
-				<li>Missing small pipes on export
-				<li>Missing Family geometry if it contains very small segments 
-				<li>Toposurface is always exported even though it is not visible in view when exporting with "Export only elements in visible view" option
-				<li>Missing opening elements in facade elements
-				<li>Issue when Grid is exported without building storey
-				<li>Unable to export Slab/Mass/Structural Slab to IfcCivilElement
-				<li>Custom property set for Windows are not exported
-				<li>Fixed some general issue exporting in IFC2x2 format
-				<li>Corrected URL for UniFormat classifications in exported IFC files
-				<li>Issue on exporting a slab as IfcCivilElement with predefinedtype
-				<li>Room or Area is not exported when section box is active and options "Export only elements visible in view" and "Export rooms from 3D views" are selected
-				<li>Issue exporting edited shape as IfcCovering
-				<li>Fixed minor issue on FRA version of export UI due to length of the label for File Header and Project Address dialog boxes
-				<li>Fixed issue that GUID changes when using Steel tab
-				<li>Wrong placement of Rooms, Furnitures, or grids when no Level is selected to be exported as a building storey (will be exported in either IfcBuilding or IfcSite instead)
-				<li>Improve export of slanted walls
-				<li>Fixed crash issue when Steel elements are exported
-				<li>Wrong placement for BRep stairs and toposurfaces on export
-				<li>Missing Steel Connection Anchor on export
-				<li>Improved export for overly faceted geometries
-				<li>Some propertysets may be exported twice in IFC4RV export
-				<li>Missing NetVolume quantity in IFC4RV export
-				<li>Improved export of openings in some extruded families with setter placement offsets
-			</ul>
-			</p>
-			<p>
-			Import bug fixes:
-			<ul>
-				<li>Improved linking of IFC rebars that contains very small line segments in the directrix
-				<li>Some IFC4 data containing IfcColumns from AllPlan failed to be imported
-				<li>Fixed several issues related to importing IFC file from Tekla
-				<li>Improve text processing in import IFC class mapping table
-				<li>Import entities containing swept disk solid geometry
-				<li>More tolerant import for certain "bad" geometry, e.g. self intersecting geometry
-				<li>More tolerant import for geometry with very small curve segments
-				<li>Improve import of IFC file that is located far away from origin
-			</ul></p>
-			<br>
-      	<p>
-         Known Issues:
-			<ul>
-				<li>Combination of a section box in the current view and the use of option <strong>Use active view when creating geometry</strong> may cause certain walls that are cut by the section box to fail during export resulting of missing some geometries. Workaround for this is to avoid using section box that cuts walls
-				<li>In IFC4 RV export, several objects such as Walls, Floors, Roofs and Ceilings are exported using their layer parts as separate geometry items. However, due to the current limitation those objects that have their shape modified manually may not be exported with the layers.
-			</ul>
-
-	</div>
-	<br>
-
-   <div class="version">20.1.0.1</div><div class="versioninfo-bullet">
-
-      <br><p>
-         General:
-			<ul>
-            <li>This is a minor update for Revit 2020. It fixes issue of incorrect search folder for IFC schema files
-			</ul>	
-	</div>
-	<br>
-   <div class="version">20.1.0.0</div><div class="versioninfo-bullet">
-
+	<div class="version">24.0.0.0</div><div class="versioninfo-bullet">
       <br><p>
          General:
 
          <ul>
-            <li>This is an update version for Revit 2020. 
-            <li>This version includes updates that is included in Revit 2020 out of the box IFC functionality.
-            <li>IFC4 schema has been updated to the latest IFC4 ADD2 TC1 as well as all other related entities, PropertySets and other related properties.
+            <li>This is the first version of IFC Extension for Revit 2024.
          </ul>
-
-         <br>
-      <p>
-         New Functionality:
-
-         <ul>
-            <li>Two new export options are added:
-					<li>- Use Type name only for IFCType name
-					<li>- Use visible Revit name as the IFCEntity name
-				<li>Added a few more IFC unit types:
-					<li>- IfcPowerMeasure
-					<li>- IfcMassMeasure
-					<li>- IfcLinearForce
-					<li>- IfcPlanarForce
-				<li>built-in parameters IFC GUID parameters are no longer read-only.
-			</ul>
-
-      <p>
-         Export Bug Fixes:
-
-         <ul>
-			<li>Various regression issues especially related to the default names for IFC entities
-			<li>Improved consistency of PropertySet assignment. It now includes all PropertySets defined for the supertype.
-		   <li>Improved support for conditional PropertySet (PropsetySet assignment based on the entity type and its PredefinedType)
-			<li>Improved handling of an Elliptical Wall in export
-			<li>Improve export of grouped rebar
-		   <li>correct perimeter quantity export for metric units, and volume quantity export in mixed unit cases.
-			<li>make Open IFC respect "Don't Import" setting when import IfcSpace.
-			<li>Fixed an issue that resulted in the incorrect orientation of some elbow pipe or duct segments after IFC export.
-		   <li>Fixed export issue when working with Cloud model
-			<li>Improved the generation of consistent IFC GUIDs when exporting doors and windows in sandwich walls.
-			<li>Improved IFC export of walls with integral wall sweeps.
-         </ul>
-			<p>
-         Import Bug Fixes:
-
-         <ul>
-         <li>Added support for IfcTimeMeasure
-			<li>Added support for IFC metadata to Revit IFC importer.
-			<li>store the IFC GUID of the containing element assembly to differentiate between assemblies with the same name.
-			<li>Fix import of rebar with incorrect trim parameters from Tekla.
-			<li>Improved import of IfcTrimmedCurve
-			<li>Fixed issue of IFC files from Tekla have an unexpected 90 degree rotation about Z
-   </div>
-
-   <br>
-	   <div class="version">20.0.0.0</div><div class="versioninfo-bullet">
-
-      <br><p>
-         General:
-
-         <ul>
-            <li>This is the first version of IFC Export utility for Revit 2020. 
-			    <li>The functionality in this version is identical to the 19.2.0.1 version
-         </ul>
-
-			<br><p>
-         Import Bug Fixes:
-
-         <ul>
-            <li>Correct the default North orientation when there is no information of the True North to +Y.
    </div>
 </div>
 
