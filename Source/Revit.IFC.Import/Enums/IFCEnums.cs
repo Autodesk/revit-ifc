@@ -1413,7 +1413,7 @@ namespace Revit.IFC.Import.Enums
       VaporPermeabilityUnit,
       VolumetricFlowRateUnit,
       RotationalFrequencyUnit,
-      Toruquenit,
+      Torqueunit,
       MomentOfInertiaUnit,
       LinearMomentUnit,
       LinearForceUnit,

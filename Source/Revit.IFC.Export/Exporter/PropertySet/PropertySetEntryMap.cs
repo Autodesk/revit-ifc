@@ -72,12 +72,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="valueType">The type of the container for a property.</param>
       /// <param name="propertyEnumerationType">The type of property.</param>
       /// <param name="propertyName">The name of property to create.</param>
+      /// <param name="lookInType">True if it's appropriate to look for value in element type.</param>
       /// <returns>The created property handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
          IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector, 
          ElementType elementType, IFCAnyHandle handle, PropertyType propertyType, 
          PropertyType propertyArgumentType, PropertyValueType valueType, Type propertyEnumerationType,
-         string propertyName, bool fromSchedule=false)
+         string propertyName, bool lookInType)
       {
          IFCAnyHandle propHnd = null;
 
@@ -92,7 +93,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                Element element = elementOrConnector.Element;
                propHnd = CreatePropertyFromElementOrSymbol(file, exporterIFC, owningPsetName, element,
                   elementType, propertyType, propertyArgumentType, valueType, propertyEnumerationType,
-                  propertyName, fromSchedule);
+                  propertyName, lookInType);
             }
          }
 
@@ -836,13 +837,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="exporterIFC">The ExporterIFC.</param>
       /// <param name="element">The element.</param>
       /// <param name="elementType">The element type, if it is appropriate to look in it for value.</param>
+      /// <param name="lookInType">True if it's appropriate to look for value in element type.</param>
       /// <returns>The property handle.</returns>
       IFCAnyHandle CreatePropertyFromElementOrSymbol(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, Element element, Element elementType,
          PropertyType propertyType, PropertyType propertyArgumentType, PropertyValueType valueType, Type propertyEnumerationType, string propertyName, 
-         bool fromSchedule = false)
+         bool lookInType = false)
       {
          // Pset from schedule will be created only on the instance and not on the type (type properties in the schedule will be added into the instance's pset
-         if ((element is ElementType || element is FamilySymbol) && fromSchedule)
+         if ((element is ElementType || element is FamilySymbol) && lookInType)
             return null;
 
          string localizedRevitParameterName = LocalizedRevitParameterName(ExporterCacheManager.LanguageType);
@@ -889,8 +891,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             }
          }
 
-         // Get the property from Type for this element only if the pset is for schedule 
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (elementType != null) && fromSchedule)
+         // Get the property from Type for this element if the pset is for schedule or 
+         // if element doesn't have an associated type (e.g. IfcRoof)
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (elementType != null) && lookInType)
             return CreatePropertyFromElementOrSymbol(file, exporterIFC, owningPsetName, elementType, null,
                propertyType, propertyArgumentType, valueType, propertyEnumerationType, propertyName, false);
 

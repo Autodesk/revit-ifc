@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BIM.IFC.Export.UI</RootNamespace>
-    <AssemblyName>IFCExportUIOverride</AssemblyName>
+    <AssemblyName>IFCExporterUIOverride</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -254,6 +254,10 @@
     <ProjectReference Include="..\Revit.IFC.EntityTree\Revit.IFC.EntityTree.csproj">
       <Project>{5fc56ba3-315a-444b-ac6b-81aacf727517}</Project>
       <Name>Revit.IFC.EntityTree</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Revit.IFC.Export\Revit.IFC.Export.csproj">
+      <Project>{bce5141a-291b-4cd8-a69b-7b9345aa00e9}</Project>
+      <Name>Revit.IFC.Export</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project=".\IFCExporterUIOverride.props" />

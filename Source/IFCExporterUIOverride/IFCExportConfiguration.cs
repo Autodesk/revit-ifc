@@ -29,6 +29,7 @@ using Autodesk.Revit.DB.IFC;
 using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Extensions;
+using Revit.IFC.Export.Utility;
 
 namespace BIM.IFC.Export.UI
 {
@@ -363,33 +364,22 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// Id of the active view.
       /// </summary>
+      [ScriptIgnore]
       public int ActiveViewId { get; set; } = ElementId.InvalidElementId.IntegerValue;
 
-      private bool m_isBuiltIn = false;
-      private bool m_isInSession = false;
       private static IFCExportConfiguration s_inSessionConfiguration = null;
 
       /// <summary>
       /// Whether the configuration is builtIn or not.
       /// </summary>
-      public bool IsBuiltIn
-      {
-         get
-         {
-            return m_isBuiltIn;
-         }
-      }
+      [ScriptIgnore]
+      public bool IsBuiltIn { get; private set; } = false;
 
       /// <summary>
       /// Whether the configuration is in-session or not.
       /// </summary>
-      public bool IsInSession
-      {
-         get
-         {
-            return m_isInSession;
-         }
-      }
+      [ScriptIgnore]
+      public bool IsInSession { get; private set; } = false;
 
       /// <summary>
       /// Creates a new default configuration.
@@ -481,8 +471,9 @@ namespace BIM.IFC.Export.UI
          // Items from the Entities to Export Tab
          configuration.ExcludeFilter = excludeFilter;
 
-         configuration.m_isBuiltIn = true;
-         configuration.m_isInSession = false;
+         configuration.IsBuiltIn = true;
+         configuration.IsInSession = false;
+
 
          return configuration;
       }
@@ -506,8 +497,8 @@ namespace BIM.IFC.Export.UI
          dup.Name = newName;
          if (makeEditable)
          {
-            dup.m_isBuiltIn = false;
-            dup.m_isInSession = false;
+            dup.IsBuiltIn = false;
+            dup.IsInSession = false;
          }
          return dup;
       }
@@ -524,7 +515,7 @@ namespace BIM.IFC.Export.UI
             s_inSessionConfiguration.Name = Resources.InSessionConfiguration;
             s_inSessionConfiguration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\DefaultUserDefinedParameterSets.txt";
             s_inSessionConfiguration.ExportUserDefinedParameterMappingFileName = "";
-            s_inSessionConfiguration.m_isInSession = true;
+            s_inSessionConfiguration.IsInSession = true;
          }
 
          return s_inSessionConfiguration;
@@ -549,7 +540,7 @@ namespace BIM.IFC.Export.UI
       /// <param name="updatedConfig">the configuration providing the updates</param>
       public void UpdateBuiltInConfiguration(IFCExportConfiguration updatedConfig)
       {
-         if (m_isBuiltIn && Name.Equals(updatedConfig.Name))
+         if (IsBuiltIn && Name.Equals(updatedConfig.Name))
          {
             IDictionary<string, object> updConfigDict = updatedConfig.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(updatedConfig));
 
@@ -612,15 +603,13 @@ namespace BIM.IFC.Export.UI
          }
 
          options.FilterViewId = VisibleElementsOfCurrentView ? filterViewId : ElementId.InvalidElementId;
-
-         string uiVersion = IFCUISettings.GetAssemblyVersion();
-         options.AddOption("AlternateUIVersion", uiVersion);
       }
 
 
       /// <summary>
       /// Identifies the version selected by the user.
       /// </summary>
+      [ScriptIgnore]
       public String FileVersionDescription
       {
          get
@@ -652,22 +641,28 @@ namespace BIM.IFC.Export.UI
       {
          Type type = GetType();
 
-         // load in each property from the dictionary. 
+         // load in each property from the dictionary.
          foreach (var prop in dictionary)
          {
             string propName = prop.Key;
             object propValue = prop.Value;
 
-            // get the property info
+            // get the property info.
             PropertyInfo propInfo = type.GetProperty(propName);
 
-            // property removed/renamed..
+            // property removed/renamed.
             if (propInfo == null)
                continue;
 
-            // set direct for all the writeable props
+            // set direct for all the writeable props.
             if (propInfo.CanWrite && !propInfo.IsDefined(typeof(ScriptIgnoreAttribute)))
             {
+               if (propInfo.GetCustomAttribute(typeof(PropertyUpgraderAttribute)) is PropertyUpgraderAttribute upgrader)
+               {
+                  upgrader.Upgrade(this, propInfo, propValue);
+                  continue;
+               }
+
                try
                {
                   propInfo.SetValue(this, serializer.ConvertToType(propValue, propInfo.PropertyType));
@@ -677,17 +672,18 @@ namespace BIM.IFC.Export.UI
                   // avoid exceptions that may occur during property deserialization to continue loading user configuration,
                   // the default value should be set
                }
+
                continue;
             }
 
             // need to set explicit member variables for ready only props.
-            if (propName == "IsBuiltIn")
+            if (propName == nameof(IsBuiltIn))
             {
-               m_isBuiltIn = serializer.ConvertToType<bool>(propValue);
+               IsBuiltIn = serializer.ConvertToType<bool>(propValue);
             }
-            else if (propName == "IsInSession")
+            else if (propName == nameof(IsInSession))
             {
-               m_isInSession = serializer.ConvertToType<bool>(propValue);
+               IsInSession = serializer.ConvertToType<bool>(propValue);
             }
          }
       }
@@ -733,6 +729,76 @@ namespace BIM.IFC.Export.UI
          IFCExportConfiguration config = IFCExportConfiguration.CreateDefaultConfiguration();
          config.DeserializeFromJson(dictionary, serializer);
          return config;
+      }
+   }
+
+   /// <summary>
+   /// An interface for property updaters.
+   /// </summary>
+   public interface IPropertyUpgrader
+   {
+      /// <summary>
+      /// A method to be called by the <see cref="IFCExportConfigurationConverter"/>
+      /// </summary>
+      /// <param name="destination">An instance of the <see cref="IFCExportConfiguration"/>.</param>
+      /// <param name="propertyInfo">A <see cref="PropertyInfo"/> instance to set upgraded value.</param>
+      /// <param name="value">A property value to upgrade.</param>
+      void Upgrade(object destination, PropertyInfo propertyInfo, object value);
+   }
+
+   /// <summary>
+   /// Used to specify <see cref="IPropertyUpgrader"/>.
+   /// </summary>
+   [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
+   public sealed class PropertyUpgraderAttribute : Attribute
+   {
+      private Type m_upgraderType;
+
+      /// <summary>
+      /// Initializes a new instance of the <see cref="PropertyUpgraderAttribute"/> class with the specified upgrader
+      /// </summary>
+      /// <param name="upgraderType">An <see cref="IPropertyUpgrader"/> type that should be applied to specific property.</param>
+      public PropertyUpgraderAttribute(Type upgraderType)
+      {
+         m_upgraderType = upgraderType;
+      }
+
+      /// <summary>
+      /// A method to be called by the <see cref="IFCExportConfigurationConverter"/>
+      /// </summary>
+      /// <param name="destination">An instance of the <see cref="IFCExportConfiguration"/>.</param>
+      /// <param name="propertyInfo">A <see cref="PropertyInfo"/> instance to set upgraded value.</param>
+      /// <param name="value">A property value to upgrade.</param>
+      public void Upgrade(object destination, PropertyInfo propertyInfo, object value)
+      {
+         if (Activator.CreateInstance(m_upgraderType) is IPropertyUpgrader upgrader)
+         {
+            upgrader.Upgrade(destination, propertyInfo, value);
+         }
+      }
+   }
+
+   /// <summary>
+   /// Upgrader for the <see cref="IFCExportConfiguration.ExportLinkedFiles"/> property.
+   /// </summary>
+   /// <remarks>
+   /// In Revit 2024 the <see cref="IFCExportConfiguration.ExportLinkedFiles"/> property type changed from bool to the <see cref="Revit.IFC.Export.Utility.LinkedFileExportAs"/> enum,
+   /// therefore, it is necessary to check the value type to convert to <see cref="Revit.IFC.Export.Utility.LinkedFileExportAs"/>.
+   /// </remarks>
+   public class ExportLinkedFilesPropertyUpgrader : IPropertyUpgrader
+   {
+      public void Upgrade(object destination, PropertyInfo propertyInfo, object value)
+      {
+         if (!propertyInfo.CanWrite)
+            return;
+
+         // convert bool to enum.
+         if (value is bool boolValue)
+            propertyInfo.SetValue(destination, boolValue ? LinkedFileExportAs.ExportAsSeparate : LinkedFileExportAs.DontExport);
+         // presented expected type.
+         else if (value is LinkedFileExportAs exportLinkedFiles)
+            propertyInfo.SetValue(destination, exportLinkedFiles);
+         // else don't set value to leave the default value.
       }
    }
 }

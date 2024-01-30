@@ -2,7 +2,7 @@
 <RevitAddIns>
   <AddIn Type="Application">
     <Name>IFC override</Name>
-    <Assembly>.\IFCExportUIOverride.dll</Assembly>
+    <Assembly>.\IFCExporterUIOverride.dll</Assembly>
     <AddInId>6DC299D6-F746-47BE-AE93-F00DDC714257</AddInId>
     <FullClassName>BIM.IFC.Export.UI.IFCCommandOverrideApplication</FullClassName>
     <VendorId>ADSK</VendorId>

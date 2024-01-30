@@ -102,42 +102,44 @@ namespace Revit.IFC.Import.Data
       protected IList<IList<CurveLoop>> GetTransformedCurveLoops(Transform scaledLcs)
       {
          IList<IList<CurveLoop>> listOfListOfLoops = new List<IList<CurveLoop>>();
-
-         foreach (IFCProfileDef crossSection in CrossSections)
+         if (CrossSections != null)
          {
-            IFCSimpleProfile simpleProfile = crossSection as IFCSimpleProfile;
-            if (simpleProfile == null)
+            foreach (IFCProfileDef crossSection in CrossSections)
             {
-               // TODO:  Support more complex ProfileDefs.
-               //
-               Importer.TheLog.LogError(Id, "Cross Section Profile #" + crossSection.Id + "Not yet supported.", false);
-               continue;
-            }
-
-            IList<CurveLoop> listOfLoops = new List<CurveLoop>();
-
-            // It is legal for simpleSweptArea.Position to be null, for example for IfcArbitraryClosedProfileDef.
-            Transform scaledSweptAreaPosition = (simpleProfile.Position == null) ? scaledLcs : scaledLcs.Multiply(simpleProfile.Position);
-
-            CurveLoop currLoop = simpleProfile.GetTheOuterCurveLoop();
-            if (currLoop?.Count() == 0)
-            {
-               Importer.TheLog.LogError(simpleProfile.Id, "No outer curve loop for profile, ignoring.", false);
-               continue;
-            }
-
-            currLoop = IFCGeometryUtil.SplitUnboundCyclicCurves(currLoop);
-            listOfLoops.Add(IFCGeometryUtil.CreateTransformed(currLoop, Id, scaledSweptAreaPosition));
-
-            if (simpleProfile.InnerCurves != null)
-            {
-               foreach (CurveLoop innerCurveLoop in simpleProfile.InnerCurves)
+               IFCSimpleProfile simpleProfile = crossSection as IFCSimpleProfile;
+               if (simpleProfile == null)
                {
-                  listOfLoops.Add(IFCGeometryUtil.CreateTransformed(IFCGeometryUtil.SplitUnboundCyclicCurves(innerCurveLoop), Id, scaledSweptAreaPosition));
+                  // TODO:  Support more complex ProfileDefs.
+                  //
+                  Importer.TheLog.LogError(Id, "Cross Section Profile #" + crossSection.Id + "Not yet supported.", false);
+                  continue;
                }
-            }
 
-            listOfListOfLoops.Add(listOfLoops);
+               IList<CurveLoop> listOfLoops = new List<CurveLoop>();
+
+               // It is legal for simpleSweptArea.Position to be null, for example for IfcArbitraryClosedProfileDef.
+               Transform scaledSweptAreaPosition = (simpleProfile.Position == null) ? scaledLcs : scaledLcs.Multiply(simpleProfile.Position);
+
+               CurveLoop currLoop = simpleProfile.GetTheOuterCurveLoop();
+               if (currLoop?.Count() == 0)
+               {
+                  Importer.TheLog.LogError(simpleProfile.Id, "No outer curve loop for profile, ignoring.", false);
+                  continue;
+               }
+
+               currLoop = IFCGeometryUtil.SplitUnboundCyclicCurves(currLoop);
+               listOfLoops.Add(IFCGeometryUtil.CreateTransformed(currLoop, Id, scaledSweptAreaPosition));
+
+               if (simpleProfile.InnerCurves != null)
+               {
+                  foreach (CurveLoop innerCurveLoop in simpleProfile.InnerCurves)
+                  {
+                     listOfLoops.Add(IFCGeometryUtil.CreateTransformed(IFCGeometryUtil.SplitUnboundCyclicCurves(innerCurveLoop), Id, scaledSweptAreaPosition));
+                  }
+               }
+
+               listOfListOfLoops.Add(listOfLoops);
+            }
          }
 
          return listOfListOfLoops;

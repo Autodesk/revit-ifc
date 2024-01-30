@@ -58,10 +58,10 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>C:\Program Files\Autodesk\Revit 2022\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\2022_Revit_API\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />

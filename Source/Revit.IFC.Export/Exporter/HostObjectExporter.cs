@@ -72,7 +72,7 @@ namespace Revit.IFC.Export.Exporter
                   wallHeight = boundingBox.Max.Z - boundingBox.Min.Z;
             }
 
-            MaterialLayerSetInfo mlsInfo = new MaterialLayerSetInfo(exporterIFC, hostObject, productWrapper);
+            MaterialLayerSetInfo mlsInfo = new MaterialLayerSetInfo(exporterIFC, hostObject, productWrapper, geometryElement);
             IFCAnyHandle materialLayerSet = mlsInfo.MaterialLayerSetHandle;
             List<ElementId> materialIds = mlsInfo.MaterialIds.Select(x => x.m_baseMatId).ToList();
 
@@ -166,9 +166,16 @@ namespace Revit.IFC.Export.Exporter
                                     flipDirSense = !(wall.Flipped ^ curveFlipped);
                                  }
                               }
-                              else if (hostObject is CeilingAndFloor)
+                              else if (hostObject is Floor)
                               {
                                  flipDirSense = false;
+                              }
+                              else if (hostObject is Ceiling)
+                              {
+                                 // flip the direction sense for the ceiling and add material layer set base offset to preserve
+                                 // the original Revit material layers order (compound structure) and comply with
+                                 // the IfcMaterialLayerSetUsage concept.
+                                 scaledOffset = -mlsInfo.TotalThickness;
                               }
 
                               double offsetFromReferenceLine = flipDirSense ? -scaledOffset : scaledOffset;

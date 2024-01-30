@@ -230,7 +230,10 @@ namespace Revit.IFC.Export.Exporter
                               if (curtainGridSet != null)
                               {
                                  foreach (CurtainGrid curtainGrid in curtainGridSet)
-                                    elemIds.UnionWith(CurtainSystemExporter.GetVisiblePanelsForGrid(curtainGrid));
+                                 {
+                                    elemIds.UnionWith(CurtainSystemExporter.GetVisiblePanelsForGrid(
+                                       curtainGrid, document));
+                                 }
                               }
                            }
 
@@ -785,7 +788,7 @@ namespace Revit.IFC.Export.Exporter
             if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue("OmniClass", out classification))
             {
                classification = IFCInstanceExporter.CreateClassification(file, "CSI (Construction Specifications Institute)", "v 1.0", 0, 0, 0, 
-                  "OmniClass", "OmniClass Classification", "http://www.omniclass.org/tables/OmniClass_13_2006-03-28.pdf");
+                  "OmniClass", "OmniClass Classification", "http://www.omniclass.org");
                ExporterCacheManager.ClassificationCache.ClassificationHandles.Add("OmniClass", classification);
             }
 
@@ -887,7 +890,7 @@ namespace Revit.IFC.Export.Exporter
 
             using (IFCTransaction transaction2 = new IFCTransaction(file))
             {
-               ElementId catId = spatialElement.Category != null ? spatialElement.Category.Id : ElementId.InvalidElementId;
+               ElementId catId = CategoryUtil.GetSafeCategoryId(spatialElement);
 
                IFCAnyHandle repHnd = null;
                if (geomElem != null)
@@ -931,7 +934,7 @@ namespace Revit.IFC.Export.Exporter
                   // Spaces shouldn't have styled items.
                   HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
                   bodyItems.Add(shapeRep);
-                  shapeRep = RepresentationUtil.CreateSweptSolidRep(exporterIFC, spatialElement, catId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null);
+                  shapeRep = RepresentationUtil.CreateSweptSolidRep(exporterIFC, spatialElement, catId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null, null);
                   IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
                   shapeReps.Add(shapeRep);
 
@@ -951,20 +954,24 @@ namespace Revit.IFC.Export.Exporter
                if (exportInfo.ExportInstance == IFCEntityType.IfcSpace)
                {
                   IFCInternalOrExternal internalOrExternal = CategoryUtil.IsElementExternal(spatialElement) ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
-                  spaceHnd = IFCInstanceExporter.CreateSpace(exporterIFC, spatialElement, GUIDUtil.CreateGUID(spatialElement),
-                                                ExporterCacheManager.OwnerHistoryHandle,
-                                                extraParams.GetLocalPlacement(), repHnd, IFCElementComposition.Element,
-                                                internalOrExternal);
+                  string preDefinedType = string.IsNullOrWhiteSpace(exportInfo.ValidatedPredefinedType) ?
+                     "NOTDEFINED" : exportInfo.ValidatedPredefinedType;
+
+                  spaceHnd = IFCInstanceExporter.CreateSpace(exporterIFC, spatialElement, 
+                     GUIDUtil.CreateGUID(spatialElement), ExporterCacheManager.OwnerHistoryHandle,
+                     extraParams.GetLocalPlacement(), repHnd, IFCElementComposition.Element,
+                     internalOrExternal, preDefinedType);
                }
                else
                {
-                  spaceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, spatialElement, GUIDUtil.CreateGUID(spatialElement),
-                                                ExporterCacheManager.OwnerHistoryHandle, extraParams.GetLocalPlacement(), repHnd);
+                  spaceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, 
+                     spatialElement, GUIDUtil.CreateGUID(spatialElement), 
+                     ExporterCacheManager.OwnerHistoryHandle, extraParams.GetLocalPlacement(), repHnd);
                }
 
                if (exportInfo.ExportType != IFCEntityType.UnKnown)
                {
-                  IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(spatialElement, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
+                  IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(spatialElement, exportInfo, file, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(type, spaceHnd);
                }
                transaction2.Commit();

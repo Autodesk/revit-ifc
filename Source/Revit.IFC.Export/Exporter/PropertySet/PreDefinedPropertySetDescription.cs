@@ -75,7 +75,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             IList<IFCData> data = entry.ProcessEntry(file, element);
 
             if (data == null && ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportMaterialPsets)
-               data = MaterialBuildInParameterUtil.CreatePredefinedDataIfBuildIn(Name, entry.PropertyName, entry.PropertyType, element);
+                  data = MaterialBuildInParameterUtil.CreatePredefinedDataIfBuildIn(Name, entry.PropertyName, entry.PropertyType, element);
 
             if (data == null)
                continue;

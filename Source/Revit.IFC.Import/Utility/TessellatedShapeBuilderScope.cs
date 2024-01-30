@@ -547,7 +547,9 @@ namespace Revit.IFC.Import.Utility
          TessellatedShapeBuilderOutcome outcome;
          IList<GeometryObject> geomObjects = CreateGeometryObjects(guid, out invalidData, out outcome);
 
-         // We won't log a message here as we expect the receiver to warn as necessary.
+         if(invalidData)
+            Importer.TheLog.LogWarning(CreatorId(), "Couldn't create mesh.", false);
+
          return geomObjects;
       }
 
@@ -565,7 +567,9 @@ namespace Revit.IFC.Import.Utility
          TessellatedShapeBuilderOutcome outcome;
          IList<GeometryObject> geomObjects = CreateGeometryObjects(guid, out invalidData, out outcome);
 
-         // We won't log a message here as we expect the receiver to warn as necessary.
+         if (invalidData)
+            Importer.TheLog.LogWarning(CreatorId(), "Couldn't create solid or mesh.", false);
+
          return geomObjects;
       }
 

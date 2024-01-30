@@ -240,7 +240,7 @@ namespace Revit.IFC.Export.Utility
 
          cache.PropertySetOptions = PropertySetOptions.Create(exporterIFC, cache);
 
-         String use2DRoomBoundary = Environment.GetEnvironmentVariable("Use2DRoomBoundaryForRoomVolumeCalculationOnIFCExport");
+         string use2DRoomBoundary = Environment.GetEnvironmentVariable("Use2DRoomBoundaryForRoomVolumeCalculationOnIFCExport");
          bool? use2DRoomBoundaryOption = OptionsUtil.GetNamedBooleanOption(options, "Use2DRoomBoundaryForVolume");
          cache.Use2DRoomBoundaryForRoomVolumeCreation =
              ((use2DRoomBoundary != null && use2DRoomBoundary == "1") ||
@@ -253,7 +253,7 @@ namespace Revit.IFC.Export.Utility
          // Set GUIDOptions here.
          {
             // This option should be rarely used, and is only for consistency with old files.  As such, it is set by environment variable only.
-            String use2009GUID = Environment.GetEnvironmentVariable("Assign2009GUIDToBuildingStoriesOnIFCExport");
+            string use2009GUID = Environment.GetEnvironmentVariable("Assign2009GUIDToBuildingStoriesOnIFCExport");
             cache.GUIDOptions.Use2009BuildingStoreyGUIDs = (use2009GUID != null && use2009GUID == "1");
 
             bool? allowGUIDParameterOverride = OptionsUtil.GetNamedBooleanOption(options, "AllowGUIDParameterOverride");
@@ -311,9 +311,6 @@ namespace Revit.IFC.Export.Utility
 
          bool? exportRoomsInView = OptionsUtil.GetNamedBooleanOption(options, "ExportRoomsInView");
          cache.ExportRoomsInView = exportRoomsInView != null ? exportRoomsInView.Value : false;
-
-         // Using the alternate UI or not.
-         cache.AlternateUIVersionOverride = OptionsUtil.GetNamedStringOption(options, "AlternateUIVersion");
 
          // Include IFCSITE elevation in the site local placement origin
          bool? includeIfcSiteElevation = OptionsUtil.GetNamedBooleanOption(options, "IncludeSiteElevation");
@@ -419,7 +416,7 @@ namespace Revit.IFC.Export.Utility
                String aLinkInstanceTransform = OptionsUtil.GetNamedStringOption(options, optionName);
 
                Transform currTransform = null;
-               if (!String.IsNullOrEmpty(aLinkInstanceTransform))
+               if (!string.IsNullOrEmpty(aLinkInstanceTransform))
                {
                   //reconstruct transform
                   Transform tr = ParseTransform(aLinkInstanceTransform);
@@ -444,8 +441,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          cache.ExcludeFilter = OptionsUtil.GetNamedStringOption(options, "ExcludeFilter");
-         
-         // Geo Reference info
+
          cache.GeoRefCRSName = OptionsUtil.GetNamedStringOption(options, "GeoRefCRSName");
          cache.GeoRefCRSDesc = OptionsUtil.GetNamedStringOption(options, "GeoRefCRSDesc");
          cache.GeoRefEPSGCode = OptionsUtil.GetNamedStringOption(options, "GeoRefEPSGCode");
@@ -867,7 +863,7 @@ namespace Revit.IFC.Export.Utility
             string exporterVersion = "Unknown Exporter version";
             if (File.Exists(assemblyFile))
             {
-               exporterVersion = "Exporter " + FileVersionInfo.GetVersionInfo(assemblyFile).FileVersion;
+               exporterVersion = "IFC " + FileVersionInfo.GetVersionInfo(assemblyFile).FileVersion;
             }
             return exporterVersion;
          }

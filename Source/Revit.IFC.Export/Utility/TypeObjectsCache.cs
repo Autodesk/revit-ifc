@@ -26,18 +26,19 @@ using Revit.IFC.Common.Enums;
 namespace Revit.IFC.Export.Utility
 {
    /// <summary>
-   /// TypeObjectKey has five components:
+   /// TypeObjectKey has six components:
    /// 1. Symbol id.
    /// 2. Level id (if we are splitting by level).
    /// 3. Flipped (true if the symbol is flipped).
    /// 4. The corresponding IFC entity type.
    /// 5. The corresponding IFC predefined type.
+   /// 6. Override material id.
    /// </summary>
-   public sealed class TypeObjectKey : Tuple<ElementId, ElementId, bool, IFCEntityType, string>
+   public sealed class TypeObjectKey : Tuple<ElementId, ElementId, bool, IFCEntityType, string, ElementId>
    {
       public TypeObjectKey(ElementId elementId, ElementId levelId, bool flipped,
-         IFCExportInfoPair exportType) :
-         base(elementId, levelId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType)
+         IFCExportInfoPair exportType, ElementId materialId) :
+         base(elementId, levelId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType, materialId)
       { }
 
       public ElementId ElementId { get { return Item1; } }
@@ -49,6 +50,8 @@ namespace Revit.IFC.Export.Utility
       public IFCEntityType EntityType { get { return Item4; } }
 
       public string PredefinedType { get { return Item5; } }
+
+      public ElementId MaterialId { get { return Item6; } }
    }
 
    /// <summary>

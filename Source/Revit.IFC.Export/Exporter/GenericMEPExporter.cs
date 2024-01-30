@@ -125,10 +125,11 @@ namespace Revit.IFC.Export.Exporter
                            if (geomObjects.Count == 0 && (solids.Count > 0 || polyMeshes.Count > 0))
                               return false;
 
-                           bool tryToExportAsExtrusion = (!exporterIFC.ExportAs2x2 ||
-                                                          (exportType.ExportInstance == IFCEntityType.IfcColumn));
+                           bool isColumn = exportType.ExportInstance == IFCEntityType.IfcColumn;
+                           bool tryToExportAsExtrusion =
+                              !ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || isColumn;
 
-                           if (exportType.ExportInstance == IFCEntityType.IfcColumn)
+                           if (isColumn)
                            {
                               extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;
                            }
@@ -195,7 +196,7 @@ namespace Revit.IFC.Export.Exporter
 
          if (type != null)
          {
-            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType);
+            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType, ElementId.InvalidElementId);
             
             FamilyTypeInfo currentTypeInfo = 
                ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);

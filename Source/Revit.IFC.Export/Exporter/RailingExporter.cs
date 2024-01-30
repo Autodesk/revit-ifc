@@ -180,6 +180,20 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// Creates a type handle for the railing element.
+      /// </summary>
+      /// <param name="element">The railing element to be exported.</param>
+      /// <param name="file">The IFC file handle.</param>
+      /// <param name="exportInfo">The export information of the railing element.</param>
+      /// <param name="productWrapper">The ProductWrapper.</param>
+      /// <param name="railingHandle">The IfcRailing handle to be exported.</param>
+      private static void CreateTypeHandle(IFCExportInfoPair exportInfo, Element element, IFCFile file, ProductWrapper productWrapper, IFCAnyHandle railingHandle)
+      {
+         IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
+         ExporterCacheManager.TypeRelationsCache.Add(typeHnd, railingHandle);
+      }
+
+      /// <summary>
       /// Collects the sub-elements of a Railing, to prevent double export.
       /// </summary>
       /// <param name="railingElem">
@@ -326,6 +340,8 @@ namespace Revit.IFC.Export.Exporter
 
                   IFCAnyHandle railing = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, element, instanceGUID, ownerHistory,
                             ecData.GetLocalPlacement(), prodRep);
+
+                  CreateTypeHandle(exportInfo, element, file, productWrapper, railing);
 
                   bool associateToLevel = (hostId == ElementId.InvalidElementId);
 

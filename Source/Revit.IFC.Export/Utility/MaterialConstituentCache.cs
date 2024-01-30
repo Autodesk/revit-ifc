@@ -49,7 +49,7 @@ namespace Revit.IFC.Export.Utility
       {
          int hash = 23;
          hash = hash * 31 + obj.ComponentCat.GetHashCode();
-         hash = hash * 31 + obj.MaterialId.IntegerValue;
+         hash = hash * 31 + obj.MaterialId.GetHashCode();
          return hash;
       }
    }

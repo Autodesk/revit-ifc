@@ -97,6 +97,26 @@ namespace Revit.IFC.Export.Utility
       }
    };
 
+   public class ClassificationCacheInfo
+   {
+      public ClassificationCacheInfo(string globalId, string name, 
+         string description, HashSet<IFCAnyHandle> relatedObjects)
+      {
+         GlobalId = globalId;
+         Name = name;
+         Description = description;
+         RelatedObjects = relatedObjects;
+      }
+
+      public string GlobalId { get; set; } = null;
+
+      public string Name { get; set; } = null;
+
+      public string Description { get; set; } = null;
+
+      public HashSet<IFCAnyHandle> RelatedObjects { get; set; } = null;
+   }
+
    /// <summary>
    /// Used to keep a cache of the created IfcClassifications.
    /// </summary>
@@ -113,8 +133,8 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The map of classification references to the related objects.
       /// </summary>
-      public IDictionary<IFCAnyHandle, Tuple<string, string, HashSet<IFCAnyHandle>>> ClassificationRelations { get; } =
-         new Dictionary<IFCAnyHandle, Tuple<string, string, HashSet<IFCAnyHandle>>>();
+      public IDictionary<IFCAnyHandle, ClassificationCacheInfo> ClassificationRelations { get; } =
+         new Dictionary<IFCAnyHandle, ClassificationCacheInfo>();
 
       public IDictionary<ClassificationReferenceKey, IFCAnyHandle> ClassificationReferenceHandles { get; } =
          new SortedDictionary<ClassificationReferenceKey, IFCAnyHandle>();
@@ -154,22 +174,27 @@ namespace Revit.IFC.Export.Utility
          string relGuid, string relationName, IFCAnyHandle relatedObject)
       {
          IFCAnyHandle classificationReference = FindOrCreateClassificationReference(file, key);
-         string relationNameToUse = relationName ?? 
-            ((key.Name ?? string.Empty) + ":" + (key.ItemReference ?? string.Empty));
-         AddRelation(classificationReference, relGuid, relationNameToUse,
+         AddRelation(classificationReference, relGuid, key.Name, key.ItemReference,
             new HashSet<IFCAnyHandle>() { relatedObject });
          return classificationReference;
       }
 
-      public void AddRelation(IFCAnyHandle classificationReference, string guid, string relName,
-         ISet<IFCAnyHandle> relatedObject)
+      public void AddRelation(IFCAnyHandle classificationReference, string guid, 
+         string keyName, string keyReference, ISet<IFCAnyHandle> relatedObject)
       {
          if (!ClassificationRelations.TryGetValue(classificationReference, out var relations))
          {
-            relations = Tuple.Create(guid, relName, new HashSet<IFCAnyHandle>());
+            bool hasKeyName = !string.IsNullOrWhiteSpace(keyName);
+            bool hasKeyReference = !string.IsNullOrWhiteSpace(keyReference);
+            string relName = hasKeyName ? keyName : keyReference;
+            string relDescription = (hasKeyName ? keyName : string.Empty) + 
+               ((hasKeyName || hasKeyReference) ? ":" : string.Empty) + 
+               (hasKeyReference ? keyReference : string.Empty);
+            relations = new ClassificationCacheInfo(guid, relName, relDescription,
+               new HashSet<IFCAnyHandle>());
             ClassificationRelations[classificationReference] = relations;
          }
-         relations.Item3.UnionWith(relatedObject);
+         relations.RelatedObjects.UnionWith(relatedObject);
       }
 
       private bool m_BimStandardsCacheInitialized = false;

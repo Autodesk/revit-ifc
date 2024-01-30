@@ -440,11 +440,8 @@ namespace Revit.IFC.Export.Exporter
       private static IDictionary<Tuple<ElementId, string>, List<Grid>> GetAllGrids(Document document, ExporterIFC exporterIFC)
       {
          View currentView = ExporterCacheManager.ExportOptionsCache.FilterViewForExport;
-         Level currentLevel = null;
-         if (currentView != null)
-         {
-            currentLevel = currentView.GenLevel;
-         }
+         Level currentLevel = currentView?.GenLevel;
+         
          SortedDictionary<double,ElementId> levelIds = new SortedDictionary<double,ElementId>();
          
          if (currentLevel != null)

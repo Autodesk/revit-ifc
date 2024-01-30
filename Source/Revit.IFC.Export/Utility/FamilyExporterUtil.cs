@@ -248,34 +248,54 @@ namespace Revit.IFC.Export.Exporter
 
          //should remove the create method where there is no use of this handle for API methods
          //some places uses the return value of ExportGenericInstance as input parameter for API methods
+         string defaultPreDefinedType = null;
+         switch (type.ExportInstance)
+         {
+            case IFCEntityType.IfcBeam:
+               defaultPreDefinedType = "BEAM";
+               break;
+            case IFCEntityType.IfcColumn:
+               defaultPreDefinedType = "COLUMN";
+               break;
+            case IFCEntityType.IfcMember:
+               defaultPreDefinedType = "BRACE";
+               break;
+            default:
+               defaultPreDefinedType = "NOTDEFINED";
+               break;
+         }
+
+         string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ?
+            defaultPreDefinedType : type.ValidatedPredefinedType;
+
          IFCAnyHandle instanceHandle = null;
          switch (type.ExportInstance)
          {
             case IFCEntityType.IfcBeam:
                {
-                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "BEAM" : type.ValidatedPredefinedType;
                   instanceHandle = IFCInstanceExporter.CreateBeam(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                       localPlacementToUse, productRepresentation, preDefinedType);
                   break;
                }
             case IFCEntityType.IfcColumn:
                {
-                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "COLUMN" : type.ValidatedPredefinedType;
-                  instanceHandle = IFCInstanceExporter.CreateColumn(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                     localPlacementToUse, productRepresentation, preDefinedType);
+                  instanceHandle = IFCInstanceExporter.CreateColumn(exporterIFC, familyInstance, 
+                     instanceGUID, ownerHistory, localPlacementToUse, productRepresentation, 
+                     preDefinedType);
                   break;
                }
             case IFCEntityType.IfcCurtainWall:
                {
-                  instanceHandle = IFCInstanceExporter.CreateCurtainWall(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                     localPlacementToUse, productRepresentation, type.ValidatedPredefinedType);
+                  instanceHandle = IFCInstanceExporter.CreateCurtainWall(exporterIFC, familyInstance, 
+                     instanceGUID, ownerHistory, localPlacementToUse, productRepresentation, 
+                     preDefinedType);
                   break;
                }
             case IFCEntityType.IfcMember:
                {
-                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "BRACE" : type.ValidatedPredefinedType;
-                  instanceHandle = IFCInstanceExporter.CreateMember(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                     localPlacementToUse, productRepresentation, preDefinedType);
+                  instanceHandle = IFCInstanceExporter.CreateMember(exporterIFC, familyInstance, 
+                     instanceGUID, ownerHistory, localPlacementToUse, productRepresentation, 
+                     preDefinedType);
 
                   // Register the members's IFC handle for later use by truss export.
                   ExporterCacheManager.ElementToHandleCache.Register(familyInstance.Id, instanceHandle, type);
@@ -283,9 +303,9 @@ namespace Revit.IFC.Export.Exporter
                }
             case IFCEntityType.IfcPlate:
                {
-                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "NOTDEFINED" : type.ValidatedPredefinedType;
-                  instanceHandle = IFCInstanceExporter.CreatePlate(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                      localPlacementToUse, productRepresentation, preDefinedType);
+                  instanceHandle = IFCInstanceExporter.CreatePlate(exporterIFC, familyInstance, 
+                     instanceGUID, ownerHistory, localPlacementToUse, productRepresentation, 
+                     preDefinedType);
                   break;
                }
             case IFCEntityType.IfcMechanicalFastener:
@@ -299,25 +319,25 @@ namespace Revit.IFC.Export.Exporter
                   if (ParameterUtil.GetDoubleValueFromElementOrSymbol(familyInstance, "NominalLength", out nominalLengthVal) != null)
                      nominalLength = UnitUtil.ScaleLength(nominalLengthVal);
 
-                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "NOTDEFINED" : type.ValidatedPredefinedType;
-
-                  instanceHandle = IFCInstanceExporter.CreateMechanicalFastener(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                     localPlacementToUse, productRepresentation, nominalDiameter, nominalLength, preDefinedType);
+                  instanceHandle = IFCInstanceExporter.CreateMechanicalFastener(exporterIFC, 
+                     familyInstance, instanceGUID, ownerHistory, localPlacementToUse,
+                     productRepresentation, nominalDiameter, nominalLength, preDefinedType);
                   break;
                }
             case IFCEntityType.IfcRailing:
                {
-                  string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ? "NOTDEFINED" : type.ValidatedPredefinedType;
-                     instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                      localPlacementToUse, productRepresentation, preDefinedType);
+                  instanceHandle = IFCInstanceExporter.CreateRailing(exporterIFC, familyInstance, 
+                     instanceGUID, ownerHistory, localPlacementToUse, productRepresentation, 
+                     preDefinedType);
                   break;
                }
             case IFCEntityType.IfcSpace:
                {
                   IFCInternalOrExternal internalOrExternal = CategoryUtil.IsElementExternal(familyInstance) ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
 
-                  instanceHandle = IFCInstanceExporter.CreateSpace(exporterIFC, familyInstance, instanceGUID, ownerHistory,
-                      localPlacementToUse, productRepresentation, IFCElementComposition.Element, internalOrExternal);
+                  instanceHandle = IFCInstanceExporter.CreateSpace(exporterIFC, familyInstance, 
+                     instanceGUID, ownerHistory, localPlacementToUse, productRepresentation, 
+                     IFCElementComposition.Element, internalOrExternal, preDefinedType);
                   break;
                }
             default:
@@ -540,10 +560,9 @@ namespace Revit.IFC.Export.Exporter
              (ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcType", out value) == null))
             value = ifcEnumTypeStr;
 
-         if (String.IsNullOrEmpty(value))
-            return enumValue;
-
-         Enum.TryParse(value, true, out enumValue);
+         if (!string.IsNullOrEmpty(value))
+            Enum.TryParse(value, true, out enumValue);
+         
          return enumValue;
       }
 

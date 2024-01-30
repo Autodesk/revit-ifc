@@ -388,7 +388,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle rampContainerHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, ramp, rampGUID, ownerHistory,
                      rampLocalPlacement, null);
 
-                  IFCAnyHandle rampTypeHnd = ExporterUtil.CreateGenericTypeFromElement(ramp, exportType, exporterIFC.GetFile(), ownerHistory, predefType, productWrapper);
+                  IFCAnyHandle rampTypeHnd = ExporterUtil.CreateGenericTypeFromElement(ramp, exportType, exporterIFC.GetFile(), productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(rampTypeHnd, rampContainerHnd);
                   productWrapper.AddElement(ramp, rampContainerHnd, placementSetter.LevelInfo, null, true, exportType);
 
@@ -561,7 +561,7 @@ namespace Revit.IFC.Export.Exporter
 
                      BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                      IFCAnyHandle representation = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC,
-                         ramp, categoryId, rampGeom, bodyExporterOptions, null, ecData, out bodyData);
+                         ramp, categoryId, rampGeom, bodyExporterOptions, null, ecData, out bodyData, instanceGeometry: true);
 
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(representation))
                      {

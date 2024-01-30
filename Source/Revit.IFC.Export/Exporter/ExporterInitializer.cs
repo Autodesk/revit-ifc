@@ -51,7 +51,8 @@ namespace Revit.IFC.Export.Exporter
          propertySetProvisionForVoid.Name = "Pset_ProvisionForVoid";
 
          propertySetProvisionForVoid.EntityTypes.Add(IFCEntityType.IfcBuildingElementProxy);
-         propertySetProvisionForVoid.ObjectType = "ProvisionForVoid";
+         propertySetProvisionForVoid.PredefinedType = "USERDEFINED";
+         propertySetProvisionForVoid.ObjectType = "PROVISIONFORVOID";
 
          // The Shape value must be determined first, as other calculators will use the value stored.
          PropertySetEntry ifcPSE = PropertySetEntry.CreateLabel("Shape");
@@ -94,66 +95,45 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Initializes property sets.
       /// </summary>
-      /// <param name="propertySetsToExport">Existing functions to call for property set initialization.</param>
-      public static void InitPropertySets(Exporter.PropertySetsToExport propertySetsToExport)
+      public static void InitPropertySets()
       {
          ParameterCache cache = ExporterCacheManager.ParameterCache;
          certifiedEntityAndPsetList = ExporterCacheManager.CertifiedEntitiesAndPsetsCache;
 
+         // Some properties, particularly the common properties, apply to both instance
+         // and type parameters.  It's actually probably a little more complicated than
+         // this, but this preserves current behavioe.
+         // TODO: Don't have this extra level which can easily be out of sync and is
+         // potentially too generic.
+         IList<int> instanceAndTypePsetIndices = new List<int>();
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportIFCCommon)
          {
-            if (propertySetsToExport == null)
-               propertySetsToExport = InitCommonPropertySets;
-            else
-               propertySetsToExport += InitCommonPropertySets;
+            instanceAndTypePsetIndices.Add(cache.PropertySets.Count);
+            InitCommonPropertySets(cache.PropertySets);
 
-            propertySetsToExport += InitExtraCommonPropertySets;
+            instanceAndTypePsetIndices.Add(cache.PropertySets.Count);
+            InitExtraCommonPropertySets(cache.PropertySets);
+            
+            InitPreDefinedPropertySets(cache.PreDefinedPropertySets);
          }
 
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportSchedulesAsPsets)
          {
-            if (propertySetsToExport == null)
-               propertySetsToExport = InitCustomPropertySets;
-            else
-               propertySetsToExport += InitCustomPropertySets;
+            InitCustomPropertySets(cache.PropertySets);
          }
 
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportUserDefinedPsets)
          {
-            if (propertySetsToExport == null)
-               propertySetsToExport = InitUserDefinedPropertySets;
-            else
-               propertySetsToExport += InitUserDefinedPropertySets;
+            InitUserDefinedPropertySets(cache.PropertySets);
          }
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE)
          {
-            if (propertySetsToExport == null)
-               propertySetsToExport = InitCOBIEPropertySets;
-            else
-               propertySetsToExport += InitCOBIEPropertySets;
+            instanceAndTypePsetIndices.Add(cache.PropertySets.Count);
+            InitCOBIEPropertySets(cache.PropertySets);
          }
 
-         propertySetsToExport?.Invoke(cache.PropertySets);
-      }
-
-      /// <summary>
-      /// Initializes predefined property sets.
-      /// </summary>
-      /// <param name="propertySetsToExport">Existing functions to call for property set initialization.</param>
-      public static void InitPreDefinedPropertySets(Exporter.PreDefinedPropertySetsToExport propertySetsToExport)
-      {
-         ParameterCache cache = ExporterCacheManager.ParameterCache;
-
-         if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportIFCCommon)
-         {
-            if (propertySetsToExport == null)
-               propertySetsToExport = InitPreDefinedPropertySets;
-            else
-               propertySetsToExport += InitPreDefinedPropertySets;
-         }
-
-         propertySetsToExport?.Invoke(cache.PreDefinedPropertySets);
+         cache.InstanceAndTypePsetIndices = instanceAndTypePsetIndices;
       }
 
       /// <summary>
@@ -220,6 +200,7 @@ namespace Revit.IFC.Export.Exporter
 
          // get the Pset definitions (using the same file as PropertyMap)
          IEnumerable<IfcPropertySetTemplate> userDefinedPsetDefs = PropertyMap.LoadUserDefinedPset();
+         PropertyValueType propValueType = PropertyValueType.SingleValue;
 
          bool exportPre4 = (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || ExporterCacheManager.ExportOptionsCache.ExportAs2x3);
 
@@ -354,6 +335,12 @@ namespace Revit.IFC.Export.Exporter
                      {
                         dataType = PropertyType.Text;           // force default to Text/string if the type does not match with any correct datatype
                      }
+
+                     PropertyType secondaryDataType;
+                     if (!Enum.TryParse(template.SecondaryMeasureType.ToLower().Replace("ifc", ""), true, out secondaryDataType))
+                     {
+                        secondaryDataType = PropertyType.Text;           // force default to Text/string if the type does not match with any correct datatype
+                     }
                      List<PropertySetEntryMap> mappings = new List<PropertySetEntryMap>();
                      foreach (IfcRelAssociates associates in template.HasAssociations)
                      {
@@ -401,10 +388,28 @@ namespace Revit.IFC.Export.Exporter
                      }
                      else
                      {
+                        switch (template.TemplateType)
+                        {
+                           case IfcSimplePropertyTemplateTypeEnum.P_LISTVALUE:
+                              propValueType = PropertyValueType.ListValue;
+                              break;
+                           case IfcSimplePropertyTemplateTypeEnum.P_BOUNDEDVALUE:
+                              propValueType = PropertyValueType.BoundedValue;
+                              break;
+                           case IfcSimplePropertyTemplateTypeEnum.P_TABLEVALUE:
+                              propValueType = PropertyValueType.TableValue;
+                              break;
+                           default:
+                              propValueType = PropertyValueType.SingleValue;
+                              break;
+                        }
+
                         PropertySetEntry pSE = new PropertySetEntry(prop.Name);
                         pSE.PropertyName = prop.Name;
                         pSE.PropertyType = dataType;
+                        pSE.PropertyArgumentType = secondaryDataType;
                         pSE.DefaultValue = defaultValue;
+                        pSE.PropertyValueType = propValueType;
                         userDefinedPropertySet.AddEntry(pSE);
                      }
                   }
@@ -420,19 +425,28 @@ namespace Revit.IFC.Export.Exporter
                Common.Enums.IFCEntityType ifcEntity;
                if (Enum.TryParse(elem, out ifcEntity))
                {
+                  bool usedCompatibleType = false;
+
                   if (exportPre4)
                   {
                      IFCEntityType originalEntity = ifcEntity;
-                     IFCCompatibilityType.checkCompatibleType(originalEntity, out ifcEntity);
+                     IFCCompatibilityType.CheckCompatibleType(originalEntity, out ifcEntity);
+                     usedCompatibleType = (originalEntity != ifcEntity);
                   }
 
                   description.EntityTypes.Add(ifcEntity);
+
                   // This is intended mostly as a workaround in IFC2x3 for IfcElementType.  Not all elements have an associated type (e.g. IfcRoof),
                   // but we still want to be able to export type property sets for that element.  So we will manually add these extra types here without
                   // forcing the user to guess.  If this causes issues, we may come up with a different design.
-                  ISet<IFCEntityType> relatedEntities = GetListOfRelatedEntities(ifcEntity);
-                  if (relatedEntities != null)
-                     description.EntityTypes.UnionWith(relatedEntities);
+                  if (!usedCompatibleType)
+                  {
+                     ISet<IFCEntityType> relatedEntities = GetListOfRelatedEntities(ifcEntity);
+                     if (relatedEntities != null)
+                     {
+                        description.EntityTypes.UnionWith(relatedEntities);
+                     }
+                  }
                }
             }
 

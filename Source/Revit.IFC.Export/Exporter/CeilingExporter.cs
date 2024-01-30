@@ -100,7 +100,7 @@ namespace Revit.IFC.Export.Exporter
                   if (!exportParts)
                   {
                      ecData.SetLocalPlacement(setter.LocalPlacement);
-                     ecData.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;
+                     ecData.PossibleExtrusionAxes = (element is FamilyInstance) ? IFCExtrusionAxes.TryXYZ : IFCExtrusionAxes.TryZ;
 
                      BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                      if (exportByComponents)
@@ -131,7 +131,7 @@ namespace Revit.IFC.Export.Exporter
                      defaultCoveringEnumType = "ROOFING";
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
-                  string coveringType = IFCValidateEntry.GetValidIFCPredefinedTypeType(/*element,*/ ifcEnumType, defaultCoveringEnumType, "IfcCoveringType");
+                  string coveringType = IFCValidateEntry.GetValidIFCPredefinedTypeType(ifcEnumType, defaultCoveringEnumType, "IfcCoveringType");
 
                   IFCAnyHandle covering = IFCInstanceExporter.CreateCovering(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
                       setter.LocalPlacement, prodRep, coveringType);
@@ -149,7 +149,7 @@ namespace Revit.IFC.Export.Exporter
                   ExporterUtil.AddIntoComplexPropertyCache(covering, layersetInfo);
 
                   IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcCovering, IFCEntityType.IfcCoveringType, coveringType);
-                  IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, coveringType, productWrapper);
+                  IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(typeHnd, covering);
 
                   bool containInSpace = false;

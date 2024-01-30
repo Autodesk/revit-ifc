@@ -91,7 +91,7 @@ namespace Revit.IFC.Import.Data
          AddressLines = IFCAnyHandleUtil.GetAggregateStringAttribute<List<string>>(ifcPostalAddress, "AddressLines");
 
          if (InternalLocation == null && PostalBox == null && Town == null && Region == null &&
-            PostalCode == null && Country == null && (AddressLines == null || AddressLines.Count == 0))
+            PostalCode == null && Country == null && ((AddressLines?.Count ?? 0) == 0))
                Importer.TheLog.LogWarning(Id, "Missing IfcPostalAddress, ignoring.", true);
       }
 

@@ -35,7 +35,7 @@ namespace Revit.IFC.Export.Exporter
    /// <summary>
    /// Provides methods to export a Revit element as IfcReinforcingMesh.
    /// </summary>
-   class FabricSheetExporter
+   public class FabricSheetExporter
    {
       /// <summary>
       /// Exports a FabricArea as an IfcGroup.  There is no geometry to export.

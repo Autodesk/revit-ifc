@@ -19,11 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Export.Exporter.PropertySet;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -58,9 +55,9 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Clears parameter cache.
+      /// Clears the parameter value caches.
       /// </summary>
-      public static void ClearParameterCache()
+      public static void ClearParameterValueCaches()
       {
          m_NonIFCParameters.Clear();
          m_IFCParameters.Clear();
@@ -74,7 +71,7 @@ namespace Revit.IFC.Export.Utility
             return null;
 
          ElementId elementId = element.Id;
-         Parameter parameter = GetParameterFromName(elementId, null, propertyName);
+         Parameter parameter = GetParameterFromName(elementId, propertyName);
 
          if (parameter == null)
             return null;
@@ -141,7 +138,7 @@ namespace Revit.IFC.Export.Utility
          if (element == null)
             return null;
 
-         Parameter parameter = GetParameterFromName(element.Id, null, propertyName);
+         Parameter parameter = GetParameterFromName(element.Id, propertyName);
          if (parameter != null && parameter.HasValue)
          {
             switch (parameter.StorageType)
@@ -244,7 +241,7 @@ namespace Revit.IFC.Export.Utility
                         unitType = pResv.UnitType;
                         return parameter;
                      }
-                     return Double.TryParse(propValue, out propertyValue) ? parameter : null;
+                     return double.TryParse(propValue, out propertyValue) ? parameter : null;
                   }
             }
          }
@@ -406,7 +403,8 @@ namespace Revit.IFC.Export.Utility
       /// <param name="builtInParameter">The built-in parameter.</param>
       /// <param name="propertyValue">The output property value.</param>
       /// <returns>The parameter, or null if not found.</returns>
-      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, BuiltInParameter builtInParameter, out double propertyValue)
+      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, 
+         BuiltInParameter builtInParameter, out double propertyValue)
       {
          propertyValue = 0.0;
          if (element == null)
@@ -475,7 +473,8 @@ namespace Revit.IFC.Export.Utility
       /// <param name="propertyValue">The output property value.</param>
       /// <param name="alternateNames">the variable array of alternate names mainly to support backward compatibility</param>
       /// <returns>The parameter, or null if not found.</returns>
-      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, string propertyName, out double propertyValue, params string[] alternateNames)
+      public static Parameter GetDoubleValueFromElementOrSymbol(Element element, 
+         string propertyName, out double propertyValue, params string[] alternateNames)
       {
          propertyValue = 0.0;
          if (string.IsNullOrEmpty(propertyName))
@@ -601,7 +600,11 @@ namespace Revit.IFC.Export.Utility
          foreach (ParameterElementCache otherCache in m_NonIFCParameters[elementId].Values)
          {
             if (otherCache.ParameterCache.TryGetValue(cleanPropertyName, out parameter))
-               return parameter;
+            {
+               parameter = ValidateParameter(parameter);
+               if (parameter != null)
+                  return parameter;
+            }
          }
 
          return parameter;
@@ -853,6 +856,34 @@ namespace Revit.IFC.Export.Utility
          m_NonIFCParameters.Remove(id);
          m_IFCParameters.Remove(id);
          m_SubelementParameterValueCache.Remove(id);
+      }
+
+      /// <summary>
+      /// Gets the parameter by name from an element.
+      /// </summary>
+      /// <param name="elemId">The element id.</param>
+      /// <param name="propertyName">The property name.</param>
+      /// <returns>The Parameter.</returns>
+      internal static Parameter GetParameterFromName(ElementId elemId, string propertyName)
+      {
+         if (!m_IFCParameters.ContainsKey(elemId))
+            CacheParametersForElement(elemId);
+
+         return getParameterByNameFromCache(elemId, propertyName);
+      }
+
+      private static HashSet<BuiltInParameter> MisleadingParameters { get; } =
+         new HashSet<BuiltInParameter>()
+         {
+            BuiltInParameter.ANALYTICAL_ROUGHNESS,
+            BuiltInParameter.ELEM_CATEGORY_PARAM
+         };
+
+      internal static Parameter ValidateParameter(Parameter parameter)
+      {
+         if (MisleadingParameters.Contains((BuiltInParameter)parameter.Id.IntegerValue))
+            return null;
+         return parameter;
       }
 
       /// <summary>

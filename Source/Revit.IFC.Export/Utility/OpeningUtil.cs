@@ -81,7 +81,7 @@ namespace Revit.IFC.Export.Utility
                HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { extrusionHandle };
                
                IFCAnyHandle representationHnd = RepresentationUtil.CreateSweptSolidRep(exporterIFC,
-                  element, categoryId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null);
+                  element, categoryId, exporterIFC.Get3DContextHandle("Body"), bodyItems, null, null);
                IList<IFCAnyHandle> representations = IFCAnyHandleUtil.IsNullOrHasNoValue(representationHnd) ?
                   null : new List<IFCAnyHandle>() { representationHnd };
 
@@ -231,7 +231,7 @@ namespace Revit.IFC.Export.Utility
          IList<CurveLoop> curveLoops, Element element, Transform lcs, double scaledWidth,
          IFCRange range, PlacementSetter setter, IFCAnyHandle localPlacement, ProductWrapper localWrapper)
       {
-      	 int createdOpeningCount = 0;
+      	int createdOpeningCount = 0;
          if (lcs == null && ((curveLoops?.Count ?? 0) > 0))
          {
             // assumption: first curve loop defines the plane.
@@ -311,9 +311,9 @@ namespace Revit.IFC.Export.Utility
                   string openingGUID = CreateOpeningGUID(element, openingElem, range, 
                      openingIndex, solidIndex);
                   
-                  if (CreateOpening(exporterIFC, parentHandle, element, openingElem, openingGUID, solid, scaledWidth, openingData.IsRecess, extrusionCreationData,
-                      setter, localWrapper, range, openingIndex, solidIndex, registerOpening) != null)
-                     createdOpeningCount++;
+                  CreateOpening(exporterIFC, parentHandle, element, openingElem, openingGUID, solid, scaledWidth, openingData.IsRecess, extrusionCreationData,
+                      setter, localWrapper, range, openingIndex, solidIndex, registerOpening);
+                  createdOpeningCount++;
                }
             }
 
@@ -327,9 +327,9 @@ namespace Revit.IFC.Export.Utility
                string openingGUID = CreateOpeningGUID(element, openingElem, range, 
                   openingIndex, solidIndex);
                   
-               CreateOpening(exporterIFC, parentHandle, localPlacement, element, openingElem, openingGUID, extrusionData, lcs, openingData.IsRecess,
-                   setter, localWrapper, range, openingIndex, solidIndex, registerOpening);
-               createdOpeningCount++;
+               if (CreateOpening(exporterIFC, parentHandle, localPlacement, element, openingElem, openingGUID, extrusionData, lcs, openingData.IsRecess,
+                   setter, localWrapper, range, openingIndex, solidIndex, registerOpening) != null)
+                  createdOpeningCount++;
             }
          }
          return createdOpeningCount;
@@ -484,28 +484,23 @@ namespace Revit.IFC.Export.Utility
             lcs = GeometryUtil.CreateTransformFromPlane(curveLoops[0].GetPlane());
          }
 
-         ElementId catId = CategoryUtil.GetSafeCategoryId(insertElement);
-
+         Transform transformToUse = lcs;
          if (extrusionData.ScaledExtrusionLength < MathUtil.Eps())
          {
-            double thickness = 0.0;
-            if (hostElement is Floor)
-               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM, out thickness);
-            else if (hostElement is RoofBase)
-               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM, out thickness);
-            else if (hostElement is Ceiling)
-               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.CEILING_THICKNESS, out thickness);
+            double extrusionLength = 0.0;
+            if (hostElement is Floor || hostElement is RoofBase || hostElement is Ceiling)
+               extrusionLength = CalculateOpeningExtrusionInFloorRoofOrCeiling(hostElement, extrusionData, transformToUse);
 
-            if (thickness < MathUtil.Eps())
+            if (extrusionLength < MathUtil.Eps())
                return null;
 
-            extrusionData.ScaledExtrusionLength = UnitUtil.ScaleLength(thickness);
+            extrusionData.ScaledExtrusionLength = UnitUtil.ScaleLength(extrusionLength);
          }
 
+         ElementId catId = CategoryUtil.GetSafeCategoryId(insertElement);
          IFCAnyHandle openingHnd = null;
-
          IFCAnyHandle openingProdRepHnd = RepresentationUtil.CreateExtrudedProductDefShape(exporterIFC, insertElement, catId,
-             curveLoops, lcs, extrusionData.ExtrusionDirection, extrusionData.ScaledExtrusionLength);
+             curveLoops, transformToUse, extrusionData.ExtrusionDirection, extrusionData.ScaledExtrusionLength);
 
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(openingProdRepHnd))
          {
@@ -554,7 +549,6 @@ namespace Revit.IFC.Export.Utility
             IFCInstanceExporter.CreateRelVoidsElement(file, voidGuid, ownerHistory, null, null,
                hostObjHnd, openingHnd);
          }
-
          return openingHnd;
       }
 
@@ -578,7 +572,7 @@ namespace Revit.IFC.Export.Utility
          return insertHostId == hostElement.Id;
       }
 
-      static bool GetOpeningDirections(Element hostElem, out XYZ perpToWall, out XYZ wallAxis)
+      public static bool GetOpeningDirections(Element hostElem, out XYZ perpToWall, out XYZ wallAxis)
       {
          bool isLinearWall = false;
          perpToWall = new XYZ(0, 0, 0);
@@ -596,6 +590,50 @@ namespace Revit.IFC.Export.Utility
          }
 
          return isLinearWall;
+      }
+
+      /// <summary>
+      /// Calculates extrusion length for openings in floor roof or ceiling based on the element thickness for not sloped elements, 
+      /// and based on bounding box for sloped. Also defines the extrusion direction for sloped elements.
+      /// </summary>
+      /// <param name="hostElement">The host element.</param>
+      /// <param name="extrusionData">The opening extrusion data</param>
+      /// <param name="lcs">The local coordinate system of the base of the extrusion for updating if the extrusion length based on bounding box.</param>
+      /// <returns>The extrusion length</returns>
+      private static double CalculateOpeningExtrusionInFloorRoofOrCeiling(Element hostElement, IFCExtrusionData extrusionData, Transform lcs)
+      {
+         double extrusionLength = 0.0;
+         //Use the element thickness for not sloped elements, if the host element is sloped, the extrusions of the resulting opening will not intersect the host element.  
+         //To handle such cases using bounding box height instead of thickness.
+         //
+         double slopeValue = 0.0;
+         ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_SLOPE, out slopeValue);
+         if (MathUtil.IsAlmostZero(slopeValue))
+         {
+            if (hostElement is Floor)
+               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM, out extrusionLength);
+            else if (hostElement is RoofBase)
+               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM, out extrusionLength);
+            else if (hostElement is Ceiling)
+               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.CEILING_THICKNESS, out extrusionLength);
+         }
+         else
+         {
+            BoundingBoxXYZ hostElementBoundingBox = hostElement.get_BoundingBox(hostElement.Document.GetElement(hostElement.OwnerViewId) as View);
+            extrusionLength = hostElementBoundingBox.Max.Z - hostElementBoundingBox.Min.Z;
+
+            //Need to recheck the ExtrusionDirection.
+            //If slope is positive value the host it will be above.
+            //
+            extrusionData.ExtrusionDirection = (slopeValue > 0) ? XYZ.BasisZ : -XYZ.BasisZ;
+
+            // Need to change extrusion plane Z coordinate to bounding box Z if the element is sloped
+            // because opening should cut bounding box completely.
+            double extrusionOriginZ = (slopeValue > 0) ? hostElementBoundingBox.Min.Z : hostElementBoundingBox.Max.Z;
+            lcs.Origin = new XYZ(lcs.Origin.X, lcs.Origin.Y, extrusionOriginZ);
+         }
+
+         return extrusionLength;
       }
    }
 }

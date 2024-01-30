@@ -73,7 +73,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          if (extrusionCreationData == null)
-               return false;
+            return false;
 
          // For Slab, Depth is equal to the extrusion length (from ScaledLength)
          IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);

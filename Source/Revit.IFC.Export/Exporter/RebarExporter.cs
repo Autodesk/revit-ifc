@@ -244,24 +244,14 @@ namespace Revit.IFC.Export.Exporter
    
       private static IFCReinforcingBarRole GetReinforcingBarRole(string role)
       {
-         if (String.IsNullOrWhiteSpace(role))
+         if (string.IsNullOrWhiteSpace(role))
             return IFCReinforcingBarRole.NotDefined;
 
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(role, "Main"))
-            return IFCReinforcingBarRole.Main;
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(role, "Shear"))
-            return IFCReinforcingBarRole.Shear;
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(role, "Ligature"))
-            return IFCReinforcingBarRole.Ligature;
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(role, "Stud"))
-            return IFCReinforcingBarRole.Stud;
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(role, "Punching"))
-            return IFCReinforcingBarRole.Punching;
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(role, "Edge"))
-            return IFCReinforcingBarRole.Edge;
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(role, "Ring"))
-            return IFCReinforcingBarRole.Ring;
-         return IFCReinforcingBarRole.UserDefined;
+         IFCReinforcingBarRole barRole;
+         if (Enum.TryParse(role, true, out barRole))
+            return barRole;
+
+         return IFCReinforcingBarRole.NotDefined;
       }
 
       /// <summary>
@@ -370,6 +360,42 @@ namespace Revit.IFC.Export.Exporter
          return rebarEntity;
       }
 
+      private static Curve ApplyNonConformalTransformIfPossible(Curve baseCurve, Transform transform)
+      {
+         if (!(baseCurve?.IsBound ?? false) || transform == null)
+            return null;
+
+         Line baseLine = baseCurve as Line;
+         if (baseLine != null)
+         {
+            XYZ newStartPoint = transform.OfPoint(baseLine.GetEndPoint(0));
+            XYZ newEndPoint = transform.OfPoint(baseLine.GetEndPoint(1));
+
+            return Line.CreateBound(newStartPoint, newEndPoint);
+         }
+
+         Arc baseArc = baseCurve as Arc;
+         if (baseArc != null)
+         {
+            // Strictly speaking, the non-conformal transform of an arc is an ellipse.
+            // However, this method is intended for very slightly non-conformal transforms,
+            // and an arc that is within a small tolerance of the "real" ellipse is more
+            // useful (and accurate to intent) than an ellipse.
+            XYZ newStartPoint = transform.OfPoint(baseArc.GetEndPoint(0));
+            XYZ newEndPoint = transform.OfPoint(baseArc.GetEndPoint(1));
+
+            double midParameter = (baseArc.GetEndParameter(0) + baseArc.GetEndParameter(1)) / 2.0;
+            XYZ newPointOnArc = transform.OfPoint(baseArc.Evaluate(midParameter, false));
+
+            return Arc.Create(newStartPoint, newEndPoint, newPointOnArc);
+         }
+
+         // At the moment, rebar segments can only be lines or arcs, so no need to worry
+         // about other cases.
+
+         return null;
+      }
+
       /// <summary>
       /// Exports a Rebar to IFC ReinforcingBar.
       /// </summary>
@@ -428,7 +454,10 @@ namespace Revit.IFC.Export.Exporter
 
                string steelGrade = NamingUtil.GetOverrideStringValue(rebarElement, "SteelGrade", null);
 
-               // Allow use of IFC2x3 or IFC4 naming.
+               Element rebarElementType = rebarElement.Document.GetElement(rebarElement.GetTypeId());
+
+               // Note that "BarRole" is now obsoleted by the built-in IFC_EXPORT_PREDEFINEDTYPE
+               // parameter.  But we haven't done an upgrade for this, so we will still check it.
                string predefinedType = NamingUtil.GetOverrideStringValue(rebarElement, "BarRole", null);
                if (string.IsNullOrWhiteSpace(predefinedType))
                   predefinedType = NamingUtil.GetOverrideStringValue(rebarElement, "PredefinedType", null);
@@ -496,14 +525,29 @@ namespace Revit.IFC.Export.Exporter
                      }
                      else
                         endParam += 1.0;
-                     curves.Add(baseCurve.CreateTransformed(barTrf));
+
+                     if (barTrf.IsConformal)
+                     {
+                        curves.Add(baseCurve.CreateTransformed(barTrf));
+                     }
+                     else
+                     {
+                        // There are cases where the Rebar API returns slightly non-conformal
+                        // transforms that cause an exception in CreateTransformed above.  Until
+                        // that API is improved, we will do our own non-conformal transformation
+                        // if possible.
+                        Curve curve = ApplyNonConformalTransformIfPossible(baseCurve, barTrf);
+                        if (curve == null)
+                           throw new InvalidOperationException("Couldn't transform rebar curve.");
+                        
+                        curves.Add(curve);
+                     }
                   }
 
                   // For IFC4 and Structural Exchange Requirement export, Entity type not allowed for RV: IfcPolyline
                   IFCAnyHandle compositeCurve = GeometryUtil.CreateCompositeOrIndexedCurve(exporterIFC, curves, null, null);
                   IFCAnyHandle sweptDiskSolid = IFCInstanceExporter.CreateSweptDiskSolid(file, compositeCurve, modelDiameter / 2, null, 0, endParam);
-                  HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
-                  bodyItems.Add(sweptDiskSolid);
+                  HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { sweptDiskSolid };
                   RepresentationUtil.CreateStyledItemAndAssign(file, rebarElement.Document, materialId, sweptDiskSolid);
 
 
@@ -532,6 +576,13 @@ namespace Revit.IFC.Export.Exporter
 
                   ExporterCacheManager.HandleToElementCache.Register(elemHnd, rebarElement.Id);
                   CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialId);
+                  
+                  IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(rebarElement,
+                     exportInfo, file, productWrapper);
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeHnd))
+                  {
+                     ExporterCacheManager.TypeRelationsCache.Add(typeHnd, elemHnd);
+                  }
                }
             }
             transaction.Commit();

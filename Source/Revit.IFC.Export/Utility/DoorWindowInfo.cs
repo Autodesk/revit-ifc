@@ -135,32 +135,61 @@ namespace Revit.IFC.Export.Utility
 
       private string ReverseDoorStyleOperation(string orig)
       {
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "DoubleDoorSingleSwingOppositeLeft"))
-            return "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT";
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "DoubleDoorSingleSwingOppositeRight"))
-            return "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT";
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "DoubleSwingLeft"))
+         bool exportAsOlderthanIFC4x3 = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3;
+         string doorOrPanel = exportAsOlderthanIFC4x3 ? "DOOR" : "PANEL";
+
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, 
+            "DoubleDoorSingleSwingOppositeLeft", "DoublePanelSingleSwingOppositeLeft"))
+            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING_OPPOSITE_RIGHT";
+         
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, 
+            "DoubleDoorSingleSwingOppositeRight", "DoublePanelSingleSwingOppositeRight"))
+            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING_OPPOSITE_LEFT";
+         
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "DoubleSwingLeft"))
             return "DOUBLE_SWING_RIGHT";
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "DoubleSwingRight"))
+         
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "DoubleSwingRight"))
             return "DOUBLE_SWING_LEFT";
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "FoldingToLeft"))
+         
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "FoldingToLeft"))
             return "FOLDING_TO_RIGHT";
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "FoldingToRight"))
+         
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "FoldingToRight"))
             return "FOLDING_TO_LEFT";
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SingleSwingLeft"))
+         
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SingleSwingLeft"))
             return "SINGLE_SWING_RIGHT";
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SingleSwingRight"))
+         
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SingleSwingRight"))
             return "SINGLE_SWING_LEFT";
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SlidingToLeft"))
+         
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SlidingToLeft"))
             return "SLIDING_TO_RIGHT";
-         else if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SlidingToRight"))
+         
+         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SlidingToRight"))
             return "SLIDING_TO_LEFT";
-         else
-            return orig;
+         
+         // New to IFC4.3.
+         if (!exportAsOlderthanIFC4x3)
+         {
+            if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "LiftingVerticalLeft"))
+               return "LIFTING_VERTICAL_RIGHT";
+
+            if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "LiftingVerticalRight"))
+               return "LIFTING_VERTICAL_LEFT";
+         }
+
+         return orig;
       }
 
       private string CalculateDoorOperationStyle(FamilyInstance currElem, Transform trf)
       {
+         // TODO: See if we can support new IFC4.3 types.
+
+         bool exportAsOlderthanIFC4x3 = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3;
+         string doorOrPanel = exportAsOlderthanIFC4x3 ? "DOOR" : "PANEL";
+         
          int leftPosYArcCount = 0;
          int leftNegYArcCount = 0;
          int rightPosYArcCount = 0;
@@ -324,7 +353,7 @@ namespace Revit.IFC.Export.Utility
                return "DOUBLE_SWING_LEFT";
 
             if ((rightHalfCircleCount > 0 || (rightPosYArcCount > 0 && rightNegYArcCount > 0)) && leftPosYArcCount == 0 && leftNegYArcCount == 0)
-               return "DOUBLE_DOOR_DOUBLE_SWING";
+               return "DOUBLE_" + doorOrPanel + "_DOUBLE_SWING";
          }
 
          if (rightHalfCircleCount > 0 && fullCircleCount == 0)
@@ -333,7 +362,7 @@ namespace Revit.IFC.Export.Utility
                return "DOUBLE_SWING_RIGHT";
 
             if ((leftHalfCircleCount > 0 || (leftPosYArcCount > 0 && leftNegYArcCount > 0)) && rightPosYArcCount == 0 && rightNegYArcCount == 0)
-               return "DOUBLE_DOOR_DOUBLE_SWING";
+               return "DOUBLE_" + doorOrPanel + "_DOUBLE_SWING";
          }
 
          // When only 90-degree arc(s) exists
@@ -377,19 +406,19 @@ namespace Revit.IFC.Export.Utility
 
          if (leftPosYArcCount > 0 && rightPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightNegYArcCount == 0)
-            return "DOUBLE_DOOR_SINGLE_SWING";
+            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING";
 
          if (leftPosYArcCount > 0 && rightPosYArcCount > 0 && leftNegYArcCount > 0 && rightNegYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 )
-            return "DOUBLE_DOOR_DOUBLE_SWING";
+            return "DOUBLE_" + doorOrPanel + "_DOUBLE_SWING";
 
          if (leftPosYArcCount > 0 && rightNegYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0)
-            return "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT";
+            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING_OPPOSITE_RIGHT";
 
          if (leftNegYArcCount > 0 && rightPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftPosYArcCount == 0 && rightNegYArcCount == 0)
-            return "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT";
+            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING_OPPOSITE_LEFT";
 
          return "NOTDEFINED";
       }
