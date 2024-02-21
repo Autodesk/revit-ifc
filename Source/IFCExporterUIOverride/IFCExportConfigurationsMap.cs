@@ -312,6 +312,7 @@ namespace BIM.IFC.Export.UI
                      catch (Exception)
                      {
                         // don't skip all configurations if an exception occurs for one
+                        IFCCommandOverrideApplication.TheDocument.Application.WriteJournalComment("IFC error: Cannot read IFCExportConfigurationMap schema", true);
                      }
                   }
                }
@@ -493,52 +494,48 @@ namespace BIM.IFC.Export.UI
             m_jsonSchema = builder.Finish();
          }
 
-         // It won't start any transaction if there is no change to the configurations
-         if (setupsToSave.Count > 0)
+         // Overwrite all saved configs with the new list
+         Transaction transaction = new Transaction(IFCCommandOverrideApplication.TheDocument, Properties.Resources.UpdateExportSetups);
+         try
          {
-            // Overwrite all saved configs with the new list
-            Transaction transaction = new Transaction(IFCCommandOverrideApplication.TheDocument, Properties.Resources.UpdateExportSetups);
-            try
+            transaction.Start(Properties.Resources.SaveConfigurationChanges);
+            IList<DataStorage> savedConfigurations = GetSavedConfigurations(m_jsonSchema);
+            int savedConfigurationCount = savedConfigurations.Count<DataStorage>();
+            int savedConfigurationIndex = 0;
+            foreach (IFCExportConfiguration configuration in setupsToSave)
             {
-               transaction.Start(Properties.Resources.SaveConfigurationChanges);
-               IList<DataStorage> savedConfigurations = GetSavedConfigurations(m_jsonSchema);
-               int savedConfigurationCount = savedConfigurations.Count<DataStorage>();
-               int savedConfigurationIndex = 0;
-               foreach (IFCExportConfiguration configuration in setupsToSave)
+               DataStorage configStorage;
+               if (savedConfigurationIndex >= savedConfigurationCount)
                {
-                  DataStorage configStorage;
-                  if (savedConfigurationIndex >= savedConfigurationCount)
-                  {
-                     configStorage = DataStorage.Create(IFCCommandOverrideApplication.TheDocument);
-                  }
-                  else
-                  {
-                     configStorage = savedConfigurations[savedConfigurationIndex];
-                     savedConfigurationIndex++;
-                  }
-
-                  Entity mapEntity = new Entity(m_jsonSchema);
-                  string configData = configuration.SerializeConfigToJson();
-                  mapEntity.Set<string>(s_configMapField, configData);
-                  configStorage.SetEntity(mapEntity);
+                  configStorage = DataStorage.Create(IFCCommandOverrideApplication.TheDocument);
                }
-
-               List<ElementId> elementsToDelete = new List<ElementId>();
-               for (; savedConfigurationIndex < savedConfigurationCount; savedConfigurationIndex++)
+               else
                {
-                  DataStorage configStorage = savedConfigurations[savedConfigurationIndex];
-                  elementsToDelete.Add(configStorage.Id);
+                  configStorage = savedConfigurations[savedConfigurationIndex];
+                  savedConfigurationIndex++;
                }
-               if (elementsToDelete.Count > 0)
-                  IFCCommandOverrideApplication.TheDocument.Delete(elementsToDelete);
-
-               transaction.Commit();
+               
+               Entity mapEntity = new Entity(m_jsonSchema);
+               string configData = configuration.SerializeConfigToJson();
+               mapEntity.Set<string>(s_configMapField, configData);
+               configStorage.SetEntity(mapEntity);
             }
-            catch (System.Exception)
+            
+            List<ElementId> elementsToDelete = new List<ElementId>();
+            for (; savedConfigurationIndex < savedConfigurationCount; savedConfigurationIndex++)
             {
-               if (transaction.HasStarted())
-                  transaction.RollBack();
+               DataStorage configStorage = savedConfigurations[savedConfigurationIndex];
+               elementsToDelete.Add(configStorage.Id);
             }
+            if (elementsToDelete.Count > 0)
+               IFCCommandOverrideApplication.TheDocument.Delete(elementsToDelete);
+            
+            transaction.Commit();
+         }
+         catch (System.Exception)
+         {
+            if (transaction.HasStarted())
+               transaction.RollBack();
          }
       }
 

@@ -633,11 +633,6 @@ namespace Revit.IFC.Export.Exporter
          {
             using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
             {
-               if (element.AssemblyInstanceId != null && element.AssemblyInstanceId != ElementId.InvalidElementId)
-               {
-                  Element assemblyElem = element.Document.GetElement(element.AssemblyInstanceId);
-                  ExportElementImpl(exporterIFC, assemblyElem, productWrapper);
-               }
                ExportElementImpl(exporterIFC, element, productWrapper);
                ExporterUtil.ExportRelatedProperties(exporterIFC, element, productWrapper);
             }
@@ -2024,20 +2019,6 @@ namespace Revit.IFC.Export.Exporter
                   }
                }
 
-               // Create RelAssociatesClassifications.
-               foreach (var relAssociatesInfo in ExporterCacheManager.ClassificationCache.ClassificationRelations)
-               {
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(relAssociatesInfo.Key))
-                     continue;
-
-                  IFCInstanceExporter.CreateRelAssociatesClassification(file,
-                     relAssociatesInfo.Value.GlobalId, ownerHistory, 
-                     relAssociatesInfo.Value.Name,
-                     relAssociatesInfo.Value.Description,
-                     relAssociatesInfo.Value.RelatedObjects, 
-                     relAssociatesInfo.Key);
-               }
-
                // now create any zone groups.
                string relAssignsToZoneGroupName = "Zone Group Assignment";
                foreach (KeyValuePair<string, ISet<IFCAnyHandle>> zoneGroup in zoneGroups)
@@ -2119,6 +2100,20 @@ namespace Revit.IFC.Export.Exporter
                }
             }
 
+            // Create RelAssociatesClassifications.
+            foreach (var relAssociatesInfo in ExporterCacheManager.ClassificationCache.ClassificationRelations)
+            {
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(relAssociatesInfo.Key))
+                  continue;
+
+               IFCInstanceExporter.CreateRelAssociatesClassification(file,
+                  relAssociatesInfo.Value.GlobalId, ownerHistory,
+                  relAssociatesInfo.Value.Name,
+                  relAssociatesInfo.Value.Description,
+                  relAssociatesInfo.Value.RelatedObjects,
+                  relAssociatesInfo.Key);
+            }
+
             // Delete handles that are marked for removal
             foreach (IFCAnyHandle handleToDel in ExporterCacheManager.HandleToDeleteCache)
             {
@@ -2186,7 +2181,7 @@ namespace Revit.IFC.Export.Exporter
             NumberOfSaves = documentVersion?.NumberOfSaves ?? 0;
 
             ProjectNumber = projectInfo?.Number ?? string.Empty;
-            ProjectName = projectInfo?.Name ?? exportOptionsCache.FileName;
+            ProjectName = projectInfo?.Name ?? exportOptionsCache.FileNameOnly;
             ProjectStatus = projectInfo?.Status ?? string.Empty;
 
             VersionName = application?.VersionName;
@@ -2318,7 +2313,7 @@ namespace Revit.IFC.Export.Exporter
             if (projectNumber == null)
                projectNumber = string.Empty;
             if (projectName == null)
-               projectName = exportOptionsCache.FileName;
+               projectName = exportOptionsCache.FullFileName;
             if (projectStatus == null)
                projectStatus = string.Empty;
 
@@ -2359,14 +2354,14 @@ namespace Revit.IFC.Export.Exporter
             if (fHItem.Authorization == null)
                fHItem.Authorization = string.Empty;
 
-            IFCInstanceExporter.CreateFileName(file, projectNumber, author, organization,
+            IFCInstanceExporter.CreateFileName(file, exportOptionsCache.FileNameOnly, author, organization,
                document.Application.VersionName, versionInfos, fHItem.Authorization);
 
             transaction.Commit();
 
             IFCFileWriteOptions writeOptions = new IFCFileWriteOptions()
             {
-               FileName = exportOptionsCache.FileName,
+               FileName = exportOptionsCache.FullFileName,
                FileFormat = exportOptionsCache.IFCFileFormat
             };
 

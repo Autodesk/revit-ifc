@@ -26,6 +26,7 @@ using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using System.Linq;
+using Revit.IFC.Export.Exporter.PropertySet;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -498,6 +499,9 @@ namespace Revit.IFC.Export.Exporter
                                  slabExtrusionCreationData.ScaledArea = UnitUtil.ScaleArea(UnitUtil.ScaleArea(hostObjectSubcomponent.AreaOfCurveLoop));
                                  slabExtrusionCreationData.ScaledOuterPerimeter = UnitUtil.ScaleLength(curveLoops[0].GetExactLength());
                                  slabExtrusionCreationData.Slope = UnitUtil.ScaleAngle(MathUtil.SafeAcos(Math.Abs(slope)));
+
+                                 if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+                                    PropertyUtil.CreateSlabBaseQuantities(exporterIFC, slabHnd, slabExtrusionCreationData, curveLoops[0]);
 
                                  productWrapper.AddElement(null, slabHnd, setter, slabExtrusionCreationData, false, roofExportType);
 

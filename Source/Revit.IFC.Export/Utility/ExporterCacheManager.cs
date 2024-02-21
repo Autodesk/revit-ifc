@@ -382,6 +382,11 @@ namespace Revit.IFC.Export.Utility
       static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> ComplexPropertyCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
 
       /// <summary>
+
+      /// Cache for Base Quantities that require separate calculation.
+      /// </summary>
+      static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> BaseQuantitiesCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
+
       /// Cache for information whether a QuantitySet specified in the Dict. value has been created for the elementHandle
       /// </summary>
       static public HashSet<(IFCAnyHandle, string)> QtoSetCreated { get; set; } = new HashSet<(IFCAnyHandle, string)>();
@@ -1424,6 +1429,7 @@ namespace Revit.IFC.Export.Utility
          m_ClassificationLocationCache = null;
          ContainmentCache = new ContainmentCache();
          ComplexPropertyCache.Clear();
+         BaseQuantitiesCache.Clear();
          m_CreatedInternalPropertySets = null;
          m_CreatedSpecialPropertySets = null;
          m_CurveAnnotationCache = null;

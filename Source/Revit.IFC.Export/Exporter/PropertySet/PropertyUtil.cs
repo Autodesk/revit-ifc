@@ -27,6 +27,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using System.ComponentModel;
 using System.Linq;
+using System.Collections;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
@@ -4107,6 +4108,58 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
+      /// Creates and caches area and volume base quantities for slabs.
+      /// </summary>
+      /// <param name="exporterIFC">The exporter.</param>
+      /// <param name="slabHnd">The slab handle.</param>
+      /// <param name="extrusionData">The IFCExportBodyParams containing the slab extrusion creation data.</param>
+      /// <param name="outerCurveLoop">The slab outer loop.</param>
+      public static void CreateSlabBaseQuantities(ExporterIFC exporterIFC, IFCAnyHandle slabHnd, IFCExportBodyParams extrusionData, CurveLoop outerCurveLoop)
+      {
+         if (extrusionData != null)
+         {
+            IFCFile file = exporterIFC.GetFile();
+            HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
+
+            double netArea = extrusionData.ScaledArea;
+            if (!MathUtil.IsAlmostZero(netArea))
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "NetArea", null, null, netArea);
+               quantityHnds.Add(quantityHnd);
+            }
+
+            //The length, area and volume may have different base length units, it safer to unscale and rescale the results.
+            double unscaledArea = UnitUtil.UnscaleArea(netArea);
+            double unscaledLength = UnitUtil.UnscaleLength(extrusionData.ScaledLength);
+            double netVolume = UnitUtil.ScaleVolume(unscaledArea * unscaledLength);
+            if (!MathUtil.IsAlmostZero(netVolume))
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "NetVolume", null, null, netVolume);
+               quantityHnds.Add(quantityHnd);
+            }
+
+            if (outerCurveLoop != null)
+            {
+               double unscaledSlabGrossArea = ExporterIFCUtils.ComputeAreaOfCurveLoops(new List<CurveLoop>() { outerCurveLoop });
+               double scaledSlabGrossArea = UnitUtil.ScaleArea(unscaledSlabGrossArea);
+               if (!MathUtil.IsAlmostZero(scaledSlabGrossArea))
+               {
+                  IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "GrossArea", null, null, scaledSlabGrossArea);
+                  quantityHnds.Add(quantityHnd);
+               }
+
+               double grossVolume = UnitUtil.ScaleVolume(unscaledArea * unscaledLength);
+               if (!MathUtil.IsAlmostZero(grossVolume))
+               {
+                  IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "GrossVolume", null, null, grossVolume);
+                  quantityHnds.Add(quantityHnd);
+               }
+            }
+
+            ExporterCacheManager.BaseQuantitiesCache.Add(slabHnd, quantityHnds);
+         }
+      }
+      /// <summary>
       /// Creates the wall base quantities and adds them to the export.
       /// </summary>
       /// <param name="exporterIFC">The exporter.</param>
@@ -4123,7 +4176,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           IList<Solid> solids, IList<Mesh> meshes,
           IFCAnyHandle wallHnd,
           double scaledLength, double scaledDepth, double scaledFootPrintArea,
-          IFCExportBodyParams extrustionData, HashSet<IFCAnyHandle> widthAsComplexQty = null)
+          IFCExportBodyParams extrusionData, HashSet<IFCAnyHandle> widthAsComplexQty = null)
       {
          IFCFile file = exporterIFC.GetFile();
          HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
@@ -4181,27 +4234,67 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          // We will only assign the area if we have all solids that we are exporting; we won't bother calcuting values for Meshes.
          if (solids != null && (meshes == null || meshes.Count == 0))
          {
+            //To determine the side of the wall that is suitable for calculating BaseQuantities, 
+            //we group the faces by normal and calculate the total area of each side.
+            Dictionary<XYZ, (List<Face>, double)> wallSides = new Dictionary<XYZ, (List<Face>, double)>();
             foreach (Solid solid in solids)
             {
-               double largestFaceNetArea = 0.0;
-               double largestFaceGrossArea = 0.0;
                foreach (Face face in solid.Faces)
                {
-                  XYZ fNormal = face.ComputeNormal(new UV(0, 0));
-                  if (MathUtil.IsAlmostZero(fNormal.Z))
+                  XYZ faceNormal = face.ComputeNormal(new UV(0, 0));
+                  if (MathUtil.IsAlmostZero(faceNormal.Z))
                   {
-                     if (face.Area > largestFaceNetArea)
-                        largestFaceNetArea = face.Area;      // collecting largest face on the XY plane. It will be used for NetArea
-
-                     IList<CurveLoop> fCurveLoops = face.GetEdgesAsCurveLoops();
-                     double grArea = ExporterIFCUtils.ComputeAreaOfCurveLoops(new List<CurveLoop>() { fCurveLoops[0] });
-                     if (grArea > largestFaceGrossArea)
-                        largestFaceGrossArea = grArea;
+                     double faceArea = face.Area;
+                     if (wallSides.Any())
+                     {
+                        bool faceAdded = false;
+                        foreach (var wallSide in wallSides)
+                        {
+                           if (faceNormal.IsAlmostEqualTo(wallSide.Key))
+                           {
+                              List<Face> sideFaces = wallSide.Value.Item1;
+                              sideFaces.Add(face);
+                              double sumArea = wallSide.Value.Item2 + faceArea;
+                              wallSides[wallSide.Key] = ( sideFaces, sumArea);
+                              faceAdded = true;
+                              break;
+                           }
+                        }
+                        if(!faceAdded)
+                        {
+                           wallSides.Add(faceNormal, (new List<Face> { face }, face.Area));
+                        }
+                     }
+                     else
+                     {
+                        wallSides.Add(faceNormal, (new List<Face> { face }, face.Area));
+                     }
                   }
                }
-               netArea += largestFaceNetArea;
-               grossArea += largestFaceGrossArea;
                volume += solid.Volume;
+            }
+
+            KeyValuePair<XYZ, (List<Face>, double)> largestSide = new KeyValuePair<XYZ, (List<Face>, double)>();
+            foreach (var wallSide in wallSides)
+            {
+               if (wallSide.Value.Item2 > largestSide.Value.Item2)
+                  largestSide = wallSide;
+            }
+
+            List<Face> facesOfLargestWallSide = largestSide.Value.Item1;
+            netArea = largestSide.Value.Item2;
+
+            foreach (Face face in facesOfLargestWallSide)
+            {
+               double largestFaceGrossArea = 0.0;
+               IList<CurveLoop> fCurveLoops = face.GetEdgesAsCurveLoops();
+               for (int ii = 0; ii < fCurveLoops.Count; ii++)
+               {
+                  double grArea = ExporterIFCUtils.ComputeAreaOfCurveLoops(new List<CurveLoop>() { fCurveLoops[ii] });
+                  if (grArea > largestFaceGrossArea)
+                     largestFaceGrossArea = grArea;
+               }
+               grossArea += largestFaceGrossArea;
             }
          }
 

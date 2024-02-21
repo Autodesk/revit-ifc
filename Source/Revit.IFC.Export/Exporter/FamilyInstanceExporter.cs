@@ -1130,40 +1130,40 @@ namespace Revit.IFC.Export.Exporter
 
          if (familyInstance.AssemblyInstanceId != null && familyInstance.AssemblyInstanceId != ElementId.InvalidElementId)
          {
-            if (ExporterCacheManager.AssemblyInstanceCache.TryGetValue(familyInstance.AssemblyInstanceId, out AssemblyInstanceInfo assInfo))
+            if (overrideLevelId == ElementId.InvalidElementId)
+               overrideLevelId = ExporterCacheManager.LevelInfoCache.GetLevelIdOfObject(doc.GetElement(familyInstance.AssemblyInstanceId));
+
+            double newOffset = trf.Origin.Z;
+            string shapeType = null;
+            foreach (IFCAnyHandle shapeRep in shapeReps)
             {
-               if (overrideLevelId == ElementId.InvalidElementId)
-                  overrideLevelId = assInfo.AssignedLevelId;
-
-               double newOffset = trf.Origin.Z;
-               string shapeType = null;
-               foreach (IFCAnyHandle shapeRep in shapeReps)
+               if (IFCAnyHandleUtil.GetRepresentationIdentifier(shapeRep).Equals("Body"))
                {
-                  if (IFCAnyHandleUtil.GetRepresentationIdentifier(shapeRep).Equals("Body"))
-                  {
-                     shapeType = IFCAnyHandleUtil.GetBaseRepresentationType(shapeRep);
-                  }                  
+                  shapeType = IFCAnyHandleUtil.GetBaseRepresentationType(shapeRep);
                }
+            }
 
-               if (!string.IsNullOrEmpty(shapeType) && (shapeType.Contains("Brep") || shapeType.Equals("Tessellation")))
+            if (!string.IsNullOrEmpty(shapeType) && (shapeType.Contains("Brep") || shapeType.Equals("Tessellation")))
+            {
+               // Use LocationPoint for the offset if any as the Brep/Tessellation will have reference to it
+               LocationPoint loc = familyInstance.Location as LocationPoint;
+               if (loc != null)
                {
-                  // Use LocationPoint for the offset if any as the Brep/Tessellation will have reference to it
-                  LocationPoint loc = familyInstance.Location as LocationPoint;
-                  if (loc != null)
+                  newOffset = loc.Point.Z;
+               }
+               else
+               {
+                  BoundingBoxXYZ bbox = familyInstance.get_BoundingBox(null);
+                  if (bbox != null)
                   {
-                     newOffset = loc.Point.Z;
-                  }
-                  else
-                  {
-                     BoundingBoxXYZ bbox = familyInstance.get_BoundingBox(null);
-                     if (bbox != null)
-                     {
-                        newOffset = bbox.Min.Z;
-                     }
+                     newOffset = bbox.Min.Z;
                   }
                }
 
-               trf.Origin = new XYZ(trf.Origin.X, trf.Origin.Y, newOffset);
+               // The current trf includes a style transformation derived from ExtrusionCreationData. 
+               // But it was not utilized for representation creation in Brep/Tessellation cases, 
+               // using the original coordinates instead, to avoid potential incorrect coordinates.
+               trf.Origin = new XYZ(originalTrf.Origin.X, originalTrf.Origin.Y, newOffset);
             }
          }
 
@@ -1315,8 +1315,12 @@ namespace Revit.IFC.Export.Exporter
                         instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
                            wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
 
-                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
-                              exporterIFC, localPlacement, setter, wrapper);
+                        IFCAnyHandle placementToUse = GetPlacementToUse(file, instanceHandle, localPlacement, extraParams, originalTrf,
+                           typeInfo.StyleTransform, useInstanceGeometry);
+                        Transform offsetTransformToUse = GetOffsetTransformtoUse(offsetTransform, setter.Offset, useInstanceGeometry);
+
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransformToUse,
+                              exporterIFC, placementToUse, setter, wrapper);
                         wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
 
                         if (CreateMaterialAssociation(file, instanceHandle, materialProfileSet, null))

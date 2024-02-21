@@ -567,7 +567,7 @@ namespace Revit.IFC.Export.Exporter
 
                      for (int ii = 0; ii < numReps; ii++)
                      {
-                        IFCExportBodyParams loopExtraParam = ii < loopExtraParams.Count ? loopExtraParams[ii] : null;
+                        IFCExportBodyParams loopExtraParam = ii < loopExtraParams.Count ? loopExtraParams[ii] : ecData;
                         productWrapper.AddElement(floorElement, slabHnds[ii], placementSetter, loopExtraParam, true, exportType);
 
                         ExporterCacheManager.TypeRelationsCache.Add(typeHandle, slabHnds[ii]);

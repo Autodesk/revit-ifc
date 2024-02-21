@@ -215,7 +215,8 @@ namespace Revit.IFC.Export.Utility
 
          ExportOptionsCache cache = new ExportOptionsCache();
          cache.FileVersion = exporterIFC.FileVersion;
-         cache.FileName = exporterIFC.FileName;
+         cache.FullFileName = exporterIFC.FileName;
+         cache.FileNameOnly = Path.GetFileName(cache.FullFileName);
          cache.ExportBaseQuantities = exporterIFC.ExportBaseQuantities;
          cache.WallAndColumnSplitting = exporterIFC.WallAndColumnSplitting;
          cache.SpaceBoundaryLevel = exporterIFC.SpaceBoundaryLevel;
@@ -476,13 +477,13 @@ namespace Revit.IFC.Export.Utility
                throw new Exception("Option 'FileType' did not match an existing IFCFileFormat value");
             }
          }
-         else if (!string.IsNullOrEmpty(cache.FileName))
+         else if (!string.IsNullOrEmpty(cache.FileNameOnly))
          {
-            if (cache.FileName.EndsWith(".ifcXML")) //localization?
+            if (cache.FileNameOnly.EndsWith(".ifcXML")) //localization?
             {
                cache.IFCFileFormat = IFCFileFormat.IfcXML;
             }
-            else if (cache.FileName.EndsWith(".ifcZIP"))
+            else if (cache.FileNameOnly.EndsWith(".ifcZIP"))
             {
                cache.IFCFileFormat = IFCFileFormat.IfcZIP;
             }
@@ -510,13 +511,14 @@ namespace Revit.IFC.Export.Utility
       public IFCVersion FileVersion { get; set; }
 
       /// <summary>
-      /// The file name.
+      /// The full file name, including path.
       /// </summary>
-      public string FileName
-      {
-         get;
-         set;
-      }
+      public string FullFileName { get; set; }
+
+      /// <summary>
+      /// The file name, not the including path.
+      /// </summary>
+      public string FileNameOnly { get; set; }
 
       /// <summary>
       /// Identifies if the schema version being exported is IFC 2x2.

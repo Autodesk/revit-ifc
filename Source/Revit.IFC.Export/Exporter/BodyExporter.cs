@@ -2512,11 +2512,11 @@ namespace Revit.IFC.Export.Exporter
 
          if (geomObject is Solid)
          {
-            triangleList = GetTriangleListFromSolid(geomObject, options, trfToUse);
+            triangleList = GetTriangleListFromSolid(exporterIFC, geomObject, options, trfToUse);
          }
          else if (geomObject is Mesh)
          {
-            triangleList = GetTriangleListFromMesh(geomObject, trfToUse);
+            triangleList = GetTriangleListFromMesh(exporterIFC, geomObject, trfToUse);
          }
          // There is also a possibility that the geomObject is an GeometryElement thaat is a collection of GeometryObjects. Go through the collection and get the Mesh, Solid, or Face in it
          else if (geomObject is GeometryElement)
@@ -2525,13 +2525,13 @@ namespace Revit.IFC.Export.Exporter
             foreach (GeometryObject geom in (geomObject as GeometryElement))
             {
                if (geom is Solid)
-                  triangleList.AddRange(GetTriangleListFromSolid(geom, options, trfToUse));
+                  triangleList.AddRange(GetTriangleListFromSolid(exporterIFC, geom, options, trfToUse));
                if (geom is Mesh)
-                  triangleList.AddRange(GetTriangleListFromMesh(geom, trfToUse));
+                  triangleList.AddRange(GetTriangleListFromMesh(exporterIFC, geom, trfToUse));
                if (geom is Face)
                {
                   Mesh faceMesh = (geom as Face).Triangulate();
-                  triangleList.AddRange(GetTriangleListFromMesh(faceMesh, trfToUse));
+                  triangleList.AddRange(GetTriangleListFromMesh(exporterIFC, faceMesh, trfToUse));
                }
             }
          }
@@ -3424,7 +3424,7 @@ namespace Revit.IFC.Export.Exporter
                                     exportBodyParams.ScaledWidth = UnitUtil.ScaleLength(width);
                                  }
 
-                                 double area = ExporterIFCUtils.ComputeAreaOfCurveLoops(curveLoops);
+                                 double area = ExporterIFCUtils.ComputeAreaOfCurveLoops(new[] { curveLoops[0] });
                                  if (area > 0.0)
                                  {
                                     exportBodyParams.ScaledArea = UnitUtil.ScaleArea(area);
@@ -3766,12 +3766,11 @@ namespace Revit.IFC.Export.Exporter
          return bodyData;
       }
 
-      static List<List<XYZ>> GetTriangleListFromSolid(GeometryObject geomObject, BodyExporterOptions options, Transform trfToUse)
+      static List<List<XYZ>> GetTriangleListFromSolid(ExporterIFC exporterIFC, GeometryObject geomObject, BodyExporterOptions options, Transform trfToUse)
       {
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Solid geomSolid = geomObject as Solid;
          FaceArray faces = geomSolid.Faces;
-         double scale = UnitUtil.ScaleLengthForRevitAPI();
 
          // The default tessellationLevel is -1, which is illegal for Triangulate.  Get a value in range. 
          double tessellationLevel = options.TessellationControls.LevelOfDetail;
@@ -3789,10 +3788,7 @@ namespace Revit.IFC.Export.Exporter
                   MeshTriangle triangle = faceTriangulation.get_Triangle(ii);
                   for (int tri = 0; tri < 3; ++tri)
                   {
-                     XYZ vert = scale * triangle.get_Vertex(tri);
-                     if (trfToUse != null)
-                        vert = trfToUse.OfPoint(vert);
-
+                     XYZ vert = TransformAndScalePoint(exporterIFC, triangle.get_Vertex(tri), trfToUse);
                      triangleVertices.Add(vert);
                   }
                   triangleList.Add(triangleVertices);
@@ -3806,21 +3802,18 @@ namespace Revit.IFC.Export.Exporter
          return triangleList;
       }
 
-      static List<List<XYZ>> GetTriangleListFromMesh(GeometryObject geomObject, Transform trfToUse)
+      static List<List<XYZ>> GetTriangleListFromMesh(ExporterIFC exporterIFC, GeometryObject geomObject, Transform trfToUse)
       {
          List<List<XYZ>> triangleList = new List<List<XYZ>>();
          Mesh geomMesh = geomObject as Mesh;
-         double scale = UnitUtil.ScaleLengthForRevitAPI();
+
          for (int ii = 0; ii < geomMesh.NumTriangles; ++ii)
          {
             List<XYZ> triangleVertices = new List<XYZ>();
             MeshTriangle triangle = geomMesh.get_Triangle(ii);
             for (int tri = 0; tri < 3; ++tri)
             {
-               XYZ vert = scale * triangle.get_Vertex(tri);
-               if (trfToUse != null)
-                  vert = trfToUse.OfPoint(vert);
-
+               XYZ vert = TransformAndScalePoint(exporterIFC, triangle.get_Vertex(tri), trfToUse);
                triangleVertices.Add(vert);
             }
             triangleList.Add(triangleVertices);

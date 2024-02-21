@@ -416,9 +416,9 @@ namespace Revit.IFC.Export.Utility
             double ceilMeasure = Math.Ceiling(value);
             double floorMeasure = Math.Floor(value);
 
-            if (MathUtil.IsAlmostEqual(value, ceilMeasure))
+            if (MathUtil.IsAlmostZero(value - ceilMeasure))
                cleanMeasure.Add(ceilMeasure);
-            else if (MathUtil.IsAlmostEqual(value, floorMeasure))
+            else if (MathUtil.IsAlmostZero(value - floorMeasure))
                cleanMeasure.Add(floorMeasure);
             else
                cleanMeasure.Add(value);
@@ -1668,6 +1668,16 @@ namespace Revit.IFC.Export.Utility
 
                         HashSet<IFCAnyHandle> addQuantity;
                         if (ExporterCacheManager.ComplexPropertyCache.TryGetValue(prodHnd, out addQuantity))
+                        {
+                           foreach (IFCAnyHandle addQty in addQuantity)
+                           {
+                              quantities.Add(addQty);
+                              string addQtyName = IFCAnyHandleUtil.GetStringAttribute(addQty, "Name");
+                              uniqueQuantityNames.Add(addQtyName);
+                           }
+                        }
+
+                        if (ExporterCacheManager.BaseQuantitiesCache.TryGetValue(prodHnd, out addQuantity))
                         {
                            foreach (IFCAnyHandle addQty in addQuantity)
                            {
