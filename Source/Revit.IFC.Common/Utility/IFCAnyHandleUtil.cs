@@ -1940,6 +1940,30 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Checks if the handle points to a valid IFC entity.  A handle could point to an 
+      /// invalid entity if it were deleted after being stored in a cache.
+      /// </summary>
+      /// <param name="handle">The handle.</param>
+      /// <returns>True if it is valid, false otherwise.</returns>
+      /// <remarks>This really should only be used on export, where there are cases
+      /// of deleted handles in caches that we need to verify before use.</remarks>
+      public static bool IsValidHandle(IFCAnyHandle handle)
+      {
+         if (IsNullOrHasNoValue(handle))
+            return false;
+
+         try
+         {
+            // If the TypeName command succeeds, it means we have a valid handle.
+            return (handle.TypeName != null);
+         }
+         catch
+         {
+            return false;
+         }
+      }
+
+      /// <summary>
       /// Checks if the handle is an entity of exactly the given type (not including its sub-types).
       /// </summary>
       /// <param name="handle">The handle to be checked.</param>
@@ -1994,7 +2018,15 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if the handle entity is an entity of either the given type or one of its sub-types.</returns>
       public static bool IsValidSubTypeOf(IFCAnyHandle handle, IFCEntityType type)
       {
-         return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
+         try
+         {
+            return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
+         }
+         catch
+         {
+            //Some entities are processed in current Revit 2022 are undefined for the EDM based old Revit versions that causes exception.
+            return false;
+         }
       }
 
       /// <summary>

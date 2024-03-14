@@ -1012,7 +1012,7 @@ namespace Revit.IFC.Export.Utility
 
             public bool NeedSearch()
             {
-               return SearchByType || SearchByPredefinedType || SearchByAltPredefinedType;
+               return SearchByType && SearchByPredefinedType && SearchByAltPredefinedType;
             }
 
             public IList<T> ByType { get; set; } = null;
@@ -1544,7 +1544,7 @@ namespace Revit.IFC.Export.Utility
             foreach (IFCAnyHandle prodHnd in productSet)
             {
                // Need to check whether the handle is valid. In some cases object that has parts may not be complete and may have orphaned handles that are not valid
-               if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodHnd))
+               if (!IFCAnyHandleUtil.IsValidHandle(prodHnd))
                   continue;
 
                IList<PropertySetDescription> currPsetsToCreate =
@@ -1692,7 +1692,7 @@ namespace Revit.IFC.Export.Utility
                         HashSet<IFCAnyHandle> qtyFromInit = currDesc.ProcessEntries(file, exporterIFC, ifcParams, elementToUse, elemTypeToUse);
                         foreach (IFCAnyHandle qty in qtyFromInit)
                         {
-                           if (IFCAnyHandleUtil.IsNullOrHasNoValue(qty) || IFCAnyHandleUtil.IsNullOrHasNoValue(qty))
+                           if (!IFCAnyHandleUtil.IsValidHandle(qty))
                               continue;
 
                            string qtyName = IFCAnyHandleUtil.GetStringAttribute(qty, "Name");

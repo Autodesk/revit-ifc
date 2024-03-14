@@ -1932,7 +1932,7 @@ namespace Revit.IFC.Export.Toolkit
             spaceElevationWithFlooring = UnitUtil.ScaleLength(elevationWithFlooring);
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            IFCAnyHandleUtil.SetAttribute(space, "PreDefinedType", predefinedType);
+            IFCAnyHandleUtil.SetAttribute(space, "PredefinedType", predefinedType, true);
          }
          else
          {

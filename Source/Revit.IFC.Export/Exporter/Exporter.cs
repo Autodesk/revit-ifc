@@ -1322,7 +1322,7 @@ namespace Revit.IFC.Export.Exporter
             ISet<IFCAnyHandle> validHandles = new HashSet<IFCAnyHandle>();
             foreach (IFCAnyHandle handle in presentationLayerSet.Value)
             {
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
+               if (IFCAnyHandleUtil.IsValidHandle(handle))
                {
                   validHandles.Add(handle);
                   assignedRepresentations.Add(handle);
@@ -1344,7 +1344,7 @@ namespace Revit.IFC.Export.Exporter
             IList<IFCAnyHandle> initialSet = presentationLayerAssignment.Value;
             foreach (IFCAnyHandle currItem in initialSet)
             {
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(currItem) && !assignedRepresentations.Contains(currItem))
+               if (IFCAnyHandleUtil.IsValidHandle(currItem) && !assignedRepresentations.Contains(currItem))
                   newLayeredItemSet.Add(currItem);
             }
 

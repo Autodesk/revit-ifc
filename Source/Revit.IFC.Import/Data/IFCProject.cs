@@ -169,7 +169,16 @@ namespace Revit.IFC.Import.Data
                   }
 
                   // Process Map Conversion if any
-                  HashSet<IFCAnyHandle> coordOperation = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(geomRepContextHandle, "HasCoordinateOperation");
+                  HashSet<IFCAnyHandle> coordOperation = null;
+                  try
+                  {
+                     coordOperation = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(geomRepContextHandle, "HasCoordinateOperation");
+                  }
+                  catch
+                  {
+                     // The IFC2x3 schema does not have "HasCoordinateOperation" attribute. In EDM based Revit versions it causes an exception EDM Toolkit Error: Attribute undefined.
+                  }
+
                   if (coordOperation != null)
                   {
                      if (coordOperation.Count > 0)

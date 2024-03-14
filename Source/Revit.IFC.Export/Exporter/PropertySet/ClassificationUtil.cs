@@ -52,7 +52,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public static void CreateUniformatClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IFCAnyHandle elemHnd)
       {
          IFCEntityType entType = IFCEntityType.IfcObjectDefinition;
-         if (!Enum.TryParse<IFCEntityType>(elemHnd.TypeName, out IFCEntityType hndEntType))
+         if (Enum.TryParse<IFCEntityType>(elemHnd.TypeName, true, out IFCEntityType hndEntType))
             entType = hndEntType;
          IList<IFCAnyHandle> elemHnds = new List<IFCAnyHandle>() { elemHnd };
          CreateUniformatClassification(exporterIFC, file, element, elemHnds, entType);

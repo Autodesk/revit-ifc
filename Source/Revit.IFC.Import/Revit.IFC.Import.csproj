@@ -47,6 +47,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG;IFC_OPENSOURCE</DefineConstants>
+    <OutputPath>C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2022.bundle\Contents\2022\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <DefineConstants>TRACE;IFC_OPENSOURCE</DefineConstants>
