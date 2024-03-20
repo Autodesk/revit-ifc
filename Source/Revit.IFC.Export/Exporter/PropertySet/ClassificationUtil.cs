@@ -52,7 +52,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public static void CreateUniformatClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IFCAnyHandle elemHnd)
       {
          IFCEntityType entType = IFCEntityType.IfcObjectDefinition;
-         if (!Enum.TryParse<IFCEntityType>(elemHnd.TypeName, out IFCEntityType hndEntType))
+         if (Enum.TryParse<IFCEntityType>(elemHnd.TypeName, true, out IFCEntityType hndEntType))
             entType = hndEntType;
          IList<IFCAnyHandle> elemHnds = new List<IFCAnyHandle>() { elemHnd };
          CreateUniformatClassification(exporterIFC, file, element, elemHnds, entType);
@@ -85,20 +85,22 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue(uniformatKeyString, out IFCAnyHandle classification))
          {
-            classification = IFCInstanceExporter.CreateClassification(file, "CSI (Construction Specifications Institute)", "1998", 0, 0, 0,
+            classification = IFCInstanceExporter.CreateClassification(file, "CSI (Construction Specifications Institute)", "1998", 0, 0, 0, 
                uniformatKeyString, "UniFormat Classification", GetUniformatURL());
             ExporterCacheManager.ClassificationCache.ClassificationHandles.Add(uniformatKeyString, classification);
          }
 
          if (!String.IsNullOrEmpty(uniformatCode))
          {
-            foreach (IFCAnyHandle elemHnd in elemHnds)
             {
-               if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
+               foreach (IFCAnyHandle elemHnd in elemHnds)
                {
-                  ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
-                     uniformatCode, uniformatKeyString, uniformatDescription, classification);
-                  InsertClassificationReference(file, key, elemHnd);
+                  if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
+                  {
+                     ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
+                        uniformatCode, uniformatKeyString, uniformatDescription, classification);
+                     InsertClassificationReference(file, key, elemHnd);
+                  }
                }
             }
          }

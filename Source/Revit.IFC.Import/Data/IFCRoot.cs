@@ -53,8 +53,8 @@ namespace Revit.IFC.Import.Data
             Importer.TheCache.CreatedGUIDs.Add(GlobalId);
 
          Name = IFCAnyHandleUtil.GetStringAttribute(ifcRoot, "Name");
-         if (string.IsNullOrWhiteSpace(Name) && CreateNameIfNull())
-            Name = ifcRoot.TypeName;
+         if (string.IsNullOrWhiteSpace(Name))
+            Name = GetDefaultName(Name);
          Description = IFCAnyHandleUtil.GetStringAttribute(ifcRoot, "Description");
 
          IFCAnyHandle ownerHistoryHandle = IFCAnyHandleUtil.GetInstanceAttribute(ifcRoot, "OwnerHistory");
@@ -122,12 +122,13 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Determines if we require the IfcRoot entity to have a name.
+      /// Determines the default name of an IfcRoot, if any.
       /// </summary>
-      /// <returns>Returns true if we require the IfcRoot entity to have a name.</returns>
-      protected virtual bool CreateNameIfNull()
+      /// <param name="name">The original name.</param>
+      /// <returns>The default name of an IfcRoot, if any.</returns>
+      protected virtual string GetDefaultName(string name)
       {
-         return false;
+         return name;
       }
    }
 }

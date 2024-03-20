@@ -103,6 +103,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Skip the "CanElementBeExported" function for cached elements that have already passed the
       /// test.
+      /// </summary>
       public static bool CanExportElementOverride { get; private set; } = false;
 
       /// <summary>

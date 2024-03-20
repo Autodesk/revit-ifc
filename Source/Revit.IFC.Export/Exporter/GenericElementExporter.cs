@@ -87,8 +87,7 @@ namespace Revit.IFC.Export.Exporter
                      }
 
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
-                        styleHandle = ExporterUtil.CreateGenericTypeFromElement(element, exportType, 
-                           file, ownerHistory, exportType.ValidatedPredefinedType, productWrapper);
+                        styleHandle = ExporterUtil.CreateGenericTypeFromElement(element, exportType, file, productWrapper);
                   }
 
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
@@ -146,6 +145,9 @@ namespace Revit.IFC.Export.Exporter
          Element element, GeometryElement geomElem, IFCExportInfoPair exportType,
          ProductWrapper wrapper)
       {
+         if (geomElem == null)
+            return false;
+
          GeometryInstance geometryInstance = GetTheGeometryInstance(geomElem);
          if (geometryInstance == null)
             return false;
@@ -179,7 +181,7 @@ namespace Revit.IFC.Export.Exporter
          // GUID_TODO: This assumes that there are no types relating to objects split by level,
          // or to doors/windows that are flipped.
          var typeKey = new TypeObjectKey(symbolId, ElementId.InvalidElementId,
-            false, exportType);
+            false, exportType, ElementId.InvalidElementId);
 
          FamilyTypeInfo currentTypeInfo = 
             ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);

@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="CA67C17D-7F68-46E2-897A-E2358C3823E9" Name="Revit IFC 2022" Language="1033" Version="22.6.2.0" Manufacturer="Autodesk" UpgradeCode="254F4C8A-9ECA-4690-A718-21ACD3849485">
+   <Product Id="02DEF1EA-AE24-4E4A-A7DD-BC8A733AC484" Name="Revit IFC 2022" Language="1033" Version="22.7.0.0" Manufacturer="Autodesk" UpgradeCode="254F4C8A-9ECA-4690-A718-21ACD3849485">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -106,19 +106,19 @@
                <File Id ="FILE_Ifc_Import_Sig" Name="Revit.IFC.Import.sig" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Import.sig" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_ExternalUI_Sig" Guid="3159B919-CD50-469D-8DDE-FE339CEBBC1C">
-               <File Id ="FILE_Ifc_ExternalUI_Sig" Name="IFCExportUIOverride.sig" Source="$(var.ProjectDir)..\Program Files to Install\IFCExportUIOverride.sig" KeyPath="yes" />
+               <File Id ="FILE_Ifc_ExternalUI_Sig" Name="IFCExporterUIOverride.sig" Source="$(var.ProjectDir)..\Program Files to Install\IFCExporterUIOverride.sig" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_ExternalUI_DLL" Guid="D7F89B58-029F-4062-B226-6F3D2EB7FE5D">
-               <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExportUIOverride.dll" Source="$(var.ProjectDir)..\Program Files to Install\IFCExportUIOverride.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExporterUIOverride.dll" Source="$(var.ProjectDir)..\Program Files to Install\IFCExporterUIOverride.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Common_DLL" Guid="C7ED4A2C-DCB1-457E-968F-2DDE9993C1B6">
-               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Common.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Import_Core_DLL" Guid="5ED374E8-58BE-4173-A320-1DF20D3AC0F8">
-               <File Id ="FILE_Ifc_Import_Core_DLL" Name="Revit.IFC.Import.Core.dll" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Import.Core.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_Import_Core_DLL" Name="Revit.IFC.Import.Core.dll" Source="$(var.Revit.IFC.Import.Core.TargetDir)Revit.IFC.Import.Core.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Entity_Tree_DLL" Guid="92933233-DEF4-4147-A116-A991E8730EEF">
-               <File Id ="FILE_Ifc_Entity_Tree_DLL" Name="Revit.IFC.EntityTree.dll" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.EntityTree.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_Entity_Tree_DLL" Name="Revit.IFC.EntityTree.dll" Source="$(var.Revit.IFC.EntityTree.TargetDir)Revit.IFC.EntityTree.dll" KeyPath="yes" />
             </Component>
          <?else?>
             <Component Id = "COMP_IFC_Export_DLL" Guid="D59E44AA-89A3-4CD7-AD9C-8D4D7AC6026B">
@@ -128,7 +128,7 @@
                <File Id ="FILE_Ifc_Import_DLL" Name="Revit.IFC.Import.dll" Source="$(var.Revit.IFC.Import.TargetDir)Revit.IFC.Import.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_ExternalUI_DLL" Guid="D7F89B58-029F-4062-B226-6F3D2EB7FE5D">
-               <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExportUIOverride.dll" Source="$(var.IFCExporterUIOverride.TargetDir)IFCExportUIOverride.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExporterUIOverride.dll" Source="$(var.IFCExporterUIOverride.TargetDir)IFCExporterUIOverride.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Common_DLL" Guid="C7ED4A2C-DCB1-457E-968F-2DDE9993C1B6">
                <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.dll" KeyPath="yes" />
@@ -233,12 +233,12 @@
 
       <ComponentGroup Id="ProductFRFiles" Directory="INSTALLFRUI">
          <Component Id = "COMP_IFC_ResourceFR_DLL" Guid="ACC9C313-F8EF-4DBB-A0DE-55D662E4857D">
-            <File Id ="FILE_Ifc_ResourceFR_DLL" Name="IFCExportUIOverride.resources.dll" Source="$(var.IFCExporterUIOverride.TargetDir)fr\IFCExportUIOverride.resources.dll" KeyPath="yes" />
+            <File Id ="FILE_Ifc_ResourceFR_DLL" Name="IFCExporterUIOverride.resources.dll" Source="$(var.IFCExporterUIOverride.TargetDir)fr\IFCExporterUIOverride.resources.dll" KeyPath="yes" />
          </Component>
       </ComponentGroup>
       <ComponentGroup Id="ProductDEFiles" Directory="INSTALLDEUI">
          <Component Id = "COMP_IFC_ResourceDE_DLL" Guid="23BD267A-652F-473A-8DF6-6302C7D14D54">
-            <File Id ="FILE_Ifc_ResourceDE_DLL" Name="IFCExportUIOverride.resources.dll" Source="$(var.IFCExporterUIOverride.TargetDir)de\IFCExportUIOverride.resources.dll" KeyPath="yes" />
+            <File Id ="FILE_Ifc_ResourceDE_DLL" Name="IFCExporterUIOverride.resources.dll" Source="$(var.IFCExporterUIOverride.TargetDir)de\IFCExporterUIOverride.resources.dll" KeyPath="yes" />
          </Component>
       </ComponentGroup>
 
@@ -266,7 +266,7 @@
                <util:XmlFile Id="SetKeyUI"
                   Action="setValue"
                   ElementPath="RevitAddIns/AddIn[\[]position()=1[\]]/Assembly"
-                  Value="[INSTALLDIR]IFCExportUIOverride.dll"
+                  Value="[INSTALLDIR]IFCExporterUIOverride.dll"
                   File="[#FILE_UI_manifest]"
                   SelectionLanguage="XPath"
                   Sequence="1" />
@@ -281,7 +281,7 @@
                <util:XmlFile Id="SetKeyUI_LT"
                   Action="setValue"
                   ElementPath="RevitAddIns/AddIn[\[]position()=1[\]]/Assembly"
-                  Value="[INSTALLDIR]IFCExportUIOverride.dll"
+                  Value="[INSTALLDIR]IFCExporterUIOverride.dll"
                   File="[DIR_Addins_LT]IFCExporterUIOverride.addin"
                   SelectionLanguage="XPath"
                   Sequence="1" />

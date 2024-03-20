@@ -78,7 +78,10 @@ namespace BIM.IFC.Export.UI
             {
                fillMandatoryFields(m_newClassification);
             }
-            m_newClassification.ClassificationEditionDate = datePicker1.SelectedDate.Value.Date;
+            if (datePicker1?.SelectedDate != null)
+            {
+               m_newClassification.ClassificationEditionDate = datePicker1.SelectedDate.Value.Date;
+            }
             IFCClassificationMgr.UpdateClassification(IFCCommandOverrideApplication.TheDocument, m_newClassification);
          }
 
@@ -134,7 +137,7 @@ namespace BIM.IFC.Export.UI
       private void datePicker1_SelectedDateChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
       {
          var picker = sender as DatePicker;
-         if (picker != null)
+         if (picker?.SelectedDate != null)
          {
             m_newClassification.ClassificationEditionDate = picker.SelectedDate.Value.Date; // Picker only use the Date
          }

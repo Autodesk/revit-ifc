@@ -238,6 +238,91 @@ working on expanding and eventually removing this limit, and we will be tracking
 
 <div class="versionset">
 
+	<div class="version">22.7.0.0</div><div class="versioninfo-bullet">
+		<br><p>
+         General:
+			<ul>
+				<li>This is the official release of IFC Extension 22.7.0
+				<li>It contains a various improvements and bug fixes for the previous 22.6.2 version. 
+			</ul>	
+       </p>
+	   <br>
+		<p>
+         Improvement:
+			<ul>
+				<li>Added export of the floor slab edge level.
+				<li>Added material shared parameters export.
+				<li>Added NetSideArea, GrossSideArea, Height, and Width quantities for curtain walls when exporting to IFC 4.
+				<li>Added the ability for the IfcCADLayerOverride shared parameter to set the appropriate CAD layer for more Revit elements when exporting to IFC.
+				<li>Added the BarRole attribute when exporting IfcReinforcingBars to IFC.
+				<li>Added type entities for rebar and assemblies when exporting to IFC. 
+				<li>Added support for exporting enumerated properties to IFC that contain multiple enumerated values.
+				<li>Added support for exporting predefined types when exporting spaces to IFC 4+.
+				<li>Added support for linking in data from IFC entities with custom representation identifiers.
+				<li>Added support for properly exporting VaporPermeability parameters to IFC.
+				<li>Added support for valid AssemblyPlace information when exporting IfcFurnitureType to IFC.
+				<li>Added Width as an exported quantity to IFC for some assembly-based walls.
+				<li>Decreased the size of IFC files when exporting Revit elements as IfcCovering.
+				<li>Exported more than one material to IFC in some cases when using the advanced option to allow the use of a mixed solid model representation.
+				<li>Implemented export of IfcRailingType entities.
+				<li>Implemented export of insulation and lining as anything.
+				<li>Improved base quantities calculation for slab elements with openings.
+				<li>Improved calculations of gross volume and gross side area when exporting some walls with openings to IFC 4.
+				<li>Improved export of models to IFC that contained family instances with invalid placements.
+				<li>Improved export of openings in sloped slabs.
+				<li>Improved export of some beams with openings to IFC 4.
+				<li>Improved export of some curtain systems to IFC.
+				<li>Improved IFC 4 export of some host objects that had different layers with the same material.
+				<li>Improved how classifications are viewed in certain older external applications when exporting to IFC.
+				<li>Improved linking of IFC files with slightly self-intersecting profile data.
+				<li>Improved stability of exporting to IFC when the Revit model has corrupted extensible storage data.
+				<li>Improved stability when exporting projects to IFC with non-standard Author information in Project Standards.
+				<li>Improved support for exporting advanced BReps to IFC if the unofficial IFC4 Design Transfer View is used.
+				<li>Improved the calculation of height and width properties when exporting some openings to IFC 4, where the values were reversed.
+				<li>Improved the export of room base quantities to IFC.
+				<li>Improved the export of some ceilings exported as parts to IFC when exporting the current view.
+				<li>Improved the export of the material layers of some IFC4 files with 0 thickness material layers.
+				<li>Improved units export.
+				<li>Improved upgrading of IFC user configuration when upgrading a Revit document to a higher version of Revit.
+				<li>Improved user defined property set mapping, especially for IFC2x3 entities that previously had no type entity exported.
+				<li>Improved validity of IFC files when exporting elements with compound structures.
+				<li>Updated French and German localization resources.
+			</ul>	
+		</p>
+		<br>
+		<p>
+         Bug fixes:
+			<ul>
+				<li>Added material information for some hosted wall sweeps exported to IFC.
+				<li>Added missing user-defined property sets for some roofs when exporting to IFC.
+				<li>Allowed the IfcSingleMaterialOverride shared parameter to override the material of certain elbows and fittings when exporting to IFC.
+				<li>Fixed a shift of TriangulatedFaceSet geometry elements.
+				<li>Fixed bug with level elevation after linking IFC.
+				<li>Fixed bug with shifted assembly elements.
+				<li>Fixed bug with model positioning.
+				<li>Fixed classifications export for systems.
+				<li>Fixed export of IFC properties associated with the top-level IfcProject entity.
+				<li>Fixed export of material layer parameters of a ceiling element.
+				<li>Fixed export of some assemblies to IFC that resulted in orphaned entities.
+				<li>Fixed export of some rebar elements.
+				<li>Fixed export of the user defined PredefinedType for the stair element.
+				<li>Fixed geometry transformation for elements in assemblies.
+				<li>Fixed local placement of the openings in framing elements export.
+				<li>Fixed missing sketch-based openings in sloped floor elements.
+				<li>Fixed the calculation of the height parameter for some railings in metric projects when a previous value had been calculated that wasn't applicable to this railing.
+				<li>Fixed the overall height value when exporting roof-based windows to IFC.
+				<li>Fixed the slope common property set parameter calculation when exporting some stringers to IFC.
+				<li>Fixed the walls export if option "Split Walls Columns Ducts by Level" is used.
+				<li>Fixed unit conversion issues.
+				<li>Improved area and volume base quantities export for slabs as part of the roof.
+				<li>Improved error handling for invalid Revit file with missing project base and survey points.
+				<li>Removed instability when selecting an IFC entity for the Export to IFC As parameter, and then switching to a schema that does not contain that entity definition.
+				<li>Removed the use of several Revit built-in parameters when exporting IFC properties that have the same name but are different.
+			</ul>	
+		</p>
+	</div>
+	<br>
+	
 	<div class="version">22.6.2.0</div><div class="versioninfo-bullet">
 		<br><p>
          General:

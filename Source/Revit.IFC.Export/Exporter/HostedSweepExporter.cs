@@ -34,7 +34,7 @@ namespace Revit.IFC.Export.Exporter
    class HostedSweepExporter
    {
       /// <summary>
-      /// Exports a hosted weep.
+      /// Exports a hosted sweep.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="hostedSweep">The hosted sweep element.</param>

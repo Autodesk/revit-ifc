@@ -110,7 +110,8 @@ namespace Revit.IFC.Export.Utility
          IList<Tuple<PlanarFace, XYZ>> potentialSweptAreaFaces = new List<Tuple<PlanarFace, XYZ>>();
          Curve directrix = potentialPathGeom as Curve;
 
-         if (potentialPathGeom == null)
+         // In some cases potentialPathGeom comes as PolyLine
+         if (directrix == null)
             return Create(faces, normal);
 
          XYZ directrixStartPt = directrix.GetEndPoint(0);

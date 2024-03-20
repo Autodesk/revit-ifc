@@ -17,10 +17,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 
@@ -74,6 +72,11 @@ namespace Revit.IFC.Export.Utility
       /// A set of IFC entities that should be associated to a level, but there is no level to associate them to.  These are for spatial elements.
       /// </summary>
       private HashSet<IFCAnyHandle> m_OrphanedSpaces;
+
+      /// <summary>
+      /// The dictionary mapping from a SlabEdge.Id to a Floor.LevelId.
+      /// </summary>
+      private IDictionary<ElementId, ElementId> FloorSlabEdgeLevels = null;
 
       /// <summary>
       /// Finds the height of the level from the dictionary.
@@ -267,5 +270,57 @@ namespace Revit.IFC.Export.Utility
          }
          return levelId;
       }
+
+      /// <summary>
+      /// Get the appropriate level id for a slab edge.
+      /// </summary>
+      /// <param name="slabEdgeId">The slab edge element id.</param>
+      /// <returns>The level id.</returns>
+      public ElementId GetSlabEdgeLevelId(ElementId slabEdgeId)
+      {
+         if (FloorSlabEdgeLevels == null)
+         {
+            InitFloorSlabEdgeLevels(ExporterCacheManager.Document);
+         }
+
+         if (FloorSlabEdgeLevels.TryGetValue(slabEdgeId, out ElementId levelId))
+         {
+            return levelId;
+         }
+
+         return ElementId.InvalidElementId;
+      }
+
+      private void InitFloorSlabEdgeLevels(Document document)
+      {
+         FloorSlabEdgeLevels = new Dictionary<ElementId, ElementId>();
+
+         ElementFilter floorFilter = new ElementClassFilter(typeof(Floor));
+         FilteredElementCollector floorCollector = new FilteredElementCollector(document);
+         floorCollector.WherePasses(floorFilter);
+         IList<Element> floorElements = floorCollector.ToElements();
+         if (floorElements?.Count > 0)
+         {
+            foreach (Element floor in floorElements)
+            {
+               IList<ElementId> dependentElementIds = floor.GetDependentElements(null);
+               if (dependentElementIds?.Count > 0)
+               {
+                  var levelId = floor.LevelId;
+                  foreach(ElementId dependentElementId in dependentElementIds)
+                  {
+                     if (dependentElementId == ElementId.InvalidElementId)
+                        continue;
+                     var dependentElement = document.GetElement(dependentElementId);
+                     if (dependentElement is SlabEdge)
+                     {
+                        FloorSlabEdgeLevels[dependentElementId] = levelId;
+                     }
+                  }
+               }
+            }
+         }
+      }
    }
+
 }

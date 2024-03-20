@@ -49,7 +49,7 @@ namespace Revit.IFC.Export.Utility
       {
          int hash = 23;
          hash = hash * 31 + obj.ComponentCat.GetHashCode();
-         hash = hash * 31 + obj.MaterialId.IntegerValue;
+         hash = hash * 31 + obj.MaterialId.GetHashCode();
          return hash;
       }
    }
@@ -95,7 +95,7 @@ namespace Revit.IFC.Export.Utility
             // We need to make sure the handle isn't stale.  If it is, remove it. 
             try
             {
-               if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
+               if (!IFCAnyHandleUtil.IsValidHandle(handle))
                {
                   m_MaterialConstDictionary.Remove(constInfo);
                   handle = null;

@@ -120,8 +120,7 @@ namespace Revit.IFC.Export.Exporter
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
                   throw new Exception("Failed to create shape representation.");
 
-               IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
-               shapeReps.Add(bodyRepHnd);
+               IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>() { bodyRepHnd };
 
                IFCAnyHandle prodShapeHnd = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
                string guid = GUIDUtil.CreateGUID(textNote);

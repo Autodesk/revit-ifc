@@ -316,7 +316,8 @@ namespace Revit.IFC.Export.Exporter
 
          if (partExportLevelId == null || partExportLevelId == ElementId.InvalidElementId)
          {
-            if (hostElement == null || (part.OriginalCategoryId != hostElement.Category.Id))
+            ElementId hostCategoryId = CategoryUtil.GetSafeCategoryId(hostElement);
+            if (hostElement == null || (part.OriginalCategoryId != hostCategoryId))
                return null;
             partExportLevelId = hostElement.LevelId;
          }
@@ -650,8 +651,6 @@ namespace Revit.IFC.Export.Exporter
                      AddGeometries(exporterIFC, part, null, ref geometryObjects, solidsToExclude);
                   }
                }
-
-               partMaterialLayerIndexList = RenumberPartMaterialIndexList(partMaterialLayerIndexList.ToList());
             }
             else
             {
@@ -777,27 +776,43 @@ namespace Revit.IFC.Export.Exporter
          prodReps.Add(hostShapeRep);
          IFCAnyHandleUtil.SetAttribute(hostProdDefShape, "Representations", prodReps);
 
-         // Create IfcShapeAspects for each of the ShapeRepresentation
+         // Create IfcShapeAspects for each of the ShapeRepresentation keeping UI order
          int partMatLayIdxCount = partMaterialLayerIndexList.Count;
          int layerSetInfoCount = layersetInfoList.Count;
          int cnt = 0;
+
+         var layerInfoInxs = new List<(int idx, IFCAnyHandle rep)>(itemReps.Count);
          foreach (IFCAnyHandle itemRep in itemReps)
          {
-            string layerName = "Layer";
+            int layerInfoIdx = -1;
+
             if (partMatLayIdxCount > 0 && cnt < partMatLayIdxCount)
             {
-               int layerInfoIdx = partMaterialLayerIndexList[cnt];
-               if (layerInfoIdx < layerSetInfoCount)
-                  layerName = layersetInfoList[layerInfoIdx].m_layerName;
+               if (partMaterialLayerIndexList[cnt] < layerSetInfoCount)
+                  layerInfoIdx = partMaterialLayerIndexList[cnt];
             }
             else
             {
                if (cnt < layerSetInfoCount)
-                  layerName = layersetInfoList[cnt].m_layerName;
+                  layerInfoIdx = cnt;
             }
-
-            RepresentationUtil.CreateRepForShapeAspect(exporterIFC, hostElement, hostProdDefShape, representationType, layerName, itemRep);
+            layerInfoInxs.Add((layerInfoIdx, itemRep));
             cnt++;
+         }
+
+         layerInfoInxs = layerInfoInxs.OrderBy(x => x.idx).ToList();
+
+         var uniqueNames = new Dictionary<(string, double), string>(new MaterialLayerSetInfo.NameAndWidthComparer());
+         foreach (var layerInfo in layerInfoInxs)
+         {
+            string layerName = (layerInfo.idx != -1) ? layersetInfoList[layerInfo.idx].m_layerName : "Layer";
+            double layerWidth = (layerInfo.idx != -1) ? layersetInfoList[layerInfo.idx].m_matWidth : 0.0;
+
+            if (string.IsNullOrEmpty(layerName))
+               layerName = "Layer";
+
+            string uniqueName = MaterialLayerSetInfo.GetUniqueMaterialNameWithWidth(layerName, layerWidth, uniqueNames);
+            RepresentationUtil.CreateRepForShapeAspect(exporterIFC, hostElement, hostProdDefShape, representationType, uniqueName, layerInfo.rep);
          }
 
          return hostShapeRep;
@@ -1009,7 +1024,8 @@ namespace Revit.IFC.Export.Exporter
             Part part = hostElement.Document.GetElement(partId) as Part;
             if (PartUtils.IsMergedPart(part))
             {
-               if (part.OriginalCategoryId == hostElement.Category.Id)
+               ElementId hostElementCategoryId = CategoryUtil.GetSafeCategoryId(hostElement);
+               if (part.OriginalCategoryId == hostElementCategoryId)
                {
                   if (IsSplit)
                   {
@@ -1070,12 +1086,13 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>TryZ for wall/column/floor/roof category and TryXY for other category.</returns>
       private static IFCExtrusionAxes GetDefaultExtrusionAxesForPart(Part part)
       {
-         switch ((BuiltInCategory)part.OriginalCategoryId.IntegerValue)
+         switch (part.OriginalCategoryId.IntegerValue)
          {
-            case BuiltInCategory.OST_Walls:
-            case BuiltInCategory.OST_Columns:
-            case BuiltInCategory.OST_Floors:
-            case BuiltInCategory.OST_Roofs:
+            case (int)BuiltInCategory.OST_Walls:
+            case (int)BuiltInCategory.OST_Columns:
+            case (int)BuiltInCategory.OST_Ceilings:
+            case (int)BuiltInCategory.OST_Floors:
+            case (int)BuiltInCategory.OST_Roofs:
                return IFCExtrusionAxes.TryZ;
             default:
                return IFCExtrusionAxes.TryXY;
@@ -1098,6 +1115,7 @@ namespace Revit.IFC.Export.Exporter
          {
             case IFCEntityType.IfcWall:
             case IFCEntityType.IfcColumn:
+            case IFCEntityType.IfcCovering:
             case IFCEntityType.IfcSlab:
             case IFCEntityType.IfcRoof:
                return IFCExtrusionAxes.TryZ;
@@ -1278,7 +1296,7 @@ namespace Revit.IFC.Export.Exporter
                if (hostElement != null)
                   return hostElement;
             }
-            else if (originalCategoryId == parentElement.Category.Id)
+            else if (originalCategoryId == CategoryUtil.GetSafeCategoryId(parentElement))
             {
                hostElement = parentElement;
                return hostElement;
@@ -1326,36 +1344,6 @@ namespace Revit.IFC.Export.Exporter
 
          return hostShapeRep;
       }
-
-      static IList<int> RenumberPartMaterialIndexList(List<int> partMaterialLayerIndexList)
-      {
-         // There is potentially a problem here when obtaining layer index since it include zero width layer in the numbering, 
-         //   but the CompoundStructure will only return the list of components that is non-zero width
-         // The list will be sorted here and "re-numbered" to be in contiguous sequence
-         partMaterialLayerIndexList.Sort();
-         int seqNo = 0;
-         int indToReplace = -1;
-         for (int contIdx = 0; contIdx < partMaterialLayerIndexList.Count; ++contIdx)
-         {
-            int currentVal = partMaterialLayerIndexList[contIdx];
-            if (currentVal > seqNo)
-            {
-               if (currentVal == indToReplace)
-               {
-                  partMaterialLayerIndexList[contIdx] = seqNo;
-                  continue;
-               }
-               seqNo++;
-               if (currentVal > seqNo)
-               {
-                  // There is a gap. We will replace this with a continguous index
-                  indToReplace = currentVal;
-                  partMaterialLayerIndexList[contIdx] = seqNo;
-               }
-            }
-         }
-
-         return partMaterialLayerIndexList;
-      }
+     
    }
 }

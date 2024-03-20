@@ -137,11 +137,8 @@ namespace Revit.IFC.Import.Data
          }
          finally
          {
-            if (ifcFile != null)
-            {
-               ifcFile.Close();
-               ifcFile = null;
-            }
+            ifcFile?.Close();
+            ifcFile = null;
          }
       }
 
@@ -452,6 +449,7 @@ namespace Revit.IFC.Import.Data
                success = ProcessReference();
                break;
          }
+
          if (success)
             StoreIFCCreatorInfo(IFCFile, doc.ProjectInformation);
          else

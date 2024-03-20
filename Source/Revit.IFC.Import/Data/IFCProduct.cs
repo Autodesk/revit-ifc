@@ -38,7 +38,7 @@ namespace Revit.IFC.Import.Data
       public IFCVoidInfo(IFCSolidInfo solid)
          : base(solid.Id, solid.GeometryObject)
       {
-         this.RepresentationType = solid.RepresentationType;
+         this.RepresentationIdentifier = solid.RepresentationIdentifier;
       }
    }
 
@@ -186,7 +186,7 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Private function to determine whether an IFCProduct directly contains vaoid geometry.
+      /// Private function to determine whether an IFCProduct directly contains valid geometry.
       /// </summary>
       /// <returns>True if the IFCProduct directly contains valid geometry.</returns>
       private bool HasValidTopLevelGeometry()
@@ -229,7 +229,7 @@ namespace Revit.IFC.Import.Data
       protected override bool CutSolidByVoids(IFCSolidInfo solidInfo)
       {
          // We only cut "Body" representation items.
-         if (solidInfo.RepresentationType != IFCRepresentationIdentifier.Body)
+         if (solidInfo.RepresentationIdentifier != IFCRepresentationIdentifier.Body)
             return true;
 
          IList<IFCVoidInfo> voidsToUse = null;

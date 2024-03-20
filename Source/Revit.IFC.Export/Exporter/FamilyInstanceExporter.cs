@@ -407,6 +407,7 @@ namespace Revit.IFC.Export.Exporter
                      break;
                   }
                case IFCEntityType.IfcFurniture:
+               case IFCEntityType.IfcFurnishingElement:
                   {
                      typeStyle = IFCInstanceExporter.CreateFurnitureType(file, familySymbol,
                         guid, propertySets, repMapList, null, null, null,
@@ -487,6 +488,23 @@ namespace Revit.IFC.Export.Exporter
          return true;
       }
 
+      private static bool IsTransformValid(Transform transform)
+      {
+         // There are no good API functions that check if a
+         // Transform has invalid information in it.  So just
+         // try assignment.
+         try
+         {
+            XYZ checkTransform = transform.OfPoint(XYZ.Zero);
+         }
+         catch (Autodesk.Revit.Exceptions.ArgumentException)
+         {
+            return false;
+         }
+
+         return true;
+      }
+
       /// <summary>
       /// Exports a family instance as a mapped item.
       /// </summary>
@@ -504,6 +522,18 @@ namespace Revit.IFC.Export.Exporter
          bool isSplit = range != null;
          if (exportParts && !PartExporter.CanExportElementInPartExport(familyInstance, isSplit ? overrideLevelId : familyInstance.LevelId, isSplit))
             return;
+
+         // A Family Instance can have its own copy of geometry, or use the symbol's copy with a transform.
+         // The routine below tells us whether to use the Instance's copy or the Symbol's copy.
+         bool useInstanceGeometry = GeometryUtil.UsesInstanceGeometry(familyInstance);
+         Transform trf = familyInstance.GetTransform();
+         if (!IsTransformValid(trf))
+         {
+            // We have found cases where there are family instances with invalid transform
+            // information.  If we find them, ignore them (they won't be visible in Revit,
+            // either.)
+            return;
+         }
 
          Document doc = familyInstance.Document;
          IFCFile file = exporterIFC.GetFile();
@@ -523,10 +553,6 @@ namespace Revit.IFC.Export.Exporter
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(familySymbol);
 
          string familyName = familySymbol.Name;
-         // A Family Instance can have its own copy of geometry, or use the symbol's copy with a transform.
-         // The routine below tells us whether to use the Instance's copy or the Symbol's copy.
-         bool useInstanceGeometry = GeometryUtil.UsesInstanceGeometry(familyInstance);
-         Transform trf = familyInstance.GetTransform();
 
          MaterialAndProfile materialAndProfile = null;
          IFCAnyHandle materialProfileSet = null;
@@ -553,9 +579,10 @@ namespace Revit.IFC.Export.Exporter
          exportType = FamilyExporterUtil.AdjustExportTypeForSchema(exportType, exportType.ValidatedPredefinedType);
 
          bool flipped = doorWindowInfo?.FlippedSymbol ?? false;
+         ElementId overrideMaterialId = ExporterUtil.GetSingleMaterial(familyInstance);
 
          var typeKey = new TypeObjectKey(originalFamilySymbol.Id,
-            overrideLevelId, flipped, exportType);
+            overrideLevelId, flipped, exportType, overrideMaterialId);
 
          FamilyTypeInfo currentTypeInfo = 
             ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
@@ -647,12 +674,15 @@ namespace Revit.IFC.Export.Exporter
                         return; // no proper visible split geometry to export.
                   }
                   else
+                  {
                      geomObjects.Add(exportGeometry);
+                  }
 
+                  bool isExtrusionFriendlyType = IsExtrusionFriendlyType(exportType.ExportInstance);
                   bool tryToExportAsExtrusion = (!ExporterCacheManager.ExportOptionsCache.ExportAs2x2
-                     || IsExtrusionFriendlyType(exportType.ExportInstance));
+                     || isExtrusionFriendlyType);
 
-                  if (IsExtrusionFriendlyType(exportType.ExportInstance))
+                  if (isExtrusionFriendlyType)
                   {
                      // Get a profile name. 
                      string profileName = NamingUtil.GetProfileName(familySymbol);
@@ -665,91 +695,73 @@ namespace Revit.IFC.Export.Exporter
 
                         extraParams.CustomAxis = extrudeDirection;
                         extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXY;
-                     }
-                     else
-                     {
-                        extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryZ;
-                        LocationPoint point = familyInstance.Location as LocationPoint;
 
-                        if (point != null)
-                           orig = point.Point;
-
-                        // TODO: Is this a useful default?  Should it be based
-                        // on the instance transform in some way?
-                        extrudeDirection = XYZ.BasisZ;
-                     }
-
-                     if (solids.Count > 0)
-                     {
-                        FootPrintInfo footprintInfo = null;
-                        // The "extrudeDirection" passed in is in global coordinates if it represents
-                        // a custom axis, while the geometry is in either the FamilyInstance or 
-                        // FamilySymbol coordinate system, depending on the useInstanceGeometry
-                        // flag.  If we aren't using instance geometry, convert the extrusion direction
-                        // and base plane to be in the symbol/geometry space.
-                        XYZ extrusionDirectionToUse = (useInstanceGeometry || !extraParams.HasCustomAxis) ?
-                           extrudeDirection : trf.Inverse.OfVector(extrudeDirection);
-                        Plane basePlaneToUse = GeometryUtil.CreatePlaneByNormalAtOrigin(extrusionDirectionToUse);
-
-                        GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
-                        ExtrusionExporter.ExtraClippingData extraClippingData = null;
-                        IFCAnyHandle bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
-                              categoryId, false, solids, basePlaneToUse, orig, extrusionDirectionToUse, null, out extraClippingData,
-                              out footprintInfo, out materialAndProfile, out extrusionData, addInfo, profileName: profileName);
-                        if (extrusionData != null)
+                        if (solids.Count > 0)
                         {
-                           extraParams.Slope = extrusionData.Slope;
-                           extraParams.ScaledLength = extrusionData.ScaledLength;
-                           extraParams.ExtrusionDirection = extrusionData.ExtrusionDirection;
-                           extraParams.ScaledHeight = extrusionData.ScaledHeight;
-                           extraParams.ScaledWidth = extrusionData.ScaledWidth;
+                           FootPrintInfo footprintInfo = null;
+                           // The "extrudeDirection" passed in is in global coordinates if it represents
+                           // a custom axis, while the geometry is in either the FamilyInstance or 
+                           // FamilySymbol coordinate system, depending on the useInstanceGeometry
+                           // flag.  If we aren't using instance geometry, convert the extrusion direction
+                           // and base plane to be in the symbol/geometry space.
+                           XYZ extrusionDirectionToUse = (useInstanceGeometry || !extraParams.HasCustomAxis) ?
+                              extrudeDirection : trf.Inverse.OfVector(extrudeDirection);
+                           Plane basePlaneToUse = GeometryUtil.CreatePlaneByNormalAtOrigin(extrusionDirectionToUse);
 
-                           extraParams.ScaledArea = extrusionData.ScaledArea;
-                           extraParams.ScaledInnerPerimeter = extrusionData.ScaledInnerPerimeter;
-                           extraParams.ScaledOuterPerimeter = extrusionData.ScaledOuterPerimeter;
-                        }
-
-                        typeInfo.MaterialIdList = extraClippingData.MaterialIds;
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepresentation))
-                        {
-                           representations3D.Add(bodyRepresentation);
-                           repMapTrfList.Add(null);
-                           if (materialAndProfile != null)
-                              typeInfo.MaterialAndProfile = materialAndProfile;   // Keep material and profile information in the type info for later creation
-
-                           if (IsExtrusionFriendlyType(exportType.ExportInstance))
+                           GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
+                           ExtrusionExporter.ExtraClippingData extraClippingData = null;
+                           IFCAnyHandle bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
+                                 categoryId, false, solids, basePlaneToUse, orig, extrusionDirectionToUse, null, out extraClippingData,
+                                 out footprintInfo, out materialAndProfile, out extrusionData, addInfo, profileName: profileName);
+                           if (extrusionData != null)
                            {
-                              if (axisInfo != null)
+                              extraParams.Slope = extrusionData.Slope;
+                              extraParams.ScaledLength = extrusionData.ScaledLength;
+                              extraParams.ExtrusionDirection = extrusionData.ExtrusionDirection;
+                              extraParams.ScaledHeight = extrusionData.ScaledHeight;
+                              extraParams.ScaledWidth = extrusionData.ScaledWidth;
+
+                              extraParams.ScaledArea = extrusionData.ScaledArea;
+                              extraParams.ScaledInnerPerimeter = extrusionData.ScaledInnerPerimeter;
+                              extraParams.ScaledOuterPerimeter = extrusionData.ScaledOuterPerimeter;
+                           }
+
+                           typeInfo.MaterialIdList = extraClippingData.MaterialIds;
+                           if (!IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepresentation))
+                           {
+                              representations3D.Add(bodyRepresentation);
+                              repMapTrfList.Add(null);
+                              if (materialAndProfile != null)
+                                 typeInfo.MaterialAndProfile = materialAndProfile;   // Keep material and profile information in the type info for later creation
+
+                              Transform newLCS = Transform.Identity;
+                              Transform offset = Transform.Identity;
+                              if (materialAndProfile != null)
                               {
-                                 Transform newLCS = Transform.Identity;
-                                 Transform offset = Transform.Identity;
-                                 if (materialAndProfile != null)
+                                 if (materialAndProfile.LCSTransformUsed != null)
                                  {
-                                    if (materialAndProfile.LCSTransformUsed != null)
-                                    {
-                                       // If the Solid creation uses a different LCS, we will use the same LCS for the Axis and transform the Axis to this new LCS
-                                       newLCS = new Transform(materialAndProfile.LCSTransformUsed);
-                                       // The Axis will be offset later to compensate the shift
-                                       offset = newLCS;
-                                    }
+                                    // If the Solid creation uses a different LCS, we will use the same LCS for the Axis and transform the Axis to this new LCS
+                                    newLCS = new Transform(materialAndProfile.LCSTransformUsed);
+                                    // The Axis will be offset later to compensate the shift
+                                    offset = newLCS;
                                  }
+                              }
 
-                                 if (!useInstanceGeometry)
-                                 {
-                                    // If the extrusion is created from the FamilySymbol, the new LCS will be the FamilyIntance transform
-                                    newLCS = trf;
-                                    offset = Transform.Identity;
-                                 }
+                              if (!useInstanceGeometry)
+                              {
+                                 // If the extrusion is created from the FamilySymbol, the new LCS will be the FamilyIntance transform
+                                 newLCS = trf;
+                                 offset = Transform.Identity;
+                              }
 
-                                 ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);
-                                 IFCAnyHandle axisRep = StructuralMemberExporter.CreateStructuralMemberAxis(exporterIFC, familyInstance, catId, axisInfo, newLCS);
-                                 if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
-                                 {
-                                    representations3D.Add(axisRep);
-                                    // This offset is going to be applied later. Need to scale the coordinate into the correct unit scale
-                                    offset.Origin = UnitUtil.ScaleLength(offset.Origin);
-                                    repMapTrfList.Add(offset);
-                                 }
+                              ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);
+                              IFCAnyHandle axisRep = StructuralMemberExporter.CreateStructuralMemberAxis(exporterIFC, familyInstance, catId, axisInfo, newLCS);
+                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
+                              {
+                                 representations3D.Add(axisRep);
+                                 // This offset is going to be applied later. Need to scale the coordinate into the correct unit scale
+                                 offset.Origin = UnitUtil.ScaleLength(offset.Origin);
+                                 repMapTrfList.Add(offset);
                               }
                            }
                         }
@@ -777,9 +789,9 @@ namespace Revit.IFC.Export.Exporter
                      if (exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcPlate)
                         bodyExporterOptions.CollectFootprintHandle = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
 
-                     GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
+                     GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);  
                      bodyData = BodyExporter.ExportBody(exporterIFC, familyInstance, categoryId, ExporterUtil.GetSingleMaterial(familyInstance),
-                           geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName);
+                           geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName, instanceGeometry:useInstanceGeometry);
                      typeInfo.MaterialIdList = bodyData.MaterialIds;
                      offsetTransform = bodyData.OffsetTransform;
 
@@ -966,7 +978,7 @@ namespace Revit.IFC.Export.Exporter
 
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeStyle))
             {
-               wrapper.RegisterHandleWithElementType(familySymbol as ElementType, exportType, typeStyle, propertySets);
+               wrapper.RegisterHandleWithElementType(familySymbol, exportType, typeStyle, propertySets);
 
                typeInfo.Style = typeStyle;
 
@@ -1118,40 +1130,40 @@ namespace Revit.IFC.Export.Exporter
 
          if (familyInstance.AssemblyInstanceId != null && familyInstance.AssemblyInstanceId != ElementId.InvalidElementId)
          {
-            if (ExporterCacheManager.AssemblyInstanceCache.TryGetValue(familyInstance.AssemblyInstanceId, out AssemblyInstanceInfo assInfo))
+            if (overrideLevelId == ElementId.InvalidElementId)
+               overrideLevelId = ExporterCacheManager.LevelInfoCache.GetLevelIdOfObject(doc.GetElement(familyInstance.AssemblyInstanceId));
+
+            double newOffset = trf.Origin.Z;
+            string shapeType = null;
+            foreach (IFCAnyHandle shapeRep in shapeReps)
             {
-               if (overrideLevelId == ElementId.InvalidElementId)
-                  overrideLevelId = assInfo.AssignedLevelId;
-
-               double newOffset = trf.Origin.Z;
-               string shapeType = null;
-               foreach (IFCAnyHandle shapeRep in shapeReps)
+               if (IFCAnyHandleUtil.GetRepresentationIdentifier(shapeRep).Equals("Body"))
                {
-                  if (IFCAnyHandleUtil.GetRepresentationIdentifier(shapeRep).Equals("Body"))
-                  {
-                     shapeType = IFCAnyHandleUtil.GetBaseRepresentationType(shapeRep);
-                  }                  
+                  shapeType = IFCAnyHandleUtil.GetBaseRepresentationType(shapeRep);
                }
+            }
 
-               if (!string.IsNullOrEmpty(shapeType) && (shapeType.Contains("Brep") || shapeType.Equals("Tessellation")))
+            if (!string.IsNullOrEmpty(shapeType) && (shapeType.Contains("Brep") || shapeType.Equals("Tessellation")))
+            {
+               // Use LocationPoint for the offset if any as the Brep/Tessellation will have reference to it
+               LocationPoint loc = familyInstance.Location as LocationPoint;
+               if (loc != null)
                {
-                  // Use LocationPoint for the offset if any as the Brep/Tessellation will have reference to it
-                  LocationPoint loc = familyInstance.Location as LocationPoint;
-                  if (loc != null)
+                  newOffset = loc.Point.Z;
+               }
+               else
+               {
+                  BoundingBoxXYZ bbox = familyInstance.get_BoundingBox(null);
+                  if (bbox != null)
                   {
-                     newOffset = loc.Point.Z;
-                  }
-                  else
-                  {
-                     BoundingBoxXYZ bbox = familyInstance.get_BoundingBox(null);
-                     if (bbox != null)
-                     {
-                        newOffset = bbox.Min.Z;
-                     }
+                     newOffset = bbox.Min.Z;
                   }
                }
 
-               trf.Origin = new XYZ(trf.Origin.X, trf.Origin.Y, newOffset);
+               // The current trf includes a style transformation derived from ExtrusionCreationData. 
+               // But it was not utilized for representation creation in Brep/Tessellation cases, 
+               // using the original coordinates instead, to avoid potential incorrect coordinates.
+               trf.Origin = new XYZ(originalTrf.Origin.X, originalTrf.Origin.Y, newOffset);
             }
          }
 
@@ -1226,25 +1238,7 @@ namespace Revit.IFC.Export.Exporter
                         instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
                            wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
 
-                        IFCAnyHandle placementToUse = localPlacement;
-                        if (!useInstanceGeometry)
-                        {
-                           bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
-                           if (needToCreateOpenings)
-                           {
-                              Transform openingTrf = new Transform(originalTrf);
-                              Transform extraRot = new Transform(originalTrf) { Origin = XYZ.Zero };
-                              openingTrf = openingTrf.Multiply(extraRot);
-                              openingTrf = openingTrf.Multiply(typeInfo.StyleTransform);
-
-                              XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
-                              IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
-                                 openingTrf.get_Basis(2), openingTrf.get_Basis(0));
-                              IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
-                              GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
-                              placementToUse = openingPlacement;
-                           }
-                        }
+                        IFCAnyHandle placementToUse = GetPlacementToUse(file, instanceHandle, localPlacement, extraParams, originalTrf, typeInfo.StyleTransform, useInstanceGeometry);
 
                         OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
                               exporterIFC, placementToUse, setter, wrapper);
@@ -1266,8 +1260,7 @@ namespace Revit.IFC.Export.Exporter
                   case IFCEntityType.IfcDoor:
                   case IFCEntityType.IfcWindow:
                      {
-                        double doorHeight = GetMinSymbolHeight(originalFamilySymbol);
-                        double doorWidth = GetMinSymbolWidth(originalFamilySymbol);
+                        (double doorWidth, double doorHeight) = GetDoorWindowDimensionFromSymbol(originalFamilySymbol, familyInstance);
 
                         double height = UnitUtil.ScaleLength(doorHeight);
                         double width = UnitUtil.ScaleLength(doorWidth);
@@ -1322,8 +1315,12 @@ namespace Revit.IFC.Export.Exporter
                         instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
                            wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
 
-                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
-                              exporterIFC, localPlacement, setter, wrapper);
+                        IFCAnyHandle placementToUse = GetPlacementToUse(file, instanceHandle, localPlacement, extraParams, originalTrf,
+                           typeInfo.StyleTransform, useInstanceGeometry);
+                        Transform offsetTransformToUse = GetOffsetTransformtoUse(offsetTransform, setter.Offset, useInstanceGeometry);
+
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransformToUse,
+                              exporterIFC, placementToUse, setter, wrapper);
                         wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
 
                         if (CreateMaterialAssociation(file, instanceHandle, materialProfileSet, null))
@@ -1336,8 +1333,12 @@ namespace Revit.IFC.Export.Exporter
                         instanceHandle = FamilyExporterUtil.ExportGenericInstance(exportType, exporterIFC, familyInstance,
                            wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
 
-                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
-                              exporterIFC, localPlacement, setter, wrapper);
+                        IFCAnyHandle placementToUse = GetPlacementToUse(file, instanceHandle, localPlacement, extraParams, originalTrf,
+                           typeInfo.StyleTransform, useInstanceGeometry);
+                        Transform offsetTransformToUse = GetOffsetTransformtoUse(offsetTransform, setter.Offset, useInstanceGeometry);
+
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransformToUse,
+                              exporterIFC, placementToUse, setter, wrapper);
 
                         if (RepresentationUtil.RepresentationForStandardCaseFromProduct(exportType.ExportInstance, instanceHandle))
                         {
@@ -1410,37 +1411,10 @@ namespace Revit.IFC.Export.Exporter
                               ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
                         }
 
-                        IFCAnyHandle placementToUse = localPlacement;
-                        if (!useInstanceGeometry)
-                        {
-                           bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
-                           if (needToCreateOpenings)
-                           {
-                              Transform openingTrf = new Transform(originalTrf);
-                              Transform extraRot = new Transform(originalTrf) { Origin = XYZ.Zero };
-                              openingTrf = openingTrf.Multiply(extraRot);
-                              openingTrf = openingTrf.Multiply(typeInfo.StyleTransform);
+                        IFCAnyHandle placementToUse = GetPlacementToUse(file, instanceHandle, localPlacement, extraParams, originalTrf,
+                           typeInfo.StyleTransform, useInstanceGeometry);
+                        Transform offsetTransformToUse = GetOffsetTransformtoUse(offsetTransform, setter.Offset, useInstanceGeometry);
 
-                              XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
-                              IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
-                                 openingTrf.get_Basis(2), openingTrf.get_Basis(0));
-                              IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
-                              GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
-                              placementToUse = openingPlacement;
-                           }
-                        }
-
-                        Transform offsetTransformToUse = null;
-                        if (useInstanceGeometry && !MathUtil.IsAlmostZero(setter.Offset))
-                        {
-                           XYZ offsetOrig = -XYZ.BasisZ * setter.Offset;
-                           Transform setterOffset = Transform.CreateTranslation(offsetOrig);
-                           offsetTransformToUse = offsetTransform.Multiply(setterOffset);
-                        }
-                        else
-                        {
-                           offsetTransformToUse = offsetTransform;
-                        }
                         OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransformToUse,
                            exporterIFC, placementToUse, setter, wrapper);
                         break;
@@ -1639,6 +1613,36 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// Get width and height of door/window based on host type.
+      /// </summary>
+      /// <param name="instance">The instance element.</param>
+      /// <param name="symbol">The type element.</param>
+      /// <returns>Width and height values.</returns>
+      public static (double width, double height) GetDoorWindowDimensionFromSymbol(FamilySymbol symbol, FamilyInstance instance)
+      {
+         // symbol width in X direction
+         double width = GetMinSymbolWidth(symbol);
+
+         double height = 0.0;
+         if (instance?.Host is Wall || instance?.Host is FaceWall)
+         {
+            // symbol height in Z direction
+            height = GetMinSymbolHeight(symbol);
+         }
+         else
+         {
+            // The height of the non-wall hosted families is measured in Y direction
+            Options options = GeometryUtil.GetIFCExportGeometryOptions();
+            GeometryElement windowGeom = symbol.get_Geometry(options);
+            BoundingBoxXYZ bbox = windowGeom?.GetBoundingBox();
+            if (bbox != null)
+               height = bbox.Max.Y - bbox.Min.Y;
+         }
+
+         return (width, height);
+      }
+
+      /// <summary>
       /// Map the cardinal point index from Revit H and V justification. The mapping is not complete since they are not 1-1
       /// </summary>
       /// <param name="familyInstance"></param>
@@ -1726,6 +1730,44 @@ namespace Revit.IFC.Export.Exporter
             return null;
 
          return potentialCurves[0];
+      }
+
+      private static IFCAnyHandle GetPlacementToUse(IFCFile file, IFCAnyHandle instanceHandle, IFCAnyHandle localPlacement, IFCExportBodyParams extraParams, Transform originalTrf, Transform styleTransform, bool useInstanceGeometry)
+      {
+         IFCAnyHandle placementToUse = localPlacement;
+         if (!useInstanceGeometry)
+         {
+            bool needToCreateOpenings = OpeningUtil.NeedToCreateOpenings(instanceHandle, extraParams);
+            if (needToCreateOpenings)
+            {
+               Transform openingTrf = new Transform(originalTrf);
+               Transform extraRot = new Transform(originalTrf) { Origin = XYZ.Zero };
+               openingTrf = openingTrf.Multiply(extraRot);
+               openingTrf = openingTrf.Multiply(styleTransform);
+
+               XYZ scaledOrigin = UnitUtil.ScaleLength(openingTrf.Origin);
+               IFCAnyHandle openingRelativePlacement = ExporterUtil.CreateAxis2Placement3D(file, scaledOrigin,
+                  openingTrf.get_Basis(2), openingTrf.get_Basis(0));
+               IFCAnyHandle openingPlacement = ExporterUtil.CopyLocalPlacement(file, localPlacement);
+               GeometryUtil.SetRelativePlacement(openingPlacement, openingRelativePlacement);
+               placementToUse = openingPlacement;
+            }
+         }
+
+         return placementToUse;
+      }
+
+      private static Transform GetOffsetTransformtoUse(Transform offsetTransform, double offset, bool useInstanceGeometry)
+      {
+         Transform offsetTransformToUse = offsetTransform;
+         if (useInstanceGeometry && !MathUtil.IsAlmostZero(offset))
+         {
+            XYZ offsetOrig = -XYZ.BasisZ * offset;
+            Transform setterOffset = Transform.CreateTranslation(offsetOrig);
+            offsetTransformToUse = offsetTransform.Multiply(setterOffset);
+         }
+
+         return offsetTransformToUse;
       }
 
 #if DEBUG

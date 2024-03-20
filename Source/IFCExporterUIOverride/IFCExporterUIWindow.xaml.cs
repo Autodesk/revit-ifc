@@ -657,6 +657,7 @@ namespace BIM.IFC.Export.UI
          m_configurationsMap.Remove(configuration.Name);
          listBoxConfigurations.Items.Remove(configuration);
          listBoxConfigurations.SelectedIndex = 0;
+         IFCExport.LastSelectedConfig.Remove(configuration.Name);
       }
 
       /// <summary>
@@ -769,6 +770,8 @@ namespace BIM.IFC.Export.UI
             m_configurationsMap.Remove(oldName);
             m_configurationsMap.AddOrReplace(configuration);
             UpdateConfigurationsList(newName);
+            if (IFCExport.LastSelectedConfig.ContainsKey(oldName))
+               IFCExport.LastSelectedConfig.Remove(oldName);
          }
       }
 

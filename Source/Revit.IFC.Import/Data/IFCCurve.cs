@@ -532,10 +532,10 @@ namespace Revit.IFC.Import.Data
          }
 
          // TODO: set graphics style for footprint curves.
-         IFCRepresentationIdentifier repId = (parentRep == null) ? IFCRepresentationIdentifier.Unhandled : parentRep.Identifier;
+         IFCRepresentationIdentifier repId = (parentRep == null) ? IFCRepresentationIdentifier.Other : parentRep.Identifier;
          bool createModelGeometry = (repId == IFCRepresentationIdentifier.Body) || 
             (repId == IFCRepresentationIdentifier.Axis) || 
-            (repId == IFCRepresentationIdentifier.Unhandled);
+            (repId == IFCRepresentationIdentifier.Other);
          bool createFootprintGeometry = (repId == IFCRepresentationIdentifier.FootPrint);
 
          ElementId gstyleId = ElementId.InvalidElementId;

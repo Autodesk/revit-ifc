@@ -135,6 +135,9 @@ namespace Revit.IFC.Import.Data
          if (createdElementId != ElementId.InvalidElementId)
             return createdElementId;
 
+         if (!materialInfo.IsValid())
+            return ElementId.InvalidElementId;
+
          string revitMaterialName = GetMaterialName(id, originalName);
 
          createdElementId = Material.Create(doc, revitMaterialName);

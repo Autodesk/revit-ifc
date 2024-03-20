@@ -166,7 +166,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The ParameterCache object.
       /// </summary>
-      static ParameterCache m_ParameterCache;
+      public static ParameterCache ParameterCache { get; set; } = new ParameterCache();
 
       /// <summary>
       /// The PartExportedCache object.
@@ -382,12 +382,17 @@ namespace Revit.IFC.Export.Utility
       static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> ComplexPropertyCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
 
       /// <summary>
+
+      /// Cache for Base Quantities that require separate calculation.
+      /// </summary>
+      static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> BaseQuantitiesCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
+
       /// Cache for information whether a QuantitySet specified in the Dict. value has been created for the elementHandle
       /// </summary>
       static public HashSet<(IFCAnyHandle, string)> QtoSetCreated { get; set; } = new HashSet<(IFCAnyHandle, string)>();
 
       /// <summary>
-      /// The ParameterCache object.
+      /// The AllocatedGeometryObjectCache object.
       /// </summary>
       public static AllocatedGeometryObjectCache AllocatedGeometryObjectCache
       {
@@ -513,19 +518,6 @@ namespace Revit.IFC.Export.Utility
             if (m_AttributeCache == null)
                m_AttributeCache = new AttributeCache();
             return m_AttributeCache;
-         }
-      }
-
-/// <summary>
-/// The ParameterCache object.
-/// </summary>
-public static ParameterCache ParameterCache
-      {
-         get
-         {
-            if (m_ParameterCache == null)
-               m_ParameterCache = new ParameterCache();
-            return m_ParameterCache;
          }
       }
 
@@ -979,7 +971,7 @@ public static ParameterCache ParameterCache
          get
          {
             if (m_ClassificationCache == null)
-               m_ClassificationCache = new ClassificationCache(ExporterCacheManager.Document);
+               m_ClassificationCache = new ClassificationCache(Document);
             return m_ClassificationCache;
          }
          set { m_ClassificationCache = value; }
@@ -1037,13 +1029,8 @@ public static ParameterCache ParameterCache
       }
 
       /// <summary>
-      /// Contains transformation which defines World Coordinate System of Host Revit file.
-      /// HostRvtFileWCS.Origin must store unscaled values.
-      /// </summary>
-      public static Transform HostRvtFileWCS { get; set; } = Transform.Identity;
-
-      /// <summary>
-      /// The LevelInfoCache object.
+      /// The LevelInfoCache object.  This contains extra information on top of
+      /// IFCLevelInfo, and will eventually replace it.
       /// </summary>
       public static LevelInfoCache LevelInfoCache { get; set; } = new LevelInfoCache();
 
@@ -1370,6 +1357,11 @@ public static ParameterCache ParameterCache
       }
 
       /// <summary>
+      /// A cache of offset applied to the host model (from the shared coords) to be used in the Link file
+      /// </summary>
+      public static Transform ScaledTransformOffsetFromSharedCoords { get; set; } = Transform.Identity;
+
+      /// <summary>
       /// Collection of IFC Handles to delete
       /// </summary>
       public static HashSet<IFCAnyHandle> HandleToDeleteCache
@@ -1407,6 +1399,7 @@ public static ParameterCache ParameterCache
             m_Global3DOriginHandle = null;
             GUIDCache.Clear();
             OwnerHistoryHandle = null;
+            ParameterCache.Clear();
             ProjectHandle = null;
             m_UnitsCache = null;
          }
@@ -1420,7 +1413,7 @@ public static ParameterCache ParameterCache
 
          if (m_AllocatedGeometryObjectCache != null)
             m_AllocatedGeometryObjectCache.DisposeCache();
-         ParameterUtil.ClearParameterCache();
+         ParameterUtil.ClearParameterValueCaches();
 
          m_AllocatedGeometryObjectCache = null;
          m_AreaSchemeCache = null;
@@ -1436,6 +1429,7 @@ public static ParameterCache ParameterCache
          m_ClassificationLocationCache = null;
          ContainmentCache = new ContainmentCache();
          ComplexPropertyCache.Clear();
+         BaseQuantitiesCache.Clear();
          m_CreatedInternalPropertySets = null;
          m_CreatedSpecialPropertySets = null;
          m_CurveAnnotationCache = null;
@@ -1468,13 +1462,13 @@ public static ParameterCache ParameterCache
          MaterialRelationsCache = new MaterialRelationsCache();
          m_MEPCache = null;
          m_Object2DCurves = null;
-         m_ParameterCache = null;
          m_PartExportedCache = null;
          m_PresentationLayerSetCache = null;
          m_PresentationStyleCache = null;
          m_PropertyInfoCache = null;
          m_PropertyMapCache = null;
          m_PropertySetsForTypeCache = null;
+         m_PreDefinedPropertySetsForTypeCache = null;
          m_RailingCache = null;
          m_RailingSubElementCache = null;
          m_SpaceBoundaryCache = null;

@@ -49,7 +49,7 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          ElementId typeId = coupler.GetTypeId();
-         FamilySymbol familySymbol = ExporterCacheManager.Document.GetElement(typeId) as FamilySymbol;
+         FamilySymbol familySymbol = coupler.Document.GetElement(typeId) as FamilySymbol;
          if (familySymbol == null)
             return;
 
@@ -68,7 +68,7 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType);
+            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType, ElementId.InvalidElementId);
             
             FamilyTypeInfo currentTypeInfo = 
                ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);

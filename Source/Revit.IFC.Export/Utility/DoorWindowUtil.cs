@@ -1057,7 +1057,8 @@ namespace Revit.IFC.Export.Utility
             using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
             {
                double height = 0.0, width = 0.0;
-               if (GeometryUtil.ComputeHeightWidthOfCurveLoop(tmpCutLoop, lcs, out height, out width))
+               OpeningUtil.GetOpeningDirections(wallElement, out _, out XYZ wallAxis);
+               if (GeometryUtil.ComputeHeightWidthOfCurveLoop(tmpCutLoop, wallAxis, out height, out width))
                {
                   extraParams.ScaledHeight = UnitUtil.ScaleLength(height);
                   extraParams.ScaledWidth = UnitUtil.ScaleLength(width);

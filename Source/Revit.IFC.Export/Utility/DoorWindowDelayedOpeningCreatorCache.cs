@@ -91,7 +91,9 @@ namespace Revit.IFC.Export.Utility
          {
             foreach (DoorWindowDelayedOpeningCreator creator in creators.Values)
             {
-               creator.Execute(exporterIFC, doc);
+               //Geometry can become invalid when ExtrusionData or Solids are null or count is 0
+               if (creator.HasValidGeometry)
+                  creator.Execute(exporterIFC, doc);
             }
          }
       }

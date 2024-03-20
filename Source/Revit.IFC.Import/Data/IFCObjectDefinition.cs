@@ -483,7 +483,15 @@ namespace Revit.IFC.Import.Data
          if (!IFCCategoryUtil.CanImport(EntityType, PredefinedType))
             throw new InvalidOperationException("Don't Import");
 
-         HashSet<IFCAnyHandle> nests = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcObjectDefinition, "Nests");
+         HashSet<IFCAnyHandle> nests = new HashSet<IFCAnyHandle>();
+         try
+         {
+            nests = IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcObjectDefinition, "Nests");
+         }
+         catch
+         {
+            // The IFC2x3 schema does not have "Nests" attribute. In EDM based Revit versions it causes an exception EDM Toolkit Error: Attribute undefined. 
+         }
          if (nests != null && nests.Count != 0)
             m_NestsHandle = nests.First();
 

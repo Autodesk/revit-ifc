@@ -65,7 +65,7 @@ namespace Revit.IFC.Import.Data
             foreach (IFCAnyHandle property in properties)
             {
                IFCProperty ifcProperty = IFCProperty.ProcessIFCProperty(property);
-               if (ifcProperty != null)
+               if (ifcProperty?.Name != null)
                   IFCProperties[ifcProperty.Name] = ifcProperty;
             }
          }
@@ -155,9 +155,9 @@ namespace Revit.IFC.Import.Data
 
                BindingMap bindingMap = Importer.TheCache.GetParameterBinding(doc);
                if (reinsert)
-                  bindingMap.ReInsert(definition, binding, BuiltInParameterGroup.PG_IFC);
+                  bindingMap.ReInsert(definition, binding, GroupTypeId.Ifc);
                else
-                  bindingMap.Insert(definition, binding, BuiltInParameterGroup.PG_IFC);
+                  bindingMap.Insert(definition, binding, GroupTypeId.Ifc);
             }
 
             parameter = element.get_Parameter(guid);

@@ -54,7 +54,7 @@ namespace Revit.IFC.Export.Utility
             try
             {
                handle = handleAndInfo.Item1;
-               if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
+               if (!IFCAnyHandleUtil.IsValidHandle(handle))
                {
                   ElementIdToHandleAndInfo.Remove(elementId);
                   handle = null;

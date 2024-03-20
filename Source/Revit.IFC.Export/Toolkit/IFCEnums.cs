@@ -1394,7 +1394,7 @@ namespace Revit.IFC.Export.Toolkit
       VaporPermeabilityUnit,
       VolumetricFlowRateUnit,
       RotationalFrequencyUnit,
-      Toruquenit,
+      Torqueunit,
       MomentOfInertiaUnit,
       LinearMomentUnit,
       LinearForceUnit,

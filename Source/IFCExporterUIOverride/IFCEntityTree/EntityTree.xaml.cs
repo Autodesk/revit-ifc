@@ -862,10 +862,14 @@ namespace BIM.IFC.Export.UI
          PredefinedTypeTreeView.ItemsSource = null;
 
          // Set the selection status of the node in the original tree as well
-         TreeViewItem origTreeNode = m_TreeViewItemDict[(cbElem.Parent as TreeViewItem).Name];
-         ToggleButton origTreeNodeTB = origTreeNode.Header as ToggleButton;
-         if (origTreeNodeTB != null)
-            origTreeNodeTB.IsChecked = false;
+         // Note that when we change schema, the selected item may no longer exist.
+         string name = (cbElem.Parent as TreeViewItem).Name;
+         if (m_TreeViewItemDict.TryGetValue(name, out TreeViewItem origTreeNode))
+         {
+            ToggleButton origTreeNodeTB = origTreeNode.Header as ToggleButton;
+            if (origTreeNodeTB != null)
+               origTreeNodeTB.IsChecked = false;
+         }
       }
 
       private void button_Reset_Click(object sender, RoutedEventArgs e)

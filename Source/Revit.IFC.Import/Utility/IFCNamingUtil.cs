@@ -51,8 +51,9 @@ namespace Revit.IFC.Import.Utility
          cleanName.Replace('|', '/');
          cleanName.Replace(';', ',');
          cleanName.Replace('?', '.');
-         cleanName.Replace('`', '\'');
          cleanName.Replace('~', '-');
+         cleanName.Replace('`', '\'');
+         cleanName.Replace('\\', '/');
 
          return cleanName.ToString();
       }

@@ -6,7 +6,7 @@ Set CreatedResourceShortName=%~3
 set ToolsFolder=%~4
 set ProjectDir=%~dp0
 set lang=en-US
-set ResBaseName=IFCExportUI.IFCExportUIResources.%lang%
+set ResBaseName=IFCExportUI.IFCExporterUIResources.%lang%
 
 pushd %OutputDir%
 call "%ToolsFolder%\SetVCVars.bat" x86> NUL
