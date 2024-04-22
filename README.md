@@ -61,5 +61,5 @@ More Labels of this type can be added as needed/requested by users and developer
 Ideally, each Issue should include Version and Component labels from the reporting user. The Autodesk developers will verify and correct those labels if needed, as well as add a Status label. Developers may also add an internal Autodesk Jira number/link to an Issue, but this is for internal reference and tracking only and not accessible to the general public.
 
 ## License
-The Revit IFC open source uses the Lesser General Public License version 2.0 (LGPLv2). It relies on ANTLR 4, which uses the BSD license.
+The Revit IFC open source uses the Library General Public License version 2.0 (LGPLv2). It relies on ANTLR 4, which uses the BSD license.
 It also includes Autodesk.SteelConnections.ASIFC.DLL, which is a proprietary file owned by Autodesk and licensed under the Autodesk Terms of Use. By using this DLL, you agree to the Autodesk Terms of Use (https://www.autodesk.com/company/terms-of-use/en/general-terms) and the Autodesk Privacy Statement (https://www.autodesk.com/company/legal-notices-trademarks/privacy-statement). You may only use this DLL with the Revit IFC open-source project. Autodesk.SteelConnections.ASIFC.DLL is provided as-is.
