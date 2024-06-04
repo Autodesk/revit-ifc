@@ -136,7 +136,7 @@ namespace Revit.IFC.Import.Data
             IList<IFCSolidInfo> clonedGeometry = CloneElementGeometry(doc, this, this, false);
             foreach (IFCSolidInfo solid in clonedGeometry)
             {
-               if (CutSolidByVoids(solid))
+               if (CutSolidByVoids(solid, null))
                   geomObjs.Add(solid.GeometryObject);
             }
 

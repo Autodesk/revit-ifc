@@ -526,12 +526,14 @@ namespace Revit.IFC.Export.Utility
       /// <param name="categoryId">The category id.</param>
       /// <param name="contextOfItems">The context for which the different subtypes of representation are valid.</param>
       /// <param name="bodyItems">Set of geometric representation items that are defined for this representation.</param>
+      /// <param name="is3D">If true, creates a GeometricSet instead of an Annotation2D.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateAnnotationSetRep(ExporterIFC exporterIFC, Element element, ElementId categoryId,
-            IFCAnyHandle contextOfItems, HashSet<IFCAnyHandle> bodyItems)
+            IFCAnyHandle contextOfItems, HashSet<IFCAnyHandle> bodyItems, bool is3D)
       {
          string identifierOpt = "Annotation";
-         string repTypeOpt = ShapeRepresentationType.Annotation2D.ToString(); // this is by IFC2x3 convention
+         string repTypeOpt = is3D ? ShapeRepresentationType.GeometricSet.ToString() :
+            ShapeRepresentationType.Annotation2D.ToString();
 
          IFCAnyHandle bodyRepresentation = CreateShapeRepresentation(exporterIFC, element, categoryId,
              contextOfItems, identifierOpt, repTypeOpt, bodyItems);
@@ -640,6 +642,8 @@ namespace Revit.IFC.Export.Utility
          if (boundingBoxRep != null)
             bodyReps.Add(boundingBoxRep);
 
+         // NOTE: This can create an invalid IfcProductDefinitionShape with no representations.  The expectation is
+         // that these will be created later, but at the moment that is not guaranteed.
          return IFCInstanceExporter.CreateProductDefinitionShape(exporterIFC.GetFile(), null, null, bodyReps);
       }
 

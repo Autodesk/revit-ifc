@@ -951,13 +951,16 @@
     <value>Export as separate IFCs</value>
   </data>
   <data name="IFCVersion4x3" xml:space="preserve">
-    <value>IFC4x3 [Experimental]</value>
+    <value>IFC4x3</value>
   </data>
   <data name="ExportMaterialPropertySets" xml:space="preserve">
     <value>Export material property sets</value>
   </data>
   <data name="IFCSG" xml:space="preserve">
     <value>IFC-SG Regulatory Requirements View</value>
+  </data>
+  <data name="ExportHostsAsSingleEntity" xml:space="preserve">
+    <value>Always export faceted floors and roofs as a single IFC entity</value>
   </data>
   <data name="AddressInformationTooltip" xml:space="preserve">
     <value>Entering a value here will reset the Purpose field to "USERDEFINED".</value>
@@ -973,5 +976,236 @@
   </data>
   <data name="UseVisibleRevitNameTooltip" xml:space="preserve">
     <value>Use this option to export IFC entity name as the visible Revit name.</value>
+  </data>
+  <data name="ExportMappingTemplates" xml:space="preserve">
+    <value>Export Mapping Templates</value>
+  </data>
+  <data name="IFCClass" xml:space="preserve">
+    <value>IFC Class</value>
+  </data>
+  <data name="ManageIFCExportMappingSettings" xml:space="preserve">
+    <value>Manage IFC Export Mapping Settings</value>
+  </data>
+  <data name="PredefinedType" xml:space="preserve">
+    <value>Predefined Type</value>
+  </data>
+  <data name="RevitCategory" xml:space="preserve">
+    <value>Revit Category</value>
+  </data>
+  <data name="TemplateSettings" xml:space="preserve">
+    <value>Template Settings</value>
+  </data>
+  <data name="UserDefinedType" xml:space="preserve">
+    <value>User-defined Type</value>
+  </data>
+  <data name="FacilityBridge" xml:space="preserve">
+    <value>Bridge (IfcBridge)</value>
+  </data>
+  <data name="FacilityBuilding" xml:space="preserve">
+    <value>Building (IfcBuilding)</value>
+  </data>
+  <data name="FacilityMarineFacility" xml:space="preserve">
+    <value>Marine Facility (IfcMarineFacility)</value>
+  </data>
+  <data name="FacilityRailway" xml:space="preserve">
+    <value>Railway (IfcRailway)</value>
+  </data>
+  <data name="FacilityRoad" xml:space="preserve">
+    <value>Road (IfcRoad)</value>
+  </data>
+  <data name="FacilityType" xml:space="preserve">
+    <value>Facility Type</value>
+  </data>
+  <data name="BridgeArched" xml:space="preserve">
+    <value>Arched (ARCHED)</value>
+  </data>
+  <data name="BridgeCableStayed" xml:space="preserve">
+    <value>Cable Stayed (CABLESTAYED)</value>
+  </data>
+  <data name="BridgeCantilever" xml:space="preserve">
+    <value>Cantilever (CANTILEVER)</value>
+  </data>
+  <data name="BridgeCulvert" xml:space="preserve">
+    <value>Culvert (CULVERT)</value>
+  </data>
+  <data name="BridgeFramework" xml:space="preserve">
+    <value>Framework (FRAMEWORK)</value>
+  </data>
+  <data name="BridgeGirder" xml:space="preserve">
+    <value>Girder (GIRDER)</value>
+  </data>
+  <data name="BridgeSuspension" xml:space="preserve">
+    <value>Suspension (SUSPENSION)</value>
+  </data>
+  <data name="BridgeTruss" xml:space="preserve">
+    <value>Truss (TRUSS)</value>
+  </data>
+  <data name="FacilityPredefinedType" xml:space="preserve">
+    <value>Facility Predefined Type</value>
+  </data>
+  <data name="MarineFacilityBarrierBeach" xml:space="preserve">
+    <value>Barrier Beach (BARRIERBEACH)</value>
+  </data>
+  <data name="MarineFacilityBreakwater" xml:space="preserve">
+    <value>Breakwater (BREAKWATER)</value>
+  </data>
+  <data name="MarineFacilityCanal" xml:space="preserve">
+    <value>Canal (CANAL)</value>
+  </data>
+  <data name="MarineFacilityDryDock" xml:space="preserve">
+    <value>Dry Dock (DRYDOCK)</value>
+  </data>
+  <data name="MarineFacilityFloatingDock" xml:space="preserve">
+    <value>Floating Dock (FLOATINGDOCK)</value>
+  </data>
+  <data name="MarineFacilityHydrolift" xml:space="preserve">
+    <value>Hydrolift (HYDROLIFT)</value>
+  </data>
+  <data name="MarineFacilityJetty" xml:space="preserve">
+    <value>Jetty (JETTY)</value>
+  </data>
+  <data name="MarineFacilityLaunchRecovery" xml:space="preserve">
+    <value>Launch Recovery Facility (LAUNCHRECOVERYFACILITY)</value>
+  </data>
+  <data name="MarineFacilityMarineDefense" xml:space="preserve">
+    <value>Marine Defense (MARINEDEFENCE)</value>
+  </data>
+  <data name="MarineFacilityNavigationalChannel" xml:space="preserve">
+    <value>Navigational Channel (NAVIGATIONALCHANNEL)</value>
+  </data>
+  <data name="MarineFacilityPort" xml:space="preserve">
+    <value>Port (PORT)</value>
+  </data>
+  <data name="MarineFacilityQuay" xml:space="preserve">
+    <value>Quay (QUAY)</value>
+  </data>
+  <data name="MarineFacilityRevetment" xml:space="preserve">
+    <value>Revetment (REVETMENT)</value>
+  </data>
+  <data name="MarineFacilityShipLift" xml:space="preserve">
+    <value>Shiplift (SHIPLIFT)</value>
+  </data>
+  <data name="MarineFacilityShipLock" xml:space="preserve">
+    <value>Ship Lock (SHIPLOCK)</value>
+  </data>
+  <data name="MarineFacilityShipyard" xml:space="preserve">
+    <value>Shipyard (SHIPYARD)</value>
+  </data>
+  <data name="MarineFacilitySlipway" xml:space="preserve">
+    <value>Slipway (SLIPWAY)</value>
+  </data>
+  <data name="MarineFacilityWaterway" xml:space="preserve">
+    <value>Waterway (WATERWAY)</value>
+  </data>
+  <data name="MarineFacilityWaterwayShiplift" xml:space="preserve">
+    <value>Waterway Shiplift (WATERWAYSHIPLIFT)</value>
+  </data>
+  <data name="NotDefined" xml:space="preserve">
+    <value>Not Defined</value>
+  </data>
+  <data name="ModifyIFCCategoryMapping" xml:space="preserve">
+    <value>Modify IFC category mapping template</value>
+  </data>
+  <data name="OwnerHistoryLastModified" xml:space="preserve">
+    <value>Set "Last Modified" user to the Author in Project Information</value>
+  </data>
+  <data name="OwnerHistoryLastModifiedTooltip" xml:space="preserve">
+    <value>Populate the IfcOwnerHistory "LastModified" attribute with the Author information set in Project Information</value>
+  </data>
+  <data name="CategoryMapping" xml:space="preserve">
+    <value>Category Mapping</value>
+  </data>
+  <data name="Ellipses" xml:space="preserve">
+    <value>...</value>
+  </data>
+  <data name="ByCategory" xml:space="preserve">
+    <value>&lt;By Category&gt;</value>
+  </data>
+  <data name="ByCategoryNoBrackets" xml:space="preserve">
+    <value>By Category</value>
+  </data>
+  <data name="ExportCategoryMappingDialogName" xml:space="preserve">
+    <value>Export IFC Category Mapping</value>
+  </data>
+  <data name="ExportCategoryMappingFilter" xml:space="preserve">
+    <value>IFC Category Mapping Files (*.txt)|*.txt</value>
+  </data>
+  <data name="CategoryMappingHelp" xml:space="preserve">
+    <value>How do I modify IFC export mapping settings?</value>
+  </data>
+  <data name="ImportCategoryMappingDialogName" xml:space="preserve">
+    <value>Import IFC Category Mapping</value>
+  </data>
+  <data name="IFCNewCategoryTemplate" xml:space="preserve">
+    <value>New Settings Template</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="TemplateName" xml:space="preserve">
+    <value>Template name</value>
+  </data>
+  <data name="IFCRenameCategoryTemplate" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="RenamePreviousName" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="RenameNewName" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="IFCCopyCategoryTemplate" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="NewTemplateDefaultName" xml:space="preserve">
+    <value>New Template</value>
+  </data>
+  <data name="IFCDeleteCategoryTemplate" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="ResetAll" xml:space="preserve">
+    <value>Reset all</value>
+  </data>
+  <data name="ResetToDefault" xml:space="preserve">
+    <value>Reset table to Revit default settings</value>
+  </data>
+  <data name="IFCDeleteCategoryTemplateMessage" xml:space="preserve">
+    <value>Delete {0} ?</value>
+  </data>
+  <data name="ResetRowToDefault" xml:space="preserve">
+    <value>Reset row to Revit default settings</value>
+  </data>
+  <data name="TemplateNameTooltip" xml:space="preserve">
+    <value>Enter unique template name.</value>
+  </data>
+  <data name="CopyTemplateTooltip" xml:space="preserve">
+    <value>Duplicate template</value>
+  </data>
+  <data name="CreateNewTemplateTooltip" xml:space="preserve">
+    <value>Create new template</value>
+  </data>
+  <data name="DeleteTemplateTooltip" xml:space="preserve">
+    <value>Delete template</value>
+  </data>
+  <data name="ExportTemplateTooltip" xml:space="preserve">
+    <value>Export template</value>
+  </data>
+  <data name="ImportTemplateTooltip" xml:space="preserve">
+    <value>Import template</value>
+  </data>
+  <data name="MoreTooltip" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="RenameTemplateTooltip" xml:space="preserve">
+    <value>Rename template</value>
+  </data>
+  <data name="SaveTemplateTooltip" xml:space="preserve">
+    <value>Save changes to template</value>
+  </data>
+  <data name="SelectedCheckboxTooltip" xml:space="preserve">
+    <value>Selected categories will be exported</value>
+  </data>
+  <data name="IFCInvalidCategoryMappingFile" xml:space="preserve">
+    <value>This is not a valid category mapping file.</value>
   </data>
 </root>

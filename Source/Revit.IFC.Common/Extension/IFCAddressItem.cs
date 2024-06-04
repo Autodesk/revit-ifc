@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
-using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 
 namespace Revit.IFC.Common.Extensions
 {
@@ -34,7 +34,7 @@ namespace Revit.IFC.Common.Extensions
       /// The purpose of the address.
       /// </summary>
       private string m_purpose = null;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string Purpose
       {
          get { return m_purpose; }
@@ -50,7 +50,7 @@ namespace Revit.IFC.Common.Extensions
       /// The description of the address.
       /// </summary>
       private string m_description = null;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string Description
       {
          get { return m_description; }
@@ -67,7 +67,7 @@ namespace Revit.IFC.Common.Extensions
       /// The user defined purpose of the address.
       /// </summary>
       private string m_userDefinedPurpose = null;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string UserDefinedPurpose
       {
          get { return m_userDefinedPurpose; }
@@ -83,7 +83,7 @@ namespace Revit.IFC.Common.Extensions
       /// The internal location of the address.
       /// </summary>
       private string m_internalLocation = null;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string InternalLocation
       {
          get { return m_internalLocation; }
@@ -99,7 +99,7 @@ namespace Revit.IFC.Common.Extensions
       /// First line for the address.
       /// </summary>
       private string m_addressLine1 = string.Empty;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string AddressLine1
       {
          get { return m_addressLine1; }
@@ -115,7 +115,7 @@ namespace Revit.IFC.Common.Extensions
       /// Second line for the address. We limit to just 2 line addresses typically done in many applications.
       /// </summary>
       private string m_addressLine2 = string.Empty;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string AddressLine2
       {
          get { return m_addressLine2; }
@@ -131,7 +131,7 @@ namespace Revit.IFC.Common.Extensions
       /// PO Box address
       /// </summary>
       private string m_pOBox = null;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string POBox
       {
          get { return m_pOBox; }
@@ -147,7 +147,7 @@ namespace Revit.IFC.Common.Extensions
       /// The city of the address.
       /// </summary>
       private string m_townOrCity = null;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string TownOrCity
       {
          get { return m_townOrCity; }
@@ -163,7 +163,7 @@ namespace Revit.IFC.Common.Extensions
       /// Region, province or state of the address.
       /// </summary>
       private string m_regionOrState = null;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string RegionOrState
       {
          get { return m_regionOrState; }
@@ -179,7 +179,7 @@ namespace Revit.IFC.Common.Extensions
       /// The postal code or zip code of the address
       /// </summary>
       private string m_postalCode = null;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string PostalCode
       {
          get { return m_postalCode; }
@@ -195,7 +195,7 @@ namespace Revit.IFC.Common.Extensions
       /// The country of the address.
       /// </summary>
       private string m_country = null;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string Country
       {
          get { return m_country; }

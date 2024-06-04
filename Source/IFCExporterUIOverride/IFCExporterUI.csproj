@@ -1,136 +1,75 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{0A108B5A-C874-4B79-A5D6-E73A7A0B80E8}</ProjectGuid>
     <AddinGUID>e78da2e3-7e89-464c-97cd-2212c8be3fa8</AddinGUID>
     <AddinType>INT</AddinType>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BIM.IFC.Export.UI</RootNamespace>
     <IFCExporterUIAssemblyName>Autodesk.IFC.Export.UI</IFCExporterUIAssemblyName>
     <AssemblyName>$(IFCExporterUIAssemblyName)</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <AssociatedParentPath>IFCExporterUI</AssociatedParentPath>
-    <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <WarningLevel>4</WarningLevel>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-    <LangVersion>7.3</LangVersion>
+     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-    <LangVersion>7.3</LangVersion>
+     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Slow_Debug|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-    <LangVersion>7.3</LangVersion>
+     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.props" />
   <ItemGroup>
     <Reference Include="Autodesk.UI.Windows">
       <HintPath>$(RevitExePath)\Autodesk.UI.Windows.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Xaml">
-      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    <Reference Include="Autodesk.Weave.Wpf">
+      <HintPath>$(RevitExePath)\Autodesk.Weave.Wpf.dll</HintPath>
     </Reference>
-    <Reference Include="WindowsBase" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="COBieCompanyInfoTab.xaml.cs">
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="COBieCompanyInfoTab.xaml.cs">
       <DependentUpon>COBieCompanyInfoTab.xaml</DependentUpon>
     </Compile>
-    <Compile Include="COBieProjectInfoTab.xaml.cs">
+    <Compile Update="COBieProjectInfoTab.xaml.cs">
       <DependentUpon>COBieProjectInfoTab.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IFCAddressInformationUI.xaml.cs">
+    <Compile Update="IFCAddressInformationUI.xaml.cs">
       <DependentUpon>IFCAddressInformationUI.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IFCClassificationUI.xaml.cs">
+    <Compile Update="IFCClassificationUI.xaml.cs">
       <DependentUpon>IFCClassificationUI.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IFCEntityTree\BrowseIFCEntityServer.cs" />
-    <Compile Include="IFCEntityTree\EntityTree.xaml.cs">
+    <Compile Update="IFCEntityTree\EntityTree.xaml.cs">
       <DependentUpon>EntityTree.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IFCEnumExtensions.cs" />
-    <Compile Include="IFCExchangeRequirements.cs" />
-    <Compile Include="IFCFileHeaderInformationUI.xaml.cs">
+    <Compile Update="IFCFileHeaderInformationUI.xaml.cs">
       <DependentUpon>IFCFileHeaderInformationUI.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IFCLinkedFileExportAs.cs" />
-    <Compile Include="IFCPhaseAttributes.cs" />
-    <Compile Include="IFCPropertySets.cs" />
-    <Compile Include="IFCRenameExportSetup.xaml.cs">
+    <Compile Update="IFCRenameExportSetup.xaml.cs">
       <DependentUpon>IFCRenameExportSetup.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IFCCommandOverrideApplication.cs" />
-    <Compile Include="IFCNewExportSetup.xaml.cs">
+    <Compile Update="IFCNewExportSetup.xaml.cs">
       <DependentUpon>IFCNewExportSetup.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Win32API.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IFCExport.xaml.cs">
+    <Compile Update="IFCExport.xaml.cs">
       <DependentUpon>IFCExport.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IFCExportConfiguration.cs" />
-    <Compile Include="IFCExportConfigurationsMap.cs" />
-    <Compile Include="IFCExporterUIWindow.xaml.cs">
+    <Compile Update="IFCExporterUIWindow.xaml.cs">
       <DependentUpon>IFCExporterUIWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IFCExportResult.cs" />
-    <Compile Include="IFCFileFormatAttributes.cs" />
-    <Compile Include="IFCSitePlacementAttributes.cs" />
-    <Compile Include="IFCSpaceBoundaryAttributes.cs" />
-    <Compile Include="IFCUIUtility.cs" />
-    <Compile Include="IFCVersionAttributes.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Properties\Resources.Designer.cs">
+    <Compile Update="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Properties\Settings.Designer.cs">
+    <Compile Update="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -140,87 +79,19 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-    <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4 Client Profile %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
-      <Visible>False</Visible>
-      <ProductName>Windows Installer 3.1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="COBieCompanyInfoTab.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="COBieProjectInfoTab.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="IFCAddressInformationUI.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="IFCClassificationUI.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="IFCEntityTree\EntityTree.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="IFCFileHeaderInformationUI.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="IFCRenameExportSetup.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="IFCExport.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="IFCExporterUIWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="IFCNewExportSetup.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
+    <Resource Include="icons\arrow_down.png" />
+    <Resource Include="icons\arrow_right.png" />
     <Resource Include="icons\create.ico" />
+    <Resource Include="icons\data-refresh.png" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="icons\delete.ico" />
+    <Resource Include="icons\duplicate_ico.ico" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="icons\rename.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="icons\duplicate_ico.ico" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="icons\load.ico" />
@@ -231,18 +102,16 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Foundation\UserInterfaceUtility\UserInterfaceUtility.csproj">
-      <Project>{80f7e25d-8198-4083-b30e-b60ee420c27e}</Project>
-      <Name>UserInterfaceUtility</Name>
       <Private>False</Private>
+      <ExcludeAssets>All</ExcludeAssets>
+      <PrivateAssets>All</PrivateAssets>
     </ProjectReference>
   </ItemGroup>
   <Import Project=".\IFCExporterUI.props" />
   <PropertyGroup>
-  </PropertyGroup>
-  <PropertyGroup>
     <PostBuildEvent>
-$(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dll $(AddinGUID)
-</PostBuildEvent>
+      $(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dll $(AddinGUID)
+   </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -251,4 +120,34 @@ $(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dl
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Compile Remove="IFCVersionExtensions.cs" />
+    <Compile Remove="IFCEntityTree\PredefinedTypeSelection.xaml.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="icons\alert.png" />
+    <None Remove="icons\arrow_down.png" />
+    <None Remove="icons\arrow_right.png" />
+    <None Remove="icons\data-refresh.png" />
+    <None Remove="icons\duplicate_ico.ico" />
+    <None Remove="icons\search.png" />
+    <None Remove="icons\template_add.png" />
+    <None Remove="icons\template_copy.png" />
+    <None Remove="icons\template_delete.png" />
+    <None Remove="icons\template_export.png" />
+    <None Remove="icons\template_import.png" />
+    <None Remove="icons\template_save.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Remove="IFCEntityTree\PredefinedTypeSelection.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
 </Project>

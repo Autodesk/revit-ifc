@@ -8,6 +8,8 @@ using System.Windows.Controls.Primitives;
 using Autodesk.Revit.DB;
 using Revit.IFC.Common.Utility;
 using Autodesk.UI.Windows;
+using System.Printing;
+using Revit.IFC.Export.Utility;
 
 namespace BIM.IFC.Export.UI
 {
@@ -16,66 +18,186 @@ namespace BIM.IFC.Export.UI
    /// </summary>
    public partial class EntityTree : ChildWindow
    {
-      TreeView m_TreeView = new TreeView();
-      TreeViewItem PrevSelPDefItem = null;
-      IDictionary<string, TreeViewItem> m_TreeViewItemDict = new Dictionary<string, TreeViewItem>(StringComparer.OrdinalIgnoreCase);
-      IFCEntityTrie m_EntityTrie = new IFCEntityTrie();
-      string m_IfcVersion = null;
-      bool m_SingleNodeSelection = false;
-      HashSet<string> ExclElementSet = null;
-      TreeViewItem PrevSelEntityItem = null;
-      string TreeSelectionDesc = null;
+      private TreeView TreeView { get; } = new TreeView();
 
-      bool m_ShowTypeNodeOnly = false;
+      private TreeViewItem PrevSelPDefItem { get; set; } = null;
+
+      private IDictionary<string, TreeViewItem> TreeViewItemDict { get; set; } = new Dictionary<string, TreeViewItem>(StringComparer.OrdinalIgnoreCase);
+
+      private IFCEntityTrie m_EntityTrie = null;
+
+      private string CurrentIFCVersion { get; set; } = null;
+
+      private HashSet<string> ExclElementSet { get; set; } = null;
+      
+      private TreeViewItem PrevSelEntityItem { get; set; } = null;
+      
+      private string TreeSelectionDesc { get; set; } = null;
+
+      private bool SingleNodeSelection { get; set; } = false;
+
+      private bool ShowTypeNodeOnly { get; set; } = false;
+
+      private bool AllowIfcAnnotation { get; set; } = false;
 
       /// <summary>
-      /// Flag to indicate the the null selection is meant to reset the selected entity
+      /// Flag to indicate that the null selection is meant to reset the selected entity
       /// </summary>
-      public bool isReset { get; private set; } = false;
+      public bool IsReset { get; private set; } = false;
 
       /// <summary>
-      /// Constructor for initializing EntityTree without IFCVersion and other defaults
+      /// A list of localized names for categories that allow mapping to IfcAnnotation.
       /// </summary>
-      /// <param name="showTypeNodeOnly">option to show IfcTypeObject tree only</param>
-      /// <param name="preSelectItem">pre-select an item (works for a single node selection only)</param>
-      /// <param name="preSelectPdef">pre-select the predefined type</param>
-      public EntityTree(bool showTypeNodeOnly = false, string preSelectEntity = null, string preSelectPdef = null)
+      private static ISet<BuiltInCategory> AllowedCategoryIdsForIfcAnnotation = new HashSet<BuiltInCategory>();
+
+      /// <summary>
+      /// A list of localized names for categories that allow mapping to IfcAnnotation.
+      /// </summary>
+      private static ISet<string> AllowedCategoriesForIfcAnnotation = new HashSet<string>();
+
+      private static void InitAllowedCategoryIdsForIfcAnnotation()
       {
-         m_IfcVersion = null;
-         ExclElementSet = new HashSet<string>();
-         m_SingleNodeSelection = true;
-         TreeSelectionDesc = "";
-         m_ShowTypeNodeOnly = showTypeNodeOnly;
-         InitializeEntityTree(preSelectEntity, preSelectPdef);
+         if (AllowedCategoryIdsForIfcAnnotation.Count == 0)
+         {
+            AllowedCategoryIdsForIfcAnnotation = new HashSet<BuiltInCategory>()
+            {
+               BuiltInCategory.OST_Lines,
+               BuiltInCategory.OST_SiteProperty
+            };
+         }
+      }
+
+      private static void InitAllowedCategoriesForIfcAnnotation(Document document)
+      {
+         if (AllowedCategoriesForIfcAnnotation.Count == 0)
+         {
+            AllowedCategoriesForIfcAnnotation = new HashSet<string>();
+            foreach (BuiltInCategory categoryId in AllowedCategoryIdsForIfcAnnotation)
+            {
+               AllowedCategoriesForIfcAnnotation.Add(
+                  Category.GetCategory(document, categoryId).Name);
+            };
+         }
+      }
+
+      private static bool IsIfcAnnotationAllowedForCategory(Document document, string categoryName)
+      {
+         if (categoryName == null)
+         {
+            return false;
+         }
+
+         InitAllowedCategoryIdsForIfcAnnotation();
+
+         InitAllowedCategoriesForIfcAnnotation(document);
+
+         return AllowedCategoriesForIfcAnnotation.Contains(categoryName);
+      }
+
+      private static bool IsIfcAnnotationAllowedForCategoryId(BuiltInCategory categoryId)
+      {
+         InitAllowedCategoryIdsForIfcAnnotation();
+
+         return AllowedCategoryIdsForIfcAnnotation.Contains(categoryId);
       }
 
       /// <summary>
       /// Constructor for initializing EntityTree
       /// </summary>
-      /// <param name="ifcVersion">the selected IFC version. This will "lock" the schema version in the dialog</param>
+      /// <param name="showTypeNodeOnly">Option to show IfcTypeObject tree only</param>
+      /// <param name="preSelectItem">Pre-select an item (works for a single node selection only)</param>
+      /// <param name="preSelectPdef">Pre-select the predefined type</param>
+      /// <param name="byCategory">Show the "By Category" checkbox if not null, and set value appropriately.</param>
+      public EntityTree(IList<ElementId> elementIds, bool showTypeNodeOnly, string preSelectEntity, string preSelectPdef, 
+         bool? byCategory)
+      {
+         AllowIfcAnnotation = true;
+         Document document = IFCCommandOverrideApplication.TheDocument;
+         foreach (ElementId elementId in elementIds)
+         {
+            Element element = document.GetElement(elementId);
+            (_, ElementId categoryId) = ExporterUtil.GetSpecificCategoryForElement(element);
+
+            BuiltInCategory builtInCategory = (BuiltInCategory)categoryId.Value;
+            if (!IsIfcAnnotationAllowedForCategoryId(builtInCategory))
+            {
+               AllowIfcAnnotation = false;
+               break;
+            }
+         }
+
+         CurrentIFCVersion = null;
+         ExclElementSet = FillSetFromList(null);
+         SingleNodeSelection = true;
+         TreeSelectionDesc = null;
+         ShowTypeNodeOnly = showTypeNodeOnly;
+         InitializeEntityTree(preSelectEntity, preSelectPdef, byCategory);
+      }
+
+      /// <summary>
+      /// Constructor for initializing EntityTree
+      /// </summary>
+      /// <param name="showTypeNodeOnly">Option to show IfcTypeObject tree only</param>
+      /// <param name="preSelectItem">Pre-select an item (works for a single node selection only)</param>
+      /// <param name="preSelectPdef">Pre-select the predefined type</param>
+      /// <param name="byCategory">Show the "By Category" checkbox if not null, and set value appropriately.</param>
+      public EntityTree(CategoryMappingNode currMappingNode)
+      {
+         IFCMappingInfo mappingInfo = currMappingNode.MappingInfo;
+         CategoryMappingNode parentNode = currMappingNode.Parent;
+
+         bool? byCategory = null;
+
+         Document document = IFCCommandOverrideApplication.TheDocument;
+         AllowIfcAnnotation = IsIfcAnnotationAllowedForCategory(document, mappingInfo.CategoryName);
+         
+         if (parentNode != null)
+         {
+            byCategory = string.IsNullOrEmpty(mappingInfo.IfcClass);
+            AllowIfcAnnotation = AllowIfcAnnotation || IsIfcAnnotationAllowedForCategory(document, parentNode.MappingInfo.CategoryName);
+         }
+
+         CurrentIFCVersion = null;
+         ExclElementSet = FillSetFromList(null);
+         SingleNodeSelection = true;
+         TreeSelectionDesc = null;
+         ShowTypeNodeOnly = false;
+         InitializeEntityTree(mappingInfo.IfcClass, mappingInfo.PredefinedType, byCategory);
+      }
+
+      /// <summary>
+      /// Constructor for initializing EntityTree
+      /// </summary>
+      /// <param name="ifcVersion">the selected IFC version, if given. This will "lock" the schema version in the dialog</param>
       /// <param name="excludeFilter">the initial list of the excluded entities. Can be used to initialize the setting</param>
       /// <param name="singleNodeSelection">true if the tree is used for a single node selection</param>
       /// <param name="showTypeNodeOnly">option to show IfcTypeObject tree only</param>
       /// <param name="preSelectItem">preselect an item (works for a single node selection only)</param>
       /// <param name="preSelectPdef">pre-select the predefined type</param>
-      public EntityTree(IFCVersion ifcVersion, string excludeFilter, string desc, bool singleNodeSelection = false, bool showTypeNodeOnly = false, string preSelectEntity = null, string preSelectPdef = null)
+      /// <param name="byCategory">Show the "By Category" checkbox if not null, and set value appropriately.</param>
+      public EntityTree(IFCVersion ifcVersion, string excludeFilter, string desc, 
+         bool singleNodeSelection)
       {
-         m_IfcVersion = IfcSchemaEntityTree.SchemaName(ifcVersion);
+         CurrentIFCVersion = IfcSchemaEntityTree.SchemaName(ifcVersion);
          ExclElementSet = FillSetFromList(excludeFilter);
-         m_SingleNodeSelection = singleNodeSelection;
+         SingleNodeSelection = singleNodeSelection;
          TreeSelectionDesc = desc;
-         m_ShowTypeNodeOnly = showTypeNodeOnly;
-         InitializeEntityTree(preSelectEntity, preSelectPdef);
+         ShowTypeNodeOnly = false;
+         InitializeEntityTree(null, null, null);
       }
 
-      void InitializeEntityTree(string preSelectEntity, string preSelectPDef)
+      void InitializeEntityTree(string preSelectEntity, string preSelectPDef, bool? byCategory)
       {
          IfcSchemaEntityTree.GetAllEntityDict();
          InitializeComponent();
 
          textBox_Search.Focus();
 
-         if (m_SingleNodeSelection)
+         CheckBox_ByCategory.Visibility = (byCategory != null) ? System.Windows.Visibility.Visible :
+            System.Windows.Visibility.Hidden;
+         CheckBox_ByCategory.IsChecked = byCategory.GetValueOrDefault(false);
+
+         if (SingleNodeSelection)
          {
             label_Show.Visibility = System.Windows.Visibility.Hidden;
             comboBox_ShowItems.Visibility = System.Windows.Visibility.Hidden;
@@ -90,15 +212,15 @@ namespace BIM.IFC.Export.UI
          // If the IFC schema version is selected for export, the combobox will be disabled for selection
          ComboBox_IFCSchema.IsEnabled = false;
          // Assign default
-         if (string.IsNullOrEmpty(m_IfcVersion))
+         if (string.IsNullOrEmpty(CurrentIFCVersion))
          {
-            m_IfcVersion = IFCVersion.IFC4.ToString();
+            CurrentIFCVersion = IFCVersion.IFC4.ToString();
             ComboBox_IFCSchema.IsEnabled = true;
          }
 
          ComboBox_IFCSchema.ItemsSource = IfcSchemaEntityTree.GetAllCachedSchemaNames();
-         ComboBox_IFCSchema.SelectedItem = m_IfcVersion;
-         if (m_SingleNodeSelection)
+         ComboBox_IFCSchema.SelectedItem = CurrentIFCVersion;
+         if (SingleNodeSelection)
          {
             Grid_Main.ColumnDefinitions[2].MinWidth = 200;
          }
@@ -115,7 +237,7 @@ namespace BIM.IFC.Export.UI
          PreSelectItem(preSelectEntity, preSelectPDef);
          IfcSchemaEntityTree.GenerateEntityTrie(ref m_EntityTrie);
       }
-
+      
       /// <summary>
       /// Pre-select the Entity (and Predefined Type) if they are set by the server (only valid for single selection mode)
       /// </summary>
@@ -123,9 +245,9 @@ namespace BIM.IFC.Export.UI
       /// <param name="preSelectPDef">Predefined Type to be pre-selected</param>
       void PreSelectItem(string preSelectEntity, string preSelectPDef)
       {
-         if (m_SingleNodeSelection && !string.IsNullOrEmpty(preSelectEntity))
+         if (SingleNodeSelection && !string.IsNullOrEmpty(preSelectEntity))
          {
-            if (m_TreeViewItemDict.TryGetValue(preSelectEntity, out TreeViewItem assocTypeItem))
+            if (TreeViewItemDict.TryGetValue(preSelectEntity, out TreeViewItem assocTypeItem))
             {
                (assocTypeItem.Header as ToggleButton).IsChecked = true;
                assocTypeItem.BringIntoView();
@@ -152,11 +274,61 @@ namespace BIM.IFC.Export.UI
                PrevSelPDefItem = null;
             }
          }
-         else if (!m_SingleNodeSelection && !string.IsNullOrEmpty(preSelectEntity))
+         else if (!SingleNodeSelection && !string.IsNullOrEmpty(preSelectEntity))
          {
-            if (m_TreeViewItemDict.TryGetValue(preSelectEntity, out TreeViewItem assocTypeItem))
+            if (TreeViewItemDict.TryGetValue(preSelectEntity, out TreeViewItem assocTypeItem))
                assocTypeItem.BringIntoView();
          }
+      }
+
+      private bool AllowSelection()
+      {
+         if (CheckBox_ByCategory.Visibility == System.Windows.Visibility.Hidden)
+            return true;
+
+         return !CheckBox_ByCategory.IsChecked.GetValueOrDefault(false);
+      }
+
+      private (TreeViewItem, IfcSchemaEntityNode) AddTreeViewItem(bool add, string name, 
+         IfcSchemaEntityTree ifcEntityTree, bool recurse)
+      {
+         if (!add)
+            return (null, null);
+
+         IfcSchemaEntityNode entityNode;
+         if (!ifcEntityTree.IfcEntityDict.TryGetValue(name, out entityNode))
+            return (null, null);
+
+         // From IfcProductNode, recursively get all the children nodes and assign them into the treeview node (they are similar in the form)
+         TreeViewItem treeViewItem = new TreeViewItem();
+         treeViewItem.Name = name;
+         if (SingleNodeSelection)
+         {
+            treeViewItem.Header = entityNode.Name + " " + TreeSelectionDesc;
+         }
+         else
+         {
+            ToggleButton itemNode = new CheckBox();
+            itemNode.Name = name;
+            itemNode.Content = name;
+            itemNode.IsChecked = true;
+            treeViewItem.Header = itemNode;
+            itemNode.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
+            itemNode.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
+         }
+         treeViewItem.IsExpanded = true;
+         treeViewItem.FontWeight = FontWeights.Bold;
+
+         if (recurse)
+         {
+            TreeView.Items.Add(GetNode(entityNode, treeViewItem, ExclElementSet));
+         }
+         else
+         {
+            TreeView.Items.Add(treeViewItem);
+         }
+
+         return (treeViewItem, entityNode);
       }
 
       void LoadTreeviewFilterElement()
@@ -164,138 +336,84 @@ namespace BIM.IFC.Export.UI
          button_Reset.IsEnabled = true;
          try
          {
-            string schemaFile = m_IfcVersion + ".xsd";
-            // Process IFCXml schema here, then search for IfcProduct and build TreeView beginning from that node. Allow checks for the tree nodes. Grey out (and Italic) the abstract entity
-            schemaFile = System.IO.Path.Combine(DirectoryUtil.IFCSchemaLocation, schemaFile);
+            string schemaFile = CurrentIFCVersion + ".xsd";
+            // Process ifcXML schema here, then search for IfcProduct and build TreeView beginning
+            // from that node. Allow checks for the tree nodes. Grey out (and Italic) abstract
+            // entities.
+            schemaFile = Path.Combine(DirectoryUtil.IFCSchemaLocation, schemaFile);
             FileInfo schemaFileInfo = new FileInfo(schemaFile);
-            IFCEntityTrie entityTrie = new IFCEntityTrie();
+            m_EntityTrie = new IFCEntityTrie();
 
-            IfcSchemaEntityTree ifcEntityTree = IfcSchemaEntityTree.GetEntityDictFor(m_IfcVersion);
-            if (ifcEntityTree != null || m_TreeView.Items.Count == 0)
+            IfcSchemaEntityTree ifcEntityTree = IfcSchemaEntityTree.GetEntityDictFor(CurrentIFCVersion);
+            if (ifcEntityTree != null || TreeView.Items.Count == 0)
             {
-               m_TreeView.Items.Clear();
-               m_TreeViewItemDict.Clear();
+               TreeView.Items.Clear();
+               TreeViewItemDict.Clear();
 
-               if (!m_ShowTypeNodeOnly)
-               {
-                  IfcSchemaEntityNode ifcProductNode;
-                  if (ifcEntityTree.IfcEntityDict.TryGetValue("IfcProduct", out ifcProductNode))
-                  {
-                     // From IfcProductNode, recursively get all the children nodes and assign them into the treeview node (they are similar in the form)
-                     TreeViewItem prod = new TreeViewItem();
-                     prod.Name = "IfcProduct";
-                     if (m_SingleNodeSelection)
-                        prod.Header = ifcProductNode.Name + " " + TreeSelectionDesc;
-                     else
-                     {
-                        ToggleButton prodNode = new CheckBox();
-                        prodNode.Name = prod.Name;
-                        prodNode.Content = prod.Name;
-                        prodNode.IsChecked = true;
-                        prod.Header = prodNode;
-                        prodNode.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
-                        prodNode.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
-                     }
-                     prod.IsExpanded = true;
-                     prod.FontWeight = FontWeights.Bold;
-                     m_TreeView.Items.Add(GetNode(ifcProductNode, prod, ExclElementSet));
-                  }
-               }
+               AddTreeViewItem(!ShowTypeNodeOnly, "IfcProduct", ifcEntityTree, true);
+               AddTreeViewItem(true,"IfcTypeProduct", ifcEntityTree, true);
 
-               IfcSchemaEntityNode ifcTypeProductNode;
-               if (ifcEntityTree.IfcEntityDict.TryGetValue("IfcTypeProduct", out ifcTypeProductNode))
+               TreeViewItem groupHeader;
+               IfcSchemaEntityNode ifcGroupNode;
+               (groupHeader, ifcGroupNode)= AddTreeViewItem(!ShowTypeNodeOnly, "IfcGroup", ifcEntityTree, false);
+
+               if (groupHeader != null && ifcGroupNode != null)
                {
-                  // From IfcTypeProductNode, recursively get all the children nodes and assign them into the treeview node (they are similar in the form)
-                  TreeViewItem typeProd = new TreeViewItem();
-                  typeProd.Name = "IfcTypeProduct";
-                  typeProd.Header = ifcTypeProductNode.Name + " " + TreeSelectionDesc;
-                  if (m_SingleNodeSelection)
-                     typeProd.Header = ifcTypeProductNode.Name + " " + TreeSelectionDesc;
+                  // From IfcGroup Node, recursively get all the children nodes and assign them
+                  // into the treeview node (they are similar in the form)
+                  TreeViewItem groupNode = new TreeViewItem();
+                  ToggleButton groupNodeItem;
+                  if (SingleNodeSelection)
+                     groupNodeItem = new RadioButton();
                   else
-                  {
-                     ToggleButton typeProdNode = new CheckBox();
-                     typeProdNode.Name = typeProd.Name;
-                     typeProdNode.Content = typeProd.Name;
-                     typeProdNode.IsChecked = true;
-                     typeProd.Header = typeProdNode;
-                     typeProdNode.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
-                     typeProdNode.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
-                  }
-                  typeProd.IsExpanded = true;
-                  typeProd.FontWeight = FontWeights.Bold;
-                  m_TreeView.Items.Add(GetNode(ifcTypeProductNode, typeProd, ExclElementSet));
-               }
+                     groupNodeItem = new CheckBox();
+                  groupNode.Name = "IfcGroup";
+                  groupNode.Header = groupNodeItem;
+                  groupNode.IsExpanded = true;
+                  TreeViewItemDict.Add(groupNode.Name, groupNode);
+                  m_EntityTrie.AddIFCEntityToDict(groupNode.Name);
 
-               if (!m_ShowTypeNodeOnly)
-               {
-                  IfcSchemaEntityNode ifcGroupNode;
-                  if (ifcEntityTree.IfcEntityDict.TryGetValue("IfcGroup", out ifcGroupNode))
-                  {
-                     // For IfcGroup, a header is neaded because the IfcGroup itself is not a Abstract entity
-                     TreeViewItem groupHeader = new TreeViewItem();
-                     groupHeader.Name = "IfcGroup";
-                     if (m_SingleNodeSelection)
-                        groupHeader.Header = "IfcGroup" + " " + TreeSelectionDesc;
-                     else
-                     {
-                        ToggleButton groupHeaderNode = new CheckBox();
-                        groupHeaderNode.Name = groupHeader.Name;
-                        groupHeaderNode.Content = groupHeader.Name;
-                        groupHeaderNode.IsChecked = true;
-                        groupHeader.Header = groupHeaderNode;
-                        groupHeaderNode.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
-                        groupHeaderNode.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
-                     }
-                     groupHeader.IsExpanded = true;
-                     groupHeader.FontWeight = FontWeights.Bold;
-                     m_TreeView.Items.Add(groupHeader);
+                  groupNodeItem.Name = "IfcGroup";
+                  groupNodeItem.Content = "IfcGroup";
+                  groupNodeItem.FontWeight = FontWeights.Normal;
+                  groupNodeItem.IsChecked = true;         // Default is always Checked
+                  if (ExclElementSet.Contains(groupNode.Name) || SingleNodeSelection)
+                     groupNodeItem.IsChecked = false;     // if the name is inside the excluded element hashset, UNcheck the checkbox (= remember the earlier choice)
 
-                     // From IfcGroup Node, recursively get all the children nodes and assign them into the treeview node (they are similar in the form)
-                     TreeViewItem groupNode = new TreeViewItem();
-                     ToggleButton groupNodeItem;
-                     if (m_SingleNodeSelection)
-                        groupNodeItem = new RadioButton();
-                     else
-                        groupNodeItem = new CheckBox();
-                     groupNode.Name = "IfcGroup";
-                     groupNode.Header = groupNodeItem;
-                     groupNode.IsExpanded = true;
-                     m_TreeViewItemDict.Add(groupNode.Name, groupNode);
-                     m_EntityTrie.AddIFCEntityToDict(groupNode.Name);
+                  groupNodeItem.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
+                  groupNodeItem.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
 
-                     groupNodeItem.Name = "IfcGroup";
-                     groupNodeItem.Content = "IfcGroup";
-                     groupNodeItem.FontWeight = FontWeights.Normal;
-                     groupNodeItem.IsChecked = true;         // Default is always Checked
-                     if (ExclElementSet.Contains(groupNode.Name) || m_SingleNodeSelection)
-                        groupNodeItem.IsChecked = false;     // if the name is inside the excluded element hashset, UNcheck the checkbox (= remember the earlier choice)
-
-                     groupNodeItem.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
-                     groupNodeItem.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
-
-                     groupHeader.Items.Add(GetNode(ifcGroupNode, groupNode, ExclElementSet));
-                  }
+                  groupHeader.Items.Add(GetNode(ifcGroupNode, groupNode, ExclElementSet));
                }
             }
             else
             {
                // Check all elements that have been excluded before for this configuration
-               foreach (TreeViewItem tvItem in m_TreeView.Items)
+               foreach (TreeViewItem tvItem in TreeView.Items)
+               {
                   UnCheckSelectedNode(tvItem, ExclElementSet);
+               }
             }
+
+            bool isEnabled = AllowSelection();
+            TreeView.IsEnabled = isEnabled;
+            IFCEntityTreeView.IsEnabled = isEnabled;
          }
          catch
          {
             // Error above in processing - disable the tree view.
-            m_TreeView.IsEnabled = false;
+            CheckBox_ByCategory.IsEnabled = false;
+            IFCEntityTreeView.IsEnabled = false;
+            TreeView.IsEnabled = false;
          }
-         IFCEntityTreeView.ItemsSource = m_TreeView.Items;
+
+         IFCEntityTreeView.ItemsSource = TreeView.Items;
       }
 
       void UnCheckSelectedNode(TreeViewItem node, HashSet<string> exclElementSet)
       {
          // No need to do anything for single selection mode
-         if (m_SingleNodeSelection)
+         if (SingleNodeSelection)
             return;
 
          CheckBox chkbox = node.Header as CheckBox;
@@ -310,30 +428,41 @@ namespace BIM.IFC.Export.UI
 
       TreeViewItem GetNode(IfcSchemaEntityNode ifcNode, TreeViewItem thisNode, HashSet<string> exclSet)
       {
+         Document document = IFCCommandOverrideApplication.TheDocument;
+         bool foundIfcAnnotation = false;
          foreach (IfcSchemaEntityNode ifcNodeChild in ifcNode.GetChildren())
          {
+            string ifcClassName = ifcNodeChild.Name;
+            
             // Skip deprecated entity
-            if (IfcSchemaEntityTree.IsDeprecatedOrUnsupported(m_IfcVersion, ifcNodeChild.Name))
+            if (IfcSchemaEntityTree.IsDeprecatedOrUnsupported(CurrentIFCVersion, ifcClassName))
+            {
                continue;
+            }
+
+            if (!AllowIfcAnnotation && !foundIfcAnnotation && string.Compare(ifcClassName, "IfcAnnotation") == 0)
+            {
+               foundIfcAnnotation = true;
+               continue;
+            }
 
             TreeViewItem childNode = new TreeViewItem();
-            if (m_SingleNodeSelection)
+            if (SingleNodeSelection)
             {
-               childNode.Name = ifcNodeChild.Name;
-               m_TreeViewItemDict.Add(childNode.Name, childNode);
-               m_EntityTrie.AddIFCEntityToDict(ifcNodeChild.Name);
+               childNode.Name = ifcClassName;
+               TreeViewItemDict.Add(ifcClassName, childNode);
+               m_EntityTrie.AddIFCEntityToDict(ifcClassName);
 
                if (ifcNodeChild.isAbstract)
                {
-                  childNode.Header = ifcNodeChild.Name;
+                  childNode.Header = ifcClassName;
                   childNode.FontWeight = FontWeights.Normal;
                }
                else
                {
-                  ToggleButton childNodeItem;
-                  childNodeItem = new RadioButton();
-                  childNodeItem.Name = ifcNodeChild.Name;
-                  childNodeItem.Content = ifcNodeChild.Name;
+                  ToggleButton childNodeItem = new RadioButton();
+                  childNodeItem.Name = ifcClassName;
+                  childNodeItem.Content = ifcClassName;
                   childNodeItem.FontWeight = FontWeights.Normal;
                   childNodeItem.IsChecked = false;
                   childNodeItem.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
@@ -344,7 +473,7 @@ namespace BIM.IFC.Export.UI
             else
             {
                childNode.Name = ifcNodeChild.Name;
-               m_TreeViewItemDict.Add(childNode.Name, childNode);
+               TreeViewItemDict.Add(childNode.Name, childNode);
                m_EntityTrie.AddIFCEntityToDict(ifcNodeChild.Name);
 
                ToggleButton childNodeItem;
@@ -372,7 +501,7 @@ namespace BIM.IFC.Export.UI
       {
          ToggleButton cbItem = sender as ToggleButton;
          TreeViewItem node = cbItem.Parent as TreeViewItem;
-         if (m_SingleNodeSelection)
+         if (SingleNodeSelection)
             CheckUncheckSingleSelection(node, true);
          else
             CheckOrUnCheckThisNodeAndBelow(node, isChecked: true);
@@ -382,7 +511,7 @@ namespace BIM.IFC.Export.UI
       {
          ToggleButton cbItem = sender as ToggleButton;
          TreeViewItem node = cbItem.Parent as TreeViewItem;
-         if (m_SingleNodeSelection)
+         if (SingleNodeSelection)
             CheckOrUnCheckThisNodeAndBelow(node, false);
          else
             CheckOrUnCheckThisNodeAndBelow(node, isChecked: false);
@@ -400,7 +529,7 @@ namespace BIM.IFC.Export.UI
          if (isChecked)
          {
             PrevSelEntityItem = thisNode;
-            InitializePreDefinedTypeSelection(m_IfcVersion, thisNode.Name);
+            InitializePreDefinedTypeSelection(CurrentIFCVersion, thisNode.Name);
          }
       }
 
@@ -420,7 +549,7 @@ namespace BIM.IFC.Export.UI
          if (thisNode.Name.Equals(clName))
          {
             TreeViewItem assocTypeItem;
-            if (m_TreeViewItemDict.TryGetValue(tyName, out assocTypeItem))
+            if (TreeViewItemDict.TryGetValue(tyName, out assocTypeItem))
             {
                ToggleButton assocType = assocTypeItem.Header as ToggleButton;
                if (assocType != null)
@@ -430,7 +559,7 @@ namespace BIM.IFC.Export.UI
          else if (thisNode.Name.Equals(tyName))
          {
             TreeViewItem assocEntityItem;
-            if (m_TreeViewItemDict.TryGetValue(clName, out assocEntityItem))
+            if (TreeViewItemDict.TryGetValue(clName, out assocEntityItem))
             {
                ToggleButton assocType = assocEntityItem.Header as ToggleButton;
                if (assocType != null)
@@ -464,7 +593,7 @@ namespace BIM.IFC.Export.UI
          if (thisNode.Name.Equals(clName))
          {
             TreeViewItem assocTypeItem;
-            if (m_TreeViewItemDict.TryGetValue(tyName, out assocTypeItem))
+            if (TreeViewItemDict.TryGetValue(tyName, out assocTypeItem))
             {
                ToggleButton assocType = assocTypeItem.Header as ToggleButton;
                if (assocType != null)
@@ -474,7 +603,7 @@ namespace BIM.IFC.Export.UI
          else if (thisNode.Name.Equals(tyName))
          {
             TreeViewItem assocEntityItem;
-            if (m_TreeViewItemDict.TryGetValue(clName, out assocEntityItem))
+            if (TreeViewItemDict.TryGetValue(clName, out assocEntityItem))
             {
                ToggleButton assocType = assocEntityItem.Header as ToggleButton;
                if (assocType != null)
@@ -546,7 +675,7 @@ namespace BIM.IFC.Export.UI
          if (!DialogResult.HasValue || DialogResult.Value == false)
             return filteredElemList;
 
-         foreach (TreeViewItem tvChld in m_TreeView.Items)
+         foreach (TreeViewItem tvChld in TreeView.Items)
             filteredElemList += GetSelectedEntity(tvChld, false);
          return filteredElemList;
       }
@@ -561,7 +690,7 @@ namespace BIM.IFC.Export.UI
          if (!DialogResult.HasValue || DialogResult.Value == false)
             return filteredElemList;
 
-         foreach (TreeViewItem tvChld in m_TreeView.Items)
+         foreach (TreeViewItem tvChld in TreeView.Items)
             filteredElemList += GetSelectedEntity(tvChld, true);
          if (filteredElemList.EndsWith(";"))
             filteredElemList = filteredElemList.Remove(filteredElemList.Length - 1);
@@ -584,18 +713,9 @@ namespace BIM.IFC.Export.UI
          return filteredElemList;
       }
 
-      /// <summary>
-      /// Return the selected IFC schema version
-      /// </summary>
-      /// <returns>the IFC schema version</returns>
-      public string IFCVersionUsed()
-      {
-         return m_IfcVersion;
-      }
-
       void ClearTreeViewChecked()
       {
-         foreach (TreeViewItem tvItem in m_TreeView.Items)
+         foreach (TreeViewItem tvItem in TreeView.Items)
             ClearTreeviewChecked(tvItem);
       }
 
@@ -636,41 +756,51 @@ namespace BIM.IFC.Export.UI
       private void Button_Cancel_Click(object sender, RoutedEventArgs e)
       {
          DialogResult = false;
-         isReset = false;
+         IsReset = false;
          Close();
       }
 
       private void Button_OK_Click(object sender, RoutedEventArgs e)
       {
          DialogResult = true;
-         if (m_SingleNodeSelection)
+         if (SingleNodeSelection)
          {
-            if (string.IsNullOrEmpty(GetSelectedEntity()) || string.IsNullOrEmpty(GetSelectedPredefinedType()))
-               isReset = true;
-            else
-               isReset = false;
+            IsReset = string.IsNullOrEmpty(GetSelectedEntity()) ||
+               string.IsNullOrEmpty(GetSelectedPredefinedType());
          }
          Close();
+      }
+      private void CheckBox_ByCategory_Clicked(object sender, RoutedEventArgs e)
+      {
+         bool byCategory = !AllowSelection();
+         if (byCategory)
+         {
+            ClearTreeViewChecked();
+            PredefinedTypeTreeView.ItemsSource = null;
+            PrevSelPDefItem = null;
+         }
+         IFCEntityTreeView.IsEnabled = !byCategory;
+         PredefinedTypeTreeView.IsEnabled = !byCategory;
       }
 
       private void ComboBox_IFCSchema_SelectionChanged(object sender, SelectionChangedEventArgs e)
       {
          string currSelEntity = null;
          string currSelPdef = null;
-         if (m_SingleNodeSelection)
+         if (SingleNodeSelection)
          {
             currSelEntity = PrevSelEntityItem?.Name;
             currSelPdef = PrevSelPDefItem?.Name;
          }
 
          string selIFCSchema = ComboBox_IFCSchema.SelectedItem.ToString();
-         if (!m_IfcVersion.Equals(selIFCSchema))
+         if (!CurrentIFCVersion.Equals(selIFCSchema))
          {
-            m_IfcVersion = selIFCSchema;
+            CurrentIFCVersion = selIFCSchema;
             m_EntityTrie = new IFCEntityTrie();
             LoadTreeviewFilterElement();
 
-            if (m_SingleNodeSelection)
+            if (SingleNodeSelection)
             {
                PreSelectItem(currSelEntity, currSelPdef);
             }
@@ -770,7 +900,7 @@ namespace BIM.IFC.Export.UI
 
       private void TreeViewReturnToDefault()
       {
-         IFCEntityTreeView.ItemsSource = m_TreeView.Items;
+         IFCEntityTreeView.ItemsSource = TreeView.Items;
          button_Reset.IsEnabled = true;
          button_CollapseAll.IsEnabled = true;
          button_ExpandAll.IsEnabled = true;
@@ -792,13 +922,13 @@ namespace BIM.IFC.Export.UI
          {
             foreach (string item in searchResults)
             {
-               ToggleButton origItem = m_TreeViewItemDict[item].Header as ToggleButton;
+               ToggleButton origItem = TreeViewItemDict[item].Header as ToggleButton;
                if (origItem == null)
                   continue;   // Skip non-ToggleButton item
 
                TreeViewItem childNode = new TreeViewItem();
                ToggleButton childNodeItem;
-               if (m_SingleNodeSelection)
+               if (SingleNodeSelection)
                   childNodeItem = new RadioButton();
                else
                   childNodeItem = new CheckBox();
@@ -809,7 +939,7 @@ namespace BIM.IFC.Export.UI
 
                // set check status following the original selection           
                childNodeItem.IsChecked = origItem.IsChecked;
-               if (m_SingleNodeSelection && origItem.IsChecked == true)
+               if (SingleNodeSelection && origItem.IsChecked == true)
                   prevSelItem = childNode;
 
                childNodeItem.Checked += new RoutedEventHandler(SearchItem_Checked);
@@ -835,7 +965,7 @@ namespace BIM.IFC.Export.UI
          if (cbElem != null)
          {
             // Clear previously selected item first
-            if (prevSelItem != null && m_SingleNodeSelection)
+            if (prevSelItem != null && SingleNodeSelection)
             {
                ToggleButton prevCBSel = prevSelItem.Header as ToggleButton;
                if (prevCBSel != null)
@@ -845,13 +975,13 @@ namespace BIM.IFC.Export.UI
             prevSelItem = cbElem.Parent as TreeViewItem;
 
             // Set the selection status of the node in the original tree as well
-            TreeViewItem origTreeNode = m_TreeViewItemDict[prevSelItem.Name];
+            TreeViewItem origTreeNode = TreeViewItemDict[prevSelItem.Name];
             ToggleButton origTreeNodeTB = origTreeNode.Header as ToggleButton;
             if (origTreeNodeTB != null)
                origTreeNodeTB.IsChecked = true;
          }
-         if (m_SingleNodeSelection)
-            InitializePreDefinedTypeSelection(m_IfcVersion, PrevSelEntityItem.Name);
+         if (SingleNodeSelection)
+            InitializePreDefinedTypeSelection(CurrentIFCVersion, PrevSelEntityItem.Name);
       }
 
       void SearchItem_Unchecked(object sender, RoutedEventArgs e)
@@ -862,10 +992,14 @@ namespace BIM.IFC.Export.UI
          PredefinedTypeTreeView.ItemsSource = null;
 
          // Set the selection status of the node in the original tree as well
-         TreeViewItem origTreeNode = m_TreeViewItemDict[(cbElem.Parent as TreeViewItem).Name];
-         ToggleButton origTreeNodeTB = origTreeNode.Header as ToggleButton;
-         if (origTreeNodeTB != null)
-            origTreeNodeTB.IsChecked = false;
+         // Note that when we change schema, the selected item may no longer exist.
+         string name = (cbElem.Parent as TreeViewItem).Name;
+         if (TreeViewItemDict.TryGetValue(name, out TreeViewItem origTreeNode))
+         {
+            ToggleButton origTreeNodeTB = origTreeNode.Header as ToggleButton;
+            if (origTreeNodeTB != null)
+               origTreeNodeTB.IsChecked = false;
+         }
       }
 
       private void button_Reset_Click(object sender, RoutedEventArgs e)
@@ -885,13 +1019,13 @@ namespace BIM.IFC.Export.UI
 
       private void button_ExpandAll_Click(object sender, RoutedEventArgs e)
       {
-         foreach (TreeViewItem item in m_TreeView.Items)
+         foreach (TreeViewItem item in TreeView.Items)
             ExpandOrCollapseThisNodeAndBelow(item, true);
       }
 
       private void button_CollapseAll_Click(object sender, RoutedEventArgs e)
       {
-         foreach (TreeViewItem item in m_TreeView.Items)
+         foreach (TreeViewItem item in TreeView.Items)
             ExpandOrCollapseThisNodeAndBelow(item, false);
       }
 
@@ -905,7 +1039,7 @@ namespace BIM.IFC.Export.UI
          {
             foreach (string item in searchResults)
             {
-               ToggleButton origItem = m_TreeViewItemDict[item].Header as ToggleButton;
+               ToggleButton origItem = TreeViewItemDict[item].Header as ToggleButton;
                if (origItem == null)
                   continue;   // Skip non-ToggleButton item
 
@@ -943,7 +1077,7 @@ namespace BIM.IFC.Export.UI
       protected override bool OnContextHelp()
       {
          string contextIdName = null;
-         if (m_SingleNodeSelection)
+         if (SingleNodeSelection)
             contextIdName = "IFC_EntityAndPredefinedType";
          else
             contextIdName = "IFC_EntitiesToExport";

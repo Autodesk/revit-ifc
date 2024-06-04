@@ -108,28 +108,6 @@ namespace Revit.IFC.Import.Utility
             }
          }
 
-         if (Importer.TheOptions.IsHybridImport && Importer.TheHybridInfo != null &&
-             IFCAnyHandleUtil.IsTypeOf(ifcRelAssignsOrAggregates, IFCEntityType.IfcRelAggregates) &&
-             (relatedTo is IFCElement ifcElementRelatedTo))
-         {
-            if (Importer.TheHybridInfo.ContainerMap == null)
-            {
-               Importer.TheHybridInfo.ContainerMap = new Dictionary<int, HashSet<IFCObjectDefinition>>();
-            }
-
-            HashSet<IFCObjectDefinition> containedObjectDefinitions = null;
-            if (Importer.TheHybridInfo.ContainerMap.TryGetValue(ifcElementRelatedTo.Id, out containedObjectDefinitions))
-            {
-               containedObjectDefinitions.UnionWith(relatedObjectSet);
-            }
-            else
-            {
-               containedObjectDefinitions = new HashSet<IFCObjectDefinition>();
-               containedObjectDefinitions.UnionWith(relatedObjectSet);
-               Importer.TheHybridInfo.ContainerMap.Add(ifcElementRelatedTo.Id, containedObjectDefinitions);
-            }
-         }
-
          return relatedObjectSet;
       }
 

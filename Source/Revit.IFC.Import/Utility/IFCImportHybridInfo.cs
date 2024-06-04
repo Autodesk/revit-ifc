@@ -31,42 +31,11 @@ using Revit.IFC.Import.Data;
 
 namespace Revit.IFC.Import.Utility
 {
+
    /// <summary>
-   /// A helper class to set and unset RepresentationsAlreadyCreated, with the "using" keyword.
+   /// Provide methods to perform Hybrid IFC Import.
    /// </summary>
-   public class RepresentationsAlreadyCreatedSetter : IDisposable
-   {
-      /// <summary>
-      /// The constructor.
-      /// </summary>
-      /// <param name="guid">The GUID to check.</param>
-      public RepresentationsAlreadyCreatedSetter(string guid)
-      {
-         // IFCRepresentationItem should know that it is processing something for Hybrid IFC Imports.
-         // Then it will create IFCHybridRepresentationItems, which are placeholders for body geometry created via AnyCAD.
-         // This is so data for Representation Item will still exist, even if legacy geometry does not.
-         if (Importer.TheHybridInfo?.HybridMap?.ContainsKey(guid) ?? false)
-         {
-            Importer.TheHybridInfo.RepresentationsAlreadyCreated = true;
-         }
-      }
-
-      /// <summary>
-      /// The Dispose method.
-      /// </summary>
-      public void Dispose()
-      {
-         if (Importer.TheHybridInfo != null)
-         {
-            Importer.TheHybridInfo.RepresentationsAlreadyCreated = false;
-         }
-      }
-   }
-
-/// <summary>
-/// Provide methods to perform Hybrid IFC Import.
-/// </summary>
-public class IFCImportHybridInfo
+   public class IFCImportHybridInfo
    {
       /// <summary>
       /// Keeps track of Elements imported (DirectShape/DirectShapeTypes) by AnyCAD
@@ -74,7 +43,7 @@ public class IFCImportHybridInfo
       public IList<ElementId> HybridElements { get; set; } = new List<ElementId>();
 
       /// <summary>
-      /// Map from IFCGuid --> Revit ElementId so legacy IFC Processing can find Elements.
+      /// Map from IFC STEP Id --> Revit ElementId so legacy IFC Processing can find Elements.
       /// </summary>
       public IDictionary<string, ElementId> HybridMap { get; set; } = new Dictionary<string, ElementId>();
 
@@ -82,19 +51,6 @@ public class IFCImportHybridInfo
       /// List of Elements that Import should delete during EndImport.
       /// </summary>
       public IList<ElementId> ElementsToDelete { get; set; } = new List<ElementId>();
-
-      /// <summary>
-      /// For IFCProject, Revit will still need to process IFCProductRepresentation/IFCRepresentation/IFCRepresentationItem.
-      /// For IFCProjectType, Revit will still need to process IFCRepresentationMap/IFCRepresentation/IFCRepresentationItem.
-      /// An example of data that must exist:  LayerAssignment.
-      /// In both cases, body geometry will have been created by AnyCAD during pass one, so new body geometry cannot be created.
-      /// Communication must be made to IFCRepresentationItem that the IFCProduct/IFCProductType has already had its Representation Created.
-      /// That is what this flag indicates:
-      /// True:  Representation (Body geometry) already created during pass one.  Ignore all RepresentationItems that might create meshes, etc.  The only
-      ///        exception to this is points and curves.  Instead an IFCHybridRepresentationItem will be created as a placeholder.
-      /// False:  Representation (Body geometry) should be created like normal with Legacy IFC Import.
-      /// </summary>
-      public bool RepresentationsAlreadyCreated { get; set; } = false;
 
       /// <summary>
       /// Document into which IFC Import occurs.
@@ -110,13 +66,6 @@ public class IFCImportHybridInfo
       /// Origin offset applied to all Elements created via legacy processing within Revit.
       /// </summary>
       public XYZ LargeCoordinateOriginOffset { get; set; } = XYZ.Zero;
-
-      /// <summary>
-      /// Keeps track of one-to-many mapping of entities that will result in container to sub-Element relationships.
-      /// Key:  stepId of the container entity.
-      /// Value:  Set of IfcObjectDefinition entities that result in sub-Elements.
-      /// </summary>
-      public IDictionary<int, HashSet<IFCObjectDefinition>> ContainerMap { get; set; } = null;
 
       /// <summary>
       /// Internal reference to the class that is responsible for doing the actual import and Map creation.
@@ -149,37 +98,36 @@ public class IFCImportHybridInfo
          // Import Elements
          //
          int? elementsImported = ImportElements(doUpdate);
-         if (elementsImported == null)
+         if (!elementsImported.HasValue)
          {
             Importer.TheLog.LogError(-1, "Hybrid IFC Import:  Unknown Error during Element Import -- aborting", true);
             return;
          }
 
-         if (elementsImported == 0)
+         if (elementsImported.Value == 0)
          {
             Importer.TheLog.LogError(-1, "Hybrid IFC Import:  elementsImportedList empty -- reverting to fallback for entire import.", false);
             return;
          }
 
-         // Associate Imported Elements with IFC Guids
-         //
-         int? associationsPerformed = AssociateElementsWithIFCGuids();
-         if (associationsPerformed == null)
+         HybridMap = HybridImporter.GetIFCStepIdToElementIdMap();
+         if (HybridMap == null)
          {
-            Importer.TheLog.LogError(-1, "Hybrid IFC Import:  Unknown Error during Element / IFC Guid association.", true);
+            Importer.TheLog.LogError(-1, "Hybrid IFC Import:  Unknown Error during IFC STEP Id/ElementId map creation.", true);
             return;
          }
 
-         // Not an error, but this may hinder the Import Later.
-         if (associationsPerformed != elementsImported)
+         if (HybridMap.Count != elementsImported.Value)
          {
-            Importer.TheLog.LogWarning(-1, "Hybrid IFC Import:  Number of Element / IFC Guid associations do not match number of imported Elements.", false);
+            // Not an error, but this may hinder the Import Later.
+            Importer.TheLog.LogComment(-1, "Hybrid IFC Import:  Number of IFC STEP Id/ElementIds associations do not match number of imported Elements.  Not an error.", true);
          }
+
 
          if (Importer.TheOptions.VerboseLogging)
          {
             Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import:  Start of Logging detailed Information about AnyCAD Import ---", false);
-            Importer.TheLog.LogComment(-1, "Hybrid IFC Import:  If an IfcGuid does not appear in the following list, then it will fallback to Revit processing ---", false);
+            Importer.TheLog.LogComment(-1, "Hybrid IFC Import:  If an IFC STEP Id does not appear in the following list, then it will fallback to Revit processing ---", false);
             LogImportedElementsDetailed();
             LogHybridMapDetailed();
             Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: End of Logging detailed Information about AnyCAD Import ---", false);
@@ -197,6 +145,7 @@ public class IFCImportHybridInfo
       public void LogImportedElementsDetailed()
       {
          Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: Start Imported Element Details. ---", false);
+         Options options = new Options();
          foreach (ElementId elementId in HybridElements)
          {
             DirectShape shape = IfcDocument?.GetElement(elementId) as DirectShape;
@@ -206,15 +155,27 @@ public class IFCImportHybridInfo
                continue;
             }
 
-            ElementId directShapeType = shape.TypeId;
-            if ((directShapeType ?? ElementId.InvalidElementId) == ElementId.InvalidElementId)
+            // GeometryInstance for DirectShape indicates the DirectShapeType for the DirectShape.  This DirectShapeType holds Geometry for DirectShape.
+            // This may differ from DirectShape.TypeId.
+            ElementId geometricDSTElementId = ElementId.InvalidElementId;
+            GeometryElement geometryElement = shape.get_Geometry(options);
+            if (geometryElement != null)
             {
-               Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: DirectShape Imported with no DirectShapeType: {elementId}.", false);
+               foreach (GeometryObject geometryObject in geometryElement)
+               {
+                  GeometryInstance geomInstance = geometryObject as GeometryInstance;
+                  if (geomInstance == null)
+                  {
+                     continue;
+                  }
+
+                  geometricDSTElementId = geomInstance.GetSymbolGeometryId().SymbolId;
+                  break;
+               }
             }
-            else
-            {
-               Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: (DirectShape, DirectShapeType) Imported: ({elementId}, {directShapeType}).", false);
-            }
+
+            // Log Comment for all three -- (DirectShape, GeomInstance DirectShapeType, TypeId)
+            Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: (DirectShape, Parametric DirectShapeType, Geometric DirectShapeType): ({elementId}, {shape.TypeId}, {geometricDSTElementId})", false);
          }
          Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: End Imported Element Details. ---", false);
       }
@@ -222,7 +183,7 @@ public class IFCImportHybridInfo
       /// <summary>
       /// Log information about the Hybrid IFC Import Association Map (IFC GlobalId --> Revit ElementId).
       /// </summary>
-      public void LogHybridMapDetailed ()
+      public void LogHybridMapDetailed()
       {
          Importer.TheLog.LogComment(-1, "--- Hybrid IFC Import: Start Hybrid Map Details. ---", false);
          if (HybridMap == null)
@@ -239,23 +200,15 @@ public class IFCImportHybridInfo
             {
                foreach (var mapEntry in HybridMap)
                {
-                  string ifcGuid = mapEntry.Key;
+                  string stepId = mapEntry.Key;
                   ElementId elementId = mapEntry.Value;
-                  if (!string.IsNullOrEmpty(ifcGuid) && ((elementId ?? ElementId.InvalidElementId) != ElementId.InvalidElementId))
+                  if (elementId == ElementId.InvalidElementId)
                   {
-                     Importer.TheLog.LogComment(-1, $"Hybrid IFC Import: Map Entry Created (IFC Guid, ElementId):  ({mapEntry.Key}, {mapEntry.Value})", false);
-                     continue;
+                     Importer.TheLog.LogComment(-1, $"Hybrid IFC Import:  Hybrid Map entry has no ElementId for {stepId}", false);
                   }
-
-                  if (!string.IsNullOrEmpty(ifcGuid))
-                  {
-                     Importer.TheLog.LogComment(-1, "Hybrid IFC Import:  Hybrid Map entry has no IFC Guid.", false);
-                     continue;
-                  }
-
-                  if ((elementId ?? ElementId.InvalidElementId) != ElementId.InvalidElementId)
-                  {
-                     Importer.TheLog.LogComment(-1, $"Hybrid IFC Import:  Hybrid Map entry has no ElementId for {ifcGuid}", false);
+                  else
+                  { 
+                     Importer.TheLog.LogComment(-1, $"Hybrid IFC Import:  Map Entry Created (IFC STEP Id, ElementId):  ({stepId}, {elementId})", false);
                   }
                }
             }
@@ -316,17 +269,7 @@ public class IFCImportHybridInfo
 
          if (update)
          {
-            //IFC Extension back - compatibility:
-            //HybridImporter.UpdateElements method available since Revit 2024.1, handle it for addin usage with the previous Revit versions.
-            //
-            try
-            {
-               TryToUpdateElements();
-            }
-            catch(MissingMethodException)
-            {
-               HybridElements = HybridImporter.ImportElements(IfcDocument, IfcInputFile);
-            }
+            HybridElements = HybridImporter.UpdateElements(IfcDocument, IfcInputFile);
          }
          else
          {
@@ -334,129 +277,6 @@ public class IFCImportHybridInfo
          }
 
          return HybridElements?.Count;
-      }
-
-      private void TryToUpdateElements()
-      {
-         HybridElements = HybridImporter.UpdateElements(IfcDocument, IfcInputFile);
-      }
-
-      /// <summary>
-      /// Associate ElementIds with IFCGuids.  In other words, populate the IFCGuid --> ElementId map.
-      /// </summary>
-      /// <returns>Number of entries in the map.</returns>
-      /// <exception cref="InvalidOperationException"></exception>
-      public int? AssociateElementsWithIFCGuids()
-      {
-         if (HybridImporter == null)
-         {
-            throw new InvalidOperationException("Attempting to associate Elements with IfcGuids with null IFCHybridImporter");
-         }
-
-         if (IfcDocument == null)
-         {
-            Importer.TheLog.LogError(-1, "No document for Hybrid IFC Import", true);
-            return null;
-         }
-
-         // CreateMap actually returns an ElementId-to-String map.  This is because of two things:
-         // 1. We don't know if an external API does a case-sensitive comparison (which is extremely important for IFC GUIDS).
-         // 2. We do know that System.String uses a case-sensitive comparison.
-         // And then convert.
-         IDictionary<IFCGuidKey, ElementId> hybridImportMap = HybridImporter.CreateMap(IfcDocument, HybridElements);
-         if (hybridImportMap == null)
-         {
-            Importer.TheLog.LogError(-1, "Hybrid IFC Import Map set to invalid value.", true);
-            return null;
-         }
-
-         // IFCGuidKey exists for the sole purpose of retrieving the map using a well-defined operator< in C++.
-         foreach (KeyValuePair<IFCGuidKey, ElementId> elementIdGuidPair in hybridImportMap)
-         {
-            // Use string for IFC Global from here on out.  IFCGuidKey is not generic enough to use as an IFC Global Id elsewhere.
-            string ifcGuid = elementIdGuidPair.Key.IFCGlobalId;
-            ElementId elementId = elementIdGuidPair.Value;
-            if (elementId == ElementId.InvalidElementId)
-            {
-               Importer.TheLog.LogError(-1, "Invalid Element ID found during Hybrid IFC Import Map construction.", false);
-            }
-            try
-            {
-               HybridMap.Add(ifcGuid, elementId);
-            }
-            catch (ArgumentException)
-            {
-               Importer.TheLog.LogWarning(-1, "Duplicate IFC Global Ids. This will cause some IFC entities to fallback to Revit processing.", false);
-            }
-            catch (Exception)
-            {
-               Importer.TheLog.LogWarning(-1, "Error in adding items to IFC GUID-to-ElementId map. This will cause some IFC entities to fallback to Revit processing.", false);
-            }
-         }
-         return HybridMap?.Count;
-      }
-
-      /// <summary>
-      /// Replaces ElementIds in both Hybrid Element list and Hybrid Map (IfcGuid->ElementId)
-      /// </summary>
-      /// <param name="ifcGuid">GUID of IFC entity.</param>
-      /// <param name="oldElementId">Old ElementId to replace.</param>
-      /// <param name="newElementId">New ElementId to replace old ElementId with.</param>
-      public void ReplaceElementId(string ifcGuid, ElementId oldElementId, ElementId newElementId)
-      {
-         if ((oldElementId == ElementId.InvalidElementId) || (newElementId == ElementId.InvalidElementId))
-            return;
-
-         // Reassign in HybridElements.
-         int index = HybridElements.IndexOf(oldElementId);
-         if (index == -1)
-         {
-            Importer.TheLog.LogWarning(-1, $"Unable to replace {ifcGuid} ElementId in list of Hybrid Elements.", true);
-            return;
-         }
-
-         HybridElements[index] = newElementId;
-
-         // Reassign in HybridMap if it exists.
-         if (!HybridMap.ContainsKey(ifcGuid))
-         {
-            Importer.TheLog.LogWarning(-1, $"Unable to replace {ifcGuid} ElementId in Map of IFCGuids to ElementIds.", true);
-            return;
-         }
-         HybridMap[ifcGuid] = newElementId;
-      }
-
-      /// <summary>
-      /// Creates a DirectShape simply to contain Geometry copied from other Elements.
-      /// The DirectShape won't have any Geometry at this time, but it will be put into the HybridMap.
-      /// </summary>
-      /// <param name="ifcProduct">IfcProduct entity corresponding to empty DirectShape.</param>
-      /// <returns>ElementId of new DirectShape if successful, ElementId.InvalidElementId otherwise.</returns>
-      public ElementId CreateEmptyContainer(IFCProduct ifcProduct)
-      {
-         // If HybridMap is null or empty, no other Elements were imported using the ATF Pipeline, so this doesn't need to be created.
-         if ((ifcProduct == null) || ((HybridMap?.Count ?? 0) == 0))
-         {
-            return ElementId.InvalidElementId;
-         }
-
-         // If Container is already in HybridMap, DirectShape has already been created.
-         ElementId containerElementId;
-         if (HybridMap.TryGetValue(ifcProduct.GlobalId, out containerElementId))
-         {
-            return containerElementId;
-         }
-
-         DirectShape emptyContainerDS = IFCElementUtil.CreateElement(IfcDocument, ifcProduct.GetCategoryId(IfcDocument),
-            ifcProduct.GlobalId, null, ifcProduct.Id, ifcProduct.EntityType);
-         if (emptyContainerDS == null)
-         {
-            return ElementId.InvalidElementId;
-         }
-
-         HybridMap.Add(ifcProduct.GlobalId, emptyContainerDS.Id);
-         
-         return emptyContainerDS.Id;
       }
 
       /// <summary>
@@ -498,8 +318,8 @@ public class IFCImportHybridInfo
             {
                if (ifcGroup.ContainerFilteredEntity(objectDefinition))
                {
-                  ElementId objDefId = ElementId.InvalidElementId;
-                  if (HybridMap?.TryGetValue(objectDefinition.GlobalId, out objDefId) ?? false)
+                  ElementId objDefId = IFCImportHybridInfo.GetHybridMapInformation(objectDefinition.Id);
+                  if (IFCImportHybridInfo.IsValidElementId(objDefId))
                   {
                      elements.Add(objDefId);
                   }
@@ -527,7 +347,7 @@ public class IFCImportHybridInfo
       /// <param name="objectDefinition">Entity that may exhibit special-case behavior.</param>
       /// <param name="hybridElementId">The element id of the existing DirectShape.</param>
       /// <returns>ElementId of new DirectShape if new Element created, ElementId.InvalidElement otherwise.</returns>
-      private void UpdateElementForSpecialCases(IFCObjectDefinition objectDefinition, ref ElementId hybridElementId)
+      private void UpdateElementForSpecialCases(IFCObjectDefinition objectDefinition, ElementId hybridElementId)
       {
          if (objectDefinition == null)
          {
@@ -540,23 +360,7 @@ public class IFCImportHybridInfo
          {
             if (objectDefinition is IFCProduct architecturalColumn)
             {
-               try
-               {
-                  UpdateStructuralColumnDirectShape(architecturalColumn, hybridElementId);
-               }
-               catch (MissingMethodException)
-               {
-                  ElementId specialCaseElementId = CreateStructuralColumnDirectShape(architecturalColumn, hybridElementId);
-
-                  if ((specialCaseElementId != ElementId.InvalidElementId) && (specialCaseElementId != hybridElementId))
-                  {
-                     ElementId hybridElementIdToDelete = new ElementId(hybridElementId.Value);
-                     // specialCaseElementId has replaced hybridElementId in the HybridMap.
-                     // The hybridElementId will be deleted later.
-                     Importer.TheHybridInfo.ElementsToDelete.Add(hybridElementIdToDelete);
-                     hybridElementId = specialCaseElementId;
-                  }
-               }
+               UpdateStructuralColumnDirectShape(architecturalColumn, hybridElementId);
             }
          }
       }
@@ -595,11 +399,6 @@ public class IFCImportHybridInfo
             return;
          }
 
-         //IFC Extension back-compatibility:
-         //ImporterIFCUtils.UpdateDirectShapeCategory method available since Revit 2024.1, handle it for addin usage with the previous Revit versions.
-         //Handle this with using CreateStructuralColumnDirectShape instead by catching MissingMethodExseption in UpdateElementForSpecialCases.
-         //
-
          ImporterIFCUtils.UpdateDirectShapeCategory(directShape, new ElementId(BuiltInCategory.OST_StructuralColumns));
 
          (IList<GeometryObject> newGeomObjects, ElementId directShapeTypeId) =
@@ -629,80 +428,6 @@ public class IFCImportHybridInfo
          if (directShapeTypeId == directShapeGeomTypeId)
             directShape.SetTypeId(directShapeGeomTypeId);
       }
-
-      /// <summary>
-      /// Create a new DirectShape for the new Structural Column.
-      /// </summary>
-      /// <preconditions></preconditions>
-      /// <param name="ifcColumn">Column that needs a Category change from OST_Column to OST_StructuralColumn.</param>
-      /// <returns>ElementId of new Structural Column for successful creation, ElementId.InvalidElementId otherwise.</returns>
-      private ElementId CreateStructuralColumnDirectShape(IFCProduct ifcColumn, ElementId hybridElementId)
-      {
-         if (ifcColumn == null)
-         {
-            Importer.TheLog.LogError(-1, "IfcColumn invalid during DirectShape recategorization.", false);
-            return ElementId.InvalidElementId;
-         }
-
-         int stepId = ifcColumn.Id;
-         ElementId ifcColumnCategory = ifcColumn.GetCategoryId(IfcDocument);
-         if (ifcColumnCategory != new ElementId(BuiltInCategory.OST_StructuralColumns))
-         {
-            Importer.TheLog.LogWarning(stepId, "IfcColumn is not a Structural Column", false);
-            return ElementId.InvalidElementId;
-         }
-
-         DirectShape oldDirectShape = IfcDocument.GetElement(hybridElementId) as DirectShape;
-         ElementId oldDirectShapeCategory = (oldDirectShape?.Category?.Id ?? ElementId.InvalidElementId);
-         if (oldDirectShapeCategory == ElementId.InvalidElementId)
-         {
-            Importer.TheLog.LogWarning(stepId, "Unable to determine Category of DirectShape.", false);
-            return ElementId.InvalidElementId;
-         }
-
-         if (oldDirectShapeCategory == ifcColumnCategory)
-         {
-            Importer.TheLog.LogComment(stepId, "Category of Column and DirectShape agree. No recategorization needed.", false);
-            return ElementId.InvalidElementId;
-         }
-
-         // Perform Deep copy of Geometry and DirectShapeTypes.
-         (IList<GeometryObject> newGeomObjects, ElementId directShapeTypeId)
-            = DuplicateGeometryForDirectShape(oldDirectShape, ifcColumn);
-         if ((newGeomObjects?.Count ?? 0) == 0)
-         {
-            Importer.TheLog.LogError(stepId, "Unable to duplicate Geometry for DirectShape recategorization.", false);
-            return ElementId.InvalidElementId;
-         }
-
-         GeometryInstance newDirectShapeGeometryInstance = newGeomObjects.First() as GeometryInstance; ;
-         if (newDirectShapeGeometryInstance == null)
-         {
-            Importer.TheLog.LogWarning(stepId, "Duplicate Geometry is not a GeometryInstance.  Using old Geometry.", false);
-            return ElementId.InvalidElementId;
-         }
-
-         directShapeTypeId = newDirectShapeGeometryInstance.GetSymbolGeometryId().SymbolId;
-         if (directShapeTypeId == ElementId.InvalidElementId)
-         {
-            Importer.TheLog.LogWarning(stepId, "Even though new DirectShape Geometry created, unable to find DirectShapeType.", false);
-            return ElementId.InvalidElementId;
-         }
-
-         IList<GeometryObject> structuralColumnGeometry = new List<GeometryObject>() { newDirectShapeGeometryInstance };
-
-         DirectShape newDirectShape = IFCElementUtil.CreateElement(IfcDocument, ifcColumnCategory, ifcColumn.GlobalId, structuralColumnGeometry, stepId, ifcColumn.EntityType);
-         if (newDirectShape == null)
-         {
-            Importer.TheLog.LogError(stepId, "Unable to create new DirectShape Element for Structural Column.", false);
-            return ElementId.InvalidElementId;
-         }
-
-         newDirectShape.SetTypeId(directShapeTypeId);
-         return newDirectShape.Id;
-      }
-
-
 
       /// <summary>
       /// Duplicates Geometry within DirectShape for a new DirectShape creation.
@@ -763,7 +488,7 @@ public class IFCImportHybridInfo
          }
 
          // Most of the work happens here to Copy DirectShapeTypes.
-         ElementId newDirectShapeTypeId = DeepCopyDirectShapeType(oldDirectShapeTypeElementId, 
+         ElementId newDirectShapeTypeId = DeepCopyDirectShapeType(oldDirectShapeTypeElementId,
             oldDirectShapeTypeGeometryElement, ifcProduct.GetCategoryId(IfcDocument), ifcTypeObject);
 
          string definitionId = GetDirectShapeTypeDefinitionId(newDirectShapeTypeId);
@@ -809,7 +534,7 @@ public class IFCImportHybridInfo
       /// <param name="newCategoryId">Category that DirectShapeTypes should be.</param>
       /// <param name="ifcTypeObject">IFCTypeObject step that drives this.  If null, values from old DirectShapeType will be used.</param>
       /// <returns>ElementId of new DirectShapeType, or ElementId.Invalid if unable to create new DirectShapeType at any step.</returns>
-      protected ElementId DeepCopyDirectShapeType(ElementId oldDirectShapeTypeElementId, GeometryElement oldDirectShapeTypeGeometryElement, 
+      protected ElementId DeepCopyDirectShapeType(ElementId oldDirectShapeTypeElementId, GeometryElement oldDirectShapeTypeGeometryElement,
                                                   ElementId newCategoryId, IFCTypeObject ifcTypeObject = null)
       {
          if ((oldDirectShapeTypeElementId == ElementId.InvalidElementId) || (oldDirectShapeTypeGeometryElement == null))
@@ -955,7 +680,7 @@ public class IFCImportHybridInfo
             {
                continue;
             }
-            
+
             foreach (GeometryObject geometryObject in geometryElement)
             {
                // For Hybrid IFC Import, it is sufficient to check for GeometryInstances only.
@@ -982,16 +707,14 @@ public class IFCImportHybridInfo
       /// But there are some data within Representation Items that need to persist to the new DirectShapes, and the only way to get that is to process the ProductRepresentation within the IFCProduct.
       /// So this populates that data.
       /// </summary>
-      /// <param name="shapeEditScope">Some data is contained in the ShapeEditScope (but not actual geometry).</param>
       /// <param name="ifcProduct">IFCProduct to edit.</param>
       /// <param name="hybridElementId">The associated element id.</param> 
       /// <returns>The list of created geometries.</returns>
-      public IList<GeometryObject> HandleHybridProductCreation(IFCImportShapeEditScope shapeEditScope, 
-         IFCProduct ifcProduct, ref ElementId hybridElementId)
+      public IList<GeometryObject> HandleHybridProductCreation(IFCProduct ifcProduct, ElementId hybridElementId)
       {
          IList<GeometryObject> createdGeometries = new List<GeometryObject>();
 
-         if (!Importer.TheOptions.IsHybridImport || (shapeEditScope == null) || (ifcProduct == null) || (hybridElementId == ElementId.InvalidElementId))
+         if (!Importer.TheOptions.IsHybridImport || (ifcProduct == null) || (hybridElementId == ElementId.InvalidElementId))
          {
             return createdGeometries;
          }
@@ -1003,59 +726,25 @@ public class IFCImportHybridInfo
             return createdGeometries;
          }
 
-         // Get solids for IFCProduct.  Only Points and Curves should be contained within "Solids".
-         if (ifcProduct.Solids?.Count > 0)
-         {
-            WireframeBuilder wireframeBuilder = new WireframeBuilder();
-            foreach (IFCSolidInfo solidInfo in ifcProduct.Solids)
-            {
-               GeometryObject currObject = solidInfo.GeometryObject;
-               if (currObject is Point)
-               {
-                  wireframeBuilder.AddPoint(currObject as Point);
-               }
-               else if (currObject is Curve)
-               {
-                  wireframeBuilder.AddCurve(currObject as Curve);
-               }
-               else
-               {
-                  continue;
-               }
-               createdGeometries.Add(currObject);
-            }
-
-            directShape.AppendShape(wireframeBuilder);
-         }
-
-         // Add Plan View Curves.
-         if (shapeEditScope.AddPlanViewCurves(ifcProduct.FootprintCurves, ifcProduct.Id))
-         {
-            shapeEditScope.SetPlanViewRep(directShape);
-         }
-
-         // IFCProduct needs PresentationLayer parameter, which is contained in the RepresentationItem (or IFCHybridRepresentationItem).
-         ifcProduct.PresentationLayerNames.UnionWith(shapeEditScope.PresentationLayerNames);
-
          // Handle Special Cases:
          // 1.  Possible Category Change for Structural Columns.  This requires a whole new DirectShape/DirectShapeType tree creation.
          // 2.  Containers for IfcRelAggregates (e.g., IfcWall & IfcBuildingElementParts).
-         Importer.TheHybridInfo.UpdateElementForSpecialCases(ifcProduct, ref hybridElementId);
+         Importer.TheHybridInfo.UpdateElementForSpecialCases(ifcProduct, hybridElementId);
          return createdGeometries;
       }
 
       /// <summary>
-      /// Adds IFCTypeObject GUID and DirectShapeType ElementId to HybridMap.
+      /// Adds IFCTypeObject STEP Id and DirectShapeType ElementId to HybridMap.
       /// </summary>
       /// <remarks>
       /// Parameter 1:  corresponds to DirectShape/IfcProduct.
       /// Parameter 2:  corresponds to DirectShapeType/IfcTypeProduct.
       /// </remarks>
-      /// <param name="ifcObjectGuid">Guid of IFCObject corresponding to DirectShape Element.</param>
+      /// <param name="directShapeEleemntId">ElementId of DirectShape corresponding to IFCObject corresponding to this IFCTypeObject.
       /// <param name="ifcTypeObject">Handle for IFCTypeObject.</param>
-      public void AddTypeToHybridMap (string ifcObjectGuid, IFCAnyHandle ifcTypeObject)
+      public void AddTypeToHybridMap(ElementId directShapeElementId, IFCAnyHandle ifcTypeObject)
       {
-         if (string.IsNullOrEmpty(ifcObjectGuid))
+         if (directShapeElementId == ElementId.InvalidElementId)
             return;
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcTypeObject))
@@ -1064,32 +753,72 @@ public class IFCImportHybridInfo
             return;
          }
 
-         if (HybridMap == null)
-         {
-            Importer.TheLog.LogError(ifcTypeObject.Id, "HybridMap is null while trying to process IFCTypeObject for IFCObject.  This shouldn't happen", true);
+         ElementId hybridElementId = IFCImportHybridInfo.GetHybridMapInformation(ifcTypeObject.Id);
+         if ((hybridElementId == null) || (hybridElementId != ElementId.InvalidElementId))
             return;
-         }
 
-         string ifcTypeObjectGuid = IFCImportHandleUtil.GetRequiredStringAttribute(ifcTypeObject, "GlobalId", false);
-         if ((string.IsNullOrEmpty(ifcTypeObjectGuid)) || HybridMap.ContainsKey(ifcTypeObjectGuid))
-         {
-            Importer.TheLog.LogComment(ifcTypeObject.Id, $"Already added IFC GUID {ifcTypeObjectGuid} to HybridMap.  Not an error.", true);
+         DirectShape directShape = IfcDocument.GetElement(directShapeElementId) as DirectShape;
+         if (directShape == null)
             return;
-         }
 
-         ElementId directShapeElementId = ElementId.InvalidElementId;
-         if (HybridMap.TryGetValue(ifcObjectGuid, out directShapeElementId))
+         ElementId directShapeTypeElementId = directShape.TypeId;
+         if (directShapeTypeElementId != ElementId.InvalidElementId)
          {
-            DirectShape directShape = IfcDocument.GetElement(directShapeElementId) as DirectShape;
-            if (directShape == null)
-               return;
-
-            ElementId directShapeTypeElementId = directShape.TypeId;
-            if (directShapeTypeElementId != ElementId.InvalidElementId)
-            {
-               HybridMap.Add(ifcTypeObjectGuid, directShapeTypeElementId);
-            }
+            HybridMap.Add(ifcTypeObject.StepId.ToString(), directShapeTypeElementId);
          }
       }
+
+      /// <summary>
+      /// Indicates if indicated Element is a DirectShape, meaning it has usable Hybrid-imported Geometry.
+      /// </summary>
+      /// <param name="directShapeElementId">ElementId representing DirectShape.</param>
+      /// <returns>True if a DirectShape, False otherwise.</returns>
+      public bool IsValidDirectShape(ElementId directShapeElementId)
+      {
+         return IfcDocument?.GetElement(directShapeElementId) is DirectShape;
+      }
+
+      /// <summary>
+      /// Retrieves the ElementId for an IFC entity, based on the STEP Id of the entity.
+      /// </summary>
+      /// <param name="stepId">STEP Id of the IFC entity.</param>
+      /// <returns>ElementId of the IFC entity, or ElementId.InvalidElementId if not in the HybridMap, or null if Hybrid IFC Import not running.</returns>
+      public static ElementId GetHybridMapInformation(int stepId)
+      {
+         if (!Importer.TheOptions.IsHybridImport || Importer.TheHybridInfo?.HybridMap == null || (stepId <= 0))
+            return null;
+
+         string stepIdAsString = stepId.ToString();
+         if (Importer.TheHybridInfo.HybridMap.TryGetValue(stepIdAsString, out ElementId hybridElementId))
+         {
+            return hybridElementId;
+         }
+
+         return ElementId.InvalidElementId;
+      }
+
+      /// <summary>
+      /// Retrieves the ElementId for an IFC entity, based on the STEP Id of the entity.
+      /// </summary>
+      /// <param name="stepId">Handle representing IFC entity./param>
+      /// <returns>ElementId of the IFC entity, or ElementId.InvalidElementId if not in the HybridMap, or null if Hybrid IFC Import not running.</returns>
+
+      public static ElementId GetHybridMapInformation(IFCAnyHandle ifcEntity)
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcEntity))
+         {
+            Importer.TheLog.LogError(-1, "Hybrid IFC Import:  attempting to retrieve invalid Entity from HybridMap", true);
+            return null;
+         }
+
+         return GetHybridMapInformation(ifcEntity.StepId);
+      }
+
+      /// <summary>
+      /// Simple helper function to check for Invalid ElementIds.
+      /// </summary>
+      /// <param name="elementId">ElementId for comparison.</param>
+      /// <returns>True if elementId is non-null and not ElementId.InvalidElementId.</returns>
+      public static bool IsValidElementId(ElementId elementId) => ((elementId != null) && (elementId != ElementId.InvalidElementId));
    }
 }

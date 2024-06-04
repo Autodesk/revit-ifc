@@ -557,6 +557,8 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcSpaceType] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcSpaceHeater] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcSpaceHeaterType] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcSpatialZone] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcSpatialZoneType] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcStair] = BuiltInCategory.OST_Stairs;
          m_EntityTypeToCategory[IFCEntityType.IfcStairType] = BuiltInCategory.OST_Stairs;
          m_EntityTypeToCategory[IFCEntityType.IfcStairFlight] = BuiltInCategory.OST_Stairs;
@@ -894,6 +896,63 @@ namespace Revit.IFC.Import.Utility
          return true;
       }
 
+      private static Category GetCategoryFromAcceptableNames(CategoryNameMap subcategories, string subCategoryName)
+      {
+         try
+         {
+            Category subCategory = subcategories.get_Item(subCategoryName);
+            if (subCategory != null)
+               return subCategory;
+         }
+         catch 
+         { 
+         }
+
+         if (!Importer.TheOptions.IsHybridImport)
+            return null;
+
+         // If we are doing hybrid import, try some other acceptable alternatives.
+         try
+         { 
+            // First attempt: remove "Type".
+            int removeTypeLocation = subCategoryName.LastIndexOf("Type.");
+            if (removeTypeLocation > 0)
+            {
+               string altSubCategoryName = subCategoryName.Replace("Type.", ".");
+               Category subCategory = subcategories.get_Item(altSubCategoryName);
+               if (subCategory != null)
+                  return subCategory;
+            }
+         }
+         catch
+         {
+         }
+
+         try
+         {
+            // Second attempt: uppercase predefined type.
+            int predefinedTypeLocation = subCategoryName.LastIndexOf(".");
+            if (predefinedTypeLocation > 0)
+            {
+               string[] nameAndPredefinedType = subCategoryName.Split('.');
+               if (nameAndPredefinedType.Count() == 2)
+               {
+                  nameAndPredefinedType[1] = nameAndPredefinedType[1].ToUpper();
+                  string altSubCategoryName = string.Join(".", nameAndPredefinedType);
+
+                  Category subCategory = subcategories.get_Item(altSubCategoryName);
+                  if (subCategory != null)
+                     return subCategory;
+               }
+            }
+         }
+         catch
+         {
+         }
+
+         return null;
+      }
+
       private static Category GetOrCreateSubcategory(Document doc, int id, string subCategoryName, ElementId categoryId)
       {
          if (string.IsNullOrWhiteSpace(subCategoryName))
@@ -907,18 +966,8 @@ namespace Revit.IFC.Import.Utility
          IDictionary<string, Category> createdSubcategories = Importer.TheCache.CreatedSubcategories;
          if (!createdSubcategories.TryGetValue(subCategoryName, out subCategory))
          {
-            // Category may have been created by a previous action (probably a previous import).  Look first.
-            // First check GenericModels.
-            //
-            try
-            {
-               CategoryNameMap subcategories = Importer.TheCache.GenericModelsCategory.SubCategories;
-               subCategory = subcategories.get_Item(subCategoryName);
-            }
-            catch
-            {
-               subCategory = null;
-            }
+            subCategory = GetCategoryFromAcceptableNames(Importer.TheCache.GenericModelsCategory?.SubCategories,
+               subCategoryName);
 
             // Then Topography.
             //

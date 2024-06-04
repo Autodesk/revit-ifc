@@ -79,6 +79,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
             return true;
 
+         m_Area = UnitUtil.ScaleArea(CalculateSpatialElementNetFloorArea(element as SpatialElement));
+         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+            return true;
+
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
          IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
          if (element is SpatialElement
@@ -100,6 +104,53 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             return true;
 
          return false;
+      }
+
+      private double CalculateSpatialElementNetFloorArea(SpatialElement spatialElement)
+      {
+         double netFloorArea = 0.0;
+
+         if (spatialElement == null)
+            return netFloorArea;
+
+         // Get the boundary loops of the SpatialElement
+         IList<IList<BoundarySegment>> boundaryLoops = spatialElement.GetBoundarySegments(new SpatialElementBoundaryOptions());
+
+         double outerLoopArea = 0.0;
+         double loopsArea = 0.0;
+         foreach (IList<BoundarySegment> boundaryLoop in boundaryLoops)
+         {
+            CurveLoop curveLoop = new CurveLoop();
+            foreach (BoundarySegment boundarySegment in boundaryLoop)
+            {
+               try
+               {
+                  Curve curve = boundarySegment.GetCurve();
+                  curveLoop.Append(curve);
+               }
+               catch (Autodesk.Revit.Exceptions.ArgumentException)
+               {
+                  //For some special cases, BoundarySegments of the element are not valid for CurveLoop creation
+                  //(curveLoop.Append(curve) throws exception because "This curve will make the loop discontinuous.") 
+
+                  return 0.0;
+               }
+            }
+
+            double loopArea = ExporterIFCUtils.ComputeAreaOfCurveLoops(new List<CurveLoop>() { curveLoop });
+
+            if (outerLoopArea < loopArea)
+               outerLoopArea = loopArea;
+
+            loopsArea += loopArea;
+         }
+
+         //To define the net area, we need to subtract the area of the holes from the area of the outerLoopArea.
+         //loopsArea is the sum of the areas of all the loops.
+         double innerLoopsArea = loopsArea - outerLoopArea;
+         netFloorArea = outerLoopArea - innerLoopsArea;
+
+         return netFloorArea;
       }
 
       /// <summary>

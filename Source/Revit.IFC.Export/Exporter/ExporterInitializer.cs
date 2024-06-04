@@ -25,7 +25,6 @@ using Revit.IFC.Export.Exporter.PropertySet.Calculators;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using GeometryGym.Ifc;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -189,231 +188,85 @@ namespace Revit.IFC.Export.Exporter
          IList<QuantityDescription> quantityDescriptions = new List<QuantityDescription>();
 
          // get the Pset definitions (using the same file as PropertyMap)
-         IEnumerable<IfcPropertySetTemplate> userDefinedPsetDefs = PropertyMap.LoadUserDefinedPset();
-         PropertyValueType propValueType = PropertyValueType.SingleValue;
-
+         IEnumerable<UserDefinedPropertySet> userDefinedPsetDefs = PropertyMap.LoadUserDefinedPset();
          bool exportPre4 = (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || ExporterCacheManager.ExportOptionsCache.ExportAs2x3);
 
          // Loop through each definition and add the Pset entries into Cache
-         foreach (IfcPropertySetTemplate psetDef in userDefinedPsetDefs)
+         foreach (UserDefinedPropertySet propertySet in userDefinedPsetDefs)
          {
             // Add Propertyset entry
             Description description = null;
-            BuiltInParameter builtInParameter = BuiltInParameter.INVALID;
-            if (string.Compare(psetDef.Name, "Attribute Mapping", true) == 0)
+            if (string.Compare(propertySet.Name, "Attribute Mapping", true) == 0)
             {
                AttributeSetDescription attributeDescription = new AttributeSetDescription();
                ExporterCacheManager.AttributeCache.AddAttributeSet(attributeDescription);
-               foreach (IfcPropertyTemplate prop in psetDef.HasPropertyTemplates.Values)
+               foreach (UserDefinedProperty property in propertySet.Properties)
                {
-                  IfcSimplePropertyTemplate template = prop as IfcSimplePropertyTemplate;
-                  if (template != null)
-                  {
-                     PropertyType dataType;
-                     if (!Enum.TryParse(template.PrimaryMeasureType.ToLower().Replace("ifc", ""), true, out dataType))
-                     {
-                        dataType = PropertyType.Text;
-                     }
-                     List<AttributeEntryMap> mappings = new List<AttributeEntryMap>();
-                     foreach (IfcRelAssociates associates in template.HasAssociations)
-                     {
-                        IfcRelAssociatesClassification associatesClassification = associates as IfcRelAssociatesClassification;
-                        if (associatesClassification != null)
-                        {
-                           IfcClassificationReference classificationReference = associatesClassification.RelatingClassification as IfcClassificationReference;
-                           if (classificationReference != null)
-                           {
-                              string id = classificationReference.Identification;
-                              if (id.ToLower().StartsWith("builtinparameter."))
-                              {
-                                 id = id.Substring("BuiltInParameter.".Length);
-                                 if (Enum.TryParse<Autodesk.Revit.DB.BuiltInParameter>(id, out builtInParameter) && builtInParameter != Autodesk.Revit.DB.BuiltInParameter.INVALID)
-                                 {
-                                    mappings.Add(new AttributeEntryMap(template.Name, builtInParameter));
-                                 }
-                                 else
-                                 {
-                                    // report as error in log when we create log file.
-                                 }
-                              }
-                              else
-                                 mappings.Add(new AttributeEntryMap(id, BuiltInParameter.INVALID));
-                           }
-                        }
-                     }
+                  // Data types to export is not provided or invalid.
+                  if ((property.IfcPropertyTypes?.Count ?? 0) == 0)
+                     continue;
 
-                     AttributeEntry aSE = new AttributeEntry(template.Name, dataType, mappings);
-                     attributeDescription.AddEntry(aSE);
-                  }
+                  PropertyType dataType = property.FirstIfcPropertyTypeOrDefault(PropertyType.Text);
+                  List<AttributeEntryMap> entryMap = property.GetEntryMap((name, parameter) => new AttributeEntryMap(name, parameter));
+                  AttributeEntry aSE = new AttributeEntry(property.Name, dataType, entryMap);
+                  attributeDescription.AddEntry(aSE);
                }
-               description = attributeDescription;
 
+               description = attributeDescription;
             }
-            else if (psetDef.TemplateType == IfcPropertySetTemplateTypeEnum.QTO_OCCURRENCEDRIVEN || psetDef.TemplateType == IfcPropertySetTemplateTypeEnum.QTO_TYPEDRIVENONLY || psetDef.TemplateType == IfcPropertySetTemplateTypeEnum.QTO_TYPEDRIVENOVERRIDE)
+            else if (propertySet.Type?.StartsWith("Qto_", StringComparison.InvariantCultureIgnoreCase) ?? false)
             {
                QuantityDescription quantityDescription = new QuantityDescription();
                quantityDescriptions.Add(quantityDescription);
                description = quantityDescription;
-               foreach (IfcPropertyTemplate prop in psetDef.HasPropertyTemplates.Values)
+               foreach (UserDefinedProperty property in propertySet.Properties)
                {
-                  IfcSimplePropertyTemplate template = prop as IfcSimplePropertyTemplate;
-                  if (template != null)
-                  {
-                     List<QuantityEntryMap> mappings = new List<QuantityEntryMap>();
-                     foreach (IfcRelAssociates associates in template.HasAssociations)
-                     {
-                        IfcRelAssociatesClassification associatesClassification = associates as IfcRelAssociatesClassification;
-                        if (associatesClassification != null)
-                        {
-                           IfcClassificationReference classificationReference = associatesClassification.RelatingClassification as IfcClassificationReference;
-                           if (classificationReference != null)
-                           {
-                              string id = classificationReference.Identification;
-                              if (id.ToLower().StartsWith("builtinparameter."))
-                              {
-                                 id = id.Substring("BuiltInParameter.".Length);
-                                 if (Enum.TryParse<Autodesk.Revit.DB.BuiltInParameter>(id, out builtInParameter) && builtInParameter != Autodesk.Revit.DB.BuiltInParameter.INVALID)
-                                 {
-                                    mappings.Add(new QuantityEntryMap(template.Name, builtInParameter));
-                                 }
-                                 else
-                                 {
-                                    // report as error in log when we create log file.
-                                 }
-                              }
-                              else
-                                 mappings.Add(new QuantityEntryMap(id, BuiltInParameter.INVALID));
-                           }
-                        }
-                     }
-                     QuantityType quantityType = QuantityType.Real;
-                     switch (template.TemplateType)
-                     {
-                        case IfcSimplePropertyTemplateTypeEnum.Q_AREA:
-                           quantityType = QuantityType.Area;
-                           break;
-                        case IfcSimplePropertyTemplateTypeEnum.Q_LENGTH:
-                           quantityType = QuantityType.PositiveLength;
-                           break;
-                        case IfcSimplePropertyTemplateTypeEnum.Q_VOLUME:
-                           quantityType = QuantityType.Volume;
-                           break;
-                        case IfcSimplePropertyTemplateTypeEnum.Q_WEIGHT:
-                           quantityType = QuantityType.Weight;
-                           break;
-                        default:
-                           quantityType = QuantityType.Real;
-                           break;
-                     }
-                     QuantityEntry quantityEntry = new QuantityEntry(prop.Name, mappings) { QuantityType = quantityType };
-                     quantityDescription.AddEntry(quantityEntry);
-                  }
+                  // Data types to export is not provided or invalid.
+                  if ((property.IfcPropertyTypes?.Count ?? 0) == 0)
+                     continue;
+
+                  QuantityType quantityType = property.FirstIfcPropertyTypeOrDefault(QuantityType.Real);
+                  IList<QuantityEntryMap> entryMap = property.GetEntryMap((name, parameter) => new QuantityEntryMap(name, parameter));
+                  QuantityEntry quantityEntry = new QuantityEntry(property.Name, entryMap) { QuantityType = quantityType };
+                  quantityDescription.AddEntry(quantityEntry);
                }
             }
             else
             {
                PropertySetDescription userDefinedPropertySet = new PropertySetDescription();
                description = userDefinedPropertySet;
-               foreach (IfcPropertyTemplate prop in psetDef.HasPropertyTemplates.Values)
+               foreach(UserDefinedProperty property in propertySet.Properties)
                {
-                  IfcSimplePropertyTemplate template = prop as IfcSimplePropertyTemplate;
-                  if (template != null)
+                  PropertyType primaryType = property.FirstIfcPropertyTypeOrDefault(PropertyType.Text); // force default to Text/string if the type does not match with any correct datatype
+                  PropertyType secondaryType = property.GetIfcPropertyAtOrDefault(1, PropertyType.Text);
+                  IList<PropertySetEntryMap> entryMap = property.GetEntryMap((name, parameter) => new PropertySetEntryMap(name, parameter));
+                  if (entryMap.Count > 0)
                   {
-                     IfcValue defaultValue = null;
-                     PropertyType dataType;
-                     if (!Enum.TryParse(template.PrimaryMeasureType.ToLower().Replace("ifc", ""), true, out dataType))
+                     PropertySetEntry propertySetEntry = new PropertySetEntry(primaryType, property.Name, entryMap);
+                     userDefinedPropertySet.AddEntry(propertySetEntry);
+                  }
+                  else
+                  {
+                     PropertySetEntry propertySetEntry = new PropertySetEntry(property.Name)
                      {
-                        dataType = PropertyType.Text;           // force default to Text/string if the type does not match with any correct datatype
-                     }
-
-                     PropertyType secondaryDataType;
-                     if (!Enum.TryParse(template.SecondaryMeasureType.ToLower().Replace("ifc", ""), true, out secondaryDataType))
-                     {
-                        secondaryDataType = PropertyType.Text;           // force default to Text/string if the type does not match with any correct datatype
-                     }
-                     List<PropertySetEntryMap> mappings = new List<PropertySetEntryMap>();
-                     foreach (IfcRelAssociates associates in template.HasAssociations)
-                     {
-                        IfcRelAssociatesClassification associatesClassification = associates as IfcRelAssociatesClassification;
-                        if (associatesClassification != null)
-                        {
-                           IfcClassificationReference classificationReference = associatesClassification.RelatingClassification as IfcClassificationReference;
-                           if (classificationReference != null)
-                           {
-                              string id = classificationReference.Identification;
-                              if (id.ToLower().StartsWith("builtinparameter."))
-                              {
-                                 id = id.Substring("BuiltInParameter.".Length);
-                                 if (Enum.TryParse<Autodesk.Revit.DB.BuiltInParameter>(id, out builtInParameter) && builtInParameter != Autodesk.Revit.DB.BuiltInParameter.INVALID)
-                                 {
-                                    mappings.Add(new PropertySetEntryMap(template.Name, builtInParameter));
-                                 }
-                                 else
-                                 {
-                                    // report as error in log when we create log file.
-                                 }
-                              }
-                              else
-                                 mappings.Add(new PropertySetEntryMap(id, BuiltInParameter.INVALID));
-                           }
-                        }
-                        else
-                        {
-                           IfcRelAssociatesConstraint associatesConstraint = associates as IfcRelAssociatesConstraint;
-                           if (associatesConstraint != null)
-                           {
-                              IfcMetric metric = associatesConstraint.RelatingConstraint as IfcMetric;
-                              if (metric != null)
-                              {
-                                 defaultValue = metric.DataValue as IfcValue;
-                              }
-                           }
-                        }
-                     }
-                     if (mappings.Count > 0)
-                     {
-                        PropertySetEntry pSE = new PropertySetEntry(dataType, prop.Name, mappings);
-                        pSE.DefaultValue = defaultValue;
-                        userDefinedPropertySet.AddEntry(pSE);
-                     }
-                     else
-                     {
-                        switch (template.TemplateType)
-                        {
-                           case IfcSimplePropertyTemplateTypeEnum.P_LISTVALUE:
-                              propValueType = PropertyValueType.ListValue;
-                              break;
-                           case IfcSimplePropertyTemplateTypeEnum.P_BOUNDEDVALUE:
-                              propValueType = PropertyValueType.BoundedValue;
-                              break;
-                           case IfcSimplePropertyTemplateTypeEnum.P_TABLEVALUE:
-                              propValueType = PropertyValueType.TableValue;
-                              break;
-                           default:
-                              propValueType = PropertyValueType.SingleValue;
-                              break;
-                        }
-
-                        PropertySetEntry pSE = new PropertySetEntry(prop.Name);
-                        pSE.PropertyName = prop.Name;
-                        pSE.PropertyType = dataType;
-                        pSE.PropertyArgumentType = secondaryDataType;
-                        pSE.DefaultValue = defaultValue;
-                        pSE.PropertyValueType = propValueType;
-                        userDefinedPropertySet.AddEntry(pSE);
-                     }
+                        PropertyName = property.Name,
+                        PropertyType = primaryType,
+                        PropertyArgumentType = secondaryType,
+                        PropertyValueType = property.IfcPropertyValueType
+                     };
+                     userDefinedPropertySet.AddEntry(propertySetEntry);
                   }
                }
+
                userDefinedPropertySets.Add(userDefinedPropertySet);
             }
-            description.Name = psetDef.Name;
-            description.DescriptionOfSet = psetDef.Description;
 
-            string[] applicableElements = psetDef.ApplicableEntity.Split(",".ToCharArray());
-            foreach (string elem in applicableElements)
+            description.Name = propertySet.Name;
+            description.DescriptionOfSet = string.Empty;
+
+            foreach (string elem in propertySet.IfcEntities)
             {
-               Common.Enums.IFCEntityType ifcEntity;
-               if (Enum.TryParse(elem, out ifcEntity))
+               if (Enum.TryParse(elem, out IFCEntityType ifcEntity))
                {
                   bool usedCompatibleType = false;
 
@@ -445,7 +298,6 @@ namespace Revit.IFC.Export.Exporter
          propertySets.Add(userDefinedPropertySets);
          if (quantityDescriptions.Count > 0)
             ExporterCacheManager.ParameterCache.Quantities.Add(quantityDescriptions);
-
       }
 
       private static bool IsSupportedFieldType(ScheduleFieldType fieldType)

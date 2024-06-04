@@ -237,8 +237,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle localPlacementToUse =
             useOverridePlacement ? overrideLocalPlacement : setter.LocalPlacement;
 
-         bool isChildInContainer = 
-            (familyInstance.AssemblyInstanceId != ElementId.InvalidElementId) || useOverridePlacement;
+         bool isChildInContainer = ExporterUtil.IsContainedInAssembly(familyInstance) || useOverridePlacement;
 
          ElementId roomId = ElementId.InvalidElementId;
          if (IsRoomRelated(type))
@@ -265,8 +264,7 @@ namespace Revit.IFC.Export.Exporter
                break;
          }
 
-         string preDefinedType = string.IsNullOrWhiteSpace(type.ValidatedPredefinedType) ?
-            defaultPreDefinedType : type.ValidatedPredefinedType;
+         string preDefinedType = type.IsPredefinedTypeDefault ? defaultPreDefinedType : type.PredefinedType;
 
          IFCAnyHandle instanceHandle = null;
          switch (type.ExportInstance)
@@ -333,7 +331,9 @@ namespace Revit.IFC.Export.Exporter
                }
             case IFCEntityType.IfcSpace:
                {
-                  IFCInternalOrExternal internalOrExternal = CategoryUtil.IsElementExternal(familyInstance) ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
+                  IFCInternalOrExternal internalOrExternal = IFCInternalOrExternal.NotDefined;
+                  if(CategoryUtil.IsElementExternal(familyInstance).HasValue)
+                     internalOrExternal = CategoryUtil.IsElementExternal(familyInstance).Value? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
 
                   instanceHandle = IFCInstanceExporter.CreateSpace(exporterIFC, familyInstance, 
                      instanceGUID, ownerHistory, localPlacementToUse, productRepresentation, 
@@ -415,7 +415,6 @@ namespace Revit.IFC.Export.Exporter
       /// <remarks>If the guid is not provided, it will be generated from the elementType.</remarks>
       public static IFCAnyHandle ExportGenericType(ExporterIFC exporterIFC,
          IFCExportInfoPair type,
-         string ifcEnumType,
          HashSet<IFCAnyHandle> propertySets,
          IList<IFCAnyHandle> representationMapList,
          Element instance,
@@ -450,7 +449,7 @@ namespace Revit.IFC.Export.Exporter
                // TODO_GUID: This is just a patch at the moment.  We should fix the callers of
                // this function so that we don't need to do this here.  Furthermore, we should
                // take into account the exportType into the guid generation.
-               type = AdjustExportTypeForSchema(type, type.ValidatedPredefinedType);
+               type = AdjustExportTypeForSchema(type);
 
                typeHandle = IFCInstanceExporter.CreateGenericIFCType(type, elementType, guid, file,
                   propertySets, representationMapList);
@@ -465,23 +464,23 @@ namespace Revit.IFC.Export.Exporter
          return typeHandle;
       }
 
-      public static IFCExportInfoPair AdjustExportTypeForSchema(IFCExportInfoPair exportType,
-         string ifcEnumType)
+      public static IFCExportInfoPair AdjustExportTypeForSchema(IFCExportInfoPair exportType)
       {
          IFCExportInfoPair exportInfo = exportType;
+         string ifcEnumType = exportType.PredefinedType;
          if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
             // Handle special cases for upward compatibility
             switch (exportType.ExportType)
             {
                case IFCEntityType.IfcBurnerType:
-                  exportInfo.SetValueWithPair(IFCEntityType.IfcGasTerminalType, ifcEnumType);
+                  exportInfo.SetByTypeAndPredefinedType(IFCEntityType.IfcGasTerminalType, ifcEnumType);
                   break;
                case IFCEntityType.IfcDoorType:
-                  exportInfo.SetValueWithPair(IFCEntityType.IfcDoorStyle, ifcEnumType);
+                  exportInfo.SetByTypeAndPredefinedType(IFCEntityType.IfcDoorStyle, ifcEnumType);
                   break;
                case IFCEntityType.IfcWindowType:
-                  exportInfo.SetValueWithPair(IFCEntityType.IfcWindowStyle, ifcEnumType);
+                  exportInfo.SetByTypeAndPredefinedType(IFCEntityType.IfcWindowStyle, ifcEnumType);
                   break;
                case IFCEntityType.UnKnown:
                   {
@@ -500,17 +499,17 @@ namespace Revit.IFC.Export.Exporter
             {
                // For compatibility with IFC2x3 and before. IfcGasTerminalType has been removed and IfcBurnerType replaces it in IFC4
                case IFCEntityType.IfcGasTerminalType:
-                  exportInfo.SetValueWithPair(IFCEntityType.IfcBurnerType, ifcEnumType);
+                  exportInfo.SetByTypeAndPredefinedType(IFCEntityType.IfcBurnerType, ifcEnumType);
                   break;
                // For compatibility with IFC2x3 and before. IfcElectricHeaterType has been removed and IfcSpaceHeaterType replaces it in IFC4
                case IFCEntityType.IfcElectricHeaterType:
-                  exportInfo.SetValueWithPair(IFCEntityType.IfcSpaceHeaterType, ifcEnumType);
+                  exportInfo.SetByTypeAndPredefinedType(IFCEntityType.IfcSpaceHeaterType, ifcEnumType);
                   break;
                case IFCEntityType.UnKnown:
                   {
                      if (exportType.ExportInstance == IFCEntityType.IfcFooting)
                      {
-                        exportInfo.SetValueWithPair(IFCEntityType.IfcFootingType, ifcEnumType);
+                        exportInfo.SetByTypeAndPredefinedType(IFCEntityType.IfcFootingType, ifcEnumType);
                      }
                      break;
                   }
@@ -596,36 +595,20 @@ namespace Revit.IFC.Export.Exporter
                Category graphicsStyleCategory = gStyle.GraphicsStyleCategory;
                if (graphicsStyleCategory != null)
                {
-                  // Remove the geometry that is not visible
-                  if (!ElementFilteringUtil.IsCategoryVisible(graphicsStyleCategory, filterView))
+                  bool removeObject = !ElementFilteringUtil.ShouldCategoryBeExported(graphicsStyleCategory, false);
+
+                  if (removeObject)
                   {
                      if (obj is Solid)
+                     {
                         solids.Remove(obj as Solid);
+                     }
                      else if (obj is Mesh)
+                     {
                         meshes.Remove(obj as Mesh);
+                     }
 
                      continue;
-                  }
-
-                  ElementId catId = graphicsStyleCategory.Id;
-
-                  string ifcClassName = ExporterUtil.GetIFCClassNameFromExportTable(exporterIFC, catId);
-                  if (!string.IsNullOrEmpty(ifcClassName))
-                  {
-                     bool foundName = String.Compare(ifcClassName, "Default", true) != 0;
-                     if (foundName)
-                     {
-                        IFCExportInfoPair exportType = ElementFilteringUtil.GetExportTypeFromClassName(ifcClassName);
-                        if (exportType.ExportInstance == IFCEntityType.UnKnown)
-                        {
-                           if (obj is Solid)
-                              solids.Remove(obj as Solid);
-                           else if (obj is Mesh)
-                              meshes.Remove(obj as Mesh);
-
-                           continue;
-                        }
-                     }
                   }
                }
             }

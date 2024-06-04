@@ -1,0 +1,34 @@
+﻿<local:BaseCategoryTemplate x:Class="BIM.IFC.Export.UI.IFCNewCategoryTemplate"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+        xmlns:local="clr-namespace:BIM.IFC.Export.UI"
+        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+        xmlns:weave="clr-namespace:Autodesk.Weave.Wpf.ElementProperties;assembly=Autodesk.Weave.Wpf"
+        xmlns:weave_d="clr-namespace:Autodesk.Weave.Wpf.ElementProperties.DesignTime;assembly=Autodesk.Weave.Wpf"
+        weave:FrameworkElementProperties.WeaveTheme="WeaveLightGray"
+        weave:FrameworkElementProperties.ApplyWeaveStyles="True"
+        weave_d:FrameworkElementProperties.DesignTimeWeaveTheme="WeaveLightGray"
+        mc:Ignorable="d"
+        WindowStyle="SingleBorderWindow"
+        Title="{x:Static p:Resources.IFCNewCategoryTemplate}"
+        ResizeMode="NoResize" SizeToContent="WidthAndHeight">
+   <StackPanel Width="317">
+      <StackPanel>
+         <Label Name="label_NewName" Content="{x:Static p:Resources.TemplateName}" weave:LabelProperties.Variant="Top"/>
+         <TextBox Name="textBox_NewName" IsEnabled="True"
+                  Text="{Binding NewName, ValidatesOnDataErrors=True, UpdateSourceTrigger=PropertyChanged}">
+            <TextBox.ToolTip>
+               <ToolTip Content="{x:Static p:Resources.TemplateNameTooltip}" Placement="Bottom"/>
+            </TextBox.ToolTip>
+         </TextBox>
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+         <Button x:Name="button_Save" Content="{x:Static p:Resources.Save}" weave:ButtonProperties.Variant="Solid" Click="button_Save_Click" IsDefault="True" IsEnabled="True"/>
+         <Button x:Name="button_Cancel" Content="{x:Static p:Resources.Cancel}" IsCancel="True" weave:ButtonProperties.Variant="Outline" Click="button_Cancel_Click"/>
+      </StackPanel>
+   </StackPanel>
+</local:BaseCategoryTemplate>

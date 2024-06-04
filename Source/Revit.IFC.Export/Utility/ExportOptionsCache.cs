@@ -73,7 +73,21 @@ namespace Revit.IFC.Export.Utility
          } 
       }
 
+      /// <summary>
+      /// Always export floors and roofs as a single entity unless exporting parts.
+      /// </summary>
+      public bool ExportHostAsSingleEntity { get; private set; } = false;
+
+      /// <summary>
+      /// If set, set the IfcOwnerHistory LastModified attribute to be the Author in Project Information.
+      /// </summary>
+      public bool OwnerHistoryLastModified { get; private set; } = false;
+
       public KnownERNames ExchangeRequirement { get; set; } = KnownERNames.NotDefined;
+
+      public KnownFacilityTypes FacilityType { get; set; } = KnownFacilityTypes.Building;
+
+      public string FacilityPredefinedType { get; set; } = null;
 
       public string GeoRefCRSName { get; private set; }
 
@@ -250,7 +264,8 @@ namespace Revit.IFC.Export.Utility
 
          ExportOptionsCache cache = new ExportOptionsCache();
          cache.FileVersion = exporterIFC.FileVersion;
-         cache.FileName = exporterIFC.FileName;
+         cache.FullFileName = exporterIFC.FileName;
+         cache.FileNameOnly = Path.GetFileName(cache.FullFileName);
          cache.ExportBaseQuantities = exporterIFC.ExportBaseQuantities;
          cache.WallAndColumnSplitting = exporterIFC.WallAndColumnSplitting;
          cache.SpaceBoundaryLevel = exporterIFC.SpaceBoundaryLevel;
@@ -298,6 +313,21 @@ namespace Revit.IFC.Export.Utility
          bool? exportAdvancedSweptSolids = OptionsUtil.GetNamedBooleanOption(options, "ExportAdvancedSweptSolids");
          cache.ExportAdvancedSweptSolids = (exportAdvancedSweptSolids.HasValue) ? exportAdvancedSweptSolids.Value : false;
 
+         string exchangeRequirementString = OptionsUtil.GetNamedStringOption(options, "ExchangeRequirement");
+         if (Enum.TryParse(exchangeRequirementString, out KnownERNames exchangeRequirment))
+         {
+            cache.ExchangeRequirement = exchangeRequirment;
+         }
+
+         string facilityTypeString = OptionsUtil.GetNamedStringOption(options, "FacilityType");
+         if (Enum.TryParse(facilityTypeString, out KnownFacilityTypes facilityType) &&
+            facilityType != KnownFacilityTypes.NotDefined)
+         {
+            cache.FacilityType = facilityType;
+         }
+
+         cache.FacilityPredefinedType = OptionsUtil.GetNamedStringOption(options, "FacilityPredefinedType");
+         
          // Set GUIDOptions here.
          {
             // This option should be rarely used, and is only for consistency with old files.  As such, it is set by environment variable only.
@@ -328,6 +358,12 @@ namespace Revit.IFC.Export.Utility
             cache.NamingOptions.UseTypeNameOnlyForIfcType =
                 (useOnlyTypeNameForIfcType != null) && useOnlyTypeNameForIfcType.GetValueOrDefault();
          }
+
+         bool? exportHostAsSingleEntity = OptionsUtil.GetNamedBooleanOption(options, "ExportHostAsSingleEntity");
+         cache.ExportHostAsSingleEntity = exportHostAsSingleEntity.GetValueOrDefault(false);
+
+         bool? ownerHistoryLastModified = OptionsUtil.GetNamedBooleanOption(options, "OwnerHistoryLastModified");
+         cache.OwnerHistoryLastModified = ownerHistoryLastModified.GetValueOrDefault(false);
 
          // "SingleElement" export option - useful for debugging - only one input element will be processed for export
          if (options.TryGetValue("SingleElement", out string singleElementValue))
@@ -408,7 +444,9 @@ namespace Revit.IFC.Export.Utility
          if (options.TryGetValue("ActivePhaseId", out activePhaseElementValue))
             cache.ActivePhaseId = ParseElementId(activePhaseElementValue);
 
-         if ((cache.ActivePhaseId == ElementId.InvalidElementId) && (cache.FilterViewForExport != null))
+         // If we have a filter view, the phase to be exported is only the phase of the
+         // view.  So we ignore any phase sent.
+         if (cache.FilterViewForExport != null)
          {
             Parameter currPhase = cache.FilterViewForExport.get_Parameter(BuiltInParameter.VIEW_PHASE);
             if (currPhase != null)
@@ -421,6 +459,8 @@ namespace Revit.IFC.Export.Utility
          cache.SelectedConfigName = OptionsUtil.GetNamedStringOption(options, "ConfigName");
 
          cache.SelectedParametermappingTableName = OptionsUtil.GetNamedStringOption(options, "ExportUserDefinedParameterMappingFileName");
+
+         cache.CategoryMappingTableName = OptionsUtil.GetNamedStringOption(options, "CategoryMapping");
 
          // This is for the option to export links as part of a federated export.
          string federatedInfoString = OptionsUtil.GetNamedStringOption(options, "FederatedLinkInfo");
@@ -563,13 +603,13 @@ namespace Revit.IFC.Export.Utility
                throw new Exception("Option 'FileType' did not match an existing IFCFileFormat value");
             }
          }
-         else if (!string.IsNullOrEmpty(cache.FileName))
+         else if (!string.IsNullOrEmpty(cache.FileNameOnly))
          {
-            if (cache.FileName.EndsWith(".ifcXML")) //localization?
+            if (cache.FileNameOnly.EndsWith(".ifcXML")) //localization?
             {
                cache.IFCFileFormat = IFCFileFormat.IfcXML;
             }
-            else if (cache.FileName.EndsWith(".ifcZIP"))
+            else if (cache.FileNameOnly.EndsWith(".ifcZIP"))
             {
                cache.IFCFileFormat = IFCFileFormat.IfcZIP;
             }
@@ -597,13 +637,14 @@ namespace Revit.IFC.Export.Utility
       public IFCVersion FileVersion { get; set; }
 
       /// <summary>
-      /// The file name.
+      /// The full file name, including path.
       /// </summary>
-      public string FileName
-      {
-         get;
-         set;
-      }
+      public string FullFileName { get; set; }
+
+      /// <summary>
+      /// The file name, not the including path.
+      /// </summary>
+      public string FileNameOnly { get; set; }
 
       /// <summary>
       /// Identifies if the schema version being exported is IFC 2x2.
@@ -985,39 +1026,23 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Contains options for setting how entity names are generated.
       /// </summary>
-      public NamingOptions NamingOptions
-      {
-         get;
-         set;
-      }
+      public NamingOptions NamingOptions { get; set; }
 
       /// <summary>
       /// The file format to export.  Not used currently.
       /// </summary>
       // TODO: Connect this to the output file being written by the client.
-      public IFCFileFormat IFCFileFormat
-      {
-         get;
-         set;
-      }
+      public IFCFileFormat IFCFileFormat { get; set; }
 
       /// <summary>
       /// Select export Config Name from the UI
       /// </summary>
-      public String SelectedConfigName
-      {
-         get;
-         set;
-      }
+      public string SelectedConfigName { get; set; }
 
       /// <summary>
       /// Select export Config Name from the UI
       /// </summary>
-      public String SelectedParametermappingTableName
-      {
-         get;
-         set;
-      }
+      public string SelectedParametermappingTableName { get; set; }
 
       /// <summary>
       /// Allow exporting a mix of extrusions and BReps as a solid model, if possible.
@@ -1027,20 +1052,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Specifies which phase id to export.  May be expanded to phases.
       /// </summary>
-      public ElementId ActivePhaseId
-      {
-         get;
-         protected set;
-      }
+      public ElementId ActivePhaseId { get; protected set; }
 
       /// <summary>
       /// The phase element corresponding to the phase id.
       /// </summary>
-      public Phase ActivePhaseElement
-      {
-         get;
-         protected set;
-      }
+      public Phase ActivePhaseElement { get; protected set; }
 
       /// <summary>
       /// The status of how to handle Revit link instances.
@@ -1055,6 +1072,12 @@ namespace Revit.IFC.Export.Utility
       {
          return ExportLinkedFileAs == LinkedFileExportAs.ExportAsSeparate;
       }
+
+      /// <summary>
+      /// The table that contains Revit class to IFC entity mappings.
+      /// </summary>
+      public string CategoryMappingTableName { get; set; } = null;
+
 
       private IList<Tuple<string, Transform>> LinkInstanceInfos { get; } = new List<Tuple<string, Transform>>();
 
@@ -1128,7 +1151,26 @@ namespace Revit.IFC.Export.Utility
       /// <returns>true if the entity found in the set</returns>
       public bool IsElementInExcludeList(IFCEntityType entity)
       {
-         return (ExcludeElementSet.Contains(entity.ToString()));
+         return IsEntityInExcludeList(entity.ToString());
+      }
+
+      /// <summary>
+      /// To check whether a specified IFC Entity is listed in the Exclude Filter (from configuration)
+      /// </summary>
+      /// <param name="entity">IFCEntityType enumeration representing the IFC entity concerned</param>
+      /// <returns>true if the entity found in the set</returns>
+      public bool IsEntityInExcludeList(string entityTypeName)
+      {
+         return ExcludeElementSet.Contains(entityTypeName);
+      }
+
+      /// <summary>
+      /// Check whether there is an Exclude Filter (from configuration)
+      /// </summary>
+      /// <returns>True if there are any entities excluded.</returns>
+      public bool HasExcludeList()
+      {
+         return ExcludeElementSet.Count > 0;
       }
 
       /// <summary>
@@ -1148,8 +1190,13 @@ namespace Revit.IFC.Export.Utility
             if (!string.IsNullOrEmpty(ExcludeFilter))
             {
                string[] eList = ExcludeFilter.Split(';');
-               foreach (string elem in eList)
-                  exclSet.Add(elem);
+               foreach (string entityToFilter in eList)
+               {
+                  if (!string.IsNullOrWhiteSpace(entityToFilter))
+                  {
+                     exclSet.Add(entityToFilter);
+                  }
+               }
             }
             _excludesElementSet = exclSet;
             return _excludesElementSet;

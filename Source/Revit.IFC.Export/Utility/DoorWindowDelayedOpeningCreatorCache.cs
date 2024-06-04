@@ -42,7 +42,7 @@ namespace Revit.IFC.Export.Utility
       /// Adds a new DoorWindowDelayedOpeningCreator.
       /// </summary>
       /// <param name="creator">The creator.</param>
-      public void Add(DoorWindowDelayedOpeningCreator creator)
+      public void Add(DoorWindowDelayedOpeningCreator creator, bool extend)
       {
          if (creator == null)
             return;
@@ -62,17 +62,11 @@ namespace Revit.IFC.Export.Utility
             // from DoorWindowInfo has higher priority
             if (oldCreator.CreatedFromDoorWindowInfo)
             {
-               if (!oldCreator.HasValidGeometry && creator.HasValidGeometry)
-               {
-                  oldCreator.CopyGeometry(creator);
-               }
+               CopyOrAddGeometry(oldCreator, creator, extend);
             }
             else if (creator.CreatedFromDoorWindowInfo)
             {
-               if (!creator.HasValidGeometry && oldCreator.HasValidGeometry)
-               {
-                  creator.CopyGeometry(oldCreator);
-               }
+               CopyOrAddGeometry(creator, oldCreator, extend);
                existingOpenings[levelIdToUse] = creator;
             }
          }
@@ -91,8 +85,22 @@ namespace Revit.IFC.Export.Utility
          {
             foreach (DoorWindowDelayedOpeningCreator creator in creators.Values)
             {
-               creator.Execute(exporterIFC, doc);
+               //Geometry can become invalid when ExtrusionData or Solids are null or count is 0
+               if (creator.HasValidGeometry)
+                  creator.Execute(exporterIFC, doc);
             }
+         }
+      }
+
+      private void CopyOrAddGeometry(DoorWindowDelayedOpeningCreator oldCreator, DoorWindowDelayedOpeningCreator newCreator, bool extend)
+      {
+         if (!oldCreator.HasValidGeometry && newCreator.HasValidGeometry)
+         {
+            oldCreator.CopyGeometry(newCreator);
+         }
+         else if (oldCreator.HasValidGeometry && newCreator.HasValidGeometry && extend)
+         {
+            oldCreator.AddGeometry(newCreator);
          }
       }
    }

@@ -209,7 +209,7 @@ namespace Revit.IFC.Import.Utility
       {
       }
 
-      protected IFCImportOptions(IDictionary<string, string> options, string ifcFileName, Document doc)
+      protected IFCImportOptions(IDictionary<string, string> options)
       {
          // "Intent": covers what the import operation is intended to create.
          // The two options are:
@@ -319,22 +319,11 @@ namespace Revit.IFC.Import.Utility
          ImportIFCOptions importIFCOptions = ImportIFCOptions.GetImportIFCOptions();
          string linkProcessor = importIFCOptions.LinkProcessor;
 
-         string revitVersion = doc.Application.VersionBuild;
-         if (revitVersion.StartsWith("24.0"))
-         {
-            // For Revit 24.0.x, only use hybrid import if revit.ini has "AnyCAD" set.
-            IsHybridImport = (string.Compare(linkProcessor, "AnyCAD", true) == 0) &&
-               (ifcFileName.EndsWith(".ifc")) && (Processor is IFCDefaultProcessor);
-         }
-         else
-         {
-            // For Revit 24.1.x
-            // Use hybrid import if revit.ini does not have "Legacy" in it and we are using
-            // the default (Revit) processor.  For other processors (e.g., Navis), revert
-            // to Legacy.
-            IsHybridImport = (string.Compare(linkProcessor, "Legacy", true) != 0) &&
-               (Processor is IFCDefaultProcessor);
-         }
+         // Use hybrid import if revit.ini does not have "Legacy" in it and we are using
+         // the default (Revit) processor.  For other processors (e.g., Navis), revert
+         // to Legacy.
+         IsHybridImport = (string.Compare(linkProcessor, "Legacy", true) != 0) &&
+            (Processor is IFCDefaultProcessor);
       }
 
       /// <summary>
@@ -342,9 +331,9 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       /// <param name="options">The user-set options for this import.</param>
       /// <returns>The new IFCImportOptions class.</returns>
-      static public IFCImportOptions Create(IDictionary<string, string> options, string ifcFileName, Document doc)
+      static public IFCImportOptions Create(IDictionary<string, string> options)
       {
-         return new IFCImportOptions(options, ifcFileName, doc);
+         return new IFCImportOptions(options);
       }
    }
 }

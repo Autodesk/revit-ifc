@@ -212,26 +212,27 @@ namespace Revit.IFC.Import.Data
                else if (IFCAnyHandleUtil.IsSubTypeOf(isDefinedByHandle, IFCEntityType.IfcRelDefinesByType))
                {
                   // For Hybrid IFC Import, preprocess IFCRelDefinesByType.
-                  // Need to do this because the TypeObject should have a GlobalId --> DirectShapeType before Revit calls ProcessIFCTypeObject.
-                  // This will add an entry to the HybridMap (IFCTypeObject GlobalId --> DirectShapeType ElementId) so Revit will know later that it doesn't need
+                  // Need to do this because the TypeObject should have a STEP Id --> DirectShapeType before Revit calls ProcessIFCTypeObject.
+                  // This will add an entry to the HybridMap (IFCTypeObject STEP Id --> DirectShapeType ElementId) so Revit will know later that it doesn't need
                   // to create a new DirectShapeType, and which DirectShapeType to use.
-                  if (Importer.TheOptions.IsHybridImport && (Importer.TheHybridInfo?.HybridMap?.ContainsKey(GlobalId) ?? false))
+                  ElementId ifcObjectElementId = IFCImportHybridInfo.GetHybridMapInformation(ifcObject);
+                  if (IFCImportHybridInfo.IsValidElementId(ifcObjectElementId))
                   {
                      IFCAnyHandle typeObject = IFCAnyHandleUtil.GetInstanceAttribute(isDefinedByHandle, "RelatingType");
-
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(typeObject))
                      {
                         Importer.TheLog.LogNullError(IFCEntityType.IfcTypeObject);
+                        return;
                      }
 
                      if (!IFCAnyHandleUtil.IsSubTypeOf(typeObject, IFCEntityType.IfcTypeObject))
                      {
                         Importer.TheLog.LogUnhandledSubTypeError(typeObject, IFCEntityType.IfcTypeObject, false);
+                        return;
                      }
 
-                     Importer.TheHybridInfo.AddTypeToHybridMap(GlobalId, typeObject);
+                     Importer.TheHybridInfo.AddTypeToHybridMap(ifcObjectElementId, typeObject);
                   }
-
                   ProcessIFCRelDefinesByType(isDefinedByHandle);
                }
                else

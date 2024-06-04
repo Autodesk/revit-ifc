@@ -17,55 +17,8 @@ namespace Revit.IFC.Import.Utility
       {
          if (ParametersToSet != null)
          {
-            //IFC Extension back - compatibility:
-            //Parameter.SetMultiple method available since Revit 2024.1, handle it for addin usage with the previous Revit versions.
-            //
-            try
-            {
-               TryToSetMultipleParameters();
-            }
-            catch (MissingMethodException)
-            {
-               foreach (Tuple<Parameter, ParameterValue> parameterAndParameterValue in ParametersToSet.ParameterList)
-               {
-                  Parameter param = parameterAndParameterValue.Item1;
-                  ParameterValue paramValue = parameterAndParameterValue.Item2;
-
-                  if(param != null)
-                  {
-                     StorageType storageType = param.StorageType;
-                     switch (storageType)
-                     {
-                        case StorageType.Integer:
-                           {
-                              param.Set((int)(paramValue as IntegerParameterValue)?.Value);
-                              break;
-                           }
-                        case StorageType.Double:
-                           {
-                              param.Set((double)(paramValue as DoubleParameterValue)?.Value);
-                              break;
-                           }
-                        case StorageType.String:
-                           {
-                              param.Set((string)(paramValue as StringParameterValue)?.Value);
-                              break;
-                           }
-                        case StorageType.ElementId:
-                           {
-                              param.Set((ElementId)(paramValue as ElementIdParameterValue)?.Value);
-                              break;
-                           }
-                     }
-                  }
-               }
-            }
+            Parameter.SetMultiple(ParametersToSet.ParameterList);
          }
-      }
-
-      private void TryToSetMultipleParameters()
-      {
-         Parameter.SetMultiple(ParametersToSet.ParameterList);
       }
 
       public ParametersToSet ParametersToSet { get; private set; } = null;

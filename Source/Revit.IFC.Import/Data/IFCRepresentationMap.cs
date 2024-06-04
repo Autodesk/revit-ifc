@@ -17,15 +17,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Import.Enums;
 using Revit.IFC.Import.Geometry;
 using Revit.IFC.Import.Utility;
 
@@ -94,15 +90,6 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Determine if the IFCRepresentationMap only has at least 1 IFCHybridInformation.
-      /// </summary>
-      /// <returns>True if the IFCRepresentationMap only has at least 1 IFCHybridInformation.</returns>
-      public bool IsHybridOnly()
-      {
-         return MappedRepresentation?.IsHybridOnly() ?? false;
-      }
-
-      /// <summary>
       /// Create geometry for a particular representation map.
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
@@ -144,10 +131,23 @@ namespace Revit.IFC.Import.Data
 
                if ((numExistingSolids != numNewSolids) || (numExistingCurves != numNewCurves))
                {
-                  IList<GeometryObject> mappedSolids = new List<GeometryObject>();
+                  List<GeometryObject> mappedSolids = new List<GeometryObject>();
                   for (int ii = numExistingSolids; ii < numNewSolids; ii++)
                   {
-                     mappedSolids.Add(shapeEditScope.Creator.Solids[numExistingSolids].GeometryObject);
+                     GeometryObject originalObject = shapeEditScope.Creator.Solids[numExistingSolids].GeometryObject;
+                     if (originalObject != null)
+                     {
+                        // We only check curves, not solids, here, so we don't pass in a DirectShape.
+                        IList<GeometryObject> processedList = IFCGeometryUtil.AdjustGeometryObjectsIfNeeded(originalObject, null, Id);
+                        if (processedList != null)
+                        {
+                           mappedSolids.AddRange(processedList);
+                        }
+                        else
+                        {
+                           mappedSolids.Add(originalObject);
+                        }
+                     }
                      shapeEditScope.Creator.Solids.RemoveAt(numExistingSolids);
                   }
 

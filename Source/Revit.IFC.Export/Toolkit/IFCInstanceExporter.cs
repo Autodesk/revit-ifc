@@ -25,6 +25,8 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Exporter.PropertySet;
+using System.Xml.Linq;
 
 namespace Revit.IFC.Export.Toolkit
 {
@@ -435,19 +437,25 @@ namespace Revit.IFC.Export.Toolkit
          string guid, IFCAnyHandle ownerHistory, string name, string description,
          string objectType)
       {
-         string overrideObjectType = objectType;
-         if (element != null)
+         string overrideObjectType = (element != null) ?
+            NamingUtil.GetObjectTypeOverride(obj, element, objectType) :
+            objectType;
+
+         if (string.IsNullOrEmpty(overrideObjectType) && (element != null))
          {
-            if (string.IsNullOrEmpty(objectType))
-               objectType = NamingUtil.GetFamilyAndTypeName(element);
-            overrideObjectType = NamingUtil.GetObjectTypeOverride(obj, element, objectType);
+            overrideObjectType = NamingUtil.GetFamilyAndTypeName(element);
          }
+
          IFCAnyHandleUtil.SetAttribute(obj, "ObjectType", overrideObjectType);
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+         {
             SetRoot(obj, element, guid, ownerHistory, name, description);
+         }
          else
+         {
             SetObjectDefinition(obj, element, guid, ownerHistory, name, description);
+         }
       }
 
       /// <summary>
@@ -555,6 +563,50 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Sets attributes to IfcFacilityPart.
+      /// </summary>
+      /// <param name="facilityPart">The IfcFacilityPart.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="objectPlacement">The object placement.</param>
+      /// <param name="representation">The representation object.</param>
+      /// <param name="longName">The long name.</param>
+      /// <param name="compositionType">The composition type.</param>
+      private static void SetFacilityPart(IFCAnyHandle facilityPart, Element element,
+         string guid, IFCAnyHandle ownerHistory, string name, string description, string objectType,
+         IFCAnyHandle objectPlacement, IFCAnyHandle representation, string longName,
+         IFCElementComposition compositionType)
+      {
+         SetSpatialStructureElement(facilityPart, element, guid, ownerHistory, name, description, objectType,
+            objectPlacement, representation, longName, compositionType);
+      }
+
+      /// <summary>
+      /// Sets attributes to IfcFacility.
+      /// </summary>
+      /// <param name="facility">The IfcFacility.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="objectPlacement">The object placement.</param>
+      /// <param name="representation">The representation object.</param>
+      /// <param name="longName">The long name.</param>
+      /// <param name="compositionType">The composition type.</param>
+      private static void SetFacility(IFCAnyHandle facility, Element element,
+         string guid, IFCAnyHandle ownerHistory, string name, string description, string objectType,
+         IFCAnyHandle objectPlacement, IFCAnyHandle representation, string longName,
+         IFCElementComposition compositionType)
+      {
+         SetSpatialStructureElement(facility, element, guid, ownerHistory, name, description, objectType,
+            objectPlacement, representation, longName, compositionType);
+      }
+
+      /// <summary>
       /// Sets attributes to IfcSpatialStructureElement.
       /// </summary>
       /// <param name="spatialStructureElement">The IfcSpatialStructureElement.</param>
@@ -568,11 +620,9 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="longName">The long name.</param>
       /// <param name="compositionType">The composition type.</param>
       private static void SetSpatialStructureElement(IFCAnyHandle spatialStructureElement, Element element,
-          string guid, IFCAnyHandle ownerHistory, string name, string description,
-          string objectType,
-          IFCAnyHandle objectPlacement, IFCAnyHandle representation,
-          string longName,
-          IFCElementComposition compositionType)
+         string guid, IFCAnyHandle ownerHistory, string name, string description,
+         string objectType, IFCAnyHandle objectPlacement, IFCAnyHandle representation, string longName,
+         IFCElementComposition compositionType)
       {
          IFCAnyHandleUtil.SetAttribute(spatialStructureElement, "CompositionType", compositionType);
          if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
@@ -1806,12 +1856,12 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.SetAttribute(building, "ElevationOfRefHeight", elevationOfRefHeight);
          IFCAnyHandleUtil.SetAttribute(building, "ElevationOfTerrain", elevationOfTerrain);
          IFCAnyHandleUtil.SetAttribute(building, "BuildingAddress", buildingAddress);
-         SetSpatialStructureElement(building, null, guid, ownerHistory, name, description, objectType, objectPlacement, representation, longName, compositionType);
+         SetFacility(building, null, guid, ownerHistory, name, description, objectType, objectPlacement, representation, longName, compositionType);
          return building;
       }
 
       /// <summary>
-      /// Creates a handle representing an IfcBuildingStorey and assigns it to the file.
+      /// Creates an IfcBridge, and assigns it to the file.
       /// </summary>
       /// <param name="file">The file.</param>
       /// <param name="guid">The GUID.</param>
@@ -1823,13 +1873,111 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="representation">The representation object.</param>
       /// <param name="longName">The long name.</param>
       /// <param name="compositionType">The composition type.</param>
-      /// <param name="elevation">The elevation with flooring measurement.</param>
+      /// <param name="predefinedType">The predefined type of the bridge.</param>
       /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateBridge(ExporterIFC exporterIFC, string guid, IFCAnyHandle ownerHistory,
+          string name, string description, string objectType, IFCAnyHandle objectPlacement, IFCAnyHandle representation,
+          string longName, IFCElementComposition compositionType, string predefinedType)
+      {
+         IFCAnyHandle bridge = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcBridge, null);
+         IFCAnyHandleUtil.SetAttribute(bridge, "PredefinedType", predefinedType);
+         SetFacility(bridge, null, guid, ownerHistory, name, description, objectType, objectPlacement, representation, longName, compositionType);
+         return bridge;
+      }
+
+      /// <summary>
+      /// Creates an IfcRoad, and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="objectPlacement">The object placement.</param>
+      /// <param name="representation">The representation object.</param>
+      /// <param name="longName">The long name.</param>
+      /// <param name="compositionType">The composition type.</param>
+      /// <param name="predefinedType">The predefined type of the bridge.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateRoad(ExporterIFC exporterIFC, string guid, IFCAnyHandle ownerHistory,
+          string name, string description, string objectType, IFCAnyHandle objectPlacement, IFCAnyHandle representation,
+          string longName, IFCElementComposition compositionType, string predefinedType)
+      {
+         IFCAnyHandle road = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcRoad, null);
+         IFCAnyHandleUtil.SetAttribute(road, "PredefinedType", predefinedType);
+         SetFacility(road, null, guid, ownerHistory, name, description, objectType, objectPlacement, representation, longName, compositionType);
+         return road;
+      }
+
+      /// <summary>
+      /// Creates an IfcRailway, and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="objectPlacement">The object placement.</param>
+      /// <param name="representation">The representation object.</param>
+      /// <param name="longName">The long name.</param>
+      /// <param name="compositionType">The composition type.</param>
+      /// <param name="predefinedType">The predefined type of the bridge.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateRailway(ExporterIFC exporterIFC, string guid, IFCAnyHandle ownerHistory,
+          string name, string description, string objectType, IFCAnyHandle objectPlacement, IFCAnyHandle representation,
+          string longName, IFCElementComposition compositionType, string predefinedType)
+      {
+         IFCAnyHandle railway = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcRailway, null);
+         IFCAnyHandleUtil.SetAttribute(railway, "PredefinedType", predefinedType);
+         SetFacility(railway, null, guid, ownerHistory, name, description, objectType, objectPlacement, representation, longName, compositionType);
+         return railway;
+      }
+
+      /// <summary>
+      /// Creates an IfcRailway, and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="objectPlacement">The object placement.</param>
+      /// <param name="representation">The representation object.</param>
+      /// <param name="longName">The long name.</param>
+      /// <param name="compositionType">The composition type.</param>
+      /// <param name="predefinedType">The predefined type of the bridge.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateMarineFacility(ExporterIFC exporterIFC, string guid, IFCAnyHandle ownerHistory,
+          string name, string description, string objectType, IFCAnyHandle objectPlacement, IFCAnyHandle representation,
+          string longName, IFCElementComposition compositionType, string predefinedType)
+      {
+         IFCAnyHandle marineFacility = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcMarineFacility, null);
+         IFCAnyHandleUtil.SetAttribute(marineFacility, "PredefinedType", predefinedType);
+         SetFacility(marineFacility, null, guid, ownerHistory, name, description, objectType, objectPlacement, representation, longName, compositionType);
+         return marineFacility;
+      }
+      
+      /// <summary>
+       /// Creates a handle representing an IfcBuildingStorey and assigns it to the file.
+       /// </summary>
+       /// <param name="file">The file.</param>
+       /// <param name="guid">The GUID.</param>
+       /// <param name="ownerHistory">The owner history.</param>
+       /// <param name="name">The name.</param>
+       /// <param name="description">The description.</param>
+       /// <param name="objectType">The object type.</param>
+       /// <param name="objectPlacement">The object placement.</param>
+       /// <param name="representation">The representation object.</param>
+       /// <param name="longName">The long name.</param>
+       /// <param name="compositionType">The composition type.</param>
+       /// <param name="elevation">The elevation with flooring measurement.</param>
+       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateBuildingStorey(ExporterIFC exporterIFC, Level level, IFCAnyHandle ownerHistory, string objectType, IFCAnyHandle objectPlacement,
           IFCElementComposition compositionType, double elevation)
       {
-
-
          IFCAnyHandle buildingStorey = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcBuildingStorey, null);
          string guid = GUIDUtil.GetLevelGUID(level);
          string name = NamingUtil.GetNameOverride(buildingStorey, level, level.Name);
@@ -1837,8 +1985,118 @@ namespace Revit.IFC.Export.Toolkit
          string longName = NamingUtil.GetLongNameOverride(level, level.Name);
 
          IFCAnyHandleUtil.SetAttribute(buildingStorey, "Elevation", elevation);
-         SetSpatialStructureElement(buildingStorey, level, guid, ownerHistory, name, description, objectType, objectPlacement, null, longName, compositionType);
+         SetFacilityPart(buildingStorey, level, guid, ownerHistory, name, description, objectType, objectPlacement, null, longName, compositionType);
          return buildingStorey;
+      }
+
+      /// <summary>
+      /// Creates a handle representing an IfcMarinePart and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="objectPlacement">The object placement.</param>
+      /// <param name="representation">The representation object.</param>
+      /// <param name="longName">The long name.</param>
+      /// <param name="compositionType">The composition type.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateMarinePart(ExporterIFC exporterIFC, Level level, IFCAnyHandle ownerHistory, string objectType, IFCAnyHandle objectPlacement,
+          IFCElementComposition compositionType)
+      {
+         IFCAnyHandle marinePart = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcMarinePart, null);
+         string guid = GUIDUtil.GetLevelGUID(level);
+         string name = NamingUtil.GetNameOverride(marinePart, level, level.Name);
+         string description = NamingUtil.GetDescriptionOverride(level, null);
+         string longName = NamingUtil.GetLongNameOverride(level, level.Name);
+
+         SetFacilityPart(marinePart, level, guid, ownerHistory, name, description, objectType, objectPlacement, null, longName, compositionType);
+         return marinePart;
+      }
+
+      /// <summary>
+      /// Creates a handle representing an IfcRoadPart and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="objectPlacement">The object placement.</param>
+      /// <param name="representation">The representation object.</param>
+      /// <param name="longName">The long name.</param>
+      /// <param name="compositionType">The composition type.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateRoadPart(ExporterIFC exporterIFC, Level level, IFCAnyHandle ownerHistory, string objectType, IFCAnyHandle objectPlacement,
+          IFCElementComposition compositionType)
+      {
+         IFCAnyHandle roadPart = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcRoadPart, null);
+         string guid = GUIDUtil.GetLevelGUID(level);
+         string name = NamingUtil.GetNameOverride(roadPart, level, level.Name);
+         string description = NamingUtil.GetDescriptionOverride(level, null);
+         string longName = NamingUtil.GetLongNameOverride(level, level.Name);
+
+         SetFacilityPart(roadPart, level, guid, ownerHistory, name, description, objectType, objectPlacement, null, longName, compositionType);
+         return roadPart;
+      }
+
+      /// <summary>
+      /// Creates a handle representing an IfcRailwayPart and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="objectPlacement">The object placement.</param>
+      /// <param name="representation">The representation object.</param>
+      /// <param name="longName">The long name.</param>
+      /// <param name="compositionType">The composition type.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateRailwayPart(ExporterIFC exporterIFC, Level level, IFCAnyHandle ownerHistory, string objectType, IFCAnyHandle objectPlacement,
+          IFCElementComposition compositionType)
+      {
+         IFCAnyHandle railwayPart = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcRailwayPart, null);
+         string guid = GUIDUtil.GetLevelGUID(level);
+         string name = NamingUtil.GetNameOverride(railwayPart, level, level.Name);
+         string description = NamingUtil.GetDescriptionOverride(level, null);
+         string longName = NamingUtil.GetLongNameOverride(level, level.Name);
+
+         SetFacilityPart(railwayPart, level, guid, ownerHistory, name, description, objectType, objectPlacement, null, longName, compositionType);
+         return railwayPart;
+      }
+
+      /// <summary>
+      /// Creates a handle representing an IfcBridgePart and assigns it to the file.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <param name="objectPlacement">The object placement.</param>
+      /// <param name="representation">The representation object.</param>
+      /// <param name="longName">The long name.</param>
+      /// <param name="compositionType">The composition type.</param>
+      /// <param name="predefinedType">The predefined type of the bridge part.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateBridgePart(ExporterIFC exporterIFC, Level level, IFCAnyHandle ownerHistory, string objectType, IFCAnyHandle objectPlacement,
+          IFCElementComposition compositionType, string predefinedType)
+      {
+         IFCAnyHandle bridgePart = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcBridgePart, null);
+         string guid = GUIDUtil.GetLevelGUID(level);
+         string name = NamingUtil.GetNameOverride(bridgePart, level, level.Name);
+         string description = NamingUtil.GetDescriptionOverride(level, null);
+         string longName = NamingUtil.GetLongNameOverride(level, level.Name);
+
+         IFCAnyHandleUtil.SetAttribute(bridgePart, "PredefinedType", predefinedType);
+         SetFacilityPart(bridgePart, level, guid, ownerHistory, name, description, objectType, objectPlacement, null, longName, compositionType);
+         return bridgePart;
       }
 
       /// <summary>
@@ -2769,6 +3027,16 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Validate that the parameters for IfcCircle are valid.
+      /// </summary>
+      /// <param name="radius">The radius of the circle.</param>
+      /// <returns>True if the circle is valid.</returns>
+      public static bool ValidateCircle(double radius)
+      {
+         return radius >= MathUtil.Eps();
+      }
+
+      /// <summary>
       /// Creates a handle representing an IfcCircle and assigns it to the file.
       /// </summary>
       /// <param name="file">The file.</param>
@@ -2777,13 +3045,24 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateCircle(IFCFile file, IFCAnyHandle position, double radius)
       {
-         if (radius < MathUtil.Eps())
+         if (!ValidateCircle(radius))
             throw new ArgumentException("Radius is tiny, zero, or negative.");
 
          IFCAnyHandle circle = CreateInstance(file, IFCEntityType.IfcCircle, null);
          SetConic(circle, position);
          IFCAnyHandleUtil.SetAttribute(circle, "Radius", radius);
          return circle;
+      }
+
+      /// <summary>
+      /// Validate that the parameters for IfcEllipse are valid.
+      /// </summary>
+      /// <param name="semiAxis1">The radius in the direction of X in the local coordinate system.</param>
+      /// <param name="semiAxis2">The radius in the direction of Y in the local coordinate system.</param>
+      /// <returns>True if the ellipse is valid.</returns>
+      public static bool ValidateEllipse(double semiAxis1, double semiAxis2)
+      {
+         return semiAxis1 >= MathUtil.Eps() && semiAxis2 >= MathUtil.Eps();
       }
 
       /// <summary>
@@ -2796,9 +3075,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateEllipse(IFCFile file, IFCAnyHandle position, double semiAxis1, double semiAxis2)
       {
-         if (semiAxis1 < MathUtil.Eps())
-            throw new ArgumentException("semiAxis1 is tiny, zero, or negative.");
-         if (semiAxis2 < MathUtil.Eps())
+         if (!ValidateEllipse(semiAxis1, semiAxis2))
             throw new ArgumentException("semiAxis2 is tiny, zero, or negative.");
 
          IFCAnyHandle ellipse = CreateInstance(file, IFCEntityType.IfcEllipse, null);
@@ -3651,9 +3928,6 @@ namespace Revit.IFC.Export.Toolkit
       public static void SetPredefinedType(IFCAnyHandle genericIFCEntity, 
          IFCExportInfoPair entityToCreate)
       {
-         if (string.IsNullOrEmpty(entityToCreate.ValidatedPredefinedType))
-            return;
-
          IFCVersion version = ExporterCacheManager.ExportOptionsCache.FileVersion;
          IFCEntityType entityType = entityToCreate.ExportInstance;
 
@@ -3666,7 +3940,7 @@ namespace Revit.IFC.Export.Toolkit
             if (predefinedTypeAttributeName == null && !MissingAttributeCache.Find(version, entityType))
                predefinedTypeAttributeName = "PredefinedType";
             if (predefinedTypeAttributeName != null)
-               IFCAnyHandleUtil.SetAttribute(genericIFCEntity, predefinedTypeAttributeName, entityToCreate.ValidatedPredefinedType, true);
+               IFCAnyHandleUtil.SetAttribute(genericIFCEntity, predefinedTypeAttributeName, entityToCreate.GetPredefinedTypeOrDefault(), true);
          }
          catch
          {
@@ -3755,15 +4029,12 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle genericIFCType = CreateInstance(file, entityTypeToUse, elementType);
          SetElementType(genericIFCType, elementType, guid, propertySets, representationMaps);
 
-         if (!string.IsNullOrEmpty(typeEntityToCreate.ValidatedPredefinedType))
+         // Earlier types in IFC2x_ may not have PredefinedType property. Ignore error
+         try
          {
-            // Earlier types in IFC2x_ may not have PredefinedType property. Ignore error
-            try
-            {
-               IFCAnyHandleUtil.SetAttribute(genericIFCType, "PredefinedType", typeEntityToCreate.ValidatedPredefinedType, true);
-            }
-            catch { }
+            IFCAnyHandleUtil.SetAttribute(genericIFCType, "PredefinedType", typeEntityToCreate.GetPredefinedTypeOrDefault(), true);
          }
+         catch { }
 
          SetGenericTypeNonOptionalAttributes(genericIFCType, typeEntityToCreate.ExportType);
 
@@ -3834,8 +4105,6 @@ namespace Revit.IFC.Export.Toolkit
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            if (string.IsNullOrEmpty(predefinedType))
-               predefinedType = "NOTDEFINED";
             predefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, predefinedType, "IFCFurnitureType");
             IFCAnyHandleUtil.SetAttribute(furnitureType, "PredefinedType", predefinedType, true);
          }
@@ -3966,8 +4235,7 @@ namespace Revit.IFC.Export.Toolkit
 
          IFCAnyHandle buildingSystem = CreateInstance(file, IFCEntityType.IfcBuildingSystem, null);
          SetGroup(buildingSystem, guid, ownerHistory, name, description, objectType);
-         if (!string.IsNullOrEmpty(entityToCreate.ValidatedPredefinedType))
-            IFCAnyHandleUtil.SetAttribute(buildingSystem, "PredefinedType", entityToCreate.ValidatedPredefinedType, true);
+         IFCAnyHandleUtil.SetAttribute(buildingSystem, "PredefinedType", entityToCreate.GetPredefinedTypeOrDefault(), true);
          if (!string.IsNullOrEmpty(longName))
             IFCAnyHandleUtil.SetAttribute(buildingSystem, "LongName", longName, false);
 
@@ -6641,7 +6909,10 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle indexedColourMap = CreateInstance(file, IFCEntityType.IfcIndexedColourMap, null);
          IFCAnyHandleUtil.SetAttribute(indexedColourMap, "MappedTo", mappedTo);
          if (opacity.HasValue)
-            IFCAnyHandleUtil.SetAttribute(indexedColourMap, "Opacity", opacity);
+         {
+            double inRangeOpacity = Math.Min(Math.Max(opacity.Value, 0.0), 1.0);
+            IFCAnyHandleUtil.SetAttribute(indexedColourMap, "Opacity", inRangeOpacity);
+         }
          IFCAnyHandleUtil.SetAttribute(indexedColourMap, "Colours", colours);
          IFCAnyHandleUtil.SetAttribute(indexedColourMap, "ColourIndex", colourIndex);
          return indexedColourMap;

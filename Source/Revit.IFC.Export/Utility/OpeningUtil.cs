@@ -152,7 +152,7 @@ namespace Revit.IFC.Export.Utility
          Transform offsetTransform, ExporterIFC exporterIFC, IFCAnyHandle originalPlacement,
          PlacementSetter setter, ProductWrapper wrapper)
       {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(elementHandle))
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(elementHandle) || extraParams == null)
             return;
 
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
@@ -268,7 +268,7 @@ namespace Revit.IFC.Export.Utility
             // including a line as part of the elevation profile of the wall.
             // As such, we will restrict which element types we check for CanExportElement.
             if ((openingElem is WallSweep) &&
-               (!ElementFilteringUtil.CanExportElement(exporterIFC, openingElem, true)))
+               (!ElementFilteringUtil.CanExportElement(openingElem, true)))
                continue;
 
             IList<IFCExtrusionData> extrusionDataList = openingData.GetExtrusionData();
@@ -292,7 +292,7 @@ namespace Revit.IFC.Export.Utility
                    element.Id, parentHandle, setter.LevelId);
                if (delayedCreator != null)
                {
-                  ExporterCacheManager.DoorWindowDelayedOpeningCreatorCache.Add(delayedCreator);
+                  ExporterCacheManager.DoorWindowDelayedOpeningCreatorCache.Add(delayedCreator, true);
                   continue;
                }
             }

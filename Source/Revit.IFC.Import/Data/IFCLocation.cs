@@ -46,6 +46,19 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// The total transform, taking into account any large coordinate offset.
+      /// </summary>
+      public Transform TotalTransformAfterOffset
+      {
+         get 
+         {
+            Transform totalTransform = TotalTransform ?? Transform.Identity;
+            totalTransform.Origin += (Importer.TheHybridInfo?.LargeCoordinateOriginOffset ?? XYZ.Zero);
+            return totalTransform;
+         }
+      }
+
+      /// <summary>
       /// The relative transform.
       /// </summary>
       public Transform RelativeTransform { get; set; } = Transform.Identity;
@@ -295,7 +308,7 @@ namespace Revit.IFC.Import.Data
 
       public static void WarnIfFaraway(IFCProduct product)
       {
-         XYZ origin = product?.ObjectLocation?.TotalTransform?.Origin;
+         XYZ origin = product?.ObjectLocation?.TotalTransformAfterOffset?.Origin;
          if (origin != null && !XYZ.IsWithinLengthLimits(origin))
          {
             Importer.TheLog.LogWarning(product.Id, "This entity has an origin that is outside of Revit's creation limits.  This could result in bad graphical display of geometry.", false);

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
@@ -14,7 +12,7 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public sealed class ElementTypeKey : Tuple<ElementType, IFCEntityType, string>
    {
-      public ElementTypeKey(ElementType elementType, IFCEntityType entType, string preDefinedType) : base(elementType, entType, preDefinedType) { }
+      public ElementTypeKey(ElementType elementType, IFCExportInfoPair exportAs) : base(elementType, exportAs.ExportType, exportAs.GetPredefinedTypeOrDefault()) { }
    }
 
    /// <summary>
@@ -89,7 +87,7 @@ namespace Revit.IFC.Export.Utility
       public IFCAnyHandle Find(ElementType elementType, IFCExportInfoPair exportType)
       {
          IFCAnyHandle handle;
-         var key = new ElementTypeKey(elementType, exportType.ExportType, exportType.ValidatedPredefinedType);
+         var key = new ElementTypeKey(elementType, exportType);
          if (m_ElementTypeToHandleDictionary.TryGetValue(key, out handle))
          {
             return handle;
@@ -161,7 +159,7 @@ namespace Revit.IFC.Export.Utility
       /// </param>
       public void Register(ElementType elementType, IFCExportInfoPair exportType, IFCAnyHandle handle)
       {
-         var key = new ElementTypeKey(elementType, exportType.ExportType, exportType.ValidatedPredefinedType);
+         var key = new ElementTypeKey(elementType, exportType);
 
          if (m_ElementTypeToHandleDictionary.ContainsKey(key) || exportType.ExportType == IFCEntityType.UnKnown)
             return;

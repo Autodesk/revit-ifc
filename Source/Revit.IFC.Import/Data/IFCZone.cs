@@ -85,7 +85,10 @@ namespace Revit.IFC.Import.Data
       /// <returns>True if the IFC entity geometry should be duplicated, False otherwise.</returns>
       public override bool ContainerFilteredEntity(IFCEntity entity)
       {
-         return (entity is IFCSpace);
+         if (entity == null)
+            return false;
+
+         return (entity.EntityType == IFCEntityType.IfcSpace) || (entity.EntityType == IFCEntityType.IfcSpatialZone);
       }
 
       /// <summary>

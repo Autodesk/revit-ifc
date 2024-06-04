@@ -371,10 +371,11 @@ namespace Revit.IFC.Export.Utility
          //   ObjectType attribute will be overridden by that value, allowing ObjectType is set according to the Type setting 
          //   such as IfcExportType="USERDEFINED" set in the Type which necessitates ObjectType in the instance to be set to
          //   the appropriate value
+         Element typeOrSymbol = null;
          if (string.IsNullOrEmpty(overrideValue)
             || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
          {
-            Element typeOrSymbol = element.Document.GetElement(element.GetTypeId()) as ElementType; ;
+            typeOrSymbol = element.Document.GetElement(element.GetTypeId()) as ElementType;
             if (typeOrSymbol == null)
             {
                FamilyInstance famInst = element as FamilyInstance;
@@ -388,6 +389,21 @@ namespace Revit.IFC.Export.Utility
                overrideValue = GetOverrideStringValue(typeOrSymbol, objectTypeOverride, originalValue);
             }
          }
+
+         if (string.IsNullOrEmpty(overrideValue)
+            || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
+         {
+            Document document = element.Document;
+            ElementId categoryId = element?.Category?.Id ?? ElementId.InvalidElementId;
+            CustomSubCategoryId customSubCategoryId = 
+               ExporterUtil.WallFunctionToCustomSubCategoryId((typeOrSymbol as WallType)?.Function);
+            ExportIFCCategoryInfo info = ExporterCacheManager.CategoryMappingTemplate.GetMappingInfoById(document, categoryId, customSubCategoryId);
+            if (string.Compare(info?.IFCPredefinedType ?? string.Empty, "USERDEFINED", true) == 0)
+            {
+               overrideValue = info.IFCUserDefinedType;
+            }
+         }
+
          //GetOverrideStringValue will return the override value from the parameter specified, otherwise it will return the originalValue
          return overrideValue;
       }

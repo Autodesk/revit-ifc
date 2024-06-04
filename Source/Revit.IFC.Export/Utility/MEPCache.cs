@@ -41,9 +41,9 @@ namespace Revit.IFC.Export.Utility
       public List<ConnectorSet> MEPConnectors = new List<ConnectorSet>();
 
       /// <summary>
-      /// A cache of elements (Ducts and Pipes) that may have coverings (Linings and/or Insulations).
+      /// A cache of elements (Ducts and Pipes) that may have coverings (Linings and/or Insulations) and their categories.
       /// </summary>
-      public HashSet<ElementId> CoveredElementsCache = new HashSet<ElementId>();
+      public IDictionary<ElementId, ElementId> CoveredElementsCache = new Dictionary<ElementId, ElementId>();
 
       /// <summary>
       /// A cache of elements (Cable Trays and Conduits) that may be assigned to systems

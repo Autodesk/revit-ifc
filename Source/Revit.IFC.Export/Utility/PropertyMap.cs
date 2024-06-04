@@ -19,73 +19,248 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
-using System.Text.RegularExpressions;
-using GeometryGym.Ifc;
+using Autodesk.Revit.DB;
+using Revit.IFC.Export.Exporter.PropertySet;
 
 namespace Revit.IFC.Export.Utility
 {
    /// <summary>
-   /// Type or Instance enum
+   /// Represents the Revit parameter to get from element.
    /// </summary>
-   public enum TypeOrInstance
+   class UserDefinedPropertyRevitParameter
    {
-      Type,
-      Instance
+      /// <summary>
+      /// Gets Revit <see cref="BuiltInParameter"/>.
+      /// </summary>
+      public BuiltInParameter BuiltInParameter { get; private set; } = BuiltInParameter.INVALID;
+
+      /// <summary>
+      /// Gets custom Revit paramater name.
+      /// </summary>
+      public string RevitParameter { get; private set; } = null;
+
+      /// <summary>
+      /// Gets a value indicating whether the Revit built-in parameter specified.
+      /// </summary>
+      public bool IsBuiltInParameterDefined { get; private set; } = false;
+
+      /// <summary>
+      /// Creates a new revit parameter representation instance for the given raw definition from the config.
+      /// </summary>
+      /// <param name="rawParameter">Data to parse.</param>
+      /// <returns>A new instance of <see cref="UserDefinedPropertyRevitParameter"/>.</returns>
+      public static UserDefinedPropertyRevitParameter Create(string rawParameter)
+      {
+         if (string.IsNullOrWhiteSpace(rawParameter))
+            return null;
+
+         UserDefinedPropertyRevitParameter parameter = new UserDefinedPropertyRevitParameter();
+         const string prefix = "BuiltInParameter.";
+         if (rawParameter.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase))
+         {
+            parameter.IsBuiltInParameterDefined = true;
+            string builtinParameterName = rawParameter.Substring(prefix.Length);
+            if (Enum.TryParse(builtinParameterName, out BuiltInParameter builtInParameter) && builtInParameter != BuiltInParameter.INVALID)
+            {
+               parameter.BuiltInParameter = builtInParameter;
+            }
+         }
+         else
+         {
+            parameter.RevitParameter = rawParameter;
+         }
+
+         return parameter;
+      }
    }
 
    /// <summary>
-   /// PropertSet definition struct
+   /// Represents a single property definiton from the config.
    /// </summary>
-   public struct PropertySetDef
+   class UserDefinedProperty
    {
-      public string propertySetName;
-      public string propertySetDescription;
-      public IList<PropertyDef> propertyDefs;
-      public TypeOrInstance applicableTo;
-      public IList<string> applicableElements;
+      /// <summary>
+      /// Gets or sets a property name.
+      /// </summary>
+      public string Name { get; set; }
+
+      /// <summary>
+      /// Gets a list of defined Revit parameters.
+      /// </summary>
+      public List<UserDefinedPropertyRevitParameter> RevitParameters { get; private set; } = new List<UserDefinedPropertyRevitParameter>();
+
+      /// <summary>
+      /// Gets a property value type. By default <see cref="PropertyValueType.SingleValue"/>.
+      /// </summary>
+      public PropertyValueType IfcPropertyValueType { get; private set; } = PropertyValueType.SingleValue;
+
+      /// <summary>
+      /// Gets a list of property types.
+      /// </summary>
+      public List<string> IfcPropertyTypes { get; private set; } = new List<string>();
+
+      /// <summary>
+      /// Parses and sets <see cref="IfcPropertyValueType"/> and <see cref="IfcPropertyTypes"/> by given <paramref name="rawIfcPropertyTypes"/>.
+      /// </summary>
+      /// <param name="rawIfcPropertyTypes">Property type data to parse.</param>
+      public void ParseIfcPropertyTypes(string rawIfcPropertyTypes)
+      {
+         if (string.IsNullOrWhiteSpace(rawIfcPropertyTypes))
+            return;
+
+         // format: <PropertyVaueType>.<ValueType>/<ValueType>/...
+         IfcPropertyTypes.Clear();
+         string dataTypePartToParse = string.Empty;
+         string[] split = rawIfcPropertyTypes.Split('.') ?? new string[] {};
+         if (split.Length == 1)
+         {
+            IfcPropertyValueType = PropertyValueType.SingleValue;
+            dataTypePartToParse = split[0];
+         } 
+         else if (split.Length >= 2)
+         {
+            const string prefix = "Property";
+            bool withPrefix = split[0].StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase);
+            string rawValueType = withPrefix ? split[0].Substring(prefix.Length) : split[0];
+            if (!Enum.TryParse(rawValueType, true, out PropertyValueType propertyValueType))
+            {
+               propertyValueType = PropertyValueType.SingleValue;
+            }
+
+            IfcPropertyValueType = propertyValueType;
+            dataTypePartToParse = split[1];
+         }
+
+         string[] rawPropertyTypes = dataTypePartToParse.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+         foreach(string rawPropertyType in rawPropertyTypes)
+         {
+            const string prefix = "Ifc";
+            bool withPrefix = rawPropertyType.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase);
+            IfcPropertyTypes.Add(withPrefix ? rawPropertyType.Substring(prefix.Length) : rawPropertyType);
+         }
+      }
+
+      /// <summary>
+      /// Parses a list of revit parameters by given data from config.
+      /// </summary>
+      /// <param name="rawParameters">Data to parse.</param>
+      public void ParseRevitParameters(string rawParameters)
+      {
+         if (string.IsNullOrWhiteSpace(rawParameters))
+            return;
+
+         RevitParameters.Clear();
+         UserDefinedPropertyRevitParameter parameter = UserDefinedPropertyRevitParameter.Create(rawParameters);
+         if (parameter != null)
+            RevitParameters.Add(parameter);
+      }
+
+      /// <summary>
+      /// Gets Revit parameters mapped into list of T type.
+      /// </summary>
+      /// <typeparam name="T">The type of list elements.</typeparam>
+      /// <param name="mapper">Function to initialize T.</param>
+      /// <returns>A list of Revit parameters mapped into list of T type.</returns>
+      public List<T> GetEntryMap<T>(Func<string, BuiltInParameter, T> mapper) where T : EntryMap, new()
+      {
+         List<T> entryMap = new List<T>();
+         foreach (UserDefinedPropertyRevitParameter parameter in RevitParameters)
+         {
+            if (parameter.BuiltInParameter != BuiltInParameter.INVALID)
+            {
+               entryMap.Add(mapper(Name, parameter.BuiltInParameter));
+            }
+            else if (!parameter.IsBuiltInParameterDefined)
+            {
+               entryMap.Add(mapper(parameter.RevitParameter, BuiltInParameter.INVALID));
+            }
+            else
+            {
+               // report as error in log when we create log file.
+            }
+         }
+
+         return entryMap;
+      }
+
+      /// <summary>
+      /// Returns the first element of <see cref="IfcPropertyTypes"/> converted to <typeparamref name="TEnum"/>,
+      /// or a <paramref name="defaultValue"/> if <see cref="IfcPropertyTypes"/> contains no elements.
+      /// </summary>
+      /// <typeparam name="TEnum">The enumeration type to which to convert value.</typeparam>
+      /// <param name="defaultValue">
+      /// Value to return if the index is out of range, if <see cref="IfcPropertyTypes"/> is empty or
+      /// first element value is not represented in the <typeparamref name="TEnum"/>.
+      /// </param>
+      /// <returns>
+      /// <paramref name="defaultValue"/> if source is empty; otherwise, the first element in <see cref="IfcPropertyTypes"/>
+      /// converted to <typeparamref name="TEnum"/>
+      /// </returns>
+      public TEnum FirstIfcPropertyTypeOrDefault<TEnum>(TEnum defaultValue) where TEnum : struct
+      {
+         if ((IfcPropertyTypes?.Count ?? 0) == 0)
+            return defaultValue;
+
+         if(Enum.TryParse(IfcPropertyTypes[0], true, out TEnum t))
+            return t;
+
+         return defaultValue;
+      }
+
+      /// <summary>
+      /// Returns the type at a specified index in <see cref=" IfcPropertyTypes"/> converted to <typeparamref name="TEnum"/>
+      /// or a default value if the index is out of range, if <see cref="IfcPropertyTypes"/> is empty, if value at a specified
+      /// index is not represented in the <typeparamref name="TEnum"/>.
+      /// </summary>
+      /// <typeparam name="TEnum">The enumeration type to which to convert value.</typeparam>
+      /// <param name="index">The zero-based index of the element to retrieve.</param>
+      /// <param name="defaultValue">
+      /// Value to return if the index is out of range, if <see cref="IfcPropertyTypes"/> is empty, if value at a specified
+      /// index is not represented in the <typeparamref name="TEnum"/>.
+      /// </param>
+      /// <returns>
+      /// <paramref name="defaultValue"/> if the index is outside the bounds of the source sequence or <see cref="IfcPropertyTypes"/> is empty; 
+      /// otherwise,the element at the specified position in the source sequence.
+      /// </returns>
+      public TEnum GetIfcPropertyAtOrDefault<TEnum>(int index, TEnum defaultValue) where TEnum : struct
+      {
+         if ((IfcPropertyTypes?.Count ?? 0) == 0 || IfcPropertyTypes.Count >= index || index < 0)
+            return defaultValue;
+
+         if (Enum.TryParse(IfcPropertyTypes[index], true, out TEnum t))
+            return t;
+
+         return defaultValue;
+      }
    }
 
    /// <summary>
-   /// Property 
+   /// Represents a property set from the config.
    /// </summary>
-   public class PropertyDef
+   class UserDefinedPropertySet
    {
-      public string PropertyName;
-      public string PropertyDataType;
-      public List<PropertyParameterDefinition> ParameterDefinitions = new List<PropertyParameterDefinition>();
-      //public GeometryGym.Ifc.IfcValue DefaultValue = null;
-      public PropertyDef(string propertyName)
-      {
-         PropertyName = propertyName;
-         ParameterDefinitions.Add(new PropertyParameterDefinition(propertyName));
-      }
-      public PropertyDef(string propertyName, PropertyParameterDefinition definition)
-      {
-         PropertyName = propertyName;
-         ParameterDefinitions.Add(definition);
-      }
-      public PropertyDef(string propertyName, IEnumerable<PropertyParameterDefinition> definitions)
-      {
-         PropertyName = propertyName;
-         ParameterDefinitions.AddRange(definitions);
-      }
+      /// <summary>
+      /// Gets a property set name.
+      /// </summary>
+      public string Name { get; set; }
+
+      /// <summary>
+      /// Gets a type of elements group for which the property set is defined.
+      /// </summary>
+      public string Type { get; set; }
+
+      /// <summary>
+      /// Gets a list of IFC entites for which property set is defined.
+      /// </summary>
+      public string[] IfcEntities { get; set; }
+
+      /// <summary>
+      /// Gets a list of properties in the property set.
+      /// </summary>
+      public IList<UserDefinedProperty> Properties { get; set; } = new List<UserDefinedProperty>();
    }
-   public class PropertyParameterDefinition
-   {
-      public string RevitParameterName = "";
-      public Autodesk.Revit.DB.BuiltInParameter RevitBuiltInParameter = Autodesk.Revit.DB.BuiltInParameter.INVALID;
-      public PropertyParameterDefinition(string revitParameterName)
-      {
-         RevitParameterName = revitParameterName;
-      }
-      public PropertyParameterDefinition(Autodesk.Revit.DB.BuiltInParameter builtInParameter)
-      {
-         RevitBuiltInParameter = builtInParameter;
-      }
-   }
+
    class PropertyMap
    {
       /// <summary>
@@ -133,7 +308,7 @@ namespace Revit.IFC.Export.Utility
          {
             // add the line
             string[] split = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-            if (split.Count() == 3)
+            if (split.Length == 3)
                parameterMap.Add(Tuple.Create(split[0], split[1]), split[2]);
          }
       }
@@ -141,7 +316,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Load user-defined Property set
       /// Format:
-      ///    PropertSet: <Pset_name> I[nstance]/T[ype] <IFC entity list separated by ','> 
+      ///    PropertySet: <Pset_name> I[nstance]/T[ype] <IFC entity list separated by ','> 
       ///              Property_name   Data_type   Revit_Parameter
       ///              ...
       /// Datatype supported: Text, Integer, Real, Boolean
@@ -149,9 +324,9 @@ namespace Revit.IFC.Export.Utility
       ///     #! UserDefinedPset
       /// </summary>
       /// <returns>List of property set definitions</returns>
-      public static IEnumerable<IfcPropertySetTemplate> LoadUserDefinedPset()
+      public static IEnumerable<UserDefinedPropertySet> LoadUserDefinedPset()
       {
-         List<IfcPropertySetTemplate> userDefinedPsets = new List<IfcPropertySetTemplate>();
+         List<UserDefinedPropertySet> userDefinedPropertySets = new List<UserDefinedPropertySet>();
 
          try
          {
@@ -162,105 +337,48 @@ namespace Revit.IFC.Export.Utility
                filename = GetUserDefPsetFilename();
             }
             if (!File.Exists(filename))
-               return userDefinedPsets;
+               return userDefinedPropertySets;
 
-            string extension = Path.GetExtension(filename);
-            if (string.Compare(extension, ".ifcxml", true) == 0 || string.Compare(extension, ".ifcjson", true) == 0 || string.Compare(extension, ".ifc", true) == 0)
+            // Format: PropertSet: <Pset_name> I[nstance]/T[ype] <IFC entity list separated by ','> 
+            //              Property_name   Data_type   Revit_Parameter
+            // ** For now it only works for simple property with single value (datatype supported: Text, Integer, Real and Boolean)
+            using (StreamReader sr = new StreamReader(filename))
             {
-               DatabaseIfc db = new DatabaseIfc(filename);
-               IfcContext context = db.Context;
-               if (context == null)
-                  return userDefinedPsets;
-               foreach (IfcRelDeclares relDeclares in context.Declares)
-               {
-                  userDefinedPsets.AddRange(relDeclares.RelatedDefinitions.OfType<IfcPropertySetTemplate>());
-               }
-            }
-            else
-            {
-               using (StreamReader sr = new StreamReader(filename))
-               {
-                  string line;
+               string line;
 
-                  DatabaseIfc db = new DatabaseIfc(ReleaseVersion.IFC4A2);
-                  IfcPropertySetTemplate userDefinedPset = null;
-                  while ((line = sr.ReadLine()) != null)
+               // current property set
+               UserDefinedPropertySet userDefinedPropertySet = null;
+               while ((line = sr.ReadLine()) != null)
+               {
+                  line = line.TrimStart(' ', '\t');
+
+                  if (string.IsNullOrEmpty(line) || line[0] == '#')
+                     continue;
+
+                  string[] split = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                  if (split.Length >=4 && string.Compare(split[0], "PropertySet:", true) == 0) // Any entry with less than 3 parameters is malformed.
                   {
-                     line.TrimStart(' ', '\t');
-
-                     if (String.IsNullOrEmpty(line)) continue;
-                     if (line[0] != '#')
+                     userDefinedPropertySet = new UserDefinedPropertySet()
                      {
-                        // Format: PropertSet: <Pset_name> I[nstance]/T[ype] <IFC entity list separated by ','> 
-                        //              Property_name   Data_type   Revit_Parameter
-                        // ** For now it only works for simple property with single value (datatype supported: Text, Integer, Real and Boolean)
+                        Name = split[1],
+                        Type = split[2],
+                        IfcEntities = split[3].Split(new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                     };
 
-                        string[] split = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (string.Compare(split[0], "PropertySet:", true) == 0)
-                        {
-                           userDefinedPset = new IfcPropertySetTemplate(db, split.Length > 2 ? split[1] : "Unknown");
-                           if (split.Count() >= 4)         // Any entry with less than 3 par is malformed
-                           {
-                              switch (split[2][0])
-                              {
-                                 case 'T':
-                                    userDefinedPset.TemplateType = IfcPropertySetTemplateTypeEnum.PSET_TYPEDRIVENONLY;
-                                    break;
-                                 case 'I':
-                                    userDefinedPset.TemplateType = IfcPropertySetTemplateTypeEnum.PSET_OCCURRENCEDRIVEN;
-                                    break;
-                                 default:
-                                    userDefinedPset.TemplateType = IfcPropertySetTemplateTypeEnum.PSET_OCCURRENCEDRIVEN;
-                                    break;
-                              }
-                              userDefinedPset.ApplicableEntity = string.Join(",", split[3].Split(new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries));
-                              userDefinedPsets.Add(userDefinedPset);
-                           }
-                        }
-                        else
-                        {
-                           if (split.Count() >= 2)
-                           {
-                              string propertyTemplateName = split[0];
-                              IfcSimplePropertyTemplate propertyDefUnit = userDefinedPset[propertyTemplateName] as IfcSimplePropertyTemplate;
-                              if(propertyDefUnit == null)
-                                 userDefinedPset.AddPropertyTemplate(propertyDefUnit = new IfcSimplePropertyTemplate(db, split[0]));
-                              if (split.Count() >= 3 && !string.IsNullOrEmpty(split[2]))
-                              {
-                                 new IfcRelAssociatesClassification(new IfcClassificationReference(db) { Identification = split[2] }, propertyDefUnit);
-                              }
-                              if (!string.IsNullOrEmpty(split[1]))
-                              {
-                                 string[] propertyTypeVals = split[1].Split(new char[] {'.'}, StringSplitOptions.RemoveEmptyEntries);
-                                 if (propertyTypeVals.Count() > 1)
-                                 {
-                                    switch (propertyTypeVals[0])
-                                    {
-                                       case "PropertyListValue":
-                                          propertyDefUnit.TemplateType = IfcSimplePropertyTemplateTypeEnum.P_LISTVALUE;
-                                          break;
-                                       case "PropertyBoundedValue":
-                                          propertyDefUnit.TemplateType = IfcSimplePropertyTemplateTypeEnum.P_BOUNDEDVALUE;
-                                          break;
-                                       case "PropertyTableValue":
-                                          propertyDefUnit.TemplateType = IfcSimplePropertyTemplateTypeEnum.P_TABLEVALUE;
-                                          break;
-                                       default:
-                                          propertyDefUnit.TemplateType = IfcSimplePropertyTemplateTypeEnum.P_SINGLEVALUE;
-                                          break;
-                                    }
-                                    
-                                    string[] measureTypes = propertyTypeVals[1].Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-                                    propertyDefUnit.PrimaryMeasureType = "Ifc" + measureTypes[0];
-                                    if (measureTypes.Count() == 2)
-                                       propertyDefUnit.SecondaryMeasureType = "Ifc" + measureTypes[1];
-                                 }
-                                 else
-                                    propertyDefUnit.PrimaryMeasureType = "Ifc" + propertyTypeVals[0];
-                              }
-                           }
-                        }
+                     userDefinedPropertySets.Add(userDefinedPropertySet);
+                  }
+                  else if (split.Length >= 2 && userDefinedPropertySet != null) // Skip property definitions outside of property set block.
+                  {
+                     UserDefinedProperty userDefinedProperty = new UserDefinedProperty();
+                     userDefinedProperty.Name = split[0];
+                     userDefinedProperty.ParseIfcPropertyTypes(split[1]);
+
+                     if (split.Length >= 3)
+                     {
+                        userDefinedProperty.ParseRevitParameters(split[2]);
                      }
+
+                     userDefinedPropertySet.Properties.Add(userDefinedProperty);
                   }
                }
             }
@@ -271,7 +389,7 @@ namespace Revit.IFC.Export.Utility
             Console.WriteLine(e.Message);
          }
 
-         return userDefinedPsets;
+         return userDefinedPropertySets;
       }
 
       /// <summary>

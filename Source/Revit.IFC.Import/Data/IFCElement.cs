@@ -90,13 +90,6 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// IfcElements are allowed to serve as Containers whose DirectShapes will contain
-      /// Geometry from other DirectShapes.
-      /// </summary>
-      /// <returns>True. This will always be true for IfcElements.</returns>
-      public override bool IsAllowedToAggregateGeometry() => true;
- 
-      /// <summary>
       /// Default constructor.
       /// </summary>
       protected IFCElement()

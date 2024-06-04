@@ -33,7 +33,7 @@ namespace Revit.IFC.Import.Data
    /// <summary>
    /// Represents an IfcSpatialStructureElement.
    /// </summary>
-   public class IFCSpatialStructureElement : IFCProduct
+   public class IFCSpatialStructureElement : IFCSpatialElement
    {
       HashSet<IFCProduct> m_IFCProducts = null;
 
@@ -222,6 +222,12 @@ namespace Revit.IFC.Import.Data
 
       protected void TryToFixFarawayOrigin()
       {
+         // If we are using ATF, it should fix coordinate issues for us.
+         if (Importer.TheOptions.IsHybridImport)
+         {
+            return;
+         }
+
          if (!(ProjectScope?.IsSet ?? false))
             return;
 

@@ -35,6 +35,16 @@ namespace Revit.IFC.Export.Utility
    public class GeometryUtil
    {
       /// <summary>
+      /// An enum used in CreateIFCCurveFromRevitCurve to determine how to create
+      /// the Revit curve in IFC entities.
+      /// </summary>
+      public enum TrimCurvePreference
+      {
+         BaseCurve,              // Do not trim the curve.
+         TrimmedCurve,           // Use a base curve and trim the curve
+         UsePolyLineOrTrim,      // Use a polyline for a bounded line, otherwise trim.
+      }
+      /// <summary>
       /// The comparer for comparing XYZ.
       /// </summary>
       public struct XYZComparer : IComparer<XYZ>
@@ -663,7 +673,7 @@ namespace Revit.IFC.Export.Utility
          if (geomElemToUse != null)
          {
             // call to recursive helper method to obtain all solid and mesh geometry within geomElemToUse
-            CollectSolidMeshGeometry(geomElemToUse, null, trf, geometryInfo);
+            geometryInfo.CollectSolidMeshGeometry(geomElemToUse, ExporterCacheManager.AllocatedGeometryObjectCache);
          }
          return geometryInfo;
       }
@@ -716,7 +726,7 @@ namespace Revit.IFC.Export.Utility
       public static SolidMeshGeometryInfo GetSplitSolidMeshGeometry(GeometryElement geomElemToUse, Transform trf)
       {
          SolidMeshGeometryInfo geometryInfo = GetSolidMeshGeometry(geomElemToUse, Transform.Identity);
-         geometryInfo.SplitSolidsList();
+         SplitSolids(geometryInfo);
          return geometryInfo;
       }
 
@@ -752,99 +762,81 @@ namespace Revit.IFC.Export.Utility
             return GetSplitSolidMeshGeometry(geomElemToUse);
 
          SolidMeshGeometryInfo geometryInfo = GetClippedSolidMeshGeometry(geomElemToUse, range);
-         geometryInfo.SplitSolidsList();
+         SplitSolids(geometryInfo);
          return geometryInfo;
       }
 
       /// <summary>
-      /// Transforms a geometry by a given transform.
+      /// The maximum number of faces in a Solid before we decide not to split it.
+      /// Larger than this can cause sigificant performance issues.
       /// </summary>
-      /// <remarks>The geometry element created by "GetTransformed" is a copy which will have its own allocated
-      /// membership - this needs to be stored and disposed of (see AllocatedGeometryObjectCache
-      /// for details)</remarks>
-      /// <param name="geomElem">The geometry.</param>
-      /// <param name="trf">The transform.</param>
-      /// <returns>The transformed geometry.</returns>
-      public static GeometryElement GetTransformedGeometry(GeometryElement geomElem, Transform trf)
-      {
-         if (geomElem == null)
-            return null;
+      /// <remarks>
+      /// Internal tests show perfectly good behavior at 1044 faces, so setting
+      /// this value based on that.  This may be tweaked over time, or other
+      /// methods used instead.
+      /// </remarks>
+      public static int MaxFaceCountForSplitVolumes = 2048;
 
-         GeometryElement currGeomElem = geomElem.GetTransformed(trf);
-         ExporterCacheManager.AllocatedGeometryObjectCache.AddGeometryObject(currGeomElem);
-         return currGeomElem;
+      /// <summary>
+      /// Splits a Solid into distinct volumes.
+      /// </summary>
+      /// <param name="solid">The initial solid.</param>
+      /// <returns>The list of volumes.</returns>
+      /// <remarks>This calls the internal SolidUtils.SplitVolumes routine, but does additional cleanup work to properly dispose of stale data.</remarks>
+      public static IList<Solid> SplitVolumes(Solid solid)
+      {
+         IList<Solid> splitVolumes = null;
+         try
+         {
+            if (solid.Faces.Size < GeometryUtil.MaxFaceCountForSplitVolumes)
+            {
+               splitVolumes = SolidUtils.SplitVolumes(solid);
+
+               // Fall back to exporting just the original Solid if we got any Solids without volume
+               if (splitVolumes.Any(x => x.Volume < 0.0 || MathUtil.IsAlmostEqual(x.Volume, 0.0)))
+                  throw new InvalidOperationException();
+
+               foreach (Solid currSolid in splitVolumes)
+               {
+                  // The geometry element created by SplitVolumes is a copy which will have its own allocated
+                  // membership - this needs to be stored and disposed of (see AllocatedGeometryObjectCache
+                  // for details)
+                  ExporterCacheManager.AllocatedGeometryObjectCache.AddGeometryObject(currSolid);
+               }
+            }
+         }
+         catch
+         {
+            splitVolumes = null;
+         }
+
+         if (splitVolumes == null)
+         {
+            // Split volumes can fail; in this case, we'll export the original solid.
+            splitVolumes = new List<Solid>() { solid };
+         }
+
+         return splitVolumes;
       }
 
       /// <summary>
-      /// Collects all solids and meshes within all nested levels of a given GeometryElement.
+      /// Splits any solid volumes which consist of multiple closed bodies into individual solids (and updates the storage accordingly).
       /// </summary>
-      /// <remarks>
-      /// This is a private helper method for the GetSolidMeshGeometry type collection methods.
-      /// </remarks>
-      /// <param name="geomElem">The GeometryElement we are collecting solids and meshes from.</param>
-      /// <param name="containingElement">The element that contains the geomElem.  It can be null.</param>
-      /// <param name="trf">The initial Transform applied on the GeometryElement.</param>
-      /// <param name="solidMeshCapsule">The SolidMeshGeometryInfo object that contains the lists of collected solids and meshes.</param>
-      private static void CollectSolidMeshGeometry(GeometryElement geomElem,
-         Element containingElement, Transform trf, SolidMeshGeometryInfo solidMeshCapsule)
+      public static void SplitSolids(SolidMeshGeometryInfo info)
       {
-         if (geomElem == null)
-            return;
+         IList<SolidInfo> splitSolidsList = new List<SolidInfo>();
 
-         GeometryElement currGeomElem = geomElem;
-         Transform localTrf = trf;
-         if (localTrf == null)
-            localTrf = Transform.Identity;
-         else if (!localTrf.IsIdentity)
-            currGeomElem = GetTransformedGeometry(geomElem, localTrf);
-
-         // iterate through the GeometryObjects contained in the GeometryElement
-         foreach (GeometryObject geomObj in currGeomElem)
+         foreach (SolidInfo solidInfo in info.SolidInfoList)
          {
-            // Add try catch here because in a rare cases we find solid that throws exception/invalid solid.Faces
-            try
+            Element element = solidInfo.OwnerElement;
+            IList<Solid> splitSolids = GeometryUtil.SplitVolumes(solidInfo.Solid);
+            foreach (Solid splitSolid in splitSolids)
             {
-               Solid solid = geomObj as Solid;
-               if (solid != null && solid.Faces.Size > 0)
-               {
-                  solidMeshCapsule.AddSolid(solid, containingElement);
-               }
-               else
-               {
-                  Mesh mesh = geomObj as Mesh;
-                  if (mesh != null)
-                  {
-                     solidMeshCapsule.AddMesh(mesh);
-                  }
-                  else
-                  {
-                     // if the current geomObj is castable as a GeometryInstance, then we perform the same collection on its symbol geometry
-                     GeometryInstance inst = geomObj as GeometryInstance;
-
-                     if (inst != null)
-                     {
-                        try
-                        {
-                           GeometryElement instanceSymbol = inst.GetSymbolGeometry();
-                           if (instanceSymbol != null && instanceSymbol.Count() != 0)
-                           {
-                              Transform instanceTransform = localTrf.Multiply(inst.Transform);
-                              Element symbol = inst.GetDocument()?.GetElement(inst.GetSymbolGeometryId().SymbolId);
-                              CollectSolidMeshGeometry(instanceSymbol, symbol,
-                                 instanceTransform, solidMeshCapsule);
-                           }
-                        }
-                        catch
-                        {
-                        }
-                     }
-                  }
-               }
-            }
-            catch
-            {
+               splitSolidsList.Add(new SolidInfo(splitSolid, element));
             }
          }
+
+         info.SolidInfoList = splitSolidsList;
       }
 
       /// <summary>
@@ -1222,8 +1214,6 @@ namespace Revit.IFC.Export.Utility
             int numBoundaries = faceEdges.Size;
             if (numBoundaries == 0)
                continue;
-            if (numBoundaries > 1)
-               throw new Exception("Can't handle faces with interior boundaries.");
 
             // In some cases the native function throws an exception, skip this face if it occurs
             ICollection<ElementId> generatingElementIds;
@@ -2238,6 +2228,12 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The arc handle.</returns>
       public static IFCAnyHandle CreateArcSegment(ExporterIFC exporterIFC, Arc arc)
       {
+         double arcRadius = UnitUtil.ScaleLength(arc.Radius);
+         if (!IFCInstanceExporter.ValidateCircle(arcRadius))
+         {
+            return null;
+         }
+
          IFCFile file = exporterIFC.GetFile();
 
          XYZ centerPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, arc.Center);
@@ -2246,8 +2242,6 @@ namespace Revit.IFC.Export.Utility
 
          XYZ xDirection = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, arc.XDirection);
          IFCAnyHandle axis = ExporterUtil.CreateAxis2Placement3D(file, centerPoint, arc.Normal, xDirection);
-
-         double arcRadius = UnitUtil.ScaleLength(arc.Radius);
 
          IFCAnyHandle circle = IFCInstanceExporter.CreateCircle(file, axis, arcRadius);
          return CreateBoundsIfNecessary(file, circle, arc);
@@ -2261,6 +2255,13 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The ellipse handle.</returns>
       public static IFCAnyHandle CreateEllipticalArcSegment(ExporterIFC exporterIFC, Ellipse ellipticalArc)
       {
+         double ellipseRadiusX = UnitUtil.ScaleLength(ellipticalArc.RadiusX);
+         double ellipseRadiusY = UnitUtil.ScaleLength(ellipticalArc.RadiusY);
+         if (!IFCInstanceExporter.ValidateEllipse(ellipseRadiusX, ellipseRadiusY))
+         {
+            return null;
+         }
+
          IFCFile file = exporterIFC.GetFile();
 
          XYZ centerPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, ellipticalArc.Center);
@@ -2269,9 +2270,6 @@ namespace Revit.IFC.Export.Utility
 
          XYZ xDirection = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, ellipticalArc.XDirection);
          IFCAnyHandle axis = ExporterUtil.CreateAxis2Placement3D(file, centerPoint, ellipticalArc.Normal, xDirection);
-
-         double ellipseRadiusX = UnitUtil.ScaleLength(ellipticalArc.RadiusX);
-         double ellipseRadiusY = UnitUtil.ScaleLength(ellipticalArc.RadiusY);
 
          IFCAnyHandle ellipse = IFCInstanceExporter.CreateEllipse(file, axis, ellipseRadiusX, ellipseRadiusY);
          return CreateBoundsIfNecessary(file, ellipse, ellipticalArc);
@@ -2713,17 +2711,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// The maximum number of faces in a Solid before we decide not to split it.
-      /// Larger than this can cause sigificant performance issues.
-      /// </summary>
-      /// <remarks>
-      /// Internal tests show perfectly good behavior at 1044 faces, so setting
-      /// this value based on that.  This may be tweaked over time, or other
-      /// methods used instead.
-      /// </remarks>
-      public static int MaxFaceCountForSplitVolumes = 2048;
-
-      /// <summary>
       /// Gets the volume of a solid, if it is possible.
       /// </summary>
       /// <param name="solid">The solid.</param>
@@ -2738,49 +2725,6 @@ namespace Revit.IFC.Export.Utility
          {
             return null;
          }
-      }
-
-      /// <summary>
-      /// Splits a Solid into distinct volumes.
-      /// </summary>
-      /// <param name="solid">The initial solid.</param>
-      /// <returns>The list of volumes.</returns>
-      /// <remarks>This calls the internal SolidUtils.SplitVolumes routine, but does additional cleanup work to properly dispose of stale data.</remarks>
-      public static IList<Solid> SplitVolumes(Solid solid)
-      {
-         IList<Solid> splitVolumes = null;
-         try
-         {
-            if (solid.Faces.Size < GeometryUtil.MaxFaceCountForSplitVolumes)
-            {
-               splitVolumes = SolidUtils.SplitVolumes(solid);
-
-               // Fall back to exporting just the original Solid if we got any Solids without volume
-               if (splitVolumes.Any(x => x.Volume < 0.0 || MathUtil.IsAlmostEqual(x.Volume, 0.0)))
-                  throw new InvalidOperationException();
-
-               foreach (Solid currSolid in splitVolumes)
-               {
-                  // The geometry element created by SplitVolumes is a copy which will have its own allocated
-                  // membership - this needs to be stored and disposed of (see AllocatedGeometryObjectCache
-                  // for details)
-                  ExporterCacheManager.AllocatedGeometryObjectCache.AddGeometryObject(currSolid);
-               }
-            }
-         }
-         catch
-         {
-            splitVolumes = null;
-         }
-
-         if (splitVolumes == null)
-         {
-            // Split volumes can fail; in this case, we'll export the original solid.
-            splitVolumes = new List<Solid>();
-            splitVolumes.Add(solid);
-         }
-
-         return splitVolumes;
       }
 
       /// <summary>
@@ -3698,15 +3642,16 @@ namespace Revit.IFC.Export.Utility
       /// <param name="file">The file</param>
       /// <param name="exporterIFC">The exporter</param>
       /// <param name="curve">The curve that needs to convert to IFCCurve</param>
-      /// <param name="allowAdvancedCurve">indicates whether (TRUE) we want to convert "advanced" curve type 
-      ///                                  like Hermite or NURBS to IfcCurve or (FALSE) we want to tessellate them</param>
+      /// <param name="allowAdvancedCurve">If true, don't tessellate non-lines and non-arcs.</param>
       /// <param name="cartesianPoints">A map of already created cartesian points, to avoid duplication.</param>
-      /// <param name="useTrimmedCurve">True if we are trimming the generated curve, false otherwise.</param>
+      /// <param name="trimCurvePreference">An indication of how to create the curve.</param>
       /// <returns>The handle representing the IFCCurve</returns>
       /// <remarks>This cartesianPoints map caches certain 3D points computed by this function that are related to the 
       /// curve, such as the start point of a line and the center of an arc.  It uses the cached values when possible.</remarks>
-      public static IFCAnyHandle CreateIFCCurveFromRevitCurve(IFCFile file, ExporterIFC exporterIFC, Curve curve, bool allowAdvancedCurve,
-         IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints, bool useTrimmedCurve, Transform additionalTrf = null)
+      public static IFCAnyHandle CreateIFCCurveFromRevitCurve(IFCFile file, 
+         ExporterIFC exporterIFC, Curve curve, bool allowAdvancedCurve,
+         IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cartesianPoints,
+         TrimCurvePreference trimCurvePreference, Transform additionalTrf)
       {
          IFCAnyHandle ifcCurve = null;
 
@@ -3733,24 +3678,27 @@ namespace Revit.IFC.Export.Utility
             if (curve.IsBound)
             {
                Line curveLine = curve as Line;
-               //ifcCurve = CreateLineSegment(exporterIFC, curveLine);
-
-               // Create line based trimmed curve for Axis
-               IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints, additionalTrf);
-               XYZ dir = (additionalTrf == null) ? curveLine.Direction : additionalTrf.OfVector(curveLine.Direction);
-               IFCAnyHandle vector = VectorToIfcVector(exporterIFC, curveLine.Direction);
-               ifcCurve = IFCInstanceExporter.CreateLine(file, curveOrigin, vector);
-
-               if (useTrimmedCurve)
+               if (trimCurvePreference == TrimCurvePreference.UsePolyLineOrTrim)
                {
-                  IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints, additionalTrf);
-                  HashSet<IFCData> trim1 = new HashSet<IFCData>();
-                  trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
-                  IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints, additionalTrf);
-                  HashSet<IFCData> trim2 = new HashSet<IFCData>();
-                  trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
+                  ifcCurve = CreateLineSegment(exporterIFC, curveLine);
+               }
+               else
+               {
+                  // Create line based trimmed curve for Axis
+                  IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints, additionalTrf);
+                  XYZ dir = (additionalTrf == null) ? curveLine.Direction : additionalTrf.OfVector(curveLine.Direction);
+                  IFCAnyHandle vector = VectorToIfcVector(exporterIFC, dir);
+                  ifcCurve = IFCInstanceExporter.CreateLine(file, curveOrigin, vector);
 
-                  ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+                  if (trimCurvePreference == TrimCurvePreference.TrimmedCurve)
+                  {
+                     IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints, additionalTrf);
+                     HashSet<IFCData> trim1 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(startPoint) };
+                     IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints, additionalTrf);
+                     HashSet<IFCData> trim2 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(endPoint) };
+
+                     ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+                  }
                }
             }
          }
@@ -3758,6 +3706,12 @@ namespace Revit.IFC.Export.Utility
          else if (curve is Arc)
          {
             Arc curveArc = curve as Arc;
+            double radius = UnitUtil.ScaleLength(curveArc.Radius);
+            if (!IFCInstanceExporter.ValidateCircle(radius))
+            {
+               return null;
+            }
+
             // Normal and x direction should be transformed to IFC coordinates before applying additional transform
             // arc center will be transformed later in XYZtoIfcCartesianPoint
             XYZ curveArcNormal = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, curveArc.Normal);
@@ -3784,17 +3738,15 @@ namespace Revit.IFC.Export.Utility
             IFCAnyHandle refDirection = ExporterUtil.CreateDirection(file, curveArcXDirection);
 
             IFCAnyHandle position3D = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
-            ifcCurve = IFCInstanceExporter.CreateCircle(file, position3D, UnitUtil.ScaleLength(curveArc.Radius));
+            ifcCurve = IFCInstanceExporter.CreateCircle(file, position3D, radius);
 
-            if (useTrimmedCurve)
+            if (trimCurvePreference != TrimCurvePreference.BaseCurve && curve.IsBound)
             {
                IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(0), cartesianPoints, additionalTrf);
-               HashSet<IFCData> trim1 = new HashSet<IFCData>();
-               trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
+               HashSet<IFCData> trim1 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(startPoint) };
 
                IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveArc.GetEndPoint(1), cartesianPoints, additionalTrf);
-               HashSet<IFCData> trim2 = new HashSet<IFCData>();
-               trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
+               HashSet<IFCData> trim2 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(endPoint) };
 
                ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
             }
@@ -3803,6 +3755,13 @@ namespace Revit.IFC.Export.Utility
          else if (curve is Ellipse)
          {
             Ellipse curveEllipse = curve as Ellipse;
+            double semiAxis1 = UnitUtil.ScaleLength(curveEllipse.RadiusX);
+            double semiAxis2 = UnitUtil.ScaleLength(curveEllipse.RadiusY);
+            if (!IFCInstanceExporter.ValidateEllipse(semiAxis1, semiAxis2))
+            {
+               return null;
+            }
+
             // Normal and x direction should be transformed to IFC coordinates before applying additional transform
             XYZ ellipseNormal = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, curveEllipse.Normal);
             XYZ ellipseXDirection = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, curveEllipse.XDirection);
@@ -3823,17 +3782,15 @@ namespace Revit.IFC.Export.Utility
 
             IFCAnyHandle position = IFCInstanceExporter.CreateAxis2Placement3D(file, location3D, axis, refDirection);
 
-            ifcCurve = IFCInstanceExporter.CreateEllipse(file, position, UnitUtil.ScaleLength(curveEllipse.RadiusX), UnitUtil.ScaleLength(curveEllipse.RadiusY));
+            ifcCurve = IFCInstanceExporter.CreateEllipse(file, position, semiAxis1, semiAxis2);
 
-            if (useTrimmedCurve)
+            if (trimCurvePreference != TrimCurvePreference.BaseCurve && curve.IsBound)
             {
                IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(0), cartesianPoints, additionalTrf);
-               HashSet<IFCData> trim1 = new HashSet<IFCData>();
-               trim1.Add(IFCData.CreateIFCAnyHandle(startPoint));
+               HashSet<IFCData> trim1 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(startPoint) };
 
                IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveEllipse.GetEndPoint(1), cartesianPoints, additionalTrf);
-               HashSet<IFCData> trim2 = new HashSet<IFCData>();
-               trim2.Add(IFCData.CreateIFCAnyHandle(endPoint));
+               HashSet<IFCData> trim2 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(endPoint) };
 
                ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
             }
@@ -4614,10 +4571,14 @@ namespace Revit.IFC.Export.Utility
 
          using (SubTransaction projLocTr = new SubTransaction(doc))
          {
+            projLocTr.Start();
             doc.ActiveProjectLocation = projLocation;
 
             BasePoint surveyPoint = BasePoint.GetSurveyPoint(doc);
             BasePoint projectBasePoint = BasePoint.GetProjectBasePoint(doc);
+            if (surveyPoint == null || projectBasePoint == null)
+               return trf;
+
             (double svNorthings, double svEastings, double svElevation, double svAngle, double pbNorthings,
                double pbEastings, double pbElevation, double pbAngle) = OptionsUtil.ProjectLocationInfo(doc, surveyPoint.Position, projectBasePoint.Position);
 
@@ -4665,6 +4626,7 @@ namespace Revit.IFC.Export.Utility
                      break;
                }
             }
+            projLocTr.RollBack();
          }
          return trf;
       }

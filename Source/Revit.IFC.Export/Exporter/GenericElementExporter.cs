@@ -32,7 +32,7 @@ namespace Revit.IFC.Export.Exporter
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
          if (exportType.ExportInstance == IFCEntityType.UnKnown)
-            exportType.SetValueWithPair(IFCEntityType.IfcBuildingElementProxy, exportType.ValidatedPredefinedType);
+            exportType.SetByTypeAndPredefinedType(IFCEntityType.IfcBuildingElementProxy, exportType.PredefinedType);
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return null;
 
@@ -78,11 +78,8 @@ namespace Revit.IFC.Export.Exporter
                         HashSet<IFCAnyHandle> propertySetsOpt = new HashSet<IFCAnyHandle>();
                         IList<IFCAnyHandle> repMapListOpt = new List<IFCAnyHandle>();
 
-                        string typeGuid = FamilyExporterUtil.GetGUIDForFamilySymbol(element as FamilyInstance, 
-                           familySymbol, exportType);
-                        styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType,
-                           exportType.ValidatedPredefinedType, propertySetsOpt, repMapListOpt,
-                           element, familySymbol, typeGuid);
+                        string typeGuid = FamilyExporterUtil.GetGUIDForFamilySymbol(element as FamilyInstance, familySymbol, exportType);
+                        styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, propertySetsOpt, repMapListOpt, element, familySymbol, typeGuid);
                         productWrapper.RegisterHandleWithElementType(familySymbol, exportType, styleHandle, propertySetsOpt);
                      }
 
@@ -219,7 +216,7 @@ namespace Revit.IFC.Export.Exporter
                extraParams.GetLocalPlacement());
 
             IFCAnyHandle typeStyle = FamilyInstanceExporter.CreateTypeEntityHandle(exporterIFC,
-               typeKey, ref typeInfo, null, representations3D, repMapTrfList, null,
+               typeKey, ref typeInfo, null, representations3D, repMapTrfList, null, null,
                element, elementType, elementType, ElementId.InvalidElementId, false, false,
                exportType, out HashSet<IFCAnyHandle> propertySets);
 
@@ -283,7 +280,7 @@ namespace Revit.IFC.Export.Exporter
             {
                string instanceGUID = GUIDUtil.CreateGUID(element);
 
-               bool isChildInContainer = element.AssemblyInstanceId != ElementId.InvalidElementId;
+               bool isChildInContainer = ExporterUtil.IsContainedInAssembly(element);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
                {
@@ -304,7 +301,7 @@ namespace Revit.IFC.Export.Exporter
                   else
                   {
                      instanceHandle = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, element, instanceGUID,
-                        ownerHistory, localPlacementToUse, repHnd, exportType.ValidatedPredefinedType);
+                        ownerHistory, localPlacementToUse, repHnd, exportType.GetPredefinedTypeOrDefault());
                   }
 
                   bool associateToLevel = !containedInSpace && !isChildInContainer;
@@ -358,8 +355,7 @@ namespace Revit.IFC.Export.Exporter
       public static bool ExportElement(ExporterIFC exporterIFC,
          Element element, GeometryElement geometryElement, ProductWrapper productWrapper)
       {
-         string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, element, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, element, out _);
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
          IFCEntityType elementClassTypeEnum;
@@ -373,7 +369,7 @@ namespace Revit.IFC.Export.Exporter
             return true;
 
          if (FamilyInstanceExporter.ExportGenericToSpecificElement(exporterIFC,
-            element, ref geometryElement, exportType, ifcEnumType, productWrapper))
+            element, ref geometryElement, exportType, productWrapper))
             return true;
 
          return (ExportSimpleGenericElement(exporterIFC, element, geometryElement, productWrapper, 

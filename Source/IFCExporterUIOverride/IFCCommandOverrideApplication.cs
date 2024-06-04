@@ -33,7 +33,6 @@ using Revit.IFC.Export.Utility;
 using Autodesk.Revit.DB.ExternalService;
 
 
-using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using View = Autodesk.Revit.DB.View;
 
 using System.Windows.Forms;
@@ -61,7 +60,6 @@ namespace BIM.IFC.Export.UI
       {
          // Clean up
          m_ifcCommandBinding.Executed -= OnIFCExport;
-
          return Result.Succeeded;
       }
 
@@ -106,7 +104,7 @@ namespace BIM.IFC.Export.UI
                entUIService.AddServer(browseIFCEntityServer);
                entUIService.SetActiveServer(browseIFCEntityServer.GetServerId());
             }
-            catch {}
+            catch { }
          }
       }
 
@@ -149,11 +147,7 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// The active document for this export.
       /// </summary>
-      public static Document TheDocument
-      {
-         get;
-         protected set;
-      }
+      public static Document TheDocument { get; set; }
 
       /// <summary>
       /// The last successful export location
@@ -255,7 +249,7 @@ namespace BIM.IFC.Export.UI
                // one of the exports.  Prevent that by keeping track of the exported file names.
                ISet<string> exportedFileNames = new HashSet<string>();
 
-               bool exportLinks = 
+               bool exportLinks =
                   selectedConfig.ExportLinkedFiles != LinkedFileExportAs.DontExport;
                bool exportSeparateLinks =
                   selectedConfig.ExportLinkedFiles == LinkedFileExportAs.ExportAsSeparate;
@@ -295,10 +289,7 @@ namespace BIM.IFC.Export.UI
                   selectedConfig.ActiveViewId = selectedConfig.UseActiveViewGeometry ? activeViewId : ElementId.InvalidElementId;
                   selectedConfig.UpdateOptions(exportOptions, activeViewId);
 
-                  // This will eventually become an option.  Hardwired for testing to be
-                  // NOT exporting linked files as separate IFC files.
-
-                  IDictionary<ElementId, string> linkGUIDsCache = 
+                  IDictionary<ElementId, string> linkGUIDsCache =
                      new Dictionary<ElementId, string>();
 
                   IDictionary<RevitLinkInstance, Transform> linkInstanceTranforms = null;
@@ -384,10 +375,10 @@ namespace BIM.IFC.Export.UI
                   // Show user errors, if any.
                   if (!string.IsNullOrEmpty(errorMessage))
                   {
-                     using (TaskDialog taskDialog = new TaskDialog(Properties.Resources.IFCExport))
+                     using (Autodesk.Revit.UI.TaskDialog taskDialog = new Autodesk.Revit.UI.TaskDialog(Properties.Resources.IFCExport))
                      {
                         taskDialog.MainInstruction = string.Format(Properties.Resources.LinkInstanceExportErrorMain, numBadInstances);
-                        taskDialog.MainIcon = TaskDialogIcon.TaskDialogIconWarning;
+                        taskDialog.MainIcon = Autodesk.Revit.UI.TaskDialogIcon.TaskDialogIconWarning;
                         taskDialog.TitleAutoPrefix = false;
 
                         taskDialog.ExpandedContent = errorMessage;
@@ -398,10 +389,10 @@ namespace BIM.IFC.Export.UI
 
                if (!string.IsNullOrWhiteSpace(unsuccesfulExports))
                {
-                  using (TaskDialog taskDialog = new TaskDialog(Properties.Resources.IFCExport))
+                  using (Autodesk.Revit.UI.TaskDialog taskDialog = new Autodesk.Revit.UI.TaskDialog(Properties.Resources.IFCExport))
                   {
                      taskDialog.MainInstruction = string.Format(Properties.Resources.IFCExportProcessError, unsuccesfulExports);
-                     taskDialog.MainIcon = TaskDialogIcon.TaskDialogIconWarning;
+                     taskDialog.MainIcon = Autodesk.Revit.UI.TaskDialogIcon.TaskDialogIconWarning;
                      TaskDialogResult taskDialogResult = taskDialog.Show();
                   }
                }
@@ -419,10 +410,10 @@ namespace BIM.IFC.Export.UI
          }
          catch (Exception e)
          {
-            using (TaskDialog taskDialog = new TaskDialog(Properties.Resources.IFCExport))
+            using (Autodesk.Revit.UI.TaskDialog taskDialog = new Autodesk.Revit.UI.TaskDialog(Properties.Resources.IFCExport))
             {
                taskDialog.MainInstruction = Properties.Resources.IFCExportProcessGenericError;
-               taskDialog.MainIcon = TaskDialogIcon.TaskDialogIconWarning;
+               taskDialog.MainIcon = Autodesk.Revit.UI.TaskDialogIcon.TaskDialogIconWarning;
                taskDialog.ExpandedContent = e.ToString();
                TaskDialogResult result = taskDialog.Show();
             }
@@ -540,14 +531,14 @@ namespace BIM.IFC.Export.UI
             if (tr.HasReflection)
             {
                instHasReflection.Add(instanceId);
-               numBadInstances++; 
+               numBadInstances++;
                continue;
             }
 
             if (!MathUtil.IsAlmostEqual(tr.Determinant, 1.0))
             {
                scaledInst.Add(instanceId);
-               numBadInstances++; 
+               numBadInstances++;
                continue;
             }
 
@@ -584,10 +575,10 @@ namespace BIM.IFC.Export.UI
             return false;
 
          return filterView.IsElementVisibleInTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate, element.Id);
-     }
+      }
 
       public void ExportLinkedDocuments(Document document, string fileName,
-         IDictionary<ElementId, string> linkGUIDsCache, 
+         IDictionary<ElementId, string> linkGUIDsCache,
          IDictionary<RevitLinkInstance, Transform> idToTransform,
          IFCExportOptions exportOptions, ElementId originalFilterViewId)
       {

@@ -190,11 +190,6 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       public void Create(IFCImportShapeEditScope shapeEditScope)
       {
-         // If we have an IFCHybridRepresentationItem, there's no reason to create the styled item, because
-         // we won't use it.
-         if (Item is IFCHybridRepresentationItem)
-            return;
-
          // TODO: support cut pattern id and cut pattern color.
          if (m_CreatedElementId != ElementId.InvalidElementId || !IsValidForCreation)
             return;

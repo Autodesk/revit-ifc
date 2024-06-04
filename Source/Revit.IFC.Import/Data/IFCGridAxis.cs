@@ -340,7 +340,7 @@ namespace Revit.IFC.Import.Data
 
          if (ParentGrid != null && ParentGrid.ObjectLocation != null)
          {
-            Transform lcs = ParentGrid.ObjectLocation.TotalTransform;
+            Transform lcs = ParentGrid.ObjectLocation.TotalTransformAfterOffset;
             axisCurve = axisCurve.CreateTransformed(lcs);
          }
 
