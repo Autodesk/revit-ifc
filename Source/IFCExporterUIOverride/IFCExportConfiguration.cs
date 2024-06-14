@@ -46,7 +46,7 @@ namespace BIM.IFC.Export.UI
             DateFormatHandling = DateFormatHandling.MicrosoftDateFormat
          };
 
-         var obj1Ser =  JsonConvert.SerializeObject(obj1, settings);
+         var obj1Ser = JsonConvert.SerializeObject(obj1, settings);
          var obj2Ser = JsonConvert.SerializeObject(obj2, settings);
          return obj1Ser == obj2Ser;
       }
@@ -643,6 +643,12 @@ namespace BIM.IFC.Export.UI
       }
 
       /// <summary>
+      /// Available after Calling public void UpdateOptions(IFCExportOptions options, ElementId filterViewId)
+      /// and LinkedFileExportAs should not be DontExport
+      /// </summary>
+      public IFCLinkedDocumentExporter LinkExporter { get; private set; }
+
+      /// <summary>
       /// Updates the IFCExportOptions with the settings in this configuration.
       /// </summary>
       /// <param name="options">The IFCExportOptions to update.</param>
@@ -650,7 +656,8 @@ namespace BIM.IFC.Export.UI
       public void UpdateOptions(IFCExportOptions options, ElementId filterViewId)
       {
          options.FilterViewId = VisibleElementsOfCurrentView ? filterViewId : ElementId.InvalidElementId;
-
+         var linkExporter = ExportLinkedFiles == LinkedFileExportAs.DontExport ? null : new IFCLinkedDocumentExporter(IFCCommandOverrideApplication.TheDocument, options);
+         linkExporter?.SetExportOption(ExportLinkedFiles);
          foreach (var prop in GetType().GetProperties())
          {
             switch (prop.Name)
