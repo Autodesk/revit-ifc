@@ -656,8 +656,6 @@ namespace BIM.IFC.Export.UI
       public void UpdateOptions(IFCExportOptions options, ElementId filterViewId)
       {
          options.FilterViewId = VisibleElementsOfCurrentView ? filterViewId : ElementId.InvalidElementId;
-         var linkExporter = ExportLinkedFiles == LinkedFileExportAs.DontExport ? null : new IFCLinkedDocumentExporter(IFCCommandOverrideApplication.TheDocument, options);
-         linkExporter?.SetExportOption(ExportLinkedFiles);
          foreach (var prop in GetType().GetProperties())
          {
             switch (prop.Name)
@@ -693,6 +691,13 @@ namespace BIM.IFC.Export.UI
                   string classificationJsonStr = JsonConvert.SerializeObject(ClassificationSettings, dateFormatSettings);
                   options.AddOption(prop.Name, classificationJsonStr);
                   break;
+               case nameof(ExportLinkedFiles):
+                  if (ExportLinkedFiles != LinkedFileExportAs.DontExport)
+                  {
+                     LinkExporter = new IFCLinkedDocumentExporter(IFCCommandOverrideApplication.TheDocument, options);
+                     LinkExporter.SetExportOption(ExportLinkedFiles);
+                  }
+                  break;
                default:
                   var propVal = prop.GetValue(this, null);
                   if (propVal != null)
@@ -701,7 +706,6 @@ namespace BIM.IFC.Export.UI
             }
          }
       }
-
 
       /// <summary>
       /// Identifies the version selected by the user.
