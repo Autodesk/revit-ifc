@@ -387,11 +387,19 @@ namespace Revit.IFC.Import.Data
             }
 
             // Register the offset by moving the Shared Coordinates away
-            ProjectPosition pPos = projectLocation.GetProjectPosition(XYZ.Zero);
-            pPos.EastWest += BaseSiteOffset.X;
-            pPos.NorthSouth += BaseSiteOffset.Y;
-            pPos.Elevation += BaseSiteOffset.Z;
-            projectLocation.SetProjectPosition(XYZ.Zero, pPos);
+            if (Importer.TheOptions.IsHybridImport)
+            {
+               // If we are in hybrid mode, we've already moved the project.  Just change the large offset.
+               Importer.TheHybridInfo.LargeCoordinateOriginOffset += BaseSiteOffset;
+            }
+            else
+            {
+               ProjectPosition pPos = projectLocation.GetProjectPosition(XYZ.Zero);
+               pPos.EastWest += BaseSiteOffset.X;
+               pPos.NorthSouth += BaseSiteOffset.Y;
+               pPos.Elevation += BaseSiteOffset.Z;
+               projectLocation.SetProjectPosition(XYZ.Zero, pPos);
+            }
          }
          else
          {

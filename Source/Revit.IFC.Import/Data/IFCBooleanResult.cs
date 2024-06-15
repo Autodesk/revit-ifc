@@ -172,7 +172,7 @@ namespace Revit.IFC.Import.Data
                if (SecondOperand is IFCRepresentationItem)
                   Importer.TheLog.LogError((SecondOperand as IFCRepresentationItem).Id, ex.Message, false);
                else
-                  throw ex;
+                  throw;
                secondSolids = null;
             }
          }

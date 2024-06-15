@@ -313,7 +313,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
                   buildingElementProxy = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, element, guid,
-                      ownerHistory, localPlacement, representation, exportType.ValidatedPredefinedType);
+                      ownerHistory, localPlacement, representation, exportType.GetPredefinedTypeOrDefault());
 
                   productWrapper.AddElement(element, buildingElementProxy, placementSetter.LevelInfo, ecData, true, exportType);
                }
@@ -483,7 +483,7 @@ namespace Revit.IFC.Export.Exporter
                      continue;
 
                   Rebar rebar = rebarElement as Rebar;
-                  if ((rebar != null) && (rebar.DistributionType == DistributionType.VaryingLength || rebar.IsRebarFreeForm()))
+                  if (rebar != null && rebar.CanHaveVaryingLengthBars)
                   {
                      baseCurves = GetRebarCenterlineCurves(rebar, true, false, false, MultiplanarOption.IncludeAllMultiplanarCurves, ii);
                      DoubleParameterValue barLengthParamVal = rebar.GetParameterValueAtIndex(barLengthParamId, ii) as DoubleParameterValue;
@@ -841,7 +841,7 @@ namespace Revit.IFC.Export.Exporter
          if (element is Rebar)
          {
             Rebar rebar = element as Rebar;
-            if (rebar.DistributionType != DistributionType.VaryingLength && !rebar.IsRebarFreeForm())
+            if (!rebar.CanHaveVaryingLengthBars)
                return;
 
             foreach (Parameter param in parameters)

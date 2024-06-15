@@ -26,9 +26,9 @@ using Autodesk.Revit.DB.Mechanical;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Toolkit;
-using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
+using Autodesk.Revit.DB.Structure;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -396,9 +396,9 @@ namespace Revit.IFC.Export.Utility
             double ceilMeasure = Math.Ceiling(value);
             double floorMeasure = Math.Floor(value);
 
-            if (MathUtil.IsAlmostEqual(value, ceilMeasure))
+            if (MathUtil.IsAlmostZero(value - ceilMeasure))
                cleanMeasure.Add(ceilMeasure);
-            else if (MathUtil.IsAlmostEqual(value, floorMeasure))
+            else if (MathUtil.IsAlmostZero(value - floorMeasure))
                cleanMeasure.Add(floorMeasure);
             else
                cleanMeasure.Add(value);
@@ -748,71 +748,176 @@ namespace Revit.IFC.Export.Utility
              IFCAnyHandleUtil.GetProductDefinitionShapeDescription(origProductDefinitionShape), representations);
       }
 
-      private static string GetIFCClassNameFromExportTable(ExporterIFC exporterIFC, Element element, ElementId categoryId, int specialClassId)
+      /// <summary>
+      /// Get the mapping information for a particular category and wall function.
+      /// </summary>
+      /// <param name="categoryId">The category id.</param>
+      /// <param name="wallFunction">The optional wall function.</param>
+      /// <param name="info">The mapping information for the category if it exists.</param>
+      /// <returns></returns>
+      public static bool GetCategoryInfoById(ElementId categoryId, WallFunction? wallFunction, 
+         out ExportIFCCategoryInfo info)
       {
-         if (element == null)
-            return null;
-
-         KeyValuePair<ElementId, int> key = new KeyValuePair<ElementId, int>(categoryId, specialClassId);
-         string ifcClassName = null;
-         if (!ExporterCacheManager.CategoryClassNameCache.TryGetValue(key, out ifcClassName))
-         {
-            ifcClassName = ExporterIFCUtils.GetIFCClassName(element, exporterIFC);
-            ExporterCacheManager.CategoryClassNameCache[key] = ifcClassName;
-         }
-
-         return ifcClassName;
-      }
-
-      private static string GetIFCTypeFromExportTable(ExporterIFC exporterIFC, Element element, ElementId categoryId, int specialClassId)
-      {
-         if (element == null)
-            return null;
-
-         KeyValuePair<ElementId, int> key = new KeyValuePair<ElementId, int>(categoryId, specialClassId);
-         string ifcType = null;
-         if (!ExporterCacheManager.CategoryTypeCache.TryGetValue(key, out ifcType))
-         {
-            ifcType = ExporterIFCUtils.GetIFCType(element, exporterIFC);
-            ExporterCacheManager.CategoryTypeCache[key] = ifcType;
-         }
-
-         return ifcType;
+         CustomSubCategoryId customSubCategoryId = WallFunctionToCustomSubCategoryId(wallFunction);
+         info = ExporterCacheManager.CategoryMappingTemplate.GetMappingInfoById(ExporterCacheManager.Document, categoryId, customSubCategoryId);
+         return !(info?.IsDefault() ?? true);
       }
 
       /// <summary>
-      /// Get the IFC class name assigned in the export layers table for a category.  Cache values to avoid calls to internal code.
+      /// Converts WallFunction enum to IFC CustomSubCategoryId
       /// </summary>
-      /// <param name="exporterIFC">The exporterIFC class.</param>
-      /// <param name="categoryId">The category id.</param>
-      /// <returns>The entity name.</returns>
-      public static string GetIFCClassNameFromExportTable(ExporterIFC exporterIFC, ElementId categoryId)
+      /// <param name="wallFunction">Optional wall function.</param>
+      /// <returns>The custom sub-category id.</returns>
+      public static CustomSubCategoryId WallFunctionToCustomSubCategoryId(WallFunction? wallFunction)
       {
-         if (categoryId == ElementId.InvalidElementId)
-            return null;
+         CustomSubCategoryId specialType = CustomSubCategoryId.None;
+         if (wallFunction == null)
+            return specialType;
 
-         KeyValuePair<ElementId, int> key = new KeyValuePair<ElementId, int>(categoryId, -1);
-         string ifcClassName = null;
-         if (!ExporterCacheManager.CategoryClassNameCache.TryGetValue(key, out ifcClassName))
+         switch (wallFunction)
          {
-            string ifcClassAndTypeName = ExporterIFCUtils.GetIFCClassNameByCategory(categoryId, exporterIFC);
-            string ifcTypeName = null;
-            ExportEntityAndPredefinedType(ifcClassAndTypeName, out ifcClassName, out ifcTypeName);
-            ExporterCacheManager.CategoryClassNameCache[key] = ifcClassName;
-
-            // This actually represents an error in the export layers table, where the class name and type name
-            // or jointly given as a class name.  This worked before, though, so for now we'll allow this case
-            // to continue working.
-            if (!string.IsNullOrEmpty(ifcTypeName) &&
-               (!ExporterCacheManager.CategoryTypeCache.ContainsKey(key) ||
-               string.IsNullOrEmpty(ExporterCacheManager.CategoryTypeCache[key])))
-               ExporterCacheManager.CategoryTypeCache[key] = ifcTypeName;
+            case WallFunction.Coreshaft: specialType = CustomSubCategoryId.Coreshaft; break;
+            case WallFunction.Exterior: specialType = CustomSubCategoryId.ExteriorWall; break;
+            case WallFunction.Foundation: specialType = CustomSubCategoryId.FoundationWall; break;
+            case WallFunction.Interior: specialType = CustomSubCategoryId.InteriorWall; break;
+            case WallFunction.Retaining: specialType = CustomSubCategoryId.RetainingWall; break;
+            case WallFunction.Soffit: specialType = CustomSubCategoryId.Soffit; break;
          }
-
-         return ifcClassName;
+         return specialType;
       }
 
-      private static string GetIFCClassNameOrTypeForMass(ExporterIFC exporterIFC, Element element, ElementId categoryId, bool getClassName)
+      private static string GetIFCEntityNameFromExportTable(WallFunction wallFunction)
+      {
+         if (GetCategoryInfoById(new ElementId(BuiltInCategory.OST_Walls), wallFunction,
+            out ExportIFCCategoryInfo info))
+         {
+            return info.IFCEntityName;
+         }
+         return null;
+      }
+
+      private static string GetIFCTypeFromExportTable(WallFunction wallFunction)
+      {
+         if (GetCategoryInfoById(new ElementId(BuiltInCategory.OST_Walls), wallFunction, 
+            out ExportIFCCategoryInfo info))
+         {
+            return info.IFCPredefinedType;
+         }
+         return null;
+      }
+
+      /// <summary>
+      /// Get the category and function information for an element.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <returns>The category and the optional function</returns>
+      public static (Category, WallFunction?) GetMappingKeyInformationForElement(Element element)
+      {
+         // TODO: This should really return CustomSubCategoryId, which in theory could apply to more than walls.
+         Category category = CategoryUtil.GetSafeCategory(element);
+         WallFunction? wallFunction = null;
+
+         ElementId categoryId = category?.Id ?? ElementId.InvalidElementId;
+         if (categoryId == new ElementId(BuiltInCategory.OST_Walls) && (element is Wall))
+         {
+            WallType wallType = element.Document.GetElement(element.GetTypeId()) as WallType;
+            if (wallType != null)
+            {
+               wallFunction = wallType.Function;
+            }
+         }
+
+         return (category, wallFunction);
+      }
+
+      /// <summary>
+      /// Get the IFC category mapping information associated with an element.
+      /// </summary>
+      /// <param name="category">The element.</param>
+      /// <returns>The category mapping information, if found.</returns>
+      public static ExportIFCCategoryInfo GetIFCCategoryExportMappingInfo(Element element)
+      {
+         (Category category, WallFunction? wallFunction) = GetMappingKeyInformationForElement(element);
+
+         ElementId categoryId = category?.Id ?? ElementId.InvalidElementId;
+         ExportIFCCategoryInfo info;
+         if (GetCategoryInfoById(categoryId, wallFunction, out info))
+         {
+            // If the category information is default (i.e., export and <By Category>), then we try our luck
+            // with the parent.  If the flag is false, we aren't exporting it anyway.  In the future, we may
+            // get the parent info and override the flag, if there is value to that.
+            if (!info.IsDefault())
+            {
+               return info;
+            }
+         }
+
+         // If the wall function is not null, then the "parent" category id is the original
+         // category id, minus the wall function.
+         ElementId parentCategoryId = category?.Parent?.Id ?? (wallFunction == null ? ElementId.InvalidElementId : categoryId);
+         if (parentCategoryId != ElementId.InvalidElementId)
+         {
+            if (GetCategoryInfoById(parentCategoryId, null, out ExportIFCCategoryInfo parentInfo))
+            {
+               return parentInfo;
+            }
+         }
+
+         return info;
+      }
+
+      /// <summary>
+      /// Get the IFC entity name assigned in the category mapping table for a particular categoy.
+      /// </summary>
+      /// <param name="category">The category.</param>
+      /// <returns>The entity name if found.</returns>
+      public static string GetIFCEntityNameFromExportTable(Category category)
+      {
+         if (category == null)
+         {
+            return null;
+         }
+
+         if (GetCategoryInfoById(category.Id, null, out ExportIFCCategoryInfo info))
+         {
+            return info.IFCEntityName;
+         }
+
+         ElementId parentCategoryId = category.Parent?.Id ?? ElementId.InvalidElementId;
+         if (parentCategoryId != ElementId.InvalidElementId)
+         {
+            if (GetCategoryInfoById(parentCategoryId, null, out info))
+            {
+               return info.IFCEntityName;
+            }
+         }
+
+         return null;
+      }
+
+      /// <summary>
+      /// Get the IFC predefined type name assigned in the category mapping table for a particular categoy.
+      /// </summary>
+      /// <param name="categoryId">The category.</param>
+      /// <returns>The predefined type if found.</returns>
+      public static string GetIFCTypeFromExportTable(Category category)
+      {
+         if (category == null)
+            return null;
+
+         if (GetCategoryInfoById(category.Id, null, out ExportIFCCategoryInfo info))
+            return info.IFCPredefinedType;
+     
+         if (category.Parent != null)
+         {
+            if (GetCategoryInfoById(category.Parent.Id, null, out info))
+               return info.IFCPredefinedType;
+         }
+
+         return null;
+       }
+
+      private static Category GetCategoryForMass(Element element)
       {
          Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
          GeometryElement geomElem = element.get_Geometry(geomOptions);
@@ -820,46 +925,58 @@ namespace Revit.IFC.Export.Utility
             return null;
 
          SolidMeshGeometryInfo solidMeshCapsule = GeometryUtil.GetSplitSolidMeshGeometry(geomElem);
-         IList<SolidInfo> solidInfos = solidMeshCapsule.GetSolidInfos();
+         IList<SolidInfo> solidInfos = solidMeshCapsule.SolidInfoList;
          IList<Mesh> meshes = solidMeshCapsule.GetMeshes();
 
-         ElementId overrideCatId = ElementId.InvalidElementId;
+         Category overrideCategory = null;
          bool initOverrideCatId = false;
 
          Document doc = element.Document;
 
          foreach (SolidInfo solidInfo in solidInfos)
          {
-            if (!ProcessObjectForGStyle(doc, solidInfo.Solid, ref overrideCatId, ref initOverrideCatId))
+            if (!ProcessObjectForGStyle(doc, solidInfo.Solid, ref overrideCategory, ref initOverrideCatId))
                return null;
          }
 
          foreach (Mesh mesh in meshes)
          {
-            if (!ProcessObjectForGStyle(doc, mesh, ref overrideCatId, ref initOverrideCatId))
+            if (!ProcessObjectForGStyle(doc, mesh, ref overrideCategory, ref initOverrideCatId))
                return null;
          }
 
-         if (getClassName)
-            return GetIFCClassNameFromExportTable(exporterIFC, overrideCatId);
-         else
-         {
-            // At the moment, we don't have the right API to get the type from a categoryId instead of from an element from the category table.  As such, we are
-            // going to hardwire this.  The only one that matters is OST_MassFloor.
-            if (overrideCatId == new ElementId(BuiltInCategory.OST_MassFloor))
-            {
-               string className = GetIFCClassNameFromExportTable(exporterIFC, overrideCatId);
-               if (string.Compare(className, "IfcSlab", true) == 0)
-                  return "FLOOR";
-               if (string.Compare(className, "IfcCovering", true) == 0)
-                  return "FLOORING";
-            }
-
-            return null; // GetIFCTypeFromExportTable(exporterIFC, overrideCatId);
-         }
+         return overrideCategory;
       }
 
-      private static string GetIFCClassNameOrTypeForWalls(ExporterIFC exporterIFC, Wall wall, ElementId categoryId, bool getClassName)
+      private static string GetIFCClassNameOrTypeForMass(Element element, bool getClassName)
+      {
+         Category overrideCategory = GetCategoryForMass(element);
+         if (getClassName)
+            return GetIFCEntityNameFromExportTable(overrideCategory);
+
+         // At the moment, we don't have the right API to get the type from a categoryId instead of from an element
+         // from the category table.  As such, we are going to hardwire this.  The only one that matters is OST_MassFloor.
+         if ((overrideCategory?.Id.Value ?? -1) == (int) BuiltInCategory.OST_MassFloor)
+         {
+            string className = GetIFCEntityNameFromExportTable(overrideCategory);
+            if (string.Compare(className, "IfcSlab", true) == 0)
+               return "FLOOR";
+            if (string.Compare(className, "IfcCovering", true) == 0)
+               return "FLOORING";
+         }
+
+         return null;
+      }
+
+      private static ExportIFCCategoryInfo GetCategoryInfoForMass(Element element)
+      {
+         Category overrideCategory = GetCategoryForMass(element);
+         ElementId categoryId = overrideCategory?.Id ?? ElementId.InvalidElementId;
+         GetCategoryInfoById(categoryId, null, out ExportIFCCategoryInfo info);
+         return info;
+      }
+
+      private static string GetIFCClassNameOrTypeForWalls(Wall wall, bool getClassName)
       {
          WallType wallType = wall.WallType;
          if (wallType == null)
@@ -869,44 +986,46 @@ namespace Revit.IFC.Export.Utility
          if (ParameterUtil.GetIntValueFromElement(wallType, BuiltInParameter.FUNCTION_PARAM, out wallFunction) != null)
          {
             if (getClassName)
-               return GetIFCClassNameFromExportTable(exporterIFC, wall, categoryId, wallFunction);
+               return GetIFCEntityNameFromExportTable((WallFunction) wallFunction);
             else
-               return GetIFCTypeFromExportTable(exporterIFC, wall, categoryId, wallFunction);
+               return GetIFCTypeFromExportTable((WallFunction)wallFunction);
          }
 
          return null;
       }
 
-      private static bool ProcessObjectForGStyle(Document doc, GeometryObject geomObj, ref ElementId overrideCatId, ref bool initOverrideCatId)
+      private static ExportIFCCategoryInfo GetCategoryInfoForWalls(Wall wall)
+      {
+         WallFunction? function = wall?.WallType?.Function;
+         GetCategoryInfoById(new ElementId(BuiltInCategory.OST_Walls), function, out ExportIFCCategoryInfo info);
+         return info;
+      }
+
+      private static bool ProcessObjectForGStyle(Document doc, GeometryObject geomObj, 
+         ref Category overrideCategory, ref bool initOverrideCatId)
       {
          GraphicsStyle gStyle = doc.GetElement(geomObj.GraphicsStyleId) as GraphicsStyle;
-         if (gStyle == null)
-            return true;
-
-         if (gStyle.GraphicsStyleCategory == null)
-            return true;
-
-         ElementId currCatId = gStyle.GraphicsStyleCategory.Id;
-         if (currCatId == ElementId.InvalidElementId)
+         Category currCategory = gStyle?.GraphicsStyleCategory;
+         if (currCategory == null)
             return true;
 
          if (!initOverrideCatId)
          {
             initOverrideCatId = true;
-            overrideCatId = currCatId;
+            overrideCategory = currCategory;
             return true;
          }
 
-         if (currCatId != overrideCatId)
+         if (currCategory.Id != overrideCategory.Id)
          {
-            overrideCatId = ElementId.InvalidElementId;
+            overrideCategory = null;
             return false;
          }
 
          return true;
       }
 
-      private static string GetIFCClassNameOrTypeFromSpecialEntry(ExporterIFC exporterIFC, Element element, ElementId categoryId, bool getClassName)
+      private static string GetIFCClassNameOrTypeFromSpecialEntry(Element element, ElementId categoryId, bool getClassName)
       {
          if (element == null)
             return null;
@@ -917,57 +1036,169 @@ namespace Revit.IFC.Export.Utility
          if (categoryId == new ElementId(BuiltInCategory.OST_Walls))
          {
             if (element is Wall)
-               return GetIFCClassNameOrTypeForWalls(exporterIFC, element as Wall, categoryId, getClassName);
+               return GetIFCClassNameOrTypeForWalls(element as Wall, getClassName);
          }
          else if (categoryId == new ElementId(BuiltInCategory.OST_Mass))
          {
-            return GetIFCClassNameOrTypeForMass(exporterIFC, element, categoryId, getClassName);
+            return GetIFCClassNameOrTypeForMass(element, getClassName);
+         }
+
+         return null;
+      }
+
+      private static ExportIFCCategoryInfo GetCategoryInfoForSpecialEntry(Element element, ElementId categoryId)
+      {
+         if (element == null)
+            return null;
+
+         // We do special checks for Wall and Massing categories.
+         // For walls, we check if it is an interior or exterior wall.
+         // For massing, we check the geometry.  If it is all in the same sub-category, we use that instead.
+         if (categoryId.Value == (int) BuiltInCategory.OST_Walls)
+         {
+            return GetCategoryInfoForWalls(element as Wall);
+         }
+         else if (categoryId.Value == (int) BuiltInCategory.OST_Mass)
+         {
+            return GetCategoryInfoForMass(element);
          }
 
          return null;
       }
 
       /// <summary>
-      /// Get the IFC class name assigned in the export layers table for a category.  Cache values to avoid calls to internal code.
+      /// Get the category id that will be used for category mapping for this element.
       /// </summary>
-      /// <param name="exporterIFC">The exporterIFC class.</param>
+      /// <param name="element">The element.</param>
+      /// <returns>The category and element id of the category, if it exists.</returns>
+      public static (Category, ElementId) GetSpecificCategoryForElement(Element element)
+      {
+         Category actualCategory = CategoryUtil.GetSafeCategory(element);
+
+         ElementId categoryId = actualCategory?.Id ?? ElementId.InvalidElementId;
+         if (categoryId == ElementId.InvalidElementId)
+            return (null, categoryId);
+
+         // Special Case for Beams: if the structural usage is set, use that sub-category.
+         ElementId actualCategoryId = categoryId;
+         StructuralInstanceUsage usage = (element as FamilyInstance)?.StructuralUsage ?? StructuralInstanceUsage.Undefined;
+         switch (usage)
+         {
+            case StructuralInstanceUsage.Automatic:
+            case StructuralInstanceUsage.Column:
+            case StructuralInstanceUsage.Undefined:
+            case StructuralInstanceUsage.Wall:
+               break;
+            case StructuralInstanceUsage.Brace:
+               actualCategoryId = new ElementId(BuiltInCategory.OST_VerticalBracing);
+               break;
+            case StructuralInstanceUsage.Girder:
+               actualCategoryId = new ElementId(BuiltInCategory.OST_Girder);
+               break;
+            case StructuralInstanceUsage.HorizontalBracing:
+               actualCategoryId = new ElementId(BuiltInCategory.OST_HorizontalBracing);
+               break;
+            case StructuralInstanceUsage.Joist:
+               actualCategoryId = new ElementId(BuiltInCategory.OST_Joist);
+               break;
+            case StructuralInstanceUsage.KickerBracing:
+               actualCategoryId = new ElementId(BuiltInCategory.OST_KickerBracing);
+               break;
+            case StructuralInstanceUsage.Other:
+               {
+                  if (categoryId == new ElementId(BuiltInCategory.OST_StructuralFraming))
+                  {
+                     actualCategoryId = new ElementId(BuiltInCategory.OST_StructuralFramingOther);
+                  }
+                  break;
+               }
+            case StructuralInstanceUsage.Purlin:
+               actualCategoryId = new ElementId(BuiltInCategory.OST_Purlin);
+               break;
+            case StructuralInstanceUsage.TrussChord:
+               actualCategoryId = new ElementId(BuiltInCategory.OST_TrussChord);
+               break;
+            case StructuralInstanceUsage.TrussWeb:
+               actualCategoryId = new ElementId(BuiltInCategory.OST_TrussWeb);
+               break;
+         }
+
+         if (actualCategoryId != categoryId)
+         {
+            actualCategory = Category.GetCategory(element.Document, actualCategoryId);
+         }
+         return (actualCategory, actualCategoryId);
+      }
+
+      /// <summary>
+      /// Get the mapping information assigned in the IFC category table for a category.
+      /// </summary>
       /// <param name="element">The element.</param>
       /// <param name="categoryId">The returned category id.</param>
       /// <returns>The entity name.</returns>
-      public static string GetIFCClassNameFromExportTable(ExporterIFC exporterIFC, 
-         Element element, out ElementId categoryId)
+      public static ExportIFCCategoryInfo GetCategoryInfoFromExportTable(Element element, out ElementId categoryId)
+      {
+         Category category;
+         (category, categoryId) = GetSpecificCategoryForElement(element);
+         if (categoryId == ElementId.InvalidElementId)
+            return null;
+
+         ExportIFCCategoryInfo info = GetCategoryInfoForSpecialEntry(element, categoryId);
+         if (!info?.IsDefault() ?? false)
+         {
+            return info;
+         }
+
+         if (!GetCategoryInfoById(categoryId, null, out info))
+         {
+            ElementId parentCategoryId = category.Parent?.Id ?? ElementId.InvalidElementId;
+            if (parentCategoryId != ElementId.InvalidElementId)
+            {
+               GetCategoryInfoById(parentCategoryId, null, out info);
+            }
+         }
+
+         return info;
+      }
+
+      /// <summary>
+      /// Get the IFC entity name assigned in the IFC category table for a category.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="categoryId">The returned category id.</param>
+      /// <returns>The entity name.</returns>
+      public static string GetIFCEntityNameFromExportTable(Element element, out ElementId categoryId)
       {
          Category category = CategoryUtil.GetSafeCategory(element);
 
          categoryId = category?.Id ?? ElementId.InvalidElementId;
-         if (category == null)
+         if (categoryId == ElementId.InvalidElementId)
             return null;
          
-         string specialEntry = GetIFCClassNameOrTypeFromSpecialEntry(exporterIFC, element, categoryId, true);
+         string specialEntry = GetIFCClassNameOrTypeFromSpecialEntry(element, categoryId, true);
          if (specialEntry != null)
             return specialEntry;
 
-         return GetIFCClassNameFromExportTable(exporterIFC, categoryId);
+         return GetIFCEntityNameFromExportTable(category);
       }
 
       /// <summary>
       /// Get the IFC predefined type assigned in the export layers table for a category.  Cache values to avoid calls to internal code.
       /// </summary>
-      /// <param name="exporterIFC">The exporterIFC class.</param>
       /// <param name="element">The element.</param>
       /// <returns>The predefined type.</returns>
-      public static string GetIFCTypeFromExportTable(ExporterIFC exporterIFC, Element element)
+      public static string GetIFCTypeFromExportTable(Element element)
       {
          Category category = CategoryUtil.GetSafeCategory(element);
          if (category == null)
             return null;
 
          ElementId categoryId = category.Id;
-         string specialEntry = GetIFCClassNameOrTypeFromSpecialEntry(exporterIFC, element, categoryId, false);
+         string specialEntry = GetIFCClassNameOrTypeFromSpecialEntry(element, categoryId, false);
          if (specialEntry != null)
             return specialEntry;
 
-         return GetIFCTypeFromExportTable(exporterIFC, element, categoryId, -1);
+         return GetIFCTypeFromExportTable(category);
       }
 
       private class ApplicablePsets<T> where T : Description
@@ -1115,7 +1346,7 @@ namespace Revit.IFC.Export.Utility
             else
             {
                if (!string.IsNullOrEmpty(currDesc.PredefinedType)
-                  && currDesc.PredefinedType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase)
+                  && currDesc.PredefinedType.Equals(exportInfo.PredefinedType, StringComparison.InvariantCultureIgnoreCase)
                   && currDesc.PredefinedType.Equals("USERDEFINED", StringComparison.InvariantCultureIgnoreCase))
                   userdefinedPdefType = true;
             }
@@ -1145,7 +1376,7 @@ namespace Revit.IFC.Export.Utility
                   ByIfcEntityType.ByAltPredefinedType.Add(currDesc);
             }
             else if (!string.IsNullOrEmpty(currDesc.PredefinedType) &&
-               currDesc.PredefinedType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase))
+               currDesc.PredefinedType.Equals(exportInfo.PredefinedType, StringComparison.InvariantCultureIgnoreCase))
             {
                if (addToInstance)
                   ByIfcEntity.ByPredefinedType.Add(currDesc);
@@ -1244,7 +1475,7 @@ namespace Revit.IFC.Export.Utility
             {
                IFCEntityType altProdHndType = IFCEntityType.UnKnown;
                if (Enum.TryParse<IFCEntityType>("IfcFurnitureType", true, out altProdHndType))
-                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.ValidatedPredefinedType);
+                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.PredefinedType);
             }
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcTypeObject))
@@ -1253,11 +1484,11 @@ namespace Revit.IFC.Export.Utility
             ElementTypeKey etKey = ExporterCacheManager.ElementTypeToHandleCache.Find(prodHnd);
             if (etKey != null)
             {
-               exportInfo.SetValueWithPair(etKey.Item2, etKey.Item3);
+               exportInfo.SetByTypeAndPredefinedType(etKey.Item2, etKey.Item3);
             }
             else
             {
-               exportInfo.SetValueWithPair(prodHndType);
+               exportInfo.SetByType(prodHndType);
             }
 
             // Need to handle backward compatibility for IFC2x3
@@ -1266,7 +1497,7 @@ namespace Revit.IFC.Export.Utility
             {
                IFCEntityType altProdHndType = IFCEntityType.UnKnown;
                if (Enum.TryParse<IFCEntityType>("IfcFurnishingElement", true, out altProdHndType))
-                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.ValidatedPredefinedType);
+                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.PredefinedType);
             }
          }
          else
@@ -1337,12 +1568,12 @@ namespace Revit.IFC.Export.Utility
          applicablePsets.ByIfcEntityType.ByType =
             GetCachedValue(processType, cacheToUse, typeEntity, null);
 
-         if (!string.IsNullOrEmpty(exportInfo.ValidatedPredefinedType))
+         if (!exportInfo.IsPredefinedTypeDefault)
          {
             applicablePsets.ByIfcEntity.ByPredefinedType =
-               GetCachedValue(processInstance, cacheToUse, instanceEntity, exportInfo.ValidatedPredefinedType);
+               GetCachedValue(processInstance, cacheToUse, instanceEntity, exportInfo.PredefinedType);
             applicablePsets.ByIfcEntityType.ByPredefinedType =
-               GetCachedValue(processType, cacheToUse, typeEntity, exportInfo.ValidatedPredefinedType);
+               GetCachedValue(processType, cacheToUse, typeEntity, exportInfo.PredefinedType);
          }
 
          if (!string.IsNullOrEmpty(objectType))
@@ -1404,11 +1635,8 @@ namespace Revit.IFC.Export.Utility
             IFCEntityType typeEntity =
                (processType && unknownType) ? exportInfo.ExportInstance : exportInfo.ExportType;
 
-            currPsets.PopulateCache(exportInfo.ExportInstance,
-               typeEntity,
-               exportInfo.ValidatedPredefinedType,
-               objectType,
-               cacheToUse);
+            currPsets.PopulateCache(exportInfo.ExportInstance, typeEntity, exportInfo.PredefinedType,
+               objectType, cacheToUse);
          }
 
          currPsets.PopulateFromCache(cachedPsets);
@@ -1695,6 +1923,16 @@ namespace Revit.IFC.Export.Utility
                            }
                         }
 
+                        if (ExporterCacheManager.BaseQuantitiesCache.TryGetValue(prodHnd, out addQuantity))
+                        {
+                           foreach (IFCAnyHandle addQty in addQuantity)
+                           {
+                              quantities.Add(addQty);
+                              string addQtyName = IFCAnyHandleUtil.GetStringAttribute(addQty, "Name");
+                              uniqueQuantityNames.Add(addQtyName);
+                           }
+                        }
+
                         IFCExportBodyParams ifcParams = productWrapper.FindExtrusionCreationParameters(prodHnd);
 
                         HashSet<IFCAnyHandle> qtyFromInit = currDesc.ProcessEntries(file, exporterIFC, ifcParams, elementToUse, elemTypeToUse);
@@ -1782,8 +2020,13 @@ namespace Revit.IFC.Export.Utility
                if (productSet.Count > 1 && prodHnd == productSet.First() && IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcElementAssembly))
                   continue;   //Classification for the ELementAssembly should have been created before when processing ElementAssembly
 
+               ElementId elementId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
+               Element elementToUse = (elementId == ElementId.InvalidElementId) ? element : element?.Document?.GetElement(elementId);
+               if (elementToUse == null)
+                  continue;
+               
                // No need to check the subtype since Classification can be assigned to IfcRoot
-               ClassificationUtil.CreateClassification(exporterIFC, file, element, prodHnd);
+               ClassificationUtil.CreateClassification(exporterIFC, file, elementToUse, prodHnd);
             }
             transaction.Commit();
          }
@@ -1880,7 +2123,7 @@ namespace Revit.IFC.Export.Utility
 
          if (!string.IsNullOrEmpty(predefType))
          {
-            exportType.ValidatedPredefinedType = predefType;
+            exportType.PredefinedType = predefType;
          }
 
          return exportType;
@@ -1912,6 +2155,23 @@ namespace Revit.IFC.Export.Utility
          return IFCExportInfoPair.UnKnown;
       }
 
+      private static IFCExportInfoPair GetExportTypeForCurtainSystem(Element element, string predefinedType)
+      {
+         if (CurtainSystemExporter.IsCurtainSystem(element) || CurtainSystemExporter.IsLegacyCurtainElement(element))
+         {
+            if (element is RoofBase)
+            {
+               return new IFCExportInfoPair(IFCEntityType.IfcRoof, predefinedType);
+            }
+            else
+            {
+               return new IFCExportInfoPair(IFCEntityType.IfcCurtainWall, predefinedType);
+            }
+         }
+
+         return IFCExportInfoPair.UnKnown;
+      }
+
       private static IFCExportInfoPair OverrideExportTypeForStructuralFamilies(Element element,
          IFCExportInfoPair originalExportInfoPair)
       {
@@ -1924,7 +2184,7 @@ namespace Revit.IFC.Export.Utility
          if (familyInstance == null)
             return originalExportInfoPair;
 
-         string enumTypeValue = originalExportInfoPair.ValidatedPredefinedType;
+         string enumTypeValue = originalExportInfoPair.PredefinedType;
 
          switch (familyInstance.StructuralType)
          {
@@ -1968,11 +2228,12 @@ namespace Revit.IFC.Export.Utility
          // in the IFC Export Options table.  If so, this overrides all other settings.
          // 2. For the special case of an element in a group, check if it in an IfcFurniture group.
          // 3. Check the parameters IFC_EXPORT_ELEMENT*_AS.
-         // 4. Look at class specified by the IFC Export Options table in step 1, if set.
-         // 5. Check at a pre-defined mapping from Revit category to IFC entity and pre-defined type.
-         // 6. Check whether the intended Entity type is inside the export exclusion set.
-         // 7. Check whether we override IfcBuildingElementProxy/Unknown values with structural known values.
-         // 8. Check to see if we should override the ValidatedPredefinedType from IFC_EXPORT_PREDEFINEDTYPE*.
+         // 4. If Element is intended to be exported as a curtain systen, find the default export settings for that.
+         // 5. Look at class specified by the IFC Export Options table in step 1, if set.
+         // 6. Check at a pre-defined mapping from Revit category to IFC entity and pre-defined type.
+         // 7. Check whether the intended Entity type is inside the export exclusion set.
+         // 8. Check whether we override IfcBuildingElementProxy/Unknown values with structural known values.
+         // 9. Check to see if we should override the ValidatedPredefinedType from IFC_EXPORT_PREDEFINEDTYPE*.
 
          // Steps start below.
 
@@ -1983,10 +2244,12 @@ namespace Revit.IFC.Export.Utility
          // Note that this means that if the Walls category is not exported, but a wall is set to be
          // exported as, e.g., an IfcCeilingType, it won't be exported.  We may want to reconsider this
          // in the future based on customer feedback.
-         ElementId categoryId;
-         string ifcClassName = GetIFCClassNameFromExportTable(exporterIFC, element, out categoryId);
-         if (categoryId == ElementId.InvalidElementId)
+         ElementId categoryId = ElementId.InvalidElementId;
+         string ifcClassName = null;
+         ExportIFCCategoryInfo info = GetCategoryInfoFromExportTable(element, out categoryId);
+         if (info != null && !info.IFCExportFlag)
             return IFCExportInfoPair.UnKnown;
+         ifcClassName = info?.IFCEntityName;
 
          // 2. If Element is contained within a Group that is exported as IfcFurniture, it should be 
          // exported as an IfcSystemFurnitureElement, regardless of other settings.
@@ -2000,48 +2263,58 @@ namespace Revit.IFC.Export.Utility
             isExportTypeDefinedInParameters = !exportType.IsUnKnown;
          }
 
-         // 4. Look at class specified by the IFC Export Options table in step 1.
+         // 4. If Element is intended to be exported as a curtain systen, find the default export
+         // settings for that.
+         if (!isExportTypeDefinedInParameters)
+         {
+            exportType = GetExportTypeForCurtainSystem(element, exportType.PredefinedType);
+         }
+         
+         // 5. Look at class specified by the IFC Export Options table in step 1.
          if (exportType.IsUnKnown && !string.IsNullOrEmpty(ifcClassName))
          {
             if (string.IsNullOrEmpty(enumTypeValue))
-               enumTypeValue = GetIFCTypeFromExportTable(exporterIFC, element);
+            {
+               enumTypeValue = info?.IFCPredefinedType ?? GetIFCTypeFromExportTable(element);
+            }
+            
             // if using name, override category id if match is found.
             if (!ifcClassName.Equals("Default", StringComparison.OrdinalIgnoreCase))
             {
                exportType = ElementFilteringUtil.GetExportTypeFromClassName(ifcClassName);
-               exportType.ValidatedPredefinedType = enumTypeValue;
+               exportType.PredefinedType = enumTypeValue;
             }
          }
 
-         // 5. Check at a pre-defined mapping from Revit category to IFC entity and pre-defined type.
+         // 6. Check at a pre-defined mapping from Revit category to IFC entity and pre-defined type.
          if (exportType.IsUnKnown)
          {
             exportType = ElementFilteringUtil.GetExportTypeFromCategoryId(categoryId);
             if (string.IsNullOrEmpty(enumTypeValue))
-               enumTypeValue = exportType.ValidatedPredefinedType;
+               enumTypeValue = exportType.PredefinedType;
          }
 
-         // 6. Check whether the intended Entity type is inside the export exclusion set.  If it is,
+         // 7. Check whether the intended Entity type is inside the export exclusion set.  If it is,
          // we are done - we won't export it.
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return IFCExportInfoPair.UnKnown;
 
-         // 7. Check whether we override IfcBuildingElementProxy/Unknown values with 
+         // 8. Check whether we override IfcBuildingElementProxy/Unknown values with 
          // structural known values.
          if (!isExportTypeDefinedInParameters)
             exportType = OverrideExportTypeForStructuralFamilies(element, exportType);
 
-         // 8. Check to see if we should override the ValidatedPredefinedType from
+         // 9. Check to see if we should override the ValidatedPredefinedType from
          // IFC_EXPORT_PREDEFINEDTYPE*.
          string pdefFromParam = GetExportTypeFromTypeParameter(element, null);
          if (!string.IsNullOrEmpty(pdefFromParam))
             enumTypeValue = pdefFromParam;
 
          if (!string.IsNullOrEmpty(enumTypeValue))
-            exportType.ValidatedPredefinedType = enumTypeValue;
+            exportType.PredefinedType = enumTypeValue;
 
          // Set the out parameter here.
-         enumTypeValue = exportType.ValidatedPredefinedType;
+         enumTypeValue = exportType.PredefinedType;
 
          if (string.IsNullOrEmpty(enumTypeValue))
             enumTypeValue = "NOTDEFINED";
@@ -2858,15 +3131,23 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="element">the element</param>
       /// <returns>whether it can be exported by components or parts</returns>
-      public static ExportPartAs CanExportByComponentsOrParts(Element element)
+      public static ExportPartAs CanExportByComponentsOrParts(Element element, ref GeometryElement geomElem)
       {
          ExportPartAs exportPartAs = ShouldExportByComponentsOrParts(element, PartUtils.GetAssociatedParts(element.Document, element.Id, false, true).Count);
-         if (PartUtils.HasAssociatedParts(element.Document, element.Id) && (exportPartAs == ExportPartAs.Part || exportPartAs == ExportPartAs.ShapeAspect))
+         if (!PartUtils.HasAssociatedParts(element.Document, element.Id))
          {
-            return exportPartAs;
+            exportPartAs = ExportPartAs.None;
          }
 
-         return ExportPartAs.None;
+         // We may have previously nuked the geometry because we thought we were going to export parts.  However, for
+         // some reason or other we decided not to, so we need to get the geometry again.  An open question is why we
+         // thought we were exporting parts when we weren't.
+         if (exportPartAs == ExportPartAs.None && geomElem == null)
+         {
+            geomElem = element.get_Geometry(GeometryUtil.GetIFCExportGeometryOptions());
+         }
+
+         return exportPartAs;
       }
 
       /// <summary>
@@ -2877,30 +3158,35 @@ namespace Revit.IFC.Export.Utility
       /// <returns>true - if parts have been successfully created. false - is creation of parts is not possible.</returns>
       public static bool CreateParts(Element element, int layersCount, ref GeometryElement geometryElement)
       {
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+            return false;
+
          ExportPartAs exportPartAs = ShouldExportByComponentsOrParts(element, layersCount);
+         if (exportPartAs != ExportPartAs.Part && exportPartAs != ExportPartAs.ShapeAspect)
+            return false;
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && (exportPartAs == ExportPartAs.Part || exportPartAs == ExportPartAs.ShapeAspect))
+         Document doc = element.Document;
+         ICollection<ElementId> ids = new List<ElementId>() { element.Id };
+         if (!PartUtils.AreElementsValidForCreateParts(doc, ids))
+            return false;
+
+         PartUtils.CreateParts(doc, ids);
+         doc.Regenerate();
+
+         //geometryElement is either re-acquired or set to null here because call to PartUtils.CreateParts() and doc.Regenerate() can invalidate its value.
+         if (exportPartAs == ExportPartAs.ShapeAspect)
          {
-            Document doc = element.Document;
-            ICollection<ElementId> ids = new List<ElementId>() { element.Id };
-            if (PartUtils.AreElementsValidForCreateParts(doc, ids))
-            {
-               PartUtils.CreateParts(doc, ids);
-               doc.Regenerate();
-
-               //geometryElement is either re-acquired or set to null here because call to PartUtils.CreateParts() and doc.Regenerate() can invalidate its value.
-               if (exportPartAs == ExportPartAs.ShapeAspect)
-                  //If we export Shape Aspects we will also export original geometry because Shape Aspects reference it.
-                  //When exporting original geometry the code will use GeometryElement so get it now.
-                  geometryElement = element.get_Geometry(GeometryUtil.GetIFCExportGeometryOptions());
-               else
-                  //If we export Parts we do not need to export original geometry so set geometryElement to null.
-                  geometryElement = null;
-               return true;
-            }
+            //If we export Shape Aspects we will also export original geometry because Shape Aspects reference it.
+            //When exporting original geometry the code will use GeometryElement so get it now.
+            geometryElement = element.get_Geometry(GeometryUtil.GetIFCExportGeometryOptions());
+         }
+         else
+         {
+            //If we export Parts we do not need to export original geometry so set geometryElement to null.
+            geometryElement = null;
          }
 
-         return false;
+         return true;
       }
 
       /// <summary>
@@ -2923,6 +3209,11 @@ namespace Revit.IFC.Export.Utility
             (ExporterCacheManager.BaseLinkedDocumentGUID == null);
       }
 
-
+      /// <summary>
+      /// Detects if Element is part of Assembly.  This is useful during Export.
+      /// </summary>
+      /// <param name="element">Element to check.</param>
+      /// <returns>True if non-null Element is part of Assembly, false otherwise.</returns>
+      public static bool IsContainedInAssembly(Element element) => ((element?.AssemblyInstanceId ?? ElementId.InvalidElementId) != ElementId.InvalidElementId);
    }
 }

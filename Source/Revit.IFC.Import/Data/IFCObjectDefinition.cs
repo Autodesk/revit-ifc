@@ -1,4 +1,4 @@
-//
+﻿//
 // Revit IFC Import library: this library works with Autodesk(R) Revit(R) to import IFC files.
 // Copyright (C) 2013  Autodesk, Inc.
 // 
@@ -119,31 +119,6 @@ namespace Revit.IFC.Import.Data
       /// The object that this object via the "IsDecomposedBy" inverse attribute.
       /// </summary>
       public IFCObjectDefinition Decomposes { get; set; } = null;
-
-      /// <summary>
-      /// Indicates if this IFCObjectDefinition is allowed to act as a Container whose DirectShape will have Geometry that will contain
-      /// Geometry from DirectShapes corresponding to other entities.
-      /// This is defined via an IfcRelAggregates relationship, but it only applies if the "RelatedTo" entity will result in a DirectShape
-      /// in the Revit Document.
-      /// This is used to indicate that this entity can act in this capacity.
-      /// </summary>
-      /// <returns>False unless overridden by a derived class.</returns>
-      public virtual bool IsAllowedToAggregateGeometry() => false;
-
-      /// <summary>
-      /// Indicates if this IfcObjectDefinition is acting as a Container whose DirectShape will have Geometry that will contain
-      /// Geometry from DirectShapes corresponding to other entities.
-      /// This only applies to Hybrid Import.
-      /// This is used to indicate that this actually is acting in this capacity.
-      /// </summary>
-      /// <returns></returns>
-      public bool IsHybridImportContainer()
-      {
-         return Importer.TheOptions.IsHybridImport &&
-            IsAllowedToAggregateGeometry() &&
-            ((ComposedObjectDefinitions?.Count ?? 0) > 0) &&
-            (Importer.TheHybridInfo?.ContainerMap?.ContainsKey(Id) ?? false);
-      }
 
       /// <summary>
       /// Get the reference elevation of this object, located in the containing IFCBuilding.
@@ -415,7 +390,7 @@ namespace Revit.IFC.Import.Data
 
          foreach (IFCSolidInfo solid in clonedGeometry)
          {
-            if (CutSolidByVoids(solid))
+            if (CutSolidByVoids(solid, null))
                geomObjs.Add(solid.GeometryObject);
          }
 
@@ -426,9 +401,10 @@ namespace Revit.IFC.Import.Data
       /// Cut a IFCSolidInfo by the voids in this IFCProduct, if any.
       /// </summary>
       /// <param name="solidInfo">The solid information.</param>
+      /// <param name="createdVoids">Extra voids from AnyCAD-created openings.</param>
       /// <returns>False if the return solid is empty; true otherwise.</returns>
       /// <remarks>Overridden at the IFCProduct level.</remarks>
-      protected virtual bool CutSolidByVoids(IFCSolidInfo solidInfo)
+      protected virtual bool CutSolidByVoids(IFCSolidInfo solidInfo, IList<Solid> createdVoids)
       {
          return true;
       }
@@ -555,9 +531,10 @@ namespace Revit.IFC.Import.Data
          PredefinedType = GetPredefinedType(ifcObjectDefinition);
 
          ElementId createdElementId = ElementId.InvalidElementId;
-         if (Importer.TheOptions.IsHybridImport)
+         ElementId objectDefinitionElementId = IFCImportHybridInfo.GetHybridMapInformation(Id);
+         if (objectDefinitionElementId != null)
          {
-            Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out createdElementId);
+            createdElementId = objectDefinitionElementId;
          }
 
          // If we aren't importing this category, skip processing.

@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using System.Runtime.Serialization;
 using System.Xml;
+using Newtonsoft.Json;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -103,10 +103,7 @@ namespace Revit.IFC.Export.Utility
 
          if (File.Exists(filePath))
          {
-            // JavaScriptSerializer does not support mapping of Json array into Hashset (it expects List) and this code below gets the data into Lists first
-            //   and then transfers the data to the final form using Hashset for performance reason
-            JavaScriptSerializer jsonConvert = new JavaScriptSerializer();
-            IDictionary<string, IFCEntityAndPsetListRawFromJson> CertifiedEntityAndPsetList = jsonConvert.Deserialize<IDictionary<string, IFCEntityAndPsetListRawFromJson>>(File.ReadAllText(filePath));
+            IDictionary<string, IFCEntityAndPsetListRawFromJson> CertifiedEntityAndPsetList = JsonConvert.DeserializeObject<IDictionary<string, IFCEntityAndPsetListRawFromJson>>(File.ReadAllText(filePath));
             // Copy the data to the desired format using Hashset in IFCEntityAndPsetList
             foreach (KeyValuePair<string, IFCEntityAndPsetListRawFromJson> entPsetData in CertifiedEntityAndPsetList)
             {

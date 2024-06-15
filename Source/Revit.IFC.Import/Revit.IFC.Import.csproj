@@ -1,333 +1,49 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{7F987D09-9716-4F50-ADE0-278E4B537101}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Revit.IFC.Import</RootNamespace>
     <AssemblyName>Revit.IFC.Import</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
-    <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <WarningLevel>4</WarningLevel>
-    <PublishUrl>Publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-    <AssociatedParentPath>Revit.IFC</AssociatedParentPath>
+    <UseWindowsForms>true</UseWindowsForms>
+    <BaseOutputPath></BaseOutputPath>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-    <PlatformTarget>x64</PlatformTarget>
-    <OutputPath>C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2024.bundle\Contents\2024\</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-    <OutputPath>bin\Releasex64\</OutputPath>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=9ea901ae1ee158aa, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\ThirdParty\ICSharpCode\ICSharpCode.SharpZipLib.DLL</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="RevitAPI, Version=24.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPI.dll</HintPath>
-    </Reference>
-    <Reference Include="RevitAPIIFC, Version=24.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPIIFC.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.XML" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Data\IFCAddress.cs" />
-    <Compile Include="Data\IFCAdvancedBrep.cs" />
-    <Compile Include="Data\IFCAdvancedFace.cs" />
-    <Compile Include="Data\IFCAnnotation.cs" />
-    <Compile Include="Data\IFCApplication.cs" />
-    <Compile Include="Data\IFCBlock.cs" />
-    <Compile Include="Data\IFCBooleanOperand.cs" />
-    <Compile Include="Data\IFCBooleanResult.cs" />
-    <Compile Include="Data\IFCBoundedCurve.cs" />
-    <Compile Include="Data\IFCBSplineCurve.cs" />
-    <Compile Include="Data\IFCBSplineCurveWithKnots.cs" />
-    <Compile Include="Data\IFCBSplineSurface.cs" />
-    <Compile Include="Data\IFCBSplineSurfaceWithKnots.cs" />
-    <Compile Include="Data\IFCBuilding.cs" />
-    <Compile Include="Data\IFCBuildingElement.cs" />
-    <Compile Include="Data\IFCBuildingElementComponent.cs" />
-    <Compile Include="Data\IFCBuildingElementPart.cs" />
-    <Compile Include="Data\IFCBuildingElementProxy.cs" />
-    <Compile Include="Data\IFCBuildingStorey.cs" />
-    <Compile Include="Data\IFCCartesianPointList3D.cs" />
-    <Compile Include="Data\IFCCartesianTransformOperator.cs" />
-    <Compile Include="Data\IFCCircle.cs" />
-    <Compile Include="Data\IFCClosedShell.cs" />
-    <Compile Include="Data\IFCColourRgb.cs" />
-    <Compile Include="Data\IFCColourRgbList.cs" />
-    <Compile Include="Data\IFCColourSpecification.cs" />
-    <Compile Include="Data\IFCCompositeCurve.cs" />
-    <Compile Include="Data\IFCConic.cs" />
-    <Compile Include="Data\IFCConnectedFaceSet.cs" />
-    <Compile Include="Data\IFCCsgPrimitive3D.cs" />
-    <Compile Include="Data\IFCCSGSolid.cs" />
-    <Compile Include="Data\IFCCurve.cs" />
-    <Compile Include="Data\IFCCylindricalSurface.cs" />
-    <Compile Include="Data\IFCDerivedProfileDef.cs" />
-    <Compile Include="Data\IFCDistributionPort.cs" />
-    <Compile Include="Data\IFCDistributionSystem.cs" />
-    <Compile Include="Data\IFCDoorLiningProperties.cs" />
-    <Compile Include="Data\IFCDoorPanelProperties.cs" />
-    <Compile Include="Data\IFCDoorStyle.cs" />
-    <Compile Include="Data\IFCDoorType.cs" />
-    <Compile Include="Data\IFCDoorWindowPropertyBase.cs" />
-    <Compile Include="Data\IFCEdge.cs" />
-    <Compile Include="Data\IFCEdgeCurve.cs" />
-    <Compile Include="Data\IFCEdgeLoop.cs" />
-    <Compile Include="Data\IFCElement.cs" />
-    <Compile Include="Data\IFCElementarySurface.cs" />
-    <Compile Include="Data\IFCElementAssembly.cs" />
-    <Compile Include="Data\IFCElementComponent.cs" />
-    <Compile Include="Data\IFCElementQuantity.cs" />
-    <Compile Include="Data\IFCElementType.cs" />
-    <Compile Include="Data\IFCEllipse.cs" />
-    <Compile Include="Data\IFCEntity.cs" />
-    <Compile Include="Data\IFCExtrudedAreaSolid.cs" />
-    <Compile Include="Data\IFCFace.cs" />
-    <Compile Include="Data\IFCFaceBasedSurfaceModel.cs" />
-    <Compile Include="Data\IFCFaceBound.cs" />
-    <Compile Include="Data\IFCFaceSurface.cs" />
-    <Compile Include="Data\IFCFacetedBrep.cs" />
-    <Compile Include="Data\IFCFeatureElement.cs" />
-    <Compile Include="Data\IFCFeatureElementSubtraction.cs" />
-    <Compile Include="Data\IFCGeometricSet.cs" />
-    <Compile Include="Data\IFCGeotechnicalElement.cs" />
-    <Compile Include="Data\IFCGeotechnicalStratum.cs" />
-    <Compile Include="Data\IFCGrid.cs" />
-    <Compile Include="Data\IFCGridAxis.cs" />
-    <Compile Include="Data\IFCGroup.cs" />
-    <Compile Include="Data\IFCHalfSpaceSolid.cs" />
-    <Compile Include="Data\IFCHybridRepresentationItem.cs" />
-    <Compile Include="Data\IFCImportFile.cs" />
-    <Compile Include="Data\IFCIndexedColourMap.cs" />
-    <Compile Include="Data\IFCIndexedPolyCurve.cs" />
-    <Compile Include="Data\IFCIndexedPolygonalFace.cs" />
-    <Compile Include="Data\IFCLine.cs" />
-    <Compile Include="Data\IFCLocation.cs" />
-    <Compile Include="Data\IFCLoop.cs" />
-    <Compile Include="Data\IFCManifoldSolidBrep.cs" />
-    <Compile Include="Data\IFCMappedItem.cs" />
-    <Compile Include="Data\IFCMaterial.cs" />
-    <Compile Include="Data\IFCMaterialConstituent.cs" />
-    <Compile Include="Data\IFCMaterialConstituentSet.cs" />
-    <Compile Include="Data\IFCMaterialLayer.cs" />
-    <Compile Include="Data\IFCMaterialLayerSet.cs" />
-    <Compile Include="Data\IFCMaterialLayerSetUsage.cs" />
-    <Compile Include="Data\IFCMaterialLayerWithOffsets.cs" />
-    <Compile Include="Data\IFCMaterialList.cs" />
-    <Compile Include="Data\IFCMaterialProfile.cs" />
-    <Compile Include="Data\IFCMaterialProfileSet.cs" />
-    <Compile Include="Data\IFCMaterialProfileSetUsage.cs" />
-    <Compile Include="Data\IFCMaterialProfileSetUsageTapering.cs" />
-    <Compile Include="Data\IfcMaterialProfileWithOffsets.cs" />
-    <Compile Include="Data\IFCObject.cs" />
-    <Compile Include="Data\IFCObjectDefinition.cs" />
-    <Compile Include="Data\IFCOffsetCurve2D.cs" />
-    <Compile Include="Data\IFCOffsetCurve3D.cs" />
-    <Compile Include="Data\IFCOpeningElement.cs" />
-    <Compile Include="Data\IFCOrientedEdge.cs" />
-    <Compile Include="Data\IFCOwnerHistory.cs" />
-    <Compile Include="Data\IFCPhysicalComplexQuantity.cs" />
-    <Compile Include="Data\IFCPhysicalQuantity.cs" />
-    <Compile Include="Data\IFCPhysicalSimpleQuantity.cs" />
-    <Compile Include="Data\IFCPlane.cs" />
-    <Compile Include="Data\IfcPolygonalFaceSet.cs" />
-    <Compile Include="Data\IFCPolyline.cs" />
-    <Compile Include="Data\IFCPolyLoop.cs" />
-    <Compile Include="Data\IFCPort.cs" />
-    <Compile Include="Data\IFCPostalAddress.cs" />
-    <Compile Include="Data\IFCPresentationLayerAssignment.cs" />
-    <Compile Include="Data\IFCPresentationLayerWithStyle.cs" />
-    <Compile Include="Data\IFCPresentationStyle.cs" />
-    <Compile Include="Data\IFCPresentationStyleAssignment.cs" />
-    <Compile Include="Data\IFCProduct.cs" />
-    <Compile Include="Data\IFCProductRepresentation.cs" />
-    <Compile Include="Data\IFCProfileDef.cs" />
-    <Compile Include="Data\IFCPropertyBoundedValue.cs" />
-    <Compile Include="Data\IFCPropertySetDefinition.cs" />
-    <Compile Include="Data\IFCPropertyTableValue.cs" />
-    <Compile Include="Data\IFCProxy.cs" />
-    <Compile Include="Data\IFCRationalBSplineSurfaceWithKnots.cs" />
-    <Compile Include="Data\IFCRepresentation.cs" />
-    <Compile Include="Data\IFCRepresentationContext.cs" />
-    <Compile Include="Data\IFCRepresentationItem.cs" />
-    <Compile Include="Data\IFCRepresentationMap.cs" />
-    <Compile Include="Data\IFCRevolvedAreaSolid.cs" />
-    <Compile Include="Data\IFCRoot.cs" />
-    <Compile Include="Data\IFCSectionedSolid.cs" />
-    <Compile Include="Data\IFCSectionedSolidHorizontal.cs" />
-    <Compile Include="Data\IFCSectionedSurface.cs" />
-    <Compile Include="Data\IFCShellBasedSurfaceModel.cs" />
-    <Compile Include="Data\IFCSite.cs" />
-    <Compile Include="Data\IFCSolidModel.cs" />
-    <Compile Include="Data\IFCSolidStratum.cs" />
-    <Compile Include="Data\IFCSpace.cs" />
-    <Compile Include="Data\IFCSpatialStructureElement.cs" />
-    <Compile Include="Data\IFCStyledItem.cs" />
-    <Compile Include="Data\IFCSurface.cs" />
-    <Compile Include="Data\IFCSurfaceCurveSweptAreaSolid.cs" />
-    <Compile Include="Data\IFCSurfaceOfLinearExtrusion.cs" />
-    <Compile Include="Data\IFCSurfaceOfRevolution.cs" />
-    <Compile Include="Data\IFCSurfaceStyle.cs" />
-    <Compile Include="Data\IFCSurfaceStyleShading.cs" />
-    <Compile Include="Data\IFCSweptAreaSolid.cs" />
-    <Compile Include="Data\IFCSweptDiskSolid.cs" />
-    <Compile Include="Data\IFCSweptSurface.cs" />
-    <Compile Include="Data\IFCSystem.cs" />
-    <Compile Include="Data\IfcTessellatedFaceSet.cs" />
-    <Compile Include="Data\IFCTopologicalRepresentationItem.cs" />
-    <Compile Include="Data\IFCTriangulatedFaceSet.cs" />
-    <Compile Include="Data\IFCTrimmedCurve.cs" />
-    <Compile Include="Data\IFCTypeObject.cs" />
-    <Compile Include="Data\IFCTypeProduct.cs" />
-    <Compile Include="Data\IFCUnit.cs" />
-    <Compile Include="Data\IFCVertex.cs" />
-    <Compile Include="Data\IFCVertexPoint.cs" />
-    <Compile Include="Data\IFCWindowLiningProperties.cs" />
-    <Compile Include="Data\IFCWindowPanelProperties.cs" />
-    <Compile Include="Data\IFCZone.cs" />
-    <Compile Include="Data\IIFCMaterialSelect.cs" />
-    <Compile Include="Data\IFCPresentationItem.cs" />
-    <Compile Include="Enums\IFCEnums.cs" />
-    <Compile Include="Enums\IFCSchemaVersion.cs" />
-    <Compile Include="Enums\IFCShapeBuilderType.cs" />
-    <Compile Include="Enums\IFCSharedParameters.cs" />
-    <Compile Include="Geometry\IFCGeometryUtil.cs" />
-    <Compile Include="Geometry\IFCPoint.cs" />
-    <Compile Include="Data\IFCComplexProperty.cs" />
-    <Compile Include="Data\IFCProperty.cs" />
-    <Compile Include="Data\IFCPropertyMapping.cs" />
-    <Compile Include="Data\IFCPropertySet.cs" />
-    <Compile Include="Data\IFCPropertyValue.cs" />
-    <Compile Include="Data\IFCProject.cs" />
-    <Compile Include="Data\IFCSimpleProperty.cs" />
-    <Compile Include="Data\IFCUnits.cs" />
-    <Compile Include="Geometry\IFCVirtualGridIntersection.cs" />
-    <Compile Include="Geometry\IIFCBooleanOperand.cs" />
-    <Compile Include="Importer.cs" />
-    <Compile Include="Processors\IFCDefaultProcessor.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <AppDesigner Include="Properties\" />
-    <Compile Include="Properties\Resources.Designer.cs">
+  <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.props" />
+   <ItemGroup>
+      <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+   </ItemGroup>
+   <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Utility\BrepBuilderScope.cs" />
-    <Compile Include="Utility\BuilderScope.cs" />
-    <Compile Include="Utility\IFCCategoryUtil.cs" />
-    <Compile Include="Utility\IFCDataUtil.cs" />
-    <Compile Include="Utility\IFCElementUtil.cs" />
-    <Compile Include="Utility\IFCGUIDUtil.cs" />
-    <Compile Include="Utility\IFCImportHybridInfo.cs" />
-    <Compile Include="Utility\IFCImportCache.cs" />
-    <Compile Include="Utility\IFCImportHandleUtil.cs" />
-    <Compile Include="Utility\IFCImportLog.cs" />
-    <Compile Include="Utility\IFCImportOptions.cs" />
-    <Compile Include="Utility\IFCImportShapeEditScope.cs" />
-    <Compile Include="Utility\IFCMaterialCache.cs" />
-    <Compile Include="Utility\IFCMaterialInfo.cs" />
-    <Compile Include="Utility\IFCNamingUtil.cs" />
-    <Compile Include="Utility\IFCObjectReferenceSelect.cs" />
-    <Compile Include="Utility\IFCParameterSetByGroup.cs" />
-    <Compile Include="Utility\IFCSolidInfo.cs" />
-    <Compile Include="Utility\IFCUnitUtil.cs" />
-    <Compile Include="Utility\ParametersToSet.cs" />
-    <Compile Include="Utility\ProcessIFCRelation.cs" />
-    <Compile Include="Utility\TessellatedShapeBuilderScope.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
-      <Visible>False</Visible>
-      <ProductName>Windows Installer 3.1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj">
-      <Project>{032EA4DC-181F-4453-9F93-E08DE1C07D95}</Project>
-      <Name>Revit.IFC.Common</Name>
       <Private>False</Private>
+      <ExcludeAssets>All</ExcludeAssets>
+      <PrivateAssets>All</PrivateAssets>
     </ProjectReference>
     <ProjectReference Include="..\Revit.IFC.Import.Core\Revit.IFC.Import.Core.csproj">
-      <Project>{b1e159b7-4b12-45a9-b83f-159e37798d44}</Project>
-      <Name>Revit.IFC.Import.Core</Name>
+      <Private>False</Private>
+      <ExcludeAssets>All</ExcludeAssets>
+      <PrivateAssets>All</PrivateAssets>
     </ProjectReference>
   </ItemGroup>
+  <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.targets" />
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
-  <!--
-    Always Import the appropriate *.OutputPath.targets file BEFORE the
-    Revit.CSharp.targets file, otherwise VisualStudio will complain
-    about missing OutputPath tags.
-    -->
-  <Import Project=".\Revit.IFC.Import.props" />
-  <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
-  </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <ItemGroup>
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPIIFC.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>

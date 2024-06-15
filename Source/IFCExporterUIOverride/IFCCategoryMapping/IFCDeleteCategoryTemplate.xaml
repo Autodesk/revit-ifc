@@ -1,0 +1,31 @@
+﻿<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.IFCDeleteCategoryTemplate"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+        xmlns:weave="clr-namespace:Autodesk.Weave.Wpf.ElementProperties;assembly=Autodesk.Weave.Wpf"
+        xmlns:weave_d="clr-namespace:Autodesk.Weave.Wpf.ElementProperties.DesignTime;assembly=Autodesk.Weave.Wpf"
+        xmlns:ctrl="clr-namespace:Autodesk.Weave.Wpf.Controls;assembly=Autodesk.Weave.Wpf"
+        weave:FrameworkElementProperties.WeaveTheme="WeaveLightGray"
+        weave:FrameworkElementProperties.ApplyWeaveStyles="True"
+        weave_d:FrameworkElementProperties.DesignTimeWeaveTheme="WeaveLightGray"
+        mc:Ignorable="d"
+        WindowStyle="SingleBorderWindow"
+        Title="{x:Static p:Resources.IFCDeleteCategoryTemplate}"
+        Height="130" Width="303" Name="deleteDialog" ResizeMode="NoResize" SizeToContent="WidthAndHeight">
+
+   <StackPanel Orientation="Vertical">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+         <ctrl:WeaveIcon RegularIcon="Warning" Margin="0,0,5,0"/>
+         <TextBlock Name="textBlock_MsgText" weave:TextBlockProperties.Variant="BodyBold"/>
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+         <Button x:Name="button_Ok" Content="{x:Static p:Resources.OK}" Width="95" weave:ButtonProperties.Variant="Solid" Click="button_Ok_Click" IsDefault="True"/>
+         <Button x:Name="button_Cancel" Content="{x:Static p:Resources.Cancel}" Width="102" IsCancel="True" weave:ButtonProperties.Variant="Outline" Click="button_Cancel_Click"/>
+      </StackPanel>
+   </StackPanel>
+
+</auiw:ChildWindow>

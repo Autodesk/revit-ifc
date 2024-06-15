@@ -98,7 +98,7 @@ namespace Revit.IFC.Import.Data
          catch (Exception ex)
          {
             if (ex == null || ex.Message == null || !ex.Message.Contains("Curve length is too small"))
-               throw ex;
+               throw;
 
             // Returning false allows the calling code to try a backup for the curve loop,
             // in cases where the issue arises from filleting, for example.
@@ -116,7 +116,7 @@ namespace Revit.IFC.Import.Data
          catch (Autodesk.Revit.Exceptions.ArgumentException ex)
          {
             if (ex == null || ex.Message == null || !ex.Message.Contains("discontinuous"))
-               throw ex;
+               throw;
 
             // Returning false allows the calling code to try a backup for the curve loop,
             // in cases where the issue arises from filleting, for example.

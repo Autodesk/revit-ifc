@@ -459,6 +459,9 @@ namespace Revit.IFC.Common.Utility
 
                BasePoint surveyPoint = BasePoint.GetSurveyPoint(doc);
                BasePoint projectBasePoint = BasePoint.GetProjectBasePoint(doc);
+               if (surveyPoint == null || projectBasePoint == null)
+                  return (eastings, northings, orthogonalHeight, angleTN, origAngleTN);
+
                (double svNorthings, double svEastings, double svElevation, double svAngle, double pbNorthings, 
                   double pbEastings, double pbElevation, double pbAngle) = ProjectLocationInfo(doc, surveyPoint.Position, projectBasePoint.Position);
                origAngleTN = pbAngle;

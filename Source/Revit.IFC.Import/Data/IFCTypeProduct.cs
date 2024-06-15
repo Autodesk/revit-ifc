@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
@@ -116,24 +117,24 @@ namespace Revit.IFC.Import.Data
 
          Tag = IFCAnyHandleUtil.GetStringAttribute(ifcTypeProduct, "Tag");
 
-         using (RepresentationsAlreadyCreatedSetter setter = new RepresentationsAlreadyCreatedSetter(GlobalId))
-         {
-            IList<IFCAnyHandle> representationMapsHandle = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcTypeProduct, "RepresentationMaps");
-            if (representationMapsHandle?.Count > 0)
-            {
-               foreach (IFCAnyHandle representationMapHandle in representationMapsHandle)
-               {
-                  IFCRepresentationMap representationMap = IFCRepresentationMap.ProcessIFCRepresentationMap(representationMapHandle);
-                  if (representationMap != null)
-                  {
-                     RepresentationMaps.Add(representationMap);
+         if (IFCImportHybridInfo.IsValidElementId(IFCImportHybridInfo.GetHybridMapInformation(Id)))
+            return;
 
-                     // Traditionally we would create a "dummy" DirectShapeType for each IfcRepresentationMap.  In the case where the IfcRepresentationMap is not used by another other IfcTypeProduct, 
-                     // we would like to stop creating the "dummy" DirectShapeType and store the geometry in the DirectShapeType associated with the IfcTypeProduct.  However, IfcRepresentationMap 
-                     // does not have an INVERSE relationship to its IfcTypeProduct(s), at least in IFC2x3.
-                     // As such, we keep track of the IfcRepresentationMaps that have the relationship described above for future correspondence.
-                     RegisterRepresentationMapWithTypeProject(representationMap, this);
-                  }
+         IList<IFCAnyHandle> representationMapsHandle = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcTypeProduct, "RepresentationMaps");
+         if (representationMapsHandle?.Count > 0)
+         {
+            foreach (IFCAnyHandle representationMapHandle in representationMapsHandle)
+            {
+               IFCRepresentationMap representationMap = IFCRepresentationMap.ProcessIFCRepresentationMap(representationMapHandle);
+               if (representationMap != null)
+               {
+                  RepresentationMaps.Add(representationMap);
+
+                  // Traditionally we would create a "dummy" DirectShapeType for each IfcRepresentationMap.  In the case where the IfcRepresentationMap is not used by another other IfcTypeProduct, 
+                  // we would like to stop creating the "dummy" DirectShapeType and store the geometry in the DirectShapeType associated with the IfcTypeProduct.  However, IfcRepresentationMap 
+                  // does not have an INVERSE relationship to its IfcTypeProduct(s), at least in IFC2x3.
+                  // As such, we keep track of the IfcRepresentationMaps that have the relationship described above for future correspondence.
+                  RegisterRepresentationMapWithTypeProject(representationMap, this);
                }
             }
          }

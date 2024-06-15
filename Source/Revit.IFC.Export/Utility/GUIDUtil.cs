@@ -294,7 +294,7 @@ namespace Revit.IFC.Export.Utility
             {
                IFCEntityType entityType =
                   useInstanceGeometry ? exportInfoPair.ExportInstance : exportInfoPair.ExportType;
-               string predefinedType = exportInfoPair.ValidatedPredefinedType ?? string.Empty;
+               string predefinedType = exportInfoPair.PredefinedType ?? string.Empty;
                hash += " Entity: " + entityType.ToString() + ":" + predefinedType;
             }
 

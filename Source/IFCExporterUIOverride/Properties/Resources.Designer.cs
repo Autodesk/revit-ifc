@@ -214,6 +214,78 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Arched (ARCHED).
+        /// </summary>
+        public static string BridgeArched {
+            get {
+                return ResourceManager.GetString("BridgeArched", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cable Stayed (CABLESTAYED).
+        /// </summary>
+        public static string BridgeCableStayed {
+            get {
+                return ResourceManager.GetString("BridgeCableStayed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cantilever (CANTILEVER).
+        /// </summary>
+        public static string BridgeCantilever {
+            get {
+                return ResourceManager.GetString("BridgeCantilever", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Culvert (CULVERT).
+        /// </summary>
+        public static string BridgeCulvert {
+            get {
+                return ResourceManager.GetString("BridgeCulvert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Framework (FRAMEWORK).
+        /// </summary>
+        public static string BridgeFramework {
+            get {
+                return ResourceManager.GetString("BridgeFramework", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Girder (GIRDER).
+        /// </summary>
+        public static string BridgeGirder {
+            get {
+                return ResourceManager.GetString("BridgeGirder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Suspension (SUSPENSION).
+        /// </summary>
+        public static string BridgeSuspension {
+            get {
+                return ResourceManager.GetString("BridgeSuspension", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Truss (TRUSS).
+        /// </summary>
+        public static string BridgeTruss {
+            get {
+                return ResourceManager.GetString("BridgeTruss", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Browse ....
         /// </summary>
         public static string Browse {
@@ -250,11 +322,47 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &lt;By Category&gt;.
+        /// </summary>
+        public static string ByCategory {
+            get {
+                return ResourceManager.GetString("ByCategory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to By Category.
+        /// </summary>
+        public static string ByCategoryNoBrackets {
+            get {
+                return ResourceManager.GetString("ByCategoryNoBrackets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cancel.
         /// </summary>
         public static string Cancel {
             get {
                 return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Category Mapping.
+        /// </summary>
+        public static string CategoryMapping {
+            get {
+                return ResourceManager.GetString("CategoryMapping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How do I modify IFC export mapping settings?.
+        /// </summary>
+        public static string CategoryMappingHelp {
+            get {
+                return ResourceManager.GetString("CategoryMappingHelp", resourceCulture);
             }
         }
         
@@ -412,6 +520,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicate template.
+        /// </summary>
+        public static string CopyTemplateTooltip {
+            get {
+                return ResourceManager.GetString("CopyTemplateTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Country.
         /// </summary>
         public static string Country {
@@ -426,6 +543,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string CreateNewSetup {
             get {
                 return ResourceManager.GetString("CreateNewSetup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create new template.
+        /// </summary>
+        public static string CreateNewTemplateTooltip {
+            get {
+                return ResourceManager.GetString("CreateNewTemplateTooltip", resourceCulture);
             }
         }
         
@@ -498,6 +624,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string DeleteSelectedSetup {
             get {
                 return ResourceManager.GetString("DeleteSelectedSetup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete template.
+        /// </summary>
+        public static string DeleteTemplateTooltip {
+            get {
+                return ResourceManager.GetString("DeleteTemplateTooltip", resourceCulture);
             }
         }
         
@@ -606,6 +741,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string Elevation {
             get {
                 return ResourceManager.GetString("Elevation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ....
+        /// </summary>
+        public static string Ellipses {
+            get {
+                return ResourceManager.GetString("Ellipses", resourceCulture);
             }
         }
         
@@ -736,11 +880,47 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Export IFC Category Mapping.
+        /// </summary>
+        public static string ExportCategoryMappingDialogName {
+            get {
+                return ResourceManager.GetString("ExportCategoryMappingDialogName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC Category Mapping Files (*.txt)|*.txt.
+        /// </summary>
+        public static string ExportCategoryMappingFilter {
+            get {
+                return ResourceManager.GetString("ExportCategoryMappingFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export only elements visible in current view.
         /// </summary>
         public static string ExportElementsVisibleInView {
             get {
                 return ResourceManager.GetString("ExportElementsVisibleInView", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to If this option is checked, don&apos;t create a container for floors and roofs unless exporting parts..
+        /// </summary>
+        public static string ExportHostAsSingleEntityTooltip {
+            get {
+                return ResourceManager.GetString("ExportHostAsSingleEntityTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Always export faceted floors and roofs as a single IFC entity.
+        /// </summary>
+        public static string ExportHostsAsSingleEntity {
+            get {
+                return ResourceManager.GetString("ExportHostsAsSingleEntity", resourceCulture);
             }
         }
         
@@ -777,6 +957,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string ExportLinkedFiles {
             get {
                 return ResourceManager.GetString("ExportLinkedFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export Mapping Templates.
+        /// </summary>
+        public static string ExportMappingTemplates {
+            get {
+                return ResourceManager.GetString("ExportMappingTemplates", resourceCulture);
             }
         }
         
@@ -871,6 +1060,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Export template.
+        /// </summary>
+        public static string ExportTemplateTooltip {
+            get {
+                return ResourceManager.GetString("ExportTemplateTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export parameter mapping table.
         /// </summary>
         public static string ExportUserDefinedParameterMappingTable {
@@ -903,6 +1101,69 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string ExportVisibleElementsInView {
             get {
                 return ResourceManager.GetString("ExportVisibleElementsInView", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bridge (IfcBridge).
+        /// </summary>
+        public static string FacilityBridge {
+            get {
+                return ResourceManager.GetString("FacilityBridge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Building (IfcBuilding).
+        /// </summary>
+        public static string FacilityBuilding {
+            get {
+                return ResourceManager.GetString("FacilityBuilding", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Marine Facility (IfcMarineFacility).
+        /// </summary>
+        public static string FacilityMarineFacility {
+            get {
+                return ResourceManager.GetString("FacilityMarineFacility", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Facility Predefined Type.
+        /// </summary>
+        public static string FacilityPredefinedType {
+            get {
+                return ResourceManager.GetString("FacilityPredefinedType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Railway (IfcRailway).
+        /// </summary>
+        public static string FacilityRailway {
+            get {
+                return ResourceManager.GetString("FacilityRailway", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Road (IfcRoad).
+        /// </summary>
+        public static string FacilityRoad {
+            get {
+                return ResourceManager.GetString("FacilityRoad", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Facility Type.
+        /// </summary>
+        public static string FacilityType {
+            get {
+                return ResourceManager.GetString("FacilityType", resourceCulture);
             }
         }
         
@@ -1105,6 +1366,42 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IFC Class.
+        /// </summary>
+        public static string IFCClass {
+            get {
+                return ResourceManager.GetString("IFCClass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copy.
+        /// </summary>
+        public static string IFCCopyCategoryTemplate {
+            get {
+                return ResourceManager.GetString("IFCCopyCategoryTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete.
+        /// </summary>
+        public static string IFCDeleteCategoryTemplate {
+            get {
+                return ResourceManager.GetString("IFCDeleteCategoryTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete {0} ?.
+        /// </summary>
+        public static string IFCDeleteCategoryTemplateMessage {
+            get {
+                return ResourceManager.GetString("IFCDeleteCategoryTemplateMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IFC Entity Selection.
         /// </summary>
         public static string IFCEntitySelection {
@@ -1168,6 +1465,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This is not a valid category mapping file..
+        /// </summary>
+        public static string IFCInvalidCategoryMappingFile {
+            get {
+                return ResourceManager.GetString("IFCInvalidCategoryMappingFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IFC 2x3 Coordination View 2.0.
         /// </summary>
         public static string IFCMVD2x3CV2 {
@@ -1209,6 +1515,24 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCMVDGSA {
             get {
                 return ResourceManager.GetString("IFCMVDGSA", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New Settings Template.
+        /// </summary>
+        public static string IFCNewCategoryTemplate {
+            get {
+                return ResourceManager.GetString("IFCNewCategoryTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rename.
+        /// </summary>
+        public static string IFCRenameCategoryTemplate {
+            get {
+                return ResourceManager.GetString("IFCRenameCategoryTemplate", resourceCulture);
             }
         }
         
@@ -1267,7 +1591,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IFC4x3 [Experimental].
+        ///   Looks up a localized string similar to IFC4x3.
         /// </summary>
         public static string IFCVersion4x3 {
             get {
@@ -1371,6 +1695,24 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCZIPFiles {
             get {
                 return ResourceManager.GetString("IFCZIPFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import IFC Category Mapping.
+        /// </summary>
+        public static string ImportCategoryMappingDialogName {
+            get {
+                return ResourceManager.GetString("ImportCategoryMappingDialogName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import template.
+        /// </summary>
+        public static string ImportTemplateTooltip {
+            get {
+                return ResourceManager.GetString("ImportTemplateTooltip", resourceCulture);
             }
         }
         
@@ -1582,11 +1924,200 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Manage IFC Export Mapping Settings.
+        /// </summary>
+        public static string ManageIFCExportMappingSettings {
+            get {
+                return ResourceManager.GetString("ManageIFCExportMappingSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Mandatory fields Name, Source or Publisher, and Edition cannot be empty..
         /// </summary>
         public static string ManditoryFieldsNotEmpty {
             get {
                 return ResourceManager.GetString("ManditoryFieldsNotEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Barrier Beach (BARRIERBEACH).
+        /// </summary>
+        public static string MarineFacilityBarrierBeach {
+            get {
+                return ResourceManager.GetString("MarineFacilityBarrierBeach", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Breakwater (BREAKWATER).
+        /// </summary>
+        public static string MarineFacilityBreakwater {
+            get {
+                return ResourceManager.GetString("MarineFacilityBreakwater", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Canal (CANAL).
+        /// </summary>
+        public static string MarineFacilityCanal {
+            get {
+                return ResourceManager.GetString("MarineFacilityCanal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dry Dock (DRYDOCK).
+        /// </summary>
+        public static string MarineFacilityDryDock {
+            get {
+                return ResourceManager.GetString("MarineFacilityDryDock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Floating Dock (FLOATINGDOCK).
+        /// </summary>
+        public static string MarineFacilityFloatingDock {
+            get {
+                return ResourceManager.GetString("MarineFacilityFloatingDock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hydrolift (HYDROLIFT).
+        /// </summary>
+        public static string MarineFacilityHydrolift {
+            get {
+                return ResourceManager.GetString("MarineFacilityHydrolift", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Jetty (JETTY).
+        /// </summary>
+        public static string MarineFacilityJetty {
+            get {
+                return ResourceManager.GetString("MarineFacilityJetty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Launch Recovery Facility (LAUNCHRECOVERYFACILITY).
+        /// </summary>
+        public static string MarineFacilityLaunchRecovery {
+            get {
+                return ResourceManager.GetString("MarineFacilityLaunchRecovery", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Marine Defense (MARINEDEFENCE).
+        /// </summary>
+        public static string MarineFacilityMarineDefense {
+            get {
+                return ResourceManager.GetString("MarineFacilityMarineDefense", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Navigational Channel (NAVIGATIONALCHANNEL).
+        /// </summary>
+        public static string MarineFacilityNavigationalChannel {
+            get {
+                return ResourceManager.GetString("MarineFacilityNavigationalChannel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Port (PORT).
+        /// </summary>
+        public static string MarineFacilityPort {
+            get {
+                return ResourceManager.GetString("MarineFacilityPort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Quay (QUAY).
+        /// </summary>
+        public static string MarineFacilityQuay {
+            get {
+                return ResourceManager.GetString("MarineFacilityQuay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Revetment (REVETMENT).
+        /// </summary>
+        public static string MarineFacilityRevetment {
+            get {
+                return ResourceManager.GetString("MarineFacilityRevetment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shiplift (SHIPLIFT).
+        /// </summary>
+        public static string MarineFacilityShipLift {
+            get {
+                return ResourceManager.GetString("MarineFacilityShipLift", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ship Lock (SHIPLOCK).
+        /// </summary>
+        public static string MarineFacilityShipLock {
+            get {
+                return ResourceManager.GetString("MarineFacilityShipLock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shipyard (SHIPYARD).
+        /// </summary>
+        public static string MarineFacilityShipyard {
+            get {
+                return ResourceManager.GetString("MarineFacilityShipyard", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Slipway (SLIPWAY).
+        /// </summary>
+        public static string MarineFacilitySlipway {
+            get {
+                return ResourceManager.GetString("MarineFacilitySlipway", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waterway (WATERWAY).
+        /// </summary>
+        public static string MarineFacilityWaterway {
+            get {
+                return ResourceManager.GetString("MarineFacilityWaterway", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waterway Shiplift (WATERWAYSHIPLIFT).
+        /// </summary>
+        public static string MarineFacilityWaterwayShiplift {
+            get {
+                return ResourceManager.GetString("MarineFacilityWaterwayShiplift", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Modify IFC category mapping template.
+        /// </summary>
+        public static string ModifyIFCCategoryMapping {
+            get {
+                return ResourceManager.GetString("ModifyIFCCategoryMapping", resourceCulture);
             }
         }
         
@@ -1605,6 +2136,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string ModifySetupTitle {
             get {
                 return ResourceManager.GetString("ModifySetupTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to More.
+        /// </summary>
+        public static string MoreTooltip {
+            get {
+                return ResourceManager.GetString("MoreTooltip", resourceCulture);
             }
         }
         
@@ -1654,6 +2194,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to New Template.
+        /// </summary>
+        public static string NewTemplateDefaultName {
+            get {
+                return ResourceManager.GetString("NewTemplateDefaultName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Next....
         /// </summary>
         public static string Next {
@@ -1677,6 +2226,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string Northings {
             get {
                 return ResourceManager.GetString("Northings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not Defined.
+        /// </summary>
+        public static string NotDefined {
+            get {
+                return ResourceManager.GetString("NotDefined", resourceCulture);
             }
         }
         
@@ -1744,6 +2302,24 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Set &quot;Last Modified&quot; user to the Author in Project Information.
+        /// </summary>
+        public static string OwnerHistoryLastModified {
+            get {
+                return ResourceManager.GetString("OwnerHistoryLastModified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Populate the IfcOwnerHistory &quot;LastModified&quot; attribute with the Author information set in Project Information.
+        /// </summary>
+        public static string OwnerHistoryLastModifiedTooltip {
+            get {
+                return ResourceManager.GetString("OwnerHistoryLastModifiedTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Phase to export.
         /// </summary>
         public static string PhaseToExport {
@@ -1767,6 +2343,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string PostalCode {
             get {
                 return ResourceManager.GetString("PostalCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Predefined Type.
+        /// </summary>
+        public static string PredefinedType {
+            get {
+                return ResourceManager.GetString("PredefinedType", resourceCulture);
             }
         }
         
@@ -2068,11 +2653,38 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to New.
+        /// </summary>
+        public static string RenameNewName {
+            get {
+                return ResourceManager.GetString("RenameNewName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Previous.
+        /// </summary>
+        public static string RenamePreviousName {
+            get {
+                return ResourceManager.GetString("RenamePreviousName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Rename the selected setup..
         /// </summary>
         public static string RenameSelectedSetup {
             get {
                 return ResourceManager.GetString("RenameSelectedSetup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rename template.
+        /// </summary>
+        public static string RenameTemplateTooltip {
+            get {
+                return ResourceManager.GetString("RenameTemplateTooltip", resourceCulture);
             }
         }
         
@@ -2095,6 +2707,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Reset all.
+        /// </summary>
+        public static string ResetAll {
+            get {
+                return ResourceManager.GetString("ResetAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Reset configurations back to the original settings.
         /// </summary>
         public static string ResetConfigToolTip {
@@ -2113,11 +2734,47 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Reset row to Revit default settings.
+        /// </summary>
+        public static string ResetRowToDefault {
+            get {
+                return ResourceManager.GetString("ResetRowToDefault", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset table to Revit default settings.
+        /// </summary>
+        public static string ResetToDefault {
+            get {
+                return ResourceManager.GetString("ResetToDefault", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Reset.
         /// </summary>
         public static string ResetToOriginals {
             get {
                 return ResourceManager.GetString("ResetToOriginals", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Revit Category.
+        /// </summary>
+        public static string RevitCategory {
+            get {
+                return ResourceManager.GetString("RevitCategory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save.
+        /// </summary>
+        public static string Save {
+            get {
+                return ResourceManager.GetString("Save", resourceCulture);
             }
         }
         
@@ -2158,11 +2815,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Save changes to template.
+        /// </summary>
+        public static string SaveTemplateTooltip {
+            get {
+                return ResourceManager.GetString("SaveTemplateTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Search.
         /// </summary>
         public static string Search {
             get {
                 return ResourceManager.GetString("Search", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selected categories will be exported.
+        /// </summary>
+        public static string SelectedCheckboxTooltip {
+            get {
+                return ResourceManager.GetString("SelectedCheckboxTooltip", resourceCulture);
             }
         }
         
@@ -2374,6 +3049,33 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Template name.
+        /// </summary>
+        public static string TemplateName {
+            get {
+                return ResourceManager.GetString("TemplateName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter unique template name..
+        /// </summary>
+        public static string TemplateNameTooltip {
+            get {
+                return ResourceManager.GetString("TemplateNameTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Template Settings.
+        /// </summary>
+        public static string TemplateSettings {
+            get {
+                return ResourceManager.GetString("TemplateSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Level of detail for some element geometry.
         /// </summary>
         public static string TessellationDetails {
@@ -2523,6 +3225,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string UserDefinedPurpose {
             get {
                 return ResourceManager.GetString("UserDefinedPurpose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User-defined Type.
+        /// </summary>
+        public static string UserDefinedType {
+            get {
+                return ResourceManager.GetString("UserDefinedType", resourceCulture);
             }
         }
         

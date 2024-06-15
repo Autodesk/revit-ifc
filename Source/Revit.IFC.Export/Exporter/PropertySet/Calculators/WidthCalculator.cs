@@ -124,8 +124,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (extrusionCreationData == null)
             return false;
 
-         // For Slab width is the lesser edge of the rectangle area profile (get it from ScaledHeight)
-         if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcSlab))
+         // For Slab width is the length of the extrusion of the rectangle area profile (get it from ScaledHeight)
+         if (PropertyUtil.IsWidthLengthReversed(hnd))
          {
             m_Width = extrusionCreationData.ScaledHeight;
          }

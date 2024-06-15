@@ -27,8 +27,44 @@ namespace Revit.IFC.Export.Utility
    /// <summary>
    /// Provides static methods for parameter related manipulations.
    /// </summary>
-   class ParameterUtil
+   public class ParameterUtil
    {
+      /// <summary>
+      /// The information needed to create an IFC property.
+      /// </summary>
+      public class PropertyDescription
+      {
+         /// <summary>
+         /// Create a property description with only a name.
+         /// </summary>
+         /// <param name="name">The name of the property.</param>
+         public PropertyDescription(string name)
+         {
+            Name = name;
+         }
+
+         /// <summary>
+         /// Create a property description with only a name.
+         /// </summary>
+         /// <param name="name">The name of the property.</param>
+         /// <param name="description">The description of the property.</param>
+         public PropertyDescription(string name, string description)
+         {
+            Name = name;
+            Description = description;
+         }
+
+         /// <summary>
+         ///  The required name.
+         /// </summary>
+         public string Name { get; set; } = null;
+
+         /// <summary>
+         /// The optional description.
+         /// </summary>
+         public string Description { get; set; } = null;
+      };
+
       // Cache the parameters for the current Element.
       private static IDictionary<ElementId, IDictionary<string, ParameterElementCache>> m_NonIFCParameters =
          new Dictionary<ElementId, IDictionary<string, ParameterElementCache>>();

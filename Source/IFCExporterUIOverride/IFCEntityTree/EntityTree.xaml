@@ -60,5 +60,6 @@
          <Button x:Name="Button_OK" Content="{x:Static p:Resources.OK}" HorizontalAlignment="Left" Width="80" Click="Button_OK_Click" Padding="1" Margin="0,0,10,0"/>
          <Button x:Name="Button_Cancel" Content="{x:Static p:Resources.Cancel}" HorizontalAlignment="Left" Width="80" Click="Button_Cancel_Click" Padding="1"/>
       </StackPanel>
+      <CheckBox x:Name="CheckBox_ByCategory" Content="{x:Static p:Resources.ByCategoryNoBrackets}" Margin="110,10,10,5" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Right" Click="CheckBox_ByCategory_Clicked" />
    </Grid>
 </auiw:ChildWindow>

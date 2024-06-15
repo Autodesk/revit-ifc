@@ -339,7 +339,7 @@ namespace Revit.IFC.Export.Toolkit
          {
             // the cache contains levels from all the exported documents
             // if the export is performed for a linked document, filter the levels that are not from this document
-            if (ExporterCacheManager.ExportOptionsCache.ExportingSeparateLink())
+            if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
             {
                Element levelElem = document.GetElement(levelInfoPair.Key);
                if (levelElem == null || !(levelElem is Level))
@@ -491,7 +491,7 @@ namespace Revit.IFC.Export.Toolkit
                {
                   // the cache contains levels from all the exported documents
                   // if the export is performed for a linked document, filter the levels that are not from this document
-                  if (ExporterCacheManager.ExportOptionsCache.ExportingSeparateLink())
+                  if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
                   {
                      Element levelElem = doc.GetElement(levelInfoPair.Key);
                      if (levelElem == null || !(levelElem is Level))
@@ -528,7 +528,7 @@ namespace Revit.IFC.Export.Toolkit
             {
                // the cache contains levels from all the exported documents
                // if the export is performed for a linked document, filter the levels that are not from this document
-               if (ExporterCacheManager.ExportOptionsCache.ExportingSeparateLink())
+               if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
                {
                   Element levelElem = doc.GetElement(levelInfoPair.Key);
                   if (levelElem == null || !(levelElem is Level))

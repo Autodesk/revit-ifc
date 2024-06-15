@@ -194,8 +194,8 @@ namespace Revit.IFC.Import.Data
       {
          // If we're "Creating" an Element from an IFCTypeObject during Hybrid IFC Import, then that will already have been imported as a DirectShapeType
          // So use that instead of creating a whole new DirectShapeType.
-         ElementId directShapeTypeId = ElementId.InvalidElementId;
-         if (Importer.TheOptions.IsHybridImport && (Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out directShapeTypeId) ?? false))
+         ElementId directShapeTypeId = IFCImportHybridInfo.GetHybridMapInformation(Id);
+         if (IFCImportHybridInfo.IsValidElementId(directShapeTypeId))
          {
             CreatedElementId = directShapeTypeId;
          }

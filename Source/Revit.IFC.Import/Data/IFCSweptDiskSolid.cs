@@ -290,7 +290,7 @@ namespace Revit.IFC.Import.Data
 
                }
                else
-                  throw ex;
+                  throw;
             }
          }
 

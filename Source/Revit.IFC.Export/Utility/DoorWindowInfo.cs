@@ -431,19 +431,13 @@ namespace Revit.IFC.Export.Utility
          ExportingDoor = isDoor;
          if (isDoor)
          {
-            if (exportType.HasUndefinedPredefinedType())
-               PreDefinedType = "DOOR";
-            else
-               PreDefinedType = exportType.ValidatedPredefinedType;
+            PreDefinedType = exportType.GetPredefinedTypeOrDefault("DOOR");
          }
 
          ExportingWindow = isWindow;
          if (isWindow)
          {
-            if (exportType.HasUndefinedPredefinedType())
-               PreDefinedType = "WINDOW";
-            else
-               PreDefinedType = exportType.ValidatedPredefinedType;
+            PreDefinedType = exportType.GetPredefinedTypeOrDefault("WINDOW");
          }
 
          FlippedSymbol = false;

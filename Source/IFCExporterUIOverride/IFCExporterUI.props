@@ -2,27 +2,17 @@
   <ItemGroup>
     <Reference Include="RevitAPI">
       <SpecificVersion>False</SpecificVersion>
-	  <HintPath>$(RevitExePath)\RevitAPI.dll</HintPath>
+	  <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPI.dll</HintPath>
 	  <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIUI">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(RevitExePath)\RevitAPIUI.dll</HintPath>
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPIUI.dll</HintPath>
 	  <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIIFC">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(RevitExePath)\RevitAPIIFC.dll</HintPath>
-	  <Private>False</Private>
-    </Reference>
-    <Reference Include="Revit.IFC.Common">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(RevitExePath)\Revit.IFC.Common.dll</HintPath>
-	  <Private>False</Private>
-    </Reference>
-    <Reference Include="Revit.IFC.Export">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(RevitExePath)\Revit.IFC.Export.dll</HintPath>
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPIIFC.dll</HintPath>
 	  <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -32,5 +22,5 @@
     Revit.CSharp.targets file, otherwise VisualStudio will complain
     about missing OutputPath tags.
     -->
-  <Import Project="$(SolutionDir)VSProps\RA.CSharp.Addin-param.targets" />
+  <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.targets" />
 </Project>

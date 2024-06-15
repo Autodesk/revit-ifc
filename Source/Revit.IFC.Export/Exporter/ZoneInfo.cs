@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
@@ -70,7 +71,7 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
-      private int CurrentZoneNumber { get; set; } = 1;
+      public int CurrentZoneNumber { get; private set; } = 1;
 
       private void SetPropZoneLabels()
       {
@@ -182,9 +183,7 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="zoneInfoFinder">Container with string information.</param>
       /// <param name="roomHandle">The room handle for this zone.</param>
-      /// <param name="zoneCommonPSetHandle">The Pset_ZoneCommon handle for this zone.</param>
-      public ZoneInfo(ZoneInfoFinder zoneInfoFinder, IFCAnyHandle roomHandle,
-         IFCAnyHandle zoneCommonPSetHandle)
+      public ZoneInfo(ZoneInfoFinder zoneInfoFinder, IFCAnyHandle roomHandle)
       {
          if (zoneInfoFinder != null)
          {
@@ -195,7 +194,6 @@ namespace Revit.IFC.Export.Exporter
          }
 
          RoomHandles.Add(roomHandle);
-         ZoneCommonProperySetHandle = zoneCommonPSetHandle;
       }
 
       /// <summary>
@@ -222,22 +220,17 @@ namespace Revit.IFC.Export.Exporter
          if (zoneInfoFinder == null)
             return;
 
-         string newObjectType = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.ObjectType);
-         string newDescription = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.Description);
-         string newLongName = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.LongName);
-         string newGroupName = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.GroupName);
-
          if (string.IsNullOrEmpty(ObjectType))
-            ObjectType = newObjectType;
+            ObjectType = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.ObjectType);
 
          if (string.IsNullOrEmpty(Description))
-            Description = newDescription;
+            Description = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.Description);
 
          if (string.IsNullOrEmpty(LongName))
-            LongName = newLongName;
+            LongName = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.LongName);
 
          if (string.IsNullOrEmpty(GroupName))
-            GroupName = newGroupName;
+            GroupName = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.GroupName);
       }
 
       /// <summary>
@@ -285,6 +278,152 @@ namespace Revit.IFC.Export.Exporter
             ExporterCacheManager.ClassificationCache.FindOrCreateClassificationReference(file, key);
       }
 
+      static private IFCAnyHandle CreateLabelPropertyFromPattern(string[] patterns, string basePropertyName,
+         IFCFile file, Element element)
+      {
+         foreach (string pattern in patterns)
+         {
+            string propertyName = string.Format(pattern, basePropertyName);
+            IFCAnyHandle propSingleValue = PropertyUtil.CreateLabelPropertyFromElement(file, element,
+               propertyName, BuiltInParameter.INVALID, basePropertyName, PropertyValueType.SingleValue,
+               null);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
+               return propSingleValue;
+         }
+         return null;
+      }
+
+      static private IFCAnyHandle CreateIdentifierPropertyFromPattern(string[] patterns, string basePropertyName,
+         IFCFile file, Element element)
+      {
+         foreach (string pattern in patterns)
+         {
+            string propertyName = string.Format(pattern, basePropertyName);
+            IFCAnyHandle propSingleValue = PropertyUtil.CreateIdentifierPropertyFromElement(file,
+               element, propertyName, BuiltInParameter.INVALID, basePropertyName,
+               PropertyValueType.SingleValue);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
+               return propSingleValue;
+         }
+         return null;
+      }
+
+      static private IFCAnyHandle CreateAreaMeasurePropertyFromPattern(string[] patterns, string basePropertyName,
+         IFCFile file, Element element)
+      {
+         foreach (string pattern in patterns)
+         {
+            string propertyName = string.Format(pattern, basePropertyName);
+            IFCAnyHandle propSingleValue = PropertyUtil.CreateAreaPropertyFromElement(file,
+               element, propertyName, BuiltInParameter.INVALID, basePropertyName,
+               PropertyValueType.SingleValue);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
+               return propSingleValue;
+         }
+         return null;
+      }
+
+      static private IFCAnyHandle CreateBooleanPropertyFromPattern(string[] patterns, string basePropertyName,
+         IFCFile file, Element element)
+      {
+         foreach (string pattern in patterns)
+         {
+            string propertyName = string.Format(pattern, basePropertyName);
+            IFCAnyHandle propSingleValue = PropertyUtil.CreateBooleanPropertyFromElement(file, element,
+               propertyName, basePropertyName, PropertyValueType.SingleValue);
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
+               return propSingleValue;
+         }
+         return null;
+      }
+
+      /// <summary>
+      /// Get the name of the net planned area property, depending on the current schema, for levels and zones.
+      /// </summary>
+      /// <returns>The name of the net planned area property.</returns>
+      /// <remarks>Note that PSet_SpaceCommon has had the property "NetPlannedArea" since IFC2x3.</remarks>
+      static private string GetLevelAndZoneNetPlannedAreaName()
+      {
+         return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? "NetAreaPlanned" : "NetPlannedArea";
+      }
+
+      /// <summary>
+      /// Get the name of the gross planned area property, depending on the current schema, for levels and zones.
+      /// </summary>
+      /// <returns>The name of the net planned area property.</returns>
+      /// <remarks>Note that PSet_SpaceCommon has had the property "GrossPlannedArea" since IFC2x3.</remarks>
+      static private string GetLevelAndZoneGrossPlannedAreaName()
+      {
+         return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? "GrossAreaPlanned" : "GrossPlannedArea";
+      }
+
+      /// <summary>
+      /// Collect the information needed to create PSet_ZoneCommon.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="element">The Revit element.</param>
+      /// <param name="index">The index of the zone for the current space.</param>
+      public void CollectZoneCommonPSetData(IFCFile file, Element element, int index)
+      {
+         // We don't use the generic Property Set mechanism because Zones aren't "real" elements.
+         string indexString = (index > 1) ? index.ToString() : string.Empty;
+         const string basePSetName = "Pset_ZoneCommon";
+
+         string[] patterns = new string[2] {
+            basePSetName + indexString + ".{0}",
+            "Zone" + "{0}" + indexString
+         };
+
+         ZoneCommonHandles.AddIfNotNullAndNewKey("Category",
+            CreateLabelPropertyFromPattern(patterns, "Category", file, element));
+
+         string grossPlannedAreaName = GetLevelAndZoneGrossPlannedAreaName();
+         ZoneCommonHandles.AddIfNotNullAndNewKey(grossPlannedAreaName,
+            CreateAreaMeasurePropertyFromPattern(patterns, grossPlannedAreaName, file,
+            element));
+
+         string netPlannedAreaName = GetLevelAndZoneNetPlannedAreaName();
+         ZoneCommonHandles.AddIfNotNullAndNewKey(netPlannedAreaName, 
+            CreateAreaMeasurePropertyFromPattern(patterns, netPlannedAreaName, file, element));
+
+         ZoneCommonHandles.AddIfNotNullAndNewKey("PubliclyAccessible",
+            CreateBooleanPropertyFromPattern(patterns, "PubliclyAccessible", file, element));
+
+         ZoneCommonHandles.AddIfNotNullAndNewKey("HandicapAccessible",
+            CreateBooleanPropertyFromPattern(patterns, "HandicapAccessible", file, element));
+
+         ZoneCommonHandles.AddIfNotNullAndNewKey("IsExternal",
+            CreateBooleanPropertyFromPattern(patterns, "IsExternal", file, element));
+
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3)
+         {
+            ZoneCommonHandles.AddIfNotNullAndNewKey("Reference",
+               CreateIdentifierPropertyFromPattern(patterns, "Reference", file, element));
+         }
+
+         if (ZoneCommonHandles.Count > 0 && ZoneCommonGUID == null)
+         {
+            string psetName = basePSetName + indexString;
+            ZoneCommonGUID = GUIDUtil.GenerateIFCGuidFrom(
+               GUIDUtil.CreateGUIDString(element, psetName));
+         }
+      }
+
+      /// <summary>
+      /// Create the PSet_ZoneCommon property set, if applicable.
+      /// </summary>
+      /// <param name="file">The IFCFile parameter.</param>
+      /// <returns>The handle to the PSet_ZoneCommon property set, if created.</returns>
+      public IFCAnyHandle CreateZoneCommonPSetData(IFCFile file)
+      {
+         if (ZoneCommonHandles.Count == 0 || ZoneCommonGUID == null)
+            return null;
+
+         return IFCInstanceExporter.CreatePropertySet(file, ZoneCommonGUID,
+            ExporterCacheManager.OwnerHistoryHandle, "PSet_ZoneCommon", null,
+            ZoneCommonHandles.Values.ToHashSet());
+      }
+
       /// <summary>
       /// The long name, for IFC4+.
       /// </summary>
@@ -301,9 +440,12 @@ namespace Revit.IFC.Export.Exporter
       public IDictionary<string, IFCAnyHandle> ClassificationReferences { get; set; } = 
          new Dictionary<string, IFCAnyHandle>();
 
+      public IDictionary<string, IFCAnyHandle> ZoneCommonHandles { get; set; } =
+         new Dictionary<string, IFCAnyHandle>();
+
       /// <summary>
-      /// The associated Pset_ZoneCommon handle, if any.
+      /// The GUID for the Pset_ZoneCommon.
       /// </summary>
-      public IFCAnyHandle ZoneCommonProperySetHandle { get; set; } = null;
+      public string ZoneCommonGUID { get; private set; } = null;
    }
 }

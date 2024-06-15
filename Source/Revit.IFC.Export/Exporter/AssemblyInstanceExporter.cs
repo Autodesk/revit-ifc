@@ -232,9 +232,7 @@ namespace Revit.IFC.Export.Exporter
 
          foreach (ElementId memberId in memberIds)
          {
-            IFCAnyHandle memberHnd = ExporterCacheManager.ElementToHandleCache.Find(memberId);
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(memberHnd))
-               memberHnds.Add(memberHnd);
+            memberHnds.AddIfNotNull(ExporterCacheManager.ElementToHandleCache.Find(memberId));
          }
 
          if (memberHnds.Count == 0)

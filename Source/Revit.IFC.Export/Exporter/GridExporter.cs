@@ -440,15 +440,18 @@ namespace Revit.IFC.Export.Exporter
          
          if (currentLevel != null)
          {
-            levelIds.Add(currentLevel.Elevation, currentLevel.Id);
+            levelIds.Add(currentLevel.ProjectElevation, currentLevel.Id);
          }
          else
          {
             foreach (ElementId levelId in ExporterCacheManager.LevelInfoCache.BuildingStoriesByElevation)
             {
                Level level = document.GetElement(levelId) as Level;
-               if (!levelIds.ContainsKey(level.Elevation))
-                  levelIds.Add(level.Elevation, levelId);
+               double? projectElevation = level?.ProjectElevation;
+               if (projectElevation.HasValue && !levelIds.ContainsKey(projectElevation.Value))
+               {
+                  levelIds.Add(projectElevation.Value, levelId);
+               }
             }
          }
 

@@ -33,6 +33,8 @@ namespace Revit.IFC.Import.Utility
    /// </summary>
    public class IFCImportCache
    {
+      public AllocatedGeometryObjectCache AllocatedGeometryObjectCache { get; set; } = new AllocatedGeometryObjectCache();
+
       /// <summary>
       /// The ParameterBindings map associated with accessed documents.
       /// </summary>

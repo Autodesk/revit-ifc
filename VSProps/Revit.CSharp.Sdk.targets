@@ -1,0 +1,21 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <DefineConstants>TRACE;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <DefineConstants>TRACE;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Slow_Debug|x64' ">
+    <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LangVersion>7</LangVersion>
+  </PropertyGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(SolutionDir)VSProps\Revit.Common.Sdk.targets" />
+  <!-- Make sure the projects using this targets file rebuild if this file changes 
+       This must come after the import of the common targets -->
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(SolutionDir)VSProps\Revit.CSharp.Sdk.targets</MSBuildAllProjects>
+  </PropertyGroup>
+</Project>

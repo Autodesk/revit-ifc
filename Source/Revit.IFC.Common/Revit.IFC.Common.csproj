@@ -1,126 +1,26 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{032EA4DC-181F-4453-9F93-E08DE1C07D95}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Revit.IFC.Common</RootNamespace>
     <AssemblyName>Revit.IFC.Common</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
-    <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <WarningLevel>4</WarningLevel>
-    <PublishUrl>Publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-    <AssociatedParentPath>Revit.IFC</AssociatedParentPath>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-    <PlatformTarget>x64</PlatformTarget>
-    <OutputPath>bin\Debugx64\</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <Prefer32Bit>false</Prefer32Bit>
-    <OutputPath>bin\Releasex64\</OutputPath>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
+  <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.props" />
+   <ItemGroup>
+      <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+   </ItemGroup>
+  <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.targets" />
+  <ItemGroup>
+    <Compile Remove="Enums\IFC4x1EntityType.cs" />
+    <Compile Remove="Enums\IFC4x2EntityType.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPIIFC.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.XML" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Enums\CommonEnum.cs" />
-    <Compile Include="Enums\IFC2X2_ADD1EntityType.cs" />
-    <Compile Include="Enums\IFC2X3_TC1EntityType.cs" />
-    <Compile Include="Enums\IFC2xEntityType.cs" />
-    <Compile Include="Enums\IFC4EntityType.cs" />
-    <Compile Include="Enums\IFC4x3EntityType.cs" />
-    <Compile Include="Enums\IFCEntityType.cs" />
-    <Compile Include="Enums\IFCKnownMVDAndER.cs" />
-    <Compile Include="Extension\IFCAddress.cs" />
-    <Compile Include="Extension\IFCAddressItem.cs" />
-    <Compile Include="Extension\IFCClassification.cs" />
-    <Compile Include="Extension\IFCClassificationMgr.cs" />
-    <Compile Include="Extension\IFCFileHeader.cs" />
-    <Compile Include="Extension\IFCFileHeaderItem.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <AppDesigner Include="Properties\" />
-    <Compile Include="Utility\COBieCompanyInfo.cs" />
-    <Compile Include="Utility\COBieProjectInfo.cs" />
-    <Compile Include="Utility\CoordReferenceInfo.cs" />
-    <Compile Include="Utility\DirectoryUtil.cs" />
-    <Compile Include="Utility\ElementComparer.cs" />
-    <Compile Include="Utility\IFCAnyHandleUtil.cs" />
-    <Compile Include="Utility\IFCCompatibilityType.cs" />
-    <Compile Include="Utility\IFCEntityTrie.cs" />
-    <Compile Include="Utility\IFCFuzzyXYZ.cs" />
-    <Compile Include="Utility\IfcSchemaEntityNode.cs" />
-    <Compile Include="Utility\IfcSchemaEntityTree.cs" />
-    <Compile Include="Utility\MathUtil.cs" />
-    <Compile Include="Utility\OptionsUtil.cs" />
-    <Compile Include="Utility\ProcessIFCXMLSchema.cs" />
-    <Compile Include="Utility\RevitStatusBar.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
-      <Visible>False</Visible>
-      <ProductName>Windows Installer 3.1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <Import Project=".\Revit.IFC.Common.props" />
-  <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2024.bundle\Contents\2024\" /F /R /Y /I</PostBuildEvent>
-  </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
