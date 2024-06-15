@@ -435,6 +435,13 @@ namespace BIM.IFC.Export.UI
       public bool IsInSession { get; private set; } = false;
 
       /// <summary>
+      /// Available after Calling public void UpdateOptions(IFCExportOptions options, ElementId filterViewId)
+      /// and LinkedFileExportAs should not be DontExport
+      /// </summary>
+      [JsonIgnore]
+      public IFCLinkedDocumentExporter LinkExporter { get; private set; }
+
+      /// <summary>
       /// Creates a new default configuration.
       /// </summary>
       /// <returns>The new default configuration.</returns>
@@ -642,11 +649,6 @@ namespace BIM.IFC.Export.UI
          }
       }
 
-      /// <summary>
-      /// Available after Calling public void UpdateOptions(IFCExportOptions options, ElementId filterViewId)
-      /// and LinkedFileExportAs should not be DontExport
-      /// </summary>
-      public IFCLinkedDocumentExporter LinkExporter { get; private set; }
 
       /// <summary>
       /// Updates the IFCExportOptions with the settings in this configuration.
