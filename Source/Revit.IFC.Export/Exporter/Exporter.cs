@@ -4750,8 +4750,6 @@ namespace Revit.IFC.Export.Exporter
 
          ProjectInfo projectInfo = doc.ProjectInformation;
 
-
-         double dblVal = double.MinValue;
          IFCFile file = exporterIFC.GetFile();
 
          // Explanation:
@@ -4768,8 +4766,6 @@ namespace Revit.IFC.Export.Exporter
          string crsMapUnitStr = null;
 
          double? scale = null;
-         if (ParameterUtil.GetDoubleValueFromElement(projectInfo, "ProjectGlobalPositioning.Scale", out dblVal) != null)
-            scale = dblVal;
          string crsVerticalDatum = null;
          string crsMapProjection = null;
          string crsMapZone = null;
@@ -4937,6 +4933,19 @@ namespace Revit.IFC.Export.Exporter
          eastings = UnitUtils.ConvertFromInternalUnits(eastings, utId);
          northings = UnitUtils.ConvertFromInternalUnits(northings, utId);
          orthogonalHeight = UnitUtils.ConvertFromInternalUnits(orthogonalHeight, utId);
+
+         double dblVal = double.MinValue;
+         if (ParameterUtil.GetDoubleValueFromElement(projectInfo, "ProjectGlobalPositioning.Scale", out dblVal) != null && dblVal > MathUtil.Eps())
+         {
+            scale = dblVal;
+         }
+         else
+         {
+            FormatOptions formatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Length);
+            ForgeTypeId selectedUnitTypeId = formatOptions.GetUnitTypeId();
+            if (!utId.Equals(selectedUnitTypeId))
+               scale = UnitUtils.Convert(1.0, selectedUnitTypeId, utId);
+         }
          IFCAnyHandle mapConversionHnd = IFCInstanceExporter.CreateMapConversion(file, geomRepContext, projectedCRS, eastings, northings,
             orthogonalHeight, xAxisAbscissa, xAxisOrdinate, scale);
 
