@@ -499,7 +499,7 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
-         Transform lcs = (ObjectLocation != null) ? ObjectLocation.TotalTransform : Transform.Identity;
+         Transform lcs = (ObjectLocation != null) ? ObjectLocation.TotalTransformAfterOffset : Transform.Identity;
 
          CreateOneDirection(UAxes, doc, lcs);
          CreateOneDirection(VAxes, doc, lcs);

@@ -61,7 +61,7 @@ namespace BIM.IFC.Export.UI
             return false;
 
          Element checkPhase = IFCCommandOverrideApplication.TheDocument.GetElement(checkPhaseId);
-         return (checkPhase != null && (checkPhase is Phase));
+         return checkPhase is Phase;
       }
 
       /// <summary>

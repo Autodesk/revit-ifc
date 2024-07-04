@@ -67,9 +67,9 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 <body>
 <div id="heading">
 	<div id="plugin-icon"><img width=85 height=85 id="Rectangle 3" src="IFCExporter.png"></div>
-	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2024</h1></div>
+	<div id="plugin-name"><h1 class="separator-line">Revit IFC 2025</h1></div>
 	<p id="plugin-description">
-	This application seamlessly replaces the built-in IFC capabilities of Revit 2024.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
+	This application seamlessly replaces the built-in IFC capabilities of Revit 2025.  It contains enhancements to functionality and defect fixes provided by Autodesk and Open Source contributors that did not appear in the initial shipping version.
     </p>
 </div>
 
@@ -81,7 +81,7 @@ h3 {font-size:14.0px;line-height:16px;height:14px;margin-bottom:3px;margin-top:1
 	<div class="command name">Revit IFC</div>
 	<div class="command description">
     <p> 
-    Revit IFC 2024 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
+    Revit IFC 2025 contains up-to-date improvements on the default IFC capabilities of Revit contributed by Autodesk and our Open 
     Source contributors.  While this app is not necessary for IFC support, it is recommended that users that depend on the quality of their IFC 
     download this app and keep it up-to-date, as new enhancements and defect fixes are added,  For more information on IFC, 
     please visit the <a href="http://buildingsmart.com/standards/ifc" target=_blank>buildingSMART website</a> or the Revit wiki.
@@ -236,150 +236,51 @@ working on expanding and eventually removing this limit, and we will be tracking
 <p>or if you have an inquiry specific to this add-in, send us an e-mail to: <a href="mailto:Revit.apps@autodesk.com">Revit.apps@autodesk.com</a></p>
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
-<div class="version">24.2.0.49</div><div class="versioninfo-bullet">
+<div class="version">25.2.0.5</div><div class="versioninfo-bullet">
       <br><p>
          General:
 			<ul>
-				<li>This is the major update of IFC Exporter for Revit 2024. 
-				<li>It contains a various improvements and bug fixes for the basic Revit 2024. 
-			</ul>	
-       </p>
-	   <br>
-	   <p>
-	    Improvements:
-			<ul>
-				<li>Added export of the floor slab edge level.
-				<li>Added Width as an exported quantity to IFC for some assembly-based walls.
-				<li>Implemented IfcMaterialLayerSetUsage assigning to a single occurence.
-				<li>Improved export of sloped slabs.
-				<li>Improved stability when exporting projects to IFC with non-standard Author information in Project Standards.
-				<li>Updated French and German localization resources
-			</ul>
-		</p>
-		<br>
-		<p>
-         Bug Fixes:
-			<ul>
-				<li>Fixed an unexpected error during file export.
-				<li>Fixed bug with inverted geometry after export of parts as ceilings.
-				<li>Fixed bug with swapped Height and Width values of opening in Base Quantities in exported IFC.
-				<li>Fixed export of NetSideArea, GrossSideArea, Height and Width to IFC4 QTO for curtain walls.
-				<li>Fixed geometry transformation for some cases.
-				<li>Fixed missing material associations for solid model bodies.
-				<li>Fixed openings local placement export.
-			</ul>
-		</p>
-		<br>
-	</div>
-	<br>
-
-<div class="version">24.1.1.6</div><div class="versioninfo-bullet">
-      <br><p>
-         General:
-			<ul>
-				<li>This is the minor update of IFC Exporter for Revit 2024. 
-				<li>It contains a various improvements and bug fixes for the basic Revit 2024. 
-			</ul>	
-       </p>
-	   <br>
-	   <p>
-	    Improvements:
-			<ul>
-				<li>The default import processor has been changed to Hybrid
-			</ul>
-		</p>
-		<br>
-		<p>
-         Bug Fixes:
-			<ul>
-				<li>Fixed a bunch of potential bugs related to the compatibility with older Revit versions.
-				<li>Fix sketch-based openings in sloped slabs.
-				<li>Fixed placement of some specific wall sweep elements.
-			</ul>
-		</p>
-		<br>
-	</div>
-	<br>
-
-<div class="version">24.1.0.22</div><div class="versioninfo-bullet">
-      <br><p>
-         General:
-			<ul>
-				<li>This is the first version of IFC Exporter for Revit 2024. 
-				<li>It contains a various improvements and bug fixes for the basic Revit 2024. 
+				<li>This is the first version of IFC Exporter for Revit 2025. 
+				<li>It contains a various improvements and bug fixes for the basic Revit 2025. 
 			</ul>	
        </p>
 	   <br>
 	   <p>
          Improvements:
 			<ul>
-				<li>Added IFC2x3 Qto sets.
-				<li>Added material shared parameters export.
-				<li>Added the BarRole attribute when exporting IfcReinforcingBars to IFC.
-				<li>Added type entities for rebar and assemblies when exporting to IFC.
-				<li>Added support for exporting predefined types when exporting spaces to IFC4+.
-				<li>Added support of new measure units.
-				<li>Allowed export of rebar with slightly invalid transforms to IFC.
-				<li>Implemented exporting user defined parameters of 'Real' type as IfcReal with Revit display values.
-				<li>Implemented exporting of IfcRailingType entity.
-				<li>Implemented support of all 4 Revit velocity data types on export.
-				<li>Improved display of openings when export or linking in IFC files.
-				<li>Improved calculation of the linked levels elevation.
-				<li>Improved export of IfcPropertyEnumeratedValue.
-				<li>Improved export of insulation and lining as anything.
-				<li>Improved export of projects to IFC that contained family instances with invalid placements.
-				<li>Improved how classifications are viewed in certain older external applications when exporting to IFC.
-				<li>Improved list/bounded/table user defined properties values export for Instances and Types.
-				<li>Improved placement of federated (and some separate) links.
-				<li>Improved processing of representation items.
-				<li>Improved support for exporting advanced BReps to IFC if the unofficial IFC4 Design Transfer View is used.
-				<li>Improved the behavior for export of elements split by levels.
-				<li>Improved user defined property set mapping, especially for IFC2x3 entities that previously had no type entity exported.
-				<li>Updated 4x3 enums according to IFC4.3.1.0 Documentation.
+				<li>Added type information when exporting Rebar couplers to IFC.
+				<li>Allowed export of some elements to IFC4 Reference View [Structural] that had no material assignments.
+				<li>Allowed Revit to preserve the active site after IFC export.
+				<li>Allowed some old IFC configuration settings to be upgraded.
+				<li>Better treatment of IfcSpatialZones and zones in general.
+				<li>Improved base quantities calculation for spatial elements.
+				<li>Improved category mapping dialog.
+				<li>Improved error handling for invalid Revit file with missing project base and survey points.
+				<li>Improved export of classification data to IFC for curtain wall doors.
+				<li>Improved export of classification description to IFC.
+				<li>Improved export of IsExternal parameter, removed support at type level.
+				<li>Improved performance of some elongated elements export to IFC 4.
+				<li>Improved positioning of linked instances when exporting to IFC.
+				<li>Improved the color assignments for some elements exported to IFC 4.
+				<li>Improved the export of current view only IFC files when the phase of the view has changed since it was first set in the IFC export settings.
+				<li>Improved the validity of exported IFC files when exporting some planar geometry.
 			</ul>
 		</p>
 		<br>
 		<p>
          Bug Fixes:
 			<ul>
-				<li>Corrected the value for many MEP parameters exported to IFC.
-				<li>Fixed colour for exported pipe fitting.
-				<li>Fixed inconsistent IfcMaterialConstituent naming.
-				<li>Fixed export of a user-defined structural element type.
-				<li>Fixed export of IfcFurnitureType.AssemblyPlace attribute.
-				<li>Fixed export of IFC properties associated with the top-level IfcProject entity.
-				<li>Fixed export of materials from hosted wall sweep.
-				<li>Fixed export of material layer parameters of a ceiling element.
-				<li>Fixed export of user defined properties for roofs.
-				<li>Fixed export of some assemblies to IFC that resulted in orphaned entities.
-				<li>Fixed export of stairs layer name.
-				<li>Fixed IFC Classification export.
-				<li>Fixed IFCMEASUREWITHUNIT. 
-				<li>Fixed log file creation for linking.
-				<li>Fixed the calculation of the height parameter for some railings in metric projects when a previous value had been calculated that wasn't applicable to this railing.
-				<li>Fixed the issue when IfcCovering sill's body was exported as Brep instead of SweptSolid.
-				<li>Fixed the processing of openings when exporting a wall as shape aspects (components).
-				<li>Fixed the slope common property set parameter calculation when exporting some stringers to IFC.
-				<li>Fixed issue with IfcCountMeasure value in IFC4x3.
-				<li>Fixed Revit Data types export.
-				<li>Fixed window opening misalignment.
-				<li>Removed the use of several Revit built-in parameters when exporting IFC properties that have the same name but are different.
+				<li>Corrected placement of some families inside assemblies when exporting to IFC.
+				<li>Fixed bug related to the exported grids to IFC if the project base elevation was significantly far from the origin.
+				<li>Fixed export of GrossArea to IFC4 QTO base quantities for Revit walls exported as IfcCovering.
+				<li>Fixed export of some missing elements when exporting linked documents to IFC.
+				<li>Fixed export of walls with openings placed next to clippings.
+				<li>Fixed Width parameter for IfcSlab and IfcCovering exported to IFC4 QTO base quantities.
+				<li>Fixed wrong elevation of linked models exporting host file with links to one IFC file.
 			</ul>
 		</p>
 		<br>
 	</div>
 	<br>
-
-<div class="versionset">
-	<div class="version">24.0.0.0</div><div class="versioninfo-bullet">
-      <br><p>
-         General:
-
-         <ul>
-            <li>This is the first version of IFC Extension for Revit 2024.
-         </ul>
-   </div>
-</div>
-
 </body>
 </html>

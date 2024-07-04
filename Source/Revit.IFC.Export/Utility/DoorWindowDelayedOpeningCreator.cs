@@ -17,16 +17,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Toolkit;
-using Revit.IFC.Export.Exporter;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -145,6 +141,49 @@ namespace Revit.IFC.Export.Utility
 
          if ((ExtrusionData != null && ExtrusionData.Count > 0) || (Solids != null && Solids.Count > 0))
             HasValidGeometry = true;
+      }
+
+      /// <summary>
+      /// Adds geometries from another creator.
+      /// </summary>
+      /// <param name="otherCreator">The other creator.</param>
+      public void AddGeometry(DoorWindowDelayedOpeningCreator otherCreator)
+      {
+         // Nothing to add.
+         if (!otherCreator.HasValidGeometry)
+         {
+            return;
+         }
+
+         bool copyExtrusionData = otherCreator.ExtrusionData != null;
+         if (ExtrusionData == null && copyExtrusionData)
+         {
+            ExtrusionData = otherCreator.ExtrusionData;
+            copyExtrusionData = false;
+         }
+
+         bool copySolids = otherCreator.Solids != null;
+         if (Solids == null && copySolids)
+         {
+            Solids = otherCreator.Solids;
+            copySolids = false;
+         }
+
+         if (copyExtrusionData)
+         {
+            foreach (IFCExtrusionData extrusionData in otherCreator.ExtrusionData)
+            {
+               ExtrusionData.Add(extrusionData);
+            }
+         }
+
+         if (copySolids)
+         {
+            foreach (Solid solid in otherCreator.Solids)
+            {
+               Solids.Add(solid);
+            }
+         }
       }
 
       /// <summary>

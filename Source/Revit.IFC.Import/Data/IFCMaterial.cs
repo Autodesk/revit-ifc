@@ -83,16 +83,19 @@ namespace Revit.IFC.Import.Data
 
          Name = IFCImportHandleUtil.GetRequiredStringAttribute(ifcMaterial, "Name", true);
 
-         List<IFCAnyHandle> hasRepresentation = null;
-         if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x3))
-            hasRepresentation = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcMaterial, "HasRepresentation");
-
-         if ((hasRepresentation?.Count ?? 0) == 1)
+         if (!Importer.TheOptions.IsHybridImport)
          {
-            if (!IFCAnyHandleUtil.IsSubTypeOf(hasRepresentation[0], IFCEntityType.IfcMaterialDefinitionRepresentation))
-               Importer.TheLog.LogUnexpectedTypeError(hasRepresentation[0], IFCEntityType.IfcMaterialDefinitionRepresentation, false);
-            else
-               MaterialDefinitionRepresentation = IFCProductRepresentation.ProcessIFCProductRepresentation(hasRepresentation[0]);
+            List<IFCAnyHandle> hasRepresentation = null;
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x3))
+               hasRepresentation = IFCAnyHandleUtil.GetAggregateInstanceAttribute<List<IFCAnyHandle>>(ifcMaterial, "HasRepresentation");
+
+            if ((hasRepresentation?.Count ?? 0) == 1)
+            {
+               if (!IFCAnyHandleUtil.IsSubTypeOf(hasRepresentation[0], IFCEntityType.IfcMaterialDefinitionRepresentation))
+                  Importer.TheLog.LogUnexpectedTypeError(hasRepresentation[0], IFCEntityType.IfcMaterialDefinitionRepresentation, false);
+               else
+                  MaterialDefinitionRepresentation = IFCProductRepresentation.ProcessIFCProductRepresentation(hasRepresentation[0]);
+            }
          }
 
          Importer.TheLog.AddToElementCount();

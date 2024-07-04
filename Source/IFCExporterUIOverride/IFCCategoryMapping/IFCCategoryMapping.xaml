@@ -1,0 +1,342 @@
+<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.IFCCategoryMapping"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"        
+        xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+        xmlns:local="clr-namespace:BIM.IFC.Export.UI"
+        xmlns:weaveRoot="clr-namespace:Autodesk.Weave.Wpf;assembly=Autodesk.Weave.Wpf"
+        xmlns:weave="clr-namespace:Autodesk.Weave.Wpf.ElementProperties;assembly=Autodesk.Weave.Wpf"
+        xmlns:ctrl="clr-namespace:Autodesk.Weave.Wpf.Controls;assembly=Autodesk.Weave.Wpf"
+        xmlns:weave_d="clr-namespace:Autodesk.Weave.Wpf.ElementProperties.DesignTime;assembly=Autodesk.Weave.Wpf"
+        weave:FrameworkElementProperties.WeaveTheme="WeaveLightGray"
+        weave:FrameworkElementProperties.ApplyWeaveStyles="True"
+        weave_d:FrameworkElementProperties.DesignTimeWeaveTheme="WeaveLightGray"
+        mc:Ignorable="d"
+        Title="{x:Static p:Resources.ManageIFCExportMappingSettings}"
+        WindowStyle="SingleBorderWindow"
+        SaveWindowSettings="True"
+        Height="559" Width="947" MinHeight="283" MinWidth="730"
+        Closing="ChildWindow_Closing">
+   <Grid weave:PanelProperties.Spacing="S">
+
+      <Grid.Resources>
+         <local:LevelToMarginConverter x:Key="LevelToMarginConverter"/>
+         <local:CheckBoxLevelToMarginConverter x:Key="CheckBoxLevelToMarginConverter"/>
+         <local:RowIndexConverter x:Key="RowIndexConverter"/>
+         
+         <Style x:Key="ToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+            <Setter Property="Template">
+               <Setter.Value>
+                  <ControlTemplate TargetType="ToggleButton">
+                     <Border Background="Transparent">
+                        <ContentPresenter />
+                     </Border>
+                  </ControlTemplate>
+               </Setter.Value>
+            </Setter>
+         </Style>
+         
+         <Style x:Key="ListBoxItemStyle" TargetType="ListBoxItem" BasedOn="{x:Static weaveRoot:Styles.ListBoxItemStyle}">
+            <Setter Property="ToolTip" Value="{Binding}"/>
+         </Style>
+
+         <Style x:Key="DataGridCellStyle" TargetType="DataGridCell" BasedOn="{x:Static weaveRoot:Styles.DataGridCellStyle}">
+            <Setter Property="Margin" Value="12,0,0,0"/>
+         </Style>
+         
+         <Style x:Key="CheckBoxStyle" TargetType="{x:Type CheckBox}" BasedOn="{x:Static weaveRoot:Styles.CheckBoxStyle}">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="{Binding Level, Converter={StaticResource CheckBoxLevelToMarginConverter}}"/>
+         </Style>
+         
+      </Grid.Resources>
+
+      <Grid.RowDefinitions>
+         <RowDefinition Height="271*"/>
+         <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+         <ColumnDefinition Width="Auto"/>
+         <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Grid Grid.Column="0">
+         <DockPanel>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,4">
+               <TextBlock Text="{x:Static p:Resources.ExportMappingTemplates}" weave:TextBlockProperties.Variant="BodyBold"/>
+            </StackPanel>
+            <StackPanel Name="stackPanel_buttons" Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,4,0,4">
+               <Button Name="button_Add" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="AddS" Click="button_Add_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.CreateNewTemplateTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Import" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="ImportS" Click="button_Import_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.ImportTemplateTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Copy" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="CopyS" Click="button_Copy_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.CopyTemplateTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Save" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="SaveS" Click="button_Save_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.SaveTemplateTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Export" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="ExportMoveS" Click="button_Export_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.ExportTemplateTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Rename" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="RenameS" Click="button_Rename_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.RenameTemplateTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Delete" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="TrashS" Click="button_Delete_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.DeleteTemplateTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+            </StackPanel>
+            <ListBox Name="listBox_MappingTemplates" ItemContainerStyle="{StaticResource ListBoxItemStyle}" 
+                     Width="{Binding ActualWidth, ElementName=stackPanel_buttons}" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     SelectionChanged="listBox_MappingTemplates_SelectionChanged"
+                     Background="{DynamicResource AdskComponentSurface200BackgroundColor}" Margin="0,4,0,4">
+               <ListBox.Resources>
+                  <Style TargetType="ToolTip" BasedOn="{x:Static weaveRoot:Styles.ToolTipStyle}">
+                     <Setter Property="Placement" Value="Bottom"/>
+                  </Style>
+                </ListBox.Resources>
+            </ListBox>
+         </DockPanel>
+      </Grid>
+
+      <Grid Grid.Column="1">
+         <DockPanel>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,4">
+               <TextBlock Text="{x:Static p:Resources.TemplateSettings}" weave:TextBlockProperties.Variant="BodyBold"/>
+            </StackPanel>
+            <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Margin="0,4,0,4">
+               <TextBox Name="textBox_Search" Width="335" weave:TextBoxProperties.Variant="BoxSearch" TextChanged="textBox_Search_TextChanged" VerticalAlignment="Center"/>
+               <Button Name="button_ResetAll" HorizontalAlignment="Right" VerticalContentAlignment="Center" weave:ButtonProperties.Variant="Flat" Click="button_ResetAll_Click" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" Width="Auto" VerticalAlignment="Center">
+                     <Image Source="../icons/data-refresh.png" Width="Auto" HorizontalAlignment="Stretch"/>
+                     <Label Name="label_ResetAll" Content="{x:Static p:Resources.ResetAll}" Margin="4,0,0,0" HorizontalAlignment="Right"/>
+                  </StackPanel>
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.ResetToDefault}" Placement="Left"/>
+                  </Button.ToolTip>
+               </Button>
+            </DockPanel>
+
+            <DataGrid Name="dataGrid_CategoryMapping" SelectionMode="Single" AutoGenerateColumns="False"
+                      HeadersVisibility="Column" ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                      CanUserAddRows="False" CanUserSortColumns="False" CanUserReorderColumns="False"
+                      weave:DataGridProperties.Stripped="True" RowHeight="27" Margin="0,4,0,4">
+               <DataGrid.Columns>
+
+                  <DataGridTemplateColumn IsReadOnly="True">
+                     <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                           <StackPanel Orientation="Horizontal">
+                              <CheckBox Name="checkBox_ExportFlag" IsChecked="{Binding MappingInfo.ExportFlag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Click="ExportFlagClick" Style="{StaticResource CheckBoxStyle}"
+                                        AutomationProperties.AutomationId="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, 
+                                                                           StringFormat=checkBox_ExportFlag_{0}, 
+                                                                           Converter={StaticResource RowIndexConverter} }">
+                                 <CheckBox.ToolTip>
+                                    <ToolTip Content="{x:Static p:Resources.SelectedCheckboxTooltip}" Placement="Bottom"/>
+                                 </CheckBox.ToolTip>
+                              </CheckBox>
+                           </StackPanel>
+                        </DataTemplate>
+                     </DataGridTemplateColumn.CellTemplate>
+
+                     <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                           <StackPanel Orientation="Horizontal">
+                              <CheckBox Name="checkBox_ExportFlagAll" Style="{StaticResource CheckBoxStyle}" 
+                                        IsChecked="{Binding DataContext.ExportFlagAll, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}">
+                                 <CheckBox.ToolTip>
+                                    <ToolTip Content="{x:Static p:Resources.SelectedCheckboxTooltip}" Placement="Bottom"/>
+                                 </CheckBox.ToolTip>
+                              </CheckBox>
+                              <ToggleButton Click="ExpandAllClick" Name="button_ExpandAll" Style="{StaticResource ToggleButtonStyle}" Width="12" Height="12" VerticalAlignment="Center" Margin="0,2,0,2" Padding="1" BorderThickness="0" Background="Transparent">
+                                 <Image>
+                                    <Image.Style>
+                                       <Style TargetType="{x:Type Image}">
+                                          <Style.Triggers>
+                                             <DataTrigger Binding="{Binding Path=IsChecked, ElementName=button_ExpandAll}" Value="True">
+                                                <Setter Property="Source" Value="../icons/arrow_down.png"/>
+                                             </DataTrigger>
+                                             <DataTrigger Binding="{Binding Path=IsChecked, ElementName=button_ExpandAll}" Value="False">
+                                                <Setter Property="Source" Value="../icons/arrow_right.png"/>
+                                             </DataTrigger>
+                                          </Style.Triggers>
+                                       </Style>
+                                    </Image.Style>
+                                 </Image>
+                              </ToggleButton>
+                           </StackPanel>
+                        </DataTemplate>
+                     </DataGridTemplateColumn.HeaderTemplate>
+
+                     <DataGridTemplateColumn.CellStyle>
+                        <Style TargetType="DataGridCell" BasedOn="{x:Static weaveRoot:Styles.DataGridCellStyle}">
+                           <Setter Property="Template">
+                              <Setter.Value>
+                                 <ControlTemplate TargetType="DataGridCell">
+                                    <Border BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        Background="{TemplateBinding Background}"
+                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+
+                                       <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
+                                          <ContentPresenter ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                        Content="{TemplateBinding Content}"
+                                                        ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                        VerticalAlignment="{TemplateBinding VerticalAlignment}" />
+
+                                          <ToggleButton Name="button_RowExpand" Width="12" Height="12" VerticalAlignment="Center" Margin="0,2,0,2" Padding="1" BorderThickness="0" Background="Transparent"
+                                            IsChecked="{Binding Path=IsExpanded, UpdateSourceTrigger=PropertyChanged}"
+                                            ClickMode="Press" Style="{StaticResource ToggleButtonStyle}">
+                                             <Image>
+                                                <Image.Style>
+                                                   <Style TargetType="{x:Type Image}">
+                                                      <Style.Triggers>
+                                                         <DataTrigger Binding="{Binding IsExpanded}" Value="true">
+                                                            <Setter Property="Source" Value="../icons/arrow_down.png"/>
+                                                         </DataTrigger>
+                                                         <DataTrigger Binding="{Binding IsExpanded}" Value="false">
+                                                            <Setter Property="Source" Value="../icons/arrow_right.png"/>
+                                                         </DataTrigger>
+                                                      </Style.Triggers>
+                                                   </Style>
+                                                </Image.Style>
+                                             </Image>
+                                          </ToggleButton>
+                                       </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                       <DataTrigger Binding="{Binding HasChildren}" Value="False">
+                                          <Setter TargetName="button_RowExpand" Property="Visibility" Value="Hidden"/>
+                                       </DataTrigger>
+                                    </ControlTemplate.Triggers>
+                                 </ControlTemplate>
+                              </Setter.Value>
+                           </Setter>
+                        </Style>
+                     </DataGridTemplateColumn.CellStyle>
+                  </DataGridTemplateColumn>
+
+                  <DataGridTextColumn Header="{x:Static p:Resources.RevitCategory}" Binding="{Binding MappingInfo.CategoryName}" Width="*" IsReadOnly="True"
+                                      EditingElementStyle="{x:Static  weaveRoot:Styles.DataGridTextColumnEditingElementStyle}" CellStyle="{StaticResource DataGridCellStyle}">
+
+                     <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{x:Static weaveRoot:Styles.DataGridTextColumnElementStyle}">
+                           <Setter Property="VerticalAlignment" Value="Center"/>
+                           <Setter Property="Margin" Value="{Binding Level,Converter={StaticResource LevelToMarginConverter}}" />
+                        </Style>
+                     </DataGridTextColumn.ElementStyle>
+                  </DataGridTextColumn>
+
+                  <DataGridTemplateColumn Header="{x:Static p:Resources.IFCClass}" Width="*" IsReadOnly="True" CellStyle="{StaticResource DataGridCellStyle}">
+                     <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                           <Grid>
+                              <Grid.Resources>
+                                 <local:IFCClassNameConverter x:Key="IFCClassNameConverter"/>
+                              </Grid.Resources>
+
+                              <Grid.ColumnDefinitions>
+                                 <ColumnDefinition Width="*"/>
+                                 <ColumnDefinition Width="auto"/>
+                              </Grid.ColumnDefinitions>
+
+                              <Border Grid.Column="0">
+                                 <Label Name="IFCClass" Content="{Binding MappingInfo.IfcClass, Converter={StaticResource IFCClassNameConverter}}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                              </Border>
+                              <Border Grid.Column="1">
+                                 <Button Name="button_IFCClass" Click="EntityPicker" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="MoreS" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Button.ToolTip>
+                                       <ToolTip Content="{x:Static p:Resources.MoreTooltip}" Placement="Bottom"/>
+                                    </Button.ToolTip>
+                                 </Button>
+                              </Border>
+                           </Grid>
+                        </DataTemplate>
+                     </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+
+                  <DataGridTemplateColumn Header="{x:Static p:Resources.PredefinedType}" Width="*" IsReadOnly="True" CellStyle="{StaticResource DataGridCellStyle}">
+                     <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                           <Grid>
+                              <Grid.ColumnDefinitions>
+                                 <ColumnDefinition Width="*"/>
+                                 <ColumnDefinition Width="auto"/>
+                              </Grid.ColumnDefinitions>
+
+                              <Border Grid.Column="0">
+                                 <Label Name="PredefinedType" Content="{Binding MappingInfo.PredefinedType}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                              </Border>
+                              <Border Grid.Column="1">
+                                 <Button Name="button_PredefinedType" Click="EntityPicker" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="MoreS" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Button.ToolTip>
+                                       <ToolTip Content="{x:Static p:Resources.MoreTooltip}" Placement="Bottom"/>
+                                    </Button.ToolTip>
+                                 </Button>
+                              </Border>
+                           </Grid>
+                        </DataTemplate>
+                     </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+
+                  <DataGridTemplateColumn Header="{x:Static p:Resources.UserDefinedType}" Width="*" IsReadOnly="True">
+                     <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                           <TextBox Name="textBox_UserDefined" Text="{Binding MappingInfo.UserDefinedType, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding MappingInfo.UserDefinedTypeEnabled}"/>
+                        </DataTemplate>
+                     </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+
+                  <DataGridTemplateColumn Header="{x:Static p:Resources.Reset}" IsReadOnly="True">
+                     <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                           <Button Name="button_Reset" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="DataRefreshS" Click="button_Reset_Click" HorizontalAlignment="Center" VerticalAlignment="Center">
+                              <Button.ToolTip>
+                                 <ToolTip Content="{x:Static p:Resources.ResetRowToDefault}" Placement="Bottom"/>
+                              </Button.ToolTip>
+                           </Button>
+                        </DataTemplate>
+                     </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+
+               </DataGrid.Columns>
+            </DataGrid>
+         </DockPanel>
+      </Grid>
+
+      <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center">
+         <ctrl:WeaveIcon RegularIcon="Info" VerticalAlignment="Top" Margin="0,0,5,0"/>
+         <TextBlock Name="textBlock_Help" HorizontalAlignment="Left" >
+         <Hyperlink Click="OnHelpClick">
+            <Run Name="run_Help" Text="{x:Static p:Resources.CategoryMappingHelp}" x:Uid="LearnMoreHyperlink"/>
+         </Hyperlink>
+         </TextBlock>
+      </StackPanel>
+
+
+      <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" weave:PanelProperties.Spacing="S">
+         <Button x:Name="button_Ok" Content="{x:Static p:Resources.OK}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Solid" Click="button_Ok_Click"/>
+         <Button x:Name="button_Cancel" Content="{x:Static p:Resources.Cancel}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Outline" Click="button_Cancel_Click" Margin="0,0,7,0"/>
+      </StackPanel>
+
+   </Grid>
+</auiw:ChildWindow>

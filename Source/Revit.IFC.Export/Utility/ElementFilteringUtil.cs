@@ -146,52 +146,84 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Checks if an element with a given ExportIFCCategoryInfo should be exported.
+      /// </summary>
+      /// <param name="info">The exporting mapping information for a category.</param>
+      /// <param name="element">The optional element.</param>
+      /// <param name="allowSeparateOpeningExport">True if IfcOpeningElement is allowed to be exported.</param>
+      /// <returns>True if the element should be exported, false otherwise.</returns>
+      public static bool ShouldExportMappingInfo(ExportIFCCategoryInfo info, Element element, bool allowSeparateOpeningExport)
+      {
+         string entityName = info?.IFCEntityName;
+         bool? exportFlag = info?.IFCExportFlag;
+
+         // If the element is null, we won't do this check.  If the entityName is empty, it is
+         // likely a sub-category that should defer to its parent to make a final decision.
+         if (info == null && element != null)
+         {
+            if (element is AreaScheme || element is Group)
+               entityName = "IfcGroup";
+            else if (element is ElectricalSystem)
+               entityName = "IfcSystem";
+            else
+               return false;
+
+            exportFlag = true;
+         }
+
+         if (!(exportFlag ?? false))
+            return false;
+
+         if (!allowSeparateOpeningExport && (string.Compare(entityName, "IfcOpeningElement", true) == 0))
+            return false;
+
+         if (ExporterCacheManager.ExportOptionsCache.HasExcludeList())
+         {
+            if (ExporterCacheManager.ExportOptionsCache.IsEntityInExcludeList(entityName))
+               return false;
+
+            IFCExportInfoPair pair = new IFCExportInfoPair();
+            pair.SetByTypeName(entityName);
+            if (ExporterCacheManager.ExportOptionsCache.IsEntityInExcludeList(pair.ExportType.ToString()))
+               return false;
+
+         }
+
+         return true;
+      }
+
+      /// <summary>
       /// Checks if element in certain category should be exported.
       /// </summary>
-      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="allowSeparateOpeningExport">True if IfcOpeningElement is allowed to be exported.</param>
+      /// <returns>True if the element should be exported, false otherwise.</returns>
+      public static bool ShouldCategoryBeExported(Category category, bool allowSeparateOpeningExport)
+      {
+         ElementId categoryId = category?.Id ?? ElementId.InvalidElementId;
+         if (ExporterUtil.GetCategoryInfoById(categoryId, null, out ExportIFCCategoryInfo info))
+            return ShouldExportMappingInfo(info, null, allowSeparateOpeningExport);
+
+         ElementId parentCategoryId = category?.Parent?.Id ?? ElementId.InvalidElementId;
+         if (parentCategoryId != ElementId.InvalidElementId)
+         {
+            if (ExporterUtil.GetCategoryInfoById(parentCategoryId, null, out info))
+               return ShouldExportMappingInfo(info, null, allowSeparateOpeningExport);
+         }
+
+         // the category is not in the mapping template
+         return IsCategoryVisible(category, ExporterCacheManager.ExportOptionsCache.FilterViewForExport);
+      }
+
+      /// <summary>
+      /// Checks if element in certain category should be exported.
+      /// </summary>
       /// <param name="element">The element.</param>
       /// <param name="allowSeparateOpeningExport">True if IfcOpeningElement is allowed to be exported.</param>
       /// <returns>True if the element should be exported, false otherwise.</returns>
-      private static bool ShouldCategoryBeExported(ExporterIFC exporterIFC, Element element, bool allowSeparateOpeningExport)
+      private static bool ShouldCategoryBeExported(Element element, bool allowSeparateOpeningExport)
       {
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         ElementId categoryId;
-         string ifcClassName = ExporterUtil.GetIFCClassNameFromExportTable(exporterIFC, element, out categoryId);
-         if (string.IsNullOrEmpty(ifcClassName))
-         {
-            // Special case: these elements aren't contained in the default export layers mapping table.
-            // This allows these elements to be exported by default.
-            if (element is AreaScheme || element is Group)
-               ifcClassName = "IfcGroup";
-            else if (element is ElectricalSystem)
-               ifcClassName = "IfcSystem";
-            else if (element is Grid)
-               ifcClassName = "IfcGrid";     // In the German template somehow the Grid does not show up in the mapping table
-            else
-               return false;
-         }
-
-         bool foundName = string.Compare(ifcClassName, "Default", true) != 0;
-         if (foundName)
-            exportType = GetExportTypeFromClassName(ifcClassName);
-         if (!foundName)
-            return true;
-
-         if (exportType.ExportInstance == IFCEntityType.UnKnown)
-            return false;
-
-         // We don't export openings directly, only via the element they are opening, unless flag is set.
-         if (exportType.ExportInstance == IFCEntityType.IfcOpeningElement && !allowSeparateOpeningExport)
-            return false;
-
-         // Check whether the intended Entity type is inside the export exclusion set
-         IFCEntityType elementClassTypeEnum;
-         if (Enum.TryParse(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
-            || Enum.TryParse(exportType.ExportType.ToString(), out elementClassTypeEnum))
-            if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
-               return false;
-
-         return true;
+         ExportIFCCategoryInfo info = ExporterUtil.GetIFCCategoryExportMappingInfo(element);
+         return ShouldExportMappingInfo(info, element, allowSeparateOpeningExport);
       }
 
       /// <summary>
@@ -227,13 +259,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Checks if element should be exported using a variety of different checks.
       /// </summary>
-      /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="element">The element.</param>
       /// <param name="allowSeparateOpeningExport">True if IfcOpeningElement is allowed to be exported.</param>
       /// <returns>True if the element should be exported, false otherwise.</returns>
       /// <remarks>There are some inefficiencies here, as we call GetExportInfoFromParameters
       /// in other contexts.  We should attempt to get the value only once.</remarks>
-      public static bool ShouldElementBeExported(ExporterIFC exporterIFC, Element element, bool allowSeparateOpeningExport)
+      public static bool ShouldElementBeExported(Element element, bool allowSeparateOpeningExport)
       {
          // Allow the ExporterStateManager to say that an element should be exported regardless of settings.
          if (ExporterStateManager.CanExportElementOverride)
@@ -249,7 +280,7 @@ namespace Revit.IFC.Export.Utility
          // Check to see if the category should be exported if parameters aren't set.
          // Note that in previous versions, the category override the parameter settings.  This is
          // no longer true.
-         if (!ShouldCategoryBeExported(exporterIFC, element, allowSeparateOpeningExport))
+         if (!ShouldCategoryBeExported(element, allowSeparateOpeningExport))
             return false;
 
          // Check whether the intended Entity type is inside the export exclusion set
@@ -260,13 +291,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Determines if the selected element meets extra criteria for export.
       /// </summary>
-      /// <param name="exporterIFC">The exporter class.</param>
       /// <param name="element">The current element to export.</param>
       /// <param name="allowSeparateOpeningExport">True if IfcOpeningElement is allowed to be exported.</param>
       /// <returns>True if the element should be exported, false otherwise.</returns>
-      public static bool CanExportElement(ExporterIFC exporterIFC, Autodesk.Revit.DB.Element element, bool allowSeparateOpeningExport)
+      public static bool CanExportElement(Element element, bool allowSeparateOpeningExport)
       {
-         if (!ElementFilteringUtil.ShouldElementBeExported(exporterIFC, element, allowSeparateOpeningExport))
+         if (!ShouldElementBeExported(element, allowSeparateOpeningExport))
             return false;
 
          // if we allow exporting parts as independent building elements, then prevent also exporting the host elements containing the parts.
@@ -277,56 +307,14 @@ namespace Revit.IFC.Export.Utility
          return true;
       }
 
-      /// <summary>
-      /// Checks if name is equal to base or its type name.
-      /// </summary>
-      /// <param name="name">The object type name.</param>
-      /// <param name="baseName">The IFC base name.</param>
-      /// <returns>True if equal, false otherwise.</returns>
-      private static bool IsEqualToTypeName(String name, String baseName)
-      {
-         if (string.Compare(name, baseName, true) == 0)
-            return true;
-
-         string typeName = IfcSchemaEntityTree.GetTypeNameFromInstanceName(baseName);
-         return (string.Compare(name, typeName, true) == 0);
-      }
-
-      /// <summary>
-      /// Compares two strings, ignoring spaces, punctuation and case.
-      /// </summary>
-      /// <param name="name">The string to compare.</param>
-      /// <param name="baseNameAllCapsNoSpaces">String to compare to, all caps, no punctuation or cases.</param>
-      /// <returns></returns>
-      private static bool CompareAlphaOnly(String name, String baseNameAllCapsNoSpaces)
-      {
-         if (string.IsNullOrEmpty(name))
-            return string.IsNullOrEmpty(baseNameAllCapsNoSpaces);
-         string nameToUpper = name.ToUpper();
-         int loc = 0;
-         int maxLen = baseNameAllCapsNoSpaces.Length;
-         foreach (char c in nameToUpper)
-         {
-            if (c >= 'A' && c <= 'Z')
-            {
-               if (baseNameAllCapsNoSpaces[loc] != c)
-                  return false;
-               loc++;
-               if (loc == maxLen)
-                  return true;
-            }
-         }
-         return false;
-      }
-
-      static IDictionary<string, IFCEntityType> PreIFC4Remap = new Dictionary<string, IFCEntityType>()
+      static readonly Dictionary<string, IFCEntityType> PreIFC4Remap = new Dictionary<string, IFCEntityType>()
       {
          { "IFCAUDIOVISUALAPPLIANCE", IFCEntityType.IfcElectricApplianceType },
          { "IFCBURNER", IFCEntityType.IfcGasTerminalType },
          { "IFCELECTRICDISTRIBUTIONBOARD", IFCEntityType.IfcElectricDistributionPoint }
       };
 
-      static IDictionary<string, IFCEntityType> IFC4Remap = new Dictionary<string, IFCEntityType>()
+      static readonly Dictionary<string, IFCEntityType> IFC4Remap = new Dictionary<string, IFCEntityType>()
       {
          { "IFCGASTERMINAL", IFCEntityType.IfcBurnerType },
          { "IFCELECTRICDISTRIBUTIONPOINT", IFCEntityType.IfcElectricDistributionBoardType },
@@ -338,7 +326,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="originalIFCClassName">The IFC class name.</param>
       /// <returns>The export type.</returns>
-      public static IFCExportInfoPair GetExportTypeFromClassName(String originalIFCClassName)
+      public static IFCExportInfoPair GetExportTypeFromClassName(string originalIFCClassName)
       {
          IFCExportInfoPair exportInfoPair = new IFCExportInfoPair();
 
@@ -347,60 +335,51 @@ namespace Revit.IFC.Export.Utility
          {
             // Here we try to catch any possible types that are missing above by checking both the class name or the type name
             // Unless there is any special treatment needed most of the above check can be done here
-            string clName = cleanIFCClassName.Substring(cleanIFCClassName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ?
-               cleanIFCClassName.Substring(0, cleanIFCClassName.Length - 4) :
-               cleanIFCClassName;
-
+            string clName = cleanIFCClassName.EndsWith("TYPE") ?
+               cleanIFCClassName.Substring(0, cleanIFCClassName.Length - 4) : cleanIFCClassName;
+            
             // Deal with small number of IFC2x3/IFC4 types that have changed in a hardwired way.
             if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             {
                if (PreIFC4Remap.TryGetValue(clName, out IFCEntityType ifcEntityType))
-                  exportInfoPair.SetValueWithPair(ifcEntityType);
+                  exportInfoPair.SetByType(ifcEntityType);
                else
-                  exportInfoPair.SetValueWithPair(clName);
+                  exportInfoPair.SetByTypeName(clName);
             }
             else
             {
                if (IFC4Remap.TryGetValue(clName, out IFCEntityType ifcEntityType))
-                  exportInfoPair.SetValueWithPair(ifcEntityType);
+                  exportInfoPair.SetByType(ifcEntityType);
                else
-                  exportInfoPair.SetValueWithPair(clName);
+                  exportInfoPair.SetByTypeName(clName);
             }
 
             if (exportInfoPair.ExportInstance == IFCEntityType.UnKnown)
-               exportInfoPair.SetValueWithPair(IFCEntityType.IfcBuildingElementProxy);
+               exportInfoPair.SetByType(IFCEntityType.IfcBuildingElementProxy);
          }
 
-         exportInfoPair.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType("NOTDEFINED", exportInfoPair.ExportType.ToString());
+         exportInfoPair.PredefinedType = null;
 
          return exportInfoPair;
       }
 
-      static IDictionary<ElementId, IFCExportInfoPair> s_CategoryToExportType = null;
-
-      static void InitializeCategoryToExportType()
-      {
-         if (s_CategoryToExportType != null)
-            return;
-
-         s_CategoryToExportType = new Dictionary<ElementId, IFCExportInfoPair>() {
-            { new ElementId(BuiltInCategory.OST_Cornices), new IFCExportInfoPair(IFCEntityType.IfcBeam, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_Ceilings), new IFCExportInfoPair(IFCEntityType.IfcCovering, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_CurtainWallPanels), new IFCExportInfoPair(IFCEntityType.IfcPlate, "CURTAIN_PANEL") },
-            { new ElementId(BuiltInCategory.OST_Furniture), new IFCExportInfoPair(IFCEntityType.IfcFurniture, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_Floors), new IFCExportInfoPair(IFCEntityType.IfcSlab, "FLOOR") },
-            { new ElementId(BuiltInCategory.OST_IOSModelGroups), new IFCExportInfoPair(IFCEntityType.IfcGroup, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_Mass), new IFCExportInfoPair(IFCEntityType.IfcBuildingElementProxy, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_CurtainWallMullions), new IFCExportInfoPair(IFCEntityType.IfcMember, "MULLION") },
-            { new ElementId(BuiltInCategory.OST_Railings), new IFCExportInfoPair(IFCEntityType.IfcRailing, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_Ramps), new IFCExportInfoPair(IFCEntityType.IfcRamp, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_Roofs), new IFCExportInfoPair(IFCEntityType.IfcRoof, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_Site), new IFCExportInfoPair(IFCEntityType.IfcSite, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_Stairs), new IFCExportInfoPair(IFCEntityType.IfcStair, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_Walls), new IFCExportInfoPair(IFCEntityType.IfcWall, "NOTDEFINED") },
-            { new ElementId(BuiltInCategory.OST_Windows), new IFCExportInfoPair(IFCEntityType.IfcWindow, "NOTDEFINED") }
-         };
-      }
+      static readonly Dictionary<BuiltInCategory, (IFCEntityType, string)> CategoryToExportType = new Dictionary<BuiltInCategory, (IFCEntityType, string)>() {
+         { BuiltInCategory.OST_Cornices, (IFCEntityType.IfcBeam, "NOTDEFINED") },
+         { BuiltInCategory.OST_Ceilings, (IFCEntityType.IfcCovering, "NOTDEFINED") },
+         { BuiltInCategory.OST_CurtainWallPanels, (IFCEntityType.IfcPlate, "CURTAIN_PANEL") },
+         { BuiltInCategory.OST_Furniture, (IFCEntityType.IfcFurniture, "NOTDEFINED") },
+         { BuiltInCategory.OST_Floors, (IFCEntityType.IfcSlab, "FLOOR") },
+         { BuiltInCategory.OST_IOSModelGroups, (IFCEntityType.IfcGroup, "NOTDEFINED") },
+         { BuiltInCategory.OST_Mass, (IFCEntityType.IfcBuildingElementProxy, "NOTDEFINED") },
+         { BuiltInCategory.OST_CurtainWallMullions, (IFCEntityType.IfcMember, "MULLION") },
+         { BuiltInCategory.OST_Railings, (IFCEntityType.IfcRailing, "NOTDEFINED") },
+         { BuiltInCategory.OST_Ramps, (IFCEntityType.IfcRamp, "NOTDEFINED") },
+         { BuiltInCategory.OST_Roofs, (IFCEntityType.IfcRoof, "NOTDEFINED") },
+         { BuiltInCategory.OST_Site, (IFCEntityType.IfcSite, "NOTDEFINED") },
+         { BuiltInCategory.OST_Stairs, (IFCEntityType.IfcStair, "NOTDEFINED") },
+         { BuiltInCategory.OST_Walls, (IFCEntityType.IfcWall, "NOTDEFINED") },
+         { BuiltInCategory.OST_Windows, (IFCEntityType.IfcWindow, "NOTDEFINED") }
+      };
 
       /// <summary>
       /// Gets export type from category id.
@@ -409,10 +388,10 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The export type.</returns>
       public static IFCExportInfoPair GetExportTypeFromCategoryId(ElementId categoryId)
       {
-         InitializeCategoryToExportType();
-         IFCExportInfoPair exportInfoPair;
-         if (s_CategoryToExportType.TryGetValue(categoryId, out exportInfoPair))
-            return exportInfoPair;
+         (IFCEntityType, string) exportInfoPair;
+         BuiltInCategory builtInCategory = (BuiltInCategory)categoryId.Value;
+         if (CategoryToExportType.TryGetValue(builtInCategory, out exportInfoPair))
+            return new IFCExportInfoPair(exportInfoPair.Item1, exportInfoPair.Item2);
          return new IFCExportInfoPair();
       }
 
@@ -425,11 +404,13 @@ namespace Revit.IFC.Export.Utility
       {
          ElementFilter ownerViewFilter = GetOwnerViewFilter(exporter);
 
-         List<Type> viewSpecificTypes = new List<Type>();
-         viewSpecificTypes.Add(typeof(TextNote));
-         viewSpecificTypes.Add(typeof(FilledRegion));
-         ElementMulticlassFilter classFilter = new ElementMulticlassFilter(viewSpecificTypes);
+         List<Type> viewSpecificTypes = new List<Type>()
+         {
+            typeof(TextNote),
+            typeof(FilledRegion)
+         };
 
+         ElementMulticlassFilter classFilter = new ElementMulticlassFilter(viewSpecificTypes);
 
          LogicalAndFilter viewSpecificTypesFilter = new LogicalAndFilter(ownerViewFilter, classFilter);
          return viewSpecificTypesFilter;
@@ -467,89 +448,102 @@ namespace Revit.IFC.Export.Utility
          }
          else
          {
-            List<Type> excludedTypes = new List<Type>();
+            List<Type> excludedTypes = new List<Type>
+            {
+               typeof(AnalyticalElement),
 
-            // FamilyInstances are handled in separate filter.
-            excludedTypes.Add(typeof(FamilyInstance));
+               // AreaScheme elements are exported as groups after all Areas have been
+               // exported.
+               typeof(AreaScheme),
 
-            // Spatial element are exported in a separate pass.
-            excludedTypes.Add(typeof(SpatialElement));
+               // curtain wall sub-types we are ignoring.
+               typeof(CurtainGridLine),
+               // typeof(Mullion),
+      
+               typeof(ElevationMarker),
 
-            // AreaScheme elements are exported as groups after all Areas have been exported.
-            excludedTypes.Add(typeof(AreaScheme));
-            // FabricArea elements are exported as groups after all FabricSheets have been exported.
-            excludedTypes.Add(typeof(FabricArea));
+               // FabricArea elements are exported as groups after all FabricSheets have
+               // been exported.
+               typeof(FabricArea),
 
-            if (!ExporterCacheManager.ExportOptionsCache.ExportAnnotations)
-               excludedTypes.Add(typeof(CurveElement));
+               // exclude levels that are covered in BeginExport
+               typeof(Level),
 
-            excludedTypes.Add(typeof(ElementType));
+               // this will be gotten from the element(s) it cuts.
+               typeof(Opening),
 
-            excludedTypes.Add(typeof(BaseArray));
+               // Spatial element are exported in a separate pass.
+               typeof(SpatialElement),
+   
+               // 2D types we are ignoring
+               typeof(FaceSplitter),
+               typeof(Revision),
+               typeof(SketchBase),
 
-            excludedTypes.Add(typeof(FillPatternElement));
-            excludedTypes.Add(typeof(LinePatternElement));
-            excludedTypes.Add(typeof(Material));
-            excludedTypes.Add(typeof(GraphicsStyle));
-            excludedTypes.Add(typeof(Family));
-            excludedTypes.Add(typeof(SketchPlane));
-            excludedTypes.Add(typeof(View));
-            excludedTypes.Add(typeof(Autodesk.Revit.DB.Structure.LoadBase));
+                // 2D types covered by the element owner view filter
+               typeof(FilledRegion),
+               typeof(TextNote),
 
-            // curtain wall sub-types we are ignoring.
-            excludedTypes.Add(typeof(CurtainGridLine));
-            // excludedTypes.Add(typeof(Mullion));
+               typeof(BaseArray),
+               typeof(ColorFillScheme),
+               typeof(ElementType),
+               typeof(GraphicsStyle),
+               typeof(Family),
+               typeof(FamilyInstance),
+               typeof(FillPatternElement),
+               typeof(InternalOrigin),
+               typeof(LinePatternElement),
+               typeof(LoadBase),
+               typeof(LoadCase),
+               typeof(Material),
+               typeof(Phase),
+               typeof(SketchPlane),
+               typeof(SunAndShadowSettings),
+               typeof(View)
+            };
 
-            // this will be gotten from the element(s) it cuts.
-            excludedTypes.Add(typeof(Opening));
+            ElementFilter excludedClassFilter = new ElementMulticlassFilter(excludedTypes,
+               true);
 
-            // 2D types we are ignoring
-            excludedTypes.Add(typeof(SketchBase));
-            excludedTypes.Add(typeof(FaceSplitter));
+            List<BuiltInCategory> excludedCategories = new List<BuiltInCategory>()
+            { 
+               // Native Revit types without match in API
+               BuiltInCategory.OST_ConduitCenterLine,
+               BuiltInCategory.OST_ConduitFittingCenterLine,
+               BuiltInCategory.OST_DecalElement,
+               //BuiltInCategory.OST_Parts,
+               //BuiltInCategory.OST_RvtLinks,
+               BuiltInCategory.OST_DuctCurvesCenterLine,
+               BuiltInCategory.OST_DuctFittingCenterLine,
+               BuiltInCategory.OST_FlexDuctCurvesCenterLine,
+               BuiltInCategory.OST_FlexPipeCurvesCenterLine,
+               BuiltInCategory.OST_HVAC_Load_Schedules,
+               BuiltInCategory.OST_IOS_GeoLocations,
+               BuiltInCategory.OST_IOSSketchGrid,
+               BuiltInCategory.OST_PipeCurvesCenterLine,
+               BuiltInCategory.OST_PipeFittingCenterLine,
+               BuiltInCategory.OST_Property,
+               BuiltInCategory.OST_SitePropertyLineSegment,
+               BuiltInCategory.OST_TopographyContours,
+               BuiltInCategory.OST_Viewers,
+               BuiltInCategory.OST_Viewports,
+               BuiltInCategory.OST_Views,
 
-            // 2D types covered by the element owner view filter
-            excludedTypes.Add(typeof(TextNote));
-            excludedTypes.Add(typeof(FilledRegion));
+               // Exclude elements with no category. 
+               BuiltInCategory.INVALID
+            };
 
-            // exclude levels that are covered in BeginExport
-            excludedTypes.Add(typeof(Level));
+            ElementMulticategoryFilter excludedCategoryFilter = 
+               new ElementMulticategoryFilter(excludedCategories, true);
 
-            // exclude analytical models
-            excludedTypes.Add(typeof(Autodesk.Revit.DB.Structure.AnalyticalElement));
-            ElementFilter excludedClassFilter = new ElementMulticlassFilter(excludedTypes, true);
+            LogicalAndFilter exclusionFilter = new LogicalAndFilter(excludedClassFilter, 
+               excludedCategoryFilter);
 
-            List<BuiltInCategory> excludedCategories = new List<BuiltInCategory>();
+            ElementOwnerViewFilter ownerViewFilter = 
+               new ElementOwnerViewFilter(ElementId.InvalidElementId);
 
-            // Native Revit types without match in API
-            excludedCategories.Add(BuiltInCategory.OST_ConduitCenterLine);
-            excludedCategories.Add(BuiltInCategory.OST_ConduitFittingCenterLine);
-            excludedCategories.Add(BuiltInCategory.OST_DecalElement);
-            //excludedCategories.Add(BuiltInCategory.OST_Parts);
-            //excludedCategories.Add(BuiltInCategory.OST_RvtLinks);
-            excludedCategories.Add(BuiltInCategory.OST_DuctCurvesCenterLine);
-            excludedCategories.Add(BuiltInCategory.OST_DuctFittingCenterLine);
-            excludedCategories.Add(BuiltInCategory.OST_FlexDuctCurvesCenterLine);
-            excludedCategories.Add(BuiltInCategory.OST_FlexPipeCurvesCenterLine);
-            excludedCategories.Add(BuiltInCategory.OST_IOS_GeoLocations);
-            excludedCategories.Add(BuiltInCategory.OST_PipeCurvesCenterLine);
-            excludedCategories.Add(BuiltInCategory.OST_PipeFittingCenterLine);
-            excludedCategories.Add(BuiltInCategory.OST_Property);
-            excludedCategories.Add(BuiltInCategory.OST_SiteProperty);
-            excludedCategories.Add(BuiltInCategory.OST_SitePropertyLineSegment);
-            excludedCategories.Add(BuiltInCategory.OST_TopographyContours);
-            excludedCategories.Add(BuiltInCategory.OST_Viewports);
-            excludedCategories.Add(BuiltInCategory.OST_Views);
-
-            // Exclude elements with no category. 
-            excludedCategories.Add(BuiltInCategory.INVALID);
-
-            ElementMulticategoryFilter excludedCategoryFilter = new ElementMulticategoryFilter(excludedCategories, true);
-
-            LogicalAndFilter exclusionFilter = new LogicalAndFilter(excludedClassFilter, excludedCategoryFilter);
-
-            ElementOwnerViewFilter ownerViewFilter = new ElementOwnerViewFilter(ElementId.InvalidElementId);
-
-            LogicalAndFilter returnedFilter = new LogicalAndFilter(exclusionFilter, ownerViewFilter);
+            LogicalAndFilter returnedFilter = new LogicalAndFilter(exclusionFilter, 
+               ownerViewFilter);
 
             return returnedFilter;
          }
@@ -658,7 +652,7 @@ namespace Revit.IFC.Export.Utility
          if (hidden)
             return false;
 
-         Category category = element.Category;
+         Category category = CategoryUtil.GetSafeCategory(element);
          hidden = !IsCategoryVisible(category, filterView);
          if (hidden)
             return false;

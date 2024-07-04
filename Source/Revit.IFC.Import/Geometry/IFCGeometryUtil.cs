@@ -623,6 +623,49 @@ namespace Revit.IFC.Import.Geometry
       }
 
       /// <summary>
+      /// Check that a geometric object is valid for a DirectShape, and adjust if needed.
+      /// </summary>
+      /// <param name="originalObject">The original GeometryObject.</param>
+      /// <param name="shape">An optional DirectShape uesd to validate solids.</param>
+      /// <param name="id">The id of the entity being processed.</param>
+      /// <returns>Null if the original object is valid, or a list of GeometryObjects if not.</returns>
+      public static IList<GeometryObject> AdjustGeometryObjectsIfNeeded(GeometryObject originalObject, DirectShape shape, int id)
+      {
+         if (shape != null && originalObject is Solid)
+         {
+            Solid solid = originalObject as Solid;
+            if (!shape.IsValidGeometry(solid))
+            {
+               Importer.TheLog.LogWarning(id, "Couldn't create valid solid, reverting to mesh.", false);
+               return CreateMeshesFromSolid(solid);
+            }
+         }
+
+         Curve curve = originalObject as Curve;
+         if (!(curve?.IsBound ?? true))
+         {
+            if (curve?.IsCyclic ?? false)
+            {
+               double period = curve.Period;
+               Curve newCurve = curve.Clone();
+
+               curve.MakeBound(0, period / 2);
+               newCurve.MakeBound(period / 2, period);
+
+               return new List<GeometryObject>() { curve, newCurve };
+            }
+            else
+            {
+               Importer.TheLog.LogWarning(id, "Found unbounded acyclic curve, ignoring.", false);
+               return new List<GeometryObject>();
+            }
+         }
+
+         return null;
+      }
+
+
+      /// <summary>
       /// Given a list of curves, finds any unbound cyclic curves and splits them.
       /// </summary>
       /// <param name="curves">The list of curves.</param>
@@ -947,7 +990,7 @@ namespace Revit.IFC.Import.Geometry
                // This is the only error that we are trying to catch and fix.
                // For any other error, we will re-throw.
                if (!msg.Contains("Failed to perform the Boolean operation for the two solids"))
-                  throw ex;
+                  throw;
 
                if (ii < numPasses - 1)
                   continue;

@@ -49,7 +49,7 @@ namespace Revit.IFC.Export.Exporter
 
          if (exportType == null)
          {
-            exportType = new IFCExportInfoPair(IFCEntityType.IfcBuildingElementProxy, IFCEntityType.IfcBuildingElementProxyType, "NOTDEFINED");
+            exportType = new IFCExportInfoPair(IFCEntityType.IfcBuildingElementProxy, IFCEntityType.IfcBuildingElementProxyType, null);
          }
 
          IFCFile file = exporterIFC.GetFile();

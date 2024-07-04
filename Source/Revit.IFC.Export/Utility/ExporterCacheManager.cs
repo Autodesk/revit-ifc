@@ -27,8 +27,6 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Common.Enums;
-using System.Runtime.Remoting.Contexts;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
@@ -41,7 +39,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The AllocatedGeometryObjectCache object.
       /// </summary>
-      static AllocatedGeometryObjectCache m_AllocatedGeometryObjectCache;
+      static public AllocatedGeometryObjectCache AllocatedGeometryObjectCache { get; protected set; } = new AllocatedGeometryObjectCache();
 
       /// <summary>
       /// The AssemblyInstanceCache object.
@@ -60,14 +58,9 @@ namespace Revit.IFC.Export.Utility
       static IDictionary<ElementId, bool> m_CanExportBeamGeometryAsExtrusionCache;
 
       /// <summary>
-      /// Cache the values of the IFC entity class from the IFC Export table by category.
+      /// Keeps track of the active ifc category mapping template.
       /// </summary>
-      static Dictionary<KeyValuePair<ElementId, int>, string> m_CategoryClassNameCache;
-
-      /// <summary>
-      /// Cache the values of the IFC entity pre-defined type from the IFC Export table by category.
-      /// </summary>
-      static Dictionary<KeyValuePair<ElementId, int>, string> m_CategoryTypeCache;
+      static IFCCategoryTemplate m_CategoryMappingTemplate = null;
 
       /// <summary>
       /// The ClassificationCache object.
@@ -105,12 +98,23 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static ElementToHandleCache m_ElementToHandleCache;
 
+      /// <summary>
+      /// A mapping of element ids to a material id determined by looking at element parameters.
+      /// </summary>
+      static public IDictionary<ElementId, ElementId> ElementIdMaterialParameterCache { get; set; } =
+         new Dictionary<ElementId, ElementId>();
+
       ///<summary>
       /// The ElementTypeToHandleCache cache
       /// </summary>
       static ElementTypeToHandleCache m_ElementTypeToHandleCache;
 
       static IDictionary<ElementId, FabricParams> m_FabricParamsCache;
+
+      /// <summary>
+      /// The ExporterIFC used to access internal IFC API functions.
+      /// </summary>
+      static public ExporterIFC ExporterIFC { get; set; } = null;
 
       ///<summary>
       /// The ExportOptions cache.
@@ -480,6 +484,11 @@ namespace Revit.IFC.Export.Utility
       static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> ComplexPropertyCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
 
       /// <summary>
+      /// Cache for Base Quantities that require separate calculation.
+      /// </summary>
+      static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> BaseQuantitiesCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
+
+      /// <summary>
       /// Cache for the Project Location that comes from the Selected Site on export option
       /// </summary>
       static public ProjectLocation SelectedSiteProjectLocation { get; set; } = null;
@@ -487,19 +496,6 @@ namespace Revit.IFC.Export.Utility
       /// Cache for information whether a QuantitySet specified in the Dict. value has been created for the elementHandle
       /// </summary>
       static public HashSet<(IFCAnyHandle, string)> QtoSetCreated { get; set; } = new HashSet<(IFCAnyHandle, string)>();
-
-      /// <summary>
-      /// The AllocatedGeometryObjectCache object.
-      /// </summary>
-      public static AllocatedGeometryObjectCache AllocatedGeometryObjectCache
-      {
-         get
-         {
-            if (m_AllocatedGeometryObjectCache == null)
-               m_AllocatedGeometryObjectCache = new AllocatedGeometryObjectCache();
-            return m_AllocatedGeometryObjectCache;
-         }
-      }
 
       /// <summary>
       /// The AssemblyInstanceCache object.
@@ -528,29 +524,35 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
-      /// <summary>
-      /// The CategoryClassNameCache object.
-      /// </summary>
-      public static IDictionary<KeyValuePair<ElementId, int>, string> CategoryClassNameCache
+      public static IFCCategoryTemplate CategoryMappingTemplate
       {
          get
          {
-            if (m_CategoryClassNameCache == null)
-               m_CategoryClassNameCache = new Dictionary<KeyValuePair<ElementId, int>, string>();
-            return m_CategoryClassNameCache;
-         }
-      }
+            // TODO: this isn't really correct if we are exporting multiple documents.
+            if (m_CategoryMappingTemplate == null)
+            {
+               try
+               {
+                  string name = ExportOptionsCache.CategoryMappingTableName;
+                  if (name != null)
+                  {
+                     Document document = ExportOptionsCache.HostDocument ?? Document;
+                     m_CategoryMappingTemplate = IFCCategoryTemplate.FindByName(document, name);
+                  }
+               }
+               catch
+               {
+                  m_CategoryMappingTemplate = null;
+               }
 
-      /// <summary>
-      /// The CategoryTypeCache object.
-      /// </summary>
-      public static IDictionary<KeyValuePair<ElementId, int>, string> CategoryTypeCache
-      {
-         get
-         {
-            if (m_CategoryTypeCache == null)
-               m_CategoryTypeCache = new Dictionary<KeyValuePair<ElementId, int>, string>();
-            return m_CategoryTypeCache;
+               if (m_CategoryMappingTemplate == null)
+               {
+                  m_CategoryMappingTemplate = IFCCategoryTemplate.GetOrCreateInSessionTemplate(Document);
+               }
+               m_CategoryMappingTemplate?.UpdateCategoryList(Document);
+            }
+
+            return m_CategoryMappingTemplate;
          }
       }
 
@@ -1491,9 +1493,12 @@ namespace Revit.IFC.Export.Utility
       {
          if (fullClear)
          {
+            m_CategoryMappingTemplate = null;
             m_CertifiedEntitiesAndPsetCache = null;
+            ExporterIFC = null;
             m_ExportOptionsCache = null;
             m_Global3DOriginHandle = null;
+            Context2DHandles.Clear();
             Context3DHandles.Clear();
             GUIDCache.Clear();
             OwnerHistoryHandle = null;
@@ -1509,24 +1514,21 @@ namespace Revit.IFC.Export.Utility
             SiteHandle = null;
          }
 
-         if (m_AllocatedGeometryObjectCache != null)
-            m_AllocatedGeometryObjectCache.DisposeCache();
+         AllocatedGeometryObjectCache.DisposeCache();
          ParameterUtil.ClearParameterValueCaches();
 
-         m_AllocatedGeometryObjectCache = null;
          m_AreaSchemeCache = null;
          m_AssemblyInstanceCache = null;
          BaseLinkedDocumentGUID = null;
          m_BeamSystemCache = null;
          BuildingHandle = null;
          m_CanExportBeamGeometryAsExtrusionCache = null;
-         m_CategoryClassNameCache = null;
-         m_CategoryTypeCache = null;
          m_CeilingSpaceRelCache = null;
          m_ClassificationCache = null;
          m_ClassificationLocationCache = null;
          ContainmentCache = new ContainmentCache();
          ComplexPropertyCache.Clear();
+         BaseQuantitiesCache.Clear();
          m_CreatedInternalPropertySets = null;
          m_CreatedSpecialPropertySets = null;
          m_CurveAnnotationCache = null;
@@ -1535,6 +1537,7 @@ namespace Revit.IFC.Export.Utility
          m_DoorWindowDelayedOpeningCreatorCache = null;
          m_DummyHostCache = null;
          m_ElementsInAssembliesCache = null;
+         ElementIdMaterialParameterCache.Clear();
          m_ElementToHandleCache = null;
          m_ElementTypeToHandleCache = null;
          m_FabricAreaHandleCache = null;
@@ -1549,7 +1552,7 @@ namespace Revit.IFC.Export.Utility
          m_HostPartsCache = null;
          m_InternallyCreatedRootHandles = null;
          m_IsExternalParameterValueCache = null;
-         LevelInfoCache = new LevelInfoCache();
+         LevelInfoCache.Clear(ExporterIFC);
          m_MaterialIdToStyleHandleCache = null;
          MaterialSetUsageCache = new MaterialSetUsageCache();
          m_MaterialSetCache = null;

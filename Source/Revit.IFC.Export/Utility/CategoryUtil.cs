@@ -48,13 +48,21 @@ namespace Revit.IFC.Export.Utility
          if (element == null)
             return null;
 
-         // Special cases below - at the moment only one, for ModelCurves.
+         // Special cases below.
          if (element is ModelCurve)
          {
             CurveElement modelCurve = element as ModelCurve;
             GraphicsStyle lineStyle = modelCurve.LineStyle as GraphicsStyle;
             if (lineStyle != null)
                return lineStyle.GraphicsStyleCategory;
+         }
+         else if (element is ModelText)
+         {
+            Parameter parameter = element.GetParameter(ParameterTypeId.ModelCategoryIdParam);
+            if (parameter != null && parameter.HasValue && parameter.StorageType == StorageType.ElementId)
+            {
+               return Category.GetCategory(element.Document, parameter.AsElementId());
+            }
          }
 
          return element.Category;
@@ -154,13 +162,6 @@ namespace Revit.IFC.Export.Utility
          return matList;
       }
 
-      public static IFCAnyHandle CreateMaterialLayerSetUsage(IFCFile file, IFCAnyHandle materialLayerSet, IFCLayerSetDirection direction,
-          IFCDirectionSense directionSense, double offset)
-      {
-         return IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet,
-            direction, directionSense, offset);
-      }
-
       public static IFCAnyHandle CreateMaterialProfileSetUsage(IFCFile file, 
          IFCAnyHandle materialProfileSet, int? cardinalPoint)
       {
@@ -257,11 +258,11 @@ namespace Revit.IFC.Export.Utility
       /// All other elements are internal.
       /// </remarks>
       /// <param name="element">The element.</param>
-      /// <returns>True if the element is external, false otherwise.</returns>
-      public static bool IsElementExternal(Element element)
+      /// <returns>True if the element is external, false otherwise and null if will not export the value.</returns>
+      public static bool? IsElementExternal(Element element)
       {
-         if (element == null)
-            return false;
+         if (element == null || element is ElementType)
+            return null;
 
          // Look for a parameter "IsExternal", potentially localized.
          ElementId elementId = element.Id;
@@ -288,10 +289,6 @@ namespace Revit.IFC.Export.Utility
             }
 
             elementType = element.Document.GetElement(element.GetTypeId());
-         }
-         else if (element is ElementType)
-         {
-            elementType = element;
          }
 
          // Many element types have the FUNCTION_PARAM parameter.  If this is set, use its value.
@@ -441,9 +438,8 @@ namespace Revit.IFC.Export.Utility
             // in IFC4 we will create IfcConstituentSet instead of MaterialList, create the associated IfcConstituent here from IfcMaterial
             foreach (ElementId materialId in alreadySeenIds)
             {
-               IFCAnyHandle constituentHnd = GetOrCreateMaterialConstituent(exporterIFC, materialId);
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(constituentHnd))
-                  constituentSet.Add(constituentHnd);
+               constituentSet.AddIfNotNull(GetOrCreateMaterialConstituent(exporterIFC, 
+                  materialId));
             }
 
             GetOrCreateMaterialConstituentSet(file, instanceHandle, constituentSet);
@@ -566,9 +562,8 @@ namespace Revit.IFC.Export.Utility
             // in IFC4 we will create IfcConstituentSet instead of MaterialList, create the associated IfcConstituent here from IfcMaterial
             foreach (KeyValuePair<MaterialConstituentInfo, HashSet<IFCAnyHandle>> repItemInfoSet in repItemInfoGroup)
             {
-               IFCAnyHandle constituentHnd = GetOrCreateMaterialConstituent(exporterIFC, repItemInfoSet.Key);
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(constituentHnd))
-                  constituentSet.Add(constituentHnd);
+               constituentSet.AddIfNotNull(GetOrCreateMaterialConstituent(exporterIFC, 
+                  repItemInfoSet.Key));
 
                RepresentationUtil.CreateRepForShapeAspect(exporterIFC, element, prodRep, repType, repItemInfoSet.Key.ComponentCat, repItemInfoSet.Value);
             }
@@ -759,10 +754,9 @@ namespace Revit.IFC.Export.Utility
 
                   IFCAnyHandle styledRepItem = null;
                   IFCAnyHandle matStyleHnd = GetOrCreateMaterialStyle(document, file, materialId);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(matStyleHnd) && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                  if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView &&
+                     styles.AddIfNotNull(matStyleHnd))
                   {
-                     styles.Add(matStyleHnd);
-
                      bool supportCutStyles = !ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2;
                      if (fillPatternId != ElementId.InvalidElementId && supportCutStyles)
                      {

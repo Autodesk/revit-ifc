@@ -171,28 +171,25 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          if (handle == null)
             return false;
-         //if (ObjectType == "")
-         //   return true;
-
+         
          // ObjectType information comes from PSD's Applicable Type. This may be a comma separated list of applicable type
          IFCEntityType hndEntity = IFCAnyHandleUtil.GetEntityType(handle);
-         if (ObjectType.IndexOf(hndEntity.ToString(), StringComparison.InvariantCultureIgnoreCase) < 0)
+         if (ObjectType.IndexOf(hndEntity.ToString(),
+            StringComparison.InvariantCultureIgnoreCase) >= 0)
          {
-            // The use of ObjectType in the PSD is confusing at best. The purpose and its consistency is questionable. 
-            // If the entity is not found in this ObjectType, try the "old" way to compare the ObjectType attribute value
-            string objectType = IFCAnyHandleUtil.GetObjectType(handle);
-            if (!string.IsNullOrEmpty(objectType))
-            {
-               if (ObjectType.IndexOf(objectType, StringComparison.InvariantCultureIgnoreCase) < 0)
-                  return false;
-               else
-                  return true;
-            }
+            return true;
+         }
+
+         // The use of ObjectType in the PSD is confusing at best. The purpose and its consistency is questionable. 
+         // If the entity is not found in this ObjectType, try the "old" way to compare the ObjectType attribute value
+         string objectType = IFCAnyHandleUtil.GetObjectType(handle);
+         if (string.IsNullOrEmpty(objectType))
+         {
             return false;
          }
-         else
-            return true;
-         //return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
+
+         return ObjectType.IndexOf(objectType,
+            StringComparison.InvariantCultureIgnoreCase) >= 0;
       }
 
       /// <summary>
@@ -208,13 +205,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             return false;
 
          // ObjectType information comes from PSD's Applicable Type. This may be a comma separated list of applicable type
-         if (ObjectType.IndexOf(entityType.ToString(), StringComparison.InvariantCultureIgnoreCase) < 0)
-            return false;
-         else
-            return true;
-
-         //string objectType = IFCAnyHandleUtil.GetObjectType(handle);
-         //return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
+         return ObjectType.IndexOf(entityType.ToString(),
+            StringComparison.InvariantCultureIgnoreCase) >= 0;
       }
    }
 }

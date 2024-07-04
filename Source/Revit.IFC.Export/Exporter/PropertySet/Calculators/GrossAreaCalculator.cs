@@ -76,13 +76,20 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
             return true;
 
-         if (extrusionCreationData == null)
-            return false;
+         if (extrusionCreationData != null)
+         {
+            m_Area = extrusionCreationData.ScaledArea;
 
-         m_Area = extrusionCreationData.ScaledArea;
+            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+               return true;
+         }
 
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-            return true;
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED, out m_Area) != null)
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
+            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+               return true;
+         }
 
          return false;
       }

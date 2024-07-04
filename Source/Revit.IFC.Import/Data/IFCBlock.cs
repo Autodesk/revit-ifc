@@ -81,10 +81,10 @@ namespace Revit.IFC.Import.Data
          {
             block = GeometryCreationUtilities.CreateExtrusionGeometry(loops, scaledExtrusionDirection, ZLength, solidOptions);
          }
-         catch (Exception ex)
+         catch (Exception)
          {
             if (shapeEditScope.MustCreateSolid())
-               throw ex;
+               throw;
 
             Importer.TheLog.LogError(Id, "Block has an invalid definition for a solid; reverting to mesh.", false);
 

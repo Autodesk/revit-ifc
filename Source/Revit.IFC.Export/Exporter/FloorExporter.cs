@@ -261,7 +261,7 @@ namespace Revit.IFC.Export.Exporter
             // For IFC4RV export, Element will be split into its parts(temporarily) in order to export the wall by its parts
             // If Parts are created by code and not by user then their names should be equal to Material names.
             bool setMaterialNameToPartName = ExporterUtil.CreateParts(floorElement, layersetInfo.MaterialIds.Count, ref geometryElement);
-            ExporterUtil.ExportPartAs exportPartAs = ExporterUtil.CanExportByComponentsOrParts(floorElement);
+            ExporterUtil.ExportPartAs exportPartAs = ExporterUtil.CanExportByComponentsOrParts(floorElement, ref geometryElement);
             bool exportByComponents = exportPartAs == ExporterUtil.ExportPartAs.ShapeAspect;
             bool exportParts = exportPartAs == ExporterUtil.ExportPartAs.Part;
 
@@ -363,7 +363,7 @@ namespace Revit.IFC.Export.Exporter
                                  ExtrusionExporter.ExtraClippingData extraClippingData = null;
                                  HandleAndData floorAndProperties =
                                      ExtrusionExporter.CreateExtrusionWithClippingAndProperties(exporterIFC, floorElement, false,
-                                     catId, solids[0], extrusionAnalyzerFloorBasePlane, floorOrigin, floorExtrusionDirection, null, 
+                                     catId, solids[0], extrusionAnalyzerFloorBasePlane, floorOrigin, floorExtrusionDirection, null,
                                      out extraClippingData,
                                      addInfo: additionalInfo);
                                  if (extraClippingData.CompletelyClipped)
@@ -383,19 +383,25 @@ namespace Revit.IFC.Export.Exporter
                                     representations.Add(footprintShapeRep);
                                  }
 
+                                 IFCAnyHandle prodRep = null;
                                  if (exportByComponents)
                                  {
-                                    IFCAnyHandle prodRep = RepresentationUtil.CreateProductDefinitionShapeWithoutBodyRep(exporterIFC, floorElement, catId, geometryElement, representations);
-                                    prodReps.Add(prodRep);
+                                    prodRep = RepresentationUtil.CreateProductDefinitionShapeWithoutBodyRep(exporterIFC, floorElement, catId, geometryElement, representations);
                                  }
                                  else if (representations.Count > 0 && floorAndProperties.Handle != null)   // Only when at least the body rep exists will come here
                                  {
-                                    IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
+                                    prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
+                                 }
+
+                                 if (!IFCAnyHandleUtil.IsNullOrHasNoValue(prodRep))
+                                 {
                                     prodReps.Add(prodRep);
                                  }
 
                                  if (floorAndProperties.Data != null)
+                                 {
                                     loopExtraParams.Add(floorAndProperties.Data);
+                                 }
                               }
                            }
                         }
@@ -410,7 +416,7 @@ namespace Revit.IFC.Export.Exporter
                               canExportAsInternalExtrusion = openingDataList == null || openingDataList.Count == 0;
                            }
 
-                           if (canExportAsInternalExtrusion && ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3)
+                           if (canExportAsInternalExtrusion)
                            {
                               loopExtraParams.Clear();
                               IList<IFCExtrusionCreationData> extrusionParams = new List<IFCExtrusionCreationData>();
@@ -464,7 +470,10 @@ namespace Revit.IFC.Export.Exporter
                            if (exportByComponents)
                            {
                               prodDefHnd = RepresentationUtil.CreateProductDefinitionShapeWithoutBodyRep(exporterIFC, floorElement, catId, geometryElement, null);
-                              prodReps.Add(prodDefHnd);
+                              if (!IFCAnyHandleUtil.IsNullOrHasNoValue(prodDefHnd))
+                              {
+                                 prodReps.Add(prodDefHnd);
+                              }
                            }
                            else
                            {
@@ -494,7 +503,7 @@ namespace Revit.IFC.Export.Exporter
                      switch (exportType.ExportInstance)
                      {
                         case IFCEntityType.IfcCovering:
-                           exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCCoveringType>(floorElement, ifcEnumType, "FLOORING");
+                           exportType.PredefinedType = IFCValidateEntry.GetValidIFCType<IFCCoveringType>(floorElement, ifcEnumType, "FLOORING");
                            break;
                         case IFCEntityType.IfcSlab:
                            {
@@ -515,7 +524,7 @@ namespace Revit.IFC.Export.Exporter
                                  }
                               }
 
-                              exportType.ValidatedPredefinedType = IFCValidateEntry.GetValidIFCType<IFCSlabType>(floorElement, ifcEnumType, isBaseSlab ? "BASESLAB" : "FLOOR");
+                              exportType.PredefinedType = IFCValidateEntry.GetValidIFCType<IFCSlabType>(floorElement, ifcEnumType, isBaseSlab ? "BASESLAB" : "FLOOR");
                            }
                            break;
                      }
@@ -577,7 +586,7 @@ namespace Revit.IFC.Export.Exporter
 
                      for (int ii = 0; ii < numReps; ii++)
                      {
-                        IFCExportBodyParams loopExtraParam = ii < loopExtraParams.Count ? loopExtraParams[ii] : null;
+                        IFCExportBodyParams loopExtraParam = ii < loopExtraParams.Count ? loopExtraParams[ii] : ecData;
                         productWrapper.AddElement(floorElement, slabHnds[ii], placementSetter, loopExtraParam, true, exportType);
 
                         ExporterCacheManager.TypeRelationsCache.Add(typeHandle, slabHnds[ii]);

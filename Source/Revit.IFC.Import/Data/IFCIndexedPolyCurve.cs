@@ -108,7 +108,7 @@ namespace Revit.IFC.Import.Data
             if (IFCImportFile.HasUndefinedAttribute(ex))
                IFCImportFile.TheFile.DowngradeIFC4SchemaTo(IFCSchemaVersion.IFC4);
             else
-               throw ex;
+               throw;
          }
 
          IFCCartesianPointList pointList = IFCCartesianPointList.ProcessIFCCartesianPointList(points);

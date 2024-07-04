@@ -32,7 +32,7 @@ using System.Windows;
 #if IFC_OPENSOURCE
 [assembly: AssemblyCompany("Autodesk, Inc.")]
 [assembly: AssemblyProduct("Autodesk.IFC.Export.UI")]
-[assembly: AssemblyCopyright("© 2012-2023 Autodesk, Inc. All rights reserved.")]
+[assembly: AssemblyCopyright("© 2012-2024 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 #endif
@@ -61,11 +61,12 @@ using System.Windows;
     // app, or any theme specific resource dictionaries)
 )]
 
+[assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("windows7.0")]
 // Version information can now be found in Foundation\RevitENU\Version.cs
 #if IFC_OPENSOURCE
 // The following information is used in the Open Source version as the release version number.
 // The number will show up in the Title bar of the export dialog as well as at the IFC header file
 // This number must be manually updated prior to releasing the new version
-[assembly: AssemblyVersion("24.2.0.49")]
-[assembly: AssemblyFileVersion("24.2.0.49")]
+[assembly: AssemblyVersion("25.2.0.5")]
+[assembly: AssemblyFileVersion("25.2.0.5")]
 #endif

@@ -144,7 +144,7 @@ namespace Revit.IFC.Export.Exporter
          IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, railing, out ifcEnumType);
          if (exportType.IsUnKnown)
          {
-            ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(exporterIFC, railing);
+            ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(railing);
          }
          
          ExportRailing(exporterIFC, railing, geomElement, ifcEnumType, productWrapper);

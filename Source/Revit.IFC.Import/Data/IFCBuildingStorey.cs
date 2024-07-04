@@ -135,7 +135,7 @@ namespace Revit.IFC.Import.Data
             foundLevel = true;
 
          double referenceElevation = GetReferenceElevation();
-         double totalElevation = (ObjectLocation?.TotalTransform?.Origin.Z ?? 0.0) + referenceElevation;
+         double totalElevation = (ObjectLocation?.TotalTransformAfterOffset?.Origin.Z ?? 0.0) + referenceElevation;
 
          if (level == null)
             level = Level.Create(doc, totalElevation);

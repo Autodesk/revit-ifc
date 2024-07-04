@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 
 namespace Revit.IFC.Common.Utility
 {
@@ -27,8 +27,7 @@ namespace Revit.IFC.Common.Utility
       {
          if (!string.IsNullOrEmpty(projInfoStr))
          {
-            JavaScriptSerializer js = new JavaScriptSerializer();
-            COBieProjectInfo projInfo = js.Deserialize<COBieProjectInfo>(projInfoStr);
+            COBieProjectInfo projInfo = JsonConvert.DeserializeObject<COBieProjectInfo>(projInfoStr);
             BuildingName_Number = projInfo.BuildingName_Number;
             BuildingType = projInfo.BuildingType;
             BuildingDescription = projInfo.BuildingDescription;
@@ -42,8 +41,7 @@ namespace Revit.IFC.Common.Utility
 
       public string ToJsonString()
       {
-         JavaScriptSerializer js = new JavaScriptSerializer();
-         return js.Serialize(this);
+         return JsonConvert.SerializeObject(this);
       }
    }
 }

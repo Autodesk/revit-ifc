@@ -128,7 +128,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             // For Slab, length is the major edge of the rectangle area profile (get it from ScaledWidth)
             // Also for Stair support
             IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
-            if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcSlab) || 
+            if (PropertyUtil.IsWidthLengthReversed(hnd) ||
                CategoryUtil.GetSafeCategoryId(element).Value == (long)BuiltInCategory.OST_StairsStringerCarriage)
             {
                m_Length = extrusionCreationData.ScaledWidth;

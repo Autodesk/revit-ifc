@@ -278,8 +278,7 @@ namespace Revit.IFC.Export.Exporter
       private static IFCAnyHandle CreateCircleBasedProfileDefIfPossible(ExporterIFC exporterIFC, string profileName, CurveLoop curveLoop, Transform lcs,
           XYZ projDir)
       {
-         IList<CurveLoop> curveLoops = new List<CurveLoop>();
-         curveLoops.Add(curveLoop);
+         IList<CurveLoop> curveLoops = new List<CurveLoop>() { curveLoop };
          return CreateCircleBasedProfileDefIfPossible(exporterIFC, profileName, curveLoops, lcs, projDir);
       }
 
@@ -334,58 +333,24 @@ namespace Revit.IFC.Export.Exporter
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {
-            XYZ xDir = lcs.BasisX;
-            XYZ yDir = lcs.BasisY;
-            XYZ zDir = lcs.BasisZ;
-            XYZ orig = lcs.Origin;
-
-            ctr -= orig;
-
-            IList<double> newCtr = new List<double>();
-            newCtr.Add(UnitUtil.ScaleLength(xDir.DotProduct(ctr)));
-            newCtr.Add(UnitUtil.ScaleLength(yDir.DotProduct(ctr)));
-            newCtr.Add(UnitUtil.ScaleLength(zDir.DotProduct(ctr)));
-
-            IFCAnyHandle location = IFCInstanceExporter.CreateCartesianPoint(file, newCtr);
-
             XYZ projDirToUse = projDir;
-            XYZ refDirToUse = new XYZ(1.0, 0.0, 0.0);
             if (curveLoops[0].HasPlane())
             {
                projDirToUse = curveLoops[0].GetPlane().Normal;
-               refDirToUse = curveLoops[0].GetPlane().XVec;
             }
-
-            IList<double> axisDir = new List<double>();
-            axisDir.Add(projDirToUse.X);
-            axisDir.Add(projDirToUse.Y);
-            axisDir.Add(projDirToUse.Z);
-            IFCAnyHandle axisDirectionOpt = ExporterUtil.CreateDirection(file, axisDir);
-
-            IList<double> refDir = new List<double>();
-            refDir.Add(1.0);
-            refDir.Add(0.0);
-            refDir.Add(0.0);
-            IFCAnyHandle refDirectionOpt = ExporterUtil.CreateDirection(file, refDirToUse);
-
-            IFCAnyHandle defPosition = IFCInstanceExporter.CreateAxis2Placement3D(file, location, axisDirectionOpt, refDirectionOpt);
 
             IFCAnyHandle outerCurve = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoops[0], lcs, projDirToUse);
-            //if (MathUtil.IsAlmostZero(innerRadius))
             if (numLoops == 1)
-               return IFCInstanceExporter.CreateArbitraryClosedProfileDef(file, IFCProfileType.Area, profileName, outerCurve);
-            else
             {
-               IFCAnyHandle innerCurve = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoops[1], lcs, projDirToUse);
-               HashSet<IFCAnyHandle> innerCurves = new HashSet<IFCAnyHandle>();
-               innerCurves.Add(innerCurve);
-               return IFCInstanceExporter.CreateArbitraryProfileDefWithVoids(file, IFCProfileType.Area, profileName, outerCurve, innerCurves);
+               return IFCInstanceExporter.CreateArbitraryClosedProfileDef(file, IFCProfileType.Area, profileName, outerCurve);
             }
+
+            IFCAnyHandle innerCurve = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoops[1], lcs, projDirToUse);
+            HashSet<IFCAnyHandle> innerCurves = new HashSet<IFCAnyHandle>() { innerCurve };
+            return IFCInstanceExporter.CreateArbitraryProfileDefWithVoids(file, IFCProfileType.Area, profileName, outerCurve, innerCurves);
          }
          else
          {
-            IList<Arc> arcs = new List<Arc>();
-
             if (numLoops == 2)
             {
                XYZ checkCtr;
@@ -404,23 +369,25 @@ namespace Revit.IFC.Export.Exporter
 
             ctr -= orig;
 
-            IList<double> newCtr = new List<double>();
-            newCtr.Add(UnitUtil.ScaleLength(xDir.DotProduct(ctr)));
-            newCtr.Add(UnitUtil.ScaleLength(yDir.DotProduct(ctr)));
+            IList<double> newCtr = new List<double>()
+            {
+               UnitUtil.ScaleLength(xDir.DotProduct(ctr)),
+               UnitUtil.ScaleLength(yDir.DotProduct(ctr))
+            };
 
             IFCAnyHandle location = IFCInstanceExporter.CreateCartesianPoint(file, newCtr);
 
-            IList<double> refDir = new List<double>();
-            refDir.Add(1.0);
-            refDir.Add(0.0);
+            IList<double> refDir = new List<double>() { 1.0, 0.0 };
             IFCAnyHandle refDirectionOpt = ExporterUtil.CreateDirection(file, refDir);
 
             IFCAnyHandle defPosition = IFCInstanceExporter.CreateAxis2Placement2D(file, location, null, refDirectionOpt);
 
             if (MathUtil.IsAlmostZero(innerRadius))
+            {
                return IFCInstanceExporter.CreateCircleProfileDef(file, IFCProfileType.Area, profileName, defPosition, radius);
-            else
-               return IFCInstanceExporter.CreateCircleHollowProfileDef(file, IFCProfileType.Area, profileName, defPosition, radius, radius - innerRadius);
+            }
+
+            return IFCInstanceExporter.CreateCircleHollowProfileDef(file, IFCProfileType.Area, profileName, defPosition, radius, radius - innerRadius);
          }
       }
 
@@ -723,17 +690,22 @@ namespace Revit.IFC.Export.Exporter
              overallWidth, overallDepth, webThickness, flangeThickness, filletRadius);
       }
 
+      /// <summary>
+      /// Check to see if a curve loop is oriented clockwise.
+      /// </summary>
+      /// <param name="curveLoop">The curve loop to check.</param>
+      /// <param name="dir">The direction to compare against.</param>
       /// <returns>true if the curve loop is clockwise, false otherwise.</returns>
-      private static bool SafeIsCurveLoopClockwise(CurveLoop curveLoop, XYZ dir)
+      private static bool? SafeIsCurveLoopClockwise(CurveLoop curveLoop, XYZ dir)
       {
          if (curveLoop == null)
-            return false;
+            return null;
 
          if (curveLoop.IsOpen())
-            return false;
+            return null;
 
          if ((curveLoop.Count() == 1) && !(curveLoop.First().IsBound))
-            return false;
+            return null;
 
          return !curveLoop.IsCounterclockwise(dir);
       }
@@ -745,7 +717,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="extrDir">Extrusion direction</param>
       /// <param name="lcs">Output parameter for the "corrected" LCS</param>
       /// <returns>True if the LCS is set</returns>
-      private static bool CorrectCurveLoopOrientation(IList<CurveLoop> curveLoops, XYZ extrDir, out Transform lcs)
+      public static bool CorrectCurveLoopOrientation(IList<CurveLoop> curveLoops, XYZ extrDir, out Transform lcs)
       {
          lcs = null;
          int loopSz = curveLoops.Count;
@@ -773,8 +745,10 @@ namespace Revit.IFC.Export.Exporter
             }
             else if (firstCurve)
             {
-               if (SafeIsCurveLoopClockwise(curveLoop, extrDir))
+               if (SafeIsCurveLoopClockwise(curveLoop, extrDir).GetValueOrDefault(false))
+               {
                   curveLoop.Flip();
+               }
 
                try
                {
@@ -790,8 +764,10 @@ namespace Revit.IFC.Export.Exporter
             }
             else
             {
-               if (!SafeIsCurveLoopClockwise(curveLoop, extrDir))
+               if (!SafeIsCurveLoopClockwise(curveLoop, extrDir).GetValueOrDefault(true))
+               {
                   curveLoop.Flip();
+               }
             }
 
             firstCurve = false;
@@ -1069,9 +1045,8 @@ namespace Revit.IFC.Export.Exporter
                {
                   if (isCCW)
                      curveLoop.Flip();
-                  IFCAnyHandle innerCurve = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoop, lcs, sweptDirection);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(innerCurve))
-                     innerCurves.Add(innerCurve);
+                  innerCurves.AddIfNotNull(GeometryUtil.CreateIFCCurveFromCurveLoop(
+                     exporterIFC, curveLoop, lcs, sweptDirection));
                }
             }
 
@@ -1897,11 +1872,9 @@ namespace Revit.IFC.Export.Exporter
          // A list of IfcCurve entities.
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {
-            IFCAnyHandle curveHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, baseCurve, 
-               extrusionLCS, extrusionDir);
             profileCurves = new List<IFCAnyHandle>();
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveHnd))
-               profileCurves.Add(curveHnd);
+            profileCurves.AddIfNotNull(GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, 
+               baseCurve, extrusionLCS, extrusionDir));
          }
          else
          {
