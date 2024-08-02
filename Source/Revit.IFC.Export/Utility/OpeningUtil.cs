@@ -152,7 +152,7 @@ namespace Revit.IFC.Export.Utility
          Transform offsetTransform, ExporterIFC exporterIFC, IFCAnyHandle originalPlacement,
          PlacementSetter setter, ProductWrapper wrapper)
       {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(elementHandle))
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(elementHandle) || extraParams == null)
             return;
 
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
@@ -292,7 +292,7 @@ namespace Revit.IFC.Export.Utility
                    element.Id, parentHandle, setter.LevelId);
                if (delayedCreator != null)
                {
-                  ExporterCacheManager.DoorWindowDelayedOpeningCreatorCache.Add(delayedCreator);
+                  ExporterCacheManager.DoorWindowDelayedOpeningCreatorCache.Add(delayedCreator, true);
                   continue;
                }
             }

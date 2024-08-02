@@ -181,6 +181,8 @@ namespace Revit.IFC.Export.Exporter
 
          try
          {
+            ExporterCacheManager.ExporterIFC = exporterIFC;
+
             IFCAnyHandleUtil.IFCStringTooLongWarn += (_1) => { document.Application.WriteJournalComment(_1, true); };
             IFCDataUtil.IFCStringTooLongWarn += (_1) => { document.Application.WriteJournalComment(_1, true); };
 
@@ -378,6 +380,21 @@ namespace Revit.IFC.Export.Exporter
          return GeometryUtil.BoundingBoxesOverlap(elementBBox, sectionBox);
       }
 
+      private bool NeedBuilding()
+      {
+         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.BuildingHandle))
+         {
+            return false;
+         }
+
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
+         {
+            return true;
+         }
+
+         return ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs == LinkedFileExportAs.ExportSameSite;
+      }
+
       protected void ExportSpatialElements(ExporterIFC exporterIFC, Document document)
       {
          // Create IfcSite first here using the first visible TopographySurface if any, if not create a default one.
@@ -409,12 +426,11 @@ namespace Revit.IFC.Export.Exporter
          }
 
          // Create IfcBuilding first here
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.BuildingHandle) && IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle))
+         if (NeedBuilding())
          {
             IFCAnyHandle buildingPlacement = CreateBuildingPlacement(exporterIFC.GetFile());
             IFCAnyHandle buildingHnd = CreateBuildingFromProjectInfo(exporterIFC, document, buildingPlacement);
-            ExporterCacheManager.BuildingHandle = buildingHnd;
-         }
+		 }
 
          ExportOptionsCache exportOptionsCache = ExporterCacheManager.ExportOptionsCache;
          View filterView = exportOptionsCache.FilterViewForExport;
@@ -691,11 +707,6 @@ namespace Revit.IFC.Export.Exporter
          {
             using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
             {
-               if (element.AssemblyInstanceId != null && element.AssemblyInstanceId != ElementId.InvalidElementId)
-               {
-                  Element assemblyElem = element.Document.GetElement(element.AssemblyInstanceId);
-                  ExportElementImpl(exporterIFC, assemblyElem, productWrapper);
-               }
                ExportElementImpl(exporterIFC, element, productWrapper);
                ExporterUtil.ExportRelatedProperties(exporterIFC, element, productWrapper);
             }
@@ -1031,10 +1042,14 @@ namespace Revit.IFC.Export.Exporter
                   {
                      // For ducts and pipes, we will add a IfcRelCoversBldgElements during the end of export.
                      if (element is Duct || element is Pipe)
-                        ExporterCacheManager.MEPCache.CoveredElementsCache.Add(element.Id);
+                     {
+                        ExporterCacheManager.MEPCache.CoveredElementsCache[element.Id] = element.Category?.Id ?? ElementId.InvalidElementId;
+                     }
                      // For cable trays and conduits, we might create systems during the end of export.
                      if (element is CableTray || element is Conduit)
+                     {
                         ExporterCacheManager.MEPCache.CableElementsCache.Add(element.Id);
+                     }
                   }
                }
 
@@ -1320,9 +1335,7 @@ namespace Revit.IFC.Export.Exporter
          {
             foreach (ElementId id in ids)
             {
-               IFCAnyHandle handle = ExporterCacheManager.ElementToHandleCache.Find(id);
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
-                  handles.Add(handle);
+               handles.AddIfNotNull(ExporterCacheManager.ElementToHandleCache.Find(id));
             }
          }
       }
@@ -1398,9 +1411,8 @@ namespace Revit.IFC.Export.Exporter
             ISet<IFCAnyHandle> validHandles = new HashSet<IFCAnyHandle>();
             foreach (IFCAnyHandle handle in presentationLayerSet.Value)
             {
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
+               if (validHandles.AddIfNotNull(handle))
                {
-                  validHandles.Add(handle);
                   assignedRepresentations.Add(handle);
                }
             }
@@ -1493,8 +1505,10 @@ namespace Revit.IFC.Export.Exporter
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
             // Relate Ducts and Pipes to their coverings (insulations and linings)
-            foreach (ElementId ductOrPipeId in ExporterCacheManager.MEPCache.CoveredElementsCache)
+            foreach (KeyValuePair<ElementId, ElementId> ductOrPipe in ExporterCacheManager.MEPCache.CoveredElementsCache)
             {
+               ElementId ductOrPipeId = ductOrPipe.Key;
+
                IFCAnyHandle ductOrPipeHandle = ExporterCacheManager.MEPCache.Find(ductOrPipeId);
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(ductOrPipeHandle))
                   continue;
@@ -1503,8 +1517,11 @@ namespace Revit.IFC.Export.Exporter
 
                try
                {
-                  ICollection<ElementId> liningIds = InsulationLiningBase.GetLiningIds(document, ductOrPipeId);
-                  GetElementHandles(liningIds, coveringHandles);
+                  if (FamilyInstanceExporter.CategoryCanHaveLining(ductOrPipe.Value))
+                  {
+                     ICollection<ElementId> liningIds = InsulationLiningBase.GetLiningIds(document, ductOrPipeId);
+                     GetElementHandles(liningIds, coveringHandles);
+                  }
                }
                catch
                {
@@ -1705,7 +1722,7 @@ namespace Revit.IFC.Export.Exporter
                   ElementId elementId = ExporterCacheManager.HandleToElementCache.Find(elemHnd);
                   Element elem = document.GetElement(elementId);
 
-                  // if there is override, use the override otherwise use default from site
+                  // if there is override, use the override otherwise use default
                   IFCAnyHandle overrideContainer = null;
                   ParameterUtil.OverrideContainmentParameter(exporterIFC, elem, out overrideContainer);
 
@@ -1784,10 +1801,10 @@ namespace Revit.IFC.Export.Exporter
                      containerInvTrf = defContainerInvTrf;
                   }
 
-                  if (containerIsSite)
-                     relatedElementSetForSite.Add(indivSpace);
-                  else if (containerIsBuilding)
+                  if (containerIsBuilding)
                      relatedElementSetForBuilding.Add(indivSpace);
+                  else if (containerIsSite)
+                     relatedElementSetForSite.Add(indivSpace);
 
                   UpdateLocalPlacementForElement(indivSpace, file, containerObjectPlacement, containerInvTrf);
                }
@@ -2101,10 +2118,11 @@ namespace Revit.IFC.Export.Exporter
                         relGuid, classificationReference.Key, null, zoneHnds);
                   }
 
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.ZoneCommonProperySetHandle))
+                  IFCAnyHandle zoneCommonProperySetHandle = zoneInfo.CreateZoneCommonPSetData(file);
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(zoneCommonProperySetHandle))
                   {
                      ExporterUtil.CreateRelDefinesByProperties(file,
-                         ownerHistory, null, null, zoneHnds, zoneInfo.ZoneCommonProperySetHandle);
+                         ownerHistory, null, null, zoneHnds, zoneCommonProperySetHandle);
                   }
 
                   string groupName = zoneInfo.GroupName;
@@ -2118,20 +2136,6 @@ namespace Revit.IFC.Export.Exporter
                      }
                      currentGroup.Add(zoneHandle);
                   }
-               }
-
-               // Create RelAssociatesClassifications.
-               foreach (var relAssociatesInfo in ExporterCacheManager.ClassificationCache.ClassificationRelations)
-               {
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(relAssociatesInfo.Key))
-                     continue;
-
-                  IFCInstanceExporter.CreateRelAssociatesClassification(file,
-                     relAssociatesInfo.Value.GlobalId, ownerHistory, 
-                     relAssociatesInfo.Value.Name,
-                     relAssociatesInfo.Value.Description,
-                     relAssociatesInfo.Value.RelatedObjects, 
-                     relAssociatesInfo.Key);
                }
 
                // now create any zone groups.
@@ -2215,6 +2219,20 @@ namespace Revit.IFC.Export.Exporter
                }
             }
 
+            // Create RelAssociatesClassifications.
+            foreach (var relAssociatesInfo in ExporterCacheManager.ClassificationCache.ClassificationRelations)
+            {
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(relAssociatesInfo.Key))
+                  continue;
+
+               IFCInstanceExporter.CreateRelAssociatesClassification(file,
+                  relAssociatesInfo.Value.GlobalId, ownerHistory,
+                  relAssociatesInfo.Value.Name,
+                  relAssociatesInfo.Value.Description,
+                  relAssociatesInfo.Value.RelatedObjects,
+                  relAssociatesInfo.Key);
+            }
+
             // Delete handles that are marked for removal
             foreach (IFCAnyHandle handleToDel in ExporterCacheManager.HandleToDeleteCache)
             {
@@ -2244,6 +2262,10 @@ namespace Revit.IFC.Export.Exporter
             if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportMaterialPsets)
                MaterialPropertiesUtil.ExportMaterialProperties(file, exporterIFC);
 
+            // Create unit assignement
+            IFCAnyHandle units = IFCInstanceExporter.CreateUnitAssignment(file, UnitMappingUtil.GetUnitsToAssign());
+            ExporterCacheManager.ProjectHandle.SetAttribute("UnitsInContext", units);
+
             // Allow native code to remove some unused handles and clear internal caches.
             ExporterIFCUtils.EndExportInternal(exporterIFC);
             transaction.Commit();
@@ -2252,6 +2274,8 @@ namespace Revit.IFC.Export.Exporter
 
       private class IFCFileDocumentInfo
       {
+         public string ContentGUIDString { get; private set; } = null;
+
          public string VersionGUIDString { get; private set; } = null;
 
          public int NumberOfSaves { get; private set; } = 0;
@@ -2279,11 +2303,12 @@ namespace Revit.IFC.Export.Exporter
 
             ExportOptionsCache exportOptionsCache = ExporterCacheManager.ExportOptionsCache;
 
+            ContentGUIDString = document?.CreationGUID.ToString() ?? string.Empty;
             VersionGUIDString = documentVersion?.VersionGUID.ToString() ?? string.Empty;
             NumberOfSaves = documentVersion?.NumberOfSaves ?? 0;
 
             ProjectNumber = projectInfo?.Number ?? string.Empty;
-            ProjectName = projectInfo?.Name ?? exportOptionsCache.FileName;
+            ProjectName = projectInfo?.Name ?? exportOptionsCache.FileNameOnly;
             ProjectStatus = projectInfo?.Status ?? string.Empty;
 
             VersionName = application?.VersionName;
@@ -2305,8 +2330,7 @@ namespace Revit.IFC.Export.Exporter
          // When exporting Link, the relative position of the Link instance in the model needs to be transformed with
          // the offset from the main model site transform
          SiteTransformBasis transformBasis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
-         bool useSitePlacement = canUseSitePlacement && (transformBasis != SiteTransformBasis.Internal && 
-            transformBasis != SiteTransformBasis.InternalInTN);
+         bool useSitePlacement = canUseSitePlacement && (transformBasis != SiteTransformBasis.Internal);
          bool useRotation = transformBasis == SiteTransformBasis.InternalInTN ||
             transformBasis == SiteTransformBasis.ProjectInTN || 
             transformBasis == SiteTransformBasis.Shared || 
@@ -2315,7 +2339,7 @@ namespace Revit.IFC.Export.Exporter
             new Transform(CoordReferenceInfo.MainModelCoordReferenceOffset ?? Transform.Identity);
 
          XYZ siteOffset = useSitePlacement ? sitePl.Origin : XYZ.Zero;
-         if (useRotation)
+         if (useRotation && useSitePlacement)
          {
             // For those that oriented in the TN, a rotation is needed to compute a correct offset in TN orientation
             Transform rotationTrfAtInternal = Transform.CreateRotationAtPoint(XYZ.BasisZ, CoordReferenceInfo.MainModelTNAngle, XYZ.Zero);
@@ -2327,7 +2351,7 @@ namespace Revit.IFC.Export.Exporter
          }
          sitePl.Origin = XYZ.Zero;
          linkTrf.Origin = XYZ.Zero;
-         Transform linkTotTrf = sitePl.Multiply(linkTrf);
+         Transform linkTotTrf = useSitePlacement ? sitePl.Multiply(linkTrf) : linkTrf;
          linkTotTrf.Origin = siteOffset;
 
          IFCAnyHandle relativePlacement = ExporterUtil.CreateAxis2Placement3D(file, 
@@ -2396,8 +2420,8 @@ namespace Revit.IFC.Export.Exporter
 
             }
 
-            string versionLine = string.Format("RevitIdentifiers [VersionGUID: {0}, NumberOfSaves: {1}]",
-               ifcFileDocumentInfo.VersionGUIDString, ifcFileDocumentInfo.NumberOfSaves);
+            string versionLine = string.Format("RevitIdentifiers [ContentGUID: {0}, VersionGUID: {1}, NumberOfSaves: {2}]",
+               ifcFileDocumentInfo.ContentGUIDString, ifcFileDocumentInfo.VersionGUIDString, ifcFileDocumentInfo.NumberOfSaves);
 
             descriptions.Add(versionLine);
            
@@ -2449,14 +2473,14 @@ namespace Revit.IFC.Export.Exporter
             if (fHItem.Authorization == null)
                fHItem.Authorization = string.Empty;
 
-            IFCInstanceExporter.CreateFileName(file, projectNumber, author, organization,
+            IFCInstanceExporter.CreateFileName(file, exportOptionsCache.FileNameOnly, author, organization,
                ifcFileDocumentInfo.VersionName, versionInfos, fHItem.Authorization);
 
             transaction.Commit();
 
             IFCFileWriteOptions writeOptions = new IFCFileWriteOptions()
             {
-               FileName = exportOptionsCache.FileName,
+               FileName = exportOptionsCache.FullFileName,
                FileFormat = exportOptionsCache.IFCFileFormat
             };
 
@@ -2846,13 +2870,16 @@ namespace Revit.IFC.Export.Exporter
          List<string> prefixTitles;
          List<string> suffixTitles;
 
-         string author = String.Empty;
+         string author = string.Empty;
+         bool hasPotentialLastUser = false;
+
          ProjectInfo projectInfo = doc.ProjectInformation;
          if (projectInfo != null)
          {
             try
             {
                author = projectInfo.Author;
+               hasPotentialLastUser = !string.IsNullOrWhiteSpace(author);
             }
             catch (Autodesk.Revit.Exceptions.InvalidOperationException)
             {
@@ -2888,12 +2915,11 @@ namespace Revit.IFC.Export.Exporter
          }
          else
          {
-            IFCAnyHandle telecomAddress = GetTelecomAddressFromExtStorage(file);
             IList<IFCAnyHandle> telecomAddresses = null;
+            IFCAnyHandle telecomAddress = GetTelecomAddressFromExtStorage(file);
             if (telecomAddress != null)
             {
-               telecomAddresses = new List<IFCAnyHandle>();
-               telecomAddresses.Add(telecomAddress);
+               telecomAddresses = new List<IFCAnyHandle>() { telecomAddress };
             }
 
             person = IFCInstanceExporter.CreatePerson(file, null, familyName, givenName, middleNames,
@@ -2917,8 +2943,11 @@ namespace Revit.IFC.Export.Exporter
          }
 
          IFCAnyHandle owningUser = IFCInstanceExporter.CreatePersonAndOrganization(file, person, organization, null);
+         IFCAnyHandle lastModifyingUser = hasPotentialLastUser && ExporterCacheManager.ExportOptionsCache.OwnerHistoryLastModified
+            ? owningUser : null;
+
          ownerHistory = IFCInstanceExporter.CreateOwnerHistory(file, owningUser, application, null,
-            Toolkit.IFCChangeAction.NoChange, null, null, null, creationDate);
+            IFCChangeAction.NoChange, null, lastModifyingUser, null, creationDate);
 
          exporterIFC.SetOwnerHistoryHandle(ownerHistory);    // For use by native code only.
          ExporterCacheManager.OwnerHistoryHandle = ownerHistory;
@@ -2926,7 +2955,8 @@ namespace Revit.IFC.Export.Exporter
          // Getting contact information from Revit extensible storage that COBie extension tool creates
          GetCOBieContactInfo(file, doc);
 
-         IFCAnyHandle units = CreateDefaultUnits(exporterIFC, doc);
+         UnitMappingUtil.CreateCobieUnits();
+
          IList<double> directionRatios = null;
          HashSet<IFCAnyHandle> repContexts = CreateContextInformation(exporterIFC, doc, out directionRatios);
 
@@ -2958,7 +2988,7 @@ namespace Revit.IFC.Export.Exporter
 
          string projectGUID = GUIDUtil.CreateProjectLevelGUID(doc, GUIDUtil.ProjectLevelGUIDType.Project);
          IFCAnyHandle projectHandle = IFCInstanceExporter.CreateProject(exporterIFC, projectInfo, projectGUID, ownerHistory,
-            projectName, projectDescription, projectLongName, projectPhase, repContexts, units);
+            projectName, projectDescription, projectLongName, projectPhase, repContexts, null);
          ExporterCacheManager.ProjectHandle = projectHandle;
 
 
@@ -3191,1140 +3221,7 @@ namespace Revit.IFC.Export.Exporter
 
          return postalAddress;
       }
-
-      private IFCAnyHandle CreateSIUnit(IFCFile file, ForgeTypeId specTypeId, IFCUnit ifcUnitType, IFCSIUnitName unitName, IFCSIPrefix? prefix, ForgeTypeId unitTypeId)
-      {
-         IFCAnyHandle siUnit = IFCInstanceExporter.CreateSIUnit(file, ifcUnitType, prefix, unitName);
-         if (specTypeId != null && unitTypeId != null)
-         {
-            double scaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, unitTypeId);
-            ExporterCacheManager.UnitsCache.AddUnit(specTypeId, siUnit, scaleFactor, 0.0);
-         }
-
-         return siUnit;
-      }
-
-      /// <summary>
-      /// Creates the IfcUnitAssignment.  This is a long list of units that we correctly translate from our internal units to known units.
-      /// </summary>
-      /// <param name="exporterIFC">The IFC exporter object.</param>
-      /// <param name="doc">The document provides ProjectUnit and DisplayUnitSystem.</param>
-      /// <returns>The IFC handle.</returns>
-      private IFCAnyHandle CreateDefaultUnits(ExporterIFC exporterIFC, Document doc)
-      {
-         HashSet<IFCAnyHandle> unitSet = new HashSet<IFCAnyHandle>();
-         IFCFile file = exporterIFC.GetFile();
-         bool exportToCOBIE = ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE;
-
-         Dictionary<Tuple<IFCAnyHandle, int>, IFCAnyHandle> addedDerivedUnitElements = new Dictionary<Tuple<IFCAnyHandle, int>, IFCAnyHandle>();
-         Action<ISet<IFCAnyHandle>, IFCAnyHandle, int> createDerivedUnitElement = (elements, unit, exponent) =>
-         {
-            var pair = new Tuple<IFCAnyHandle, int>(unit, exponent);
-            if (!addedDerivedUnitElements.ContainsKey(pair))
-            {
-               var element = IFCInstanceExporter.CreateDerivedUnitElement(file, unit, exponent);
-               elements.Add(addedDerivedUnitElements[pair] = element);
-            }
-
-            elements.Add(addedDerivedUnitElements[pair]);
-         };
-
-         IFCAnyHandle lenSIBaseUnit = null;
-         {
-            bool lenConversionBased = false;
-            bool lenUseDefault = false;
-
-            IFCUnit lenUnitType = IFCUnit.LengthUnit;
-            IFCSIPrefix? lenPrefix = null;
-            IFCSIUnitName lenUnitName = IFCSIUnitName.Metre;
-            string lenConvName = null;
-
-            FormatOptions lenFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Length);
-            ForgeTypeId lengthUnit = lenFormatOptions.GetUnitTypeId();
-            if (lengthUnit.Equals(UnitTypeId.Meters) ||
-               lengthUnit.Equals(UnitTypeId.MetersCentimeters))
-            {
-               // This space intentionally left blank
-            }
-            else if (lengthUnit.Equals(UnitTypeId.Centimeters))
-            {
-               lenPrefix = IFCSIPrefix.Centi;
-            }
-            else if (lengthUnit.Equals(UnitTypeId.Millimeters))
-            {
-               lenPrefix = IFCSIPrefix.Milli;
-            }
-            else if (lengthUnit.Equals(UnitTypeId.Feet) ||
-               lengthUnit.Equals(UnitTypeId.FeetFractionalInches))
-            {
-               if (exportToCOBIE)
-                  lenConvName = "foot";
-               else
-                  lenConvName = "FOOT";
-               lenConversionBased = true;
-            }
-            else if (lengthUnit.Equals(UnitTypeId.FractionalInches) ||
-               lengthUnit.Equals(UnitTypeId.Inches))
-            {
-               if (exportToCOBIE)
-                  lenConvName = "inch";
-               else
-                  lenConvName = "INCH";
-               lenConversionBased = true;
-            }
-            else
-            {
-               //Couldn't find display unit type conversion -- assuming foot
-               if (exportToCOBIE)
-                  lenConvName = "foot";
-               else
-                  lenConvName = "FOOT";
-               lenConversionBased = true;
-               lenUseDefault = true;
-            }
-
-            double lengthScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, lenUseDefault ? UnitTypeId.Feet : lenFormatOptions.GetUnitTypeId());
-            IFCAnyHandle lenSIUnit = IFCInstanceExporter.CreateSIUnit(file, lenUnitType, lenPrefix, lenUnitName);
-            if (lenPrefix == null)
-               lenSIBaseUnit = lenSIUnit;
-            else
-               lenSIBaseUnit = IFCInstanceExporter.CreateSIUnit(file, lenUnitType, null, lenUnitName);
-
-            if (lenConversionBased)
-            {
-               double lengthSIScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Meters) / lengthScaleFactor;
-               IFCAnyHandle lenDims = IFCInstanceExporter.CreateDimensionalExponents(file, 1, 0, 0, 0, 0, 0, 0); // length
-               IFCAnyHandle lenConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsLengthMeasure(lengthSIScaleFactor),
-                   lenSIUnit);
-               lenSIUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, lenDims, lenUnitType, lenConvName, lenConvFactor);
-            }
-
-            unitSet.Add(lenSIUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Length, lenSIUnit, lengthScaleFactor, 0.0);
-         }
-
-         {
-            bool areaConversionBased = false;
-            bool areaUseDefault = false;
-
-            IFCUnit areaUnitType = IFCUnit.AreaUnit;
-            IFCSIPrefix? areaPrefix = null;
-            IFCSIUnitName areaUnitName = IFCSIUnitName.Square_Metre;
-            string areaConvName = null;
-
-            FormatOptions areaFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Area);
-            ForgeTypeId areaUnit = areaFormatOptions.GetUnitTypeId();
-            if (areaUnit.Equals(UnitTypeId.SquareMeters))
-            {
-               // This space intentionally left blank.
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareCentimeters))
-            {
-               areaPrefix = IFCSIPrefix.Centi;
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareMillimeters))
-            {
-               areaPrefix = IFCSIPrefix.Milli;
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareFeet))
-            {
-               if (exportToCOBIE)
-                  areaConvName = "foot";
-               else
-                  areaConvName = "SQUARE FOOT";
-               areaConversionBased = true;
-            }
-            else if (areaUnit.Equals(UnitTypeId.SquareInches))
-            {
-               if (exportToCOBIE)
-                  areaConvName = "inch";
-               else
-                  areaConvName = "SQUARE INCH";
-               areaConversionBased = true;
-            }
-            else
-            {
-               //Couldn't find display unit type conversion -- assuming foot
-               if (exportToCOBIE)
-                  areaConvName = "foot";
-               else
-                  areaConvName = "SQUARE FOOT";
-               areaConversionBased = true;
-               areaUseDefault = true;
-            }
-
-            double areaScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, areaUseDefault ? UnitTypeId.SquareFeet : areaFormatOptions.GetUnitTypeId());
-            IFCAnyHandle areaSiUnit = IFCInstanceExporter.CreateSIUnit(file, areaUnitType, areaPrefix, areaUnitName);
-            if (areaConversionBased)
-            {
-               double areaSIScaleFactor = areaScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.SquareMeters);
-               IFCAnyHandle areaDims = IFCInstanceExporter.CreateDimensionalExponents(file, 2, 0, 0, 0, 0, 0, 0); // area
-               IFCAnyHandle areaConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsAreaMeasure(areaSIScaleFactor), areaSiUnit);
-               areaSiUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, areaDims, areaUnitType, areaConvName, areaConvFactor);
-            }
-
-            unitSet.Add(areaSiUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Area, areaSiUnit, areaScaleFactor, 0.0);
-         }
-
-         {
-            bool volumeConversionBased = false;
-            bool volumeUseDefault = false;
-
-            IFCUnit volumeUnitType = IFCUnit.VolumeUnit;
-            IFCSIPrefix? volumePrefix = null;
-            IFCSIUnitName volumeUnitName = IFCSIUnitName.Cubic_Metre;
-            string volumeConvName = null;
-
-            FormatOptions volumeFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Volume);
-            ForgeTypeId volumeUnit = volumeFormatOptions.GetUnitTypeId();
-            if (volumeUnit.Equals(UnitTypeId.CubicMeters))
-            {
-               // This space intentionally left blank.
-            }
-            else if (volumeUnit.Equals(UnitTypeId.Liters))
-            {
-               volumePrefix = IFCSIPrefix.Deci;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicCentimeters))
-            {
-               volumePrefix = IFCSIPrefix.Centi;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicMillimeters))
-            {
-               volumePrefix = IFCSIPrefix.Milli;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicFeet))
-            {
-               if (exportToCOBIE)
-                  volumeConvName = "foot";
-               else
-                  volumeConvName = "CUBIC FOOT";
-               volumeConversionBased = true;
-            }
-            else if (volumeUnit.Equals(UnitTypeId.CubicInches))
-            {
-               if (exportToCOBIE)
-                  volumeConvName = "inch";
-               else
-                  volumeConvName = "CUBIC INCH";
-               volumeConversionBased = true;
-            }
-            else
-            {
-               //Couldn't find display unit type conversion -- assuming foot
-               if (exportToCOBIE)
-                  volumeConvName = "foot";
-               else
-                  volumeConvName = "CUBIC FOOT";
-               volumeConversionBased = true;
-               volumeUseDefault = true;
-            }
-
-            double volumeScaleFactor =
-                UnitUtils.ConvertFromInternalUnits(1.0, volumeUseDefault ? UnitTypeId.CubicFeet : volumeFormatOptions.GetUnitTypeId());
-            IFCAnyHandle volumeSiUnit = IFCInstanceExporter.CreateSIUnit(file, volumeUnitType, volumePrefix, volumeUnitName);
-            if (volumeConversionBased)
-            {
-               double volumeSIScaleFactor = volumeScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.CubicMeters);
-               IFCAnyHandle volumeDims = IFCInstanceExporter.CreateDimensionalExponents(file, 3, 0, 0, 0, 0, 0, 0); // volume
-               IFCAnyHandle volumeConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsVolumeMeasure(volumeSIScaleFactor), volumeSiUnit);
-               volumeSiUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, volumeDims, volumeUnitType, volumeConvName, volumeConvFactor);
-            }
-
-            unitSet.Add(volumeSiUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Volume, volumeSiUnit, volumeScaleFactor, 0.0);
-         }
-
-         IFCAnyHandle angleSIUnit = null;
-         {
-            IFCUnit unitType = IFCUnit.PlaneAngleUnit;
-            IFCSIUnitName unitName = IFCSIUnitName.Radian;
-
-            angleSIUnit = IFCInstanceExporter.CreateSIUnit(file, unitType, null, unitName);
-
-            string convName = null;
-
-            FormatOptions angleFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Angle);
-            bool angleUseDefault = false;
-            ForgeTypeId angleUnit = angleFormatOptions.GetUnitTypeId();
-            if (angleUnit.Equals(UnitTypeId.Degrees) ||
-               angleUnit.Equals(UnitTypeId.DegreesMinutes))
-            {
-               convName = "DEGREE";
-            }
-            else if (angleUnit.Equals(UnitTypeId.Gradians))
-            {
-               convName = "GRAD";
-            }
-            else if (angleUnit.Equals(UnitTypeId.Radians))
-            {
-               // This space intentionally left blank.
-            }
-            else
-            {
-               angleUseDefault = true;
-               convName = "DEGREE";
-            }
-
-            IFCAnyHandle dims = IFCInstanceExporter.CreateDimensionalExponents(file, 0, 0, 0, 0, 0, 0, 0);
-
-            IFCAnyHandle planeAngleUnit = angleSIUnit;
-            double angleScaleFactor = UnitUtils.Convert(1.0, angleUseDefault ? UnitTypeId.Degrees : angleFormatOptions.GetUnitTypeId(), UnitTypeId.Radians);
-            if (convName != null)
-            {
-               IFCAnyHandle convFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsPlaneAngleMeasure(angleScaleFactor), planeAngleUnit);
-               planeAngleUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, dims, unitType, convName, convFactor);
-            }
-            unitSet.Add(planeAngleUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Angle, planeAngleUnit, 1.0 / angleScaleFactor, 0.0);
-         }
-
-         // Mass
-         IFCAnyHandle massSIUnit = null;
-         {
-            massSIUnit = CreateSIUnit(file, SpecTypeId.Mass, IFCUnit.MassUnit, IFCSIUnitName.Gram, IFCSIPrefix.Kilo, null);
-            // If we are exporting to GSA standard, we will override kg with pound below.
-            if (!exportToCOBIE)
-               unitSet.Add(massSIUnit);      // created above, so unique.
-         }
-
-         // Mass density - support metric kg/(m^3) only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, -3);
-
-            IFCAnyHandle massDensityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.MassDensityUnit, null);
-            unitSet.Add(massDensityUnit);
-
-            double massDensityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.KilogramsPerCubicMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.MassDensity, massDensityUnit, massDensityFactor, 0.0);
-         }
-
-         // Ion concentration - support metric kg/(m^3) only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, -3);
-
-            IFCAnyHandle massDensityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.IonConcentrationUnit, null);
-            unitSet.Add(massDensityUnit);
-
-            double massDensityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.KilogramsPerCubicMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.PipingDensity, massDensityUnit, massDensityFactor, 0.0);
-         }
-
-         // Moment of inertia - support metric m^4.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, lenSIBaseUnit, 4);
-
-            IFCAnyHandle momentOfInertiaUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.MomentOfInertiaUnit, null);
-            unitSet.Add(momentOfInertiaUnit);
-
-            double momentOfInertiaFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.MetersToTheFourthPower);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.MomentOfInertia, momentOfInertiaUnit, momentOfInertiaFactor, 0.0);
-         }
-
-         // Time -- support seconds only.
-         IFCAnyHandle timeSIUnit = null;
-         {
-            timeSIUnit = CreateSIUnit(file, null, IFCUnit.TimeUnit, IFCSIUnitName.Second, null, null);
-            unitSet.Add(timeSIUnit);      // created above, so unique.
-         }
-
-         // Frequency = support Hertz only.
-         {
-            IFCAnyHandle frequencySIUnit = CreateSIUnit(file, null, IFCUnit.FrequencyUnit, IFCSIUnitName.Hertz, null, null);
-            unitSet.Add(frequencySIUnit);      // created above, so unique.
-         }
-
-         // Temperature
-         IFCAnyHandle tempBaseSIUnit = null;
-         {
-            // Base SI unit for temperature.
-            tempBaseSIUnit = CreateSIUnit(file, null, IFCUnit.ThermoDynamicTemperatureUnit, IFCSIUnitName.Kelvin, null, null);
-
-            // We are going to have two entries: one for thermodynamic temperature (default), and one for color temperature.
-            FormatOptions tempFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.HvacTemperature);
-            IFCSIUnitName thermalTempUnit;
-            double offset = 0.0;
-            ForgeTypeId tempUnit = tempFormatOptions.GetUnitTypeId();
-            if (tempUnit.Equals(UnitTypeId.Celsius) ||
-               tempUnit.Equals(UnitTypeId.Fahrenheit))
-            {
-               thermalTempUnit = IFCSIUnitName.Degree_Celsius;
-               offset = -273.15;
-            }
-            else
-            {
-               thermalTempUnit = IFCSIUnitName.Kelvin;
-            }
-
-            IFCAnyHandle temperatureSIUnit = null;
-            if (thermalTempUnit != IFCSIUnitName.Kelvin)
-               temperatureSIUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.ThermoDynamicTemperatureUnit, null, thermalTempUnit);
-            else
-               temperatureSIUnit = tempBaseSIUnit;
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacTemperature, temperatureSIUnit, 1.0, offset);
-
-            unitSet.Add(temperatureSIUnit);      // created above, so unique.
-
-            // Color temperature.
-            // We don't add the color temperature to the unit set; it will be explicitly used.
-            IFCAnyHandle colorTempSIUnit = tempBaseSIUnit;
-            ExporterCacheManager.UnitsCache["COLORTEMPERATURE"] = colorTempSIUnit;
-         }
-
-         // Thermal transmittance - support metric W/(m^2 * K) = kg/(K * s^3) only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, tempBaseSIUnit, -1);
-            createDerivedUnitElement(elements, timeSIUnit, -3);
-
-            IFCAnyHandle thermalTransmittanceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.ThermalTransmittanceUnit, null);
-            unitSet.Add(thermalTransmittanceUnit);
-
-            double thermalTransmittanceFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.WattsPerSquareMeterKelvin);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HeatTransferCoefficient, thermalTransmittanceUnit, thermalTransmittanceFactor, 0.0);
-         }
-
-         // Thermal conductivity - support metric W/(m * K) = (kg * m)/(K * s^3) only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, 1);
-            createDerivedUnitElement(elements, tempBaseSIUnit, -1);
-            createDerivedUnitElement(elements, timeSIUnit, -3);
-
-            IFCAnyHandle thermaConductivityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.ThermalConductanceUnit, null);
-            unitSet.Add(thermaConductivityUnit);
-
-            double thermalConductivityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.WattsPerMeterKelvin);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.ThermalConductivity, thermaConductivityUnit, thermalConductivityFactor, 0.0);
-         }
-
-         // Volumetric Flow Rate - support metric L/s or m^3/s only.
-         {
-            IFCAnyHandle volumetricFlowRateLenUnit = null;
-
-            FormatOptions flowFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.AirFlow);
-            ForgeTypeId forgeTypeId = flowFormatOptions.GetUnitTypeId();
-            if (forgeTypeId.Equals(UnitTypeId.LitersPerSecond))
-            {
-               volumetricFlowRateLenUnit = IFCInstanceExporter.CreateSIUnit(file, IFCUnit.LengthUnit, IFCSIPrefix.Deci, IFCSIUnitName.Metre);
-            }
-            else
-            {
-               volumetricFlowRateLenUnit = lenSIBaseUnit;   // use m^3/s by default.
-               forgeTypeId = UnitTypeId.CubicMetersPerSecond;
-            }
-            double volumetricFlowRateFactor = UnitUtils.ConvertFromInternalUnits(1.0, forgeTypeId);
-
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, volumetricFlowRateLenUnit, 3);
-            createDerivedUnitElement(elements, timeSIUnit, -1);
-
-            IFCAnyHandle volumetricFlowRateUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.VolumetricFlowRateUnit, null);
-            unitSet.Add(volumetricFlowRateUnit);
-
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.AirFlow, volumetricFlowRateUnit, volumetricFlowRateFactor, 0.0);
-         }
-
-         // Mass flow rate - support kg/s only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, timeSIUnit, -1);
-
-            IFCAnyHandle massFlowRateUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.MassFlowRateUnit, null);
-            unitSet.Add(massFlowRateUnit);
-
-            double massFlowRateFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.KilogramsPerSecond);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.PipingMassPerTime, massFlowRateUnit, massFlowRateFactor, 0.0);
-         }
-
-         // Rotational frequency - support cycles/s only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, timeSIUnit, -1);
-
-            IFCAnyHandle rotationalFrequencyUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.RotationalFrequencyUnit, null);
-            unitSet.Add(rotationalFrequencyUnit);
-
-            double rotationalFrequencyFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.RevolutionsPerSecond);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.AngularSpeed, rotationalFrequencyUnit, rotationalFrequencyFactor, 0.0);
-         }
-
-         // Electrical current - support metric ampere only.
-         IFCAnyHandle currentSIUnit = null;
-         {
-            currentSIUnit = CreateSIUnit(file, SpecTypeId.Current, IFCUnit.ElectricCurrentUnit, IFCSIUnitName.Ampere,
-                null, UnitTypeId.Amperes);
-            unitSet.Add(currentSIUnit);      // created above, so unique.
-         }
-
-         // Electrical voltage - support metric volt only.
-         {
-            IFCAnyHandle voltageSIUnit = CreateSIUnit(file, SpecTypeId.ElectricalPotential, IFCUnit.ElectricVoltageUnit, IFCSIUnitName.Volt,
-                null, UnitTypeId.Volts);
-            unitSet.Add(voltageSIUnit);      // created above, so unique.
-         }
-
-         // Power - support metric watt only.
-         IFCAnyHandle powerSIUnit = null;
-         {
-            powerSIUnit = CreateSIUnit(file, SpecTypeId.HvacPower, IFCUnit.PowerUnit, IFCSIUnitName.Watt,
-                null, UnitTypeId.Watts);
-            unitSet.Add(powerSIUnit);      // created above, so unique.
-         }
-
-         // Force - support newtons (N), metric weight-force, us-weight-force and kips.
-         {
-            bool forceConversionBased = false;
-            bool forceUseDefault = false;
-
-            IFCUnit forceUnitType = IFCUnit.ForceUnit;
-            IFCSIPrefix? forcePrefix = null;
-            IFCSIUnitName forceUnitName = IFCSIUnitName.Newton;
-            string forceConvName = null;
-
-            FormatOptions forceFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Force);
-            ForgeTypeId forceUnit = forceFormatOptions.GetUnitTypeId();
-            if (forceUnit.Equals(UnitTypeId.Newtons))
-            {
-               // This space intentionally left blank.
-            }
-            else if (forceUnit.Equals(UnitTypeId.Dekanewtons))
-            {
-               forcePrefix = IFCSIPrefix.Deca;
-            }
-            else if (forceUnit.Equals(UnitTypeId.Kilonewtons))
-            {
-               forcePrefix = IFCSIPrefix.Kilo;
-            }
-            else if (forceUnit.Equals(UnitTypeId.Meganewtons))
-            {
-               forcePrefix = IFCSIPrefix.Mega;
-            }
-            else if (forceUnit.Equals(UnitTypeId.KilogramsForce))
-            {
-               forceConvName = "KILOGRAM-FORCE";
-            }
-            else if (forceUnit.Equals(UnitTypeId.TonnesForce))
-            {
-               forceConvName = "TONN-FORCE";
-            }
-            else if (forceUnit.Equals(UnitTypeId.UsTonnesForce))
-            {
-               forceConvName = "USTONN-FORCE";
-               forceConversionBased = true;
-            }
-            else if (forceUnit.Equals(UnitTypeId.PoundsForce))
-            {
-               forceConvName = "POUND-FORCE";
-               forceConversionBased = true;
-            }
-            else if (forceUnit.Equals(UnitTypeId.Kips))
-            {
-               forceConvName = "KIP";
-               forceConversionBased = true;
-            }
-            else
-            {
-               //Couldn't find display unit type conversion -- assuming newton
-               forceUnit = UnitTypeId.Newtons;
-               forceUseDefault = true;
-            }
-
-            if (exportToCOBIE && forceConvName != null)
-               forceConvName = forceConvName.ToLower();
-
-            double forceScaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, forceUseDefault ? UnitTypeId.Newtons : forceFormatOptions.GetUnitTypeId());
-            IFCAnyHandle forceSiUnit = IFCInstanceExporter.CreateSIUnit(file, forceUnitType, forcePrefix, forceUnitName);
-            if (forceConversionBased)
-            {
-               double forceSIScaleFactor = forceScaleFactor * UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Newtons);
-               IFCAnyHandle forceDims = IFCInstanceExporter.CreateDimensionalExponents(file, 1, 1, -2, 0, 0, 0, 0); // force
-               IFCAnyHandle forceConvFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsForceMeasure(forceSIScaleFactor), forceSiUnit);
-               forceSiUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, forceDims, forceUnitType, forceConvName, forceConvFactor);
-            }
-
-            unitSet.Add(forceSiUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Force, forceSiUnit, forceScaleFactor, 0.0);
-         }
-
-         // Illuminance
-         {
-            IFCSIPrefix? prefix = null;
-            IFCAnyHandle luxSIUnit = CreateSIUnit(file, SpecTypeId.Illuminance, IFCUnit.IlluminanceUnit, IFCSIUnitName.Lux,
-                prefix, UnitTypeId.Lux);
-            unitSet.Add(luxSIUnit);      // created above, so unique.
-            ExporterCacheManager.UnitsCache["LUX"] = luxSIUnit;
-         }
-
-         // Luminous Flux
-         IFCAnyHandle lumenSIUnit = null;
-         {
-            IFCSIPrefix? prefix = null;
-            lumenSIUnit = CreateSIUnit(file, SpecTypeId.LuminousFlux, IFCUnit.LuminousFluxUnit, IFCSIUnitName.Lumen,
-                prefix, UnitTypeId.Lumens);
-            unitSet.Add(lumenSIUnit);      // created above, so unique.
-         }
-
-         // Luminous Intensity
-         {
-            IFCSIPrefix? prefix = null;
-            IFCAnyHandle candelaSIUnit = CreateSIUnit(file, SpecTypeId.LuminousIntensity, IFCUnit.LuminousIntensityUnit, IFCSIUnitName.Candela,
-                prefix, UnitTypeId.Candelas);
-            unitSet.Add(candelaSIUnit);      // created above, so unique.
-         }
-
-         // Energy
-         {
-            IFCSIPrefix? prefix = null;
-            IFCAnyHandle jouleSIUnit = CreateSIUnit(file, SpecTypeId.Energy, IFCUnit.EnergyUnit, IFCSIUnitName.Joule,
-                prefix, UnitTypeId.Joules);
-            unitSet.Add(jouleSIUnit);      // created above, so unique.
-         }
-
-         // Luminous Efficacy - support lm/W only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, -1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, -2);
-            createDerivedUnitElement(elements, timeSIUnit, 3);
-            createDerivedUnitElement(elements, lumenSIUnit, 1);
-
-            IFCAnyHandle luminousEfficacyUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.UserDefined, "Luminous Efficacy");
-
-            double electricalEfficacyFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.LumensPerWatt);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Efficacy, luminousEfficacyUnit, electricalEfficacyFactor, 0.0);
-            ExporterCacheManager.UnitsCache["LUMINOUSEFFICACY"] = luminousEfficacyUnit;
-
-            unitSet.Add(luminousEfficacyUnit);
-         }
-
-         // Electrical Resistivity - support Ohm * M = (kg * m^3)/(s^3 * A^2) only
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, 3);
-            createDerivedUnitElement(elements, timeSIUnit, -3);
-            createDerivedUnitElement(elements, currentSIUnit, -2);
-
-            IFCAnyHandle electricalResistivityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.UserDefined, "Electrical Resistivity");
-
-            double electricalResistivityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.OhmMeters);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.ElectricalResistivity, electricalResistivityUnit, electricalResistivityFactor, 0.0);
-            ExporterCacheManager.UnitsCache["ELECTRICALRESISTIVITY"] = electricalResistivityUnit;
-
-            unitSet.Add(electricalResistivityUnit);
-         }
-         // Sound Power - support watt only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, 2);
-            createDerivedUnitElement(elements, timeSIUnit, -3);
-
-            IFCAnyHandle soundPowerUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.SoundPowerUnit, null);
-            unitSet.Add(soundPowerUnit);
-
-            double soundPowerFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Watts);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Wattage, soundPowerUnit, soundPowerFactor, 0.0);
-         }
-
-         // Sound Pressure - support Pascal only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, -1);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle soundPressureUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.SoundPressureUnit, null);
-            unitSet.Add(soundPressureUnit);
-
-            double soundPressureFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Pascals);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacPressure, soundPressureUnit, soundPressureFactor, 0.0);
-         }
-
-         // Linear Velocity - support m/s only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, lenSIBaseUnit, 1);
-            createDerivedUnitElement(elements, timeSIUnit, -1);
-
-            IFCAnyHandle linearVelocityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.LinearVelocityUnit, null);
-
-            double linearVelocityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.MetersPerSecond);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacVelocity, linearVelocityUnit, linearVelocityFactor, 0.0);
-
-            unitSet.Add(linearVelocityUnit);
-         }
-
-         // Currency - disallowed for IC2x3 Coordination View 2.0.  If we find a currency, export it as a real.
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAs2x3CoordinationView2)
-         {
-            FormatOptions currencyFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.Currency);
-            ForgeTypeId currencySymbol = currencyFormatOptions.GetSymbolTypeId();
-
-            IFCAnyHandle currencyUnit = null;
-
-            // Some of these are guesses for IFC2x3, since multiple currencies may use the same symbol, 
-            // but no detail is given on which currency is being used.  For IFC4, we just use the label.
-            if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-            {
-               string currencyLabel = null;
-               try
-               {
-                  currencyLabel = LabelUtils.GetLabelForSymbol(currencySymbol);
-                  currencyUnit = IFCInstanceExporter.CreateMonetaryUnit4(file, currencyLabel);
-               }
-               catch
-               {
-                  currencyUnit = null;
-               }
-            }
-            else
-            {
-               IFCCurrencyType? currencyType = null;
-
-               if (currencySymbol.Equals(SymbolTypeId.UsDollar))
-               {
-                  currencyType = IFCCurrencyType.USD;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.EuroPrefix) ||
-                  currencySymbol.Equals(SymbolTypeId.EuroSuffix))
-               {
-                  currencyType = IFCCurrencyType.EUR;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.UkPound))
-               {
-                  currencyType = IFCCurrencyType.GBP;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.ChineseHongKongDollar))
-               {
-                  currencyType = IFCCurrencyType.HKD;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Krone))
-               {
-                  currencyType = IFCCurrencyType.NOK;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Shekel))
-               {
-                  currencyType = IFCCurrencyType.ILS;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Yen))
-               {
-                  currencyType = IFCCurrencyType.JPY;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Won))
-               {
-                  currencyType = IFCCurrencyType.KRW;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Baht))
-               {
-                  currencyType = IFCCurrencyType.THB;
-               }
-               else if (currencySymbol.Equals(SymbolTypeId.Dong))
-               {
-                  currencyType = IFCCurrencyType.VND;
-               }
-
-               if (currencyType.HasValue)
-                  currencyUnit = IFCInstanceExporter.CreateMonetaryUnit2x3(file, currencyType.Value);
-            }
-
-            if (currencyUnit != null)
-            {
-               unitSet.Add(currencyUnit);      // created above, so unique.
-               // We will cache the currency, if we create it.  If we don't, we'll export currencies as numbers.
-               ExporterCacheManager.UnitsCache["CURRENCY"] = currencyUnit;
-            }
-         }
-
-         // Pressure - support Pascal, kPa and MPa.
-         {
-            IFCSIPrefix? prefix = null;
-            FormatOptions pressureFormatOptions = doc.GetUnits().GetFormatOptions(SpecTypeId.HvacPressure);
-            ForgeTypeId pressureUnit = pressureFormatOptions.GetUnitTypeId();
-            if (pressureUnit.Equals(UnitTypeId.Pascals))
-            {
-               // This space intentionally left blank.
-            }
-            else if (pressureUnit.Equals(UnitTypeId.Kilopascals))
-            {
-               prefix = IFCSIPrefix.Kilo;
-            }
-            else if (pressureUnit.Equals(UnitTypeId.Megapascals))
-            {
-               prefix = IFCSIPrefix.Mega;
-            }
-            else
-            {
-               pressureUnit = UnitTypeId.Pascals;
-            }
-
-            IFCAnyHandle pressureSIUnit = CreateSIUnit(file, SpecTypeId.HvacPressure, IFCUnit.PressureUnit, IFCSIUnitName.Pascal,
-                prefix, pressureUnit);
-            unitSet.Add(pressureSIUnit);      // created above, so unique.
-         }
-
-         // Friction loss - support Pa/m only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, lenSIBaseUnit, -2);
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle frictionLossUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.UserDefined, "Friction Loss");
-
-            double frictionLossFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.PascalsPerMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacFriction, frictionLossUnit, frictionLossFactor, 0.0);
-            ExporterCacheManager.UnitsCache["FRICTIONLOSS"] = frictionLossUnit;
-
-            unitSet.Add(frictionLossUnit);
-         }
-
-         // Area/Planar Force - support N/m2 only, and Linear Force - support N/m only
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle linearForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.LinearForceUnit, null);
-
-            double linearForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NewtonsPerMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.LinearForce, linearForceUnit, linearForceFactor, 0.0);
-            unitSet.Add(linearForceUnit);
-
-            elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, -1);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle planarForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.PlanarForceUnit, null);
-
-            double planarForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NewtonsPerSquareMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.AreaForce, planarForceUnit, planarForceFactor, 0.0);
-            unitSet.Add(planarForceUnit);
-         }
-
-         // Specific heat - support metric J/(kg * K) = m^2/(s^2 * K) only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, lenSIBaseUnit, 2);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-            createDerivedUnitElement(elements, tempBaseSIUnit, -1);
-
-            IFCAnyHandle specificHeatUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.SpecificHeatCapacityUnit, null);
-            unitSet.Add(specificHeatUnit);
-
-            double specificHeatFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.JoulesPerKilogramDegreeCelsius);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.SpecificHeat, specificHeatUnit, specificHeatFactor, 0.0);
-         }
-
-         // Heat flux density - support metric W/m^2 = kg/s^3 only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, timeSIUnit, -3);
-
-            IFCAnyHandle heatFluxDensityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.HeatFluxDensityUnit, null);
-            unitSet.Add(heatFluxDensityUnit);
-
-            double heatFluxDensityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.WattsPerSquareMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacPowerDensity, heatFluxDensityUnit, heatFluxDensityFactor, 0.0);
-         }
-
-         // Heating value - support metric J/kg = m^2/s^2 only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, lenSIBaseUnit, 2);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle heatingValueUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.HeatingValueUnit, null);
-            unitSet.Add(heatingValueUnit);
-
-            double heatingValueFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.JoulesPerGram);
-            heatingValueFactor *= 1.0e+3; // --> gram to kilogram
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.SpecificHeatOfVaporization, heatingValueUnit, heatingValueFactor, 0.0);
-         }
-
-         // Permeability (Permeance) - support metric kg/(Pa * s * m^2) = s/m only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, timeSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, -1);
-
-            IFCAnyHandle permeabilityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.VaporPermeabilityUnit, null);
-            unitSet.Add(permeabilityUnit);
-
-            double permeabilityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NanogramsPerPascalSecondSquareMeter);
-            permeabilityFactor *= 1.0e-12; // --> Nanogram to kilogram
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Permeability, permeabilityUnit, permeabilityFactor, 0.0);
-         }
-
-         // Dynamic viscosity - support metric Pa * s = kg/(m * s) only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, -1);
-            createDerivedUnitElement(elements, timeSIUnit, -1);
-
-            IFCAnyHandle viscosityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.DynamicViscosityUnit, null);
-            unitSet.Add(viscosityUnit);
-
-            double viscosityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.KilogramsPerMeterSecond);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.HvacViscosity, viscosityUnit, viscosityFactor, 0.0);
-         }
-
-         // Thermal expansion coefficient - support metric 1/K only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, tempBaseSIUnit, -1);
-
-            IFCAnyHandle thermalExpansionCoefficientUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.ThermalExpansionCoefficientUnit, null);
-            unitSet.Add(thermalExpansionCoefficientUnit);
-
-            double thermalExpansionCoefficientFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.InverseDegreesCelsius);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.ThermalExpansionCoefficient, thermalExpansionCoefficientUnit, thermalExpansionCoefficientFactor, 0.0);
-         }
-
-         // Modulus of elasticity - support Pascal only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, -1);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle modulusOfElasticityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.ModulusOfElasticityUnit, null);
-            unitSet.Add(modulusOfElasticityUnit);
-
-            double modulusOfElasticityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Pascals);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Stress, modulusOfElasticityUnit, modulusOfElasticityFactor, 0.0);
-         }
-
-         // Isothermal moisture capacity - support m3 / kg only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, lenSIBaseUnit, 3);
-            createDerivedUnitElement(elements, massSIUnit, -1);
-
-            IFCAnyHandle isothermalMoistureCapacityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.IsothermalMoistureCapacityUnit, null);
-            unitSet.Add(isothermalMoistureCapacityUnit);
-
-            double isothermalMoistureCapacityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.CubicMetersPerKilogram);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.IsothermalMoistureCapacity, isothermalMoistureCapacityUnit, isothermalMoistureCapacityFactor, 0.0);
-         }
-
-         // Moisture diffusivity - support metric m^2/s only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, lenSIBaseUnit, 2);
-            createDerivedUnitElement(elements, timeSIUnit, -1);
-
-            IFCAnyHandle moistureDiffusivityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.MoistureDiffusivityUnit, null);
-            unitSet.Add(moistureDiffusivityUnit);
-
-            double moistureDiffusivityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.SquareMetersPerSecond);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Diffusivity, moistureDiffusivityUnit, moistureDiffusivityFactor, 0.0);
-         }
-
-         // Area density - support metric kg/m^2 only.
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, 2);
-         
-            IFCAnyHandle areaDensityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                Toolkit.IFC4.IFCDerivedUnit.AREADENSITYUNIT, null);
-            unitSet.Add(areaDensityUnit);
-         
-            double areaDensityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.KilogramsPerSquareMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.MassPerUnitArea, areaDensityUnit, areaDensityFactor, 0.0);
-         }
-
-         // Mass per length - support metric kg/m only.
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, -1);
-
-            IFCAnyHandle massPerLenghtUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.MassPerLengthUnit, null);
-            unitSet.Add(massPerLenghtUnit);
-
-            double massPerLenghtFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.KilogramsPerMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.MassPerUnitLength, massPerLenghtUnit, massPerLenghtFactor, 0.0);
-         }
-
-         // Thermal resistance - support metric (m^2 * K)/W = (s^3 * K) / kg only. 
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, timeSIUnit, 3);
-            createDerivedUnitElement(elements, tempBaseSIUnit, 1);
-            createDerivedUnitElement(elements, massSIUnit, -1);
-
-            IFCAnyHandle thermalResistanceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.ThermalResistanceUnit, null);
-            unitSet.Add(thermalResistanceUnit);
-
-            double thermalResistanceFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.SquareMeterKelvinsPerWatt);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.ThermalResistance, thermalResistanceUnit, thermalResistanceFactor, 0.0);
-         }
-
-         // Acceleration - support metric m/s^2 only. 
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            createDerivedUnitElement(elements, lenSIBaseUnit, 1);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle thermalResistanceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.AccelerationUnit, null);
-            unitSet.Add(thermalResistanceUnit);
-
-            double thermalResistanceFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.MetersPerSecondSquared);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Acceleration, thermalResistanceUnit, thermalResistanceFactor, 0.0);
-         }
-
-         // Angular velocity - support rad/s only. 
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-            
-            createDerivedUnitElement(elements, angleSIUnit, 1);
-            createDerivedUnitElement(elements, timeSIUnit, -1);
-
-            IFCAnyHandle angularVelocityUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.AngularVelocityUnit, null);
-            unitSet.Add(angularVelocityUnit);
-
-            double angularVelocityFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.RadiansPerSecond);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Pulsation, angularVelocityUnit, angularVelocityFactor, 0.0);
-         }
-
-         // Linear stiffness - support N/m = kg/s^2 only. 
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle linearStiffnessUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.LinearStiffnessUnit, null);
-            unitSet.Add(linearStiffnessUnit);
-
-            double linearStiffnessFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NewtonsPerMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.PointSpringCoefficient, linearStiffnessUnit, linearStiffnessFactor, 0.0);
-         }
-
-         // Warping constant - support m^6 only. 
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-
-            createDerivedUnitElement(elements, lenSIBaseUnit, 6);
-
-            IFCAnyHandle wrappingConstantUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.WarpingConstantUnit, null);
-            unitSet.Add(wrappingConstantUnit);
-
-            double wrappingConstantFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.MetersToTheSixthPower);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.WarpingConstant, wrappingConstantUnit, wrappingConstantFactor, 0.0);
-         }
-
-         // Linear moment - support N-m / m = (kg * m)/s^2 only. 
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, 1);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle linearMomentUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.LinearMomentUnit, null);
-            unitSet.Add(linearMomentUnit);
-
-            double linearMomentFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NewtonMetersPerMeter);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.LinearMoment, linearMomentUnit, linearMomentFactor, 0.0);
-         }
-
-         // Torque - support N-m = (kg * m^2)/s^2 only. 
-         {
-            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
-
-            createDerivedUnitElement(elements, massSIUnit, 1);
-            createDerivedUnitElement(elements, lenSIBaseUnit, 2);
-            createDerivedUnitElement(elements, timeSIUnit, -2);
-
-            IFCAnyHandle torqueUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
-                IFCDerivedUnitEnum.Torqueunit, null);
-            unitSet.Add(torqueUnit);
-
-            double torqueFactor = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.NewtonMeters);
-            ExporterCacheManager.UnitsCache.AddUnit(SpecTypeId.Moment, torqueUnit, torqueFactor, 0.0);
-         }
-
-         // GSA only units.
-         if (exportToCOBIE)
-         {
-            // Derived imperial mass unit
-            {
-               IFCUnit unitType = IFCUnit.MassUnit;
-               IFCAnyHandle dims = IFCInstanceExporter.CreateDimensionalExponents(file, 0, 1, 0, 0, 0, 0, 0);
-               double factor = 0.45359237; // --> pound to kilogram
-               string convName = "pound";
-
-               IFCAnyHandle convFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsMassMeasure(factor), massSIUnit);
-               IFCAnyHandle massUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, dims, unitType, convName, convFactor);
-               unitSet.Add(massUnit);      // created above, so unique.
-            }
-
-            // Air Changes per Hour
-            {
-               IFCUnit unitType = IFCUnit.FrequencyUnit;
-               IFCAnyHandle dims = IFCInstanceExporter.CreateDimensionalExponents(file, 0, 0, -1, 0, 0, 0, 0);
-               double factor = 1.0 / 3600.0; // --> seconds to hours
-               string convName = "ACH";
-
-               IFCAnyHandle convFactor = IFCInstanceExporter.CreateMeasureWithUnit(file, Toolkit.IFCDataUtil.CreateAsTimeMeasure(factor), timeSIUnit);
-               IFCAnyHandle achUnit = IFCInstanceExporter.CreateConversionBasedUnit(file, dims, unitType, convName, convFactor);
-               unitSet.Add(achUnit);      // created above, so unique.
-               ExporterCacheManager.UnitsCache["ACH"] = achUnit;
-            }
-         }
-
-         return IFCInstanceExporter.CreateUnitAssignment(file, unitSet);
-      }
-
+      
       /// <summary>
       /// Creates the global direction and sets the cardinal directions in 3D.
       /// </summary>
@@ -4998,9 +3895,7 @@ namespace Revit.IFC.Export.Exporter
                Element baseEquipment = systemElem.BaseEquipment;
                if (baseEquipment != null)
                {
-                  IFCAnyHandle memberHandle = ExporterCacheManager.MEPCache.Find(baseEquipment.Id);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(memberHandle))
-                     system.Value.Add(memberHandle);
+                  system.Value.AddIfNotNull(ExporterCacheManager.MEPCache.Find(baseEquipment.Id));
                }
 
                if (isElectricalSystem)
@@ -5012,9 +3907,7 @@ namespace Revit.IFC.Export.Exporter
                      ElementSet members = systemElem.Elements;
                      foreach (Element member in members)
                      {
-                        IFCAnyHandle memberHandle = ExporterCacheManager.MEPCache.Find(member.Id);
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(memberHandle))
-                           system.Value.Add(memberHandle);
+                        system.Value.AddIfNotNull(ExporterCacheManager.MEPCache.Find(member.Id));
                      }
                   }
                   catch
@@ -5044,7 +3937,7 @@ namespace Revit.IFC.Export.Exporter
                   string ifcEnumType;
                   IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(exporterIFC, systemElem, out ifcEnumType);
 
-                  string predefinedType = exportAs.ValidatedPredefinedType;
+                  string predefinedType = exportAs.PredefinedType;
                   if (predefinedType == null)
                   {
                      Toolkit.IFC4.IFCDistributionSystem systemType = ConnectorExporter.GetMappedIFCDistributionSystemFromElement(systemElem);

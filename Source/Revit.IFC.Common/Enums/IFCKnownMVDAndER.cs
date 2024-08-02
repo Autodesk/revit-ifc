@@ -6,10 +6,6 @@ using System.Threading.Tasks;
 
 namespace Revit.IFC.Common.Enums
 {
-   //public enum KnownMVDNames
-   //{
-   //}
-
    /// <summary>
    /// Enumeration for known Exchange Requirements
    /// </summary>

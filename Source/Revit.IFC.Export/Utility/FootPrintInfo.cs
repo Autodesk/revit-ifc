@@ -119,10 +119,8 @@ namespace Revit.IFC.Export.Utility
          ISet<IFCAnyHandle> repItems = new HashSet<IFCAnyHandle>();
          foreach (CurveLoop extrusionBoundaryLoop in ExtrusionBaseLoops)
          {
-            IFCAnyHandle footprintGeomRepItem = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, extrusionBoundaryLoop,
-               ExtrusionBaseLCS, new XYZ(0, 0, 1.0));
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(footprintGeomRepItem))
-               repItems.Add(footprintGeomRepItem);
+            repItems.AddIfNotNull(GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC,
+               extrusionBoundaryLoop, ExtrusionBaseLCS, XYZ.BasisZ));
          }
 
          IFCAnyHandle footprintShapeRep = null;
