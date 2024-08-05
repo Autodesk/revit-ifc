@@ -47,10 +47,12 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="RevitAPI">
+    <Reference Include="RevitAPI, Version=24.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC">
+    <Reference Include="RevitAPIIFC, Version=24.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />

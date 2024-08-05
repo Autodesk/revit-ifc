@@ -49,10 +49,12 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="RevitAPI">
+    <Reference Include="RevitAPI, Version=24.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC">
+    <Reference Include="RevitAPIIFC, Version=24.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2024\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -162,15 +164,11 @@
     <Compile Include="Exporter\PropertySet\Calculators\WaistThicknessCalculator.cs" />
     <Compile Include="Exporter\PropertySet\Calculators\WalkingLineOffsetCalculator.cs" />
     <Compile Include="Exporter\PropertySet\ClassificationUtil.cs" />
-    <Compile Include="Exporter\PropertySet\ElectricalCurrentPropertyUtil.cs" />
-    <Compile Include="Exporter\PropertySet\ElectricalVoltagePropertyUtil.cs" />
     <Compile Include="Exporter\PropertySet\EntryMap.cs" />
     <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X2Enum.cs" />
     <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC2X3Enum.cs" />
     <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC4Enum.cs" />
     <Compile Include="Exporter\PropertySet\ExporterInitializer_PsetDefIFC4X3Enum.cs" />
-    <Compile Include="Exporter\PropertySet\FrequencyPropertyUtil.cs" />
-    <Compile Include="Exporter\PropertySet\PositivePlaneAnglePropertyUtil.cs" />
     <Compile Include="Exporter\PropertySet\PreDefinedPropertySetDescription.cs" />
     <Compile Include="Exporter\PropertySet\PreDefinedPropertySetEntry.cs" />
     <Compile Include="Exporter\PropertySet\PreDefinedPropertySetEntryMap.cs" />
@@ -309,6 +307,7 @@
     <Compile Include="Utility\SystemsCache.cs" />
     <Compile Include="Utility\TriangleMergeUtil.cs" />
     <Compile Include="Utility\TypePropertyInfoCache.cs" />
+    <Compile Include="Utility\UnitMappingUtil.cs" />
     <Compile Include="Utility\UnitsCache.cs" />
     <Compile Include="Utility\UnitUtil.cs" />
     <Compile Include="Utility\WallConnectionDataCache.cs" />

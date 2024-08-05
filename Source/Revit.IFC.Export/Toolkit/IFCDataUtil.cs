@@ -142,7 +142,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsReal(double value)
       {
-         return CreateAsMeasure(value, "IfcReal");
+         return CreateAsMeasureWithUnit(value, "IfcReal");
       }
 
       /// <summary>
@@ -152,7 +152,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsNumeric(double value)
       {
-         return CreateAsMeasure(value, "IfcNumericMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcNumericMeasure");
       }
 
       /// <summary>
@@ -162,7 +162,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsRatioMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcRatioMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcRatioMeasure");
       }
 
       /// <summary>
@@ -172,7 +172,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsNormalisedRatioMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcNormalisedRatioMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcNormalisedRatioMeasure");
       }
 
       /// <summary>
@@ -182,7 +182,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsSpecularExponent(double value)
       {
-         return CreateAsMeasure(value, "IfcSpecularExponent");
+         return CreateAsMeasureWithUnit(value, "IfcSpecularExponent");
       }
 
       /// <summary>
@@ -192,7 +192,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsPositiveRatioMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcPositiveRatioMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcPositiveRatioMeasure");
       }
 
       /// <summary>
@@ -202,7 +202,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsLengthMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcLengthMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcLengthMeasure");
       }
 
       /// <summary>
@@ -212,7 +212,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsVolumeMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcVolumeMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcVolumeMeasure");
       }
 
       /// <summary>
@@ -222,7 +222,10 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsPositiveLengthMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcPositiveLengthMeasure");
+         if (value > MathUtil.Eps())
+            return CreateAsMeasureWithUnit(value, "IfcPositiveLengthMeasure");
+         else
+            return null;
       }
 
       /// <summary>
@@ -232,7 +235,10 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsPositivePlaneAngleMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcPositivePlaneAngleMeasure");
+         if (value > MathUtil.Eps())
+            return CreateAsMeasureWithUnit(value, "IfcPositivePlaneAngleMeasure");
+         else
+            return null;
       }
 
       /// <summary>
@@ -242,7 +248,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsPlaneAngleMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcPlaneAngleMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcPlaneAngleMeasure");
       }
 
       /// <summary>
@@ -252,7 +258,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsAreaMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcAreaMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcAreaMeasure");
       }
 
       /// <summary>
@@ -262,7 +268,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsAccelerationMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcAccelerationMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcAccelerationMeasure");
       }
 
       /// <summary>
@@ -272,7 +278,43 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsEnergyMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcEnergyMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcEnergyMeasure");
+      }
+
+
+      /// <summary>
+      /// Creates corresponding ifc unit for a measure name
+      /// </summary>
+      public static void CreateCorrespondingUnit(string measureName)
+      {
+         ForgeTypeId specType = UnitMappingUtil.GetUnitSpecTypeFromString(measureName);
+         UnitMappingUtil.GetOrCreateUnitInfo(specType);
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as an IfcMeasure of the right type
+      /// and creates the corresponding Revit unit.
+      /// </summary>
+      /// <param name="value">The int value.</param>
+      /// <param name="measureName">The type of IfcMeasure (e.g. IfcForceMeasure).</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsMeasureWithUnit(int value, string measureName)
+      {
+         CreateCorrespondingUnit(measureName);
+         return CreateAsMeasure(value, measureName);
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as an IfcMeasure of the right type
+      /// and creates the corresponding Revit unit.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <param name="measureName">The type of IfcMeasure (e.g. IfcForceMeasure).</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsMeasureWithUnit(double value, string measureName)
+      {
+         CreateCorrespondingUnit(measureName);
+         return CreateAsMeasure(value, measureName);
       }
 
       /// <summary>
@@ -282,7 +324,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsLinearMomentMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcLinearMomentMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcLinearMomentMeasure");
       }
 
       /// <summary>
@@ -292,7 +334,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsMassPerLengthMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcMassPerLengthMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcMassPerLengthMeasure");
       }
 
       /// <summary>
@@ -302,7 +344,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsTorqueMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcTorqueMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcTorqueMeasure");
       }
 
       /// <summary>
@@ -312,7 +354,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsLinearStiffnessMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcLinearStiffnessMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcLinearStiffnessMeasure");
       }
 
       /// <summary>
@@ -322,7 +364,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsAngularVelocityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcAngularVelocityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcAngularVelocityMeasure");
       }
 
       /// <summary>
@@ -332,7 +374,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsThermalResistanceMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcThermalResistanceMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcThermalResistanceMeasure");
       }
 
       /// <summary>
@@ -342,7 +384,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsWarpingConstantMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcWarpingConstantMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcWarpingConstantMeasure");
       }
 
       /// <summary>
@@ -352,7 +394,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsLinearVelocityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcLinearVelocityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcLinearVelocityMeasure");
       }
 
       /// <summary>
@@ -362,7 +404,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsCountMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcCountMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcCountMeasure");
       }
 
       /// <summary>
@@ -372,7 +414,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsCountMeasure(int value)
       {
-         return CreateAsMeasure(value, "IfcCountMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcCountMeasure");
       }
 
       /// <summary>
@@ -382,7 +424,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsParameterValue(double value)
       {
-         return CreateAsMeasure(value, "IfcParameterValue");
+         return CreateAsMeasureWithUnit(value, "IfcParameterValue");
       }
 
       /// <summary>
@@ -392,7 +434,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsPowerMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcPowerMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcPowerMeasure");
       }
 
       /// <summary>
@@ -402,7 +444,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsSoundPowerMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcSoundPowerMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcSoundPowerMeasure");
       }
 
       /// <summary>
@@ -412,7 +454,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsSoundPressureMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcSoundPressureMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcSoundPressureMeasure");
       }
 
       /// <summary>
@@ -422,27 +464,27 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsFrequencyMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcFrequencyMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcFrequencyMeasure");
       }
 
       /// <summary>
-      /// Creates an IFCData object as IfcElectricalCurrentMeasure.
+      /// Creates an IFCData object as IfcElectricCurrentMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsElectricCurrentMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcElectricCurrentMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcElectricCurrentMeasure");
       }
 
       /// <summary>
-      /// Creates an IFCData object as IfcElectricalVoltageMeasure.
+      /// Creates an IFCData object as IfcElectricVoltageMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsElectricVoltageMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcElectricVoltageMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcElectricVoltageMeasure");
       }
 
       /// <summary>
@@ -452,7 +494,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsThermodynamicTemperatureMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcThermodynamicTemperatureMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcThermodynamicTemperatureMeasure");
       }
 
       /// <summary>
@@ -462,7 +504,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsDynamicViscosityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcDynamicViscosityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcDynamicViscosityMeasure");
       }
 
       /// <summary>
@@ -472,7 +514,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsIsothermalMoistureCapacityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcIsothermalMoistureCapacityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcIsothermalMoistureCapacityMeasure");
       }
 
       /// <summary>
@@ -482,7 +524,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsMassDensityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcMassDensityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcMassDensityMeasure");
       }
 
       /// <summary>
@@ -492,7 +534,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsModulusOfElasticityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcModulusOfElasticityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcModulusOfElasticityMeasure");
       }
 
       /// <summary>
@@ -502,7 +544,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsVaporPermeabilityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcVaporPermeabilityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcVaporPermeabilityMeasure");
       }
 
       /// <summary>
@@ -512,7 +554,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsThermalExpansionCoefficientMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcThermalExpansionCoefficientMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcThermalExpansionCoefficientMeasure");
       }
 
       /// <summary>
@@ -522,9 +564,19 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsPressureMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcPressureMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcPressureMeasure");
       }
 
+      /// <summary>
+      /// Creates an IFCData object as IfcMonetaryMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsMonetaryMeasure(double value)
+      {
+         return CreateAsMeasureWithUnit(value, "IfcMonetaryMeasure");
+      }
+      
       /// <summary>
       /// Creates an IFCData object as IfcSpecificHeatCapacityMeasure.
       /// </summary>
@@ -532,7 +584,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsSpecificHeatCapacityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcSpecificHeatCapacityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcSpecificHeatCapacityMeasure");
       }
 
       /// <summary>
@@ -542,7 +594,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsHeatingValueMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcHeatingValueMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcHeatingValueMeasure");
       }
 
       /// <summary>
@@ -552,7 +604,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsMoistureDiffusivityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcMoistureDiffusivityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcMoistureDiffusivityMeasure");
       }
 
       /// <summary>
@@ -562,7 +614,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsIonConcentrationMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcIonConcentrationMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcIonConcentrationMeasure");
       }
 
       /// <summary>
@@ -572,7 +624,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsMomentOfInertiaMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcMomentOfInertiaMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcMomentOfInertiaMeasure");
       }
 
       /// <summary>
@@ -582,7 +634,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsHeatFluxDensityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcHeatFluxDensityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcHeatFluxDensityMeasure");
       }
 
       /// <summary>
@@ -592,7 +644,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsAreaDensityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcAreaDensityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcAreaDensityMeasure");
       }
 
       /// <summary>
@@ -602,8 +654,29 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsThermalConductivityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcThermalConductivityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcThermalConductivityMeasure");
       }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcRotationalFrequencyMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsRotationalFrequencyMeasure(double value)
+      {
+         return CreateAsMeasureWithUnit(value, "IfcRotationalFrequencyMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcMassFlowRateMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsMassFlowRateMeasure(double value)
+      {
+         return CreateAsMeasureWithUnit(value, "IfcMassFlowRateMeasure");
+      }
+      
 
       /// <summary>
       /// Creates an IFCData object as IfcThermalTransmittanceMeasure.
@@ -612,7 +685,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsThermalTransmittanceMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcThermalTransmittanceMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcThermalTransmittanceMeasure");
       }
 
       /// <summary>
@@ -683,7 +756,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsVolumetricFlowRateMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcVolumetricFlowRateMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcVolumetricFlowRateMeasure");
       }
 
       /// <summary>
@@ -693,7 +766,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsIlluminanceMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcIlluminanceMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcIlluminanceMeasure");
       }
 
       /// <summary>
@@ -703,7 +776,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsLuminousFluxMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcLuminousFluxMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcLuminousFluxMeasure");
       }
 
       /// <summary>
@@ -713,7 +786,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsLuminousIntensityMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcLuminousIntensityMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcLuminousIntensityMeasure");
       }
 
       /// <summary>
@@ -723,7 +796,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsForceMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcForceMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcForceMeasure");
       }
 
       /// <summary>
@@ -733,7 +806,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>the IFCData object</returns>
       public static IFCData CreateAsLinearForceMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcLinearForceMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcLinearForceMeasure");
       }
 
       /// <summary>
@@ -743,7 +816,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>the IFCData object</returns>
       public static IFCData CreateAsMassMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcMassMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcMassMeasure");
       }
 
       /// <summary>
@@ -753,7 +826,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>the IFCData object</returns>
       public static IFCData CreateAsTimeMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcTimeMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcTimeMeasure");
       }
 
       /// <summary>
@@ -763,7 +836,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>the IFCData object</returns>
       public static IFCData CreateAsPlanarForceMeasure(double value)
       {
-         return CreateAsMeasure(value, "IfcPlanarForceMeasure");
+         return CreateAsMeasureWithUnit(value, "IfcPlanarForceMeasure");
       }
 
       /// <summary>

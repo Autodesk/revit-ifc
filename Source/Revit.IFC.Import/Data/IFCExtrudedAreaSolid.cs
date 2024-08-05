@@ -828,12 +828,12 @@ namespace Revit.IFC.Import.Data
                   extrusionObject = GeometryCreationUtilities.CreateExtrusionGeometry(loops, scaledExtrusionDirection, currDepth, solidOptions);
                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                extrusionObject = GetMeshBackup(shapeEditScope, loops, scaledExtrusionDirection,
                   currDepth, guid);
                if (extrusionObject == null)
-                  throw ex;
+                  throw;
             }
 
             if (extrusionObject != null)

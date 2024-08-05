@@ -1744,6 +1744,24 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Set &quot;Last Modified&quot; user to the Author in Project Information.
+        /// </summary>
+        public static string OwnerHistoryLastModified {
+            get {
+                return ResourceManager.GetString("OwnerHistoryLastModified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Populate the IfcOwnerHistory &quot;LastModified&quot; attribute with the Author information set in Project Information.
+        /// </summary>
+        public static string OwnerHistoryLastModifiedTooltip {
+            get {
+                return ResourceManager.GetString("OwnerHistoryLastModifiedTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Phase to export.
         /// </summary>
         public static string PhaseToExport {
@@ -2370,6 +2388,33 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string StreetAddress {
             get {
                 return ResourceManager.GetString("StreetAddress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Template name.
+        /// </summary>
+        public static string TemplateName {
+            get {
+                return ResourceManager.GetString("TemplateName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter unique template name..
+        /// </summary>
+        public static string TemplateNameTooltip {
+            get {
+                return ResourceManager.GetString("TemplateNameTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Template Settings.
+        /// </summary>
+        public static string TemplateSettings {
+            get {
+                return ResourceManager.GetString("TemplateSettings", resourceCulture);
             }
         }
         

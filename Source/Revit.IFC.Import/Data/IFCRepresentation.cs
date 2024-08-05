@@ -201,7 +201,9 @@ namespace Revit.IFC.Import.Data
                      }
                   }
                   else
+                  {
                      repItem = IFCRepresentationItem.ProcessIFCRepresentationItem(item);
+                  }
                }
                catch (Exception ex)
                {
@@ -265,7 +267,7 @@ namespace Revit.IFC.Import.Data
       /// </summary>
       /// <param name="shapeEditScope">The geometry creation scope.</param>
       /// <param name="scaledLcs">Local coordinate system for the geometry, including scale, potentially non-uniform.</param>
-      /// <param name="guid">The guid of an element for which represntation is being created.</param>
+      /// <param name="guid">The guid of an element for which representation is being created.</param>
       public void CreateShape(IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
          // Special handling for Box representation.  We may decide to create an IFCBoundingBox class and stop this special treatment.

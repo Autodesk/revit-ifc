@@ -224,9 +224,8 @@ namespace Revit.IFC.Export.Exporter
          {
             IFCAnyHandle axisHnd = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, curve);
             axis_items = new List<IFCAnyHandle>();
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisHnd))
+            if (axis_items.AddIfNotNull(axisHnd))
             {
-               axis_items.Add(axisHnd);
                representationTypeOpt = "Curve3D";        // We use Curve3D for IFC4RV Axis
             }
          }
@@ -374,10 +373,7 @@ namespace Revit.IFC.Export.Exporter
          if (elementType == null)
             return;
 
-         string preDefinedTypeSearch = predefinedType;
-         if (string.IsNullOrEmpty(preDefinedTypeSearch))
-            preDefinedTypeSearch = "NULL";
-         IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcBeamType, preDefinedTypeSearch);
+         IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcBeamType, predefinedType);
          IFCAnyHandle beamType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(beamType))
          {
@@ -538,8 +534,7 @@ namespace Revit.IFC.Export.Exporter
                   IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
                   double elevation = (setter.LevelInfo != null) ? setter.LevelInfo.Elevation : 0.0;
                   IFCAnyHandle axisRep = CreateBeamAxis(exporterIFC, element, catId, axisInfo, offsetTransform, elevation);
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(axisRep))
-                        representations.Add(axisRep);
+                  representations.AddIfNotNull(axisRep);
                   representations.Add(repHnd);
 
                   Transform boundingBoxTrf = offsetTransform?.Inverse ?? Transform.Identity;
@@ -550,16 +545,14 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
-                  beam = IFCInstanceExporter.CreateBeam(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle, extrusionCreationData.GetLocalPlacement(), prodRep, exportType.ValidatedPredefinedType);
-
-
+                  beam = IFCInstanceExporter.CreateBeam(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle, extrusionCreationData.GetLocalPlacement(), prodRep, exportType.GetPredefinedTypeOrDefault());
                   IFCAnyHandle mpSetUsage;
                   if (materialProfileSet != null)
                      mpSetUsage = IFCInstanceExporter.CreateMaterialProfileSetUsage(file, materialProfileSet, null, null);
 
                   productWrapper.AddElement(element, beam, setter, extrusionCreationData, true, exportType);
 
-                  ExportBeamType(exporterIFC, productWrapper, beam, element, exportType.ValidatedPredefinedType);
+                  ExportBeamType(exporterIFC, productWrapper, beam, element, exportType.GetPredefinedTypeOrDefault());
 
                   OpeningUtil.CreateOpeningsIfNecessary(beam, element, extrusionCreationData, offsetTransform, exporterIFC,
                       extrusionCreationData.GetLocalPlacement(), setter, productWrapper);

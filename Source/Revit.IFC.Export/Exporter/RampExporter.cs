@@ -369,9 +369,9 @@ namespace Revit.IFC.Export.Exporter
 
                string predefType = ifcEnumType;
                IFCExportInfoPair exportTypePair = ExporterUtil.GetProductExportType(exporterIFC, ramp, out ifcEnumType);
-               if (!string.IsNullOrEmpty(exportTypePair.ValidatedPredefinedType))
+               if (!exportTypePair.IsPredefinedTypeDefault)
                {
-                  predefType = exportTypePair.ValidatedPredefinedType;
+                  predefType = exportTypePair.PredefinedType;
                }
 
                SortedDictionary<double,IList<(Solid body, Face largestTopFace)>> rampFlights = null;
@@ -579,7 +579,7 @@ namespace Revit.IFC.Export.Exporter
                         IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
                         IFCAnyHandle rampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, guid, ownerHistory,
-                              localPlacement, representation, exportTypePair.ValidatedPredefinedType);
+                              localPlacement, representation, exportTypePair.GetPredefinedTypeOrDefault());
                         productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true, exportTypePair);
                         CategoryUtil.CreateMaterialAssociation(exporterIFC, rampHnd, bodyData.MaterialIds);
 
@@ -593,7 +593,7 @@ namespace Revit.IFC.Export.Exporter
                         List<IFCAnyHandle> components = new List<IFCAnyHandle>();
                         IList<IFCExportBodyParams> componentExtrusionData = new List<IFCExportBodyParams>();
                         IFCAnyHandle containedRampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, containedRampGuid, ownerHistory,
-                                  containedRampLocalPlacement, representation, exportTypePair.ValidatedPredefinedType);
+                                  containedRampLocalPlacement, representation, exportTypePair.GetPredefinedTypeOrDefault());
                         components.Add(containedRampHnd);
                         componentExtrusionData.Add(ecData);
                         //productWrapper.AddElement(containedRampHnd, placementSetter.LevelInfo, ecData, false);
@@ -603,7 +603,7 @@ namespace Revit.IFC.Export.Exporter
                         IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
                         IFCAnyHandle rampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, guid, ownerHistory,
-                                  localPlacement, null, exportTypePair.ValidatedPredefinedType);
+                                  localPlacement, null, exportTypePair.GetPredefinedTypeOrDefault());
                         productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true, exportTypePair);
 
                         string typeGuid = GUIDUtil.CreateGUID(rampType);
@@ -633,19 +633,19 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper.</param>
       public static void Export(ExporterIFC exporterIFC, Element element, GeometryElement geometryElement, ProductWrapper productWrapper)
       {
-         string ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(exporterIFC, element);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, element, out _);
          IFCFile file = exporterIFC.GetFile();
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            StairsExporter.ExportLegacyStairOrRampAsContainer(exporterIFC, ifcEnumType, element, geometryElement, productWrapper);
+            StairsExporter.ExportLegacyStairOrRampAsContainer(exporterIFC, exportType.GetPredefinedTypeOrDefault(), element, geometryElement, productWrapper);
 
             // If we didn't create a handle here, then the element wasn't a "native" Ramp, and is likely a FamilyInstance or a DirectShape.
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(productWrapper.GetAnElement()))
             {
                int numFlights = GetNumFlightsForRamp(exporterIFC, element);
                if (numFlights > 0)
-                  ExportRamp(exporterIFC, ifcEnumType, element, geometryElement, numFlights, productWrapper);
+                  ExportRamp(exporterIFC, exportType.PredefinedType, element, geometryElement, numFlights, productWrapper);
             }
 
             tr.Commit();
