@@ -264,10 +264,41 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       AngularVelocity,
       IfcCostValue,
       IfcRelaxation,
-      ElectricalResistivity,
       FrictionLoss,
       LinearMoment,
-      LinearStiffness
+      LinearStiffness,
+      CostPerArea,
+      ApparentPowerDensity,
+      CostRateEnergy,
+      CostRatePower,
+      Efficacy,
+      Luminance,
+      ElectricalPowerDensity,
+      PowerPerLength,
+      ElectricalResistivity,
+      HeatCapacityPerArea,
+      ThermalGradientCoefficientForMoistureCapacity,
+      ThermalMass,
+      AirFlowDensity,
+      AirFlowDividedByCoolingLoad,
+      AirFlowDividedByVolume,
+      AreaDividedByCoolingLoad,
+      AreaDividedByHeatingLoad,
+      CoolingLoadDividedByArea,
+      CoolingLoadDividedByVolume,
+      FlowPerPower,
+      HvacFriction,
+      HeatingLoadDividedByArea,
+      HeatingLoadDividedByVolume,
+      PowerPerFlow,
+      PipingFriction,
+      AreaSpringCoefficient,
+      LineSpringCoefficient,
+      MassPerUnitArea,
+      ReinforcementAreaPerUnitLength,
+      RotationalLineSpringCoefficient,
+      RotationalPointSpringCoefficient,
+      UnitWeight
    }
 
    /// <summary>
@@ -923,10 +954,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.Currency;
                   }
-                  else if (type == SpecTypeId.Efficacy)
-                  {
-                     propertyType = PropertyType.ElectricalEfficacy;
-                  }
                   else if (type == SpecTypeId.Energy ||
                      type == SpecTypeId.HvacEnergy)
                   {
@@ -958,18 +985,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.ElectricVoltage;
                   }
-                  else if (type == SpecTypeId.ElectricalResistivity)
-                  {
-                     propertyType = PropertyType.ElectricalResistivity;
-                  }
                   else if (type == SpecTypeId.ElectricalFrequency ||
                      type == SpecTypeId.StructuralFrequency)
                   {
                      propertyType = PropertyType.Frequency;
-                  }
-                  else if (type == SpecTypeId.HvacFriction)
-                  {
-                     propertyType = PropertyType.FrictionLoss;
                   }
                   else if (type == SpecTypeId.LuminousFlux)
                   {
@@ -1125,6 +1144,134 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   else if (type == SpecTypeId.WarpingConstant)
                   {
                      propertyType = PropertyType.WarpingConstant;
+                  }
+                  else if (type == SpecTypeId.CostPerArea)
+                  {
+                     propertyType = PropertyType.CostPerArea;
+                  }
+                  else if (type == SpecTypeId.ApparentPowerDensity)
+                  {
+                     propertyType = PropertyType.ApparentPowerDensity;
+                  }
+                  else if (type == SpecTypeId.CostRateEnergy)
+                  {
+                     propertyType = PropertyType.CostRateEnergy;
+                  }
+                  else if (type == SpecTypeId.CostRatePower)
+                  {
+                     propertyType = PropertyType.CostRatePower;
+                  }
+                  else if (type == SpecTypeId.Efficacy)
+                  {
+                     propertyType = PropertyType.ElectricalEfficacy;
+                  }
+                  else if (type == SpecTypeId.Luminance)
+                  {
+                     propertyType = PropertyType.Luminance;
+                  }
+                  else if (type == SpecTypeId.ElectricalPowerDensity)
+                  {
+                     propertyType = PropertyType.ElectricalPowerDensity;
+                  }
+                  else if (type == SpecTypeId.PowerPerLength)
+                  {
+                     propertyType = PropertyType.PowerPerLength;
+                  }
+                  else if (type == SpecTypeId.ElectricalResistivity)
+                  {
+                     propertyType = PropertyType.ElectricalResistivity;
+                  }
+                  else if (type == SpecTypeId.HeatCapacityPerArea)
+                  {
+                     propertyType = PropertyType.HeatCapacityPerArea;
+                  }
+                  else if (type == SpecTypeId.ThermalGradientCoefficientForMoistureCapacity)
+                  {
+                     propertyType = PropertyType.ThermalGradientCoefficientForMoistureCapacity;
+                  }
+                  else if (type == SpecTypeId.ThermalMass)
+                  {
+                     propertyType = PropertyType.ThermalMass;
+                  }
+                  else if (type == SpecTypeId.AirFlowDensity)
+                  {
+                     propertyType = PropertyType.AirFlowDensity;
+                  }
+                  else if (type == SpecTypeId.AirFlowDividedByCoolingLoad)
+                  {
+                     propertyType = PropertyType.AirFlowDividedByCoolingLoad;
+                  }
+                  else if (type == SpecTypeId.AirFlowDividedByVolume)
+                  {
+                     propertyType = PropertyType.AirFlowDividedByVolume;
+                  }
+                  else if (type == SpecTypeId.AreaDividedByCoolingLoad)
+                  {
+                     propertyType = PropertyType.AreaDividedByCoolingLoad;
+                  }
+                  else if (type == SpecTypeId.AreaDividedByHeatingLoad)
+                  {
+                     propertyType = PropertyType.AreaDividedByHeatingLoad;
+                  }
+                  else if (type == SpecTypeId.CoolingLoadDividedByArea)
+                  {
+                     propertyType = PropertyType.CoolingLoadDividedByArea;
+                  }
+                  else if (type == SpecTypeId.CoolingLoadDividedByVolume)
+                  {
+                     propertyType = PropertyType.CoolingLoadDividedByVolume;
+                  }
+                  else if (type == SpecTypeId.FlowPerPower)
+                  {
+                     propertyType = PropertyType.FlowPerPower;
+                  }
+                  else if (type == SpecTypeId.HvacFriction)
+                  {
+                     propertyType = PropertyType.FrictionLoss;
+                  }
+                  else if (type == SpecTypeId.HeatingLoadDividedByArea)
+                  {
+                     propertyType = PropertyType.HeatingLoadDividedByArea;
+                  }
+                  else if (type == SpecTypeId.HeatingLoadDividedByVolume)
+                  {
+                     propertyType = PropertyType.HeatingLoadDividedByVolume;
+                  }
+                  else if (type == SpecTypeId.PowerPerFlow)
+                  {
+                     propertyType = PropertyType.PowerPerFlow;
+                  }
+                  else if (type == SpecTypeId.PipingFriction)
+                  {
+                     propertyType = PropertyType.PipingFriction;
+                  }
+                  else if (type == SpecTypeId.AreaSpringCoefficient)
+                  {
+                     propertyType = PropertyType.AreaSpringCoefficient;
+                  }
+                  else if (type == SpecTypeId.LineSpringCoefficient)
+                  {
+                     propertyType = PropertyType.LineSpringCoefficient;
+                  }
+                  else if (type == SpecTypeId.MassPerUnitArea)
+                  {
+                     propertyType = PropertyType.MassPerUnitArea;
+                  }
+                  else if (type == SpecTypeId.ReinforcementAreaPerUnitLength)
+                  {
+                     propertyType = PropertyType.ReinforcementAreaPerUnitLength;
+                  }
+                  else if (type == SpecTypeId.RotationalLineSpringCoefficient)
+                  {
+                     propertyType = PropertyType.RotationalLineSpringCoefficient;
+                  }
+                  else if (type == SpecTypeId.RotationalPointSpringCoefficient)
+                  {
+                     propertyType = PropertyType.RotationalPointSpringCoefficient;
+                  }
+                  else if (type == SpecTypeId.UnitWeight)
+                  {
+                     propertyType = PropertyType.UnitWeight;
                   }
                   else
                   {

@@ -146,9 +146,11 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="element">The element.</param>
       /// <param name="solid">The solid.</param>
       /// <param name="normal">The normal of the plane that the path lies on.</param>
+      /// <param name="addInfo">A set of flags for which representations we should generate.</param>
+      /// <param name="isCoarse">True if we should do a coarse parameterization of the directrix.</param>
       /// <returns>The SweptSolidExporter.</returns>
       public static SweptSolidExporter Create(ExporterIFC exporterIFC, Element element, SimpleSweptSolidAnalyzer sweptAnalyzer, GeometryObject geomObject,
-         GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody)
+         GenerateAdditionalInfo addInfo, bool isCoarse)
       {
          try
          {
@@ -157,7 +159,7 @@ namespace Revit.IFC.Export.Exporter
 
             SweptSolidExporter sweptSolidExporter = null;
 
-            IList<Revit.IFC.Export.Utility.GeometryUtil.FaceBoundaryType> faceBoundaryTypes;
+            IList<GeometryUtil.FaceBoundaryType> faceBoundaryTypes;
             IList<CurveLoop> faceBoundaries = GeometryUtil.GetFaceBoundaries(sweptAnalyzer.ProfileFace, null, out faceBoundaryTypes);
 
             string profileName = null;
@@ -202,7 +204,7 @@ namespace Revit.IFC.Export.Exporter
                   }
                   else
                   {
-                     sweptSolidExporter.RepresentationItem = CreateSimpleSweptSolid(exporterIFC, profileName, faceBoundaries, sweptAnalyzer.ReferencePlaneNormal, sweptAnalyzer.PathCurve);
+                     sweptSolidExporter.RepresentationItem = CreateSimpleSweptSolid(exporterIFC, profileName, faceBoundaries, sweptAnalyzer.PathCurve);
                      sweptSolidExporter.RepresentationType = ShapeRepresentationType.AdvancedSweptSolid;
                      if ((addInfo & GenerateAdditionalInfo.GenerateFootprint) != 0)
                      {
@@ -213,7 +215,8 @@ namespace Revit.IFC.Export.Exporter
                }
                else
                {
-                  sweptSolidExporter.Facets = CreateSimpleSweptSolidAsBRep(exporterIFC, profileName, faceBoundaries, sweptAnalyzer.ReferencePlaneNormal, sweptAnalyzer.PathCurve);
+                  sweptSolidExporter.Facets = CreateSimpleSweptSolidAsBRep(exporterIFC, faceBoundaries, 
+                     sweptAnalyzer.PathCurve, isCoarse);
                   sweptSolidExporter.RepresentationType = ShapeRepresentationType.Brep;
                }
             }
@@ -255,7 +258,7 @@ namespace Revit.IFC.Export.Exporter
                      profileName = type.Name;
                }
 
-               return CreateSimpleSweptSolid(exporterIFC, profileName, faceBoundaries, sweptAnalyzer.ReferencePlaneNormal, sweptAnalyzer.PathCurve);
+               return CreateSimpleSweptSolid(exporterIFC, profileName, faceBoundaries, sweptAnalyzer.PathCurve);
             }
          }
          catch (Exception)
@@ -266,9 +269,9 @@ namespace Revit.IFC.Export.Exporter
          return null;
       }
 
-      private static bool CanCreateSimpleSweptSolid(IList<CurveLoop> profileCurveLoops, XYZ normal, Curve directrix)
+      private static bool CanCreateSimpleSweptSolid(IList<CurveLoop> profileCurveLoops, Curve directrix)
       {
-         if (directrix == null || normal == null || profileCurveLoops == null || profileCurveLoops.Count == 0)
+         if (directrix == null || profileCurveLoops == null || profileCurveLoops.Count == 0)
             return false;
 
          if (directrix is Arc)
@@ -336,14 +339,14 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="directrix">The path curve.</param>
       /// <returns>The swept solid handle.</returns>
       public static IFCAnyHandle CreateSimpleSweptSolid(ExporterIFC exporterIFC, string profileName, IList<CurveLoop> profileCurveLoops,
-          XYZ normal, Curve directrix)
+         Curve directrix)
       {
          // see definition of IfcSurfaceCurveSweptAreaSolid from
          // http://www.buildingsmart-tech.org/ifc/IFC2x4/rc4/html/schema/ifcgeometricmodelresource/lexical/ifcsurfacecurvesweptareasolid.htm
 
          IFCAnyHandle simpleSweptSolidHnd = null;
 
-         if (!CanCreateSimpleSweptSolid(profileCurveLoops, normal, directrix))
+         if (!CanCreateSimpleSweptSolid(profileCurveLoops, directrix))
             return simpleSweptSolidHnd;
 
          bool isBound = directrix.IsBound;
@@ -363,7 +366,7 @@ namespace Revit.IFC.Export.Exporter
             return null;
          }
 
-         if (curveLoops == null || curveLoops.Count == 0)
+         if ((curveLoops?.Count ?? 0) == 0)
             return simpleSweptSolidHnd;
 
          double startParam = 0.0, endParam = 1.0;
@@ -373,28 +376,22 @@ namespace Revit.IFC.Export.Exporter
             if (isBound)
             {
                // Put the parameters in range of [0, 2*Pi]
-               double inRangeStarParam = (directrix.GetEndParameter(0) % (2 * Math.PI));
+               double inRangeStartParam = (directrix.GetEndParameter(0) % (2 * Math.PI));
                double inRangeEndParam = (directrix.GetEndParameter(1) % (2 * Math.PI));
                // We want the angle direction is anti-clockwise (+ direction), therefore we will always start with the smaller one
-               if (inRangeEndParam < inRangeStarParam)
+               if (inRangeEndParam < inRangeStartParam)
                {
-                  double tmp = inRangeStarParam;
-                  inRangeStarParam = inRangeEndParam;
-                  inRangeEndParam = tmp;
+                  (inRangeStartParam, inRangeEndParam) = (inRangeEndParam, inRangeStartParam);
                }
+               
                // If start param is negative, we will reset it to 0 and shift the end accordingly
-               if (inRangeStarParam < 0)
-               {
-                  double parRange = inRangeEndParam - inRangeStarParam;
-                  inRangeStarParam = 0.0;
-                  inRangeEndParam = parRange;
-               }
+               inRangeEndParam -= inRangeStartParam;
                endParam = UnitUtil.ScaleAngle(inRangeEndParam);
-               //endParam = UnitUtil.ScaleAngle(MathUtil.PutInRange(directrix.GetEndParameter(1), Math.PI, 2 * Math.PI) -
-               //   MathUtil.PutInRange(originalStartParam, Math.PI, 2 * Math.PI));
             }
             else
+            {
                endParam = 2.0 * Math.PI;
+            }
          }
 
          // Start creating IFC entities.
@@ -403,9 +400,8 @@ namespace Revit.IFC.Export.Exporter
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(sweptArea))
             return simpleSweptSolidHnd;
 
-         IFCAnyHandle curveHandle = null;
          IFCAnyHandle referenceSurfaceHandle = ExtrusionExporter.CreateSurfaceOfLinearExtrusionFromCurve(exporterIFC, directrix, axisLCS, 1.0, 1.0,
-             out curveHandle);
+             out IFCAnyHandle curveHandle);
 
          // Should this be moved up?  Check.
          XYZ scaledOrigin = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, axisLCS.Origin);
@@ -421,12 +417,12 @@ namespace Revit.IFC.Export.Exporter
          return simpleSweptSolidHnd;
       }
 
-      private static IList<double> CreateRoughParametricTessellation(Curve curve)
+      private static IList<double> CreateParametricTessellation(Curve curve, bool isCoarse)
       {
          IList<XYZ> originalTessellation = curve.Tessellate();
 
          int numPoints = originalTessellation.Count;
-         int numTargetPoints = Math.Min(numPoints, 12);
+         int numTargetPoints = isCoarse ? Math.Min(numPoints, 12) : numPoints;
          int numInteriorPoints = numTargetPoints - 2;
 
          IList<double> roughTessellation = new List<double>(numTargetPoints);
@@ -479,20 +475,20 @@ namespace Revit.IFC.Export.Exporter
       /// Creates a facetation of a simple swept solid from a list of curve loops.
       /// </summary>
       /// <param name="exporterIFC">The exporter.</param>
-      /// <param name="profileName">The profile name.</param>
       /// <param name="profileCurveLoops">The profile curve loops.</param>
       /// <param name="normal">The normal of the plane that the path lies on.</param>
       /// <param name="directrix">The path curve.</param>
+      /// <param name="isCoarse">If true, create a coarse approximation of the directrix.</param>
       /// <returns>The list of facet handles.</returns>
-      public static HashSet<IFCAnyHandle> CreateSimpleSweptSolidAsBRep(ExporterIFC exporterIFC, string profileName, IList<CurveLoop> profileCurveLoops,
-          XYZ normal, Curve directrix)
+      public static HashSet<IFCAnyHandle> CreateSimpleSweptSolidAsBRep(ExporterIFC exporterIFC, IList<CurveLoop> profileCurveLoops,
+         Curve directrix, bool isCoarse)
       {
          // see definition of IfcSurfaceCurveSweptAreaSolid from
          // http://www.buildingsmart-tech.org/ifc/IFC2x4/rc4/html/schema/ifcgeometricmodelresource/lexical/ifcsurfacecurvesweptareasolid.htm
 
          HashSet<IFCAnyHandle> facetHnds = null;
 
-         if (!CanCreateSimpleSweptSolid(profileCurveLoops, normal, directrix))
+         if (!CanCreateSimpleSweptSolid(profileCurveLoops, directrix))
             return facetHnds;
 
          // An extra requirement, as we can't tessellate an unbound curve.
@@ -557,7 +553,7 @@ namespace Revit.IFC.Export.Exporter
 
          // Tessellate the Directrix.  This only works for bound Directrix curves. Unfortunately, we get XYZ values, which we will have to convert
          // back to parameter values to get the local transform.
-         IList<double> tessellatedDirectrixParameters = CreateRoughParametricTessellation(directrix);
+         IList<double> tessellatedDirectrixParameters = CreateParametricTessellation(directrix, isCoarse);
 
          // Create all of the other outlines by transformng the first tessellated outline to the current transform.
          Transform profilePlaneTrf = Transform.CreateTranslation(ExporterIFCUtils.TransformAndScalePoint(exporterIFC, profileLCS.Origin));

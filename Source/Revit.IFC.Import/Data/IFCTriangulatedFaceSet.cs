@@ -129,7 +129,7 @@ namespace Revit.IFC.Import.Data
             if (IFCImportFile.HasUndefinedAttribute(ex))
                IFCImportFile.TheFile.DowngradeIFC4SchemaTo(IFCSchemaVersion.IFC4Add1Obsolete);
             else
-               throw ex;
+               throw;
          }
       }
 

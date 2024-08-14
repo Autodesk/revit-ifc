@@ -73,6 +73,12 @@ namespace Revit.IFC.Export.Utility
          } 
       }
 
+
+      /// <summary>
+      /// If set, set the IfcOwnerHistory LastModified attribute to be the Author in Project Information.
+      /// </summary>
+      public bool OwnerHistoryLastModified { get; private set; } = false;
+
       public KnownERNames ExchangeRequirement { get; set; } = KnownERNames.NotDefined;
 
       public string GeoRefCRSName { get; private set; }
@@ -250,7 +256,8 @@ namespace Revit.IFC.Export.Utility
 
          ExportOptionsCache cache = new ExportOptionsCache();
          cache.FileVersion = exporterIFC.FileVersion;
-         cache.FileName = exporterIFC.FileName;
+         cache.FullFileName = exporterIFC.FileName;
+         cache.FileNameOnly = Path.GetFileName(cache.FullFileName);
          cache.ExportBaseQuantities = exporterIFC.ExportBaseQuantities;
          cache.WallAndColumnSplitting = exporterIFC.WallAndColumnSplitting;
          cache.SpaceBoundaryLevel = exporterIFC.SpaceBoundaryLevel;
@@ -328,6 +335,9 @@ namespace Revit.IFC.Export.Utility
             cache.NamingOptions.UseTypeNameOnlyForIfcType =
                 (useOnlyTypeNameForIfcType != null) && useOnlyTypeNameForIfcType.GetValueOrDefault();
          }
+         
+         bool? ownerHistoryLastModified = OptionsUtil.GetNamedBooleanOption(options, "OwnerHistoryLastModified");
+         cache.OwnerHistoryLastModified = ownerHistoryLastModified.GetValueOrDefault(false);
 
          // "SingleElement" export option - useful for debugging - only one input element will be processed for export
          if (options.TryGetValue("SingleElement", out string singleElementValue))
@@ -408,7 +418,9 @@ namespace Revit.IFC.Export.Utility
          if (options.TryGetValue("ActivePhaseId", out activePhaseElementValue))
             cache.ActivePhaseId = ParseElementId(activePhaseElementValue);
 
-         if ((cache.ActivePhaseId == ElementId.InvalidElementId) && (cache.FilterViewForExport != null))
+         // If we have a filter view, the phase to be exported is only the phase of the
+         // view.  So we ignore any phase sent.
+         if (cache.FilterViewForExport != null)
          {
             Parameter currPhase = cache.FilterViewForExport.get_Parameter(BuiltInParameter.VIEW_PHASE);
             if (currPhase != null)
@@ -554,13 +566,13 @@ namespace Revit.IFC.Export.Utility
                throw new Exception("Option 'FileType' did not match an existing IFCFileFormat value");
             }
          }
-         else if (!string.IsNullOrEmpty(cache.FileName))
+         else if (!string.IsNullOrEmpty(cache.FileNameOnly))
          {
-            if (cache.FileName.EndsWith(".ifcXML")) //localization?
+            if (cache.FileNameOnly.EndsWith(".ifcXML")) //localization?
             {
                cache.IFCFileFormat = IFCFileFormat.IfcXML;
             }
-            else if (cache.FileName.EndsWith(".ifcZIP"))
+            else if (cache.FileNameOnly.EndsWith(".ifcZIP"))
             {
                cache.IFCFileFormat = IFCFileFormat.IfcZIP;
             }
@@ -588,13 +600,14 @@ namespace Revit.IFC.Export.Utility
       public IFCVersion FileVersion { get; set; }
 
       /// <summary>
-      /// The file name.
+      /// The full file name, including path.
       /// </summary>
-      public string FileName
-      {
-         get;
-         set;
-      }
+      public string FullFileName { get; set; }
+
+      /// <summary>
+      /// The file name, not the including path.
+      /// </summary>
+      public string FileNameOnly { get; set; }
 
       /// <summary>
       /// Identifies if the schema version being exported is IFC 2x2.
@@ -976,39 +989,23 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Contains options for setting how entity names are generated.
       /// </summary>
-      public NamingOptions NamingOptions
-      {
-         get;
-         set;
-      }
+      public NamingOptions NamingOptions { get; set; }
 
       /// <summary>
       /// The file format to export.  Not used currently.
       /// </summary>
       // TODO: Connect this to the output file being written by the client.
-      public IFCFileFormat IFCFileFormat
-      {
-         get;
-         set;
-      }
+      public IFCFileFormat IFCFileFormat { get; set; }
 
       /// <summary>
       /// Select export Config Name from the UI
       /// </summary>
-      public String SelectedConfigName
-      {
-         get;
-         set;
-      }
+      public string SelectedConfigName { get; set; }
 
       /// <summary>
       /// Select export Config Name from the UI
       /// </summary>
-      public String SelectedParametermappingTableName
-      {
-         get;
-         set;
-      }
+      public string SelectedParametermappingTableName { get; set; }
 
       /// <summary>
       /// Allow exporting a mix of extrusions and BReps as a solid model, if possible.
@@ -1018,20 +1015,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Specifies which phase id to export.  May be expanded to phases.
       /// </summary>
-      public ElementId ActivePhaseId
-      {
-         get;
-         protected set;
-      }
+      public ElementId ActivePhaseId { get; protected set; }
 
       /// <summary>
       /// The phase element corresponding to the phase id.
       /// </summary>
-      public Phase ActivePhaseElement
-      {
-         get;
-         protected set;
-      }
+      public Phase ActivePhaseElement { get; protected set; }
 
       /// <summary>
       /// The status of how to handle Revit link instances.

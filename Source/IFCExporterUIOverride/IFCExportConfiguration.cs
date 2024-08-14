@@ -286,6 +286,15 @@ namespace BIM.IFC.Export.UI
       public bool UseTypeNameOnlyForIfcType { get; set; } = false;
 
       /// <summary>
+      /// Don't create a container entity for floors and roofs unless exporting parts
+      /// </summary>
+      public bool ExportHostAsSingleEntity { get; set; } = false;
+
+      /// <summary>
+      /// Use Author field in Project Information to set IfcOwnerHistory LastModified attribute
+      /// </summary>
+      public bool OwnerHistoryLastModified { get; set; } = false;
+      /// <summary>
       /// Value indicating whether the IFC Entity Name will use visible Revit Name
       /// </summary>
       public bool UseVisibleRevitNameAsEntityName { get; set; } = false;
@@ -562,7 +571,9 @@ namespace BIM.IFC.Export.UI
       /// <param name="filterViewId">The id of the view that will be used to select which elements to export.</param>
       public void UpdateOptions(IFCExportOptions options, ElementId filterViewId)
       {
-         JavaScriptSerializer ser = new JavaScriptSerializer();
+      	 JavaScriptSerializer ser = new JavaScriptSerializer();
+         options.FilterViewId = VisibleElementsOfCurrentView ? filterViewId : ElementId.InvalidElementId;
+         
          foreach (var prop in GetType().GetProperties())
          {
             switch (prop.Name)
@@ -574,7 +585,7 @@ namespace BIM.IFC.Export.UI
                   options.FileVersion = IFCVersion;
                   break;
                case "ActivePhaseId":
-                  if (IFCPhaseAttributes.Validate(ActivePhaseId))
+                  if (options.FilterViewId == ElementId.InvalidElementId && IFCPhaseAttributes.Validate(ActivePhaseId))
                      options.AddOption(prop.Name, ActivePhaseId.ToString());
                   break;
                case "SpaceBoundaries":
@@ -601,8 +612,6 @@ namespace BIM.IFC.Export.UI
                   break;
             }
          }
-
-         options.FilterViewId = VisibleElementsOfCurrentView ? filterViewId : ElementId.InvalidElementId;
       }
 
 

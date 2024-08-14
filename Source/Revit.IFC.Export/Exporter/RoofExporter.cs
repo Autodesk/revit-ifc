@@ -26,6 +26,7 @@ using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using System.Linq;
+using Revit.IFC.Export.Exporter.PropertySet;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -102,16 +103,11 @@ namespace Revit.IFC.Export.Exporter
                             categoryId, geometryElement, bodyExporterOptions, null, ecData, out bodyData, instanceGeometry: true);
                         if (bodyData != null && bodyData.MaterialIds != null)
                            materialIds = bodyData.MaterialIds;
-                     }
-                     else
-                     {
-                        prodRep = RepresentationUtil.CreateProductDefinitionShapeWithoutBodyRep(exporterIFC, roof, categoryId, geometryElement, representations);
-                     }
-
-                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodRep))
-                     {
-                        ecData.ClearOpenings();
-                        return;
+                        if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodRep))
+                        {
+                           ecData.ClearOpenings();
+                           return;
+                        }
                      }
 
                      bool exportSlab = ((ecData.ScaledLength > MathUtil.Eps() || exportByComponents) &&
@@ -120,6 +116,21 @@ namespace Revit.IFC.Export.Exporter
                      string guid = GUIDUtil.CreateGUID(roof);
                      IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                      IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
+
+                     if (exportByComponents)
+                     {
+                        if (exportSlab || exportRoofAsSingleGeometry)
+                        {
+                           prodRep = RepresentationUtil.CreateProductDefinitionShapeWithoutBodyRep(exporterIFC, roof, categoryId, geometryElement, representations);
+                           IFCAnyHandle hostShapeRepFromParts = PartExporter.ExportHostPartAsShapeAspects(exporterIFC, roof, prodRep,
+                              productWrapper, placementSetter, localPlacement, ElementId.InvalidElementId, layersetInfo, ecData);
+                        }
+                        else
+                        {
+                           ecData.ClearOpenings();
+                           return;
+                        }
+                     }
 
                      IFCAnyHandle roofHnd = IFCInstanceExporter.CreateGenericIFCEntity(
                         roofExportType, exporterIFC, roof, guid, ownerHistory,
@@ -133,12 +144,6 @@ namespace Revit.IFC.Export.Exporter
 
                      if (!(roof is RoofBase))
                         CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, materialIds);
-
-                     if (exportByComponents && (exportSlab || exportRoofAsSingleGeometry))
-                     {
-                        IFCAnyHandle hostShapeRepFromParts = PartExporter.ExportHostPartAsShapeAspects(exporterIFC, roof, prodRep,
-                           productWrapper, placementSetter, localPlacement, ElementId.InvalidElementId, layersetInfo, ecData);
-                     }
 
                      Transform offsetTransform = (bodyData != null) ? bodyData.OffsetTransform : Transform.Identity;
 
@@ -194,7 +199,7 @@ namespace Revit.IFC.Export.Exporter
                            }
                            else if (layersetInfo != null && layersetInfo.MaterialIds != null)
                            {
-                              materialIds = layersetInfo.MaterialIds.Select(x => x.m_baseMatId).ToList();
+                              materialIds = layersetInfo.MaterialIds.Select(x => x.BaseMatId).ToList();
                               CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, materialIds);
                            }
                         }
@@ -266,14 +271,16 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      ///  Exports a roof or floor as a container of multiple roof slabs.  Returns the handle, if successful.
+      /// Exports a roof or floor as a container of multiple roof slabs.  Returns the handle, 
+      /// if successful.
       /// </summary>
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="element">The roof or floor element.</param>
       /// <param name="geometry">The geometry of the element.</param>
       /// <param name="productWrapper">The product wrapper.</param>
       /// <returns>The roof handle.</returns>
-      /// <remarks>For floors, if there is only one component, return null, as we do not want to create a container.</remarks>
+      /// <remarks>For floors, if there is only one component, return null, as we do not want to 
+      /// create a container.</remarks>
       public static IFCAnyHandle ExportRoofOrFloorAsContainer(ExporterIFC exporterIFC, 
          Element element, GeometryElement geometry, ProductWrapper productWrapper)
       {
@@ -285,8 +292,7 @@ namespace Revit.IFC.Export.Exporter
          if (!elementIsRoof && !elementIsFloor)
             return null;
 
-         IFCExportInfoPair roofExportType = ExporterUtil.GetProductExportType(exporterIFC, element, 
-            out _);
+         IFCExportInfoPair roofExportType = ExporterUtil.GetProductExportType(exporterIFC, element, out _);
          if (roofExportType.IsUnKnown)
          {
             IFCEntityType elementClassTypeEnum = 
@@ -313,8 +319,8 @@ namespace Revit.IFC.Export.Exporter
 
                // Check for containment override
                IFCAnyHandle overrideContainerHnd = null;
-               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC,
-                  element, out overrideContainerHnd);
+               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, 
+                  out overrideContainerHnd);
 
                // We want to delay creating entity handles until as late as possible, so that if we
                // abort the IFC transaction, we don't have to delete elements.  This is both for
@@ -373,7 +379,7 @@ namespace Revit.IFC.Export.Exporter
 
                            // If element is floor, then the profile curve loop of hostObjectSubComponent is computed from the top face of the floor
                            // else if element is roof, then the profile curve loop is taken from the bottom face of the roof instead 
-                           XYZ extrusionDir = elementIsFloor ? new XYZ(0, 0, -1) : new XYZ(0, 0, 1);
+                           XYZ extrusionDir = elementIsFloor ? -XYZ.BasisZ : XYZ.BasisZ;
 
                            ElementId catId = CategoryUtil.GetSafeCategoryId(element);
 
@@ -456,7 +462,7 @@ namespace Revit.IFC.Export.Exporter
                                     double scaleProj = extrusionDir.DotProduct(plane.Normal);
                                     foreach (MaterialLayerSetInfo.MaterialInfo matLayerInfo in MaterialIds)
                                     {
-                                       double itemExtrDepth = matLayerInfo.m_matWidth;
+                                       double itemExtrDepth = matLayerInfo.Width;
                                        double scaledItemExtrDepth = UnitUtil.ScaleLength(itemExtrDepth) * slope;
                                        IFCAnyHandle itemShapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, extrusionDir, scaledItemExtrDepth, false, out _);
                                        if (IFCAnyHandleUtil.IsNullOrHasNoValue(itemShapeRep))
@@ -465,10 +471,10 @@ namespace Revit.IFC.Export.Exporter
                                           return null;
                                        }
 
-                                       BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, false, itemShapeRep, matLayerInfo.m_baseMatId);
+                                       BodyExporter.CreateSurfaceStyleForRepItem(exporterIFC, element.Document, false, itemShapeRep, matLayerInfo.BaseMatId);
 
                                        bodyItems.Add(itemShapeRep);
-                                       RepresentationUtil.CreateRepForShapeAspect(exporterIFC, element, prodDefShape, representationType, matLayerInfo.m_layerName, itemShapeRep);
+                                       RepresentationUtil.CreateRepForShapeAspect(exporterIFC, element, prodDefShape, representationType, matLayerInfo.LayerName, itemShapeRep);
 
                                        XYZ offset = new XYZ(0, 0, itemExtrDepth / scaleProj);   // offset is calculated as extent in the direction of extrusion
                                        lcs.Origin += offset;
@@ -499,10 +505,13 @@ namespace Revit.IFC.Export.Exporter
                                  slabExtrusionCreationData.ScaledOuterPerimeter = UnitUtil.ScaleLength(curveLoops[0].GetExactLength());
                                  slabExtrusionCreationData.Slope = UnitUtil.ScaleAngle(MathUtil.SafeAcos(Math.Abs(slope)));
 
+                                 if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+                                    PropertyUtil.CreateSlabBaseQuantities(exporterIFC, slabHnd, slabExtrusionCreationData, curveLoops[0]);
+
                                  productWrapper.AddElement(null, slabHnd, setter, slabExtrusionCreationData, false, roofExportType);
 
                                  // Create type
-                                 IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(element, 
+                                 IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(element,
                                     roofExportType, exporterIFC.GetFile(), productWrapper);
                                  ExporterCacheManager.TypeRelationsCache.Add(slabRoofTypeHnd, slabHnd);
 
@@ -613,38 +622,38 @@ namespace Revit.IFC.Export.Exporter
       {
          string typeName = NamingUtil.RemoveSpacesAndUnderscores(roofTypeName);
 
-         if (String.Compare(typeName, "ROOFTYPEENUM", true) == 0 ||
-             String.Compare(typeName, "ROOFTYPEENUMFREEFORM", true) == 0)
+         if (string.Compare(typeName, "ROOFTYPEENUM", true) == 0 ||
+             string.Compare(typeName, "ROOFTYPEENUMFREEFORM", true) == 0)
             return "FREEFORM";
-         if (String.Compare(typeName, "FLAT", true) == 0 ||
-             String.Compare(typeName, "FLATROOF", true) == 0)
+         if (string.Compare(typeName, "FLAT", true) == 0 ||
+             string.Compare(typeName, "FLATROOF", true) == 0)
             return "FLAT_ROOF";
-         if (String.Compare(typeName, "SHED", true) == 0 ||
-             String.Compare(typeName, "SHEDROOF", true) == 0)
+         if (string.Compare(typeName, "SHED", true) == 0 ||
+             string.Compare(typeName, "SHEDROOF", true) == 0)
             return "SHED_ROOF";
-         if (String.Compare(typeName, "GABLE", true) == 0 ||
-             String.Compare(typeName, "GABLEROOF", true) == 0)
+         if (string.Compare(typeName, "GABLE", true) == 0 ||
+             string.Compare(typeName, "GABLEROOF", true) == 0)
             return "GABLE_ROOF";
-         if (String.Compare(typeName, "HIP", true) == 0 ||
-             String.Compare(typeName, "HIPROOF", true) == 0)
+         if (string.Compare(typeName, "HIP", true) == 0 ||
+             string.Compare(typeName, "HIPROOF", true) == 0)
             return "HIP_ROOF";
-         if (String.Compare(typeName, "HIPPED_GABLE", true) == 0 ||
-             String.Compare(typeName, "HIPPED_GABLEROOF", true) == 0)
+         if (string.Compare(typeName, "HIPPED_GABLE", true) == 0 ||
+             string.Compare(typeName, "HIPPED_GABLEROOF", true) == 0)
             return "HIPPED_GABLE_ROOF";
-         if (String.Compare(typeName, "MANSARD", true) == 0 ||
-             String.Compare(typeName, "MANSARDROOF", true) == 0)
+         if (string.Compare(typeName, "MANSARD", true) == 0 ||
+             string.Compare(typeName, "MANSARDROOF", true) == 0)
             return "MANSARD_ROOF";
-         if (String.Compare(typeName, "BARREL", true) == 0 ||
-             String.Compare(typeName, "BARRELROOF", true) == 0)
+         if (string.Compare(typeName, "BARREL", true) == 0 ||
+             string.Compare(typeName, "BARRELROOF", true) == 0)
             return "BARREL_ROOF";
-         if (String.Compare(typeName, "BUTTERFLY", true) == 0 ||
-             String.Compare(typeName, "BUTTERFLYROOF", true) == 0)
+         if (string.Compare(typeName, "BUTTERFLY", true) == 0 ||
+             string.Compare(typeName, "BUTTERFLYROOF", true) == 0)
             return "BUTTERFLY_ROOF";
-         if (String.Compare(typeName, "PAVILION", true) == 0 ||
-             String.Compare(typeName, "PAVILIONROOF", true) == 0)
+         if (string.Compare(typeName, "PAVILION", true) == 0 ||
+             string.Compare(typeName, "PAVILIONROOF", true) == 0)
             return "PAVILION_ROOF";
-         if (String.Compare(typeName, "DOME", true) == 0 ||
-             String.Compare(typeName, "DOMEROOF", true) == 0)
+         if (string.Compare(typeName, "DOME", true) == 0 ||
+             string.Compare(typeName, "DOMEROOF", true) == 0)
             return "DOME_ROOF";
 
          return typeName;        //return unchanged. Validation for ENUM will be done later specific to schema version

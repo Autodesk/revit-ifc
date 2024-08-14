@@ -73,37 +73,39 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          // Create Uniformat classification, if it is not set.
          string uniformatKeyString = "Uniformat";
          string uniformatDescription = "";
-         string uniformatCode = null;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.UNIFORMAT_CODE, false, out uniformatCode) == null)
-            ParameterUtil.GetStringValueFromElementOrSymbol(element, "Assembly Code", out uniformatCode);
-
-         if (!String.IsNullOrWhiteSpace(uniformatCode))
-         {
-            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.UNIFORMAT_DESCRIPTION, false, out uniformatDescription) == null)
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, "Assembly Description", out uniformatDescription);
-         }
 
          if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue(uniformatKeyString, out IFCAnyHandle classification))
          {
-            classification = IFCInstanceExporter.CreateClassification(file, "CSI (Construction Specifications Institute)", "1998", 0, 0, 0, 
+            classification = IFCInstanceExporter.CreateClassification(file, "CSI (Construction Specifications Institute)", "1998", 0, 0, 0,
                uniformatKeyString, "UniFormat Classification", GetUniformatURL());
             ExporterCacheManager.ClassificationCache.ClassificationHandles.Add(uniformatKeyString, classification);
          }
 
-         if (!String.IsNullOrEmpty(uniformatCode))
+
+         foreach (IFCAnyHandle elemHnd in elemHnds)
          {
+            if (!IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
+               continue;
+
+            ElementId elementId = ExporterCacheManager.HandleToElementCache.Find(elemHnd);
+            Element elementToUse = (elementId == ElementId.InvalidElementId) ? element : element?.Document?.GetElement(elementId);
+            if (elementToUse == null)
+               continue;
+
+            if (ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, BuiltInParameter.UNIFORMAT_CODE, false, out string uniformatCode) == null)
+               ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, "Assembly Code", out uniformatCode);
+
+            if (!String.IsNullOrWhiteSpace(uniformatCode))
             {
-               foreach (IFCAnyHandle elemHnd in elemHnds)
-               {
-                  if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
-                  {
-                     ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
-                        uniformatCode, uniformatKeyString, uniformatDescription, classification);
-                     InsertClassificationReference(file, key, elemHnd);
-                  }
-               }
+               if (ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, BuiltInParameter.UNIFORMAT_DESCRIPTION, false, out string uniformatRefName) == null)
+                  ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, "Assembly Description", out uniformatRefName);
+
+               ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
+                  uniformatCode, uniformatRefName, uniformatDescription, classification);
+               InsertClassificationReference(file, key, elemHnd);
             }
          }
+
       }
 
       /// <summary>
@@ -162,15 +164,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
             ParseClassificationCode(paramClassificationCode, classificationCodeFieldName, out classificationName, out classificationCode, out classificationRefName);
 
-            if (string.IsNullOrEmpty(classificationDescription))
+            if (string.IsNullOrEmpty(classificationRefName))
             {
                if (string.Compare(classificationCodeFieldName, "Assembly Code", true) == 0)
                {
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.UNIFORMAT_DESCRIPTION, false, out classificationDescription);
+                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.UNIFORMAT_DESCRIPTION, false, out classificationRefName);
                }
                else if (string.Compare(classificationCodeFieldName, "OmniClass Number", true) == 0)
                {
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.OMNICLASS_DESCRIPTION, false, out classificationDescription);
+                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.OMNICLASS_DESCRIPTION, false, out classificationRefName);
                }
             }
             // If classificationName is empty, there is no classification to export.

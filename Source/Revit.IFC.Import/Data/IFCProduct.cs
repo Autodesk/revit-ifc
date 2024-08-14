@@ -195,7 +195,7 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Private function to determine whether an IFCProduct contins geometry in a sub-element.
+      /// Private function to determine whether an IFCProduct contains geometry in a sub-element.
       /// </summary>
       /// <param name="visitedEntities">A list of already visited entities, to avoid infinite recursion.</param>
       /// <returns>True if the IFCProduct directly or indirectly contains geometry.</returns>
@@ -389,20 +389,19 @@ namespace Revit.IFC.Import.Data
                      {
                         // We need to check if the solid created is good enough for DirectShape.  If not, warn and use a fallback Mesh.
                         GeometryObject currObject = geometryObject.GeometryObject;
-                        if (currObject is Solid)
-                        {
-                           Solid solid = currObject as Solid;
-                           if (!shape.IsValidGeometry(solid))
+                        if (currObject != null)
                            {
-                              Importer.TheLog.LogWarning(Id, "Couldn't create valid solid, reverting to mesh.", false);
-                              directShapeGeometries.AddRange(IFCGeometryUtil.CreateMeshesFromSolid(solid));
-                              currObject = null;
+                              IList<GeometryObject> adjustedObjects = IFCGeometryUtil.AdjustGeometryObjectsIfNeeded(currObject, shape, Id);
+                              if (adjustedObjects != null)
+                              {
+                                 directShapeGeometries.AddRange(adjustedObjects);
+                              }
+                              else
+                              {
+                                 directShapeGeometries.Add(currObject);
+                              }
                            }
                         }
-
-                        if (currObject != null)
-                           directShapeGeometries.Add(currObject);
-                     }
 
                      // We will use the first IfcTypeObject id, if it exists.  In general, there should be 0 or 1.
                      IFCTypeObject typeObjectToUse = null;
