@@ -105,8 +105,11 @@ namespace Revit.IFC.Import.Data
                lcs = ContainedIn?.ObjectLocation?.TotalTransform;
 
          }
+
          if (lcs == null)
+         {
             lcs = Transform.Identity;
+         }
 
          // 2016+ only.
          XYZ origin = lcs.Origin;

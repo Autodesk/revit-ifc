@@ -58,7 +58,6 @@ namespace BIM.IFC.Export.UI
       {
          // Clean up
          m_ifcCommandBinding.Executed -= OnIFCExport;
-
          return Result.Succeeded;
       }
 
@@ -103,7 +102,7 @@ namespace BIM.IFC.Export.UI
                entUIService.AddServer(browseIFCEntityServer);
                entUIService.SetActiveServer(browseIFCEntityServer.GetServerId());
             }
-            catch {}
+            catch { }
          }
       }
 

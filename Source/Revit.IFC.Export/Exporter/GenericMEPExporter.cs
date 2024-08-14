@@ -59,7 +59,7 @@ namespace Revit.IFC.Export.Exporter
             // associated with the assembly, on the level of the assembly.
             if ((exportType.ExportType == IFCEntityType.IfcDuctSegmentType) &&
                (ExporterCacheManager.ExportOptionsCache.WallAndColumnSplitting) &&
-               (element.AssemblyInstanceId == ElementId.InvalidElementId))
+               !ExporterUtil.IsContainedInAssembly(element))
             {
                LevelUtil.CreateSplitLevelRangesForElement(exporterIFC, exportType, element, out levels,
                                                           out ranges);
@@ -207,8 +207,7 @@ namespace Revit.IFC.Export.Exporter
                IList<IFCAnyHandle> repMapListOpt = new List<IFCAnyHandle>();
 
                string typeGuid = FamilyExporterUtil.GetGUIDForFamilySymbol(element as FamilyInstance, type, exportType);
-               styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, ifcEnumType, 
-                  propertySetsOpt, repMapListOpt, element, type, typeGuid);
+               styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, propertySetsOpt, repMapListOpt, element, type, typeGuid);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                {
                   productWrapper.RegisterHandleWithElementType(type, exportType, styleHandle, null);

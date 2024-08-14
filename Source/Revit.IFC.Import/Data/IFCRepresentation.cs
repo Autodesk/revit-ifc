@@ -189,7 +189,9 @@ namespace Revit.IFC.Import.Data
                      }
                   }
                   else
+                  {
                      repItem = IFCRepresentationItem.ProcessIFCRepresentationItem(item);
+                  }
                }
                catch (Exception ex)
                {

@@ -27,6 +27,66 @@ using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Common.Utility
 {
+   public static class ListExtensions
+   {
+      /// <summary>
+      /// Add an IFCAnyHandle to a list if the handle is valid.
+      /// </summary>
+      /// <typeparam name="IFCAnyHandle"></typeparam>
+      /// <param name="myList">The list.</param>
+      /// <param name="hnd">The handle to conditionally add.</param>
+      /// <returns>True if an item was added, false if not.</returns>
+      public static bool AddIfNotNull<T>(this IList<T> myList, T hnd) where T : IFCAnyHandle
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(hnd))
+            return false;
+
+         myList.Add(hnd);
+         return true;
+      }
+   }
+
+   /// <summary>
+   /// Class containing convenience function for IDictionary of IFCAnyHandle.
+   /// </summary>
+   public static class DictionaryExtensionsClass
+   {
+      public static bool AddIfNotNullAndNewKey<T>(this IDictionary<string, T> myDictionary, 
+         string key, T hnd) where T : IFCAnyHandle
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(hnd))
+            return false;
+         
+         if (myDictionary.ContainsKey(key))
+            return false;
+
+         myDictionary[key] = hnd;
+         return true;
+      }
+   }
+
+   /// <summary>
+   /// Class containing convenience function for ISet of IFCAnyHandle.
+   /// </summary>
+   public static class SetExtensions
+   {
+      /// <summary>
+      /// Add an IFCAnyHandle to a set if the handle is valid.
+      /// </summary>
+      /// <typeparam name="IFCAnyHandle"></typeparam>
+      /// <param name="mySet">The set.</param>
+      /// <param name="hnd">The handle to conditionally add.</param>
+      /// <returns>True if an item was added, false if not.</returns>
+      public static bool AddIfNotNull<T>(this ISet<T> mySet, T hnd) where T : IFCAnyHandle
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(hnd))
+            return false;
+
+         mySet.Add(hnd);
+         return true;
+      }
+   }
+
    public class IFCLimits
    {
       /// <summary>

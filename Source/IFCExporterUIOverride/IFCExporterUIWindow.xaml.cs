@@ -191,6 +191,8 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       private void InitializeConfigurationOptions()
       {
+         Document document = IFCExport.TheDocument;
+
          if (!comboboxIfcType.HasItems)
          {
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
@@ -231,7 +233,7 @@ namespace BIM.IFC.Export.UI
 
          if (!comboboxActivePhase.HasItems)
          {
-            PhaseArray phaseArray = IFCCommandOverrideApplication.TheDocument.Phases;
+            PhaseArray phaseArray = document.Phases; 
             comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId));  // Default.
             foreach (Phase phase in phaseArray)
             {
@@ -250,8 +252,7 @@ namespace BIM.IFC.Export.UI
 
          if (!comboBoxProjectSite.HasItems)
          {
-            Document doc = IFCExport.TheDocument;
-            foreach (ProjectLocation pLoc in doc.ProjectLocations.Cast<ProjectLocation>().ToList())
+            foreach (ProjectLocation pLoc in document.ProjectLocations.Cast<ProjectLocation>().ToList())
             {
                // There seem to be a possibility that the Site Locations can have the same name (UI does not allow it though)
                // In this case, it will skip the duplicate since there is no way for this to know which one is exactly selected
@@ -279,7 +280,7 @@ namespace BIM.IFC.Export.UI
       {
          if (configuration.VisibleElementsOfCurrentView)
          {
-            UIDocument uiDoc = new UIDocument(IFCCommandOverrideApplication.TheDocument);
+            UIDocument uiDoc = new UIDocument(IFCExport.TheDocument);
             Parameter currPhase = uiDoc.ActiveView.get_Parameter(BuiltInParameter.VIEW_PHASE);
             if (currPhase != null)
                configuration.ActivePhaseId = currPhase.AsElementId().IntegerValue;
@@ -393,6 +394,8 @@ namespace BIM.IFC.Export.UI
          userDefinedParameterMappingTable.Text = configuration.ExportUserDefinedParameterMappingFileName;
          checkBoxExportUserDefinedParameterMapping.IsChecked = configuration.ExportUserDefinedParameterMapping;
 
+         checkbox_OwnerHistoryLastModified.IsChecked = configuration.OwnerHistoryLastModified;
+
          // Keep old behavior where by default we looked for ParameterMappingTable.txt in the current directory if ExportUserDefinedParameterMappingFileName
          // isn't set.
          if (string.IsNullOrWhiteSpace(configuration.ExportUserDefinedParameterMappingFileName))
@@ -419,7 +422,6 @@ namespace BIM.IFC.Export.UI
                                                                 checkBoxFamilyAndTypeName,
                                                                 checkboxExportBoundingBox,
                                                                 checkboxExportSolidModelRep,
-                                                                checkBoxExportLinkedFiles,
                                                                 checkboxIncludeIfcSiteElevation,
                                                                 checkboxStoreIFCGUID,
                                                                 checkboxExportMaterialPsets,
@@ -439,7 +441,9 @@ namespace BIM.IFC.Export.UI
                                                                 checkBoxExportSpecificSchedules,
                                                                 checkBox_TriangulationOnly,
                                                                 checkbox_UseTypeNameOnly,
-                                                                checkbox_UseVisibleRevitNameAsEntityName
+                                                                checkbox_UseVisibleRevitNameAsEntityName,
+                                                                checkbox_OwnerHistoryLastModified
+            
             };
 
          foreach (UIElement element in configurationElements)
@@ -451,7 +455,7 @@ namespace BIM.IFC.Export.UI
          userDefinedParameterMappingTable.IsEnabled = userDefinedParameterMappingTable.IsEnabled && configuration.ExportUserDefinedParameterMapping;
          buttonBrowse.IsEnabled = buttonBrowse.IsEnabled && configuration.ExportUserDefinedPsets;
          buttonParameterMappingBrowse.IsEnabled = buttonParameterMappingBrowse.IsEnabled && configuration.ExportUserDefinedParameterMapping;
-
+         
          // ExportRoomsInView option will only be enabled if it is not currently disabled AND the "export elements visible in view" option is checked
          bool? cboVisibleElementInCurrentView = checkboxVisibleElementsCurrView.IsChecked;
          checkBoxExportRoomsInView.IsEnabled = checkBoxExportRoomsInView.IsEnabled && cboVisibleElementInCurrentView.HasValue ? cboVisibleElementInCurrentView.Value : false;
@@ -482,6 +486,9 @@ namespace BIM.IFC.Export.UI
 
          checkbox_UseVisibleRevitNameAsEntityName.IsChecked = configuration.UseVisibleRevitNameAsEntityName;
          checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
+
+         checkbox_OwnerHistoryLastModified.IsChecked = configuration.OwnerHistoryLastModified;
+         checkbox_OwnerHistoryLastModified.IsEnabled = true;
 
          if (configuration.IFCVersion.Equals(IFCVersion.IFC2x3FM))
          {
@@ -663,6 +670,7 @@ namespace BIM.IFC.Export.UI
          m_configurationsMap.Remove(configuration.Name);
          listBoxConfigurations.Items.Remove(configuration);
          listBoxConfigurations.SelectedIndex = 0;
+         IFCExport.LastSelectedConfig.Remove(configuration.Name);
       }
 
       /// <summary>
@@ -775,6 +783,8 @@ namespace BIM.IFC.Export.UI
             m_configurationsMap.Remove(oldName);
             m_configurationsMap.AddOrReplace(configuration);
             UpdateConfigurationsList(newName);
+            if (IFCExport.LastSelectedConfig.ContainsKey(oldName))
+               IFCExport.LastSelectedConfig.Remove(oldName);
          }
       }
 
@@ -1561,6 +1571,18 @@ namespace BIM.IFC.Export.UI
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
          configuration.UseTypeNameOnlyForIfcType = false;
+      }
+
+      private void Checkbox_OwnerHistoryLastModified_Checked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.OwnerHistoryLastModified = true;
+      }
+
+      private void Checkbox_OwnerHistoryLastModified_Unchecked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.OwnerHistoryLastModified = false;
       }
 
       private void Checkbox_UseVisibleRevitName_Checked(object sender, RoutedEventArgs e)

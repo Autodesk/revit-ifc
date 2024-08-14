@@ -110,6 +110,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          {
             ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_HEIGHT, out m_Height);
          }
+         else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcCurtainWall))
+         {
+            BoundingBoxXYZ boundingBox = element.get_BoundingBox(null);
+            if (boundingBox != null)
+               m_Height = boundingBox.Max.Z - boundingBox.Min.Z;
+         }
 
          if (m_Height > eps)
          {

@@ -941,4 +941,13 @@
   <data name="ExportMaterialPropertySets" xml:space="preserve">
     <value>Export material property sets</value>
   </data>
+  <data name="OwnerHistoryLastModified" xml:space="preserve">
+    <value>Set "Last Modified" user to the Author in Project Information</value>
+  </data>
+  <data name="OwnerHistoryLastModifiedTooltip" xml:space="preserve">
+    <value>Populate the IfcOwnerHistory "LastModified" attribute with the Author information set in Project Information</value>
+  </data>
+  <data name="TemplateNameTooltip" xml:space="preserve">
+    <value>Enter unique template name.</value>
+  </data>
 </root>

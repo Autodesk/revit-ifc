@@ -851,10 +851,10 @@ namespace Revit.IFC.Import.Data
                Importer.PostDelayedLinkErrors(originalDocument);
                linkTransaction.Commit();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                linkTransaction.RollBack();
-               throw ex;
+               throw;
             }
          }
          else // reload from
@@ -1114,6 +1114,10 @@ namespace Revit.IFC.Import.Data
          {
             //schemaVersion = IFCSchemaVersion.IFC4x3; 
             schemaVersion = IFCSchemaVersion.IFC4x3;
+         }
+         else if (schemaName.Equals("IFC4X3_ADD2", StringComparison.OrdinalIgnoreCase))
+         {
+            schemaVersion = IFCSchemaVersion.IFC4x3_ADD2;
          }
          else
             throw new ArgumentException("Invalid or unsupported schema: " + schemaName);

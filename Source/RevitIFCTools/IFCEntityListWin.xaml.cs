@@ -455,9 +455,9 @@ namespace RevitIFCTools
          if (!Enum.TryParse<IFCEntityType>(entity, out entType))
             return;
 
-         exportInfo.SetValueWithPair(entType, predefType);
+         exportInfo.SetByTypeAndPredefinedType(entType, predefType);
          textBox_type2.Text = "Instance: " + exportInfo.ExportInstance + "\nType: " + exportInfo.ExportType 
-               + "\r\nPredefinedTpe: " + exportInfo.ValidatedPredefinedType;
+               + "\r\nPredefinedTpe: " + exportInfo.PredefinedType;
       }
    }
 }

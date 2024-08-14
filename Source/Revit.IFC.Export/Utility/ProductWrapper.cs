@@ -73,6 +73,13 @@ namespace Revit.IFC.Export.Utility
 
          ExporterCacheManager.ElementToHandleCache.Register(element.Id, handle, exportType);
          ExporterCacheManager.HandleToElementCache.Register(handle, element.Id);
+
+         if (SpatialElementExporter.IsZoneCompatible(exportType))
+         {
+            IFCFile file = ExporterIFC.GetFile();
+            SpatialElementExporter.CreateZoneInfos(file, element, handle);
+            SpatialElementExporter.CreateSpaceOccupantInfo(file, element, handle);
+         }
       }
 
       /// <summary>
@@ -173,29 +180,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Gets the first handle of a particular type, or null if none exists.
-      /// </summary>
-      /// <param name="type">The entity type.</param>
-      /// <returns>The handle, or null.</returns>
-      public IFCAnyHandle GetElementOfType(IFCEntityType type)
-      {
-         foreach (IFCAnyHandle handle in CreatedHandles)
-         {
-            if (IFCAnyHandleUtil.IsSubTypeOf(handle, type))
-               return handle;
-         }
-
-         ICollection<IFCAnyHandle> internalObjects = InternalWrapper.GetAllObjects();
-         foreach (IFCAnyHandle handle in internalObjects)
-         {
-            if (IFCAnyHandleUtil.IsSubTypeOf(handle, type))
-               return handle;
-         }
-
-         return null;
-      }
-
-      /// <summary>
       /// Get all handles in the wrapper.
       /// </summary>
       /// <returns>The collection of handles.</returns>
@@ -211,8 +195,7 @@ namespace Revit.IFC.Export.Utility
          // of disposal of entities, and in general a move to .NET only created entities.
          foreach (IFCAnyHandle internalObject in internalObjects)
          {
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(internalObject))
-               allObjects.Add(internalObject);
+            allObjects.AddIfNotNull(internalObject);
          }
 
          allObjects.UnionWith(CreatedHandles);

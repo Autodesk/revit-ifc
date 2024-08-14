@@ -1222,8 +1222,6 @@ namespace Revit.IFC.Export.Utility
             int numBoundaries = faceEdges.Size;
             if (numBoundaries == 0)
                continue;
-            if (numBoundaries > 1)
-               throw new Exception("Can't handle faces with interior boundaries.");
 
             // In some cases the native function throws an exception, skip this face if it occurs
             ICollection<ElementId> generatingElementIds;
@@ -2238,6 +2236,12 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The arc handle.</returns>
       public static IFCAnyHandle CreateArcSegment(ExporterIFC exporterIFC, Arc arc)
       {
+         double arcRadius = UnitUtil.ScaleLength(arc.Radius);
+         if (!IFCInstanceExporter.ValidateCircle(arcRadius))
+         {
+            return null;
+         }
+
          IFCFile file = exporterIFC.GetFile();
 
          XYZ centerPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, arc.Center);
@@ -2246,8 +2250,6 @@ namespace Revit.IFC.Export.Utility
 
          XYZ xDirection = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, arc.XDirection);
          IFCAnyHandle axis = ExporterUtil.CreateAxis2Placement3D(file, centerPoint, arc.Normal, xDirection);
-
-         double arcRadius = UnitUtil.ScaleLength(arc.Radius);
 
          IFCAnyHandle circle = IFCInstanceExporter.CreateCircle(file, axis, arcRadius);
          return CreateBoundsIfNecessary(file, circle, arc);
@@ -2261,6 +2263,13 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The ellipse handle.</returns>
       public static IFCAnyHandle CreateEllipticalArcSegment(ExporterIFC exporterIFC, Ellipse ellipticalArc)
       {
+         double ellipseRadiusX = UnitUtil.ScaleLength(ellipticalArc.RadiusX);
+         double ellipseRadiusY = UnitUtil.ScaleLength(ellipticalArc.RadiusY);
+         if (!IFCInstanceExporter.ValidateEllipse(ellipseRadiusX, ellipseRadiusY))
+         {
+            return null;
+         }
+
          IFCFile file = exporterIFC.GetFile();
 
          XYZ centerPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, ellipticalArc.Center);
@@ -2269,9 +2278,6 @@ namespace Revit.IFC.Export.Utility
 
          XYZ xDirection = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, ellipticalArc.XDirection);
          IFCAnyHandle axis = ExporterUtil.CreateAxis2Placement3D(file, centerPoint, ellipticalArc.Normal, xDirection);
-
-         double ellipseRadiusX = UnitUtil.ScaleLength(ellipticalArc.RadiusX);
-         double ellipseRadiusY = UnitUtil.ScaleLength(ellipticalArc.RadiusY);
 
          IFCAnyHandle ellipse = IFCInstanceExporter.CreateEllipse(file, axis, ellipseRadiusX, ellipseRadiusY);
          return CreateBoundsIfNecessary(file, ellipse, ellipticalArc);
@@ -4614,10 +4620,14 @@ namespace Revit.IFC.Export.Utility
 
          using (SubTransaction projLocTr = new SubTransaction(doc))
          {
+            projLocTr.Start();
             doc.ActiveProjectLocation = projLocation;
 
             BasePoint surveyPoint = BasePoint.GetSurveyPoint(doc);
             BasePoint projectBasePoint = BasePoint.GetProjectBasePoint(doc);
+            if (surveyPoint == null || projectBasePoint == null)
+               return trf;
+
             (double svNorthings, double svEastings, double svElevation, double svAngle, double pbNorthings,
                double pbEastings, double pbElevation, double pbAngle) = OptionsUtil.ProjectLocationInfo(doc, surveyPoint.Position, projectBasePoint.Position);
 
@@ -4665,6 +4675,7 @@ namespace Revit.IFC.Export.Utility
                      break;
                }
             }
+            projLocTr.RollBack();
          }
          return trf;
       }

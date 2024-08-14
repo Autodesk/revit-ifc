@@ -201,6 +201,32 @@ namespace Revit.IFC.Export.Utility
          exporterIFC.AddBuildingStorey(levelId, info);
       }
 
+      /// <summary>
+      /// Clears all caches.
+      /// </summary>
+      /// <param name="exporterIFC">The Exporter object.</param>
+      public void Clear(ExporterIFC exporterIFC)
+      {
+         // Clear data stored externally to LevelInfoCache.
+         if (exporterIFC != null)
+         {
+            ISet<ElementId> uniqueLevels = LevelsByElevation?.ToHashSet();
+            if ((uniqueLevels?.Count ?? 0) > 0)
+            {
+               foreach (ElementId levelId in uniqueLevels)
+               {
+                  exporterIFC.RemoveBuildingStorey(levelId);
+               }
+            }
+         }
+
+         // Revert all caches back to original state.
+         m_ElementIdToLevelHeight?.Clear();
+         m_BuildingStoriesByElevation?.Clear();
+         m_LevelsByElevation?.Clear();
+         m_OrphanedElements?.Clear();
+         m_OrphanedSpaces?.Clear();
+      }
 
       /// <summary>
       /// Get the IFCLevelInfo corresponding to a level.

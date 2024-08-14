@@ -237,6 +237,72 @@ working on expanding and eventually removing this limit, and we will be tracking
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
 <div class="versionset">
+	<div class="version">23.4.0.0</div><div class="versioninfo-bullet">
+      <br><p>
+         General:
+			<ul>
+				<li>This is the first version of IFC Exporter for Revit 2023. 
+				<li>It contains a various improvements and bug fixes for the basic Revit 2023. 
+			</ul>	
+       </p>
+	   <br>
+	   <p>
+         Improvements:
+			<ul>
+				<li>Added filename to the journal when export IFC if the default is used.
+				<li>Added information to IfcOwnerHistory when exporting to IFC.
+				<li>Add new user defined units export.
+				<li>Added Revit Content Identifier to IFC export.
+				<li>Added Width as an exported quantity to IFC for some assembly-based walls.
+				<li>Allowed export of some elements to IFC4 Reference View [Structural] that had no material assignments.
+				<li>Allowed some old IFC configuration settings to be upgraded.
+				<li>Changed the behavior of the warning message when exporting to IFC 4 if elements in a Revit model are far from the origin so that the warning appears only if an EPSG code is also set.
+				<li>Implemented unique and consistent naming for IfcShapeAspect and IfcMaterialConstituent pairs.
+				<li>Improved area and volume base quantities export for slabs as part of the roof.
+				<li>Improved exporting all layers of some walls to IFC 4 when the option to split by level was chosen.
+				<li>Improved stability of exporting to IFC when the Revit model has corrupted extensible storage data.
+				<li>Improved stability when exporting files to IFC with some short, invalid IFC entity names set in the Export to IFC As and Export Type to IFC As parameters.
+				<li>Improved support for adding properties to PSet_ZoneCommon.
+				<li>Improved the color assignments for some elements exported to IFC 4.
+				<li>Improved the export of current view only IFC files when the phase of the view has changed since it was first set in the IFC export settings.
+			</ul>
+		</p>
+		<br>
+		<p>
+         Bug Fixes:
+			<ul>
+				<li>Added type parameter set export for Revit elements whose corresponding IFC 2x3 entity didn't have a type entity associated with it, such as ramps, stairs, and footings.
+				<li>Corrected placement of some families inside assemblies when exporting to IFC.
+				<li>Fixed a shifting of TriangulatedFaceSet geometry elements.
+				<li>Fixed body representation for walls export to the IFC4RV.
+				<li>Fixed bug with renaming IFC configuration makes the revit-session remember the old and the new IFC configuration.
+				<li>Fixed classifications export for systems.
+				<li>Fixed export of linked file orientation when exporting linked files to the same site.
+				<li>Fixed export of model line placement elevation for 2D representation.
+				<li>Fixed export of room elevation.
+				<li>Fixed export of walls with openings placed next to clippings.
+				<li>Fixed export of GrossArea to IFC4 QTO base quantities for Revit walls exported as IfcCovering.
+				<li>Fixed a IsExternal parameter for windows exported to IFC.
+				<li>Fixed a placement of beam openings.
+				<li>Fixed the processing of the Export to IFC parameter for the assemblies.
+				<li>Fixed Width parameter for IfcSlab and IfcCovering exported to IFC4 QTO base quantities.
+				<li>Improved base quantities calculation for slab elements with openings.
+				<li>Improved base quantities calculation for spatial elements.
+				<li>Improved calculations of gross volume and gross side area when exporting some walls with openings to IFC 4.
+				<li>Improved error handling for invalid Revit file with missing project base and survey points.
+				<li>Improved export of some beams to IFC where the geometry was previously inverted in the IFC file.
+				<li>Improved export of some beams with openings to IFC 4.
+				<li>Improved export of some missing elements when exporting linked documents to IFC.
+				<li>Improved the export of some walls that had doors or windows with multiple voids in the original family.
+				<li>Improved performance of some elongated elements export to IFC 4.
+				<li>Improved linking invalid IFC files with unbounded curves as part of their geometric representations.
+				<li>Removed some IFC export configuration settings that didn't get properly renamed or deleted by Revit.
+			</ul>
+		</p>
+		<br>
+	</div>
+	<br>
+	
 	<div class="version">23.3.1.0</div><div class="versioninfo-bullet">
       <br><p>
          General:

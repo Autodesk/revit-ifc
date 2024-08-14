@@ -46,15 +46,13 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="levelId">The level id.</param>
       /// <param name="direction">The IFCLayerSetDirection.</param>
       /// <param name="containsBRepGeometry">True if the geometry contains BRep geoemtry.  If so, we will export an IfcMaterialList</param>
+      /// <param name="layersetInfo">Material layer info.</param>
       /// <returns>True if exported successfully, false otherwise.</returns>
       public static bool ExportHostObjectMaterials(ExporterIFC exporterIFC, HostObject hostObject,
           IList<IFCAnyHandle> elemHnds, GeometryElement geometryElement, ProductWrapper productWrapper,
-          ElementId levelId, Toolkit.IFCLayerSetDirection direction, bool containsBRepGeometry, IFCAnyHandle typeHnd = null)
+          ElementId levelId, IFCLayerSetDirection direction, bool containsBRepGeometry, IFCAnyHandle typeHnd = null, MaterialLayerSetInfo layersetInfo = null)
       {
-         if (hostObject == null)
-            return true; //nothing to do
-
-         if (elemHnds == null || (elemHnds.Count == 0))
+         if (hostObject == null || ((elemHnds?.Count ?? 0) == 0))
             return true; //nothing to do
 
          IFCFile file = exporterIFC.GetFile();
@@ -72,9 +70,9 @@ namespace Revit.IFC.Export.Exporter
                   wallHeight = boundingBox.Max.Z - boundingBox.Min.Z;
             }
 
-            MaterialLayerSetInfo mlsInfo = new MaterialLayerSetInfo(exporterIFC, hostObject, productWrapper, geometryElement);
+            MaterialLayerSetInfo mlsInfo = layersetInfo == null ? new MaterialLayerSetInfo(exporterIFC, hostObject, productWrapper, geometryElement) : layersetInfo;
             IFCAnyHandle materialLayerSet = mlsInfo.MaterialLayerSetHandle;
-            List<ElementId> materialIds = mlsInfo.MaterialIds.Select(x => x.m_baseMatId).ToList();
+            List<ElementId> materialIds = mlsInfo.MaterialIds.Select(x => x.BaseMatId).ToList();
 
             // Among all the calls of this method the problem of material association absence was found only 
             // for CeilingAndFloor host object type (see JIRA item REVIT-164913)
@@ -181,7 +179,8 @@ namespace Revit.IFC.Export.Exporter
                               double offsetFromReferenceLine = flipDirSense ? -scaledOffset : scaledOffset;
                               IFCDirectionSense sense = flipDirSense ? IFCDirectionSense.Negative : IFCDirectionSense.Positive;
 
-                              layerSetUsage = CategoryUtil.CreateMaterialLayerSetUsage(file, materialLayerSet, direction, sense, offsetFromReferenceLine);
+                              layerSetUsage = IFCInstanceExporter.CreateMaterialLayerSetUsage(file, materialLayerSet,
+                                 direction, sense, offsetFromReferenceLine);
                            }
                            ExporterCacheManager.MaterialSetUsageCache.Add(layerSetUsage, elemHnd);
                         }
@@ -243,18 +242,22 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="levelId">The level id.</param>
       /// <param name="direction">The IFCLayerSetDirection.</param>
       /// <param name="containsBRepGeometry">True if the geometry contains BRep geoemtry.  If so, we will export an IfcMaterialList.  If null, we will calculate.</param>
+      /// <param name="layersetInfo">Material layer info.</param>
       /// <returns>True if exported successfully, false otherwise.</returns>
       public static bool ExportHostObjectMaterials(ExporterIFC exporterIFC, HostObject hostObject,
           IFCAnyHandle elemHnd, GeometryElement geometryElement, ProductWrapper productWrapper,
-          ElementId levelId, Toolkit.IFCLayerSetDirection direction, bool? containsBRepGeometry, IFCAnyHandle typeHnd)
+          ElementId levelId, IFCLayerSetDirection direction, bool? containsBRepGeometry, IFCAnyHandle typeHnd, MaterialLayerSetInfo layersetInfo = null)
       {
-         IList<IFCAnyHandle> elemHnds = new List<IFCAnyHandle>();
-         elemHnds.Add(elemHnd);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(elemHnd))
+            return false;
+
+         IList<IFCAnyHandle> elemHnds = new List<IFCAnyHandle>() { elemHnd };
 
          // Setting doesContainBRepGeometry to false below preserves the original behavior that we created IfcMaterialLists for all geometries.
          // TODO: calculate, or pass in, a valid bool value for Ceilings, Roofs, and Wall Sweeps.
          bool doesContainBRepGeometry = containsBRepGeometry.HasValue ? containsBRepGeometry.Value : false;
-         return ExportHostObjectMaterials(exporterIFC, hostObject, elemHnds, geometryElement, productWrapper, levelId, direction, doesContainBRepGeometry, typeHnd);
+         return ExportHostObjectMaterials(exporterIFC, hostObject, elemHnds, geometryElement, productWrapper, levelId, 
+            direction, doesContainBRepGeometry, typeHnd, layersetInfo);
       }
 
       /// <summary>
