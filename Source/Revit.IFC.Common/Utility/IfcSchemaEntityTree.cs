@@ -432,8 +432,7 @@ namespace Revit.IFC.Common.Utility
             return res;
          }
 
-         string theTypeName =
-            typeName.Substring(typeName.Length - 4, 4).Equals("Type", StringComparison.CurrentCultureIgnoreCase) ?
+         string theTypeName = typeName.EndsWith("Type", StringComparison.CurrentCultureIgnoreCase) ? 
             typeName : GetTypeNameFromInstanceName(typeName); 
          
          IfcSchemaEntityNode entNode = ifcEntitySchemaTree.Find(theTypeName);
@@ -716,7 +715,9 @@ namespace Revit.IFC.Common.Utility
       public static bool IsDeprecatedOrUnsupported(string schemaName, string entityName)
       {
          if (DeprecatedOrUnsupportedDict.ContainsKey(schemaName))
+         {
             return DeprecatedOrUnsupportedDict[schemaName].Contains(entityName);
+         }
 
          return false;
       }

@@ -728,9 +728,9 @@ namespace Revit.IFC.Import
          finally
          {
             TheLog?.Close();
-            TheLog = null;
             IFCImportFile.TheFile?.Close();
             TheHybridInfo = null;
+            TheLog = null;
          }
       }
 

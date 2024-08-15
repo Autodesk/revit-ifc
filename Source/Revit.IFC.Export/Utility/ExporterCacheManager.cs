@@ -105,12 +105,23 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static ElementToHandleCache m_ElementToHandleCache;
 
+      /// <summary>
+      /// A mapping of element ids to a material id determined by looking at element parameters.
+      /// </summary>
+      static public IDictionary<ElementId, ElementId> ElementIdMaterialParameterCache { get; set; } =
+         new Dictionary<ElementId, ElementId>();
+
       ///<summary>
       /// The ElementTypeToHandleCache cache
       /// </summary>
       static ElementTypeToHandleCache m_ElementTypeToHandleCache;
 
       static IDictionary<ElementId, FabricParams> m_FabricParamsCache;
+
+      /// <summary>
+      /// The ExporterIFC used to access internal IFC API functions.
+      /// </summary>
+      static public ExporterIFC ExporterIFC { get; set; } = null;
 
       ///<summary>
       /// The ExportOptions cache.
@@ -478,6 +489,11 @@ namespace Revit.IFC.Export.Utility
       /// Cache for additional Quantities or Properties to be created later with the other quantities
       /// </summary>
       static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> ComplexPropertyCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
+
+      /// <summary>
+      /// Cache for Base Quantities that require separate calculation.
+      /// </summary>
+      static public IDictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> BaseQuantitiesCache { get; set; } = new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
 
       /// <summary>
       /// Cache for the Project Location that comes from the Selected Site on export option
@@ -1492,8 +1508,10 @@ namespace Revit.IFC.Export.Utility
          if (fullClear)
          {
             m_CertifiedEntitiesAndPsetCache = null;
+            ExporterIFC = null;
             m_ExportOptionsCache = null;
             m_Global3DOriginHandle = null;
+            Context2DHandles.Clear();
             Context3DHandles.Clear();
             GUIDCache.Clear();
             OwnerHistoryHandle = null;
@@ -1527,6 +1545,7 @@ namespace Revit.IFC.Export.Utility
          m_ClassificationLocationCache = null;
          ContainmentCache = new ContainmentCache();
          ComplexPropertyCache.Clear();
+         BaseQuantitiesCache.Clear();
          m_CreatedInternalPropertySets = null;
          m_CreatedSpecialPropertySets = null;
          m_CurveAnnotationCache = null;
@@ -1535,6 +1554,7 @@ namespace Revit.IFC.Export.Utility
          m_DoorWindowDelayedOpeningCreatorCache = null;
          m_DummyHostCache = null;
          m_ElementsInAssembliesCache = null;
+         ElementIdMaterialParameterCache.Clear();
          m_ElementToHandleCache = null;
          m_ElementTypeToHandleCache = null;
          m_FabricAreaHandleCache = null;
@@ -1549,7 +1569,7 @@ namespace Revit.IFC.Export.Utility
          m_HostPartsCache = null;
          m_InternallyCreatedRootHandles = null;
          m_IsExternalParameterValueCache = null;
-         LevelInfoCache = new LevelInfoCache();
+         LevelInfoCache.Clear(ExporterIFC);
          m_MaterialIdToStyleHandleCache = null;
          MaterialSetUsageCache = new MaterialSetUsageCache();
          m_MaterialSetCache = null;

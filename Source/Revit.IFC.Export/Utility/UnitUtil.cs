@@ -29,7 +29,7 @@ using Revit.IFC.Export.Toolkit;
 namespace Revit.IFC.Export.Utility
 {
    /// <summary>
-   /// Utilities to work with ExporterCacheManager.UnitCache.
+   /// Utilities to work with ExporterCacheManager.UnitsCache.
    /// </summary>
    public class UnitUtil
    {
@@ -366,6 +366,26 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Converts Mass in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The Mass in Revit internal units.</param>
+      /// <returns>The Mass in Revit display units.</returns>
+      static public double ScaleMass(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.Mass, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts LinearVelocity in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The LinearVelocity in Revit internal units.</param>
+      /// <returns>The LinearVelocity in Revit display units.</returns>
+      static public double ScaleLinearVelocity(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.HvacVelocity, unscaledValue);
+      }
+      
+      /// <summary>
       /// Converts ModulusOfElasticity in Revit internal units to Revit display units.
       /// </summary>
       /// <param name="unscaledValue">The ModulusOfElasticity in Revit internal units.</param>
@@ -493,6 +513,26 @@ namespace Revit.IFC.Export.Utility
       static public double ScaleThermalConductivity(double unscaledValue)
       {
          return ScaleDouble(SpecTypeId.ThermalConductivity, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts RotationalFrequency in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The RotationalFrequency in Revit internal units.</param>
+      /// <returns>The RotationalFrequency in Revit display units.</returns>
+      static public double ScaleRotationalFrequency(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.AngularSpeed, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts ScaleMassFlowRate in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The ScaleMassFlowRate in Revit internal units.</param>
+      /// <returns>The ScaleMassFlowRate in Revit display units.</returns>
+      static public double ScaleMassFlowRate(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.PipingMassPerTime, unscaledValue);
       }
 
       /// <summary>

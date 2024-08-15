@@ -435,19 +435,25 @@ namespace Revit.IFC.Export.Toolkit
          string guid, IFCAnyHandle ownerHistory, string name, string description,
          string objectType)
       {
-         string overrideObjectType = objectType;
-         if (element != null)
+         string overrideObjectType = (element != null) ?
+            NamingUtil.GetObjectTypeOverride(obj, element, objectType) :
+            objectType;
+
+         if (string.IsNullOrEmpty(overrideObjectType) && (element != null))
          {
-            if (string.IsNullOrEmpty(objectType))
-               objectType = NamingUtil.GetFamilyAndTypeName(element);
-            overrideObjectType = NamingUtil.GetObjectTypeOverride(obj, element, objectType);
+            overrideObjectType = NamingUtil.GetFamilyAndTypeName(element);
          }
+
          IFCAnyHandleUtil.SetAttribute(obj, "ObjectType", overrideObjectType);
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+         {
             SetRoot(obj, element, guid, ownerHistory, name, description);
+         }
          else
+         {
             SetObjectDefinition(obj, element, guid, ownerHistory, name, description);
+         }
       }
 
       /// <summary>
@@ -568,11 +574,9 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="longName">The long name.</param>
       /// <param name="compositionType">The composition type.</param>
       private static void SetSpatialStructureElement(IFCAnyHandle spatialStructureElement, Element element,
-          string guid, IFCAnyHandle ownerHistory, string name, string description,
-          string objectType,
-          IFCAnyHandle objectPlacement, IFCAnyHandle representation,
-          string longName,
-          IFCElementComposition compositionType)
+         string guid, IFCAnyHandle ownerHistory, string name, string description,
+         string objectType, IFCAnyHandle objectPlacement, IFCAnyHandle representation, string longName,
+         IFCElementComposition compositionType)
       {
          IFCAnyHandleUtil.SetAttribute(spatialStructureElement, "CompositionType", compositionType);
          if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
@@ -1828,8 +1832,6 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCAnyHandle CreateBuildingStorey(ExporterIFC exporterIFC, Level level, IFCAnyHandle ownerHistory, string objectType, IFCAnyHandle objectPlacement,
           IFCElementComposition compositionType, double elevation)
       {
-
-
          IFCAnyHandle buildingStorey = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcBuildingStorey, null);
          string guid = GUIDUtil.GetLevelGUID(level);
          string name = NamingUtil.GetNameOverride(buildingStorey, level, level.Name);
@@ -2769,6 +2771,16 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Validate that the parameters for IfcCircle are valid.
+      /// </summary>
+      /// <param name="radius">The radius of the circle.</param>
+      /// <returns>True if the circle is valid.</returns>
+      public static bool ValidateCircle(double radius)
+      {
+         return radius >= MathUtil.Eps();
+      }
+
+      /// <summary>
       /// Creates a handle representing an IfcCircle and assigns it to the file.
       /// </summary>
       /// <param name="file">The file.</param>
@@ -2777,13 +2789,24 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateCircle(IFCFile file, IFCAnyHandle position, double radius)
       {
-         if (radius < MathUtil.Eps())
+         if (!ValidateCircle(radius))
             throw new ArgumentException("Radius is tiny, zero, or negative.");
 
          IFCAnyHandle circle = CreateInstance(file, IFCEntityType.IfcCircle, null);
          SetConic(circle, position);
          IFCAnyHandleUtil.SetAttribute(circle, "Radius", radius);
          return circle;
+      }
+
+      /// <summary>
+      /// Validate that the parameters for IfcEllipse are valid.
+      /// </summary>
+      /// <param name="semiAxis1">The radius in the direction of X in the local coordinate system.</param>
+      /// <param name="semiAxis2">The radius in the direction of Y in the local coordinate system.</param>
+      /// <returns>True if the ellipse is valid.</returns>
+      public static bool ValidateEllipse(double semiAxis1, double semiAxis2)
+      {
+         return semiAxis1 >= MathUtil.Eps() && semiAxis2 >= MathUtil.Eps();
       }
 
       /// <summary>
@@ -2796,9 +2819,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateEllipse(IFCFile file, IFCAnyHandle position, double semiAxis1, double semiAxis2)
       {
-         if (semiAxis1 < MathUtil.Eps())
-            throw new ArgumentException("semiAxis1 is tiny, zero, or negative.");
-         if (semiAxis2 < MathUtil.Eps())
+         if (!ValidateEllipse(semiAxis1, semiAxis2))
             throw new ArgumentException("semiAxis2 is tiny, zero, or negative.");
 
          IFCAnyHandle ellipse = CreateInstance(file, IFCEntityType.IfcEllipse, null);
@@ -3651,9 +3672,6 @@ namespace Revit.IFC.Export.Toolkit
       public static void SetPredefinedType(IFCAnyHandle genericIFCEntity, 
          IFCExportInfoPair entityToCreate)
       {
-         if (string.IsNullOrEmpty(entityToCreate.ValidatedPredefinedType))
-            return;
-
          IFCVersion version = ExporterCacheManager.ExportOptionsCache.FileVersion;
          IFCEntityType entityType = entityToCreate.ExportInstance;
 
@@ -3666,7 +3684,7 @@ namespace Revit.IFC.Export.Toolkit
             if (predefinedTypeAttributeName == null && !MissingAttributeCache.Find(version, entityType))
                predefinedTypeAttributeName = "PredefinedType";
             if (predefinedTypeAttributeName != null)
-               IFCAnyHandleUtil.SetAttribute(genericIFCEntity, predefinedTypeAttributeName, entityToCreate.ValidatedPredefinedType, true);
+               IFCAnyHandleUtil.SetAttribute(genericIFCEntity, predefinedTypeAttributeName, entityToCreate.GetPredefinedTypeOrDefault(), true);
          }
          catch
          {
@@ -3755,15 +3773,12 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle genericIFCType = CreateInstance(file, entityTypeToUse, elementType);
          SetElementType(genericIFCType, elementType, guid, propertySets, representationMaps);
 
-         if (!string.IsNullOrEmpty(typeEntityToCreate.ValidatedPredefinedType))
+         // Earlier types in IFC2x_ may not have PredefinedType property. Ignore error
+         try
          {
-            // Earlier types in IFC2x_ may not have PredefinedType property. Ignore error
-            try
-            {
-               IFCAnyHandleUtil.SetAttribute(genericIFCType, "PredefinedType", typeEntityToCreate.ValidatedPredefinedType, true);
-            }
-            catch { }
+            IFCAnyHandleUtil.SetAttribute(genericIFCType, "PredefinedType", typeEntityToCreate.GetPredefinedTypeOrDefault(), true);
          }
+         catch { }
 
          SetGenericTypeNonOptionalAttributes(genericIFCType, typeEntityToCreate.ExportType);
 
@@ -3834,8 +3849,6 @@ namespace Revit.IFC.Export.Toolkit
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            if (string.IsNullOrEmpty(predefinedType))
-               predefinedType = "NOTDEFINED";
             predefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, predefinedType, "IFCFurnitureType");
             IFCAnyHandleUtil.SetAttribute(furnitureType, "PredefinedType", predefinedType, true);
          }
@@ -3966,8 +3979,7 @@ namespace Revit.IFC.Export.Toolkit
 
          IFCAnyHandle buildingSystem = CreateInstance(file, IFCEntityType.IfcBuildingSystem, null);
          SetGroup(buildingSystem, guid, ownerHistory, name, description, objectType);
-         if (!string.IsNullOrEmpty(entityToCreate.ValidatedPredefinedType))
-            IFCAnyHandleUtil.SetAttribute(buildingSystem, "PredefinedType", entityToCreate.ValidatedPredefinedType, true);
+         IFCAnyHandleUtil.SetAttribute(buildingSystem, "PredefinedType", entityToCreate.GetPredefinedTypeOrDefault(), true);
          if (!string.IsNullOrEmpty(longName))
             IFCAnyHandleUtil.SetAttribute(buildingSystem, "LongName", longName, false);
 
@@ -6641,7 +6653,10 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandle indexedColourMap = CreateInstance(file, IFCEntityType.IfcIndexedColourMap, null);
          IFCAnyHandleUtil.SetAttribute(indexedColourMap, "MappedTo", mappedTo);
          if (opacity.HasValue)
-            IFCAnyHandleUtil.SetAttribute(indexedColourMap, "Opacity", opacity);
+         {
+            double inRangeOpacity = Math.Min(Math.Max(opacity.Value, 0.0), 1.0);
+            IFCAnyHandleUtil.SetAttribute(indexedColourMap, "Opacity", inRangeOpacity);
+         }
          IFCAnyHandleUtil.SetAttribute(indexedColourMap, "Colours", colours);
          IFCAnyHandleUtil.SetAttribute(indexedColourMap, "ColourIndex", colourIndex);
          return indexedColourMap;

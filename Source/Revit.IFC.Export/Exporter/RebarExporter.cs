@@ -313,7 +313,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle localPlacement = ecData.GetLocalPlacement();
 
                   buildingElementProxy = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, element, guid,
-                      ownerHistory, localPlacement, representation, exportType.ValidatedPredefinedType);
+                      ownerHistory, localPlacement, representation, exportType.GetPredefinedTypeOrDefault());
 
                   productWrapper.AddElement(element, buildingElementProxy, placementSetter.LevelInfo, ecData, true, exportType);
                }

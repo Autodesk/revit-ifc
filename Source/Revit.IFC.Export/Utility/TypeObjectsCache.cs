@@ -38,7 +38,7 @@ namespace Revit.IFC.Export.Utility
    {
       public TypeObjectKey(ElementId elementId, ElementId levelId, bool flipped,
          IFCExportInfoPair exportType, ElementId materialId) :
-         base(elementId, levelId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType, materialId)
+         base(elementId, levelId, flipped, exportType.ExportType, exportType.PredefinedType, materialId)
       { }
 
       public ElementId ElementId { get { return Item1; } }

@@ -971,6 +971,15 @@
   <data name="UseTypeNameOnlyTooltip" xml:space="preserve">
     <value>Use this option to export the IFC type name as the Revit type name without the family name.</value>
   </data>
+  <data name="OwnerHistoryLastModified" xml:space="preserve">
+    <value>Set "Last Modified" user to the Author in Project Information</value>
+  </data>
+  <data name="OwnerHistoryLastModifiedTooltip" xml:space="preserve">
+    <value>Populate the IfcOwnerHistory "LastModified" attribute with the Author information set in Project Information</value>
+  </data>
+  <data name="TemplateNameTooltip" xml:space="preserve">
+    <value>Enter unique template name.</value>
+  </data>
   <data name="UseVisibleRevitNameTooltip" xml:space="preserve">
     <value>Use this option to export IFC entity name as the visible Revit name.</value>
   </data>

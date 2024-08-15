@@ -396,9 +396,9 @@ namespace Revit.IFC.Export.Utility
             double ceilMeasure = Math.Ceiling(value);
             double floorMeasure = Math.Floor(value);
 
-            if (MathUtil.IsAlmostEqual(value, ceilMeasure))
+            if (MathUtil.IsAlmostZero(value - ceilMeasure))
                cleanMeasure.Add(ceilMeasure);
-            else if (MathUtil.IsAlmostEqual(value, floorMeasure))
+            else if (MathUtil.IsAlmostZero(value - floorMeasure))
                cleanMeasure.Add(floorMeasure);
             else
                cleanMeasure.Add(value);
@@ -672,7 +672,7 @@ namespace Revit.IFC.Export.Utility
          Transform newTrf = ExporterIFCUtils.GetUnscaledTransformWithoutFixOfDirection(exporterIFC, newPlacement);
 
          Transform resultTrf = new Transform(Transform.Identity);
-         
+
          resultTrf.BasisZ = new XYZ(newTrf.BasisX.DotProduct(originalTrf.BasisZ),
                                     newTrf.BasisY.DotProduct(originalTrf.BasisZ),
                                     newTrf.BasisZ.DotProduct(originalTrf.BasisZ));
@@ -1115,7 +1115,7 @@ namespace Revit.IFC.Export.Utility
             else
             {
                if (!string.IsNullOrEmpty(currDesc.PredefinedType)
-                  && currDesc.PredefinedType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase)
+                  && currDesc.PredefinedType.Equals(exportInfo.PredefinedType, StringComparison.InvariantCultureIgnoreCase)
                   && currDesc.PredefinedType.Equals("USERDEFINED", StringComparison.InvariantCultureIgnoreCase))
                   userdefinedPdefType = true;
             }
@@ -1145,7 +1145,7 @@ namespace Revit.IFC.Export.Utility
                   ByIfcEntityType.ByAltPredefinedType.Add(currDesc);
             }
             else if (!string.IsNullOrEmpty(currDesc.PredefinedType) &&
-               currDesc.PredefinedType.Equals(exportInfo.ValidatedPredefinedType, StringComparison.InvariantCultureIgnoreCase))
+               currDesc.PredefinedType.Equals(exportInfo.PredefinedType, StringComparison.InvariantCultureIgnoreCase))
             {
                if (addToInstance)
                   ByIfcEntity.ByPredefinedType.Add(currDesc);
@@ -1199,7 +1199,7 @@ namespace Revit.IFC.Export.Utility
          ParameterCache parameterCache = ExporterCacheManager.ParameterCache;
          IList<IList<PropertySetDescription>> psetsToCreate = parameterCache.PropertySets;
          IList<int> instanceAndTypePsetIndices = parameterCache.InstanceAndTypePsetIndices;
-         
+
          return GetCurrPSetsToCreateGeneric(prodHnd, psetsToCreate, instanceAndTypePsetIndices,
             ExporterCacheManager.PropertySetsForTypeCache, psetsToProcess);
       }
@@ -1244,7 +1244,7 @@ namespace Revit.IFC.Export.Utility
             {
                IFCEntityType altProdHndType = IFCEntityType.UnKnown;
                if (Enum.TryParse<IFCEntityType>("IfcFurnitureType", true, out altProdHndType))
-                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.ValidatedPredefinedType);
+                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.PredefinedType);
             }
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcTypeObject))
@@ -1253,11 +1253,11 @@ namespace Revit.IFC.Export.Utility
             ElementTypeKey etKey = ExporterCacheManager.ElementTypeToHandleCache.Find(prodHnd);
             if (etKey != null)
             {
-               exportInfo.SetValueWithPair(etKey.Item2, etKey.Item3);
+               exportInfo.SetByTypeAndPredefinedType(etKey.Item2, etKey.Item3);
             }
             else
             {
-               exportInfo.SetValueWithPair(prodHndType);
+               exportInfo.SetByType(prodHndType);
             }
 
             // Need to handle backward compatibility for IFC2x3
@@ -1266,7 +1266,7 @@ namespace Revit.IFC.Export.Utility
             {
                IFCEntityType altProdHndType = IFCEntityType.UnKnown;
                if (Enum.TryParse<IFCEntityType>("IfcFurnishingElement", true, out altProdHndType))
-                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.ValidatedPredefinedType);
+                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.PredefinedType);
             }
          }
          else
@@ -1337,12 +1337,12 @@ namespace Revit.IFC.Export.Utility
          applicablePsets.ByIfcEntityType.ByType =
             GetCachedValue(processType, cacheToUse, typeEntity, null);
 
-         if (!string.IsNullOrEmpty(exportInfo.ValidatedPredefinedType))
+         if (!exportInfo.IsPredefinedTypeDefault)
          {
             applicablePsets.ByIfcEntity.ByPredefinedType =
-               GetCachedValue(processInstance, cacheToUse, instanceEntity, exportInfo.ValidatedPredefinedType);
+               GetCachedValue(processInstance, cacheToUse, instanceEntity, exportInfo.PredefinedType);
             applicablePsets.ByIfcEntityType.ByPredefinedType =
-               GetCachedValue(processType, cacheToUse, typeEntity, exportInfo.ValidatedPredefinedType);
+               GetCachedValue(processType, cacheToUse, typeEntity, exportInfo.PredefinedType);
          }
 
          if (!string.IsNullOrEmpty(objectType))
@@ -1404,11 +1404,8 @@ namespace Revit.IFC.Export.Utility
             IFCEntityType typeEntity =
                (processType && unknownType) ? exportInfo.ExportInstance : exportInfo.ExportType;
 
-            currPsets.PopulateCache(exportInfo.ExportInstance,
-               typeEntity,
-               exportInfo.ValidatedPredefinedType,
-               objectType,
-               cacheToUse);
+            currPsets.PopulateCache(exportInfo.ExportInstance, typeEntity, exportInfo.PredefinedType,
+               objectType, cacheToUse);
          }
 
          currPsets.PopulateFromCache(cachedPsets);
@@ -1551,7 +1548,7 @@ namespace Revit.IFC.Export.Utility
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
             ICollection<IFCAnyHandle> productSet = productWrapper.GetAllObjects();
-            
+
             // In some cases, like multi-story stairs and ramps, we may have the same Pset used for multiple levels.
             // If ifcParams is null, re-use the property set.
             IDictionary<Tuple<Element, Element, string>, IFCAnyHandle> createdPropertySets =
@@ -1782,8 +1779,13 @@ namespace Revit.IFC.Export.Utility
                if (productSet.Count > 1 && prodHnd == productSet.First() && IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcElementAssembly))
                   continue;   //Classification for the ELementAssembly should have been created before when processing ElementAssembly
 
+               ElementId elementId = ExporterCacheManager.HandleToElementCache.Find(prodHnd);
+               Element elementToUse = (elementId == ElementId.InvalidElementId) ? element : element?.Document?.GetElement(elementId);
+               if (elementToUse == null)
+                  continue;
+               
                // No need to check the subtype since Classification can be assigned to IfcRoot
-               ClassificationUtil.CreateClassification(exporterIFC, file, element, prodHnd);
+               ClassificationUtil.CreateClassification(exporterIFC, file, elementToUse, prodHnd);
             }
             transaction.Commit();
          }
@@ -1880,7 +1882,7 @@ namespace Revit.IFC.Export.Utility
 
          if (!string.IsNullOrEmpty(predefType))
          {
-            exportType.ValidatedPredefinedType = predefType;
+            exportType.PredefinedType = predefType;
          }
 
          return exportType;
@@ -1924,7 +1926,7 @@ namespace Revit.IFC.Export.Utility
          if (familyInstance == null)
             return originalExportInfoPair;
 
-         string enumTypeValue = originalExportInfoPair.ValidatedPredefinedType;
+         string enumTypeValue = originalExportInfoPair.PredefinedType;
 
          switch (familyInstance.StructuralType)
          {
@@ -2009,7 +2011,7 @@ namespace Revit.IFC.Export.Utility
             if (!ifcClassName.Equals("Default", StringComparison.OrdinalIgnoreCase))
             {
                exportType = ElementFilteringUtil.GetExportTypeFromClassName(ifcClassName);
-               exportType.ValidatedPredefinedType = enumTypeValue;
+               exportType.PredefinedType = enumTypeValue;
             }
          }
 
@@ -2018,7 +2020,7 @@ namespace Revit.IFC.Export.Utility
          {
             exportType = ElementFilteringUtil.GetExportTypeFromCategoryId(categoryId);
             if (string.IsNullOrEmpty(enumTypeValue))
-               enumTypeValue = exportType.ValidatedPredefinedType;
+               enumTypeValue = exportType.PredefinedType;
          }
 
          // 6. Check whether the intended Entity type is inside the export exclusion set.  If it is,
@@ -2038,10 +2040,10 @@ namespace Revit.IFC.Export.Utility
             enumTypeValue = pdefFromParam;
 
          if (!string.IsNullOrEmpty(enumTypeValue))
-            exportType.ValidatedPredefinedType = enumTypeValue;
+            exportType.PredefinedType = enumTypeValue;
 
          // Set the out parameter here.
-         enumTypeValue = exportType.ValidatedPredefinedType;
+         enumTypeValue = exportType.PredefinedType;
 
          if (string.IsNullOrEmpty(enumTypeValue))
             enumTypeValue = "NOTDEFINED";
@@ -2057,7 +2059,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">The element.</param>
       /// <param name="enumTypeValue">The output string value represents the enum type.</param>
       /// <returns>The IFCExportInfoPair.</returns>
-      public static IFCExportInfoPair GetProductExportType(ExporterIFC exporterIFC, 
+      public static IFCExportInfoPair GetProductExportType(ExporterIFC exporterIFC,
          Element element, out string enumTypeValue)
       {
          return GetExportType(exporterIFC, element, IFCEntityType.IfcProduct, out enumTypeValue);
@@ -2071,7 +2073,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">The element.</param>
       /// <param name="enumTypeValue">The output string value represents the enum type.</param>
       /// <returns>The IFCExportInfoPair.</returns>
-      public static IFCExportInfoPair GetObjectExportType(ExporterIFC exporterIFC, 
+      public static IFCExportInfoPair GetObjectExportType(ExporterIFC exporterIFC,
          Element element, out string enumTypeValue)
       {
          return GetExportType(exporterIFC, element, IFCEntityType.IfcObject, out enumTypeValue);
@@ -2923,6 +2925,11 @@ namespace Revit.IFC.Export.Utility
             (ExporterCacheManager.BaseLinkedDocumentGUID == null);
       }
 
-
+      /// <summary>
+      /// Detects if Element is part of Assembly.  This is useful during Export.
+      /// </summary>
+      /// <param name="element">Element to check.</param>
+      /// <returns>True if non-null Element is part of Assembly, false otherwise.</returns>
+      public static bool IsContainedInAssembly(Element element) => ((element?.AssemblyInstanceId ?? ElementId.InvalidElementId) != ElementId.InvalidElementId);
    }
 }

@@ -293,8 +293,7 @@ namespace Revit.IFC.Export.Exporter
             case PartExportMode.AsBuildingElement:
             case PartExportMode.ShapeRepresentationOnly:
                {
-                  string ifcEnumType = null;
-                  IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, hostElement, out ifcEnumType);
+                  IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, hostElement, out _);
 
                   // Check the intended IFC entity or type name is in the exclude list specified in the UI
                   IFCEntityType elementClassTypeEnum;
@@ -445,8 +444,8 @@ namespace Revit.IFC.Export.Exporter
 
                      IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
-                     string ifcEnumType = null;
-                     IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, (hostElement != null) ? hostElement : partElement, out ifcEnumType);
+                     IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, (hostElement != null) ? hostElement : partElement, out _);
+                     string ifcEnumType = exportType.GetPredefinedTypeOrDefault();
                      string partGUID = GUIDUtil.GenerateIFCGuidFrom(partElement, exportType);
                      IFCAnyHandle ifcPart = null;
                      if (exportMode != PartExportMode.AsBuildingElement)
@@ -499,12 +498,12 @@ namespace Revit.IFC.Export.Exporter
                               break;
                            default:
                               ifcPart = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, partElement, partGUID, ownerHistory,
-                              extrusionCreationData.GetLocalPlacement(), prodRep, exportType.ValidatedPredefinedType);
+                              extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
                               break;
                         }
                      }
 
-                     if (setMaterialNameToPartName)
+                     if (setMaterialNameToPartName && (bodyData?.MaterialIds?.Count ?? 0) > 0)
                      {
                         Material material = partElement.Document.GetElement(bodyData.MaterialIds[0]) as Material;
                         if (material != null)
@@ -693,10 +692,12 @@ namespace Revit.IFC.Export.Exporter
                   // material. It is not very correct, but it will produce consistent output
 
                   var matList = (from x in layersetInfo.MaterialIds
-                                 where !MathUtil.IsAlmostZero(x.m_matWidth)
-                                 select new MaterialLayerSetInfo.MaterialInfo(x.m_baseMatId, x.m_layerName, x.m_matWidth, x.m_function)).ToList();
-                  if (matList != null && matList.Count > 0)
+                                 where !MathUtil.IsAlmostZero(x.Width)
+                                 select new MaterialLayerSetInfo.MaterialInfo(x.BaseMatId, x.LayerName, x.Width, x.Function)).ToList();
+                  if ((matList?.Count ?? 0) > 0)
+                  {
                      layersetInfoList.Add(matList[0]);   // add only the first non-zero thickness
+                  }
                }
                else
                {
@@ -716,7 +717,7 @@ namespace Revit.IFC.Export.Exporter
             }
             else
             {
-               IList<ElementId> matInfoList = layersetInfo.MaterialIds.Where(x => !MathUtil.IsAlmostZero(x.m_matWidth)).Select(x => x.m_baseMatId).ToList();
+               IList<ElementId> matInfoList = layersetInfo.MaterialIds.Where(x => !MathUtil.IsAlmostZero(x.Width)).Select(x => x.BaseMatId).ToList();
                // There is a chance that the material list is already correct or just in reverse order, so handle it before moving on to manual sequencing
                MaterialLayerSetInfo.CompareTwoLists compStat = MaterialLayerSetInfo.CompareMaterialInfoList(bodyData.MaterialIds, matInfoList);
                switch (compStat)
@@ -738,7 +739,7 @@ namespace Revit.IFC.Export.Exporter
                         layersetInfoList = CollectMaterialInfoList(hostElement, associatedPartsList, layersetInfo);
 
                         // There is a chance that the manually collected list will be reversed or incorrect, so check it again
-                        IList<ElementId> newMatInfoList = layersetInfoList.Where(x => !MathUtil.IsAlmostZero(x.m_matWidth)).Select(x => x.m_baseMatId).ToList();
+                        IList<ElementId> newMatInfoList = layersetInfoList.Where(x => !MathUtil.IsAlmostZero(x.Width)).Select(x => x.BaseMatId).ToList();
                         compStat = MaterialLayerSetInfo.CompareMaterialInfoList(newMatInfoList, matInfoList);
                         if (compStat == MaterialLayerSetInfo.CompareTwoLists.ListsReversedEqual)
                            layersetInfoList = layersetInfoList.Reverse().ToList();
@@ -752,14 +753,24 @@ namespace Revit.IFC.Export.Exporter
                {
                   // We still cannot match the layer, it could be no layer. Use only the first material
                   MaterialLayerSetInfo.MaterialInfo layer1 = layersetInfo.MaterialIds[0];
-                  layersetInfo.SingleMaterialOverride(layer1.m_baseMatId, layer1.m_matWidth);
+                  layersetInfo.SingleMaterialOverride(layer1.BaseMatId, layer1.Width);
                   layersetInfoList.Add(layer1);
                }
             }
          }
 
          // Scan through the prodReps and remove any existing "Body" rep if it is already in there, if there is, it will be removed and replaced with the parts
-         List<IFCAnyHandle> prodReps = IFCAnyHandleUtil.GetRepresentations(hostProdDefShape);
+         List<IFCAnyHandle> prodReps;
+         if (hostProdDefShape == null)
+         {
+            hostProdDefShape = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, null);
+            prodReps = new List<IFCAnyHandle>();
+         }
+         else
+         {
+            prodReps = IFCAnyHandleUtil.GetRepresentations(hostProdDefShape);
+         }
+
          int repToRemove = -1;
          for (int rCnt = 0; rCnt < prodReps.Count; ++rCnt)
          {
@@ -781,7 +792,7 @@ namespace Revit.IFC.Export.Exporter
          int layerSetInfoCount = layersetInfoList.Count;
          int cnt = 0;
 
-         var layerInfoInxs = new List<(int idx, IFCAnyHandle rep)>(itemReps.Count);
+         var layerInfoInxs = new List<(int Index, IFCAnyHandle Representation)>(itemReps.Count);
          foreach (IFCAnyHandle itemRep in itemReps)
          {
             int layerInfoIdx = -1;
@@ -800,19 +811,26 @@ namespace Revit.IFC.Export.Exporter
             cnt++;
          }
 
-         layerInfoInxs = layerInfoInxs.OrderBy(x => x.idx).ToList();
+         layerInfoInxs = layerInfoInxs.OrderBy(x => x.Index).ToList();
 
-         var uniqueNames = new Dictionary<(string, double), string>(new MaterialLayerSetInfo.NameAndWidthComparer());
+         HashSet<string> shapeAspectNameUsed = new HashSet<string>();
          foreach (var layerInfo in layerInfoInxs)
          {
-            string layerName = (layerInfo.idx != -1) ? layersetInfoList[layerInfo.idx].m_layerName : "Layer";
-            double layerWidth = (layerInfo.idx != -1) ? layersetInfoList[layerInfo.idx].m_matWidth : 0.0;
+            int layerIndex = layerInfo.Index;
 
-            if (string.IsNullOrEmpty(layerName))
-               layerName = "Layer";
+            string shapeAspectName = (layerIndex != -1) ? layersetInfoList[layerIndex].ShapeAspectName : "Layer";
+            if (string.IsNullOrEmpty(shapeAspectName))
+               shapeAspectName = "Layer";
 
-            string uniqueName = MaterialLayerSetInfo.GetUniqueMaterialNameWithWidth(layerName, layerWidth, uniqueNames);
-            RepresentationUtil.CreateRepForShapeAspect(exporterIFC, hostElement, hostProdDefShape, representationType, uniqueName, layerInfo.rep);
+            // Ensure IfcShapeAspect name is unique and save it for consistensy to IfcMaterialConstituent.
+            shapeAspectName = NamingUtil.GetUniqueNameWithinSet(shapeAspectName, shapeAspectNameUsed);
+            if (layerIndex >= 0 && layerIndex < layerSetInfoCount)
+            {
+               layersetInfoList[layerIndex].ShapeAspectName = shapeAspectName;
+            }
+
+            RepresentationUtil.CreateRepForShapeAspect(exporterIFC, hostElement, hostProdDefShape, representationType,
+               shapeAspectName, layerInfo.Representation);
          }
 
          return hostShapeRep;
@@ -940,7 +958,7 @@ namespace Revit.IFC.Export.Exporter
                foreach (MaterialLayerSetInfo.MaterialInfo layerInfo in layersetInfo.MaterialIds)
                {
                   // Face's material ID == layer's material ID && face's width == layer's width
-                  if (faceInfo.Value.Item2.MaterialElementId == layerInfo.m_baseMatId && MathUtil.IsAlmostEqual(faceInfo.Value.Item1, layerInfo.m_matWidth))
+                  if (faceInfo.Value.Item2.MaterialElementId == layerInfo.BaseMatId && MathUtil.IsAlmostEqual(faceInfo.Value.Item1, layerInfo.Width))
                   {
                      layersetInfoList.Add(layerInfo);
                      break;
@@ -990,7 +1008,7 @@ namespace Revit.IFC.Export.Exporter
             layersCount > 1));
       }
       /// <summary>
-      /// Checks if elemnt has associated parts and all conditions are met for exporting it as Parts.
+      /// Checks if element has associated parts and all conditions are met for exporting it as Parts.
       /// </summary>
       /// <param name="hostElement">The host element.</param>
       /// <returns>True if host element can export the parts, false otherwise.</returns>
@@ -1118,6 +1136,7 @@ namespace Revit.IFC.Export.Exporter
             case IFCEntityType.IfcCovering:
             case IFCEntityType.IfcSlab:
             case IFCEntityType.IfcRoof:
+            case IFCEntityType.IfcBuildingElementProxy:
                return IFCExtrusionAxes.TryZ;
             default:
                return IFCExtrusionAxes.TryXY;
