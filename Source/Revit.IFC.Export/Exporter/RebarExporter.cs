@@ -444,7 +444,13 @@ namespace Revit.IFC.Export.Exporter
                   return null;
 
                ElementId materialId = ElementId.InvalidElementId;
-               ParameterUtil.GetElementIdValueFromElementOrSymbol(rebarElement, BuiltInParameter.MATERIAL_ID_PARAM, out materialId);
+               Element type = rebarElement.Document.GetElement(rebarElement.GetTypeId());
+               Parameter specialRebarMaterialParameter = type.LookupParameter("IfcMaterialRebar");
+
+               if (specialRebarMaterialParameter != null && specialRebarMaterialParameter.HasValue && specialRebarMaterialParameter.StorageType == StorageType.ElementId && specialRebarMaterialParameter.AsElementId() != null)
+                  materialId = specialRebarMaterialParameter.AsElementId();
+               else
+                  ParameterUtil.GetElementIdValueFromElementOrSymbol(rebarElement, BuiltInParameter.MATERIAL_ID_PARAM, out materialId);
 
                double longitudinalBarNominalDiameter = 0.0, modelDiameter = 0.0;
                GetBarDiameters(rebarItem, out longitudinalBarNominalDiameter, out modelDiameter);
