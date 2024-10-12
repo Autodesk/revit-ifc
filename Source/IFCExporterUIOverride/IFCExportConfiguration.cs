@@ -696,8 +696,8 @@ namespace BIM.IFC.Export.UI
                case nameof(ExportLinkedFiles):
                   if (ExportLinkedFiles != LinkedFileExportAs.DontExport)
                   {
-                     linkExporter = new IFCLinkedDocumentExporter(IFCCommandOverrideApplication.TheDocument, options);
-                     linkExporter.SetExportOption(ExportLinkedFiles);
+                     LinkExporter = new IFCLinkedDocumentExporter(IFCCommandOverrideApplication.TheDocument, options);
+                     LinkExporter.SetExportOption(ExportLinkedFiles);
                   }
                   break;
                default:
