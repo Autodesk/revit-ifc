@@ -2183,9 +2183,11 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The line handle.</returns>
       public static IFCAnyHandle CreateLineSegment(ExporterIFC exporterIFC, Line line)
       {
-         List<XYZ> points = new List<XYZ>();
-         points.Add(line.GetEndPoint(0));
-         points.Add(line.GetEndPoint(1));
+         List<XYZ> points = new()
+         {
+            line.GetEndPoint(0),
+            line.GetEndPoint(1)
+         };
          return CreatePolyLineSegmentCommon(exporterIFC, points);
       }
 

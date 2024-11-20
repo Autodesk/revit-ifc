@@ -1208,4 +1208,16 @@
   <data name="IFCInvalidCategoryMappingFile" xml:space="preserve">
     <value>This is not a valid category mapping file.</value>
   </data>
+  <data name="ExportCeilingGrids" xml:space="preserve">
+    <value>Export Ceiling Grids</value>
+  </data>
+  <data name="ExportBarsInUniformRebarSetsAsSeparateIFCEntities" xml:space="preserve">
+    <value>Export bars in uniform rebar sets as separate IFC entities</value>
+  </data>
+  <data name="ExportBarsInUniformRebarSetsAsSeparateIFCEntitiesToopTip" xml:space="preserve">
+    <value>Use this option to export bars in uniform rebar sets as separate IFC entities.</value>
+  </data>
+  <data name="UseTypePropertiesInInstacePSets" xml:space="preserve">
+    <value>Allow use of type properties in instance property sets</value>
+  </data>
 </root>

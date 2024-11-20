@@ -2040,6 +2040,9 @@ namespace Revit.IFC.Export.Utility
       /// <param name="productWrapper">The ProductWrapper class that contains the associated IFC handles.</param>
       public static void ExportRelatedProperties(ExporterIFC exporterIFC, Element element, ProductWrapper productWrapper)
       {
+         if (ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
+            return;
+
          ExportElementProperties(exporterIFC, element, productWrapper);
          if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities && !(ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE))
             ExportElementQuantities(exporterIFC, element, productWrapper);
@@ -2941,10 +2944,10 @@ namespace Revit.IFC.Export.Utility
       /// Get Transform from an IfcLocalPlacement
       /// </summary>
       /// <param name="ecsHnd">Handle to the IfcLocalPlacement</param>
+      /// <param name="unscaleOrigin">If true, return the origin in Revit coordinates (feet).  If false, in IFC coordinates.</param>
       /// <returns>Transform from the RelativePlacement attribute of the IfcLocalPlacement</returns>
-      public static Transform GetTransformFromLocalPlacementHnd(IFCAnyHandle ecsHnd)
+      public static Transform GetTransformFromLocalPlacementHnd(IFCAnyHandle ecsHnd, bool unscaleOrigin)
       {
-         Transform ecsFromHnd = null;
          if (!IFCAnyHandleUtil.IsTypeOf(ecsHnd, IFCEntityType.IfcLocalPlacement))
             return null;
 
@@ -2967,29 +2970,29 @@ namespace Revit.IFC.Export.Utility
          else
          {
             // Default Z-Direction
-            zDirection = new XYZ(0.0, 0.0, 1.0);
+            zDirection = XYZ.BasisZ;
          }
 
          if (xDir != null)
          {
             IList<double> xDirValues = IFCAnyHandleUtil.GetAggregateDoubleAttribute<List<double>>(xDir, "DirectionRatios");
-            xDirection = new XYZ(xDirValues[0], xDirValues[1], xDirValues[2]);
+            xDirection = new(xDirValues[0], xDirValues[1], xDirValues[2]);
          }
          else
          {
             // Default X-Direction
-            xDirection = new XYZ(1.0, 0.0, 0.0);
+            xDirection = XYZ.BasisX;
          }
 
          XYZ yDirection = zDirection.CrossProduct(xDirection);
          IList<double> posCoords = IFCAnyHandleUtil.GetAggregateDoubleAttribute<List<double>>(pos, "Coordinates");
-         XYZ position = new XYZ(posCoords[0], posCoords[1], posCoords[2]);
+         XYZ position = new(posCoords[0], posCoords[1], posCoords[2]);
 
-         ecsFromHnd = Transform.Identity;
+         Transform ecsFromHnd = Transform.Identity;
          ecsFromHnd.BasisX = xDirection;
          ecsFromHnd.BasisY = yDirection;
          ecsFromHnd.BasisZ = zDirection;
-         ecsFromHnd.Origin = position;
+         ecsFromHnd.Origin = unscaleOrigin ? UnitUtil.UnscaleLength(position) : position;
 
          return ecsFromHnd;
       }
@@ -3009,12 +3012,12 @@ namespace Revit.IFC.Export.Utility
          if (!localPlacementHnd.IsTypeOf("IfcLocalPlacement"))
             return totalTrf;
 
-         totalTrf = GetTransformFromLocalPlacementHnd(localPlacementHnd);
+         totalTrf = GetTransformFromLocalPlacementHnd(localPlacementHnd, false);
 
          IFCAnyHandle placementRelTo = IFCAnyHandleUtil.GetInstanceAttribute(localPlacementHnd, "PlacementRelTo");
          while (!IFCAnyHandleUtil.IsNullOrHasNoValue(placementRelTo))
          {
-            Transform trf = GetTransformFromLocalPlacementHnd(placementRelTo);
+            Transform trf = GetTransformFromLocalPlacementHnd(placementRelTo, false);
             if (trf == null)
                return null;        // the placementRelTo is not the type of IfcLocalPlacement, return null. We don't handle this
 

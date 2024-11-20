@@ -1,6 +1,8 @@
 <Project>
+    <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
+       <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
    <PropertyGroup>
-       <!-- net8.0-windows -->
        <TargetFramework Condition=" '$(TargetFramework)' == '' ">net8.0-windows</TargetFramework>
    </PropertyGroup>
 </Project>

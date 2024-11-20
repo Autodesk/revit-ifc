@@ -210,6 +210,11 @@ namespace BIM.IFC.Export.UI
       public bool ExportBaseQuantities { get; set; } = false;
 
       /// <summary>
+      /// Whether or not to include ceilings grids for ceilings in the export data. 
+      /// </summary>
+      public bool ExportCeilingGrids { get; set; } = false;
+
+      /// <summary>
       /// True to include the material property sets. 
       /// False to exclude them.
       /// </summary>
@@ -236,6 +241,11 @@ namespace BIM.IFC.Export.UI
       /// The name of the file containing the user defined property sets to be exported.
       /// </summary>
       public string ExportUserDefinedPsetsFileName { get; set; } = "";
+
+      /// <summary>
+      /// Whether or not to include type property to the user defined property sets. 
+      /// </summary>
+      public bool UseTypePropertiesInInstacePSets { get; set; } = false;
 
       /// <summary>
       /// True if the User decides to use the Parameter Mapping Table
@@ -338,6 +348,12 @@ namespace BIM.IFC.Export.UI
       /// Use Author field in Project Information to set IfcOwnerHistory LastModified attribute
       /// </summary>
       public bool OwnerHistoryLastModified { get; set; } = false;
+
+      /// <summary>
+      /// Use this field in Project Information to set how will be bars in uniform sets exported in IFC.
+      /// </summary>
+      public bool ExportBarsInUniformSetsAsSeparateIFCEntities { get; set; } = false;
+
       /// <summary>
       /// Value indicating whether the IFC Entity Name will use visible Revit Name
       /// </summary>
@@ -478,6 +494,7 @@ namespace BIM.IFC.Export.UI
                                  bool materialPsets,
                                  bool schedulesAsPSets,
                                  bool userDefinedPSets,
+                                 bool useTypePropertiesInInstacePSets,
                                  bool userDefinedParameterMapping,
                                  bool PlanElems2D,
                                  bool exportBoundingBox,
@@ -487,7 +504,8 @@ namespace BIM.IFC.Export.UI
                                  KnownERNames exchangeRequirement = KnownERNames.NotDefined,
                                  string customName = null,
                                  KnownFacilityTypes facilityType = KnownFacilityTypes.NotDefined,
-                                 Enum facilityPredefinedType = null)
+                                 Enum facilityPredefinedType = null,
+                                 bool exportCeilingGrids = false)
       {
          IFCExportConfiguration configuration = new IFCExportConfiguration();
 
@@ -512,6 +530,7 @@ namespace BIM.IFC.Export.UI
          // Items from Additional Content Tab
          configuration.Export2DElements = PlanElems2D;
          configuration.ExportLinkedFiles = exportLinkedFiles;
+         configuration.ExportCeilingGrids = exportCeilingGrids;
 
          // Items from Property Sets Tab
          configuration.ExportInternalRevitPropertySets = internalSets;
@@ -519,6 +538,7 @@ namespace BIM.IFC.Export.UI
          configuration.ExportMaterialPsets = materialPsets;
          configuration.ExportSchedulesAsPsets = schedulesAsPSets;
          configuration.ExportUserDefinedPsets = userDefinedPSets;
+         configuration.UseTypePropertiesInInstacePSets = useTypePropertiesInInstacePSets;
          configuration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\" + configuration.Name + @".txt";
          configuration.ExportUserDefinedParameterMapping = userDefinedParameterMapping;
 

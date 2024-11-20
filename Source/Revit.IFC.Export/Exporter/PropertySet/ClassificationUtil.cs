@@ -51,6 +51,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elemHnd">the element handle</param>
       public static void CreateUniformatClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IFCAnyHandle elemHnd)
       {
+         if (ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
+            return;
+
          IFCEntityType entType = IFCEntityType.IfcObjectDefinition;
          if (!Enum.TryParse<IFCEntityType>(elemHnd.TypeName, out IFCEntityType hndEntType))
             entType = hndEntType;
@@ -119,6 +122,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public static bool CreateClassification(ExporterIFC exporterIFC, IFCFile file, 
          Element element, IFCAnyHandle elemHnd)
       {
+         if (ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
+            return false;
+
          bool createdClassification = false;
 
          string paramClassificationCode = "";

@@ -168,6 +168,11 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       static MEPCache m_MEPCache;
 
+      /// <summary>
+      /// Non-spatial Elements (e.g., Floor) for export.
+      /// </summary>
+      public static HashSet<ElementId> NonSpatialElements { get; private set; } = new();
+
       static AttributeCache m_AttributeCache;
 
       /// <summary>
@@ -251,8 +256,19 @@ namespace Revit.IFC.Export.Utility
          if (Context3DHandles.TryGetValue(identifier, out IFCAnyHandle handle))
             return handle;
 
-         return null;
+         if (!Context3DHandles.TryGetValue(IFCRepresentationIdentifier.None, out IFCAnyHandle context3D))
+            return handle;
+
+         IFCGeometricProjection projection = (identifier == IFCRepresentationIdentifier.Axis) ?
+            IFCGeometricProjection.Graph_View : IFCGeometricProjection.Model_View;
+
+         IFCFile file = ExporterIFC.GetFile();
+         IFCAnyHandle context3DHandle = IFCInstanceExporter.CreateGeometricRepresentationSubContext(file,
+                identifier.ToString(), "Model", context3D, null, projection, null);
+         Set3DContextHandle(ExporterIFC, identifier, context3DHandle);
+         return context3DHandle;
       }
+
 
       /// <summary>
       /// Get the handle associated to a particular IfcGeometricRepresentationContext, or create it
@@ -522,6 +538,28 @@ namespace Revit.IFC.Export.Utility
                m_CanExportBeamGeometryAsExtrusionCache = new Dictionary<ElementId, bool>();
             return m_CanExportBeamGeometryAsExtrusionCache;
          }
+      }
+
+      private static bool? m_ExportCeilingGrids { get; set; } = null;
+
+      /// <summary>
+      /// Determines if we should export ceiling grids.
+      /// </summary>
+      /// <returns>True if the user has chosen to export ceiling grids and ceiling surface patterns are exported.</returns>
+      public static bool ExportCeilingGrids()
+      {
+         if (!ExportOptionsCache.ExportCeilingGrids)
+         {
+            return false;
+         }
+
+         if (!m_ExportCeilingGrids.HasValue)
+         {
+            m_ExportCeilingGrids = CategoryMappingTemplate?.GetMappingInfoById(Document,
+               new ElementId(BuiltInCategory.OST_CeilingsSurfacePattern), CustomSubCategoryId.None)?.IFCExportFlag ?? false;
+         }
+
+         return m_ExportCeilingGrids.Value;         
       }
 
       public static IFCCategoryTemplate CategoryMappingTemplate
@@ -1540,6 +1578,7 @@ namespace Revit.IFC.Export.Utility
          ElementIdMaterialParameterCache.Clear();
          m_ElementToHandleCache = null;
          m_ElementTypeToHandleCache = null;
+         m_ExportCeilingGrids = null;
          m_FabricAreaHandleCache = null;
          m_FabricParamsCache = null;
          m_FamilySymbolToTypeInfoCache = null;
@@ -1561,6 +1600,7 @@ namespace Revit.IFC.Export.Utility
          m_MaterialHandleCache = null;
          MaterialRelationsCache = new MaterialRelationsCache();
          m_MEPCache = null;
+         NonSpatialElements.Clear();
          m_Object2DCurves = null;
          m_PartExportedCache = null;
          m_PresentationLayerSetCache = null;

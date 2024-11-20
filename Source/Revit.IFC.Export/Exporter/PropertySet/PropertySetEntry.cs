@@ -416,10 +416,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elementType">The element type of which this property is created for.</param>
       /// <param name="handle">The handle for which this property is created for.</param>
       /// <param name="lookInType">True if it's appropriate to look for value in element type.</param>
+      /// <param name="addTypePropertiesToInstance">Indicates whether properties from the element's type should be added to the instance.</param>
       /// <returns>The created property handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
          IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector,
-         ElementType elementType, IFCAnyHandle handle, bool lookInType = false)
+         ElementType elementType, IFCAnyHandle handle, bool lookInType = false, bool addTypePropertiesToInstance = false)
       {
          // if CombinedParameterData, then we have to recreate the parameter value, since there is no
          // API for this.
@@ -434,7 +435,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName,
                extrusionCreationData, elementOrConnector, elementType, handle, PropertyType,
                PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName,
-               lookInType);
+               lookInType, addTypePropertiesToInstance);
             if (propHnd != null)
                return propHnd;
          }

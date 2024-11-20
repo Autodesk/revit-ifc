@@ -557,12 +557,11 @@ namespace Revit.IFC.Export.Utility
           GeometryElement geometryElement, BodyExporterOptions bodyExporterOptions, IList<IFCAnyHandle> extraReps,
           IFCExportBodyParams extrusionCreationData, bool allowOffsetTransform)
       {
-         BodyData bodyData;
          BodyExporterOptions newBodyExporterOptions = new BodyExporterOptions(bodyExporterOptions);
          newBodyExporterOptions.AllowOffsetTransform = allowOffsetTransform;
 
          return CreateAppropriateProductDefinitionShape(exporterIFC, element, categoryId,
-             geometryElement, newBodyExporterOptions, extraReps, extrusionCreationData, out bodyData);
+             geometryElement, newBodyExporterOptions, extraReps, extrusionCreationData, out _);
       }
 
       /// <summary>

@@ -9,15 +9,6 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-     <LangVersion>7.3</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-     <LangVersion>7.3</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Slow_Debug|x64'">
-     <LangVersion>7.3</LangVersion>
-  </PropertyGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.props" />
   <ItemGroup>
     <Reference Include="Autodesk.UI.Windows">

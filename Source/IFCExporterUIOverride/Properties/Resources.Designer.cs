@@ -862,6 +862,24 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Export bars in uniform rebar sets as separate IFC entities.
+        /// </summary>
+        public static string ExportBarsInUniformRebarSetsAsSeparateIFCEntities {
+            get {
+                return ResourceManager.GetString("ExportBarsInUniformRebarSetsAsSeparateIFCEntities", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use this option to export bars in uniform rebar sets as separate IFC entities..
+        /// </summary>
+        public static string ExportBarsInUniformRebarSetsAsSeparateIFCEntitiesToopTip {
+            get {
+                return ResourceManager.GetString("ExportBarsInUniformRebarSetsAsSeparateIFCEntitiesToopTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export base quantities.
         /// </summary>
         public static string ExportBaseQuantities {
@@ -894,6 +912,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string ExportCategoryMappingFilter {
             get {
                 return ResourceManager.GetString("ExportCategoryMappingFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export Ceiling Grids.
+        /// </summary>
+        public static string ExportCeilingGrids {
+            get {
+                return ResourceManager.GetString("ExportCeilingGrids", resourceCulture);
             }
         }
         
@@ -3261,6 +3288,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string UseTypeNameOnlyTooltip {
             get {
                 return ResourceManager.GetString("UseTypeNameOnlyTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Allow use of type properties in instance property sets.
+        /// </summary>
+        public static string UseTypePropertiesInInstacePSets {
+            get {
+                return ResourceManager.GetString("UseTypePropertiesInInstacePSets", resourceCulture);
             }
         }
         

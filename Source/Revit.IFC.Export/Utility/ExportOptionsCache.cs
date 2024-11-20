@@ -83,6 +83,8 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public bool OwnerHistoryLastModified { get; private set; } = false;
 
+      public bool ExportBarsInUniformSetsAsSeparateIFCEntities { get; private set; } = false;
+
       public KnownERNames ExchangeRequirement { get; set; } = KnownERNames.NotDefined;
 
       public KnownFacilityTypes FacilityType { get; set; } = KnownFacilityTypes.Building;
@@ -273,6 +275,7 @@ namespace Revit.IFC.Export.Utility
          cache.ExportParts = (filterView != null && filterView.PartsVisibility == PartsVisibility.ShowPartsOnly);
          cache.ExportPartsAsBuildingElementsOverride = null;
          cache.ExportAnnotationsOverride = null;
+         cache.ExportCeilingGrids = false;
 
          // We are going to default to "true" for IncludeSteelElements to allow the default API
          // export to match the default UI.
@@ -365,6 +368,9 @@ namespace Revit.IFC.Export.Utility
          bool? ownerHistoryLastModified = OptionsUtil.GetNamedBooleanOption(options, "OwnerHistoryLastModified");
          cache.OwnerHistoryLastModified = ownerHistoryLastModified.GetValueOrDefault(false);
 
+         bool? exportBarsInUniformSetsAsSeparateIFCEntities = OptionsUtil.GetNamedBooleanOption(options, "ExportBarsInUniformSetsAsSeparateIFCEntities");
+         cache.ExportBarsInUniformSetsAsSeparateIFCEntities = exportBarsInUniformSetsAsSeparateIFCEntities.GetValueOrDefault(false);
+
          // "SingleElement" export option - useful for debugging - only one input element will be processed for export
          if (options.TryGetValue("SingleElement", out string singleElementValue))
          {
@@ -373,6 +379,14 @@ namespace Revit.IFC.Export.Utility
             List<ElementId> ids = new List<ElementId>();
             ids.Add(elementId);
             cache.ElementsForExport = ids;
+         }
+         else if (options.TryGetValue("SingleElementGeometry", out string singleElementGeometryValue))
+         {
+            ElementId elementId = ParseElementId(singleElementGeometryValue);
+
+            List<ElementId> ids = [elementId];
+            cache.ElementsForExport = ids;
+            cache.ExportGeometryOnly = true;
          }
          else if (options.TryGetValue("ElementsForExport", out string elementsToExportValue))
          {
@@ -386,6 +400,9 @@ namespace Revit.IFC.Export.Utility
 
          // "ExportAnnotations" override
          cache.ExportAnnotationsOverride = OptionsUtil.GetNamedBooleanOption(options, "Export2DElements");
+
+         // "ExportAnnotations" override
+         cache.ExportCeilingGrids = OptionsUtil.GetNamedBooleanOption(options, "ExportCeilingGrids").GetValueOrDefault(false);
 
          // "ExportSeparateParts" override
          cache.ExportPartsAsBuildingElementsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportPartsAsBuildingElements");
@@ -816,11 +833,12 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Cache variable for the export annotations override (if set independently via the UI or API inputs)
       /// </summary>
-      private bool? ExportAnnotationsOverride
-      {
-         get;
-         set;
-      }
+      private bool? ExportAnnotationsOverride { get; set; } = null;
+
+      /// <summary>
+      /// Cache variable for the export ceiling grids override (if set independently via the UI or API inputs)
+      /// </summary>
+      public bool ExportCeilingGrids { get; set; } = false;
 
       /// <summary>
       /// Identifies if the file version being exported supports annotations.
@@ -995,6 +1013,12 @@ namespace Revit.IFC.Export.Utility
          set;
       }
 
+      /// <summary>
+      /// A bare-bones IFC export that include only BRep geometry, generally for
+      /// a specific set of elements.
+      /// </summary>
+      public bool ExportGeometryOnly { get; set; } = false;
+      
       /// <summary>
       /// The filter view for export.  
       /// </summary>

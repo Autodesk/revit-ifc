@@ -40,12 +40,10 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="filledRegion">The filled region element.</param>
-      /// <param name="geometryElement">The geometry element.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
-      public static void Export(ExporterIFC exporterIFC, FilledRegion filledRegion,
-          GeometryElement geometryElement, ProductWrapper productWrapper)
+      public static void Export(ExporterIFC exporterIFC, FilledRegion filledRegion, ProductWrapper productWrapper)
       {
-         if (filledRegion == null || geometryElement == null)
+         if (filledRegion == null)
             return;
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
