@@ -25,6 +25,7 @@ using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Enums;
+using System.Reflection;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -141,14 +142,24 @@ namespace Revit.IFC.Export.Exporter
                   if (ExporterCacheManager.ExportCeilingGrids())
                   {
                      IList<Curve> ceilingGridLines = null;
-                     try
+
+                     var ceiling = element as Ceiling;
+                     if (ceiling != null)
                      {
-                        ceilingGridLines = (element as Ceiling)?.GetCeilingGridLines(true);
-                     }
-                     catch(MissingMethodException)
-                     {
-                        // Ceiling.GetCeilingGridLines method is availiable since 2025.3
-                        // ignore ceiling grid export for older Revit versions.
+                        try
+                        {
+                           var methodInfo = typeof(Ceiling).GetMethod("GetCeilingGridLines", BindingFlags.Instance | BindingFlags.Public);
+                           if (methodInfo != null)
+                           {
+                              // Invoke the method dynamically and cast the result to the expected type
+                              ceilingGridLines = (IList<Curve>)methodInfo.Invoke(ceiling, new object[] { true });
+                           }
+                        }
+                        catch (Exception)
+                        {
+                           // Ceiling.GetCeilingGridLines method is availiable since 2025.3
+                           // ignore ceiling grid export for older Revit versions.
+                        }
                      }
 
                      HashSet<IFCAnyHandle> repItems = new();
