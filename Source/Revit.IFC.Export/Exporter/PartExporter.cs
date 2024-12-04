@@ -368,8 +368,8 @@ namespace Revit.IFC.Export.Exporter
                      {
                         originalPlacement = IFCAnyHandleUtil.GetObjectPlacement(hostHandle);
                      }
-                     hostTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(originalPlacement);
-                     hostTrf = ExporterUtil.UnscaleTransformOrigin(hostTrf);
+                     hostTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(originalPlacement, true);
+
                      geometryElement = SolidMeshGeometryInfo.GetTransformedGeometry(geometryElement, hostTrf.Inverse,
                         ExporterCacheManager.AllocatedGeometryObjectCache);
                   }

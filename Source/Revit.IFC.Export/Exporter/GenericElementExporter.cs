@@ -52,7 +52,10 @@ namespace Revit.IFC.Export.Exporter
 
                   ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
 
-                  BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+                  bool tryToExportAsTessellation = !ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly;
+
+                  BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(tryToExportAsTessellation, 
+                     ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                   IFCAnyHandle representation = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC, element,
                       categoryId, geometryElement, bodyExporterOptions, null, ecData, true);
 

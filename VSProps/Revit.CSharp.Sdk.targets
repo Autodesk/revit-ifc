@@ -8,9 +8,6 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Slow_Debug|x64' ">
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup>
-    <LangVersion>7</LangVersion>
-  </PropertyGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <Import Project="$(SolutionDir)VSProps\Revit.Common.Sdk.targets" />
   <!-- Make sure the projects using this targets file rebuild if this file changes 

@@ -842,7 +842,7 @@ namespace Revit.IFC.Export.Exporter
                               IFCAnyHandle lcsHnd = extraParams.GetLocalPlacement();
                               // It appears that the local placement is already scaled. Unscale it here
                               // because axisInfo is based on unscaled information.
-                              newLCS = ExporterUtil.UnscaleTransformOrigin(ExporterUtil.GetTransformFromLocalPlacementHnd(lcsHnd));
+                              newLCS = ExporterUtil.UnscaleTransformOrigin(ExporterUtil.GetTransformFromLocalPlacementHnd(lcsHnd, false));
                            }
 
                            ElementId catId = CategoryUtil.GetSafeCategoryId(familyInstance);

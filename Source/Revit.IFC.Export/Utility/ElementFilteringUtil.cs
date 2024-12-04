@@ -40,6 +40,43 @@ namespace Revit.IFC.Export.Utility
    class ElementFilteringUtil
    {
       /// <summary>
+      /// Create the based export element collector used for filtering elements
+      /// </summary>
+      /// <param name="document">The document.</param>
+      /// <param name="useFilterViewIfExists">If false, don't use the filter view
+      /// even if it exists.</param>
+      /// <returns>The FilteredElementCollector.</returns>
+      /// <remarks>useFilterViewIfExists is intended to be false for cases
+      /// where we want to potentially export some invisible elements, such
+      /// as rooms in 3D views.</remarks>
+      public static FilteredElementCollector GetExportElementCollector(
+         Document document, bool useFilterViewIfExists)
+      {
+         ExportOptionsCache exportOptionsCache = ExporterCacheManager.ExportOptionsCache;
+         ICollection<ElementId> idsToExport = exportOptionsCache.ElementsForExport;
+         if (idsToExport.Count > 0)
+         {
+            return new FilteredElementCollector(document, idsToExport);
+         }
+
+         View filterView = useFilterViewIfExists ?
+            exportOptionsCache.FilterViewForExport : null;
+
+         if (filterView == null)
+         {
+            return new FilteredElementCollector(document);
+         }
+
+         if (ExporterStateManager.CurrentLinkId != ElementId.InvalidElementId)
+         {
+            return new FilteredElementCollector(filterView.Document, filterView.Id,
+               ExporterStateManager.CurrentLinkId);
+         }
+
+         return new FilteredElementCollector(filterView.Document, filterView.Id);
+      }
+
+      /// <summary>
       /// Gets spatial element filter.
       /// </summary>
       /// <param name="document">The Revit document.</param>
@@ -51,14 +88,29 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Gets filter for non spatial elements.
+      /// Gets the filtered non-spatial elements.
       /// </summary>
       /// <param name="document">The Revit document.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <returns>The Element filter.</returns>
-      public static ElementFilter GetNonSpatialElementFilter(Document document, ExporterIFC exporterIFC)
+      public static ISet<ElementId> GetNonSpatialElements(Document document, ExporterIFC exporterIFC)
       {
-         return GetExportFilter(document, exporterIFC, false);
+         ICollection<ElementId> nonSpatialElements;
+         if (ExporterCacheManager.ExportOptionsCache.ElementsForExport.Count > 0)
+         {
+            nonSpatialElements = ExporterCacheManager.ExportOptionsCache.ElementsForExport;
+         }
+         else
+         {
+            FilteredElementCollector otherElementCollector = GetExportElementCollector(document, true);
+            ElementFilter nonSpatialElementFilter = GetExportFilter(document, exporterIFC, false);
+            otherElementCollector.WherePasses(nonSpatialElementFilter);
+            nonSpatialElements = otherElementCollector.ToElementIds();
+         }
+
+         ExporterCacheManager.NonSpatialElements.UnionWith(nonSpatialElements);
+
+         return ExporterCacheManager.NonSpatialElements;
       }
 
       /// <summary>

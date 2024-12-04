@@ -109,11 +109,16 @@ namespace Revit.IFC.Export.Exporter
             string origInstanceName = NamingUtil.GetNameOverride(coupler, NamingUtil.GetIFCName(coupler));
 
             bool hasTypeInfo = !IFCAnyHandleUtil.IsNullOrHasNoValue(currentTypeInfo.Style);
-
+            bool bExportAsSingleIFCEntity = !ExporterCacheManager.ExportOptionsCache.ExportBarsInUniformSetsAsSeparateIFCEntities;
+            ISet<IFCAnyHandle> representations = new HashSet<IFCAnyHandle>() { };
+            string instanceGUID = null;
             for (int idx = 0; idx < nCouplerQuantity; idx++)
             {
-               string instanceGUID = GUIDUtil.GenerateIFCGuidFrom(
-                  GUIDUtil.CreateGUIDString(coupler, "Fastener:" + (idx + 1).ToString()));
+               if (!bExportAsSingleIFCEntity)
+                  instanceGUID = GUIDUtil.GenerateIFCGuidFrom(GUIDUtil.CreateGUIDString(coupler, "Fastener:" + (idx + 1).ToString()));
+               else
+                  instanceGUID = GUIDUtil.GenerateIFCGuidFrom(GUIDUtil.CreateGUIDString(coupler, "Fastener"));
+
 
                IFCAnyHandle style = currentTypeInfo.Style;
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(style))
@@ -127,50 +132,74 @@ namespace Revit.IFC.Export.Exporter
 
                IFCAnyHandle contextOfItems3d = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
 
-               ISet<IFCAnyHandle> representations = new HashSet<IFCAnyHandle>()
-               { ExporterUtil.CreateDefaultMappedItem(file, repMapList[0], XYZ.Zero) };
-
-               IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>()
-               { RepresentationUtil.CreateBodyMappedItemRep(exporterIFC, coupler, categoryId, contextOfItems3d, representations) };
-               
-               IFCAnyHandle productRepresentation = IFCInstanceExporter.CreateProductDefinitionShape(exporterIFC.GetFile(), null, null, shapeReps);
-
                Transform trf = coupler.GetCouplerPositionTransform(idx);
 
-               using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, coupler, trf, null))
+               if (!bExportAsSingleIFCEntity)
                {
-                  IFCAnyHandle instanceHandle = null;
-                  IFCExportInfoPair exportMechFastener = new IFCExportInfoPair(IFCEntityType.IfcMechanicalFastener, ifcEnumType);
-                  instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportMechFastener, exporterIFC, coupler, instanceGUID, ownerHistory,
-                                      setter.LocalPlacement, productRepresentation);
-                  string instanceName = NamingUtil.GetNameOverride(instanceHandle, coupler, origInstanceName + ": " + idx);
-                  IFCAnyHandleUtil.OverrideNameAttribute(instanceHandle, instanceName);
+                  representations = new HashSet<IFCAnyHandle>() { ExporterUtil.CreateDefaultMappedItem(file, repMapList[0], XYZ.Zero) };
+               }
+               else
+               {
+                  IFCAnyHandle axis1 = ExporterUtil.CreateDirection(file, trf.BasisX);
+                  IFCAnyHandle axis2 = ExporterUtil.CreateDirection(file, trf.BasisY);
+                  IFCAnyHandle axis3 = ExporterUtil.CreateDirection(file, trf.BasisZ);
+                  IFCAnyHandle origin = ExporterUtil.CreateCartesianPoint(file, UnitUtil.ScaleLength(trf.Origin));
+                  double scale = 1.0;
+                  IFCAnyHandle mappingTarget = IFCInstanceExporter.CreateCartesianTransformationOperator3D(file, axis1, axis2, origin, scale, axis3);
+                  representations.Add(IFCInstanceExporter.CreateMappedItem(file, repMapList[0], mappingTarget));
+               }
 
-                  if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+               if (!bExportAsSingleIFCEntity || (bExportAsSingleIFCEntity && representations.Count == nCouplerQuantity))
+               {
+                  IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>()
+               { RepresentationUtil.CreateBodyMappedItemRep(exporterIFC, coupler, categoryId, contextOfItems3d, representations) };
+
+                  IFCAnyHandle productRepresentation = IFCInstanceExporter.CreateProductDefinitionShape(exporterIFC.GetFile(), null, null, shapeReps);
+
+                  if (bExportAsSingleIFCEntity)
+                     trf = Transform.Identity;
+
+                  using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, coupler, trf, null))
                   {
-                     // In IFC4 NominalDiameter and NominalLength attributes have been deprecated. PredefinedType attribute was added.
-                     IFCAnyHandleUtil.SetAttribute(instanceHandle, "PredefinedType", Toolkit.IFC4.IFCMechanicalFastenerType.USERDEFINED);
-                  }
-                  else
-                  {
-                     IFCAnyHandleUtil.SetAttribute(instanceHandle, "NominalDiameter", familySymbol.get_Parameter(BuiltInParameter.COUPLER_WIDTH).AsDouble());
-                     IFCAnyHandleUtil.SetAttribute(instanceHandle, "NominalLength", familySymbol.get_Parameter(BuiltInParameter.COUPLER_LENGTH).AsDouble());
-                  }
+                     IFCAnyHandle instanceHandle = null;
+                     IFCExportInfoPair exportMechFastener = new IFCExportInfoPair(IFCEntityType.IfcMechanicalFastener, ifcEnumType);
+                     instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportMechFastener, exporterIFC, coupler, instanceGUID, ownerHistory,
+                                         setter.LocalPlacement, productRepresentation);
 
-                  createdRebarCouplerHandles.Add(instanceHandle);
+                     string instanceName = null;
+                     if (!bExportAsSingleIFCEntity)
+                        instanceName = NamingUtil.GetNameOverride(instanceHandle, coupler, origInstanceName + ": " + idx);
+                     else
+                        instanceName = NamingUtil.GetNameOverride(instanceHandle, coupler, origInstanceName);
 
-                  productWrapper.AddElement(coupler, instanceHandle, setter, null, true, exportType);
+                     IFCAnyHandleUtil.OverrideNameAttribute(instanceHandle, instanceName);
 
-                  if (hasTypeInfo)
-                  {
-                     ExporterCacheManager.TypeRelationsCache.Add(currentTypeInfo.Style, instanceHandle);
+                     if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+                     {
+                        // In IFC4 NominalDiameter and NominalLength attributes have been deprecated. PredefinedType attribute was added.
+                        IFCAnyHandleUtil.SetAttribute(instanceHandle, "PredefinedType", Toolkit.IFC4.IFCMechanicalFastenerType.USERDEFINED);
+                     }
+                     else
+                     {
+                        IFCAnyHandleUtil.SetAttribute(instanceHandle, "NominalDiameter", familySymbol.get_Parameter(BuiltInParameter.COUPLER_WIDTH).AsDouble());
+                        IFCAnyHandleUtil.SetAttribute(instanceHandle, "NominalLength", familySymbol.get_Parameter(BuiltInParameter.COUPLER_LENGTH).AsDouble());
+                     }
+
+                     createdRebarCouplerHandles.Add(instanceHandle);
+
+                     productWrapper.AddElement(coupler, instanceHandle, setter, null, true, exportType);
+
+                     if (hasTypeInfo)
+                     {
+                        ExporterCacheManager.TypeRelationsCache.Add(currentTypeInfo.Style, instanceHandle);
+                     }
                   }
                }
             }
 
             string couplerGUID = GUIDUtil.CreateGUID(coupler);
 
-            if (nCouplerQuantity > 1)
+            if (nCouplerQuantity > 1 && !bExportAsSingleIFCEntity)
             {
                // Create a group to hold all of the created IFC entities, if the coupler aren't already in an assembly.  
                // We want to avoid nested groups of groups of couplers.

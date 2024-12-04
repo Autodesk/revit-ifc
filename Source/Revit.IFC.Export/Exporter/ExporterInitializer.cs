@@ -234,6 +234,7 @@ namespace Revit.IFC.Export.Exporter
             else
             {
                PropertySetDescription userDefinedPropertySet = new PropertySetDescription();
+               userDefinedPropertySet.AddTypePropertiesToInstance = ExporterCacheManager.ExportOptionsCache.PropertySetOptions.UseTypePropertiesInInstacePSets;
                description = userDefinedPropertySet;
                foreach(UserDefinedProperty property in propertySet.Properties)
                {

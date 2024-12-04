@@ -477,12 +477,23 @@ namespace Revit.IFC.Export.Exporter
 
                ElementId barLengthParamId = new ElementId(BuiltInParameter.REBAR_ELEM_LENGTH);
                ParameterSet rebarElementParams = rebarElement.Parameters;
+
+               Rebar rebar = rebarElement as Rebar;
+               RebarInSystem rebarInSystem = rebarElement as RebarInSystem;
+
+               HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { };
+               string rebarName = null;
+               bool bExportAsSingleIFCEntity = false;
+
+               if ((!ExporterCacheManager.ExportOptionsCache.ExportBarsInUniformSetsAsSeparateIFCEntities) &&
+               ((rebar != null && !rebar.HasVariableLengthBars) || rebarInSystem != null))
+                  bExportAsSingleIFCEntity = true;
+
                for (int ii = 0; ii < numberOfBarPositions; ii++)
                {
                   if (!DoesBarExistAtPosition(rebarItem, ii))
                      continue;
 
-                  Rebar rebar = rebarElement as Rebar;
                   if (rebar != null && rebar.CanHaveVaryingLengthBars)
                   {
                      baseCurves = GetRebarCenterlineCurves(rebar, true, false, false, MultiplanarOption.IncludeAllMultiplanarCurves, ii);
@@ -490,7 +501,6 @@ namespace Revit.IFC.Export.Exporter
                      if (barLengthParamVal != null)
                         barLength = barLengthParamVal.Value;
                   }
-
 
                   string rebarNameFormated = origRebarName;
                   if (rebar != null && rebar.CanBeMatchedWithMultipleShapes())
@@ -508,9 +518,12 @@ namespace Revit.IFC.Export.Exporter
 
                   int indexForNamingAndGUID = ii + itemIndex;
 
-                  string rebarName = NamingUtil.GetNameOverride(rebarElement, rebarNameFormated + ": " + indexForNamingAndGUID);
+                  if (!bExportAsSingleIFCEntity)
+                     rebarName = NamingUtil.GetNameOverride(rebarElement, rebarNameFormated + ": " + indexForNamingAndGUID);
+                  else
+                     rebarName = NamingUtil.GetNameOverride(rebarElement, rebarNameFormated);
 
-                  Transform barTrf = GetBarPositionTransform(rebarItem, ii);
+                 Transform barTrf = GetBarPositionTransform(rebarItem, ii);
 
                   IList<Curve> curves = new List<Curve>();
                   double endParam = 0.0;
@@ -547,41 +560,49 @@ namespace Revit.IFC.Export.Exporter
                   // For IFC4 and Structural Exchange Requirement export, Entity type not allowed for RV: IfcPolyline
                   IFCAnyHandle compositeCurve = GeometryUtil.CreateCompositeOrIndexedCurve(exporterIFC, curves, null, null);
                   IFCAnyHandle sweptDiskSolid = IFCInstanceExporter.CreateSweptDiskSolid(file, compositeCurve, modelDiameter / 2, null, 0, endParam);
-                  HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { sweptDiskSolid };
                   RepresentationUtil.CreateStyledItemAndAssign(file, rebarElement.Document, materialId, sweptDiskSolid);
 
-                  IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
-                  IFCAnyHandle shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(exporterIFC, 
-                     rebarElement, categoryId, contextOfItems, bodyItems, null);
-                  IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>() { shapeRep };
-                  prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
+                  if (!bExportAsSingleIFCEntity)
+                     bodyItems = new HashSet<IFCAnyHandle>() { sweptDiskSolid };
+                  else
+                     bodyItems.Add(sweptDiskSolid);
 
-                  IFCAnyHandle copyLevelPlacement = (ii == 0) ? originalPlacement : ExporterUtil.CopyLocalPlacement(file, originalPlacement);
-
-                  string rebarGUID = (indexForNamingAndGUID < maxBarGUIDS) ?
-                      GUIDUtil.CreateSubElementGUID(rebarElement, indexForNamingAndGUID + (int)IFCReinforcingBarSubElements.BarStart - 1) :
-                      GUIDUtil.GenerateIFCGuidFrom(
-                         GUIDUtil.CreateGUIDString(rebarElement, indexForNamingAndGUID.ToString()));
-                  IFCAnyHandle elemHnd = IFCInstanceExporter.CreateReinforcingBar(exporterIFC, rebarElement, rebarGUID, ExporterCacheManager.OwnerHistoryHandle,
-                     copyLevelPlacement, prodRep, steelGrade, longitudinalBarNominalDiameter, longitudinalBarCrossSectionArea, barLength, role, null);
-                  IFCAnyHandleUtil.OverrideNameAttribute(elemHnd, rebarName);
-                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingBar);
-
-                  // We will not add the element to the productWrapper here, but instead in the function that calls
-                  // ExportRebar.  The reason for this is that we don't currently know if the handles such be associated
-                  // to the level or not, depending on whether they will or won't be grouped.
-                  createdRebars.Add(new DelayedProductWrapper(rebarElement, elemHnd, setter.LevelInfo, exportInfo));
-
-                  CacheSubelementParameterValues(rebarElement, rebarElementParams, ii, elemHnd);
-
-                  ExporterCacheManager.HandleToElementCache.Register(elemHnd, rebarElement.Id);
-                  CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialId);
-                  
-                  IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(rebarElement,
-                     exportInfo, file, productWrapper);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeHnd))
+                  //for uniform sets we export only after we have all solids
+                  if (!bExportAsSingleIFCEntity || (bExportAsSingleIFCEntity && bodyItems.Count == rebarQuantity))
                   {
-                     ExporterCacheManager.TypeRelationsCache.Add(typeHnd, elemHnd);
+                     IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
+                     IFCAnyHandle shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(exporterIFC,
+                        rebarElement, categoryId, contextOfItems, bodyItems, null);
+                     IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>() { shapeRep };
+                     prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
+
+                     IFCAnyHandle copyLevelPlacement = (ii == 0 || bExportAsSingleIFCEntity) ? originalPlacement : ExporterUtil.CopyLocalPlacement(file, originalPlacement);
+
+                     string rebarGUID = (indexForNamingAndGUID < maxBarGUIDS) ?
+                         GUIDUtil.CreateSubElementGUID(rebarElement, indexForNamingAndGUID + (int)IFCReinforcingBarSubElements.BarStart - 1) :
+                         GUIDUtil.GenerateIFCGuidFrom(
+                            GUIDUtil.CreateGUIDString(rebarElement, indexForNamingAndGUID.ToString()));
+                     IFCAnyHandle elemHnd = IFCInstanceExporter.CreateReinforcingBar(exporterIFC, rebarElement, rebarGUID, ExporterCacheManager.OwnerHistoryHandle,
+                        copyLevelPlacement, prodRep, steelGrade, longitudinalBarNominalDiameter, longitudinalBarCrossSectionArea, barLength, role, null);
+                     IFCAnyHandleUtil.OverrideNameAttribute(elemHnd, rebarName);
+                     IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingBar);
+
+                     // We will not add the element to the productWrapper here, but instead in the function that calls
+                     // ExportRebar.  The reason for this is that we don't currently know if the handles such be associated
+                     // to the level or not, depending on whether they will or won't be grouped.
+                     createdRebars.Add(new DelayedProductWrapper(rebarElement, elemHnd, setter.LevelInfo, exportInfo));
+
+                     CacheSubelementParameterValues(rebarElement, rebarElementParams, ii, elemHnd);
+
+                     ExporterCacheManager.HandleToElementCache.Register(elemHnd, rebarElement.Id);
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialId);
+
+                     IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(rebarElement,
+                        exportInfo, file, productWrapper);
+                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeHnd))
+                     {
+                        ExporterCacheManager.TypeRelationsCache.Add(typeHnd, elemHnd);
+                     }
                   }
                }
             }

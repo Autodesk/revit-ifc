@@ -407,6 +407,7 @@ namespace BIM.IFC.Export.UI
          checkboxExportBaseQuantities.IsChecked = configuration.ExportBaseQuantities;
          checkboxSplitWalls.IsChecked = configuration.SplitWallsAndColumns;
          checkbox2dElements.IsChecked = configuration.Export2DElements;
+         checkboxExportCeilingGrids.IsChecked = configuration.ExportCeilingGrids;
          checkboxInternalPropertySets.IsChecked = configuration.ExportInternalRevitPropertySets;
          checkboxIFCCommonPropertySets.IsChecked = configuration.ExportIFCCommonPropertySets;
          checkboxVisibleElementsCurrView.IsChecked = configuration.VisibleElementsOfCurrentView;
@@ -421,6 +422,7 @@ namespace BIM.IFC.Export.UI
          checkBoxExportSpecificSchedules.IsChecked = configuration.ExportSpecificSchedules;
          checkboxExportUserDefinedPset.IsChecked = configuration.ExportUserDefinedPsets;
          userDefinedPropertySetFileName.Text = configuration.ExportUserDefinedPsetsFileName;
+         checkboxUseTypePropertiesInInstacePSets.IsChecked = configuration.UseTypePropertiesInInstacePSets;
          checkboxIncludeIfcSiteElevation.IsChecked = configuration.IncludeSiteElevation;
          checkboxStoreIFCGUID.IsChecked = configuration.StoreIFCGUID;
          checkBoxExportRoomsInView.IsChecked = configuration.ExportRoomsInView;
@@ -443,6 +445,8 @@ namespace BIM.IFC.Export.UI
          checkbox_ExportHostAsSingleEntity.IsChecked = configuration.ExportHostAsSingleEntity;
 
          checkbox_OwnerHistoryLastModified.IsChecked = configuration.OwnerHistoryLastModified;
+
+         checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities.IsChecked = configuration.ExportBarsInUniformSetsAsSeparateIFCEntities;
 
          // Keep old behavior where by default we looked for ParameterMappingTable.txt in the current directory if ExportUserDefinedParameterMappingFileName
          // isn't set.
@@ -480,6 +484,7 @@ namespace BIM.IFC.Export.UI
                                                                 comboboxActivePhase,
                                                                 checkboxExportUserDefinedPset,
                                                                 userDefinedPropertySetFileName,
+                                                                checkboxUseTypePropertiesInInstacePSets,
                                                                 checkBoxExportUserDefinedParameterMapping,
                                                                 userDefinedParameterMappingTable,
                                                                 buttonBrowse,
@@ -492,6 +497,7 @@ namespace BIM.IFC.Export.UI
                                                                 checkbox_UseVisibleRevitNameAsEntityName,
                                                                 checkbox_ExportHostAsSingleEntity,
                                                                 checkbox_OwnerHistoryLastModified,
+                                                                checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities,
                                                                 comboBoxCategoryMapping,
                                                                 buttonCategoryMapping
             };
@@ -501,6 +507,7 @@ namespace BIM.IFC.Export.UI
             element.IsEnabled = !configuration.IsBuiltIn;
          }
          comboboxActivePhase.IsEnabled = comboboxActivePhase.IsEnabled && !configuration.VisibleElementsOfCurrentView;
+         checkboxUseTypePropertiesInInstacePSets.IsEnabled = checkboxUseTypePropertiesInInstacePSets.IsEnabled && configuration.ExportUserDefinedPsets;
          userDefinedPropertySetFileName.IsEnabled = userDefinedPropertySetFileName.IsEnabled && configuration.ExportUserDefinedPsets;
          userDefinedParameterMappingTable.IsEnabled = userDefinedParameterMappingTable.IsEnabled && configuration.ExportUserDefinedParameterMapping;
          buttonBrowse.IsEnabled = buttonBrowse.IsEnabled && configuration.ExportUserDefinedPsets;
@@ -541,6 +548,9 @@ namespace BIM.IFC.Export.UI
 
          checkbox_OwnerHistoryLastModified.IsChecked = configuration.OwnerHistoryLastModified;
          checkbox_OwnerHistoryLastModified.IsEnabled = true;
+
+         checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities.IsChecked = configuration.ExportBarsInUniformSetsAsSeparateIFCEntities;
+         checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities.IsEnabled = true;
 
          if (configuration.IFCVersion.Equals(IFCVersion.IFC2x3FM))
          {
@@ -1019,6 +1029,21 @@ namespace BIM.IFC.Export.UI
       }
 
       /// <summary>
+      /// Updates the result after the ExportCeilingGrids is picked.
+      /// </summary>
+      /// <param name="sender">The source of the event.</param>
+      /// <param name="e">Event arguments that contains the event data.</param>
+      private void checkboxExportCeilingGrids_Checked(object sender, RoutedEventArgs e)
+      {
+         CheckBox checkBox = (CheckBox)sender;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.ExportCeilingGrids = GetCheckbuttonChecked(checkBox);
+         }
+      }
+
+      /// <summary>
       /// Updates the result after the SplitWalls is picked.
       /// </summary>
       /// <param name="sender">The source of the event.</param>
@@ -1423,6 +1448,23 @@ namespace BIM.IFC.Export.UI
             configuration.ExportUserDefinedPsets = GetCheckbuttonChecked(checkBox);
             userDefinedPropertySetFileName.IsEnabled = configuration.ExportUserDefinedPsets;
             buttonBrowse.IsEnabled = configuration.ExportUserDefinedPsets;
+            checkboxUseTypePropertiesInInstacePSets.IsEnabled = configuration.ExportUserDefinedPsets;
+            checkboxUseTypePropertiesInInstacePSets.IsChecked = false;
+         }
+      }
+
+      /// <summary>
+      /// Update checkbox for exporting type properties for the instances
+      /// </summary>
+      /// <param name="sender">The source of the event.</param>
+      /// <param name="e">Event arguments that contains the event data.</param>
+      private void checkboxUseTypePropertiesInInstacePSets_Checked(object sender, RoutedEventArgs e)
+      {
+         CheckBox checkBox = (CheckBox)sender;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.UseTypePropertiesInInstacePSets = GetCheckbuttonChecked(checkBox);
          }
       }
 
@@ -1645,6 +1687,18 @@ namespace BIM.IFC.Export.UI
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
          configuration.OwnerHistoryLastModified = false;
+      }
+
+      private void checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities_Checked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.ExportBarsInUniformSetsAsSeparateIFCEntities = true;
+      }
+
+      private void checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities_Unchecked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.ExportBarsInUniformSetsAsSeparateIFCEntities = false;
       }
 
       private void Checkbox_UseVisibleRevitName_Checked(object sender, RoutedEventArgs e)

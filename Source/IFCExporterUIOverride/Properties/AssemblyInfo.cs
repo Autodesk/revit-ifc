@@ -67,6 +67,6 @@ using System.Windows;
 // The following information is used in the Open Source version as the release version number.
 // The number will show up in the Title bar of the export dialog as well as at the IFC header file
 // This number must be manually updated prior to releasing the new version
-[assembly: AssemblyVersion("25.2.0.5")]
-[assembly: AssemblyFileVersion("25.2.0.5")]
+[assembly: AssemblyVersion("25.4.0.27")]
+[assembly: AssemblyFileVersion("25.4.0.27")]
 #endif

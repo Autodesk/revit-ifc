@@ -485,19 +485,21 @@ namespace Revit.IFC.Export.Exporter
 
       protected void ExportNonSpatialElements(ExporterIFC exporterIFC, Document document)
       {
-         FilteredElementCollector otherElementCollector = GetExportElementCollector(document, true);
+         // Cache non-spatial Elements for later usage.
+         ICollection<ElementId> nonSpatialElements = ElementFilteringUtil.GetNonSpatialElements(document, exporterIFC);
 
-         ElementFilter nonSpatialElementFilter = ElementFilteringUtil.GetNonSpatialElementFilter(document, exporterIFC);
-         otherElementCollector.WherePasses(nonSpatialElementFilter);
-
-         int numOfOtherElement = otherElementCollector.Count();
-         IList<Element> otherElementCollListCopy = new List<Element>(otherElementCollector);
+         int numNonSpatialElements = nonSpatialElements.Count;
          int otherElementCollectorCount = 1;
-         foreach (Element element in otherElementCollListCopy)
+         foreach (ElementId elementId in nonSpatialElements)
          {
-            statusBar.Set(string.Format(Resources.IFCProcessingNonSpatialElements, otherElementCollectorCount, numOfOtherElement, element.Id));
+            statusBar.Set(string.Format(Resources.IFCProcessingNonSpatialElements, otherElementCollectorCount, numNonSpatialElements, elementId));
+
             otherElementCollectorCount++;
-            ExportElement(exporterIFC, element);
+            Element element = document.GetElement(elementId);
+            if (element != null)
+            {
+               ExportElement(exporterIFC, element);
+            }
          }
       }
 
@@ -809,13 +811,19 @@ namespace Revit.IFC.Export.Exporter
          {
             exporterIFC.PushExportState(element, geomElem);
 
-            Autodesk.Revit.DB.Document doc = element.Document;
+            Document doc = element.Document;
             using (SubTransaction st = new SubTransaction(doc))
             {
                st.Start();
 
+               // A very quick check if we happen to be exporting only geometry.
+               if (ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
+               {
+                  ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper);
+               }
+
                // A long list of supported elements.  Please keep in alphabetical order by the first item in the list..
-               if (element is AreaScheme)
+               else if (element is AreaScheme)
                {
                   AreaSchemeExporter.ExportAreaScheme(exporterIFC, element as AreaScheme, productWrapper);
                }
@@ -900,7 +908,7 @@ namespace Revit.IFC.Export.Exporter
                else if (element is FilledRegion)
                {
                   FilledRegion filledRegion = element as FilledRegion;
-                  FilledRegionExporter.Export(exporterIFC, filledRegion, geomElem, productWrapper);
+                  FilledRegionExporter.Export(exporterIFC, filledRegion, productWrapper);
                }
                else if (element is Grid)
                {
@@ -1258,10 +1266,10 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle buildingPlacement = CreateBuildingPlacement(file);
 
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-            
+
             // create levels
             // Check if there is any level assigned as a building storey, if no at all, model will be exported without Building and BuildingStorey, all containment will be to Site
-            IList<Level> allLevels = LevelUtil.FindAllLevels(document);
+            List<Level> allLevels = !ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly ? LevelUtil.FindAllLevels(document) : [];
 
             bool exportBuilding = ExportBuilding(allLevels);
 
@@ -1425,7 +1433,7 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle oldRelativePlacement = IFCAnyHandleUtil.GetInstanceAttribute(elemObjectPlacementHnd, "PlacementRelTo");
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(oldRelativePlacement))
             {
-               newTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(elemObjectPlacementHnd);
+               newTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(elemObjectPlacementHnd, false);
             }
             else
             {
@@ -1446,7 +1454,7 @@ namespace Revit.IFC.Export.Exporter
 
       private void CreatePresentationLayerAssignments(ExporterIFC exporterIFC, IFCFile file)
       {
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
             return;
 
          ISet<IFCAnyHandle> assignedRepresentations = new HashSet<IFCAnyHandle>();
@@ -2463,23 +2471,26 @@ namespace Revit.IFC.Export.Exporter
 
             }
 
-            string versionLine = string.Format("RevitIdentifiers [ContentGUID: {0}, VersionGUID: {1}, NumberOfSaves: {2}]",
-               ifcFileDocumentInfo.ContentGUIDString, ifcFileDocumentInfo.VersionGUIDString, ifcFileDocumentInfo.NumberOfSaves);
-
-            descriptions.Add(versionLine);
-           
-            if (!string.IsNullOrEmpty(ExporterCacheManager.ExportOptionsCache.ExcludeFilter))
+            if (!ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
             {
-               descriptions.Add("Options [Excluded Entities: " + ExporterCacheManager.ExportOptionsCache.ExcludeFilter + "]");
+               string versionLine = string.Format("RevitIdentifiers [ContentGUID: {0}, VersionGUID: {1}, NumberOfSaves: {2}]",
+                  ifcFileDocumentInfo.ContentGUIDString, ifcFileDocumentInfo.VersionGUIDString, ifcFileDocumentInfo.NumberOfSaves);
+
+               descriptions.Add(versionLine);
+
+               if (!string.IsNullOrEmpty(ExporterCacheManager.ExportOptionsCache.ExcludeFilter))
+               {
+                  descriptions.Add("Options [Excluded Entities: " + ExporterCacheManager.ExportOptionsCache.ExcludeFilter + "]");
+               }
+
+               string projectNumber = ifcFileDocumentInfo?.ProjectNumber ?? string.Empty;
+               string projectName = ifcFileDocumentInfo?.ProjectName ?? string.Empty;
+               string projectStatus = ifcFileDocumentInfo?.ProjectStatus ?? string.Empty;
+
+               IFCAnyHandle project = ExporterCacheManager.ProjectHandle;
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(project))
+                  IFCAnyHandleUtil.UpdateProject(project, projectNumber, projectName, projectStatus);
             }
-
-            string projectNumber = ifcFileDocumentInfo?.ProjectNumber ?? string.Empty;
-            string projectName = ifcFileDocumentInfo?.ProjectName ?? string.Empty;
-            string projectStatus = ifcFileDocumentInfo?.ProjectStatus ?? string.Empty;
-
-            IFCAnyHandle project = ExporterCacheManager.ProjectHandle;
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(project))
-               IFCAnyHandleUtil.UpdateProject(project, projectNumber, projectName, projectStatus);
 
             IFCInstanceExporter.CreateFileSchema(file);
 
@@ -2731,25 +2742,24 @@ namespace Revit.IFC.Export.Exporter
          int dimCount = 3;
          IFCAnyHandle context3D = IFCInstanceExporter.CreateGeometricRepresentationContext(file, null,
              "Model", dimCount, precision, wcs, trueNorth);
-         // CoordinationView2.0 requires sub-contexts of "Axis", "Body", and "Box".
-         // We will use these for regular export also.
-         {
-            IFCAnyHandle context3DAxis = IFCInstanceExporter.CreateGeometricRepresentationSubContext(file,
-                "Axis", "Model", context3D, null, IFCGeometricProjection.Graph_View, null);
-            IFCAnyHandle context3DBody = IFCInstanceExporter.CreateGeometricRepresentationSubContext(file,
-                "Body", "Model", context3D, null, IFCGeometricProjection.Model_View, null);
-            IFCAnyHandle context3DBox = IFCInstanceExporter.CreateGeometricRepresentationSubContext(file,
-                "Box", "Model", context3D, null, IFCGeometricProjection.Model_View, null);
-            IFCAnyHandle context3DFootPrint = IFCInstanceExporter.CreateGeometricRepresentationSubContext(file,
-                "FootPrint", "Model", context3D, null, IFCGeometricProjection.Model_View, null);
+         
+         ExporterCacheManager.Set3DContextHandle(exporterIFC, IFCRepresentationIdentifier.None, context3D);
 
-            ExporterCacheManager.Set3DContextHandle(exporterIFC, IFCRepresentationIdentifier.Axis, context3DAxis);
-            ExporterCacheManager.Set3DContextHandle(exporterIFC, IFCRepresentationIdentifier.Body, context3DBody);
-            ExporterCacheManager.Set3DContextHandle(exporterIFC, IFCRepresentationIdentifier.Box, context3DBox);
-            ExporterCacheManager.Set3DContextHandle(exporterIFC, IFCRepresentationIdentifier.FootPrint, context3DFootPrint);
+         if (!ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
+         {
+            ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Axis);
          }
 
-         ExporterCacheManager.Set3DContextHandle(exporterIFC, IFCRepresentationIdentifier.None, context3D);
+         // We will force creation of the Body subcontext because internal code expects it.
+         // For the rest, we will create sub-contexts as we need them.
+         ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
+
+         if (!ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
+         {
+            ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Box);
+            ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.FootPrint);
+         }
+
          repContexts.Add(context3D); // Only Contexts in list, not sub-contexts.
 
          // Create IFCMapConversion information for the context
@@ -2916,7 +2926,7 @@ namespace Revit.IFC.Export.Exporter
          string author = string.Empty;
          bool hasPotentialLastUser = false;
 
-         ProjectInfo projectInfo = doc.ProjectInformation;
+         ProjectInfo projectInfo = !ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly ? doc.ProjectInformation : null;
          if (projectInfo != null)
          {
             try
@@ -2942,6 +2952,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle ownerHistory = null;
          IFCAnyHandle person = null;
          IFCAnyHandle organization = null;
+         IFCAnyHandle owningUser = null;
 
          COBieCompanyInfo cobieCompInfo = ExporterCacheManager.ExportOptionsCache.COBieCompanyInfo;
 
@@ -2956,13 +2967,13 @@ namespace Revit.IFC.Export.Exporter
                 null, new List<IFCAnyHandle>() { postalAddress, telecomAddress });
             person = IFCInstanceExporter.CreatePerson(file, null, null, null, null, null, null, null, null);
          }
-         else
+         else if (!ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
          {
-            IList<IFCAnyHandle> telecomAddresses = null;
+            List<IFCAnyHandle> telecomAddresses = null;
             IFCAnyHandle telecomAddress = GetTelecomAddressFromExtStorage(file);
             if (telecomAddress != null)
             {
-               telecomAddresses = new List<IFCAnyHandle>() { telecomAddress };
+               telecomAddresses = [ telecomAddress ];
             }
 
             person = IFCInstanceExporter.CreatePerson(file, null, familyName, givenName, middleNames,
@@ -2985,15 +2996,24 @@ namespace Revit.IFC.Export.Exporter
             organization = IFCInstanceExporter.CreateOrganization(file, null, organizationName, organizationDescription, null, null);
          }
 
-         IFCAnyHandle owningUser = IFCInstanceExporter.CreatePersonAndOrganization(file, person, organization, null);
-         IFCAnyHandle lastModifyingUser = hasPotentialLastUser && ExporterCacheManager.ExportOptionsCache.OwnerHistoryLastModified
-            ? owningUser : null;
+         if (person != null || organization != null)
+         {
+            owningUser = IFCInstanceExporter.CreatePersonAndOrganization(file, person, organization, null);
+         }
 
-         ownerHistory = IFCInstanceExporter.CreateOwnerHistory(file, owningUser, application, null,
+         // TODO: Fix regression tests whose line numbers change as a result of missing handles.
+         // Change to if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 || !ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
+         {
+            IFCAnyHandle lastModifyingUser = hasPotentialLastUser && ExporterCacheManager.ExportOptionsCache.OwnerHistoryLastModified
+               ? owningUser : null;
+
+            ownerHistory = IFCInstanceExporter.CreateOwnerHistory(file, owningUser, application, null,
             IFCChangeAction.NoChange, null, lastModifyingUser, null, creationDate);
 
-         exporterIFC.SetOwnerHistoryHandle(ownerHistory);    // For use by native code only.
-         ExporterCacheManager.OwnerHistoryHandle = ownerHistory;
+            exporterIFC.SetOwnerHistoryHandle(ownerHistory);    // For use by native code only.
+            ExporterCacheManager.OwnerHistoryHandle = ownerHistory;
+         }
 
          // Getting contact information from Revit extensible storage that COBie extension tool creates
          GetCOBieContactInfo(file, doc);
@@ -3008,32 +3028,34 @@ namespace Revit.IFC.Export.Exporter
          string projectDescription = null;
          string projectPhase = null;
 
-         COBieProjectInfo cobieProjInfo = ExporterCacheManager.ExportOptionsCache.COBieProjectInfo;
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3COBIE24DesignDeliverable && cobieProjInfo != null)
+         if (!ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
          {
-            projectName = cobieProjInfo.ProjectName;
-            projectDescription = cobieProjInfo.ProjectDescription;
-            projectPhase = cobieProjInfo.ProjectPhase;
-         }
-         else
-         {
-            // As per IFC implementer's agreement, we get IfcProject.Name from ProjectInfo.Number and IfcProject.Longname from ProjectInfo.Name 
-            projectName = projectInfo?.Number;
-            projectLongName = projectInfo?.Name;
+            COBieProjectInfo cobieProjInfo = ExporterCacheManager.ExportOptionsCache.COBieProjectInfo;
+            if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3COBIE24DesignDeliverable && cobieProjInfo != null)
+            {
+               projectName = cobieProjInfo.ProjectName;
+               projectDescription = cobieProjInfo.ProjectDescription;
+               projectPhase = cobieProjInfo.ProjectPhase;
+            }
+            else
+            {
+               // As per IFC implementer's agreement, we get IfcProject.Name from ProjectInfo.Number and IfcProject.Longname from ProjectInfo.Name 
+               projectName = projectInfo?.Number;
+               projectLongName = projectInfo?.Name;
 
-            // Get project description if it is set in the Project info
-            projectDescription = (projectInfo != null) ? NamingUtil.GetDescriptionOverride(projectInfo, null) : null;
+               // Get project description if it is set in the Project info
+               projectDescription = (projectInfo != null) ? NamingUtil.GetDescriptionOverride(projectInfo, null) : null;
 
-            if (projectInfo != null)
-               if (ParameterUtil.GetStringValueFromElement(projectInfo, "IfcProject.Phase", out projectPhase) == null)
-                  ParameterUtil.GetStringValueFromElement(projectInfo, "Project Phase", out projectPhase);
+               if (projectInfo != null)
+                  if (ParameterUtil.GetStringValueFromElement(projectInfo, "IfcProject.Phase", out projectPhase) == null)
+                     ParameterUtil.GetStringValueFromElement(projectInfo, "Project Phase", out projectPhase);
+            }
          }
 
          string projectGUID = GUIDUtil.CreateProjectLevelGUID(doc, GUIDUtil.ProjectLevelGUIDType.Project);
          IFCAnyHandle projectHandle = IFCInstanceExporter.CreateProject(exporterIFC, projectInfo, projectGUID, ownerHistory,
             projectName, projectDescription, projectLongName, projectPhase, repContexts, null);
          ExporterCacheManager.ProjectHandle = projectHandle;
-
 
          if (projectInfo != null)
          {
@@ -3065,30 +3087,26 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle contactTelecomAddress = IFCInstanceExporter.CreateTelecomAddress(file, null, null, null, telNoList, null, null, eMailAddressList, null);
          IFCAnyHandle contactPostalAddress = IFCInstanceExporter.CreatePostalAddress(file, null, null, null, department, addressLines, postalBox, town, stateRegion,
                  postalCode, country);
-         IList<IFCAnyHandle> contactAddresses = new List<IFCAnyHandle>();
-         contactAddresses.Add(contactTelecomAddress);
-         contactAddresses.Add(contactPostalAddress);
+         List<IFCAnyHandle> contactAddresses = [ contactTelecomAddress, contactPostalAddress ];
          IFCAnyHandle contactPerson = IFCInstanceExporter.CreatePerson(file, null, contactFamilyName, contactFirstName, null,
              null, null, null, contactAddresses);
          IFCAnyHandle contactOrganization = IFCInstanceExporter.CreateOrganization(file, organizationCode, company, null,
              null, null);
          IFCAnyHandle actorRole = IFCInstanceExporter.CreateActorRole(file, "UserDefined", category, null);
-         IList<IFCAnyHandle> actorRoles = new List<IFCAnyHandle>();
-         actorRoles.Add(actorRole);
+         List<IFCAnyHandle> actorRoles = [actorRole ];
          IFCAnyHandle contactEntry = IFCInstanceExporter.CreatePersonAndOrganization(file, contactPerson, contactOrganization, actorRoles);
       }
 
       private IFCAnyHandle GetTelecomAddressFromExtStorage(IFCFile file)
       {
          IFCFileHeaderItem fHItem = ExporterCacheManager.ExportOptionsCache.FileHeaderItem;
-         if (!string.IsNullOrEmpty(fHItem.AuthorEmail))
+         if (string.IsNullOrEmpty(fHItem.AuthorEmail))
          {
-            IList<string> electronicMailAddress = new List<string>();
-            electronicMailAddress.Add(fHItem.AuthorEmail);
-            return IFCInstanceExporter.CreateTelecomAddress(file, null, null, null, null, null, null, electronicMailAddress, null);
+            return null;
          }
 
-         return null;
+         List<string> electronicMailAddress = [fHItem.AuthorEmail];
+         return IFCInstanceExporter.CreateTelecomAddress(file, null, null, null, null, null, null, electronicMailAddress, null);
       }
 
       /// <summary>
@@ -3099,7 +3117,7 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>The handle of IFC file.</returns>
       static public IFCAnyHandle CreateIFCAddressFromExtStorage(IFCFile file, Document document)
       {
-         IFCAddress savedAddress = new IFCAddress();
+         IFCAddress savedAddress = new();
          IFCAddressItem savedAddressItem;
 
          if (savedAddress.GetSavedAddress(document, out savedAddressItem) == true)
@@ -3916,6 +3934,7 @@ namespace Revit.IFC.Export.Exporter
          eastings = UnitUtils.ConvertFromInternalUnits(eastings, utId);
          northings = UnitUtils.ConvertFromInternalUnits(northings, utId);
          orthogonalHeight = UnitUtils.ConvertFromInternalUnits(orthogonalHeight, utId);
+
          IFCAnyHandle mapConversionHnd = IFCInstanceExporter.CreateMapConversion(file, geomRepContext, projectedCRS, eastings, northings,
             orthogonalHeight, xAxisAbscissa, xAxisOrdinate, scale);
 
