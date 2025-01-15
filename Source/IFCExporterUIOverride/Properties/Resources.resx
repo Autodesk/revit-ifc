@@ -950,4 +950,7 @@
   <data name="TemplateNameTooltip" xml:space="preserve">
     <value>Enter unique template name.</value>
   </data>
+  <data name="UseTypePropertiesInInstacePSets" xml:space="preserve">
+    <value>Allow use of type properties in instance property sets</value>
+  </data>
 </root>

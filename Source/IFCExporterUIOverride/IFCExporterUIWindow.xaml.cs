@@ -375,6 +375,7 @@ namespace BIM.IFC.Export.UI
          checkBoxExportSpecificSchedules.IsChecked = configuration.ExportSpecificSchedules;
          checkboxExportUserDefinedPset.IsChecked = configuration.ExportUserDefinedPsets;
          userDefinedPropertySetFileName.Text = configuration.ExportUserDefinedPsetsFileName;
+         checkboxUseTypePropertiesInInstacePSets.IsChecked = configuration.UseTypePropertiesInInstacePSets;
          checkBoxExportLinkedFiles.IsChecked = configuration.ExportLinkedFiles;
          checkboxIncludeIfcSiteElevation.IsChecked = configuration.IncludeSiteElevation;
          checkboxStoreIFCGUID.IsChecked = configuration.StoreIFCGUID;
@@ -432,6 +433,7 @@ namespace BIM.IFC.Export.UI
                                                                 comboboxActivePhase,
                                                                 checkboxExportUserDefinedPset,
                                                                 userDefinedPropertySetFileName,
+                                                                checkboxUseTypePropertiesInInstacePSets,
                                                                 checkBoxExportUserDefinedParameterMapping,
                                                                 userDefinedParameterMappingTable,
                                                                 buttonBrowse,
@@ -451,6 +453,7 @@ namespace BIM.IFC.Export.UI
             element.IsEnabled = !configuration.IsBuiltIn;
          }
          comboboxActivePhase.IsEnabled = comboboxActivePhase.IsEnabled && !configuration.VisibleElementsOfCurrentView;
+         checkboxUseTypePropertiesInInstacePSets.IsEnabled = checkboxUseTypePropertiesInInstacePSets.IsEnabled && configuration.ExportUserDefinedPsets;
          userDefinedPropertySetFileName.IsEnabled = userDefinedPropertySetFileName.IsEnabled && configuration.ExportUserDefinedPsets;
          userDefinedParameterMappingTable.IsEnabled = userDefinedParameterMappingTable.IsEnabled && configuration.ExportUserDefinedParameterMapping;
          buttonBrowse.IsEnabled = buttonBrowse.IsEnabled && configuration.ExportUserDefinedPsets;
@@ -1370,6 +1373,23 @@ namespace BIM.IFC.Export.UI
             configuration.ExportUserDefinedPsets = GetCheckbuttonChecked(checkBox);
             userDefinedPropertySetFileName.IsEnabled = configuration.ExportUserDefinedPsets;
             buttonBrowse.IsEnabled = configuration.ExportUserDefinedPsets;
+            checkboxUseTypePropertiesInInstacePSets.IsEnabled = configuration.ExportUserDefinedPsets;
+            checkboxUseTypePropertiesInInstacePSets.IsChecked = false;
+         }
+      }
+
+      /// <summary>
+      /// Update checkbox for exporting type properties for the instances
+      /// </summary>
+      /// <param name="sender">The source of the event.</param>
+      /// <param name="e">Event arguments that contains the event data.</param>
+      private void checkboxUseTypePropertiesInInstacePSets_Checked(object sender, RoutedEventArgs e)
+      {
+         CheckBox checkBox = (CheckBox)sender;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.UseTypePropertiesInInstacePSets = GetCheckbuttonChecked(checkBox);
          }
       }
 
