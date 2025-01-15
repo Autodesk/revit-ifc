@@ -187,6 +187,8 @@ namespace Revit.IFC.Export.Utility
          protected set { m_ExportUserDefinedPsetsFileName = value; }
       }
 
+      public bool UseTypePropertiesInInstacePSets { get; set; } = false;
+
       /// <summary>
       /// Private default constructor.
       /// </summary>
@@ -221,6 +223,10 @@ namespace Revit.IFC.Export.Utility
 
          // "ExportUserDefinedPsets" override
          propertySetOptions.ExportUserDefinedPsetsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportUserDefinedPsets");
+
+         // "UseTypePropertiesInInstacePSets"
+         propertySetOptions.UseTypePropertiesInInstacePSets =
+            OptionsUtil.GetNamedBooleanOption(options, "UseTypePropertiesInInstacePSets").GetValueOrDefault(false);
 
          // "ExportUserDefinedPsetsFileName" override
          propertySetOptions.ExportUserDefinedPsetsFileName = OptionsUtil.GetNamedStringOption(options, "ExportUserDefinedPsetsFileName");

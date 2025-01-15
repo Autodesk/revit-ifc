@@ -402,7 +402,8 @@ namespace Revit.IFC.Import.Data
                // geometry, but it will contain parameters that are needed for the DirectShape imported for Hybrid IFC Import.
                if (Importer.TheOptions.IsHybridImport && GlobalId != null)
                {
-                  if ((Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out ElementId hybridElementId) ?? false) &&
+                  ElementId hybridElementId = ElementId.InvalidElementId;
+                  if ((Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out hybridElementId) ?? false) &&
                      hybridElementId != ElementId.InvalidElementId)
                   {
                      // "Create" a DirectShape Element.

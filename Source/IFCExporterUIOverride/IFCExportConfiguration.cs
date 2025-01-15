@@ -197,6 +197,11 @@ namespace BIM.IFC.Export.UI
       public string ExportUserDefinedPsetsFileName { get; set; } = "";
 
       /// <summary>
+      /// Whether or not to include type property to the user defined property sets. 
+      /// </summary>
+      public bool UseTypePropertiesInInstacePSets { get; set; } = false;
+
+      /// <summary>
       /// True if the User decides to use the Parameter Mapping Table
       /// False if the user decides to ignore it
       /// </summary>
@@ -437,6 +442,7 @@ namespace BIM.IFC.Export.UI
                                  bool materialPsets,
                                  bool schedulesAsPSets,
                                  bool userDefinedPSets,
+                                 bool useTypePropertiesInInstacePSets,
                                  bool userDefinedParameterMapping,
                                  bool PlanElems2D,
                                  bool exportBoundingBox,
@@ -474,6 +480,7 @@ namespace BIM.IFC.Export.UI
          configuration.ExportMaterialPsets = materialPsets;
          configuration.ExportSchedulesAsPsets = schedulesAsPSets;
          configuration.ExportUserDefinedPsets = userDefinedPSets;
+         configuration.UseTypePropertiesInInstacePSets = useTypePropertiesInInstacePSets;
          configuration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\" + configuration.Name + @".txt";
          configuration.ExportUserDefinedParameterMapping = userDefinedParameterMapping;
 

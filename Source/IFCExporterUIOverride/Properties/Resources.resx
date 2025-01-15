@@ -983,4 +983,7 @@
   <data name="UseVisibleRevitNameTooltip" xml:space="preserve">
     <value>Use this option to export IFC entity name as the visible Revit name.</value>
   </data>
+  <data name="UseTypePropertiesInInstacePSets" xml:space="preserve">
+    <value>Allow use of type properties in instance property sets</value>
+  </data>
 </root>
