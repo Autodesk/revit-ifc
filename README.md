@@ -16,6 +16,59 @@ Links to multilingual versions of the Revit IFC Manual V2.0 can be found here: [
 - [IFC in Revit 2023](https://help.autodesk.com/view/RVT/2023/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 - [IFC in Revit 2022](https://help.autodesk.com/view/RVT/2022/ENU/?guid=GUID-6EB68CEC-6C17-4B16-A509-30537F666C1F)
 
+### Building the Solution
+1. **Open the Solution**
+   - Launch Visual Studio and open `Revit.IFC.sln`.
+   - Ensure you are using the correct branch for your Revit version (e.g., `Release_25.x.x` for Revit 2025).
+
+2. **Update Revit Library References**
+   - Set the correct paths for Revit DLL references based on your environment.
+   - The default Revit installation path is typically:
+     ```
+     C:\Program Files\Autodesk\Revit 2025
+     ```
+
+3. **Restore NuGet Packages**
+   - Visual Studio should automatically restore all required NuGet packages.
+   - If not, open `Tools > NuGet Package Manager > Package Manager Console` and run:
+     ```powershell
+     Update-Package -reinstall
+     ```
+
+4. **Set Configuration and Build**
+   - In the toolbar, select the desired configuration (`Debug` or `Release`) and platform (`Any CPU`).
+   - Build the solution by navigating to `Build > Build Solution`.
+   - Verify that the build completes without errors.
+
+### Debugging the Solution
+1. **Set Up Debugging**  
+   - To debug the IFC exporter within Revit, you need to attach Visual Studio to the Revit process.
+
+2. **Prepare DLL for Debugging**  
+   - Build the solution in the `Debug` configuration.  
+   - Copy the resulting DLLs to the add-in folder. The default path is typically:  
+     ```
+     C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2025.bundle\Contents\2025
+     ```
+
+3. **Launch Revit**  
+   - Start Revit.
+
+4. **Attach to Process**  
+   - In Visual Studio, go to `Debug > Attach to Process...`.  
+   - From the list of available processes, locate and select `Revit.exe`.  
+   - Click **Attach**.
+
+5. **Set Breakpoints**  
+   - Open the relevant source files in Visual Studio and set breakpoints to inspect the code during execution.  
+   - Entry points for common operations:  
+     - **Exporting IFC**: Use the `ExportIFC` method in `Exporter.cs`.  
+     - **Importing/Linking IFC**: Use the `ImportIFC` method in `Importer.cs`.  
+   - **Note**: For IFC import, much of the logic is processed internally by Revit and is not open-sourced.
+
+6. **Trigger the Code Path**  
+   - Perform actions in Revit to execute the code where breakpoints are set, such as exporting or linking an IFC file.
+   
 ## Issue Submission Templates
 When submitting an Issue, users will be asked to choose between the following submission templates:
 - **Problem Report [PR]**: _is a "bug", error, or issue found during the use of any aspect of the IFC functionality._
