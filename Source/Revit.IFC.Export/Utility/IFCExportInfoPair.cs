@@ -70,7 +70,7 @@ namespace Revit.IFC.Export.Utility
                // there are exceptions.
                if (m_ExportType == IFCEntityType.UnKnown)
                {
-                  newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType(value, IfcSchemaEntityTree.GetTypeNameFromInstanceName(m_ExportInstance.ToString()));
+                  newValidatedPredefinedType = IFCValidateEntry.GetValidIFCPredefinedType(value, IfcSchemaEntityTree.GetTypeNameFromInstanceName(m_ExportInstance.ToString(), ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4));
                }
                else
                {
@@ -324,7 +324,7 @@ namespace Revit.IFC.Export.Utility
                IList<IfcSchemaEntityNode> instNodes = IfcSchemaEntityTree.FindAllSuperTypes(ifcVersion, entityTypeName, "IfcProduct", "IfcGroup");
                foreach (IfcSchemaEntityNode instNode in instNodes)
                {
-                  typeName = IfcSchemaEntityTree.GetTypeNameFromInstanceName(instNode.Name);
+                  typeName = IfcSchemaEntityTree.GetTypeNameFromInstanceName(instNode.Name, ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4);
                   IfcSchemaEntityNode node = theTree.Find(typeName);
                   if (node == null)
                      node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(ifcVersion, typeName);

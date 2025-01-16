@@ -22,8 +22,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Autodesk.Revit.DB.Mechanical;
-using Autodesk.Revit.DB.Plumbing;
 using Revit.IFC.Export.Properties;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Utility;
@@ -2841,6 +2839,11 @@ namespace Revit.IFC.Export.Exporter
             }
          }
          currentFaceHashSetList.Add(currentFaceSet);
+
+         // Call GC.KeepAlive(solidFacetation) at this point to maintain a reference to solidFacetation
+         // and prevent the object deletion by the garbage collector after try-catch block.
+         GC.KeepAlive(solidFacetation);
+
          return true;
       }
 

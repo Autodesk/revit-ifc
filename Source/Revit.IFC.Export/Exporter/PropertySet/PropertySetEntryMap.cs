@@ -73,12 +73,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="propertyEnumerationType">The type of property.</param>
       /// <param name="propertyName">The name of property to create.</param>
       /// <param name="lookInType">True if it's appropriate to look for value in element type.</param>
+      /// <param name="addTypePropertiesToInstance">Indicates whether properties from the element's type should be added to the instance.</param>
       /// <returns>The created property handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
          IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector, 
          ElementType elementType, IFCAnyHandle handle, PropertyType propertyType, 
          PropertyType propertyArgumentType, PropertyValueType valueType, Type propertyEnumerationType,
-         string propertyName, bool lookInType)
+         string propertyName, bool lookInType, bool addTypePropertiesToInstance)
       {
          IFCAnyHandle propHnd = null;
 
@@ -93,7 +94,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                Element element = elementOrConnector.Element;
                propHnd = CreatePropertyFromElementOrSymbol(file, exporterIFC, owningPsetName, element,
                   elementType, propertyType, propertyArgumentType, valueType, propertyEnumerationType,
-                  propertyName, lookInType);
+                  propertyName, lookInType, addTypePropertiesToInstance);
             }
          }
 
@@ -1091,10 +1092,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="element">The element.</param>
       /// <param name="elementType">The element type, if it is appropriate to look in it for value.</param>
       /// <param name="lookInType">True if it's appropriate to look for value in element type.</param>
+      /// <param name="addTypePropertiesToInstance">Indicates whether properties from the element's type should be added to the instance.</param>
       /// <returns>The property handle.</returns>
       IFCAnyHandle CreatePropertyFromElementOrSymbol(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, Element element, Element elementType,
          PropertyType propertyType, PropertyType propertyArgumentType, PropertyValueType valueType, Type propertyEnumerationType, string propertyName, 
-         bool lookInType = false)
+         bool lookInType = false, bool addTypePropertiesToInstance = false)
       {
          // Pset from schedule will be created only on the instance and not on the type (type properties in the schedule will be added into the instance's pset
          if ((element is ElementType || element is FamilySymbol) && lookInType)
@@ -1146,7 +1148,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          // Get the property from Type for this element if the pset is for schedule or 
          // if element doesn't have an associated type (e.g. IfcRoof)
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (elementType != null) && lookInType)
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && (elementType != null) && (lookInType || addTypePropertiesToInstance))
             return CreatePropertyFromElementOrSymbol(file, exporterIFC, owningPsetName, elementType, null,
                propertyType, propertyArgumentType, valueType, propertyEnumerationType, propertyName, false);
 

@@ -424,13 +424,18 @@ namespace Revit.IFC.Common.Utility
       /// This is done in a heuristic fashion, so we will need to 
       /// make sure exceptions are dealt with.
       /// </remarks>
-      public static string GetTypeNameFromInstanceName(string instanceName)
+      public static string GetTypeNameFromInstanceName(string instanceName, bool exportAsOlderThanIFC4)
       {
          // Deal with exceptions.
          if (string.Compare(instanceName, "IfcProduct", true) == 0)
             return "IfcTypeProduct";
          else if (string.Compare(instanceName, "IfcObject", true) == 0)
             return "IfcTypeObject";
+         // IFCDoorType and IFCWindowType are available since IFC4.
+         else if (string.Compare(instanceName, "IfcWindow", true) == 0 && exportAsOlderThanIFC4)
+            return "IfcWindowStyle";
+         else if (string.Compare(instanceName, "IFCDoor", true) == 0 && exportAsOlderThanIFC4)
+            return "IFCDoorStyle";
          return instanceName + "Type";
       }
       
@@ -455,8 +460,12 @@ namespace Revit.IFC.Common.Utility
             return res;
          }
 
+
+         bool schemaOlderThanIFC4 = context.Equals(Ifc2x3Schema, StringComparison.InvariantCultureIgnoreCase) 
+            || context.Equals(Ifc2x2Schema, StringComparison.InvariantCultureIgnoreCase);
+
          string theTypeName = typeName.EndsWith("Type", StringComparison.CurrentCultureIgnoreCase) ? 
-            typeName : GetTypeNameFromInstanceName(typeName); 
+            typeName : GetTypeNameFromInstanceName(typeName, schemaOlderThanIFC4); 
          
          IfcSchemaEntityNode entNode = ifcEntitySchemaTree.Find(theTypeName);
          if (entNode != null)

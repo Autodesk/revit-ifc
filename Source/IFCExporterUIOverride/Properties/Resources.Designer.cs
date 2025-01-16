@@ -2518,6 +2518,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Allow use of type properties in instance property sets.
+        /// </summary>
+        public static string UseTypePropertiesInInstacePSets {
+            get {
+                return ResourceManager.GetString("UseTypePropertiesInInstacePSets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Use visible Revit name as the IFCEntity name.
         /// </summary>
         public static string UseVisibleRevitNameAsEntityName {
