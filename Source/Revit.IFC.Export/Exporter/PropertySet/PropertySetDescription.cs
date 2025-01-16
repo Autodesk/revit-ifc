@@ -113,6 +113,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
    
       /// <summary>
+      /// Determines whether properties from the element's type should be added to the instance.
+      /// </summary>
+      public bool AddTypePropertiesToInstance { get; set; }
+
+      /// <summary>
       /// The entries stored in this property set description.
       /// </summary>
       public void AddEntry(PropertySetEntry entry)
@@ -186,7 +191,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             try
             {
-               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle, lookInType);
+               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle, lookInType, AddTypePropertiesToInstance);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportMaterialPsets)
                   propHnd = MaterialBuildInParameterUtil.CreateMaterialPropertyIfBuildIn(Name, entry.PropertyName, entry.PropertyType, elementOrConnectorToUse?.Element, file);
