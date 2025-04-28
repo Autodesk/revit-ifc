@@ -58,7 +58,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </remarks>
       public bool IsElementTypeProperty { get; set; } = true;
 
-      protected List<T> Entries { get; set; } = new List<T>();
+      public List<T> Entries { get; set; } = new List<T>();
 
       /// <summary>
       /// Constructor to create an Entry object.

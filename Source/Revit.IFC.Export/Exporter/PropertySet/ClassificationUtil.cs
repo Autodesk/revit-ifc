@@ -49,61 +49,65 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="file">the file</param>
       /// <param name="element">the element</param>
       /// <param name="elemHnd">the element handle</param>
-      public static void CreateUniformatClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IFCAnyHandle elemHnd)
+      public static void CreateUniformatClassification(IFCFile file, Element element, IFCAnyHandle elemHnd)
       {
+         if (ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
+            return;
+
          IFCEntityType entType = IFCEntityType.IfcObjectDefinition;
-         if (!Enum.TryParse<IFCEntityType>(elemHnd.TypeName, out IFCEntityType hndEntType))
+         if (!Enum.TryParse(elemHnd.TypeName, out IFCEntityType hndEntType))
             entType = hndEntType;
-         IList<IFCAnyHandle> elemHnds = new List<IFCAnyHandle>() { elemHnd };
-         CreateUniformatClassification(exporterIFC, file, element, elemHnds, entType);
+         List<IFCAnyHandle> elemHnds = [ elemHnd ];
+         CreateUniformatClassification(file, element, elemHnds, entType);
       }
 
       /// <summary>
       /// Creates uniformat classification.
       /// </summary>
-      /// <param name="exporterIFC">The ExporterIFC.</param>
       /// <param name="file">The file.</param>
       /// <param name="element">The element.</param>
       /// <param name="elemHnds">The list of element handles that are part of the aggregate of the element.</param>
       /// <param name="constraintEntType">The IFC entity of which type the classification to be considered</param>
-      public static void CreateUniformatClassification(ExporterIFC exporterIFC, IFCFile file, Element element, IList<IFCAnyHandle> elemHnds, IFCEntityType constraintEntType)
+      public static void CreateUniformatClassification(IFCFile file, Element element, IList<IFCAnyHandle> elemHnds, IFCEntityType constraintEntType)
       {
-         if (ExporterCacheManager.ClassificationCache.UniformatOverriden)
+         if (ExporterCacheManager.ClassificationCache.UniformatOverridden)
             return;
          // Create Uniformat classification, if it is not set.
          string uniformatKeyString = "Uniformat";
          string uniformatDescription = "";
-         string uniformatCode = null;
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.UNIFORMAT_CODE, false, out uniformatCode) == null)
-            ParameterUtil.GetStringValueFromElementOrSymbol(element, "Assembly Code", out uniformatCode);
-
-         if (!String.IsNullOrWhiteSpace(uniformatCode))
-         {
-            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, BuiltInParameter.UNIFORMAT_DESCRIPTION, false, out uniformatDescription) == null)
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, "Assembly Description", out uniformatDescription);
-         }
 
          if (!ExporterCacheManager.ClassificationCache.ClassificationHandles.TryGetValue(uniformatKeyString, out IFCAnyHandle classification))
          {
-            classification = IFCInstanceExporter.CreateClassification(file, "CSI (Construction Specifications Institute)", "1998", 0, 0, 0, 
+            classification = IFCInstanceExporter.CreateClassification(file, "CSI (Construction Specifications Institute)", "1998", 0, 0, 0,
                uniformatKeyString, "UniFormat Classification", GetUniformatURL());
             ExporterCacheManager.ClassificationCache.ClassificationHandles.Add(uniformatKeyString, classification);
          }
 
-         if (!String.IsNullOrEmpty(uniformatCode))
+
+         foreach (IFCAnyHandle elemHnd in elemHnds)
          {
+            if (!IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
+               continue;
+
+            ElementId elementId = ExporterCacheManager.HandleToElementCache.Find(elemHnd);
+            Element elementToUse = (elementId == ElementId.InvalidElementId) ? element : element?.Document?.GetElement(elementId);
+            if (elementToUse == null)
+               continue;
+
+            if (ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, BuiltInParameter.ASSEMBLY_CODE, false, out string uniformatCode) == null)
+               ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, "Assembly Code", out uniformatCode);
+
+            if (!String.IsNullOrWhiteSpace(uniformatCode))
             {
-               foreach (IFCAnyHandle elemHnd in elemHnds)
-               {
-                  if (IFCAnyHandleUtil.IsSubTypeOf(elemHnd, constraintEntType))
-                  {
-                     ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
-                        uniformatCode, uniformatKeyString, uniformatDescription, classification);
-                     InsertClassificationReference(file, key, elemHnd);
-                  }
-               }
+               if (ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, BuiltInParameter.ASSEMBLY_DESCRIPTION, false, out string uniformatRefName) == null)
+                  ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, "Assembly Description", out uniformatRefName);
+
+               ClassificationReferenceKey key = new ClassificationReferenceKey(GetUniformatURL(),
+                  uniformatCode, uniformatRefName, uniformatDescription, classification);
+               InsertClassificationReference(file, key, elemHnd);
             }
          }
+
       }
 
       /// <summary>
@@ -117,11 +121,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public static bool CreateClassification(ExporterIFC exporterIFC, IFCFile file, 
          Element element, IFCAnyHandle elemHnd)
       {
+         if (ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
+            return false;
+
          bool createdClassification = false;
 
-         string paramClassificationCode = "";
+         string paramClassificationCode = string.Empty;
          string baseClassificationCodeFieldName = "ClassificationCode";
-         IList<string> customClassificationCodeNames = new List<string>();
+         List<string> customClassificationCodeNames = [];
 
          string classificationName = null;
          string classificationCode = null;
@@ -162,15 +169,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
             ParseClassificationCode(paramClassificationCode, classificationCodeFieldName, out classificationName, out classificationCode, out classificationRefName);
 
-            if (string.IsNullOrEmpty(classificationDescription))
+            if (string.IsNullOrEmpty(classificationRefName))
             {
                if (string.Compare(classificationCodeFieldName, "Assembly Code", true) == 0)
                {
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.UNIFORMAT_DESCRIPTION, false, out classificationDescription);
+                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.ASSEMBLY_DESCRIPTION, false, out classificationRefName);
                }
-               else if (string.Compare(classificationCodeFieldName, "OmniClass Number", true) == 0)
+               else if (string.Compare(classificationCodeFieldName, "Classification Number", true) == 0)
                {
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.OMNICLASS_DESCRIPTION, false, out classificationDescription);
+                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.CLASSIFICATION_DESCRIPTION, false, out classificationRefName);
                }
             }
             // If classificationName is empty, there is no classification to export.

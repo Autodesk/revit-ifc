@@ -58,9 +58,6 @@ namespace Revit.IFC.Import.Utility
       // Maps entity types to the type contained in the dictionary above, to avoid duplicate instance/type mappings.
       static IDictionary<IFCEntityType, IFCEntityType> m_EntityTypeKey = null;
 
-      // Sometimes we need to get the Category directly from the entity.  This identifies those special cases.
-      static HashSet<IFCEntityType> m_RequestCategoryFromEntity = null;
-
       /// <summary>
       /// Clear the maps at the start of import, to force reload of options.
       /// </summary>
@@ -72,7 +69,6 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeKey = null;
          m_EntityPredefinedTypeToCategory = null;
          m_EntityPredefinedObjectTypesToCategory = null;
-         m_RequestCategoryFromEntity = null;
       }
 
       private static void InitializeCategoryMaps()
@@ -83,7 +79,6 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeKey = new Dictionary<IFCEntityType, IFCEntityType>();
          m_EntityPredefinedTypeToCategory = new Dictionary<Tuple<IFCEntityType, string>, BuiltInCategory>();
          m_EntityPredefinedObjectTypesToCategory = new Dictionary<Tuple<IFCEntityType, string, string>, BuiltInCategory>();
-         m_RequestCategoryFromEntity = new HashSet<IFCEntityType>();
 
          if (!InitFromFile())
             InitEntityTypeToCategoryMaps();
@@ -148,18 +143,6 @@ namespace Revit.IFC.Import.Utility
             return m_EntityPredefinedObjectTypesToCategory;
          }
 
-      }
-
-      private static HashSet<IFCEntityType> RequestCategoryFromEntity
-      {
-         get
-         {
-            if (m_RequestCategoryFromEntity == null)
-            {
-               InitializeCategoryMaps();
-            }
-            return m_RequestCategoryFromEntity;
-         }
       }
 
       private static string GetTypeNameFromCategoryName(string categoryName)
@@ -557,6 +540,8 @@ namespace Revit.IFC.Import.Utility
          m_EntityTypeToCategory[IFCEntityType.IfcSpaceType] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcSpaceHeater] = BuiltInCategory.OST_MechanicalEquipment;
          m_EntityTypeToCategory[IFCEntityType.IfcSpaceHeaterType] = BuiltInCategory.OST_MechanicalEquipment;
+         m_EntityTypeToCategory[IFCEntityType.IfcSpatialZone] = BuiltInCategory.OST_GenericModel;
+         m_EntityTypeToCategory[IFCEntityType.IfcSpatialZoneType] = BuiltInCategory.OST_GenericModel;
          m_EntityTypeToCategory[IFCEntityType.IfcStair] = BuiltInCategory.OST_Stairs;
          m_EntityTypeToCategory[IFCEntityType.IfcStairType] = BuiltInCategory.OST_Stairs;
          m_EntityTypeToCategory[IFCEntityType.IfcStairFlight] = BuiltInCategory.OST_Stairs;
@@ -659,8 +644,6 @@ namespace Revit.IFC.Import.Utility
          m_EntityPredefinedObjectTypesToCategory[Tuple.Create(IFCEntityType.IfcAnnotation, "USERDEFINED", "CogoPoints")] = BuiltInCategory.OST_Topography;
          m_EntityPredefinedObjectTypesToCategory[Tuple.Create(IFCEntityType.IfcAnnotation, "USERDEFINED", "StringLine")] = BuiltInCategory.OST_Topography;
          m_EntityPredefinedObjectTypesToCategory[Tuple.Create(IFCEntityType.IfcAnnotation, "USERDEFINED", "BreakLine")] = BuiltInCategory.OST_Topography;
-
-         m_RequestCategoryFromEntity.Add(IFCEntityType.IfcDistributionSystem);
       }
 
       private static bool InitFromFile()
@@ -807,32 +790,7 @@ namespace Revit.IFC.Import.Utility
       /// <returns>Value of ObjectType.</returns>
       private static string GetObjectType(IFCObject ifcObject)
       {
-         return (ifcObject?.ObjectType);
-      }
-
-      /// <summary>
-      /// This is used in those cases where the ObjectDefinition itself will identify its category, rather than identifying
-      /// every possible category in the maps above.
-      /// Since the Entity actually knows its own Categories, this will keep the encapsulation there.
-      /// </summary>
-      /// <param name="ifcObjectDefinition">Object Definition for which category is desired.</param>
-      /// <returns>ElementId representation of Category</returns>
-      private static ElementId GetCategoryElementIdFromObjectDefinition(IFCObjectDefinition ifcObjectDefinition)
-      {
-         ElementId retVal = ElementId.InvalidElementId;
-         if (ifcObjectDefinition != null)
-         {
-            IFCEntityType entityType;
-            if (RequestCategoryFromEntity.TryGetValue(ifcObjectDefinition.EntityType, out entityType))
-            {
-               // Make sure that the Entity Type agrees.
-               if (entityType == ifcObjectDefinition.EntityType)
-               {
-                  retVal = ifcObjectDefinition.GetCategoryElementId();
-               }
-            }
-         }
-         return retVal;
+         return ifcObject?.ObjectType;
       }
 
       /// <summary>
@@ -894,6 +852,63 @@ namespace Revit.IFC.Import.Utility
          return true;
       }
 
+      private static Category GetCategoryFromAcceptableNames(CategoryNameMap subcategories, string subCategoryName)
+      {
+         try
+         {
+            Category subCategory = subcategories.get_Item(subCategoryName);
+            if (subCategory != null)
+               return subCategory;
+         }
+         catch 
+         { 
+         }
+
+         if (Importer.TheOptions.HybridImportOptions == null)
+            return null;
+
+         // If we are doing hybrid import, try some other acceptable alternatives.
+         try
+         { 
+            // First attempt: remove "Type".
+            int removeTypeLocation = subCategoryName.LastIndexOf("Type.");
+            if (removeTypeLocation > 0)
+            {
+               string altSubCategoryName = subCategoryName.Replace("Type.", ".");
+               Category subCategory = subcategories.get_Item(altSubCategoryName);
+               if (subCategory != null)
+                  return subCategory;
+            }
+         }
+         catch
+         {
+         }
+
+         try
+         {
+            // Second attempt: uppercase predefined type.
+            int predefinedTypeLocation = subCategoryName.LastIndexOf(".");
+            if (predefinedTypeLocation > 0)
+            {
+               string[] nameAndPredefinedType = subCategoryName.Split('.');
+               if (nameAndPredefinedType.Count() == 2)
+               {
+                  nameAndPredefinedType[1] = nameAndPredefinedType[1].ToUpper();
+                  string altSubCategoryName = string.Join(".", nameAndPredefinedType);
+
+                  Category subCategory = subcategories.get_Item(altSubCategoryName);
+                  if (subCategory != null)
+                     return subCategory;
+               }
+            }
+         }
+         catch
+         {
+         }
+
+         return null;
+      }
+
       private static Category GetOrCreateSubcategory(Document doc, int id, string subCategoryName, ElementId categoryId)
       {
          if (string.IsNullOrWhiteSpace(subCategoryName))
@@ -907,18 +922,8 @@ namespace Revit.IFC.Import.Utility
          IDictionary<string, Category> createdSubcategories = Importer.TheCache.CreatedSubcategories;
          if (!createdSubcategories.TryGetValue(subCategoryName, out subCategory))
          {
-            // Category may have been created by a previous action (probably a previous import).  Look first.
-            // First check GenericModels.
-            //
-            try
-            {
-               CategoryNameMap subcategories = Importer.TheCache.GenericModelsCategory.SubCategories;
-               subCategory = subcategories.get_Item(subCategoryName);
-            }
-            catch
-            {
-               subCategory = null;
-            }
+            subCategory = GetCategoryFromAcceptableNames(Importer.TheCache.GenericModelsCategory?.SubCategories,
+               subCategoryName);
 
             // Then Topography.
             //
@@ -997,15 +1002,19 @@ namespace Revit.IFC.Import.Utility
       /// <summary>
       /// Determines if the category qualifies for a subcategory.
       /// Criteria:
-      /// 1. Category is OST_GenericaModel.
-      /// 2. Mapping exists in (EntityType, PredefinedType, ObjectType) table.
+      /// 1. DirectShape hasn't already been created internally.
+      /// 2. Category is OST_GenericModel.
+      /// 3. Mapping exists in (EntityType, PredefinedType, ObjectType) table.
       /// </summary>
       /// <param name="categoryId">Category to test.</param>
       /// <param name="entityPredefinedObjectTypeKey">Tuple to look into Category mapping table.</param>
       /// <returns>Boolean to indicate whether we set the category or not.</returns>
-      private static bool ShouldSetSubcategory (ElementId categoryId,
+      private static bool ShouldSetSubcategory (ElementId categoryId, int id,
                                                 Tuple <IFCEntityType, string, string> entityPredefinedObjectTypeKey)
       {
+         if (IFCImportHybridInfo.GetDirectShape(id)?.Category != null)
+            return false;
+
          if (categoryId == new ElementId(BuiltInCategory.OST_GenericModel))
             return true;
 
@@ -1046,7 +1055,7 @@ namespace Revit.IFC.Import.Utility
 
          // First try on category:  if needed inspect the entity for a given category.
          //
-         ElementId catElemId = GetCategoryElementIdFromObjectDefinition(entity);
+         ElementId catElemId = entity.GetCategoryElementId();
          if (catElemId == ElementId.InvalidElementId)
          {
             catElemId = GetCategoryElementId(entityType, predefinedType, objectType);
@@ -1065,7 +1074,7 @@ namespace Revit.IFC.Import.Utility
 
          Tuple <IFCEntityType, string, string> entityPredefinedObjectTypesKey = Tuple.Create (entityType, entity.PredefinedType, objectType);
          Category subCategory = null;
-         if (ShouldSetSubcategory (catElemId, entityPredefinedObjectTypesKey))
+         if (ShouldSetSubcategory(catElemId, entity.Id, entityPredefinedObjectTypesKey))
          {
             string subCategoryName = GetCustomCategoryName(entity);
 

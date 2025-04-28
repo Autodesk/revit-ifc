@@ -106,9 +106,16 @@ namespace Revit.IFC.Import.Data
                lcs = ContainedIn?.ObjectLocation?.TotalTransform;
 
          }
-         if (lcs == null)
-            lcs = Transform.Identity;
 
+         if (lcs == null)
+         {
+            lcs = Transform.Identity;
+         }
+
+         // We could use ObjectLocation?.TotalTransformAfterOffset above, but that is 
+         // slightly different behavior, since TotalTransformAfterOffset is never null.
+         lcs.Origin += (Importer.TheHybridInfo?.LargeCoordinateOriginOffset ?? XYZ.Zero);
+            
          // 2016+ only.
          XYZ origin = lcs.Origin;
 

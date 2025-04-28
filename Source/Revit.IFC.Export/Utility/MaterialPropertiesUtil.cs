@@ -21,9 +21,11 @@ using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Newtonsoft.Json.Linq;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Toolkit;
+using static Revit.IFC.Export.Utility.ParameterUtil;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -39,6 +41,13 @@ namespace Revit.IFC.Export.Utility
       /// <param name="exporterIFC">The IFC exporter object.</param>
       public static void ExportMaterialProperties(IFCFile file, ExporterIFC exporterIFC)
       {
+         bool materialPropertiesAreAllowed =
+           !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ||
+           ExporterCacheManager.CertifiedEntitiesAndPsetsCache.AllowPredefPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "IfcExtendedMaterialProperties");
+
+         if (!materialPropertiesAreAllowed)
+            return;
+
          Document document = ExporterCacheManager.Document;
 
          foreach (KeyValuePair<ElementId, Tuple<IFCAnyHandle, IFCExportInfoPair>> cachedMaterial in ExporterCacheManager.MaterialHandleCache.ElementIdToHandleAndInfo)
@@ -57,8 +66,14 @@ namespace Revit.IFC.Export.Utility
                ExportStructuralParameters(file, document, material, materialHnd);
                ExportThermalParameters(file, document, material, materialHnd);
 
+               // 1. Maps project/shared parameters to 'built-in material properties'
+               // For example, export IfcMechanicalMaterialProperties.DynamicViscosity Revit material project/shared parameter to IfcMechanicalMaterialProperties.DynamicViscosity attribute
+               // 2. Exports some hardcoded mapped Revit material parameters (see MaterialBuildInParameterUtil class) to 'built-in material properties'
+               // For example, export Revit material parameter Density('Physical' tab) to IfcGeneralMaterialProperties.MassDensity attribute
                ExportMappedMaterialProperties(file, exporterIFC, material, materialHnd);
 
+               // Export internal Revit properties
+               // For example, non-ifc project parameters to IfcExtendedMaterialProperties 
                PropertyUtil.CreateInternalRevitPropertySets(exporterIFC, material, new HashSet<IFCAnyHandle>() { materialHnd }, true);
             }
          }
@@ -128,15 +143,51 @@ namespace Revit.IFC.Export.Utility
          HashSet<IFCAnyHandle> properties = new HashSet<IFCAnyHandle>();
 
          // Category
+         PropertyDescription catPropertyDescription = new PropertyDescription("Category");
          string name = material.MaterialCategory;
-         properties.Add(PropertyUtil.CreateLabelProperty(file, "Category", name, PropertyValueType.SingleValue, null));
+         properties.Add(PropertyUtil.CreateLabelProperty(file, catPropertyDescription, name, PropertyValueType.SingleValue, null));
 
          // Class
+         PropertyDescription classPropertyDescription = new PropertyDescription("Class");
          name = material.MaterialClass;
-         properties.Add(PropertyUtil.CreateLabelProperty(file, "Class", name, PropertyValueType.SingleValue, null));
+         properties.Add(PropertyUtil.CreateLabelProperty(file, classPropertyDescription, name, PropertyValueType.SingleValue, null));
 
          // The rest of identity parameters are exported automatically in PropertyUtil.CreateInternalRevitPropertySets
          return properties;
+      }
+
+      static private void SetSimpleMaterialProperty(IFCFile file, ISet<IFCAnyHandle> properties, string propertyName, 
+         string value)
+      {
+         PropertyDescription propertyDescription = new PropertyDescription(propertyName);
+         properties.Add(PropertyUtil.CreateLabelProperty(file, propertyDescription, value, PropertyValueType.SingleValue, null));
+      }
+
+      static private void SetSimpleMaterialProperty(IFCFile file, ISet<IFCAnyHandle> properties, 
+         PropertySetElement structuralSet, BuiltInParameter builtInParameter, string propertyName)
+      {
+         string strValue;
+         GetStringValueFromElement(structuralSet, builtInParameter, out strValue);
+         if (string.IsNullOrEmpty(strValue))
+         {
+            return;
+         }
+
+         PropertyDescription propertyDescription = new PropertyDescription(propertyName);
+         properties.Add(PropertyUtil.CreateLabelProperty(file, propertyDescription, strValue, PropertyValueType.SingleValue, null));
+      }
+
+      static private void SetSimpleMaterialProperty(IFCFile file, ISet<IFCAnyHandle> properties, 
+         ForgeTypeId specTypeId, string propertyName, double value)
+      {
+         PropertyDescription propertyDescription = new PropertyDescription(propertyName);
+         properties.Add(PropertyUtil.CreateRealPropertyByType(file, specTypeId, propertyDescription, value, PropertyValueType.SingleValue));
+      }
+
+      static private void SetSimpleMaterialProperty(IFCFile file, ISet<IFCAnyHandle> properties, string propertyName, bool value)
+      {
+         PropertyDescription propertyDescription = new PropertyDescription(propertyName);
+         properties.Add(PropertyUtil.CreateBooleanProperty(file, propertyDescription, value, PropertyValueType.SingleValue));
       }
 
       /// <summary>
@@ -162,49 +213,24 @@ namespace Revit.IFC.Export.Utility
 
          StructuralBehavior behaviour = structuralAsset.Behavior;
 
-         // Name
-         string strValue;
-         ParameterUtil.GetStringValueFromElement(structuralSet, BuiltInParameter.PROPERTY_SET_NAME, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Name", strValue, PropertyValueType.SingleValue, null));
-
-         // Description
-         ParameterUtil.GetStringValueFromElement(structuralSet, BuiltInParameter.PROPERTY_SET_DESCRIPTION, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Description", strValue, PropertyValueType.SingleValue, null));
-
-         // Keywords
-         ParameterUtil.GetStringValueFromElement(structuralSet, BuiltInParameter.PROPERTY_SET_KEYWORDS, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Keywords", strValue, PropertyValueType.SingleValue, null));
+         SetSimpleMaterialProperty(file, properties, structuralSet, BuiltInParameter.PROPERTY_SET_NAME, "Name");
+         SetSimpleMaterialProperty(file, properties, structuralSet, BuiltInParameter.PROPERTY_SET_DESCRIPTION, "Description");
+         SetSimpleMaterialProperty(file, properties, structuralSet, BuiltInParameter.PROPERTY_SET_KEYWORDS, "Keywords");
 
          // Type
-         string type = assetClass.ToString();
-         properties.Add(PropertyUtil.CreateLabelProperty(file, "Type", type, PropertyValueType.SingleValue, null));
-
-         // SubClass
-         string subClass = structuralAsset.SubClass;
-         properties.Add(PropertyUtil.CreateLabelProperty(file, "SubClass", subClass, PropertyValueType.SingleValue, null));
-
+         SetSimpleMaterialProperty(file, properties, "Type", assetClass.ToString());
+         SetSimpleMaterialProperty(file, properties, "SubClass", structuralAsset.SubClass);
 
          if (assetClass == StructuralAssetClass.Concrete || assetClass == StructuralAssetClass.Metal || assetClass == StructuralAssetClass.Generic
             || assetClass == StructuralAssetClass.Plastic || assetClass == StructuralAssetClass.Wood)
          {
-            // Source
-            ParameterUtil.GetStringValueFromElement(structuralSet, BuiltInParameter.MATERIAL_ASSET_PARAM_SOURCE, out strValue);
-            if (!string.IsNullOrEmpty(strValue))
-               properties.Add(PropertyUtil.CreateLabelProperty(file, "Source", strValue, PropertyValueType.SingleValue, null));
-
-            // Source URL
-            ParameterUtil.GetStringValueFromElement(structuralSet, BuiltInParameter.MATERIAL_ASSET_PARAM_SOURCE_URL, out strValue);
-            if (!string.IsNullOrEmpty(strValue))
-               properties.Add(PropertyUtil.CreateLabelProperty(file, "Source URL", strValue, PropertyValueType.SingleValue, null));
+            SetSimpleMaterialProperty(file, properties, structuralSet, BuiltInParameter.MATERIAL_ASSET_PARAM_SOURCE, "Source");
+            SetSimpleMaterialProperty(file, properties, structuralSet, BuiltInParameter.MATERIAL_ASSET_PARAM_SOURCE_URL, "Source URL");
          }
 
          // Behavior
-         string behaviourStr = behaviour.ToString();
-         properties.Add(PropertyUtil.CreateLabelProperty(file, "Behavior", behaviourStr, PropertyValueType.SingleValue, null));
-
+         SetSimpleMaterialProperty(file, properties, "Behavior", behaviour.ToString());
+         
          if (assetClass != StructuralAssetClass.Basic)
          {
             // ThermalExpansionCoefficient X
@@ -212,7 +238,7 @@ namespace Revit.IFC.Export.Utility
             if ((assetClass == StructuralAssetClass.Metal || assetClass == StructuralAssetClass.Concrete || assetClass == StructuralAssetClass.Generic || assetClass == StructuralAssetClass.Plastic || assetClass == StructuralAssetClass.Wood) && behaviour != StructuralBehavior.Isotropic)
             {
                string thermalExpansionCoefficientName = (behaviour == StructuralBehavior.Orthotropic) ? "ThermalExpansionCoefficientX" : "ThermalExpansionCoefficient1";
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.ThermalExpansionCoefficient, thermalExpansionCoefficientName, thermalExpansionCoefficientXYZ.X, PropertyValueType.SingleValue));
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.ThermalExpansionCoefficient, thermalExpansionCoefficientName, thermalExpansionCoefficientXYZ.X);
             }
          }
 
@@ -224,146 +250,134 @@ namespace Revit.IFC.Export.Utility
             if (behaviour == StructuralBehavior.Orthotropic || behaviour == StructuralBehavior.TransverseIsotropic)
             {
                string thermalExpansionCoefficientName = (behaviour == StructuralBehavior.Orthotropic) ? "ThermalExpansionCoefficientY" : "ThermalExpansionCoefficient2";
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.ThermalExpansionCoefficient, thermalExpansionCoefficientName, thermalExpansionCoefficientXYZ.Y, PropertyValueType.SingleValue));
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.ThermalExpansionCoefficient, thermalExpansionCoefficientName, thermalExpansionCoefficientXYZ.Y);
             }
 
             // ThermalExpansionCoefficient Z
             if (behaviour == StructuralBehavior.Orthotropic)
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.ThermalExpansionCoefficient, "ThermalExpansionCoefficientZ", thermalExpansionCoefficientXYZ.Z, PropertyValueType.SingleValue));
+            {
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.ThermalExpansionCoefficient, "ThermalExpansionCoefficientZ", thermalExpansionCoefficientXYZ.Z);
+            }
 
             // YoungModulus X
             XYZ youngModulusXYZ = structuralAsset.YoungModulus;
             if (behaviour != StructuralBehavior.Isotropic)
             {
                string youngModulusNameX = (behaviour == StructuralBehavior.Orthotropic) ? "YoungModulusX" : "YoungModulus1";
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, youngModulusNameX, youngModulusXYZ.X, PropertyValueType.SingleValue));
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, youngModulusNameX, youngModulusXYZ.X);
             }
             // YoungModulus Y
             if (behaviour == StructuralBehavior.Orthotropic || behaviour == StructuralBehavior.TransverseIsotropic)
             {
                string youngModulusNameY = (behaviour == StructuralBehavior.Orthotropic) ? "YoungModulusY" : "YoungModulus2";
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, youngModulusNameY, youngModulusXYZ.Y, PropertyValueType.SingleValue));
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, youngModulusNameY, youngModulusXYZ.Y);
             }
 
             // YoungModulus Z
             if (behaviour == StructuralBehavior.Orthotropic)
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, "YoungModulusZ", youngModulusXYZ.Z, PropertyValueType.SingleValue));
+            {
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "YoungModulusZ", youngModulusXYZ.Z);
+            }
 
             XYZ poissonRatioXYZ = structuralAsset.PoissonRatio;
             if (behaviour != StructuralBehavior.Isotropic)
             {
                // PoissonRatio X
                string poissonRatioNameX = (behaviour == StructuralBehavior.Orthotropic) ? "PoissonRatioX" : "PoissonRatio12";
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Number, poissonRatioNameX, poissonRatioXYZ.X, PropertyValueType.SingleValue));
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Number, poissonRatioNameX, poissonRatioXYZ.X);
             }
 
             // PoissonRatio Y
             if (behaviour == StructuralBehavior.Orthotropic || behaviour == StructuralBehavior.TransverseIsotropic)
             {
                string poissonRatioNameY = (behaviour == StructuralBehavior.Orthotropic) ? "PoissonRatioY" : "PoissonRatio23";
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Number, poissonRatioNameY, poissonRatioXYZ.Y, PropertyValueType.SingleValue));
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Number, poissonRatioNameY, poissonRatioXYZ.Y);
             }
 
             // PoissonRatio Z
             if (behaviour == StructuralBehavior.Orthotropic)
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Number, "PoissonRatioZ", poissonRatioXYZ.Z, PropertyValueType.SingleValue));
+            {
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Number, "PoissonRatioZ", poissonRatioXYZ.Z);
+            }
 
             // ShearModulus X
             XYZ shearModulusXYZ = structuralAsset.ShearModulus;
             if (behaviour != StructuralBehavior.Isotropic)
             {
                string shearModulusName = (behaviour == StructuralBehavior.Orthotropic) ? "ShearModulusX" : "ShearModulus12";
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, shearModulusName, shearModulusXYZ.X, PropertyValueType.SingleValue));
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, shearModulusName, shearModulusXYZ.X);
             }
 
             // ShearModulus Y
             if (behaviour == StructuralBehavior.Orthotropic)
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, "ShearModulusY", shearModulusXYZ.Y, PropertyValueType.SingleValue));
+            {
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "ShearModulusY", shearModulusXYZ.Y);
+            }
 
             // ShearModulus Z
             if (behaviour == StructuralBehavior.Orthotropic)
-               properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, "ShearModulusZ", shearModulusXYZ.Z, PropertyValueType.SingleValue));
+            {
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "ShearModulusZ", shearModulusXYZ.Z);
+            }
 
-            // TensileStrength
-            double minimumTensileStrength = structuralAsset.MinimumTensileStrength;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, "TensileStrength", minimumTensileStrength, PropertyValueType.SingleValue));
-
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "TensileStrength", structuralAsset.MinimumTensileStrength);
          }
 
          if (assetClass == StructuralAssetClass.Metal)
          {
-            // MetalThermallyTreated
-            bool metalThermallyTreated = structuralAsset.MetalThermallyTreated;
-            properties.Add(PropertyUtil.CreateBooleanProperty(file, "ThermallyTreated", metalThermallyTreated, PropertyValueType.SingleValue));
+            SetSimpleMaterialProperty(file, properties, "ThermallyTreated", structuralAsset.MetalThermallyTreated);
          }
 
          if (assetClass == StructuralAssetClass.Wood)
          {
-            // WoodSpecies
-            string woodSpecies = structuralAsset.WoodSpecies;
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Species", woodSpecies, PropertyValueType.SingleValue, null));
+            SetSimpleMaterialProperty(file, properties, "Species", structuralAsset.WoodSpecies);
+            SetSimpleMaterialProperty(file, properties, "WoodGrade", structuralAsset.WoodGrade);
 
-            // WoodGrade
-            string woodGrade = structuralAsset.WoodGrade;
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "WoodGrade", woodGrade, PropertyValueType.SingleValue, null));
-
-            // WoodBendingStrength
-            double woodBendingStrength = structuralAsset.WoodBendingStrength;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, "Bending", woodBendingStrength, PropertyValueType.SingleValue));
-
-            // WoodParallelCompressionStrength
-            double woodParallelCompressionStrength = structuralAsset.WoodParallelCompressionStrength;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, "CompressionParalleltoGrain", woodParallelCompressionStrength, PropertyValueType.SingleValue));
-
-            // WoodPerpendicularCompressionStrength
-            double woodPerpendicularCompressionStrength = structuralAsset.WoodPerpendicularCompressionStrength;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, "CompressionPerpendiculartoGrain", woodPerpendicularCompressionStrength, PropertyValueType.SingleValue));
-
-            // WoodParallelShearStrength
-            double woodParallelShearStrength = structuralAsset.WoodParallelShearStrength;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, "ShearParallelToGrain", woodParallelShearStrength, PropertyValueType.SingleValue));
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "Bending", structuralAsset.WoodBendingStrength);
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "CompressionParalleltoGrain", structuralAsset.WoodParallelCompressionStrength);
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "CompressionPerpendiculartoGrain", structuralAsset.WoodPerpendicularCompressionStrength);
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "ShearParallelToGrain", structuralAsset.WoodParallelShearStrength);
 
             // TensionParallelToGrain
             double tensionParallelToGrain;
-            Parameter param = ParameterUtil.GetDoubleValueFromElement(structuralSet, BuiltInParameter.PHY_MATERIAL_PARAM_TENSION_PARALLEL, out tensionParallelToGrain);
+            Parameter param = GetDoubleValueFromElement(structuralSet, BuiltInParameter.PHY_MATERIAL_PARAM_TENSION_PARALLEL, out tensionParallelToGrain);
             if (param != null)
-               properties.Add(PropertyUtil.CreateRealPropertyBasedOnParameterType(file, param, "TensionParallelToGrain", tensionParallelToGrain, PropertyValueType.SingleValue));
+            {
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "TensionParallelToGrain", tensionParallelToGrain);
+            }
 
             // TensionPerpendicularToGrain
             double tensionPerpendicularToGrain;
-            param = ParameterUtil.GetDoubleValueFromElement(structuralSet, BuiltInParameter.PHY_MATERIAL_PARAM_TENSION_PERPENDICULAR, out tensionPerpendicularToGrain);
+            param = GetDoubleValueFromElement(structuralSet, BuiltInParameter.PHY_MATERIAL_PARAM_TENSION_PERPENDICULAR, out tensionPerpendicularToGrain);
             if (param != null)
-               properties.Add(PropertyUtil.CreateRealPropertyBasedOnParameterType(file, param, "TensionPerpendicularToGrain", tensionPerpendicularToGrain, PropertyValueType.SingleValue));
+            {
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "TensionPerpendicularToGrain", tensionPerpendicularToGrain);
+            }
 
             // AverageModulus
             double averageModulus;
-            param = ParameterUtil.GetDoubleValueFromElement(structuralSet, BuiltInParameter.PHY_MATERIAL_PARAM_AVERAGE_MODULUS, out averageModulus);
+            param = GetDoubleValueFromElement(structuralSet, BuiltInParameter.PHY_MATERIAL_PARAM_AVERAGE_MODULUS, out averageModulus);
             if (param != null)
-               properties.Add(PropertyUtil.CreateRealPropertyBasedOnParameterType(file, param, "AverageModulus", averageModulus, PropertyValueType.SingleValue));
+            {
+               SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "AverageModulus", averageModulus);
+            }
 
             // Construction
             int construction;
-            if (ParameterUtil.GetIntValueFromElement(structuralSet, BuiltInParameter.PHY_MATERIAL_PARAM_WOOD_CONSTRUCTION, out construction) != null)
+            if (GetIntValueFromElement(structuralSet, BuiltInParameter.PHY_MATERIAL_PARAM_WOOD_CONSTRUCTION, out construction) != null)
             {
                string constructionStr = GetConstructionString(construction);
-               if (!string.IsNullOrEmpty(strValue))
-                  properties.Add(PropertyUtil.CreateLabelProperty(file, "Construction", constructionStr, PropertyValueType.SingleValue, null));
+               if (!string.IsNullOrEmpty(constructionStr))
+                  SetSimpleMaterialProperty(file, properties, "Construction", constructionStr);
             }
          }
 
          if (assetClass == StructuralAssetClass.Concrete)
          {
-            // ConcreteCompression
-            double concreteCompression = structuralAsset.ConcreteCompression;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Stress, "ConcreteCompression", concreteCompression, PropertyValueType.SingleValue));
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Stress, "ConcreteCompression", structuralAsset.ConcreteCompression);
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Number, "ShearStrengthModification", structuralAsset.ConcreteShearStrengthReduction);
 
-            // ConcreteShearStrengthReduction
-            double woodParallelCompressionStrength = structuralAsset.ConcreteShearStrengthReduction;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Number, "ShearStrengthModification", woodParallelCompressionStrength, PropertyValueType.SingleValue));
-
-            // Lightweight
-            bool lightweight = structuralAsset.Lightweight;
-            properties.Add(PropertyUtil.CreateBooleanProperty(file, "ThermallyTreated", lightweight, PropertyValueType.SingleValue));
+            SetSimpleMaterialProperty(file, properties, "ThermallyTreated", structuralAsset.Lightweight);
          }
 
          return properties;
@@ -392,122 +406,73 @@ namespace Revit.IFC.Export.Utility
 
          StructuralBehavior behaviour = thermalAsset.Behavior;
 
-         // Name        
-         string name = thermalAsset.Name;
-         properties.Add(PropertyUtil.CreateLabelProperty(file, "Name", name, PropertyValueType.SingleValue, null));
-
-         // Description
-         string strValue;
-         ParameterUtil.GetStringValueFromElement(thermalSet, BuiltInParameter.PROPERTY_SET_DESCRIPTION, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Description", strValue, PropertyValueType.SingleValue, null));
-
-         // Keywords
-         ParameterUtil.GetStringValueFromElement(thermalSet, BuiltInParameter.PROPERTY_SET_KEYWORDS, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Keywords", strValue, PropertyValueType.SingleValue, null));
-
-         // Type
-         string type = materialType.ToString();
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Type", type, PropertyValueType.SingleValue, null));
-
-         // SubClass 
-         ParameterUtil.GetStringValueFromElement(thermalSet, BuiltInParameter.PHY_MATERIAL_PARAM_SUBCLASS, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "SubClass", strValue, PropertyValueType.SingleValue, null));
-
-         // Source
-         ParameterUtil.GetStringValueFromElement(thermalSet, BuiltInParameter.MATERIAL_ASSET_PARAM_SOURCE, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Source", strValue, PropertyValueType.SingleValue, null));
-
-         // Source URL
-         ParameterUtil.GetStringValueFromElement(thermalSet, BuiltInParameter.MATERIAL_ASSET_PARAM_SOURCE_URL, out strValue);
-         if (!string.IsNullOrEmpty(strValue))
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Source URL", strValue, PropertyValueType.SingleValue, null));
-
+         SetSimpleMaterialProperty(file, properties, "Name", thermalAsset.Name);
+         SetSimpleMaterialProperty(file, properties, thermalSet, BuiltInParameter.PROPERTY_SET_DESCRIPTION, "Description");
+         SetSimpleMaterialProperty(file, properties, thermalSet, BuiltInParameter.PROPERTY_SET_KEYWORDS, "Keywords");
+         SetSimpleMaterialProperty(file, properties, "Type", materialType.ToString());
+         SetSimpleMaterialProperty(file, properties, thermalSet, BuiltInParameter.PHY_MATERIAL_PARAM_SUBCLASS, "SubClass");
+         SetSimpleMaterialProperty(file, properties, thermalSet, BuiltInParameter.MATERIAL_ASSET_PARAM_SOURCE, "Source");
+         SetSimpleMaterialProperty(file, properties, thermalSet, BuiltInParameter.MATERIAL_ASSET_PARAM_SOURCE_URL, "Source URL");
 
          if (materialType == ThermalMaterialType.Solid && behaviour == StructuralBehavior.Orthotropic)
          {
             // ThermalConductivityX
             double thermalConductivityX;
-            Parameter param = ParameterUtil.GetDoubleValueFromElement(thermalSet, BuiltInParameter.PHY_MATERIAL_PARAM_THERMAL_CONDUCTIVITY_X, out thermalConductivityX);
+            Parameter param = GetDoubleValueFromElement(thermalSet, BuiltInParameter.PHY_MATERIAL_PARAM_THERMAL_CONDUCTIVITY_X, out thermalConductivityX);
             if (param != null)
-               properties.Add(PropertyUtil.CreateRealPropertyBasedOnParameterType(file, param, "ThermalConductivityX", thermalConductivityX, PropertyValueType.SingleValue));
+            {
+               properties.Add(PropertyUtil.CreateRealPropertyBasedOnParameterType(file, param, 
+                  new PropertyDescription("ThermalConductivityX"), thermalConductivityX, PropertyValueType.SingleValue));
+            }
 
             // ThermalConductivityY
             double thermalConductivityY;
-            param = ParameterUtil.GetDoubleValueFromElement(thermalSet, BuiltInParameter.PHY_MATERIAL_PARAM_THERMAL_CONDUCTIVITY_Y, out thermalConductivityY);
+            param = GetDoubleValueFromElement(thermalSet, BuiltInParameter.PHY_MATERIAL_PARAM_THERMAL_CONDUCTIVITY_Y, out thermalConductivityY);
             if (param != null)
-               properties.Add(PropertyUtil.CreateRealPropertyBasedOnParameterType(file, param, "ThermalConductivityY", thermalConductivityY, PropertyValueType.SingleValue));
+            {
+               properties.Add(PropertyUtil.CreateRealPropertyBasedOnParameterType(file, param,
+                  new PropertyDescription("ThermalConductivityY"), thermalConductivityY, PropertyValueType.SingleValue));
+            }
 
             // ThermalConductivityZ
             double thermalConductivityZ;
-            param = ParameterUtil.GetDoubleValueFromElement(thermalSet, BuiltInParameter.PHY_MATERIAL_PARAM_THERMAL_CONDUCTIVITY_Z, out thermalConductivityZ);
+            param = GetDoubleValueFromElement(thermalSet, BuiltInParameter.PHY_MATERIAL_PARAM_THERMAL_CONDUCTIVITY_Z, out thermalConductivityZ);
             if (param != null)
-               properties.Add(PropertyUtil.CreateRealPropertyBasedOnParameterType(file, param, "ThermalConductivityZ", thermalConductivityZ, PropertyValueType.SingleValue));
+            {
+               properties.Add(PropertyUtil.CreateRealPropertyBasedOnParameterType(file, param,
+                  new PropertyDescription("ThermalConductivityZ"), thermalConductivityZ, PropertyValueType.SingleValue));
+            }
          }
 
-         // Density
-         double density = thermalAsset.Density;
-         properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.MassDensity, "Density", density, PropertyValueType.SingleValue));
-
-         // Emissivity
-         double emissivity = thermalAsset.Emissivity;
-         properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Number, "Emissivity", emissivity, PropertyValueType.SingleValue));
-
+         SetSimpleMaterialProperty(file, properties, SpecTypeId.MassDensity, "Density", thermalAsset.Density);
+         SetSimpleMaterialProperty(file, properties, SpecTypeId.Number, "Emissivity", thermalAsset.Emissivity);
 
          if (materialType == ThermalMaterialType.Gas || materialType == ThermalMaterialType.Liquid)
          {
-            // Compressibility
-            double compressibility = thermalAsset.Compressibility;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Number, "Compressibility", compressibility, PropertyValueType.SingleValue));
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Number, "Compressibility", thermalAsset.Compressibility);
          }
 
          if (materialType == ThermalMaterialType.Solid)
          {
-            // Behavior
-            string behaviourStr = behaviour.ToString();
-            properties.Add(PropertyUtil.CreateLabelProperty(file, "Behavior", behaviourStr, PropertyValueType.SingleValue, null));
+            SetSimpleMaterialProperty(file, properties, "Behavior", behaviour.ToString());
 
-            // TransmitsLight
-            bool transmitsLight = thermalAsset.TransmitsLight;
-            properties.Add(PropertyUtil.CreateBooleanProperty(file, "TransmitsLight", transmitsLight, PropertyValueType.SingleValue));
+            SetSimpleMaterialProperty(file, properties, "TransmitsLight", thermalAsset.TransmitsLight);
 
-            // Permeability
-            double permeability = thermalAsset.Permeability;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Permeability, "Permeability", permeability, PropertyValueType.SingleValue));
-
-            // Reflectivity
-            double reflectivity = thermalAsset.Reflectivity;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.Number, "Reflectivity", reflectivity, PropertyValueType.SingleValue));
-
-            // ElectricalResistivity
-            double electricalResistivity = thermalAsset.ElectricalResistivity;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.ElectricalResistivity, "ElectricalResistivity", electricalResistivity, PropertyValueType.SingleValue));
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Permeability, "Permeability", thermalAsset.Permeability);
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.Number, "Reflectivity", thermalAsset.Reflectivity);
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.ElectricalResistivity, "ElectricalResistivity", thermalAsset.ElectricalResistivity);
          }
 
          if (materialType == ThermalMaterialType.Gas)
          {
-            // GasViscosity
-            double gasViscosity = thermalAsset.GasViscosity;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.HvacViscosity, "GasViscosity", gasViscosity, PropertyValueType.SingleValue));
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.HvacViscosity, "GasViscosity", thermalAsset.GasViscosity);
          }
 
          if (materialType == ThermalMaterialType.Liquid)
          {
-            // LiquidViscosity
-            double liquidViscosity = thermalAsset.LiquidViscosity;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.HvacViscosity, "LiquidViscosity", liquidViscosity, PropertyValueType.SingleValue));
-
-            // SpecificHeatOfVaporization
-            double specificHeatOfVaporization = thermalAsset.SpecificHeatOfVaporization;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.SpecificHeatOfVaporization, "SpecificHeatOfVaporization", specificHeatOfVaporization, PropertyValueType.SingleValue));
-
-            // VaporPressure
-            double vaporPressure = thermalAsset.VaporPressure;
-            properties.Add(PropertyUtil.CreateRealPropertyByType(file, SpecTypeId.HvacPressure, "VaporPressure", vaporPressure, PropertyValueType.SingleValue));
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.HvacViscosity, "LiquidViscosity", thermalAsset.LiquidViscosity);
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.SpecificHeatOfVaporization, "SpecificHeatOfVaporization", thermalAsset.SpecificHeatOfVaporization);
+            SetSimpleMaterialProperty(file, properties, SpecTypeId.HvacPressure, "VaporPressure", thermalAsset.VaporPressure);
          }
 
          return properties;
@@ -618,23 +583,23 @@ namespace Revit.IFC.Export.Utility
 
 
    /// <summary>
-   /// Provides static methods for export buildIn material properties to specifict ifc entities.
+   /// Provides static methods for export builtIn material properties to specifict ifc entities.
    /// </summary>
-   public class MaterialBuildInParameterUtil
+   public class MaterialBuiltInParameterUtil
    {
       // Dictionary of properties to export to specific IFC entities
       // Each property has: list of property sets and function to extract the value
-      static readonly Dictionary<string, Tuple<IList<string>, Func<Material, double?>>> materialBuildInSet = new Dictionary<string, Tuple<IList<string>, Func<Material, double?>>>
+      static readonly Dictionary<string, Tuple<IList<string>, Func<Material, double?>>> materialBuiltInSet = new Dictionary<string, Tuple<IList<string>, Func<Material, double?>>>
       {
-         { "MassDensity",          new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialCommon", "IfcGeneralMaterialProperties"}, getBuildInMassDensity) },
-         { "Porosity",             new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialCommon", "IfcGeneralMaterialProperties"}, getBuildInPorosity) },
-         { "SpecificHeatCapacity", new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialThermal", "IfcThermalMaterialProperties"}, getBuildInSpecificHeatCapacity) },
-         { "ThermalConductivity",  new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialThermal", "IfcThermalMaterialProperties"}, getBuildInThermalConductivity) },
-         { "YieldStress",          new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialSteel", "IfcMechanicalSteelMaterialProperties"}, getBuildInYieldStress) },
-         { "PoissonRatio",         new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialMechanical", "IfcMechanicalMaterialProperties"}, getBuildInPoissonRatio) },
-         { "YoungModulus",         new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialMechanical", "IfcMechanicalMaterialProperties"}, getBuildInYoungModulus) },
-         { "ShearModulus",         new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialMechanical", "IfcMechanicalMaterialProperties"}, getBuildInShearModulus) },
-         { "ThermalExpansionCoefficient", new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialMechanical", "IfcMechanicalMaterialProperties"}, getBuildInThermalExpansionCoefficient) }
+         { "MassDensity",          new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialCommon", "IfcGeneralMaterialProperties"}, getBuiltInMassDensity) },
+         { "Porosity",             new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialCommon", "IfcGeneralMaterialProperties"}, getBuiltInPorosity) },
+         { "SpecificHeatCapacity", new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialThermal", "IfcThermalMaterialProperties"}, getBuiltInSpecificHeatCapacity) },
+         { "ThermalConductivity",  new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialThermal", "IfcThermalMaterialProperties"}, getBuiltInThermalConductivity) },
+         { "YieldStress",          new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialSteel", "IfcMechanicalSteelMaterialProperties"}, getBuiltInYieldStress) },
+         { "PoissonRatio",         new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialMechanical", "IfcMechanicalMaterialProperties"}, getBuiltInPoissonRatio) },
+         { "YoungModulus",         new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialMechanical", "IfcMechanicalMaterialProperties"}, getBuiltInYoungModulus) },
+         { "ShearModulus",         new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialMechanical", "IfcMechanicalMaterialProperties"}, getBuiltInShearModulus) },
+         { "ThermalExpansionCoefficient", new Tuple<IList<string>, Func<Material, double?>>(new List<string>{ "Pset_MaterialMechanical", "IfcMechanicalMaterialProperties"}, getBuiltInThermalExpansionCoefficient) }
       };
 
       /// <summary>
@@ -642,7 +607,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="material">The material.</param>
       /// <returns>nullable value.</returns>
-      static double? getBuildInMassDensity(Material material)
+      static double? getBuiltInMassDensity(Material material)
       {
          StructuralAsset structuralAsset = getMaterialStructuralAssert(material);
          if (structuralAsset == null)
@@ -656,7 +621,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="material">The material.</param>
       /// <returns>nullable value.</returns>
-      static double? getBuildInPorosity(Material material)
+      static double? getBuiltInPorosity(Material material)
       {
          ThermalAsset thermalAsset = getMaterialThermalAssert(material);
          if (thermalAsset == null)
@@ -674,7 +639,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="material">The material.</param>
       /// <returns>nullable value.</returns>
-      static double? getBuildInSpecificHeatCapacity(Material material)
+      static double? getBuiltInSpecificHeatCapacity(Material material)
       {
          ThermalAsset thermalAsset = getMaterialThermalAssert(material);
          if (thermalAsset == null)
@@ -688,7 +653,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="material">The material.</param>
       /// <returns>nullable value.</returns>
-      static double? getBuildInThermalConductivity(Material material)
+      static double? getBuiltInThermalConductivity(Material material)
       {
          ThermalAsset thermalAsset = getMaterialThermalAssert(material);
          if (thermalAsset == null)
@@ -706,7 +671,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="material">The material.</param>
       /// <returns>nullable value.</returns>
-      static double? getBuildInYieldStress(Material material)
+      static double? getBuiltInYieldStress(Material material)
       {
          StructuralAsset structuralAsset = getMaterialStructuralAssert(material);
          if (structuralAsset == null)
@@ -725,7 +690,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="material">The material.</param>
       /// <returns>nullable value.</returns>
-      static double? getBuildInPoissonRatio(Material material)
+      static double? getBuiltInPoissonRatio(Material material)
       {
          StructuralAsset structuralAsset = getMaterialStructuralAssert(material);
          if (structuralAsset == null)
@@ -744,7 +709,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="material">The material.</param>
       /// <returns>nullable value.</returns>
-      static double? getBuildInYoungModulus(Material material)
+      static double? getBuiltInYoungModulus(Material material)
       {
          StructuralAsset structuralAsset = getMaterialStructuralAssert(material);
          if (structuralAsset == null)
@@ -763,7 +728,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="material">The material.</param>
       /// <returns>nullable value.</returns>
-      static double? getBuildInShearModulus(Material material)
+      static double? getBuiltInShearModulus(Material material)
       {
          StructuralAsset structuralAsset = getMaterialStructuralAssert(material);
          if (structuralAsset == null)
@@ -782,7 +747,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="material">The material.</param>
       /// <returns>nullable value.</returns>
-      static double? getBuildInThermalExpansionCoefficient(Material material)
+      static double? getBuiltInThermalExpansionCoefficient(Material material)
       {
          StructuralAsset structuralAsset = getMaterialStructuralAssert(material);
          if (structuralAsset == null)
@@ -801,10 +766,10 @@ namespace Revit.IFC.Export.Utility
       /// Check if the property must be exported 
       /// </summary>
       /// <param name="propertyName">The property name.</param>
-      /// <returns>True if it is to export as material buildIn parameter.</returns>
-      public static bool isMaterialBuildInParameter(string propertyName)
+      /// <returns>True if it is to export as material builtIn parameter.</returns>
+      public static bool isMaterialBuiltInParameter(string propertyName)
       {
-         return materialBuildInSet.ContainsKey(propertyName);
+         return materialBuiltInSet.ContainsKey(propertyName);
       }
 
       /// <summary>
@@ -815,10 +780,10 @@ namespace Revit.IFC.Export.Utility
       /// <param name="propertyType">The material.</param>
       /// <param name="element">The material.</param>
       /// <returns>Material data.</returns>
-      public static IList<IFCData> CreatePredefinedDataIfBuildIn(string psetName, string propertyName, PropertyType propertyType, Element element)
+      public static IList<IFCData> CreatePredefinedDataIfBuiltIn(string psetName, string propertyName, PropertyType propertyType, Element element)
       {
          IList<IFCData> data = null;
-         if (isMaterialBuildInParameter(propertyName))
+         if (isMaterialBuiltInParameter(propertyName))
          {
             IFCData singleData = CreateMaterialDataFromParameter(psetName, propertyName, propertyType, element);
             if (singleData != null)
@@ -865,16 +830,21 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">The material.</param>
       /// <param name="file">The file.</param>
       /// <returns>Material property handle.</returns>
-      public static IFCAnyHandle CreateMaterialPropertyIfBuildIn(string psetName, string propertyName, PropertyType propertyType, Element element, IFCFile file)
+      public static IFCAnyHandle CreateMaterialPropertyIfBuiltIn(string psetName, string propertyName, PropertyType propertyType, Element element, IFCFile file)
       {
-         IFCAnyHandle hnd = null;
-         if (isMaterialBuildInParameter(propertyName))
+         if (!isMaterialBuiltInParameter(propertyName))
          {
-            IFCData data = CreateMaterialDataFromParameter(psetName, propertyName, propertyType, element);
-            if (data != null)
-               hnd = PropertyUtil.CreateCommonProperty(file, propertyName, data, PropertyValueType.SingleValue, null);
+            return null;
          }
-         return hnd;
+         
+         IFCData data = CreateMaterialDataFromParameter(psetName, propertyName, propertyType, element);
+         if (data == null)
+         {
+            return null;
+         }
+
+         PropertyDescription propertyDescription = new PropertyDescription(propertyName);
+         return PropertyUtil.CreateCommonProperty(file, propertyDescription, data, PropertyValueType.SingleValue, null);
       }
 
       /// <summary>
@@ -888,7 +858,7 @@ namespace Revit.IFC.Export.Utility
       public static IFCData CreateMaterialDataFromParameter(string psetName, string propertyName, PropertyType propertyType, Element element)
       {
          IFCData data = null;
-         if (materialBuildInSet.TryGetValue(propertyName, out var parameterInfo))
+         if (materialBuiltInSet.TryGetValue(propertyName, out var parameterInfo))
          {
             if (!parameterInfo.Item1.Contains(psetName) || parameterInfo.Item2 == null)
                return data;

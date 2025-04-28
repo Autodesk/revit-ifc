@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "MVUFma931qg=",
+  "success": true,
+  "projectFilePath": "C:\\git\\IFC-for-Revit\\2026\\Source\\Revit.IFC.Common\\Revit.IFC.Common.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jleblond-thibodeau\\.nuget\\packages\\bimone.autodesk.revit2026.revitapi\\26.0.10.8\\bimone.autodesk.revit2026.revitapi.26.0.10.8.nupkg.sha512",
+    "C:\\Users\\jleblond-thibodeau\\.nuget\\packages\\bimone.autodesk.revit2026.revitapiifc\\26.0.10.8\\bimone.autodesk.revit2026.revitapiifc.26.0.10.8.nupkg.sha512",
+    "C:\\Users\\jleblond-thibodeau\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}

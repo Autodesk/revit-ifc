@@ -111,7 +111,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </summary>
       IList<PropertySetEntry> m_Entries = new List<PropertySetEntry>();
 
-   
+      /// <summary>
+      /// The entries stored in this property set description.
+      /// </summary>
+      public IList<PropertySetEntry> Entries { get { return m_Entries; } }
+
+      /// <summary>
+      /// Determines whether properties from the element's type should be added to the instance.
+      /// </summary>
+      public bool AddTypePropertiesToInstance { get; set; }
+
       /// <summary>
       /// The entries stored in this property set description.
       /// </summary>
@@ -186,10 +195,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             try
             {
-               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle, lookInType);
+               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle, lookInType, AddTypePropertiesToInstance);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportMaterialPsets)
-                  propHnd = MaterialBuildInParameterUtil.CreateMaterialPropertyIfBuildIn(Name, entry.PropertyName, entry.PropertyType, elementOrConnectorToUse?.Element, file);
+                  propHnd = MaterialBuiltInParameterUtil.CreateMaterialPropertyIfBuiltIn(Name, entry.PropertyName, entry.PropertyType, elementOrConnectorToUse?.Element, file);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
                   continue;

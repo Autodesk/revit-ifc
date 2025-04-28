@@ -1,0 +1,37 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+
+  <ItemGroup>
+    <Compile Include="$(VersionInfo)">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <Platform Condition="'$(Platform)'==''">x64</Platform>
+    <AirMaxVersion>Airmax2016</AirMaxVersion>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1668</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <Optimize>false</Optimize>
+    <ThirdPartyConfig>x64\Release</ThirdPartyConfig>    
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <Optimize>true</Optimize>
+    <ThirdPartyConfig>x64\Release</ThirdPartyConfig>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Slow_Debug|x64' ">
+    <Optimize>false</Optimize>
+     <ThirdPartyConfig>x64\Debug</ThirdPartyConfig>   
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'x64' ">
+    <NoWarn>1607</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(SolutionDir)VSProps\Revit.Common.Sdk.targets</MSBuildAllProjects>
+  </PropertyGroup>
+
+</Project>

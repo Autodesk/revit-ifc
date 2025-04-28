@@ -8,12 +8,12 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("IFC Import for Revit")]
-[assembly: AssemblyCopyright("@2012-2022 Autodesk, Inc. All rights reserved.")]
+[assembly: AssemblyCopyright("@2012-2025 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("24.2.0.49")]
-[assembly: AssemblyFileVersion("24.2.0.49")]
+[assembly: AssemblyVersion("26.1.0.23")]
+[assembly: AssemblyFileVersion("26.1.0.23")]
 #endif
 
 #region Using directives

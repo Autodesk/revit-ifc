@@ -91,27 +91,48 @@ namespace Revit.IFC.Export.Toolkit
       /// </summary>
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="element">The element.</param>
+      /// <param name="orientationTrf">The orientation transformation for the local coordinates being used to export the element.  
+      /// Optional, can be <see langword="null"/>.</param>
+      public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem, Transform orientationTrf)
+      {
+         IFCAnyHandle containerOverrideHnd;
+         ElementId overrideLevelId = ParameterUtil.OverrideContainmentParameter(elem, out containerOverrideHnd);
+         return Create(exporterIFC, elem, null, orientationTrf, overrideLevelId, containerOverrideHnd);
+      }
+
+      /// <summary>
+      ///    Creates a new placement setter instance for the given element with the ability to specific overridden transformations
+      ///    and level id.
+      /// </summary>
+      /// <param name="exporterIFC">The exporter.</param>
+      /// <param name="element">The element.</param>
       /// <param name="instanceOffsetTrf">The offset transformation for the instance of a type.  Optional, can be <see langword="null"/>.</param>
       /// <param name="orientationTrf">The orientation transformation for the local coordinates being used to export the element.  
       /// Optional, can be <see langword="null"/>.</param>
       /// <param name="overrideLevelId">The level id to reference.  This is intended for use when splitting walls and columns by level.</param>
+      /// <param name="containerOverrideHnd">The handle to the level to reference.</param>
       public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf, ElementId overrideLevelId, IFCAnyHandle containerOverrideHnd)
       {
          // Call a different PlacementSetter if the containment is overridden to the Site or the Building
          if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && containerOverrideHnd != null)
          {
-            if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, Common.Enums.IFCEntityType.IfcSite)
-               || IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, Common.Enums.IFCEntityType.IfcBuilding))
-               return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, containerOverrideHnd);
-            else if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, Common.Enums.IFCEntityType.IfcBuildingStorey))
+            if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, IFCEntityType.IfcSite)
+               || IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, IFCEntityType.IfcBuilding))
             {
-               IFCAnyHandle contHnd = null;
-               overrideLevelId = ParameterUtil.OverrideContainmentParameter(exporterIFC, elem, out contHnd);
+               return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, containerOverrideHnd);
+            }
+
+            if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, IFCEntityType.IfcBuildingStorey))
+            {
+               overrideLevelId = ParameterUtil.OverrideContainmentParameter(elem, out _);
             }
          }
 
          if (overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId)
+         {
             overrideLevelId = LevelUtil.GetBaseLevelIdForElement(elem);
+         }
+
          return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, overrideLevelId);
       }
 
@@ -334,12 +355,12 @@ namespace Revit.IFC.Export.Toolkit
 
          double newHeight = Offset + offset;
 
-         IDictionary<ElementId, IFCLevelInfo> levelInfos = ExporterIFC.GetLevelInfos();
+         IDictionary<ElementId, IFCLevelInfo> levelInfos = ExporterCacheManager.LevelInfoCache.LevelsById;
          foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
          {
             // the cache contains levels from all the exported documents
             // if the export is performed for a linked document, filter the levels that are not from this document
-            if (ExporterCacheManager.ExportOptionsCache.ExportingSeparateLink())
+            if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
             {
                Element levelElem = document.GetElement(levelInfoPair.Key);
                if (levelElem == null || !(levelElem is Level))
@@ -387,8 +408,7 @@ namespace Revit.IFC.Export.Toolkit
          ExporterIFC = exporterIFC;
 
          // Convert null value to InvalidElementId.
-         if (overrideLevelId == null)
-            overrideLevelId = ElementId.InvalidElementId;
+         overrideLevelId ??= ElementId.InvalidElementId;
 
          Document doc = elem.Document;
          Element hostElem = elem;
@@ -398,7 +418,7 @@ namespace Revit.IFC.Export.Toolkit
          bool useOverrideOrigin = false;
          XYZ overrideOrigin = XYZ.Zero;
 
-         IDictionary<ElementId, IFCLevelInfo> levelInfos = exporterIFC.GetLevelInfos();
+         IDictionary<ElementId, IFCLevelInfo> levelInfos = ExporterCacheManager.LevelInfoCache.LevelsById;
 
          if (overrideLevelId == ElementId.InvalidElementId)
          {
@@ -434,13 +454,6 @@ namespace Revit.IFC.Export.Toolkit
                   }
 
                   newLevelId = hostElem != null ? hostElem.LevelId : ElementId.InvalidElementId;
-
-                  // TODO: This code clearly does nothing, and there is code below that probably does a better 
-                  // job of it.  Fix by adding newLevelId = ..., or delete this entirely?
-                  //if (newLevelId == ElementId.InvalidElementId)
-                  //{
-                     //ExporterIFCUtils.GetLevelIdByHeight(exporterIFC, hostElem);
-                  //}
                }
             }
 
@@ -491,7 +504,7 @@ namespace Revit.IFC.Export.Toolkit
                {
                   // the cache contains levels from all the exported documents
                   // if the export is performed for a linked document, filter the levels that are not from this document
-                  if (ExporterCacheManager.ExportOptionsCache.ExportingSeparateLink())
+                  if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
                   {
                      Element levelElem = doc.GetElement(levelInfoPair.Key);
                      if (levelElem == null || !(levelElem is Level))
@@ -519,16 +532,23 @@ namespace Revit.IFC.Export.Toolkit
 
             if (newLevelId == ElementId.InvalidElementId)
                newLevelId = bottomLevelId;
+
+            // Finally, override the level if needed.
+            // Note that if there is an override level, we will always use that instead.
+            if (ExporterCacheManager.LevelInfoCache.LevelParameterOverride.TryGetValue(newLevelId, out ElementId parameterOverrideLevelId))
+            {
+               newLevelId = parameterOverrideLevelId;
+            }
          }
 
-         LevelInfo = exporterIFC.GetLevelInfo(newLevelId);
+         LevelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(newLevelId);
          if (LevelInfo == null)
          {
             foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
             {
                // the cache contains levels from all the exported documents
                // if the export is performed for a linked document, filter the levels that are not from this document
-               if (ExporterCacheManager.ExportOptionsCache.ExportingSeparateLink())
+               if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
                {
                   Element levelElem = doc.GetElement(levelInfoPair.Key);
                   if (levelElem == null || !(levelElem is Level))
@@ -539,8 +559,8 @@ namespace Revit.IFC.Export.Toolkit
             }
          }
 
-         double elevation = (LevelInfo != null) ? LevelInfo.Elevation : 0.0;
-         IFCAnyHandle levelPlacement = (LevelInfo != null) ? LevelInfo.GetLocalPlacement() : null;
+         double elevation = LevelInfo?.Elevation ?? 0.0;
+         IFCAnyHandle levelPlacement = LevelInfo?.GetLocalPlacement();
 
          IFCFile file = exporterIFC.GetFile();
 

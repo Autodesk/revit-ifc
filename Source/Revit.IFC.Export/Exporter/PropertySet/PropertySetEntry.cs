@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
-using GeometryGym.Ifc;
+using static Revit.IFC.Export.Utility.ParameterUtil;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
@@ -264,10 +264,41 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       AngularVelocity,
       IfcCostValue,
       IfcRelaxation,
-      ElectricalResistivity,
       FrictionLoss,
       LinearMoment,
-      LinearStiffness
+      LinearStiffness,
+      CostPerArea,
+      ApparentPowerDensity,
+      CostRateEnergy,
+      CostRatePower,
+      Efficacy,
+      Luminance,
+      ElectricalPowerDensity,
+      PowerPerLength,
+      ElectricalResistivity,
+      HeatCapacityPerArea,
+      ThermalGradientCoefficientForMoistureCapacity,
+      ThermalMass,
+      AirFlowDensity,
+      AirFlowDividedByCoolingLoad,
+      AirFlowDividedByVolume,
+      AreaDividedByCoolingLoad,
+      AreaDividedByHeatingLoad,
+      CoolingLoadDividedByArea,
+      CoolingLoadDividedByVolume,
+      FlowPerPower,
+      HvacFriction,
+      HeatingLoadDividedByArea,
+      HeatingLoadDividedByVolume,
+      PowerPerFlow,
+      PipingFriction,
+      AreaSpringCoefficient,
+      LineSpringCoefficient,
+      MassPerUnitArea,
+      ReinforcementAreaPerUnitLength,
+      RotationalLineSpringCoefficient,
+      RotationalPointSpringCoefficient,
+      UnitWeight
    }
 
    /// <summary>
@@ -296,8 +327,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public Type PropertyEnumerationType { get; set; } = null;
 
       IFCAnyHandle DefaultProperty { get; set; } = null;
-
-      public IfcValue DefaultValue { get; set; } = null;
 
       public IList<TableCellCombinedParameterData> CombinedParameterData { get; set; } = null;
 
@@ -342,33 +371,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          PropertyType = propertyType;
       }
-      
-      private IFCAnyHandle SetDefaultProperty(IFCFile file)
-      {
-         if (DefaultProperty == null)
-         {
-            if (DefaultValue != null)
-            {
-               switch (PropertyType)
-               {
-                  case PropertyType.Label:
-                     return DefaultProperty = PropertyUtil.CreateLabelProperty(file, PropertyName, DefaultValue.ValueString, PropertyValueType, PropertyEnumerationType);
-                  case PropertyType.Text:
-                     return DefaultProperty = PropertyUtil.CreateTextProperty(file, PropertyName, DefaultValue.ValueString, PropertyValueType);
-                  case PropertyType.Identifier:
-                     return DefaultProperty = PropertyUtil.CreateIdentifierProperty(file, PropertyName, DefaultValue.ValueString, PropertyValueType);
-                  //todo make this work for all values
-               }
-            }
-         }
 
-         return DefaultProperty;
-      }
-
-      private string GetParameterValueById(Element element, ElementId paramId)
+      private string GetPartialParameterValueOnePass(Element element, ElementId paramId)
       {
          if (element == null)
-            return string.Empty;
+         {
+            return null;
+         }
 
          Parameter parameter = null;
          if (ParameterUtils.IsBuiltInParameter(paramId))
@@ -377,26 +386,52 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          }
          else
          {
-            ParameterElement parameterElem = element.Document.GetElement(paramId) as ParameterElement;           
-            if (parameterElem == null)
-               return string.Empty;
-            parameter = element.get_Parameter(parameterElem.GetDefinition());
+            ParameterElement parameterElem = element.Document.GetElement(paramId) as ParameterElement;
+            if (parameterElem != null)
+            {
+               parameter = element.get_Parameter(parameterElem.GetDefinition());
+            }
          }
 
-         return parameter?.AsValueString() ?? string.Empty;
+         return parameter?.AsValueString();
+      }
+    
+      private string GetPartialParameterValueById(Element element, ProjectInfo projectInformation, ElementId paramId)
+      {
+         // We need to look in (up to) 3 places: the Element, the ElementType, and ProjectInformation, in that order.
+         string value = GetPartialParameterValueOnePass(element, paramId);
+         if (value == null && element != null && !(element is ElementType))
+         {
+            Element elementType = element.Document.GetElement(element.GetTypeId());
+            value = GetPartialParameterValueOnePass(elementType, paramId);
+         }
+
+         if (value == null && projectInformation != null)
+         {
+            value = GetPartialParameterValueOnePass(projectInformation, paramId);
+         }
+
+         return value ?? string.Empty;
       }
 
       private IFCAnyHandle CreateTextPropertyFromCombinedParameterData(IFCFile file, Element element)
       {
          string parameterString = string.Empty;
+         ProjectInfo projectInfo = element?.Document?.ProjectInformation;
          foreach (var parameterData in CombinedParameterData)
          {
+            string currentPart = GetPartialParameterValueById(element, projectInfo, parameterData.ParamId);
+            if (string.IsNullOrEmpty(currentPart))
+            {
+               continue;
+            }
             parameterString += parameterData.Prefix;
-            parameterString += GetParameterValueById(element, parameterData.ParamId);
+            parameterString += currentPart;
             parameterString += (parameterData.Suffix + parameterData.Separator);
          }
 
-         return PropertyUtil.CreateTextPropertyFromCache(file, PropertyName, parameterString, PropertyValueType);
+         PropertyDescription propertyDescription = new PropertyDescription(PropertyName);
+         return PropertyUtil.CreateTextPropertyFromCache(file, propertyDescription, parameterString, PropertyValueType);
       }
 
       /// <summary>
@@ -410,15 +445,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elementType">The element type of which this property is created for.</param>
       /// <param name="handle">The handle for which this property is created for.</param>
       /// <param name="lookInType">True if it's appropriate to look for value in element type.</param>
+      /// <param name="addTypePropertiesToInstance">Indicates whether properties from the element's type should be added to the instance.</param>
       /// <returns>The created property handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
          IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector,
-         ElementType elementType, IFCAnyHandle handle, bool lookInType = false)
+         ElementType elementType, IFCAnyHandle handle, bool lookInType = false, bool addTypePropertiesToInstance = false)
       {
          // if CombinedParameterData, then we have to recreate the parameter value, since there is no
          // API for this.
          if (CombinedParameterData != null)
          {
+            if (elementOrConnector.Element == null)
+            {
+               // We don't support connectors for combined parameters.
+               return null;
+            }
             return CreateTextPropertyFromCombinedParameterData(file, elementOrConnector.Element);
          }
 
@@ -428,12 +469,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName,
                extrusionCreationData, elementOrConnector, elementType, handle, PropertyType,
                PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName,
-               lookInType);
+               lookInType, addTypePropertiesToInstance);
             if (propHnd != null)
                return propHnd;
          }
 
-         return SetDefaultProperty(file);
+         return null;
       }
 
       /// <summary>
@@ -923,10 +964,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.Currency;
                   }
-                  else if (type == SpecTypeId.Efficacy)
-                  {
-                     propertyType = PropertyType.ElectricalEfficacy;
-                  }
                   else if (type == SpecTypeId.Energy ||
                      type == SpecTypeId.HvacEnergy)
                   {
@@ -958,18 +995,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.ElectricVoltage;
                   }
-                  else if (type == SpecTypeId.ElectricalResistivity)
-                  {
-                     propertyType = PropertyType.ElectricalResistivity;
-                  }
                   else if (type == SpecTypeId.ElectricalFrequency ||
                      type == SpecTypeId.StructuralFrequency)
                   {
                      propertyType = PropertyType.Frequency;
-                  }
-                  else if (type == SpecTypeId.HvacFriction)
-                  {
-                     propertyType = PropertyType.FrictionLoss;
                   }
                   else if (type == SpecTypeId.LuminousFlux)
                   {
@@ -1125,6 +1154,134 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   else if (type == SpecTypeId.WarpingConstant)
                   {
                      propertyType = PropertyType.WarpingConstant;
+                  }
+                  else if (type == SpecTypeId.CostPerArea)
+                  {
+                     propertyType = PropertyType.CostPerArea;
+                  }
+                  else if (type == SpecTypeId.ApparentPowerDensity)
+                  {
+                     propertyType = PropertyType.ApparentPowerDensity;
+                  }
+                  else if (type == SpecTypeId.CostRateEnergy)
+                  {
+                     propertyType = PropertyType.CostRateEnergy;
+                  }
+                  else if (type == SpecTypeId.CostRatePower)
+                  {
+                     propertyType = PropertyType.CostRatePower;
+                  }
+                  else if (type == SpecTypeId.Efficacy)
+                  {
+                     propertyType = PropertyType.ElectricalEfficacy;
+                  }
+                  else if (type == SpecTypeId.Luminance)
+                  {
+                     propertyType = PropertyType.Luminance;
+                  }
+                  else if (type == SpecTypeId.ElectricalPowerDensity)
+                  {
+                     propertyType = PropertyType.ElectricalPowerDensity;
+                  }
+                  else if (type == SpecTypeId.PowerPerLength)
+                  {
+                     propertyType = PropertyType.PowerPerLength;
+                  }
+                  else if (type == SpecTypeId.ElectricalResistivity)
+                  {
+                     propertyType = PropertyType.ElectricalResistivity;
+                  }
+                  else if (type == SpecTypeId.HeatCapacityPerArea)
+                  {
+                     propertyType = PropertyType.HeatCapacityPerArea;
+                  }
+                  else if (type == SpecTypeId.ThermalGradientCoefficientForMoistureCapacity)
+                  {
+                     propertyType = PropertyType.ThermalGradientCoefficientForMoistureCapacity;
+                  }
+                  else if (type == SpecTypeId.ThermalMass)
+                  {
+                     propertyType = PropertyType.ThermalMass;
+                  }
+                  else if (type == SpecTypeId.AirFlowDensity)
+                  {
+                     propertyType = PropertyType.AirFlowDensity;
+                  }
+                  else if (type == SpecTypeId.AirFlowDividedByCoolingLoad)
+                  {
+                     propertyType = PropertyType.AirFlowDividedByCoolingLoad;
+                  }
+                  else if (type == SpecTypeId.AirFlowDividedByVolume)
+                  {
+                     propertyType = PropertyType.AirFlowDividedByVolume;
+                  }
+                  else if (type == SpecTypeId.AreaDividedByCoolingLoad)
+                  {
+                     propertyType = PropertyType.AreaDividedByCoolingLoad;
+                  }
+                  else if (type == SpecTypeId.AreaDividedByHeatingLoad)
+                  {
+                     propertyType = PropertyType.AreaDividedByHeatingLoad;
+                  }
+                  else if (type == SpecTypeId.CoolingLoadDividedByArea)
+                  {
+                     propertyType = PropertyType.CoolingLoadDividedByArea;
+                  }
+                  else if (type == SpecTypeId.CoolingLoadDividedByVolume)
+                  {
+                     propertyType = PropertyType.CoolingLoadDividedByVolume;
+                  }
+                  else if (type == SpecTypeId.FlowPerPower)
+                  {
+                     propertyType = PropertyType.FlowPerPower;
+                  }
+                  else if (type == SpecTypeId.HvacFriction)
+                  {
+                     propertyType = PropertyType.FrictionLoss;
+                  }
+                  else if (type == SpecTypeId.HeatingLoadDividedByArea)
+                  {
+                     propertyType = PropertyType.HeatingLoadDividedByArea;
+                  }
+                  else if (type == SpecTypeId.HeatingLoadDividedByVolume)
+                  {
+                     propertyType = PropertyType.HeatingLoadDividedByVolume;
+                  }
+                  else if (type == SpecTypeId.PowerPerFlow)
+                  {
+                     propertyType = PropertyType.PowerPerFlow;
+                  }
+                  else if (type == SpecTypeId.PipingFriction)
+                  {
+                     propertyType = PropertyType.PipingFriction;
+                  }
+                  else if (type == SpecTypeId.AreaSpringCoefficient)
+                  {
+                     propertyType = PropertyType.AreaSpringCoefficient;
+                  }
+                  else if (type == SpecTypeId.LineSpringCoefficient)
+                  {
+                     propertyType = PropertyType.LineSpringCoefficient;
+                  }
+                  else if (type == SpecTypeId.MassPerUnitArea)
+                  {
+                     propertyType = PropertyType.MassPerUnitArea;
+                  }
+                  else if (type == SpecTypeId.ReinforcementAreaPerUnitLength)
+                  {
+                     propertyType = PropertyType.ReinforcementAreaPerUnitLength;
+                  }
+                  else if (type == SpecTypeId.RotationalLineSpringCoefficient)
+                  {
+                     propertyType = PropertyType.RotationalLineSpringCoefficient;
+                  }
+                  else if (type == SpecTypeId.RotationalPointSpringCoefficient)
+                  {
+                     propertyType = PropertyType.RotationalPointSpringCoefficient;
+                  }
+                  else if (type == SpecTypeId.UnitWeight)
+                  {
+                     propertyType = PropertyType.UnitWeight;
                   }
                   else
                   {

@@ -58,14 +58,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// The handle.
       /// </returns>
-      public override IFCAnyHandle RedirectDescription(ExporterIFC exporterIFC, Element element)
+      public override IFCAnyHandle RedirectDescription(Element element)
       {
          SpatialElement spatialElem = element as SpatialElement;
          if (spatialElem != null)
          {
                ElementId levelId = spatialElem.LevelId;
-               IFCLevelInfo levelInfo = exporterIFC.GetLevelInfo(levelId);
-               if (levelInfo != null)
+               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(levelId);
+            if (levelInfo != null)
                   return levelInfo.GetBuildingStorey();
          }
 

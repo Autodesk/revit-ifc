@@ -158,7 +158,7 @@ namespace Revit.IFC.Import.Data
       {
          // TODO: We are not creating a shape if there is no representation for the shape.  We may allow this for specific entity types,
          // such as doors or windows.
-         return (Importer.TheOptions.IsHybridImport || ((Representations?.Count ?? 0) > 0));
+         return (Importer.TheOptions.HybridImportOptions != null || ((Representations?.Count ?? 0) > 0));
       }
 
       /// <summary>

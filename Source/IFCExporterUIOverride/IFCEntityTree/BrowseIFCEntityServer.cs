@@ -9,6 +9,7 @@ using Autodesk.Revit.DB.ExternalService;
 using System.Windows.Interop;
 using System.Windows;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Utility;
 
 namespace BIM.IFC.Export.UI.IFCEntityTree
 {
@@ -17,15 +18,16 @@ namespace BIM.IFC.Export.UI.IFCEntityTree
       private (bool, string, string) ShowDialogCommon(bool showTypeNodeOnly,
          string preSelectEnt, string preSelectPDef, IFCExternalServiceUIData data)
       {
-         EntityTree theTree = new EntityTree(showTypeNodeOnly,
-         preSelectEntity: preSelectEnt, preSelectPdef: preSelectPDef);
+         IFCCommandOverrideApplication.TheDocument = data.Document;
+
+         EntityTree theTree = new EntityTree(data.GetRevitElementIds(), showTypeNodeOnly, preSelectEnt, preSelectPDef, null);
 
          bool? ret = theTree.ShowDialog();
          if (ret.HasValue && ret.Value == true)
          {
             string selEntity = theTree.GetSelectedEntity();
             string selPDef = theTree.GetSelectedPredefinedType();
-            data.IsReset = theTree.isReset;
+            data.IsReset = theTree.IsReset;
             return (true, selEntity, selPDef);
          }
 
@@ -177,7 +179,11 @@ namespace BIM.IFC.Export.UI.IFCEntityTree
       /// <returns>the server guid</returns>
       public Guid GetServerId()
       {
+#if IFC_OPENSOURCE
+         return new Guid("{22CAF64D-50B7-4C9E-9C4B-D4D92041650E}");
+#else
          return new Guid("{DB5C5B21-BB95-4520-972D-ED6889A7A543}");
+#endif
       }
 
       /// <summary>

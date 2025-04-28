@@ -40,12 +40,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// Causes the calculation to be reassigned per the implementation of this particular redirection calculator.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
       /// <param name="element">
       /// The element.
       /// </param>
-      abstract public IFCAnyHandle RedirectDescription(ExporterIFC exporterIFC, Element element);
+      abstract public IFCAnyHandle RedirectDescription(Element element);
    }
 }

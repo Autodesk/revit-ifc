@@ -25,6 +25,7 @@ using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Enums;
+using System.Windows.Forms;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -50,11 +51,11 @@ namespace Revit.IFC.Export.Exporter
       /// </param>
       public static void ExportCeilingElement(ExporterIFC exporterIFC, Ceiling ceiling, ref GeometryElement geomElement, ProductWrapper productWrapper)
       {
-         string ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(exporterIFC, ceiling);
+         string ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(ceiling);
          string pdefFromParam = ExporterUtil.GetExportTypeFromTypeParameter(ceiling, null);
-         if (!String.IsNullOrEmpty(pdefFromParam))
+         if (!string.IsNullOrEmpty(pdefFromParam))
             ifcEnumType = pdefFromParam;
-         if (String.IsNullOrEmpty(ifcEnumType))
+         if (string.IsNullOrEmpty(ifcEnumType))
             ifcEnumType = "CEILING";
          ExportCovering(exporterIFC, ceiling, ref geomElement, ifcEnumType, productWrapper);
       }
@@ -74,28 +75,33 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          IFCFile file = exporterIFC.GetFile();
-         MaterialLayerSetInfo layersetInfo = new MaterialLayerSetInfo(exporterIFC, element, productWrapper);
+         MaterialLayerSetInfo layersetInfo = new(exporterIFC, element, productWrapper);
 
-         using (IFCTransaction transaction = new IFCTransaction(file))
+         using (IFCTransaction transaction = new(file))
          {
             // For IFC4RV export, Element will be split into its parts(temporarily) in order to export the wall by its parts
-            // If Parts are created by code and not by user then their name should be equal to Material name.
-            bool setMaterialNameToPartName = ExporterUtil.CreateParts(element, layersetInfo.MaterialIds.Count, ref geomElem);
-            ExporterUtil.ExportPartAs exportPartAs = ExporterUtil.CanExportByComponentsOrParts(element);
+            ExporterUtil.ExportPartAs exportPartAs = ExporterUtil.CanExportParts(element);
             bool exportByComponents = exportPartAs == ExporterUtil.ExportPartAs.ShapeAspect;
             bool exportParts = exportPartAs == ExporterUtil.ExportPartAs.Part;
+            // If Parts are created by code and not by user then their name should be equal to Material name.
+            bool setMaterialNameToPartName = false;
+            if (ExporterCacheManager.TemporaryPartsCache.HasTemporaryParts(element.Id))
+            {
+               setMaterialNameToPartName = true;
+               ExporterCacheManager.TemporaryPartsCache.SetPartExportType(element.Id, exportPartAs);
+            }
 
             if (exportParts && !PartExporter.CanExportElementInPartExport(element, element.LevelId, false))
+            {
                return;
+            }
 
             // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-            IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
+            List<IFCAnyHandle> representations = new();
 
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null))
             {
-               using (IFCExportBodyParams ecData = new IFCExportBodyParams())
+               using (IFCExportBodyParams ecData = new())
                {
                   ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
 
@@ -105,21 +111,16 @@ namespace Revit.IFC.Export.Exporter
                      ecData.SetLocalPlacement(setter.LocalPlacement);
                      ecData.PossibleExtrusionAxes = (element is FamilyInstance) ? IFCExtrusionAxes.TryXYZ : IFCExtrusionAxes.TryZ;
 
-                     BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
-                     if (exportByComponents)
-                     {
-                        prodRep = RepresentationUtil.CreateProductDefinitionShapeWithoutBodyRep(exporterIFC, element, categoryId, geomElem, representations);
-                     }
-                     else
+                     BodyExporterOptions bodyExporterOptions = new(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
+                     if (!exportByComponents)
                      {
                         prodRep = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC, element,
                             categoryId, geomElem, bodyExporterOptions, null, ecData, true);
-                     }
-
-                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodRep))
-                     {
-                        ecData.ClearOpenings();
-                        return;
+                        if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodRep))
+                        {
+                           ecData.ClearOpenings();
+                           return;
+                        }
                      }
                   }
 
@@ -136,22 +137,61 @@ namespace Revit.IFC.Export.Exporter
                   string instanceGUID = GUIDUtil.CreateGUID(element);
                   string coveringType = IFCValidateEntry.GetValidIFCPredefinedTypeType(ifcEnumType, defaultCoveringEnumType, "IfcCoveringType");
 
+                  if (exportByComponents)
+                  {
+                     prodRep = RepresentationUtil.CreateProductDefinitionShapeWithoutBodyRep(exporterIFC, element, categoryId, geomElem, representations);
+                     IFCAnyHandle hostShapeRepFromParts = PartExporter.ExportHostPartAsShapeAspects(exporterIFC, 
+                        element, prodRep, ElementId.InvalidElementId, layersetInfo, ecData);
+                  }
+
+                  if (ExporterCacheManager.ExportCeilingGrids())
+                  {
+                     IList<Curve> ceilingGridLines = (element as Ceiling)?.GetCeilingGridLines(true);
+                     HashSet<IFCAnyHandle> repItems = new();
+                     if (ceilingGridLines != null)
+                     {
+                        Transform localPlacementOffset = ExporterUtil.GetTransformFromLocalPlacementHnd(setter.LocalPlacement, true);
+                        if (localPlacementOffset.IsIdentity)
+                        {
+                           localPlacementOffset = null;
+                        }
+                        else
+                        {
+                           localPlacementOffset = localPlacementOffset.Inverse;
+                        }
+
+                        foreach (Curve ceilingGrid in ceilingGridLines)
+                        {
+                           Curve transformedCeilingGrid = 
+                              localPlacementOffset != null ? ceilingGrid.CreateTransformed(localPlacementOffset) : ceilingGrid;
+                           repItems.AddIfNotNull(GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC,
+                              transformedCeilingGrid, false, null, GeometryUtil.TrimCurvePreference.UsePolyLineOrTrim, null));
+                        }
+                     }
+
+                     if (repItems.Count > 0)
+                     {
+                        IFCAnyHandle contextOfItemsFootprint = exporterIFC.Get3DContextHandle("FootPrint");
+                        IFCAnyHandle footprintShapeRep = RepresentationUtil.CreateBaseShapeRepresentation(exporterIFC, contextOfItemsFootprint,
+                           "FootPrint", "Curve2D", repItems);
+                        List<IFCAnyHandle> newRep = new() { footprintShapeRep };
+                        IFCAnyHandleUtil.AddRepresentations(prodRep, newRep);
+                     }
+                  }
+
+
                   IFCAnyHandle covering = IFCInstanceExporter.CreateCovering(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
                       setter.LocalPlacement, prodRep, coveringType);
 
                   if (exportParts)
                   {
-                     PartExporter.ExportHostPart(exporterIFC, element, covering, productWrapper, setter, setter.LocalPlacement, null, setMaterialNameToPartName);
+                     PartExporter.ExportHostPart(exporterIFC, element, covering, setter, setter.LocalPlacement, null, setMaterialNameToPartName);
                   }
-                  else if (exportByComponents)
-                  {
-                     IFCAnyHandle hostShapeRepFromParts = PartExporter.ExportHostPartAsShapeAspects(exporterIFC, element, prodRep,
-                        productWrapper, setter, setter.LocalPlacement, ElementId.InvalidElementId, layersetInfo, ecData);
-                  }
+                  
 
                   ExporterUtil.AddIntoComplexPropertyCache(covering, layersetInfo);
 
-                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcCovering, IFCEntityType.IfcCoveringType, coveringType);
+                  IFCExportInfoPair exportInfo = new(IFCEntityType.IfcCovering, IFCEntityType.IfcCoveringType, coveringType);
                   IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(typeHnd, covering);
 
@@ -191,7 +231,7 @@ namespace Revit.IFC.Export.Exporter
                      if (ceiling != null)
                      {
                         HostObjectExporter.ExportHostObjectMaterials(exporterIFC, ceiling, covering,
-                            geomElem, productWrapper, ElementId.InvalidElementId, Toolkit.IFCLayerSetDirection.Axis3, null, null);
+                            geomElem, productWrapper, ElementId.InvalidElementId, IFCLayerSetDirection.Axis3, null, null);
                      }
                      else
                      {

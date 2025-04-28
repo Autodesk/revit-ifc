@@ -1,0 +1,219 @@
+﻿<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.IFCUserDefinedPropertyMapping"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"        
+        xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+        xmlns:local="clr-namespace:BIM.IFC.Export.UI"
+        xmlns:weaveRoot="clr-namespace:Autodesk.Weave.Wpf;assembly=Autodesk.Weave.Wpf"
+        xmlns:weave="clr-namespace:Autodesk.Weave.Wpf.ElementProperties;assembly=Autodesk.Weave.Wpf"
+        xmlns:ctrl="clr-namespace:Autodesk.Weave.Wpf.Controls;assembly=Autodesk.Weave.Wpf"
+        xmlns:weave_d="clr-namespace:Autodesk.Weave.Wpf.ElementProperties.DesignTime;assembly=Autodesk.Weave.Wpf"
+        weave:FrameworkElementProperties.ApplyWeaveStyles="True"
+        weave_d:FrameworkElementProperties.DesignTimeWeaveTheme="WeaveLightGray"
+        mc:Ignorable="d"
+        Title="{x:Static p:Resources.IFCManageUserDefinedPropertySeets}"
+        SaveWindowSettings="True"
+        Height="559" Width="947" MinHeight="283" MinWidth="730">
+
+   <Window.Resources>
+      <ResourceDictionary>
+         <ObjectDataProvider
+             x:Key="PropertyApplicationEnum"
+             MethodName="GetValues"
+             ObjectType="{x:Type system:Enum}">
+            <ObjectDataProvider.MethodParameters>
+               <x:Type Type="{x:Type local:PropertyApplicationEnum}"/>
+            </ObjectDataProvider.MethodParameters>
+         </ObjectDataProvider>
+      </ResourceDictionary>
+   </Window.Resources>
+   
+   <Grid weave:PanelProperties.Spacing="S">
+      <Grid.Resources>
+
+         <Style x:Key="ListBoxItemStyle" TargetType="ListBoxItem" BasedOn="{x:Static weaveRoot:Styles.ListBoxItemStyle}">
+            <Setter Property="ToolTip" Value="{Binding}"/>
+         </Style>
+         <local:RowIndexValueConverter x:Key="RowIndexValueConverter"/>
+
+         <Style x:Key="CheckBoxStyle" TargetType="{x:Type CheckBox}" BasedOn="{x:Static weaveRoot:Styles.CheckBoxStyle}">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+         </Style>
+      </Grid.Resources>
+      
+      <Grid.RowDefinitions>
+         <RowDefinition Height="271*"/>
+         <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+         <ColumnDefinition Width="Auto"/>
+         <ColumnDefinition Width="3*"/>
+         <ColumnDefinition Width="1*"/>
+      </Grid.ColumnDefinitions>
+      <Grid Grid.Column="0">
+         <DockPanel>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,4">
+               <TextBlock Text="{x:Static p:Resources.PropertySets}" weave:TextBlockProperties.Variant="BodyBold"/>
+            </StackPanel>
+            <StackPanel Name="stackPanel_buttons" Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,4,0,4">
+               <Button Name="button_Add" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="AddS" Click="button_Add_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.CreateNewPropertySetTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Import" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="ImportS" Click="button_Import_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.ImportPropertySetTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Copy" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="CopyS" Click="button_Copy_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.CopyPropertySetTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Save" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="SaveS" Click="button_Save_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.SaveTemplateTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Export" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="ExportMoveS" Click="button_Export_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.ExportPropertySetTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+               <Button Name="button_Delete" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="TrashS" Click="button_Delete_Click">
+                  <Button.ToolTip>
+                     <ToolTip Content="{x:Static p:Resources.DeletePropertySetTooltip}" Placement="Top"/>
+                  </Button.ToolTip>
+               </Button>
+            </StackPanel>
+            <ListBox Name="listBox_PropertySets" ItemContainerStyle="{StaticResource ListBoxItemStyle}" 
+                     Width="{Binding ActualWidth, ElementName=stackPanel_buttons}" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     SelectionChanged="listBox_MappingTemplates_SelectionChanged"
+                     Background="{DynamicResource AdskComponentSurface200BackgroundColor}" Margin="0,4,0,4">
+               <ListBox.Resources>
+                  <Style TargetType="ToolTip" BasedOn="{x:Static weaveRoot:Styles.ToolTipStyle}">
+                     <Setter Property="Placement" Value="Bottom"/>
+                  </Style>
+               </ListBox.Resources>
+            </ListBox>
+         </DockPanel>
+      </Grid>
+
+      <Grid Grid.Column="1">
+         <DockPanel>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,4">
+               <TextBlock Text="{x:Static p:Resources.PropertySetDetails}" weave:TextBlockProperties.Variant="BodyBold"/>
+            </StackPanel>
+
+            <DataGrid Name="dataGrid_UserDefinedProperties" weave:FrameworkElementProperties.ApplyWeaveStyles="True"
+                      AutoGenerateColumns="False"                      
+                      HorizontalAlignment="Center"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserResizeRows="False"
+                      CanUserReorderColumns="False"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="True"
+                      weave:DataGridProperties.Stripped="False"
+                      weave:DataGridProperties.SelectAllVisibility="True"
+                      weave:DataGridProperties.ShowColumnContextMenu="True"
+                      SelectionMode="Single"
+                      HeadersVisibility="Column"                      
+                      RowHeight="27" Margin="0,4,0,4">
+               <DataGrid.Columns>
+
+                  <DataGridTemplateColumn IsReadOnly="True">
+
+                     <DataGridTemplateColumn.CellStyle>
+                        <Style TargetType="DataGridCell" BasedOn="{x:Static weaveRoot:Styles.DataGridCellStyle}">
+                           <Setter Property="Template">
+                              <Setter.Value>
+                                 <ControlTemplate TargetType="DataGridCell">
+                                    <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
+                                       <CheckBox Name="checkBox_ExportFlag" IsChecked="{Binding Path=ExportFlag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        AutomationProperties.AutomationId="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, 
+                                                                              StringFormat=checkBox_ExportFlag_{0}, 
+                                                                              Converter={StaticResource RowIndexValueConverter} }">
+                                          <CheckBox.ToolTip>
+                                             <ToolTip Content="{x:Static p:Resources.SelectedPropertiesCheckboxTooltip}" Placement="Bottom"/>
+                                          </CheckBox.ToolTip>
+                                       </CheckBox>
+                                    </StackPanel>
+                                 </ControlTemplate>
+                              </Setter.Value>
+                           </Setter>
+                        </Style>
+                     </DataGridTemplateColumn.CellStyle>
+                    
+                     <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                           <StackPanel Orientation="Horizontal">
+                              <CheckBox Name="checkBox_ExportFlagAll" Style="{StaticResource CheckBoxStyle}" 
+                                        IsChecked="{Binding DataContext.ExportFlagAll, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}">
+                                 <CheckBox.ToolTip>
+                                    <ToolTip Content="{x:Static p:Resources.SelectedCheckboxTooltip}" Placement="Bottom"/>
+                                 </CheckBox.ToolTip>
+                              </CheckBox>
+                           </StackPanel>
+                        </DataTemplate>
+                     </DataGridTemplateColumn.HeaderTemplate>
+                  </DataGridTemplateColumn>
+
+                  <DataGridTextColumn Header="{x:Static p:Resources.RevitProperty}" Binding="{Binding Path=RevitPropertyName}" Width="*" IsReadOnly="True"/>
+
+                  <DataGridComboBoxColumn Header="{x:Static p:Resources.InstanceOrType}" Width="*"
+                                          ItemsSource="{Binding Source={StaticResource PropertyApplicationEnum}}"
+                                          SelectedItemBinding="{Binding Path=PropertyApplicationType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                  <DataGridTextColumn Header="{x:Static p:Resources.IFCProperty}" Binding="{Binding Path=IFCPropertyName}" Width="*" IsReadOnly="False"/>
+
+               </DataGrid.Columns>
+            </DataGrid>
+         </DockPanel>
+      </Grid>
+
+      <Grid Grid.Column="2">
+         <DockPanel>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,4">
+               <TextBlock Text="{x:Static p:Resources.IFC4SchemaEntities}" weave:TextBlockProperties.Variant="BodyBold"/>
+            </StackPanel>
+            <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Margin="0,4,0,4">
+               <Button x:Name="button_SelectEntity" Content="{x:Static p:Resources.IFCSelectEntities}" HorizontalAlignment="Left" Click="button_SelectEnitites_Click"/>
+            </DockPanel>
+
+            <ListBox Name="listBox_SelectedIFCEntities" ItemContainerStyle="{StaticResource ListBoxItemStyle}" 
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     SelectionChanged="listBox_SelectedIFCEntities_SelectionChanged"
+                     Background="{DynamicResource AdskComponentSurface200BackgroundColor}" Margin="0,4,0,4">
+               <ListBox.Resources>
+                  <Style TargetType="ToolTip" BasedOn="{x:Static weaveRoot:Styles.ToolTipStyle}">
+                     <Setter Property="Placement" Value="Bottom"/>
+                  </Style>
+               </ListBox.Resources>
+            </ListBox>
+
+         </DockPanel>
+      </Grid>
+
+
+      <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center">
+         <ctrl:WeaveIcon RegularIcon="Info" VerticalAlignment="Top" Margin="0,0,5,0"/>
+         <TextBlock Name="textBlock_Help" HorizontalAlignment="Left" >
+         <Hyperlink Click="OnHelpClick">
+            <Run Name="run_Help" Text="{x:Static p:Resources.UserDefinedHelp}" x:Uid="LearnMoreHyperlink"/>
+         </Hyperlink>
+         </TextBlock>
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" weave:PanelProperties.Spacing="S">
+         <Button x:Name="button_Ok" Content="{x:Static p:Resources.OK}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Solid" Click="button_Ok_Click"/>
+         <Button x:Name="button_Cancel" Content="{x:Static p:Resources.Cancel}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Outline" Click="button_Cancel_Click" Margin="0,0,7,0"/>
+      </StackPanel>
+
+   </Grid>
+</auiw:ChildWindow>

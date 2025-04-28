@@ -35,7 +35,7 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    class RailingExporter
    {
-      private static ElementId GetStairOrRampHostId(ExporterIFC exporterIFC, Railing railingElem)
+      private static ElementId GetStairOrRampHostId(Railing railingElem)
       {
          ElementId returnHostId = ElementId.InvalidElementId;
 
@@ -141,10 +141,10 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, railing, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(railing, out ifcEnumType);
          if (exportType.IsUnKnown)
          {
-            ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(exporterIFC, railing);
+            ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(railing);
          }
          
          ExportRailing(exporterIFC, railing, geomElement, ifcEnumType, productWrapper);
@@ -234,17 +234,13 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
-            // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null))
             {
                using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
                   IFCAnyHandle localPlacement = setter.LocalPlacement;
                   StairRampContainerInfo stairRampInfo = null;
-                  ElementId hostId = GetStairOrRampHostId(exporterIFC, element as Railing);
+                  ElementId hostId = GetStairOrRampHostId(element as Railing);
                   Transform inverseTrf = Transform.Identity;
                   if (hostId != ElementId.InvalidElementId)
                   {
@@ -336,9 +332,9 @@ namespace Revit.IFC.Export.Exporter
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
 
-                  IFCExportInfoPair exportInfo = ExporterUtil.GetProductExportType(exporterIFC, element, out ifcEnumType);
+                  IFCExportInfoPair exportInfo = ExporterUtil.GetProductExportType(element, out ifcEnumType);
 
-                  IFCAnyHandle railing = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, element, instanceGUID, ownerHistory,
+                  IFCAnyHandle railing = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, file, element, instanceGUID, ownerHistory,
                             ecData.GetLocalPlacement(), prodRep);
 
                   CreateTypeHandle(exportInfo, element, file, productWrapper, railing);
@@ -355,7 +351,7 @@ namespace Revit.IFC.Export.Exporter
                   ElementId matId = CategoryUtil.GetBaseMaterialIdForElement(element);
 
                   // Get IfcSingleMaterialOverride to work for railing
-                  singleMaterialOverrideHnd = ExporterUtil.GetSingleMaterial(exporterIFC, element, matId);
+                  singleMaterialOverrideHnd = ExporterUtil.GetSingleMaterial(file, element, matId);
                   if (singleMaterialOverrideHnd != null)
                   {
                      matIds = new List<ElementId> { matId };

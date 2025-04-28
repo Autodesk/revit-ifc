@@ -59,7 +59,7 @@ namespace Revit.IFC.Export.Utility
       /// The list of property sets.
       /// </summary>
       public IList<IList<PropertySetDescription>> PropertySets 
-         { get; private set; } = new List<IList<PropertySetDescription>>();
+         { get; set; } = new List<IList<PropertySetDescription>>();
 
       /// <summary>
       /// The list of quantities.

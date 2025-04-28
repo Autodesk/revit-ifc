@@ -33,21 +33,12 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    class CurtainSystemExporter
    {
-      /// <summary>
-      /// Exports curtain object as container.
+      /// Exports a curtain object as container.
       /// </summary>
-      /// <param name="allSubElements">
-      /// Collection of elements contained in the host curtain element.
-      /// </param>
-      /// <param name="wallElement">
-      /// The curtain wall element.
-      /// </param>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="productWrapper">
-      /// The ProductWrapper.
-      /// </param>
+      /// <param name="allSubElements">Collection of elements contained in the host curtain element.</param>
+      /// <param name="wallElement">The curtain system element.</param>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="productWrapper">The ProductWrapper.</param>
       public static void ExportCurtainObjectCommonAsContainer(ICollection<ElementId> allSubElements, Element wallElement,
          ExporterIFC exporterIFC, ProductWrapper origWrapper, PlacementSetter currSetter)
       {
@@ -65,16 +56,20 @@ namespace Revit.IFC.Export.Exporter
                {
                   using (ProductWrapper productWrapper = ProductWrapper.Create(origWrapper))
                   {
+                     // This element has already been filtered out, don't look again.
+                     if (!ExporterCacheManager.NonSpatialElements.Contains(subElemId))
+                        continue;
+
                      Element subElem = wallElement.Document.GetElement(subElemId);
                      if (subElem == null)
                         continue;
 
-                     if (alreadyVisited.Contains(subElem.Id))
+                     if (alreadyVisited.Contains(subElemId))
                         continue;
-                     alreadyVisited.Add(subElem.Id);
+                     alreadyVisited.Add(subElemId);
 
                      // Respect element visibility settings.
-                     if (!ElementFilteringUtil.CanExportElement(exporterIFC, subElem, false) || !ElementFilteringUtil.IsElementVisible(subElem))
+                     if (!ElementFilteringUtil.CanExportElement(subElem, false) || !ElementFilteringUtil.IsElementVisible(subElem))
                         continue;
 
                      GeometryElement geomElem = subElem.get_Geometry(geomOptions);
@@ -85,62 +80,13 @@ namespace Revit.IFC.Export.Exporter
                      {
                         if (subElem is FamilyInstance)
                         {
-                           string ifcEnumType;
-                           IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, subElem, out ifcEnumType);
+                           IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(subElem, out _);
 
-                           if (subElem is Mullion)
+                           IFCAnyHandle currLocalPlacement = currSetter.LocalPlacement;
+                           using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
                            {
-                              if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
-                                 ProxyElementExporter.Export(exporterIFC, subElem, geomElem, productWrapper, exportType);
-                              else
-                              {
-                                 IFCAnyHandle currLocalPlacement = currSetter.LocalPlacement;
-
-                                 if (exportType.ExportInstance == IFCEntityType.IfcCurtainWall)
-                                 {
-                                    // By default, panels and mullions are set to the same category as their parent.  In this case,
-                                    // ask to get the exportType from the category id, since we don't want to inherit the parent class.
-                                    exportType.SetValueWithPair(IFCEntityType.IfcMemberType, "MULLION");
-                                 }
-
-                                 FamilyInstanceExporter.ExportFamilyInstanceAsMappedItem(exporterIFC, subElem as Mullion, exportType, exportType.ValidatedPredefinedType, productWrapper,
-                                     ElementId.InvalidElementId, null, currLocalPlacement);
-                              }
-                           }
-                           else
-                           {
-                              FamilyInstance subFamInst = subElem as FamilyInstance;
-
-                              if (exportType.ExportInstance == IFCEntityType.IfcCurtainWall)
-                              {
-                                 // By default, panels and mullions are set to the same category as their parent.  In this case,
-                                 // ask to get the exportType from the category id, since we don't want to inherit the parent class.
-                                 ElementId catId = CategoryUtil.GetSafeCategoryId(subElem);
-                                 exportType = ElementFilteringUtil.GetExportTypeFromCategoryId(catId);
-                              }
-
-
-                              if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
-                              {
-                                 if ((exportType.ExportInstance == IFCEntityType.UnKnown) || 
-                                       (exportType.ExportInstance == IFCEntityType.IfcPlate) ||
-                                       (exportType.ExportInstance == IFCEntityType.IfcMember))
-                                    exportType.SetValueWithPair(IFCEntityType.IfcBuildingElementProxy, ifcEnumType);
-                              }
-                              else
-                              {
-                                 if (exportType.ExportInstance == IFCEntityType.UnKnown)
-                                 {
-                                    exportType.SetValueWithPair(IFCEntityType.IfcPlateType, "CURTAIN_PANEL");
-                                 }
-                              }
-
-                              IFCAnyHandle currLocalPlacement = currSetter.LocalPlacement;
-                              using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
-                              {
-                                 FamilyInstanceExporter.ExportFamilyInstanceAsMappedItem(exporterIFC, subFamInst, exportType, ifcEnumType, productWrapper,
-                                     ElementId.InvalidElementId, null, currLocalPlacement);
-                              }
+                              FamilyInstanceExporter.ExportFamilyInstanceAsMappedItem(exporterIFC,
+                                 subElem as FamilyInstance, exportType, productWrapper, ElementId.InvalidElementId, null, currLocalPlacement);
                            }
                         }
                         else if (subElem is CurtainGridLine)
@@ -164,26 +110,13 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Exports curtain object as one Brep.
       /// </summary>
-      /// <param name="allSubElements">
-      /// Collection of elements contained in the host curtain element.
-      /// </param>
-      /// <param name="wallElement">
-      /// The curtain wall element.
-      /// </param>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="setter">
-      /// The PlacementSetter object.
-      /// </param>
-      /// <param name="localPlacement">
-      /// The local placement handle.
-      /// </param>
-      /// <returns>
-      /// The handle.
-      /// </returns>
-      public static IFCAnyHandle ExportCurtainObjectCommonAsOneBRep(ICollection<ElementId> allSubElements, Element wallElement,
-         ExporterIFC exporterIFC)
+      /// <param name="allSubElements">Collection of elements contained in the host curtain element.</param>
+      /// <param name="wallElement">The curtain wall element.</param>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="setter">The PlacementSetter object.</param>
+      /// <param name="localPlacement">The local placement handle.</param>
+      public static void ExportCurtainObjectAsOneEntity(IFCAnyHandle parentHnd,
+         ICollection<ElementId> allSubElements, Element wallElement, ExporterIFC exporterIFC)
       {
          IFCAnyHandle prodDefRep = null;
          Document document = wallElement.Document;
@@ -205,12 +138,11 @@ namespace Revit.IFC.Export.Exporter
          {
             Element subElem = wallElement.Document.GetElement(subElemId);
             GeometryElement geomElem = subElem.get_Geometry(geomOptions);
-            if (geomElem == null)
+            if (geomElem == null || alreadyVisited.Contains(subElemId))
+            {
                continue;
-
-            if (alreadyVisited.Contains(subElem.Id))
-               continue;
-            alreadyVisited.Add(subElem.Id);
+            }
+            alreadyVisited.Add(subElemId);
 
 
             // Export tessellated geometry when IFC4 Reference View is selected
@@ -221,7 +153,9 @@ namespace Revit.IFC.Export.Exporter
                if (triFaceSet != null && triFaceSet.Count > 0)
                {
                   foreach (IFCAnyHandle triFaceSetItem in triFaceSet)
+                  {
                      bodyItems.Add(triFaceSetItem);
+                  }
                   useFallbackBREP = false;    // no need to do Brep since it is successful
                }
             }
@@ -229,9 +163,8 @@ namespace Revit.IFC.Export.Exporter
             else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView)
             {
                IFCAnyHandle advancedBRep = BodyExporter.ExportBodyAsAdvancedBrep(exporterIFC, subElem, geomElem);
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(advancedBRep))
+               if (bodyItems.AddIfNotNull(advancedBRep))
                {
-                  bodyItems.Add(advancedBRep);
                   useFallbackBREP = false;    // no need to do Brep since it is successful
                }
             }
@@ -243,73 +176,90 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle outer = IFCInstanceExporter.CreateClosedShell(file, faces);
 
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(outer))
-                  bodyItems.Add(RepresentationUtil.CreateFacetedBRep(exporterIFC, document, 
+               {
+                  bodyItems.Add(RepresentationUtil.CreateFacetedBRep(exporterIFC, document,
                      false, outer, ElementId.InvalidElementId));
+               }
             }
          }
 
          if (bodyItems.Count == 0)
-            return prodDefRep;
+         {
+            return;
+         }
 
          ElementId catId = CategoryUtil.GetSafeCategoryId(wallElement);
          IFCAnyHandle shapeRep;
 
          // Use tessellated geometry in Reference View
          if ((ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General) && !useFallbackBREP)
+         {
             shapeRep = RepresentationUtil.CreateTessellatedRep(exporterIFC, wallElement, catId, contextOfItems, bodyItems, null);
+         }
          else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView && !useFallbackBREP)
+         {
             shapeRep = RepresentationUtil.CreateAdvancedBRepRep(exporterIFC, wallElement, catId, contextOfItems, bodyItems, null);
+         }
          else
+         {
             shapeRep = RepresentationUtil.CreateBRepRep(exporterIFC, wallElement, catId, contextOfItems, bodyItems);
+         }
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
-            return prodDefRep;
+         {
+            return;
+         }
 
-         IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
-         shapeReps.Add(shapeRep);
+         IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>() { shapeRep };
 
          IFCAnyHandle boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, wallElement.get_Geometry(geomOptions), Transform.Identity);
          if (boundingBoxRep != null)
+         {
             shapeReps.Add(boundingBoxRep);
+         }
 
          prodDefRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
-         return prodDefRep;
+         IFCAnyHandleUtil.SetAttribute(parentHnd, "Representation", prodDefRep);
       }
+
+      private static readonly HashSet<IFCEntityType> AllowedContainerTypes =
+         [
+            IFCEntityType.IfcCurtainWall,
+            IFCEntityType.IfcRamp,
+            IFCEntityType.IfcRoof,
+            IFCEntityType.IfcStair,
+            IFCEntityType.IfcWall,
+            IFCEntityType.IfcWallStandardCase
+         ];
 
       /// <summary>
       /// Checks if the curtain element can be exported as container.
       /// </summary>
-      /// <remarks>
-      /// It checks if all sub elements to be exported have geometries.
-      /// </remarks>
-      /// <param name="allSubElements">
-      /// Collection of elements contained in the host curtain element.
-      /// </param>
-      /// <param name="document">
-      /// The Revit document.
-      /// </param>
-      /// <returns>
-      /// True if it can be exported as container, false otherwise.
-      /// </returns>
-      private static bool CanExportCurtainWallAsContainer(ICollection<ElementId> allSubElements, Document document)
+      /// <remarks>It checks if all sub elements to be exported have geometries.</remarks>
+      /// <param name="allSubElements">Collection of elements contained in the host curtain element.</param>
+      /// <param name="document">The Revit document.</param>
+      /// <returns>True if it can be exported as container, false otherwise.</returns>
+      private static bool CanExportCurtainWallAsContainer(Document document, IFCExportInfoPair exportType, 
+         ICollection<ElementId> allSubElements)
       {
+         if (!AllowedContainerTypes.Contains(exportType.ExportInstance))
+         {
+            return false;
+         }
+
          Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
 
          FilteredElementCollector collector = new FilteredElementCollector(document, allSubElements);
 
-         List<Type> curtainWallSubElementTypes = new List<Type>();
-         curtainWallSubElementTypes.Add(typeof(FamilyInstance));
-         curtainWallSubElementTypes.Add(typeof(CurtainGridLine));
-         curtainWallSubElementTypes.Add(typeof(Wall));
+         List<Type> curtainWallSubElementTypes = new List<Type>()
+            { typeof(FamilyInstance), typeof(CurtainGridLine), typeof(Wall) };
 
          ElementMulticlassFilter multiclassFilter = new ElementMulticlassFilter(curtainWallSubElementTypes, true);
          collector.WherePasses(multiclassFilter);
          ICollection<ElementId> filteredSubElemments = collector.ToElementIds();
          foreach (ElementId subElemId in filteredSubElemments)
          {
-            Element subElem = document.GetElement(subElemId);
-            GeometryElement geomElem = subElem.get_Geometry(geomOptions);
-            if (geomElem == null)
+            if (document?.GetElement(subElemId)?.get_Geometry(geomOptions) == null)
                return false;
          }
          return true;
@@ -319,19 +269,18 @@ namespace Revit.IFC.Export.Exporter
       /// Export Curtain Walls and Roofs.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="exportType">The IFC entity to export to.</param>
       /// <param name="allSubElements">Collection of elements contained in the host curtain element.</param>
       /// <param name="element">The element to be exported.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
-      private static void ExportBase(ExporterIFC exporterIFC, ICollection<ElementId> allSubElements, Element element, ProductWrapper wrapper)
+      private static void ExportBase(ExporterIFC exporterIFC, IFCExportInfoPair exportType, 
+         ICollection<ElementId> allSubElements, Element element, ProductWrapper wrapper)
       {
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcRoof;
-         if (element is Wall || element is CurtainSystem || IsLegacyCurtainElement(element))
-            elementClassTypeEnum = Common.Enums.IFCEntityType.IfcCurtainWall;
-         else if (element is RoofBase)
-            elementClassTypeEnum = Common.Enums.IFCEntityType.IfcRoof;
-
-         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
+         if (exportType.IsUnKnown ||
+            ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
+         {
             return;
+         }
 
          IFCFile file = exporterIFC.GetFile();
          IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
@@ -346,45 +295,25 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle localPlacement = null;
 
                // Check for containment override
-               IFCAnyHandle overrideContainerHnd = null;
-               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-
-               setter = PlacementSetter.Create(exporterIFC, element, null, orientationTrf, overrideContainerId, overrideContainerHnd);
+               setter = PlacementSetter.Create(exporterIFC, element, orientationTrf);
                localPlacement = setter.LocalPlacement;
 
                string objectType = NamingUtil.CreateIFCObjectName(exporterIFC, element);
 
                IFCAnyHandle prodRepHnd = null;
-               IFCAnyHandle elemHnd = null;
                string elemGUID = GUIDUtil.CreateGUID(element);
-               if (element is Wall || element is CurtainSystem || IsLegacyCurtainElement(element))
-               {
-                  elemHnd = IFCInstanceExporter.CreateCurtainWall(exporterIFC, element, elemGUID, ownerHistory, localPlacement, prodRepHnd, null);
-               }
-               else if (element is RoofBase)
-               {
-                  //need to convert the string to enum
-                  string ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(exporterIFC, element);
-                  //ifcEnumType = IFCValidateEntry.GetValidIFCPredefinedType(element, ifcEnumType);
-                  elemHnd = IFCInstanceExporter.CreateRoof(exporterIFC, element, elemGUID, ownerHistory, localPlacement, prodRepHnd, ifcEnumType);
-               }
-               else
-               {
-                  return;
-               }
+               IFCAnyHandle elemHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType,
+                  file, element, elemGUID, ownerHistory, localPlacement, prodRepHnd);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(elemHnd))
                   return;
 
                wrapper.AddElement(element, elemHnd, setter, null, true, null);
 
-               bool canExportCurtainWallAsContainer = CanExportCurtainWallAsContainer(allSubElements, element.Document);
-               IFCAnyHandle rep = null;
+               bool canExportCurtainWallAsContainer = CanExportCurtainWallAsContainer(element.Document, exportType, allSubElements); 
                if (!canExportCurtainWallAsContainer)
                {
-                  rep = ExportCurtainObjectCommonAsOneBRep(allSubElements, element, exporterIFC);
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(rep))
-                     return;
+                  ExportCurtainObjectAsOneEntity(elemHnd, allSubElements, element, exporterIFC);
                }
                else
                {
@@ -486,23 +415,27 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="element">The element to be exported.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
       private static void ExportBaseWithGrids(ExporterIFC exporterIFC, Element hostElement, 
-         ProductWrapper productWrapper)
+         IFCExportInfoPair exportType, ProductWrapper productWrapper)
       {
          // Don't export the Curtain Wall itself, which has no useful geometry; instead export all of the GReps of the
          // mullions and panels.
-         CurtainGridSet gridSet = CurtainSystemExporter.GetCurtainGridSet(hostElement);
+         CurtainGridSet gridSet = GetCurtainGridSet(hostElement);
          if (gridSet == null)
          {
             if (hostElement is Wall)
+            {
                ExportLegacyCurtainElement(exporterIFC, hostElement as Wall, productWrapper);
+            }
             return;
          }
 
          if (gridSet.Size == 0)
+         {
             return;
+         }
 
          ICollection<ElementId> allSubElements = GetSubElements(gridSet, hostElement.Document);
-         ExportBase(exporterIFC, allSubElements, hostElement, productWrapper);
+         ExportBase(exporterIFC, exportType, allSubElements, hostElement, productWrapper);
       }
 
       /// <summary>
@@ -513,7 +446,8 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper.</param>
       public static void ExportWall(ExporterIFC exporterIFC, Wall hostElement, ProductWrapper productWrapper)
       {
-         ExportBaseWithGrids(exporterIFC, hostElement, productWrapper);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(hostElement, out _);
+         ExportBaseWithGrids(exporterIFC, hostElement, exportType, productWrapper);
       }
 
       /// <summary>
@@ -524,7 +458,8 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper.</param>
       public static void ExportCurtainRoof(ExporterIFC exporterIFC, RoofBase hostElement, ProductWrapper productWrapper)
       {
-         ExportBaseWithGrids(exporterIFC, hostElement, productWrapper);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(hostElement, out _);
+         ExportBaseWithGrids(exporterIFC, hostElement, exportType, productWrapper);
       }
 
       /// <summary>
@@ -535,15 +470,16 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper.</param>
       public static void ExportCurtainSystem(ExporterIFC exporterIFC, CurtainSystem curtainSystem, ProductWrapper productWrapper)
       {
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(curtainSystem, out _);
+
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcCurtainWall;
-         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
+         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return;
 
          IFCFile file = exporterIFC.GetFile();
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
-            ExportBaseWithGrids(exporterIFC, curtainSystem, productWrapper);
+            ExportBaseWithGrids(exporterIFC, curtainSystem, exportType, productWrapper);
             transaction.Commit();
          }
       }
@@ -556,9 +492,10 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper.</param>
       public static void ExportLegacyCurtainElement(ExporterIFC exporterIFC, Element curtainElement, ProductWrapper productWrapper)
       {
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(curtainElement, out _);
+
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcCurtainWall;
-         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
+         if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return;
 
          ICollection<ElementId> allSubElements = ExporterIFCUtils.GetLegacyCurtainSubElements(curtainElement);
@@ -566,7 +503,7 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
-            ExportBase(exporterIFC, allSubElements, curtainElement, productWrapper);
+            ExportBase(exporterIFC, exportType, allSubElements, curtainElement, productWrapper);
             transaction.Commit();
          }
       }
@@ -605,7 +542,7 @@ namespace Revit.IFC.Export.Exporter
             if (ex.Message == "The host object is obsolete.")
                return true;
             else
-               throw ex;
+               throw;
          }
 
          return false;

@@ -27,6 +27,7 @@ using Autodesk.Revit.DB.Architecture;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Exporter.PropertySet;
+using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Exporter
@@ -46,11 +47,11 @@ namespace Revit.IFC.Export.Exporter
       public static void ExportTopographySurface(ExporterIFC exporterIFC, TopographySurface topoSurface, GeometryElement geometryElement, ProductWrapper productWrapper)
       {
          // Skip if the element is already processed and the Site has been created before
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.SiteHandle) && !IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.ElementToHandleCache.Find(topoSurface.Id)))
+         if (ExporterCacheManager.SiteExportInfo.IsSiteExported() && !IFCAnyHandleUtil.IsNullOrHasNoValue(ExporterCacheManager.ElementToHandleCache.Find(topoSurface.Id)))
             return;
 
          string ifcEnumType;
-         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, topoSurface, out ifcEnumType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(topoSurface, out ifcEnumType);
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
          Common.Enums.IFCEntityType elementClassTypeEnum;
@@ -80,6 +81,36 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// Gives Revit the capability to export one Element (such as a Floor) as the "main" IfcSite.
+      /// </summary>
+      /// <param name="exporterIFC">IFC Exporter Object controlling export.</param>
+      /// <param name="element">Which Element that will be exported as an IfcSite.</param>
+      /// <param name="geometryElement">Geometry for the main IfcSite.</param>
+      /// <param name="productWrapper">Wraps the product if needed.</param>
+      /// <returns>True if element exported as an IfcSite, False otherwise.</returns>
+      public static bool ExportGenericElementAsSite(ExporterIFC exporterIFC, Element element, GeometryElement geometryElement, ProductWrapper productWrapper)
+      {
+         if ((element == null) || !ExporterCacheManager.SiteExportInfo.IsPotentialSiteElementId(element.Id))
+            return false;
+
+         ExportSiteBase(exporterIFC, element.Document, element, geometryElement, productWrapper);
+         return true;
+      }
+
+      /// <summary>
+      /// Indicates if Element should be exported as an IfcSite.
+      /// </summary>
+      /// <param name="exporterIFC">The Exporter object.</param>
+      /// <param name="element">Element to be exported.</param>
+      /// <returns>True if the Element should be exported as an IfcSite, false otherwise.</returns>
+      public static bool ShouldExportElementAsSite(Element element)
+      {
+         string enumTypeValue = string.Empty;
+         IFCExportInfoPair pair = ExporterUtil.GetPotentialProductExportType(element);
+         return (pair.ExportInstance == Common.Enums.IFCEntityType.IfcSite);
+      }
+
+      /// <summary>
       /// Exports IFC site object if having latitude and longitude.
       /// </summary>
       /// <param name="exporterIFC">
@@ -106,11 +137,11 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper.</param>
       private static void ExportSiteBase(ExporterIFC exporterIFC, Document document, Element element, GeometryElement geometryElement, ProductWrapper productWrapper)
       {
-         IFCAnyHandle siteHandle = ExporterCacheManager.SiteHandle;
+         IFCAnyHandle siteHandle = ExporterCacheManager.SiteExportInfo.SiteHandle;
 
          // Nothing to do if we've already created an IfcSite, and have no site element to try to
          // export or append to the existing site.
-         if (element == null && !IFCAnyHandleUtil.IsNullOrHasNoValue(siteHandle))
+         if (element == null && ExporterCacheManager.SiteExportInfo.IsSiteExported())
             return;
 
          Document doc = document;
@@ -137,7 +168,7 @@ namespace Revit.IFC.Export.Exporter
                // but until we have a concept of a building in Revit, we have to assume 0-1 sites, 1 building.
                bool appendedToSite = false;
                bool exportAsFacetation = !ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2;
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(siteHandle))
+               if (ExporterCacheManager.SiteExportInfo.IsSiteExported())
                {
                   IList<IFCAnyHandle> representations = IFCAnyHandleUtil.GetProductRepresentations(siteHandle);
                   if (representations.Count > 0)
@@ -293,10 +324,10 @@ namespace Revit.IFC.Export.Exporter
 
                double elevation = UnitUtil.ScaleLength(unscaledElevation);
 
-               siteHandle = IFCInstanceExporter.CreateSite(exporterIFC, element, siteGUID, ownerHistory, siteName, siteDescription, siteObjectType, localPlacement,
+               ExporterCacheManager.SiteExportInfo.SiteHandle = IFCInstanceExporter.CreateSite(exporterIFC, element, siteGUID, ownerHistory, siteName, siteDescription, siteObjectType, localPlacement,
                   siteRepresentation, siteLongName, IFCElementComposition.Element, latitude, longitude, elevation, siteLandTitleNumber, address);
-               productWrapper.AddSite(mainSiteElement, siteHandle);
-               ExporterCacheManager.SiteHandle = siteHandle;
+               productWrapper.AddSite(mainSiteElement, ExporterCacheManager.SiteExportInfo.SiteHandle);
+               ExporterCacheManager.SiteExportInfo.SiteElementId = element?.Id ?? ElementId.InvalidElementId;
             }
 
 

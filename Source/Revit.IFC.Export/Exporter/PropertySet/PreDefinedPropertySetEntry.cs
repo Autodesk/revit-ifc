@@ -21,8 +21,6 @@ using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Export.Utility;
-using GeometryGym.Ifc;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {

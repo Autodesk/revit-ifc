@@ -88,9 +88,15 @@ namespace Revit.IFC.Import.Data
       /// Processes an IfcPropertySetDefinition.
       /// </summary>
       /// <param name="ifcPropertySetDefinition">The IfcPropertySetDefinition handle.</param>
+      /// <param name="hostIfcObjectStepId">The STEP Id of the host IFC object which invoked this method.</param>
       /// <returns>The IFCPropertySetDefinition object.</returns>
-      public static IFCPropertySetDefinition ProcessIFCPropertySetDefinition(IFCAnyHandle ifcPropertySetDefinition)
+      public static IFCPropertySetDefinition ProcessIFCPropertySetDefinition(IFCAnyHandle ifcPropertySetDefinition, int hostIfcObjectStepId)
       {
+         if (Importer.TheOptions.UsingHybridPropertySetsForHostObject(hostIfcObjectStepId))
+         {
+            return null;
+         }
+
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcPropertySetDefinition))
          {
             Importer.TheLog.LogNullError(IFCEntityType.IfcPropertySetDefinition);

@@ -27,8 +27,44 @@ namespace Revit.IFC.Export.Utility
    /// <summary>
    /// Provides static methods for parameter related manipulations.
    /// </summary>
-   class ParameterUtil
+   public class ParameterUtil
    {
+      /// <summary>
+      /// The information needed to create an IFC property.
+      /// </summary>
+      public class PropertyDescription
+      {
+         /// <summary>
+         /// Create a property description with only a name.
+         /// </summary>
+         /// <param name="name">The name of the property.</param>
+         public PropertyDescription(string name)
+         {
+            Name = name;
+         }
+
+         /// <summary>
+         /// Create a property description with only a name.
+         /// </summary>
+         /// <param name="name">The name of the property.</param>
+         /// <param name="description">The description of the property.</param>
+         public PropertyDescription(string name, string description)
+         {
+            Name = name;
+            Description = description;
+         }
+
+         /// <summary>
+         ///  The required name.
+         /// </summary>
+         public string Name { get; set; } = null;
+
+         /// <summary>
+         /// The optional description.
+         /// </summary>
+         public string Description { get; set; } = null;
+      };
+
       // Cache the parameters for the current Element.
       private static IDictionary<ElementId, IDictionary<string, ParameterElementCache>> m_NonIFCParameters =
          new Dictionary<ElementId, IDictionary<string, ParameterElementCache>>();
@@ -1148,48 +1184,22 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">The input element.</param>
       /// <param name="overrideContainerHnd">The entity handle of the container.</param>
       /// <returns>The element id of the container.</returns>
-      public static ElementId OverrideContainmentParameter(ExporterIFC exporterIFC, Element element, out IFCAnyHandle overrideContainerHnd)
+      public static ElementId OverrideContainmentParameter(Element element, out IFCAnyHandle overrideContainerHnd)
       {
-         ElementId containerElemId = ElementId.InvalidElementId;
-         // Special case whether an object should be assigned to the Site or Building container
          overrideContainerHnd = null;
-         string containerOverrideName = null;
-         if (ParameterUtil.GetStringValueFromElement(element, "OverrideElementContainer", out containerOverrideName) == null)
-            ParameterUtil.GetStringValueFromElement(element, "IfcSpatialContainer", out containerOverrideName);
-         if (!string.IsNullOrEmpty(containerOverrideName))
-         {
-            if (containerOverrideName.Equals("IFCSITE", StringComparison.CurrentCultureIgnoreCase))
-            {
-               overrideContainerHnd = ExporterCacheManager.SiteHandle;
-               return containerElemId;
-            }
-            else if (containerOverrideName.Equals("IFCBUILDING", StringComparison.CurrentCultureIgnoreCase))
-            {
-               overrideContainerHnd = ExporterCacheManager.BuildingHandle;
-               return containerElemId;
-            }
 
-            // Find Level that is designated as the override by iterating through all the Levels for the name match
-            FilteredElementCollector collector = new FilteredElementCollector(element.Document);
-            ICollection<Element> collection = collector.OfClass(typeof(Level)).ToElements();
-            foreach (Element level in collection)
-            {
-               if (level.Name.Equals(containerOverrideName, StringComparison.CurrentCultureIgnoreCase))
-               {
-                  containerElemId = level.Id;
-                  break;
-               }
-            }
-            if (containerElemId != ElementId.InvalidElementId)
-            {
-               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, containerElemId);
-               if (levelInfo != null)
-                  overrideContainerHnd = levelInfo.GetBuildingStorey();
-               if (overrideContainerHnd != null)
-                  return containerElemId;
-            }
+         if (element == null)
+         {
+            return ElementId.InvalidElementId;
          }
 
+         // Special case whether an object should be assigned to the Site or Building container
+         if (GetStringValueFromElement(element, "OverrideElementContainer", out string containerOverrideName) == null)
+         {
+            GetStringValueFromElement(element, "IfcSpatialContainer", out containerOverrideName);
+         }
+
+         (ElementId containerElemId, overrideContainerHnd) = LevelUtil.FindContainer(containerOverrideName);
          return containerElemId;
       }
 
@@ -1197,17 +1207,16 @@ namespace Revit.IFC.Export.Utility
       /// Get override containment value through a parameter "IfcSpatialContainer" or "OverrideElementContainer". 
       /// Value can be "IFCSITE", "IFCBUILDING", or the appropriate Level name, given an IfcSpace entity handle.
       /// </summary>
-      /// <param name="exporterIFC">The export context.</param>
       /// <param name="document">The document containing the element corresponding the the IfcSpace handle.</param>
       /// <param name="spaceHnd">The entity handle of the IfcSpace.</param>
       /// <param name="overrideContainerHnd">The entity handle of the container.</param>
       /// <returns>The element id of the container.</returns>
-      public static ElementId OverrideSpaceContainmentParameter(ExporterIFC exporterIFC, Document document,
+      public static ElementId OverrideSpaceContainmentParameter(Document document,
          IFCAnyHandle spaceHnd, out IFCAnyHandle overrideContainerHnd)
       {
          ElementId spaceId = ExporterCacheManager.HandleToElementCache.Find(spaceHnd);
          Element elem = document.GetElement(spaceId);
-         return ParameterUtil.OverrideContainmentParameter(exporterIFC, elem, out overrideContainerHnd);
+         return ParameterUtil.OverrideContainmentParameter(elem, out overrideContainerHnd);
       }
 
       /// <summary>

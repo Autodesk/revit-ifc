@@ -1,0 +1,68 @@
+﻿<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.IFCPropertyFilter"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+        xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+        xmlns:local="clr-namespace:BIM.IFC.Export.UI"
+        xmlns:weaveRoot="clr-namespace:Autodesk.Weave.Wpf;assembly=Autodesk.Weave.Wpf"
+        xmlns:weave="clr-namespace:Autodesk.Weave.Wpf.ElementProperties;assembly=Autodesk.Weave.Wpf"
+        xmlns:ctrl="clr-namespace:Autodesk.Weave.Wpf.Controls;assembly=Autodesk.Weave.Wpf"
+        xmlns:weave_d="clr-namespace:Autodesk.Weave.Wpf.ElementProperties.DesignTime;assembly=Autodesk.Weave.Wpf"
+        mc:Ignorable="d"
+        weave:FrameworkElementProperties.ApplyWeaveStyles="True"
+        weave_d:FrameworkElementProperties.DesignTimeWeaveTheme="WeaveLightGray"
+        Title="{x:Static p:Resources.Filter}" 
+        Height="210" Width="210" 
+        MinHeight="200" MinWidth="200">
+   <Grid>
+      <Grid.RowDefinitions>
+         <RowDefinition Height="*"/>
+         <RowDefinition Height="auto"/>
+      </Grid.RowDefinitions>
+      
+      <StackPanel Grid.Row="0">
+         <Label Name="label_PropertySet" 
+                Content="{x:Static p:Resources.PropertySet}" 
+                weave:LabelProperties.Variant="Top"/>
+         <Grid>
+            <TextBox Name="textBox_PropertySet" 
+                  weave:TextBoxProperties.Variant="Box" 
+                  Padding="0,0,20,0"
+                  weave:TextBoxProperties.HintText="{x:Static p:Resources.Value}"/>
+            <Button Name ="button_PropertySetClean" 
+                    weave:ButtonProperties.Variant="SquareIcon" 
+                    weave:ButtonProperties.IconName="CloseSUI" 
+                    HorizontalAlignment="Right" 
+                    Click="button_PropertySetClean_Click"/>
+         </Grid>
+         
+         <Label Name="label_Parameter" 
+                Content="{x:Static p:Resources.Parameter}" 
+                weave:LabelProperties.Variant="Top"/>
+         <Grid>
+            <TextBox Name="textBox_Parameter" 
+                     weave:TextBoxProperties.Variant="Box" 
+                     Padding="0,0,20,0"
+                     weave:TextBoxProperties.HintText="{x:Static p:Resources.Value}"/>
+            <Button Name ="button_ParamaterClean" 
+                    weave:ButtonProperties.Variant="SquareIcon" 
+                    weave:ButtonProperties.IconName="CloseSUI" 
+                    HorizontalAlignment="Right" 
+                    Click="button_ParamaterClean_Click"/>
+         </Grid>
+      </StackPanel>
+
+      <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+         <Button x:Name="button_Remove" 
+                 Content="{x:Static p:Resources.Remove}" 
+                 weave:ButtonProperties.Variant="Solid" 
+                 Click="button_Remove_Click"/>
+         <Button x:Name="button_Apply" 
+                 Content="{x:Static p:Resources.Apply}"
+                 weave:ButtonProperties.Variant="Outline"
+                 Click="button_Apply_Click"/>
+      </StackPanel>
+   </Grid>
+</auiw:ChildWindow>

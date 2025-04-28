@@ -105,7 +105,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public string PreDefinedType { get; set; }
 
-      private DoorWindowInfo()
+      public DoorWindowInfo()
       {
          HostObject = null;
          InsertInstance = null;
@@ -187,9 +187,6 @@ namespace Revit.IFC.Export.Utility
       {
          // TODO: See if we can support new IFC4.3 types.
 
-         bool exportAsOlderthanIFC4x3 = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3;
-         string doorOrPanel = exportAsOlderthanIFC4x3 ? "DOOR" : "PANEL";
-         
          int leftPosYArcCount = 0;
          int leftNegYArcCount = 0;
          int rightPosYArcCount = 0;
@@ -353,7 +350,7 @@ namespace Revit.IFC.Export.Utility
                return "DOUBLE_SWING_LEFT";
 
             if ((rightHalfCircleCount > 0 || (rightPosYArcCount > 0 && rightNegYArcCount > 0)) && leftPosYArcCount == 0 && leftNegYArcCount == 0)
-               return "DOUBLE_" + doorOrPanel + "_DOUBLE_SWING";
+               return "DOUBLE_DOOR_DOUBLE_SWING";
          }
 
          if (rightHalfCircleCount > 0 && fullCircleCount == 0)
@@ -362,7 +359,7 @@ namespace Revit.IFC.Export.Utility
                return "DOUBLE_SWING_RIGHT";
 
             if ((leftHalfCircleCount > 0 || (leftPosYArcCount > 0 && leftNegYArcCount > 0)) && rightPosYArcCount == 0 && rightNegYArcCount == 0)
-               return "DOUBLE_" + doorOrPanel + "_DOUBLE_SWING";
+               return "DOUBLE_DOOR_DOUBLE_SWING";
          }
 
          // When only 90-degree arc(s) exists
@@ -406,19 +403,19 @@ namespace Revit.IFC.Export.Utility
 
          if (leftPosYArcCount > 0 && rightPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightNegYArcCount == 0)
-            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING";
+            return "DOUBLE_DOOR_SINGLE_SWING";
 
          if (leftPosYArcCount > 0 && rightPosYArcCount > 0 && leftNegYArcCount > 0 && rightNegYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 )
-            return "DOUBLE_" + doorOrPanel + "_DOUBLE_SWING";
+            return "DOUBLE_DOOR_DOUBLE_SWING";
 
          if (leftPosYArcCount > 0 && rightNegYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0)
-            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING_OPPOSITE_RIGHT";
+            return "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT";
 
          if (leftNegYArcCount > 0 && rightPosYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftPosYArcCount == 0 && rightNegYArcCount == 0)
-            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING_OPPOSITE_LEFT";
+            return "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT";
 
          return "NOTDEFINED";
       }
@@ -431,19 +428,13 @@ namespace Revit.IFC.Export.Utility
          ExportingDoor = isDoor;
          if (isDoor)
          {
-            if (exportType.HasUndefinedPredefinedType())
-               PreDefinedType = "DOOR";
-            else
-               PreDefinedType = exportType.ValidatedPredefinedType;
+            PreDefinedType = exportType.GetPredefinedTypeOrDefault("DOOR");
          }
 
          ExportingWindow = isWindow;
          if (isWindow)
          {
-            if (exportType.HasUndefinedPredefinedType())
-               PreDefinedType = "WINDOW";
-            else
-               PreDefinedType = exportType.ValidatedPredefinedType;
+            PreDefinedType = exportType.GetPredefinedTypeOrDefault("WINDOW");
          }
 
          FlippedSymbol = false;

@@ -40,10 +40,10 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Exports an element as a group.
       /// </summary>
-      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="file">The IFC File object.</param>
       /// <param name="element">The element.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
-      public static void ExportAreaScheme(ExporterIFC exporterIFC, AreaScheme element,
+      public static void ExportAreaScheme(IFCFile file, AreaScheme element,
           ProductWrapper productWrapper)
       {
          if (element == null)
@@ -60,8 +60,6 @@ namespace Revit.IFC.Export.Exporter
          Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcGroup;
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return;
-
-         IFCFile file = exporterIFC.GetFile();
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {

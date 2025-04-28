@@ -9,7 +9,7 @@
       <Button Content="{x:Static p:Resources.OK}" Height="23" HorizontalAlignment="Left" Margin="157,116,0,0" Name="buttonOK" VerticalAlignment="Top" Width="75" Click="buttonOK_Click" IsDefault="True" />
         <TextBox Height="23" HorizontalAlignment="Left" Margin="12,28,0,0" Name="textBoxOriginalName" VerticalAlignment="Top" Width="301" IsEnabled="False" />
       <Label Content="{x:Static p:Resources.OriginalName}" Height="33" HorizontalAlignment="Left" Margin="12,0,0,0" Name="labelOriginalName" VerticalAlignment="Top" />
-        <TextBox Height="23" HorizontalAlignment="Left" Margin="12,81,0,0" Name="textBoxNewName" VerticalAlignment="Top" Width="301" TextChanged="textBoxNewName_TextChanged" />
+      <TextBox Height="23" HorizontalAlignment="Left" Margin="12,81,0,0" Name="textBoxNewName" VerticalAlignment="Top" Width="301" TextChanged="textBoxNewName_TextChanged" ToolTip="{x:Static p:Resources.TemplateNameTooltip}"/>
       <Label Content="{x:Static p:Resources.NewName}" Height="33" HorizontalAlignment="Left" Margin="12,57,0,0" Name="labelNewName" VerticalAlignment="Top" />
     </Grid>
 </auiw:ChildWindow>

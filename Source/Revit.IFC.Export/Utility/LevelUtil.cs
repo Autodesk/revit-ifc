@@ -80,15 +80,40 @@ namespace Revit.IFC.Export.Utility
          return allLevels;
       }
 
+      public static (ElementId, IFCAnyHandle) FindContainer(string containerName)
+      {
+         if (string.IsNullOrEmpty(containerName))
+            return (ElementId.InvalidElementId, null);
+
+         if (containerName.Equals("IFCPROJECT", StringComparison.CurrentCultureIgnoreCase))
+            return (ElementId.InvalidElementId, ExporterCacheManager.ProjectHandle);
+
+         if (containerName.Equals("IFCSITE", StringComparison.CurrentCultureIgnoreCase))
+            return (ElementId.InvalidElementId, ExporterCacheManager.SiteExportInfo.SiteHandle);
+
+         if (containerName.Equals("IFCBUILDING", StringComparison.CurrentCultureIgnoreCase))
+            return (ElementId.InvalidElementId, ExporterCacheManager.BuildingHandle);
+
+         // Find Level that is designated as the override by iterating through all the Levels for the name match
+         IFCAnyHandle overrideContainerHnd = null;
+         if (ExporterCacheManager.LevelInfoCache.LevelsByName.TryGetValue(containerName, out ElementId elementId))
+         {
+            if (elementId != ElementId.InvalidElementId)
+            {
+               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(elementId);
+               if (levelInfo != null)
+                  overrideContainerHnd = levelInfo.GetBuildingStorey();
+            }
+         }
+
+         return (elementId, overrideContainerHnd);
+      }
+
       /// <summary>
       /// Checks to see if a particular level is a building story.  Returns true as default.
       /// </summary>
-      /// <param name="level">
-      /// The level.
-      /// </param>
-      /// <returns>
-      /// True if the level is a building story, false otherwise.
-      /// </returns>
+      /// <param name="level">The level.</param>
+      /// <returns>True if the level is a building story, false otherwise.</returns>
       public static bool IsBuildingStory(Level level)
       {
          if (level == null)
@@ -326,16 +351,68 @@ namespace Revit.IFC.Export.Utility
       /// <remarks>
       /// We may need to split an element (e.g. column) into parts by level.
       /// </remarks>
-      /// <param name="exporterIFC">The ExporterIFC object. </param>
       /// <param name="exportType">The export type. </param>
       /// <param name="element">The element. </param>
       /// <param name="levels">The levels to split the element.</param>
       /// <param name="ranges">The ranges to split the element. These will be non-overlapping.</param>
-      public static void CreateSplitLevelRangesForElement(ExporterIFC exporterIFC, IFCExportInfoPair exportType, Element element,
+      public static void CreateSplitLevelRangesForElement(IFCExportInfoPair exportType, Element element,
+         out IList<ElementId> levels, out IList<IFCRange> ranges)
+      {
+         BoundingBoxXYZ boundingBox = element?.get_BoundingBox(null);
+         CreateSplitLevelRangesCommon(exportType, element, boundingBox, out levels, out ranges);
+      }
+      
+      /// <summary>
+       /// Creates a list of ranges to split an element.
+       /// </summary>
+       /// <remarks>
+       /// We may need to split an element (e.g. column) into parts by level.
+       /// </remarks>
+       /// <param name="exportType">The export type. </param>
+       /// <param name="element">The element. </param>
+       /// <param name="levels">The levels to split the element.</param>
+       /// <param name="ranges">The ranges to split the element. These will be non-overlapping.</param>
+      public static IDictionary<ElementId, IFCRange> CreateSplitLevelRangesForElement(IFCExportInfoPair exportType, Element element)
+      {
+         Dictionary<ElementId, IFCRange> levelsAndRanges = new();
+         
+         BoundingBoxXYZ boundingBox = element?.get_BoundingBox(null);
+         CreateSplitLevelRangesCommon(exportType, element, boundingBox, out IList<ElementId> levels, out IList<IFCRange> ranges);
+         int numParts = ranges.Count;
+         for (int ii = 0; ii < numParts; ii++) 
+         {
+            levelsAndRanges[levels[ii]] = ranges[ii];
+         }
+
+         return levelsAndRanges;
+      }
+
+      /// <summary>
+      /// Creates a list of ranges to split an element.
+      /// </summary>
+      /// <remarks>
+      /// We may need to split an element (e.g. column) into parts by level.
+      /// </remarks>
+      /// <param name="exportType">The export type.</param>
+      /// <param name="hostElement">The host element.</param>
+      /// <param name="geometryElement">The element geomtry. </param>      
+      /// <param name="levels">The levels to split the element.</param>
+      /// <param name="ranges">The ranges to split the element. These will be non-overlapping.</param>
+      public static void CreateSplitLevelRangesForElementGeometry(IFCExportInfoPair exportType, Element hostElement, GeometryElement geometryElement,
+         out IList<ElementId> levels, out IList<IFCRange> ranges)
+      {
+         BoundingBoxXYZ boundingBox = geometryElement?.GetBoundingBox();
+         CreateSplitLevelRangesCommon(exportType, hostElement, boundingBox, out levels, out ranges);
+      }
+
+      private static void CreateSplitLevelRangesCommon(IFCExportInfoPair exportType, Element element, BoundingBoxXYZ boundingBox,
          out IList<ElementId> levels, out IList<IFCRange> ranges)
       {
          levels = new List<ElementId>();
          ranges = new List<IFCRange>();
+
+         if (boundingBox == null)
+            return;
 
          if (!ExporterCacheManager.ExportOptionsCache.WallAndColumnSplitting)
             return;
@@ -347,85 +424,79 @@ namespace Revit.IFC.Export.Utility
          if (!splitByLevel)
             return;
 
-         BoundingBoxXYZ boundingBox = element.get_BoundingBox(null);
-         if (boundingBox == null)
-            return;
-
+         IFCRange zSpan = new IFCRange(boundingBox.Min.Z, boundingBox.Max.Z);
+         if (zSpan.Start < zSpan.End)
          {
-            IFCRange zSpan = new IFCRange(boundingBox.Min.Z, boundingBox.Max.Z);
-            if (zSpan.Start < zSpan.End)
+            bool firstLevel = true;
+            ElementId skipToNextLevel = ElementId.InvalidElementId;
+
+            // If the base level of the element is set, we will start "looking" at that level.  Anything below the base level will be included with the base level.
+            // We will only do this if the base level is a building story.
+            ElementId firstLevelId = GetBaseLevelIdForElement(element);
+            bool foundFirstLevel = firstLevelId == ElementId.InvalidElementId;
+
+            IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.GetBuildingStoriesByElevation();
+            foreach (ElementId levelId in levelIds)
             {
-               bool firstLevel = true;
-               ElementId skipToNextLevel = ElementId.InvalidElementId;
-
-               // If the base level of the element is set, we will start "looking" at that level.  Anything below the base level will be included with the base level.
-               // We will only do this if the base level is a building story.
-               ElementId firstLevelId = GetBaseLevelIdForElement(element);
-               bool foundFirstLevel = (firstLevelId == ElementId.InvalidElementId);
-
-               IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.BuildingStoriesByElevation;
-               foreach (ElementId levelId in levelIds)
+               if (!foundFirstLevel)
                {
-                  if (!foundFirstLevel)
-                  {
-                     if (levelId != firstLevelId)
-                        continue;
-                     else
-                        foundFirstLevel = true;
-                  }
-
-                  if (skipToNextLevel != ElementId.InvalidElementId && levelId != skipToNextLevel)
+                  if (levelId != firstLevelId)
                      continue;
-
-                  IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, levelId);
-                  if (levelInfo == null)
-                     continue;
-
-                  // endBelowLevel 
-                  if (zSpan.End < levelInfo.Elevation + extension)
-                     continue;
-
-                  // To calculate the distance to the next level, we check to see if the Level UpToLevel built-in parameter
-                  // is set.  If so, we calculate the distance by getting the elevation of the UpToLevel level minus the
-                  // current elevation, and use it if it is greater than 0.  If it is not greater than 0, or the built-in
-                  // parameter is not set, we use DistanceToNextLevel.
-                  double levelHeight = ExporterCacheManager.LevelInfoCache.FindHeight(levelId);
-                  if (levelHeight < 0.0)
-                     levelHeight = CalculateDistanceToNextLevel(element.Document, levelId, levelInfo);
-                  skipToNextLevel = ExporterCacheManager.LevelInfoCache.FindNextLevel(levelId);
-
-                  // startAboveLevel
-                  if ((!MathUtil.IsAlmostZero(levelHeight)) &&
-                     (zSpan.Start > levelInfo.Elevation + levelHeight - extension))
-                     continue;
-
-                  bool startBelowLevel = !firstLevel && (zSpan.Start < levelInfo.Elevation - extension);
-                  bool endAboveLevel = ((!MathUtil.IsAlmostZero(levelHeight)) &&
-                     (zSpan.End > levelInfo.Elevation + levelHeight + extension));
-                  if (!startBelowLevel && !endAboveLevel)
-                     break;
-
-                  IFCRange currentSpan = new IFCRange(
-                     startBelowLevel ? levelInfo.Elevation : zSpan.Start,
-                     endAboveLevel ? (levelInfo.Elevation + levelHeight) : zSpan.End);
-
-                  // We want our ranges to be non-overlapping.  As such, we'll modify the start parameter
-                  // to be at least as large as the previous end parameter (if any).  If this makes the
-                  // range invalid, we won't add it.
-                  if (ranges.Count > 0)
-                  {
-                     IFCRange lastSpan = ranges.Last();
-                     if (lastSpan.End > currentSpan.End - MathUtil.Eps())
-                        continue;
-
-                     currentSpan.Start = Math.Max(currentSpan.Start, lastSpan.End);
-                  }
-
-                  ranges.Add(currentSpan);
-                  levels.Add(levelId);
-
-                  firstLevel = false;
+                  else
+                     foundFirstLevel = true;
                }
+
+               if (skipToNextLevel != ElementId.InvalidElementId && levelId != skipToNextLevel)
+                  continue;
+
+               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(levelId);
+               if (levelInfo == null)
+                  continue;
+
+               // endBelowLevel 
+               if (zSpan.End < levelInfo.Elevation + extension)
+                  continue;
+
+               // To calculate the distance to the next level, we check to see if the Level UpToLevel built-in parameter
+               // is set.  If so, we calculate the distance by getting the elevation of the UpToLevel level minus the
+               // current elevation, and use it if it is greater than 0.  If it is not greater than 0, or the built-in
+               // parameter is not set, we use DistanceToNextLevel.
+               double levelHeight = ExporterCacheManager.LevelInfoCache.FindHeight(levelId);
+               if (levelHeight < 0.0)
+                  levelHeight = CalculateDistanceToNextLevel(element.Document, levelId, levelInfo);
+               skipToNextLevel = ExporterCacheManager.LevelInfoCache.FindNextLevel(levelId);
+
+               // startAboveLevel
+               if ((!MathUtil.IsAlmostZero(levelHeight)) &&
+                  (zSpan.Start > levelInfo.Elevation + levelHeight - extension))
+                  continue;
+
+               bool startBelowLevel = !firstLevel && (zSpan.Start < levelInfo.Elevation - extension);
+               bool endAboveLevel = ((!MathUtil.IsAlmostZero(levelHeight)) &&
+                  (zSpan.End > levelInfo.Elevation + levelHeight + extension));
+               if (!startBelowLevel && !endAboveLevel)
+                  break;
+
+               IFCRange currentSpan = new IFCRange(
+                  startBelowLevel ? levelInfo.Elevation : zSpan.Start,
+                  endAboveLevel ? (levelInfo.Elevation + levelHeight) : zSpan.End);
+
+               // We want our ranges to be non-overlapping.  As such, we'll modify the start parameter
+               // to be at least as large as the previous end parameter (if any).  If this makes the
+               // range invalid, we won't add it.
+               if (ranges.Count > 0)
+               {
+                  IFCRange lastSpan = ranges.Last();
+                  if (lastSpan.End > currentSpan.End - MathUtil.Eps())
+                     continue;
+
+                  currentSpan.Start = Math.Max(currentSpan.Start, lastSpan.End);
+               }
+
+               ranges.Add(currentSpan);
+               levels.Add(levelId);
+
+               firstLevel = false;
             }
          }
       }

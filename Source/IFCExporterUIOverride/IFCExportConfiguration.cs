@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
-using System.Web.Script.Serialization;
 using System.Linq;
 
 using Autodesk.Revit.DB;
@@ -30,6 +29,10 @@ using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Extensions;
 using Revit.IFC.Export.Utility;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Windows.Forms;
+using static System.Windows.Forms.Design.AxImporter;
 
 namespace BIM.IFC.Export.UI
 {
@@ -40,10 +43,14 @@ namespace BIM.IFC.Export.UI
    {
       public static bool ConfigurationsAreEqual<T>(T obj1, T obj2)
       {
-         var serializer = new JavaScriptSerializer();
-         var obj1Serialized = serializer.Serialize(obj1);
-         var obj2Serialized = serializer.Serialize(obj2);
-         return obj1Serialized == obj2Serialized;
+         JsonSerializerSettings settings = new JsonSerializerSettings
+         {
+            DateFormatHandling = DateFormatHandling.MicrosoftDateFormat
+         };
+
+         var obj1Ser =  JsonConvert.SerializeObject(obj1, settings);
+         var obj2Ser = JsonConvert.SerializeObject(obj2, settings);
+         return obj1Ser == obj2Ser;
       }
    }
 
@@ -58,13 +65,13 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       public IFCVersion IFCVersion { get; set; } = IFCVersion.IFC2x3CV2;
 
-      private KnownERNames exchangeRequirement = KnownERNames.NotDefined;
+      private KnownERNames m_ExchangeRequirement = KnownERNames.NotDefined;
 
       public KnownERNames ExchangeRequirement
       {
          get
          {
-            return exchangeRequirement;
+            return m_ExchangeRequirement;
          }
          set
          {
@@ -72,10 +79,48 @@ namespace BIM.IFC.Export.UI
             {
                IList<KnownERNames> erList = IFCExchangeRequirements.ExchangeRequirements[IFCVersion];
                if (erList != null && erList.Contains(value))
-                  exchangeRequirement = value;
+               {
+                  m_ExchangeRequirement = value;
+               }
             }
          }
       }
+
+      private KnownFacilityTypes m_FacilityType = KnownFacilityTypes.NotDefined;
+
+      public KnownFacilityTypes FacilityType
+      {
+         get
+         {
+            return m_FacilityType;
+         }
+         set
+         {
+            if (IFCFacilityTypes.FacilityTypes.TryGetValue(IFCVersion, out IList<KnownFacilityTypes> facilityTypes))
+            {
+               if (facilityTypes?.Contains(value) ?? false)
+               {
+                  m_FacilityType = value;
+               }
+            }
+         }
+      }
+
+      private Enum m_FacilityPredefinedType = null;
+
+      public Enum FacilityPredefinedType
+      {
+         get
+         {
+            return m_FacilityPredefinedType;
+         }
+         set
+         {
+            m_FacilityPredefinedType = IFCFacilityTypes.ValidatedPredefinedTypeEnum(FacilityType, value);
+         }
+      }
+
+      public string CategoryMapping { get; set; } = null;
 
       /// <summary>
       /// The IFCFileFormat of the configuration.
@@ -167,6 +212,11 @@ namespace BIM.IFC.Export.UI
       public bool ExportBaseQuantities { get; set; } = false;
 
       /// <summary>
+      /// Whether or not to include ceilings grids for ceilings in the export data. 
+      /// </summary>
+      public bool ExportCeilingGrids { get; set; } = false;
+
+      /// <summary>
       /// True to include the material property sets. 
       /// False to exclude them.
       /// </summary>
@@ -193,6 +243,11 @@ namespace BIM.IFC.Export.UI
       /// The name of the file containing the user defined property sets to be exported.
       /// </summary>
       public string ExportUserDefinedPsetsFileName { get; set; } = "";
+
+      /// <summary>
+      /// Whether or not to include type property to the user defined property sets. 
+      /// </summary>
+      public bool UseTypePropertiesInInstacePSets { get; set; } = false;
 
       /// <summary>
       /// True if the User decides to use the Parameter Mapping Table
@@ -287,6 +342,21 @@ namespace BIM.IFC.Export.UI
       public bool UseTypeNameOnlyForIfcType { get; set; } = false;
 
       /// <summary>
+      /// Don't create a container entity for floors and roofs unless exporting parts
+      /// </summary>
+      public bool ExportHostAsSingleEntity { get; set; } = false;
+
+      /// <summary>
+      /// Use Author field in Project Information to set IfcOwnerHistory LastModified attribute
+      /// </summary>
+      public bool OwnerHistoryLastModified { get; set; } = false;
+
+      /// <summary>
+      /// Use this field in Project Information to set how will be bars in uniform sets exported in IFC.
+      /// </summary>
+      public bool ExportBarsInUniformSetsAsSeparateIFCEntities { get; set; } = false;
+
+      /// <summary>
       /// Value indicating whether the IFC Entity Name will use visible Revit Name
       /// </summary>
       public bool UseVisibleRevitNameAsEntityName { get; set; } = false;
@@ -365,7 +435,7 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// Id of the active view.
       /// </summary>
-      [ScriptIgnore]
+      [JsonIgnore]
       public ElementId ActiveViewId { get; set; } = ElementId.InvalidElementId;
 
       private static IFCExportConfiguration s_inSessionConfiguration = null;
@@ -373,13 +443,13 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// Whether the configuration is builtIn or not.
       /// </summary>
-      [ScriptIgnore]
+      [JsonIgnore]
       public bool IsBuiltIn { get; private set; } = false;
 
       /// <summary>
       /// Whether the configuration is in-session or not.
       /// </summary>
-      [ScriptIgnore]
+      [JsonIgnore]
       public bool IsInSession { get; private set; } = false;
 
       /// <summary>
@@ -426,6 +496,7 @@ namespace BIM.IFC.Export.UI
                                  bool materialPsets,
                                  bool schedulesAsPSets,
                                  bool userDefinedPSets,
+                                 bool useTypePropertiesInInstacePSets,
                                  bool userDefinedParameterMapping,
                                  bool PlanElems2D,
                                  bool exportBoundingBox,
@@ -433,7 +504,10 @@ namespace BIM.IFC.Export.UI
                                  string excludeFilter = "",
                                  bool includeSteelElements = false,
                                  KnownERNames exchangeRequirement = KnownERNames.NotDefined,
-                                 string customName = null)
+                                 string customName = null,
+                                 KnownFacilityTypes facilityType = KnownFacilityTypes.NotDefined,
+                                 Enum facilityPredefinedType = null,
+                                 bool exportCeilingGrids = false)
       {
          IFCExportConfiguration configuration = new IFCExportConfiguration();
 
@@ -446,6 +520,8 @@ namespace BIM.IFC.Export.UI
 
          configuration.IFCVersion = ifcVersion;
          configuration.ExchangeRequirement = exchangeRequirement;
+         configuration.FacilityType = facilityType;
+         configuration.FacilityPredefinedType = facilityPredefinedType;
          configuration.IFCFileType = IFCFileFormat.Ifc;
          configuration.ActivePhaseId = ElementId.InvalidElementId.Value;
          configuration.SpaceBoundaries = spaceBoundaries;
@@ -456,6 +532,7 @@ namespace BIM.IFC.Export.UI
          // Items from Additional Content Tab
          configuration.Export2DElements = PlanElems2D;
          configuration.ExportLinkedFiles = exportLinkedFiles;
+         configuration.ExportCeilingGrids = exportCeilingGrids;
 
          // Items from Property Sets Tab
          configuration.ExportInternalRevitPropertySets = internalSets;
@@ -463,6 +540,7 @@ namespace BIM.IFC.Export.UI
          configuration.ExportMaterialPsets = materialPsets;
          configuration.ExportSchedulesAsPsets = schedulesAsPSets;
          configuration.ExportUserDefinedPsets = userDefinedPSets;
+         configuration.UseTypePropertiesInInstacePSets = useTypePropertiesInInstacePSets;
          configuration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\" + configuration.Name + @".txt";
          configuration.ExportUserDefinedParameterMapping = userDefinedParameterMapping;
 
@@ -586,6 +664,32 @@ namespace BIM.IFC.Export.UI
          }
       }
 
+      private bool UpdateParameterTemplate(IFCParameterTemplate parameterTemplate, string propertyName, object propertyVal)
+      {
+         switch (propertyName)
+         {
+            case "ExportBaseQuantities":
+               parameterTemplate.ExportIFCBaseQuantities = ExportBaseQuantities;
+               break;
+            case "ExportIFCCommonPropertySets":
+               parameterTemplate.ExportIFCCommonPropertySets = (bool)propertyVal;
+               break;
+            case "ExportInternalRevitPropertySets":
+               parameterTemplate.ExportRevitElementParameters = (bool)propertyVal;
+               break;
+            case "ExportMaterialPsets":
+               parameterTemplate.ExportRevitMaterialParameters = (bool)propertyVal;
+               break;
+            case "ExportSchedulesAsPsets":
+               parameterTemplate.ExportRevitSchedules = (bool)propertyVal;
+               break;
+            default:
+               return false;
+         }
+
+         return true;
+      }
+
       /// <summary>
       /// Updates the IFCExportOptions with the settings in this configuration.
       /// </summary>
@@ -593,8 +697,15 @@ namespace BIM.IFC.Export.UI
       /// <param name="filterViewId">The id of the view that will be used to select which elements to export.</param>
       public void UpdateOptions(IFCExportOptions options, ElementId filterViewId)
       {
-         JavaScriptSerializer ser = new JavaScriptSerializer();
-         foreach (var prop in GetType().GetProperties())
+         // This is a temporary home.
+         IFCParameterTemplate parameterTemplate = IFCParameterTemplate.GetOrCreateInSessionTemplate(IFCCommandOverrideApplication.TheDocument);
+
+         options.FilterViewId = VisibleElementsOfCurrentView ? filterViewId : ElementId.InvalidElementId;
+
+         // Temporary until UI is created.
+         options.AddOption("ParameterMappingTableName", Resources.InSessionConfiguration);
+
+         foreach (PropertyInfo prop in GetType().GetProperties())
          {
             switch (prop.Name)
             {
@@ -605,7 +716,7 @@ namespace BIM.IFC.Export.UI
                   options.FileVersion = IFCVersion;
                   break;
                case "ActivePhaseId":
-                  if (IFCPhaseAttributes.Validate(ActivePhaseId))
+                  if (options.FilterViewId == ElementId.InvalidElementId && IFCPhaseAttributes.Validate(ActivePhaseId))
                      options.AddOption(prop.Name, ActivePhaseId.ToString());
                   break;
                case "SpaceBoundaries":
@@ -614,33 +725,37 @@ namespace BIM.IFC.Export.UI
                case "SplitWallsAndColumns":
                   options.WallAndColumnSplitting = SplitWallsAndColumns;
                   break;
-               case "ExportBaseQuantities":
-                  options.ExportBaseQuantities = ExportBaseQuantities;
-                  break;
                case "ProjectAddress":
-                  string projectAddrJsonString = ser.Serialize(ProjectAddress);
+                  string projectAddrJsonString = JsonConvert.SerializeObject(ProjectAddress);
                   options.AddOption(prop.Name, projectAddrJsonString);
                   break;
                case "ClassificationSettings":
-                  string classificationJsonStr = ser.Serialize(ClassificationSettings);
+                  JsonSerializerSettings dateFormatSettings = new JsonSerializerSettings
+                  {
+                     DateFormatHandling = DateFormatHandling.MicrosoftDateFormat
+                  };
+                  string classificationJsonStr = JsonConvert.SerializeObject(ClassificationSettings, dateFormatSettings);
                   options.AddOption(prop.Name, classificationJsonStr);
                   break;
                default:
-                  var propVal = prop.GetValue(this, null);
+                  object propVal = prop.GetValue(this, null);
                   if (propVal != null)
-                     options.AddOption(prop.Name, propVal.ToString());
+                  {
+                     if (!UpdateParameterTemplate(parameterTemplate, prop.Name, propVal))
+                     {
+                        options.AddOption(prop.Name, propVal.ToString());
+                     }
+                  }
                   break;
             }
          }
-
-         options.FilterViewId = VisibleElementsOfCurrentView ? filterViewId : ElementId.InvalidElementId;
       }
 
 
       /// <summary>
       /// Identifies the version selected by the user.
       /// </summary>
-      [ScriptIgnore]
+      [JsonIgnore]
       public String FileVersionDescription
       {
          get
@@ -668,25 +783,21 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       /// <param name="dictionary">Key, value pairs for each read in property.</param>
       /// <param name="serializer">Json serializer used to load data. </param>
-      public void DeserializeFromJson(IDictionary<string, object> dictionary, JavaScriptSerializer serializer)
+      public void DeserializeFromJson(JObject jsonObject, JsonSerializer serializer)
       {
          Type type = GetType();
 
-         // load in each property from the dictionary.
-         foreach (var prop in dictionary)
+         foreach (var prop in jsonObject.Properties())
          {
-            string propName = prop.Key;
-            object propValue = prop.Value;
+            string propName = prop.Name;
+            JToken propValue = prop.Value;
 
-            // get the property info.
             PropertyInfo propInfo = type.GetProperty(propName);
 
-            // property removed/renamed.
             if (propInfo == null)
                continue;
 
-            // set direct for all the writeable props.
-            if (propInfo.CanWrite && !propInfo.IsDefined(typeof(ScriptIgnoreAttribute)))
+            if (propInfo.CanWrite && propInfo.GetCustomAttribute(typeof(JsonIgnoreAttribute)) == null)
             {
                if (propInfo.GetCustomAttribute(typeof(PropertyUpgraderAttribute)) is PropertyUpgraderAttribute upgrader)
                {
@@ -696,25 +807,24 @@ namespace BIM.IFC.Export.UI
 
                try
                {
-                  propInfo.SetValue(this, serializer.ConvertToType(propValue, propInfo.PropertyType));
+                  propInfo.SetValue(this, propValue.ToObject(propInfo.PropertyType, serializer));
                }
                catch (Exception)
                {
-                  // avoid exceptions that may occur during property deserialization to continue loading user configuration,
-                  // the default value should be set
+                  // Handle exceptions that may occur during property deserialization to continue loading user configuration.
+                  // The default value should be set.
                }
 
                continue;
             }
 
-            // need to set explicit member variables for ready only props.
             if (propName == nameof(IsBuiltIn))
             {
-               IsBuiltIn = serializer.ConvertToType<bool>(propValue);
+               IsBuiltIn = propValue.ToObject<bool>(serializer);
             }
             else if (propName == nameof(IsInSession))
             {
-               IsInSession = serializer.ConvertToType<bool>(propValue);
+               IsInSession = propValue.ToObject<bool>(serializer);
             }
          }
       }
@@ -725,41 +835,41 @@ namespace BIM.IFC.Export.UI
       /// <returns>the serialized json string for the configuration</returns>
       public string SerializeConfigToJson()
       {
-         JavaScriptSerializer js = new JavaScriptSerializer();
-         return js.Serialize(this);
+         JsonSerializerSettings settings = new JsonSerializerSettings
+         {
+            DateFormatHandling = DateFormatHandling.MicrosoftDateFormat
+         };
+         return JsonConvert.SerializeObject(this, settings);
       }
    }
 
    /// <summary>
    /// Converter to handle specialize Deserialization for the Configurations. 
    /// </summary>
-   public class IFCExportConfigurationConverter : JavaScriptConverter
+   public class IFCExportConfigurationConverter : JsonConverter
    {
-
-      public override IEnumerable<Type> SupportedTypes
+      public override bool CanConvert(Type objectType)
       {
-         //Define the ListItemCollection as a supported type.
-         get { return new ReadOnlyCollection<Type>(new List<Type>(new Type[] { typeof(IFCExportConfiguration) })); }
+         return objectType == typeof(IFCExportConfiguration);
       }
 
-      public override IDictionary<string, object> Serialize(object obj, JavaScriptSerializer serializer)
+      public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
       {
-         // no need to do any special serialization for this object, so don't use for that purpose
-         throw new NotImplementedException();
-      }
-
-      public override object Deserialize(IDictionary<string, object> dictionary, Type type, JavaScriptSerializer serializer)
-      {
-         if (dictionary == null)
-            throw new ArgumentNullException("dictionary");
-
-         if (type != typeof(IFCExportConfiguration))
+         if (reader.TokenType == JsonToken.Null)
             return null;
+
+         var jsonObject = JObject.Load(reader);
 
          // Create the instance to deserialize into.
          IFCExportConfiguration config = IFCExportConfiguration.CreateDefaultConfiguration();
-         config.DeserializeFromJson(dictionary, serializer);
+         config.DeserializeFromJson(jsonObject, serializer);
          return config;
+      }
+
+      public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+      {
+         // Since we only need deserialization in this case, writing is not implemented.
+         throw new NotImplementedException();
       }
    }
 
@@ -820,16 +930,35 @@ namespace BIM.IFC.Export.UI
    {
       public void Upgrade(object destination, PropertyInfo propertyInfo, object value)
       {
-         if (!propertyInfo.CanWrite)
+         if (!propertyInfo.CanWrite || !(value is JValue))
             return;
 
-         // convert bool to enum.
-         if (value is bool boolValue)
-            propertyInfo.SetValue(destination, boolValue ? LinkedFileExportAs.ExportAsSeparate : LinkedFileExportAs.DontExport);
-         // presented expected type.
-         else if (value is LinkedFileExportAs exportLinkedFiles)
-            propertyInfo.SetValue(destination, exportLinkedFiles);
-         // else don't set value to leave the default value.
+         JValue jvalue = value as JValue;
+         switch (jvalue.Type)
+         {
+            case JTokenType.Boolean:
+               {
+                  bool boolValue = (bool)jvalue.Value;
+                  propertyInfo.SetValue(destination, boolValue ? LinkedFileExportAs.ExportAsSeparate : LinkedFileExportAs.DontExport);
+                  break;
+               }
+            case JTokenType.Integer:
+               {
+                  try
+                  {
+                     int jvalueAsInt = (int)(long)jvalue.Value;
+                     if (Enum.IsDefined(typeof(LinkedFileExportAs), jvalueAsInt))
+                     {
+                        propertyInfo.SetValue(destination, (LinkedFileExportAs)jvalueAsInt);
+                     }
+                  }
+                  catch
+                  {
+                     // TODO: Give user error.
+                  }
+                  break;
+               }
+         }
       }
    }
 }

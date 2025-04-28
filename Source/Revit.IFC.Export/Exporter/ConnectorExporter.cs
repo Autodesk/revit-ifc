@@ -125,11 +125,12 @@ namespace Revit.IFC.Export.Exporter
             else
             {
                Element hostElement = connector.Owner;
-               
-               IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : (flowDirection == FlowDirectionType.Out ? IFCFlowDirection.Source : IFCFlowDirection.Sink);
-               IFCAnyHandle hostElementIFCHandle = ExporterCacheManager.MEPCache.Find(hostElement.Id);
+               IFCAnyHandle hostElementIFCHandle = ExporterCacheManager.MEPCache.Find(hostElement.Id);               
+               // Orphaned ports aren't allowed in IFC
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(hostElementIFCHandle))
+                  return;
 
-               // Note that hostElementIFCHandle could be null if, e.g., the host is a Wire.
+               IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : (flowDirection == FlowDirectionType.Out ? IFCFlowDirection.Source : IFCFlowDirection.Sink);
                string guid = GUIDUtil.GenerateIFCGuidFrom(
                   GUIDUtil.CreateGUIDString(hostElement,
                   IFCEntityType.IfcDistributionPort.ToString() + " Connector: " + connector.Id.ToString()));
@@ -298,16 +299,22 @@ namespace Revit.IFC.Export.Exporter
                return;
 
             // Check the outElement to see if it is a Wire; if so, get its connections and "skip" the wire.
-            if (outElement is Wire)
+            Wire wire = outElement as Wire;
+            if (wire != null)
             {
                if (m_ProcessedWires.Contains(outElement.Id))
                   return;
                m_ProcessedWires.Add(outElement.Id);
-               ExporterCacheManager.SystemsCache.AddElectricalSystem((outElement as Wire).MEPSystem.Id);
+
+               MEPSystem system = wire.MEPSystem;
+               if (system != null)
+               {
+                  ExporterCacheManager.SystemsCache.AddElectricalSystem(system.Id);
+               }
 
                try
                {
-                  ConnectorSet wireConnectorSet = MEPCache.GetConnectorsForWire(outElement as Wire);
+                  ConnectorSet wireConnectorSet = MEPCache.GetConnectorsForWire(wire);
                   if (wireConnectorSet != null)
                   {
                      foreach (Connector connectedToWire in wireConnectorSet)

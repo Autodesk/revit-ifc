@@ -19,11 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
-using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 
@@ -57,19 +55,43 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </summary>
       public HashSet<IFCEntityType> EntityTypes { get; } = new HashSet<IFCEntityType>();
 
+      private string m_ObjectType = null;
       /// <summary>
       /// The object type of element appropriate for this property or quantity set.
       /// Primarily used for identifying proxies.
       /// </summary>
-      /// <remarks>Currently limited to one entity type.</remarks>
-      public string ObjectType { get; set; } = String.Empty;
+      /// <remarks>Only one ObjectType is supported.</remarks>
+      public string ObjectType 
+      { 
+         private get 
+         { 
+            return m_ObjectType;  
+         }
+         set 
+         {
+            // The data in ObjectType is frequently wrong and should be fixed.  In the meantime, we will
+            // fix the value here.
+            // Note that we expect only one object type - we will revisit that assumption upon fixing the data.
+            string[] objectTypeList = value.Split(',') ?? new string[] { };
+            foreach (string objectType in objectTypeList)
+            {
+               if (!(objectType.StartsWith("IFC", StringComparison.InvariantCultureIgnoreCase)
+                  || objectType.StartsWith("Pset", StringComparison.InvariantCultureIgnoreCase)))
+               {
+                  m_ObjectType = objectType;
+                  return;
+               }
+            }
+            m_ObjectType = string.Empty; 
+         } 
+      }
 
       /// <summary>
       /// The pre-defined type of element appropriate for this property or quantity set.
       /// Primarily used for identifying sub-types of MEP objects.
       /// </summary>
       /// <remarks>Currently limited to one entity type.</remarks>
-      public string PredefinedType { get; set; } = String.Empty;
+      public string PredefinedType { get; set; } = string.Empty;
 
       /// <summary>
       /// The redirect calculator associated with this property or quantity set.
@@ -81,7 +103,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </summary>
       /// <param name="handle">The handle.</param>
       /// <returns>True if it is sub type, false otherwise.</returns>
-      public bool IsSubTypeOfEntityTypes(IFCAnyHandle handle)
+      private bool IsSubTypeOfEntityTypes(IFCAnyHandle handle)
       {
          // Note that although EntityTypes is represented as a set, we still need to go through each item in the last to check for subtypes.
          foreach (IFCEntityType entityType in EntityTypes)
@@ -97,7 +119,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </summary>
       /// <param name="handle"></param>
       /// <returns></returns>
-      public bool IsSubTypeOfEntityTypes(IFCEntityType ifcEntityType)
+      private bool IsSubTypeOfEntityTypes(IFCEntityType ifcEntityType)
       {
          IFCVersion ifcVersion = ExporterCacheManager.ExportOptionsCache.FileVersion;
          var ifcEntitySchemaTree = IfcSchemaEntityTree.GetEntityDictFor(ExporterCacheManager.ExportOptionsCache.FileVersion);
@@ -123,98 +145,42 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          if (handle == null || !IsSubTypeOfEntityTypes(handle))
             return false;
-         if (ObjectType == "")
+         if (string.IsNullOrEmpty(ObjectType))
             return true;
 
-         string objectType = IFCAnyHandleUtil.GetEntityType(handle).ToString();
-         return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
+         IFCEntityType entityType = IFCAnyHandleUtil.GetEntityType(handle);
+         return EntityTypes.Contains(entityType);
       }
 
       /// <summary>
-      /// Identifies if the input handle matches the type of element only to which this description applies.
-      /// </summary>
-      /// <param name="handle">
-      /// The handle.
-      /// </param>
-      /// <returns>
-      /// True if it matches, false otherwise.
-      /// </returns>
-      public bool IsAppropriateEntityType(IFCAnyHandle handle)
-      {
-         if (handle == null || !IsSubTypeOfEntityTypes(handle))
-            return false;
-         return true;
-      }
-
-      /// <summary>
-      /// Identifies if the input type matches the type of element only to which this description applies.
+      /// Identifies if either the entity or object type match this description.
       /// </summary>
       /// <param name="entity">the Entity</param>
       /// <returns>true if matches</returns>
-      public bool IsAppropriateEntityType(IFCEntityType entity)
+      public bool IsAppropriateEntityAndObjectType(IFCEntityType entity, string objectType)
       {
          if (entity == IFCEntityType.UnKnown || !IsSubTypeOfEntityTypes(entity))
-            return false;
-         return true;
-      }
-
-      /// <summary>
-      /// Identifies if the input handle matches the object type only to which this description applies.
-      /// </summary>
-      /// <param name="handle">
-      /// The handle.
-      /// </param>
-      /// <returns>
-      /// True if it matches, false otherwise.
-      /// </returns>
-      public bool IsAppropriateObjectType(IFCAnyHandle handle)
-      {
-         if (handle == null)
-            return false;
-         //if (ObjectType == "")
-         //   return true;
-
-         // ObjectType information comes from PSD's Applicable Type. This may be a comma separated list of applicable type
-         IFCEntityType hndEntity = IFCAnyHandleUtil.GetEntityType(handle);
-         if (ObjectType.IndexOf(hndEntity.ToString(), StringComparison.InvariantCultureIgnoreCase) < 0)
          {
-            // The use of ObjectType in the PSD is confusing at best. The purpose and its consistency is questionable. 
-            // If the entity is not found in this ObjectType, try the "old" way to compare the ObjectType attribute value
-            string objectType = IFCAnyHandleUtil.GetObjectType(handle);
-            if (!string.IsNullOrEmpty(objectType))
-            {
-               if (ObjectType.IndexOf(objectType, StringComparison.InvariantCultureIgnoreCase) < 0)
-                  return false;
-               else
-                  return true;
-            }
             return false;
          }
-         else
+
+         if (string.IsNullOrEmpty(ObjectType))
+         {
             return true;
-         //return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
+         }
+
+         return string.Equals(ObjectType, objectType, StringComparison.InvariantCultureIgnoreCase);
       }
 
       /// <summary>
-      /// Identifies if the input handle matches the object type only to which this description applies.
+      /// Checks if the input string matches the non-empty object type of the description.
       /// </summary>
-      /// <param name="entityType">the entity type</param>
-      /// <returns>true if found match</returns>
-      public bool IsAppropriateObjectType(IFCEntityType entityType)
+      /// <param name="objectType">The object type to check.</param>
+      /// <returns></returns>
+      public bool IsValidObjectType(string objectType)
       {
-         //if (ObjectType == "")
-         //   return true;
-         if (entityType == IFCEntityType.UnKnown)
-            return false;
-
-         // ObjectType information comes from PSD's Applicable Type. This may be a comma separated list of applicable type
-         if (ObjectType.IndexOf(entityType.ToString(), StringComparison.InvariantCultureIgnoreCase) < 0)
-            return false;
-         else
-            return true;
-
-         //string objectType = IFCAnyHandleUtil.GetObjectType(handle);
-         //return (NamingUtil.IsEqualIgnoringCaseAndSpaces(ObjectType, objectType));
+         return string.IsNullOrEmpty(ObjectType) ? false : 
+            string.Equals(ObjectType, objectType, StringComparison.InvariantCultureIgnoreCase);
       }
    }
 }

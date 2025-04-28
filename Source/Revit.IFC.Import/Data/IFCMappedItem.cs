@@ -68,8 +68,6 @@ namespace Revit.IFC.Import.Data
             return;
 
          MappingSource = IFCRepresentationMap.ProcessIFCRepresentationMap(mappingSource);
-         if (MappingSource.IsHybridOnly())
-            return;
 
          // We will not fail if the transform is not given, but instead assume it to be the identity.
          IFCAnyHandle mappingTarget = IFCImportHandleUtil.GetRequiredInstanceAttribute(item, "MappingTarget", false);

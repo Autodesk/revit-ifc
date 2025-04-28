@@ -43,5 +43,10 @@ namespace Revit.IFC.Export.Exporter
       /// Group's export type.
       /// </summary>
       public IFCExportInfoPair GroupType { get; set; } = new IFCExportInfoPair(IFCEntityType.UnKnown);
+
+      /// <summary>
+      /// Flag that indicate that the group should be exported.
+      /// </summary>
+      public bool ExportFlag { get; set; } = false;
    }
 }

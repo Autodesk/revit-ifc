@@ -33,6 +33,8 @@ namespace Revit.IFC.Import.Utility
    /// </summary>
    public class IFCImportCache
    {
+      public AllocatedGeometryObjectCache AllocatedGeometryObjectCache { get; set; } = new AllocatedGeometryObjectCache();
+
       /// <summary>
       /// The ParameterBindings map associated with accessed documents.
       /// </summary>
@@ -174,6 +176,11 @@ namespace Revit.IFC.Import.Utility
       public IDictionary<string, ElementId> GridNameToElementMap { get; } = new Dictionary<string, ElementId>();
 
       /// <summary>
+      /// Set of Levels constrained to scope boxes.
+      /// </summary>
+      public ISet<ElementId> ConstrainedLevels { get; set; } = new HashSet<ElementId>();
+
+      /// <summary>
       /// The view plane type if, if ViewPlanTypeIdInitialized is true and we found one.
       /// </summary>
       public ElementId ViewPlanTypeId { get; set; } = ElementId.InvalidElementId;
@@ -190,6 +197,9 @@ namespace Revit.IFC.Import.Utility
       /// Which Site Id should be Default Side Id. 
       /// </summary>
       public int? DefaultSiteId { get; set; } = null;
+
+      /// <summary>Indicates whether or not the shared parameters file should be deleted at the end of processing.</summary>
+      private string SharedParametersFileToDeleteAtReset { get; set; } = null;
 
       /// <summary>
       /// Pre-process IfcGrids before processing IfcGridLocation.
@@ -347,39 +357,6 @@ namespace Revit.IFC.Import.Utility
          ProjectInfo projectInfo = doc.ProjectInformation;
          ProjectInformationId = (projectInfo == null) ? ElementId.InvalidElementId : projectInfo.Id;
 
-         // Cache the original shared parameters file, and create and read in a new one.
-         OriginalSharedParametersFile = doc.Application.SharedParametersFilename;
-         doc.Application.SharedParametersFilename = fileName + ".sharedparameters.txt";
-
-         try
-         {
-            DefinitionFile definitionFile = doc.Application.OpenSharedParameterFile();
-            if (definitionFile == null || definitionFile.Groups.IsEmpty)
-            {
-               StreamWriter definitionFileStream = new StreamWriter(doc.Application.SharedParametersFilename, false);
-               definitionFileStream.Close();
-               definitionFile = doc.Application.OpenSharedParameterFile();
-            }
-
-            if (definitionFile == null)
-               throw new InvalidOperationException("Can't create definition file for shared parameters.");
-
-            DefinitionGroup definitionInstanceGroup = definitionFile.Groups.get_Item("IFC Parameters");
-            if (definitionInstanceGroup == null)
-               definitionInstanceGroup = definitionFile.Groups.Create("IFC Parameters");
-            InstanceGroupDefinitions = definitionInstanceGroup.Definitions;
-
-            DefinitionGroup definitionTypeGroup = definitionFile.Groups.get_Item("IFC Type Parameters");
-            if (definitionTypeGroup == null)
-               definitionTypeGroup = definitionFile.Groups.Create("IFC Type Parameters");
-            TypeGroupDefinitions = definitionTypeGroup.Definitions;
-         }
-         catch (System.Exception)
-         {
-
-         }
-
-
          // Cache list of schedules.
          FilteredElementCollector viewScheduleCollector = new FilteredElementCollector(doc);
          ICollection<Element> viewSchedules = viewScheduleCollector.OfClass(typeof(ViewSchedule)).ToElements();
@@ -405,6 +382,51 @@ namespace Revit.IFC.Import.Utility
          StatusBar = RevitStatusBar.Create();
       }
 
+      public void ReadSharedParametersFile(Document doc, string fileName)
+      {
+         // Cache the original shared parameters file, and create and read in a new one.
+         OriginalSharedParametersFile = doc.Application.SharedParametersFilename;
+         string targetSharedParametersFile = fileName + ".sharedparameters.txt";
+         doc.Application.SharedParametersFilename = targetSharedParametersFile;
+         bool fileExisted = false;
+         try
+         {
+            DefinitionFile definitionFile = doc.Application.OpenSharedParameterFile();
+            if (definitionFile == null || definitionFile.Groups.IsEmpty)
+            {
+               StreamWriter definitionFileStream = new StreamWriter(doc.Application.SharedParametersFilename, false);
+               definitionFileStream.Close();
+               definitionFile = doc.Application.OpenSharedParameterFile();
+            }
+            else
+            {
+               fileExisted = true;
+            }
+
+            if (definitionFile == null)
+               throw new InvalidOperationException("Can't create definition file for shared parameters.");
+
+            DefinitionGroup definitionInstanceGroup = definitionFile.Groups.get_Item("IFC Parameters");
+            if (definitionInstanceGroup == null)
+               definitionInstanceGroup = definitionFile.Groups.Create("IFC Parameters");
+            InstanceGroupDefinitions = definitionInstanceGroup.Definitions;
+
+            DefinitionGroup definitionTypeGroup = definitionFile.Groups.get_Item("IFC Type Parameters");
+            if (definitionTypeGroup == null)
+               definitionTypeGroup = definitionFile.Groups.Create("IFC Type Parameters");
+            TypeGroupDefinitions = definitionTypeGroup.Definitions;
+         }
+         catch (System.Exception)
+         {
+         }
+
+         // Only delete if we called this method and hybrid property sets was enabled and it wasn't what the user was using.
+         if (fileExisted && Importer.TheOptions.UsingHybridPropertySets() && (OriginalSharedParametersFile != targetSharedParametersFile))
+         {
+            SharedParametersFileToDeleteAtReset = targetSharedParametersFile;
+         }
+      }
+
       /// <summary>
       /// Create a new IFCImportCache.
       /// </summary>
@@ -422,6 +444,16 @@ namespace Revit.IFC.Import.Utility
       public void Reset(Document doc)
       {
          doc.Application.SharedParametersFilename = OriginalSharedParametersFile;
+         if (!String.IsNullOrEmpty(SharedParametersFileToDeleteAtReset))
+         {
+            try
+            {
+               File.Delete(SharedParametersFileToDeleteAtReset);
+            }
+            catch (System.Exception)
+            {
+            }
+         }
       }
    }
 }

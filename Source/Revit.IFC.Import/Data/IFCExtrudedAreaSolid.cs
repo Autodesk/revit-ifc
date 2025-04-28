@@ -192,8 +192,8 @@ namespace Revit.IFC.Import.Data
          {
             // The offset axis curve should match one of the curves of the extrusion profile.  
             // We check that here by seeing if a point on the offset axis curve is on the current unbounded curve.
-            if (unboundCurveList[ii].Intersect(unboundOffsetAxisCurve) != SetComparisonResult.Overlap &&
-                MathUtil.IsAlmostZero(unboundCurveList[ii].Distance(offsetAxisCurve.GetEndPoint(0))))
+            if (   SetComparisonResult.Overlap != unboundCurveList[ii].Intersect(unboundOffsetAxisCurve, CurveIntersectResultOption.Simple)?.Result
+                && MathUtil.IsAlmostZero(unboundCurveList[ii].Distance(offsetAxisCurve.GetEndPoint(0))))
             {
                startIndex = ii;
 
@@ -204,14 +204,18 @@ namespace Revit.IFC.Import.Data
                // "curve loop" if not.
                bool? maybeFlipped = CurvesHaveOppositeOrientation(originalCurveList[ii], axisCurve);
                if (!maybeFlipped.HasValue)
+               {
                   return null;
+               }
 
                flipped = maybeFlipped.Value;
 
                // Now check that startIndex and startIndex+2 are parallel, and totalThickness apart.
-               if ((unboundCurveList[ii].Intersect(unboundCurveList[(ii + 2) % 4]) == SetComparisonResult.Overlap) ||
-                   !MathUtil.IsAlmostEqual(unboundCurveList[ii].Distance(originalCurveList[(ii + 2) % 4].GetEndPoint(0)), totalThickness))
+               if (   SetComparisonResult.Overlap == unboundCurveList[ii].Intersect(unboundCurveList[(ii + 2) % 4], CurveIntersectResultOption.Simple)?.Result
+                   || !MathUtil.IsAlmostEqual(unboundCurveList[ii].Distance(originalCurveList[(ii + 2) % 4].GetEndPoint(0)), totalThickness))
+               {
                   return null;
+               }
 
                break;
             }
@@ -450,26 +454,27 @@ namespace Revit.IFC.Import.Data
                   // Trim/Extend the curves so that they make a closed loop.
                   for (int jj = 0; jj < 4; jj++)
                   {
-                     IntersectionResultArray resultArray = null;
-                     outline[jj].Intersect(outline[(jj + 1) % 4], out resultArray);
-                     if (resultArray == null || resultArray.Size == 0)
+                     CurveIntersectResult result = outline[jj].Intersect(outline[(jj + 1) % 4], CurveIntersectResultOption.Detailed);
+                     int numResults = result?.GetOverlaps()?.Count ?? 0;
+                     if (  (numResults == 0)
+                        || (numResults > 1 && !axisIsCyclic) 
+                        || (numResults > 2)
+                        || (CurveOverlapPointType.Intersection != result.GetOverlaps()[0]?.Type))
+                     {
                         return null;
+                     }
 
-                     int numResults = resultArray.Size;
-                     if ((numResults > 1 && !axisIsCyclic) || (numResults > 2))
-                        return null;
-
-                     UV intersectionPoint = resultArray.get_Item(0).UVPoint;
-                     endParameters[jj][1] = intersectionPoint.U;
-                     endParameters[(jj + 1) % 4][0] = intersectionPoint.V;
+                     CurveOverlapPoint intersectionPoint = result.GetOverlaps()[0];
+                     endParameters[jj][1] = intersectionPoint.FirstParameter;
+                     endParameters[(jj + 1) % 4][0] = intersectionPoint.SecondParameter;
 
                      if (numResults == 2)
                      {
                         // If the current result is closer to the end of the curve, keep it.
-                        UV newIntersectionPoint = resultArray.get_Item(1).UVPoint;
-
+                        CurveOverlapPoint newIntersectionPoint = result.GetOverlaps()[1];
+                        
                         int endParamIndex = (jj % 2);
-                        double newParamToCheck = newIntersectionPoint[endParamIndex];
+                        double newParamToCheck = (0 == endParamIndex) ? newIntersectionPoint.FirstParameter : newIntersectionPoint.SecondParameter;
                         double oldParamToCheck = (endParamIndex == 0) ? endParameters[jj][1] : endParameters[(jj + 1) % 4][0];
                         double currentEndPoint = (endParamIndex == 0) ?
                             orientedCurveList[jj].GetEndParameter(1) : orientedCurveList[(jj + 1) % 4].GetEndParameter(0);
@@ -485,8 +490,8 @@ namespace Revit.IFC.Import.Data
 
                         if (Math.Abs(newDist) < Math.Abs(oldDist))
                         {
-                           endParameters[jj][1] = newIntersectionPoint.U;
-                           endParameters[(jj + 1) % 4][0] = newIntersectionPoint.V;
+                           endParameters[jj][1] = newIntersectionPoint.FirstParameter;
+                           endParameters[(jj + 1) % 4][0] = newIntersectionPoint.SecondParameter;
                         }
                      }
                   }
@@ -828,12 +833,12 @@ namespace Revit.IFC.Import.Data
                   extrusionObject = GeometryCreationUtilities.CreateExtrusionGeometry(loops, scaledExtrusionDirection, currDepth, solidOptions);
                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                extrusionObject = GetMeshBackup(shapeEditScope, loops, scaledExtrusionDirection,
                   currDepth, guid);
                if (extrusionObject == null)
-                  throw ex;
+                  throw;
             }
 
             if (extrusionObject != null)

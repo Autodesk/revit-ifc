@@ -1,0 +1,198 @@
+{
+  "version": 3,
+  "targets": {
+    "net8.0-windows7.0": {
+      "BIMOne.Autodesk.Revit2026.RevitAPI/26.0.10.8": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/RevitAPI.dll": {
+            "related": ".runtimeconfig.json;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/RevitAPI.dll": {
+            "related": ".runtimeconfig.json;.xml"
+          }
+        }
+      },
+      "BIMOne.Autodesk.Revit2026.RevitAPIIFC/26.0.10.8": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/RevitAPIIFC.dll": {
+            "related": ".runtimeconfig.json;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/RevitAPIIFC.dll": {
+            "related": ".runtimeconfig.json;.xml"
+          }
+        }
+      },
+      "Newtonsoft.Json/13.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Newtonsoft.Json.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/Newtonsoft.Json.dll": {
+            "related": ".xml"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "BIMOne.Autodesk.Revit2026.RevitAPI/26.0.10.8": {
+      "sha512": "39L/43AGnZoceZSQfrHYZ3DJKMgd9rgIGXU086xCfnXxOhIizQrLbrbQ2MDgLHHseQg0kUhYD9BfU7ssP0maoA==",
+      "type": "package",
+      "path": "bimone.autodesk.revit2026.revitapi/26.0.10.8",
+      "files": [
+        ".nupkg.metadata",
+        "bimone.autodesk.revit2026.revitapi.26.0.10.8.nupkg.sha512",
+        "bimone.autodesk.revit2026.revitapi.nuspec",
+        "lib/net8.0/RevitAPI.dll",
+        "lib/net8.0/RevitAPI.runtimeconfig.json",
+        "lib/net8.0/RevitAPI.xml"
+      ]
+    },
+    "BIMOne.Autodesk.Revit2026.RevitAPIIFC/26.0.10.8": {
+      "sha512": "Z0ook211nTK1BceQ/3gsuRppcDc34Afat01zY/LiWBer6+mJfYSFB9jcgrshTzheZoYWZNde69qrxpH9mtCBVQ==",
+      "type": "package",
+      "path": "bimone.autodesk.revit2026.revitapiifc/26.0.10.8",
+      "files": [
+        ".nupkg.metadata",
+        "bimone.autodesk.revit2026.revitapiifc.26.0.10.8.nupkg.sha512",
+        "bimone.autodesk.revit2026.revitapiifc.nuspec",
+        "lib/net8.0/RevitAPIIFC.dll",
+        "lib/net8.0/RevitAPIIFC.runtimeconfig.json",
+        "lib/net8.0/RevitAPIIFC.xml"
+      ]
+    },
+    "Newtonsoft.Json/13.0.1": {
+      "sha512": "ppPFpBcvxdsfUonNcvITKqLl3bqxWbDCZIzDWHzjpdAHRFfZe0Dw9HmA0+za13IdyrgJwpkDTDA9fHaxOrt20A==",
+      "type": "package",
+      "path": "newtonsoft.json/13.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.md",
+        "lib/net20/Newtonsoft.Json.dll",
+        "lib/net20/Newtonsoft.Json.xml",
+        "lib/net35/Newtonsoft.Json.dll",
+        "lib/net35/Newtonsoft.Json.xml",
+        "lib/net40/Newtonsoft.Json.dll",
+        "lib/net40/Newtonsoft.Json.xml",
+        "lib/net45/Newtonsoft.Json.dll",
+        "lib/net45/Newtonsoft.Json.xml",
+        "lib/netstandard1.0/Newtonsoft.Json.dll",
+        "lib/netstandard1.0/Newtonsoft.Json.xml",
+        "lib/netstandard1.3/Newtonsoft.Json.dll",
+        "lib/netstandard1.3/Newtonsoft.Json.xml",
+        "lib/netstandard2.0/Newtonsoft.Json.dll",
+        "lib/netstandard2.0/Newtonsoft.Json.xml",
+        "newtonsoft.json.13.0.1.nupkg.sha512",
+        "newtonsoft.json.nuspec",
+        "packageIcon.png"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net8.0-windows7.0": [
+      "BIMOne.Autodesk.Revit2026.RevitAPI >= 26.0.10.8",
+      "BIMOne.Autodesk.Revit2026.RevitAPIIFC >= 26.0.10.8",
+      "Newtonsoft.Json >= 13.0.1"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\jleblond-thibodeau\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\git\\IFC-for-Revit\\2026\\Source\\Revit.IFC.Common\\Revit.IFC.Common.csproj",
+      "projectName": "BIMOne.Revit.IFC.Common",
+      "projectPath": "C:\\git\\IFC-for-Revit\\2026\\Source\\Revit.IFC.Common\\Revit.IFC.Common.csproj",
+      "packagesPath": "C:\\Users\\jleblond-thibodeau\\.nuget\\packages\\",
+      "outputPath": "C:\\git\\IFC-for-Revit\\2026\\Intermediate\\Debugx64\\Revit.IFC.Common\\",
+      "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
+      "configFilePaths": [
+        "C:\\Users\\jleblond-thibodeau\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net8.0-windows"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
+        "C:\\git\\Sources\\localfeed\\": {},
+        "https://api.nuget.org/v3/index.json": {},
+        "https://bimoneonline.pkgs.visualstudio.com/BIMOne/_packaging/RevitDlls/nuget/v3/index.json": {}
+      },
+      "frameworks": {
+        "net8.0-windows7.0": {
+          "targetAlias": "net8.0-windows",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "allWarningsAsErrors": true,
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.200"
+    },
+    "frameworks": {
+      "net8.0-windows7.0": {
+        "targetAlias": "net8.0-windows",
+        "dependencies": {
+          "BIMOne.Autodesk.Revit2026.RevitAPI": {
+            "target": "Package",
+            "version": "[26.0.10.8, )"
+          },
+          "BIMOne.Autodesk.Revit2026.RevitAPIIFC": {
+            "target": "Package",
+            "version": "[26.0.10.8, )"
+          },
+          "Newtonsoft.Json": {
+            "target": "Package",
+            "version": "[13.0.1, )"
+          }
+        },
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          },
+          "Microsoft.WindowsDesktop.App": {
+            "privateAssets": "none"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

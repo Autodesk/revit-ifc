@@ -21,19 +21,18 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.UI;
 using Autodesk.UI.Windows;
-using Microsoft.Win32;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Utility;
 using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Script.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 using UserInterfaceUtility.Json;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Extensions;
+using Newtonsoft.Json;
 
 namespace BIM.IFC.Export.UI
 {
@@ -79,6 +78,37 @@ namespace BIM.IFC.Export.UI
          comboBoxProjectSite.ItemsSource = m_SiteNames;
 
          ResetToOriginalConfigSettings(currentConfigName);
+
+         InitParameterMappingUI();
+      }
+
+      /// <summary>
+      /// Adds new Parameter Mapping Tab
+      /// </summary>
+      private void InitParameterMappingUI()
+      {
+         IFCExportOptions exportOptions = new()
+         {
+            FamilyMappingFile = "IFCParameterMapping"
+         };
+
+         IFCExportOptions temporaryOptions = new();
+         temporaryOptions.Assign(exportOptions);
+
+         if (temporaryOptions.FamilyMappingFile.CompareTo("IFCNewParameterMapping") != 0)
+         {
+            // Parent window has NoResize resize mode, extend width here
+            this.Width -= 100;
+
+            // Update right margin for listBoxConfigurations to fit new width
+            Thickness listBoxConfigurationsMargin = listBoxConfigurations.Margin;
+            listBoxConfigurationsMargin.Right -= 100;
+            listBoxConfigurations.Margin = listBoxConfigurationsMargin;
+
+            // Update width for ParameterMapping tab when it is visible similar to General tab width
+            ParameterMapping.Width = 0;
+            ParameterMapping.Visibility = System.Windows.Visibility.Hidden;
+         }
       }
 
       /// <summary>
@@ -186,11 +216,34 @@ namespace BIM.IFC.Export.UI
          InitializeConfigurationList(currentConfigName);
       }
 
+      private void InitComboBoxCategoryMapping(Document document)
+      {
+         string originalSelectedItem = (string) comboBoxCategoryMapping.SelectedItem;
+         comboBoxCategoryMapping.SelectedItem = null;
+         comboBoxCategoryMapping.Items.Clear();
+
+         comboBoxCategoryMapping.Items.Add(Properties.Resources.InSessionConfiguration);
+
+         IList<string> mappingList = IFCCategoryTemplate.ListNames(document);
+         if (mappingList != null)
+         {
+            foreach (string mappingName in mappingList)
+            {
+               comboBoxCategoryMapping.Items.Add(mappingName);
+            }
+         }
+
+         comboBoxCategoryMapping.SelectedItem = originalSelectedItem != null && comboBoxCategoryMapping.Items.Contains(originalSelectedItem) ?
+            originalSelectedItem : Properties.Resources.InSessionConfiguration;
+      }
+
       /// <summary>
       /// Initializes the comboboxes via the configuration options.
       /// </summary>
       private void InitializeConfigurationOptions()
       {
+         Document document = IFCExport.TheDocument;
+
          if (!comboboxIfcType.HasItems)
          {
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x2));
@@ -230,7 +283,7 @@ namespace BIM.IFC.Export.UI
 
          if (!comboboxActivePhase.HasItems)
          {
-            PhaseArray phaseArray = IFCCommandOverrideApplication.TheDocument.Phases;
+            PhaseArray phaseArray = document.Phases; 
             comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId));  // Default.
             foreach (Phase phase in phaseArray)
             {
@@ -249,8 +302,7 @@ namespace BIM.IFC.Export.UI
 
          if (!comboBoxProjectSite.HasItems)
          {
-            Document doc = IFCExport.TheDocument;
-            foreach (ProjectLocation pLoc in doc.ProjectLocations.Cast<ProjectLocation>().ToList())
+            foreach (ProjectLocation pLoc in document.ProjectLocations.Cast<ProjectLocation>().ToList())
             {
                // There seem to be a possibility that the Site Locations can have the same name (UI does not allow it though)
                // In this case, it will skip the duplicate since there is no way for this to know which one is exactly selected
@@ -280,13 +332,18 @@ namespace BIM.IFC.Export.UI
             comboboxLinkedFiles.Items.Add(new IFCLinkedFileExportAs(LinkedFileExportAs.ExportSameProject));
             comboboxLinkedFiles.Items.Add(new IFCLinkedFileExportAs(LinkedFileExportAs.ExportSameSite));
          }
+
+         if (!comboBoxCategoryMapping.HasItems)
+         {
+            InitComboBoxCategoryMapping(document);
+         }
       }
 
       private void UpdatePhaseAttributes(IFCExportConfiguration configuration)
       {
          if (configuration.VisibleElementsOfCurrentView)
          {
-            UIDocument uiDoc = new UIDocument(IFCCommandOverrideApplication.TheDocument);
+            UIDocument uiDoc = new UIDocument(IFCExport.TheDocument);
             Parameter currPhase = uiDoc.ActiveView.get_Parameter(BuiltInParameter.VIEW_PHASE);
             if (currPhase != null)
                configuration.ActivePhaseId = currPhase.AsElementId().Value;
@@ -325,6 +382,8 @@ namespace BIM.IFC.Export.UI
          }
 
          UpdateExchangeRequirement(configuration);
+
+         UpdateFacilityType(configuration);
 
          foreach (IFCFileFormatAttributes format in comboboxFileType.Items.Cast<IFCFileFormatAttributes>())
          {
@@ -371,11 +430,15 @@ namespace BIM.IFC.Export.UI
             }
          }
 
+         string categoryMapping = configuration.CategoryMapping ?? Properties.Resources.InSessionConfiguration;
+         comboBoxCategoryMapping.SelectedItem = categoryMapping;
+
          UpdatePhaseAttributes(configuration);
 
          checkboxExportBaseQuantities.IsChecked = configuration.ExportBaseQuantities;
          checkboxSplitWalls.IsChecked = configuration.SplitWallsAndColumns;
          checkbox2dElements.IsChecked = configuration.Export2DElements;
+         checkboxExportCeilingGrids.IsChecked = configuration.ExportCeilingGrids;
          checkboxInternalPropertySets.IsChecked = configuration.ExportInternalRevitPropertySets;
          checkboxIFCCommonPropertySets.IsChecked = configuration.ExportIFCCommonPropertySets;
          checkboxVisibleElementsCurrView.IsChecked = configuration.VisibleElementsOfCurrentView;
@@ -390,6 +453,7 @@ namespace BIM.IFC.Export.UI
          checkBoxExportSpecificSchedules.IsChecked = configuration.ExportSpecificSchedules;
          checkboxExportUserDefinedPset.IsChecked = configuration.ExportUserDefinedPsets;
          userDefinedPropertySetFileName.Text = configuration.ExportUserDefinedPsetsFileName;
+         checkboxUseTypePropertiesInInstacePSets.IsChecked = configuration.UseTypePropertiesInInstacePSets;
          checkboxIncludeIfcSiteElevation.IsChecked = configuration.IncludeSiteElevation;
          checkboxStoreIFCGUID.IsChecked = configuration.StoreIFCGUID;
          checkBoxExportRoomsInView.IsChecked = configuration.ExportRoomsInView;
@@ -408,6 +472,12 @@ namespace BIM.IFC.Export.UI
          checkbox_UseTypeNameOnly.IsChecked = configuration.UseTypeNameOnlyForIfcType;
          userDefinedParameterMappingTable.Text = configuration.ExportUserDefinedParameterMappingFileName;
          checkBoxExportUserDefinedParameterMapping.IsChecked = configuration.ExportUserDefinedParameterMapping;
+
+         checkbox_ExportHostAsSingleEntity.IsChecked = configuration.ExportHostAsSingleEntity;
+
+         checkbox_OwnerHistoryLastModified.IsChecked = configuration.OwnerHistoryLastModified;
+
+         checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities.IsChecked = configuration.ExportBarsInUniformSetsAsSeparateIFCEntities;
 
          // Keep old behavior where by default we looked for ParameterMappingTable.txt in the current directory if ExportUserDefinedParameterMappingFileName
          // isn't set.
@@ -445,6 +515,7 @@ namespace BIM.IFC.Export.UI
                                                                 comboboxActivePhase,
                                                                 checkboxExportUserDefinedPset,
                                                                 userDefinedPropertySetFileName,
+                                                                checkboxUseTypePropertiesInInstacePSets,
                                                                 checkBoxExportUserDefinedParameterMapping,
                                                                 userDefinedParameterMappingTable,
                                                                 buttonBrowse,
@@ -454,7 +525,17 @@ namespace BIM.IFC.Export.UI
                                                                 checkBoxExportSpecificSchedules,
                                                                 checkBox_TriangulationOnly,
                                                                 checkbox_UseTypeNameOnly,
-                                                                checkbox_UseVisibleRevitNameAsEntityName
+                                                                checkbox_UseVisibleRevitNameAsEntityName,
+                                                                checkbox_ExportHostAsSingleEntity,
+                                                                checkbox_OwnerHistoryLastModified,
+                                                                checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities,
+                                                                comboBoxCategoryMapping,
+                                                                buttonCategoryMapping,
+                                                                checkboxIFCCommonPropertySetsMapping,
+                                                                checkboxRevitPropertySetsMapping,
+                                                                checkboxBaseQuantitiesMapping,
+                                                                checkboxMaterialPropertySetsMapping,
+                                                                checkboxSchedulesMapping
             };
 
          foreach (UIElement element in configurationElements)
@@ -462,11 +543,12 @@ namespace BIM.IFC.Export.UI
             element.IsEnabled = !configuration.IsBuiltIn;
          }
          comboboxActivePhase.IsEnabled = comboboxActivePhase.IsEnabled && !configuration.VisibleElementsOfCurrentView;
+         checkboxUseTypePropertiesInInstacePSets.IsEnabled = checkboxUseTypePropertiesInInstacePSets.IsEnabled && configuration.ExportUserDefinedPsets;
          userDefinedPropertySetFileName.IsEnabled = userDefinedPropertySetFileName.IsEnabled && configuration.ExportUserDefinedPsets;
          userDefinedParameterMappingTable.IsEnabled = userDefinedParameterMappingTable.IsEnabled && configuration.ExportUserDefinedParameterMapping;
          buttonBrowse.IsEnabled = buttonBrowse.IsEnabled && configuration.ExportUserDefinedPsets;
          buttonParameterMappingBrowse.IsEnabled = buttonParameterMappingBrowse.IsEnabled && configuration.ExportUserDefinedParameterMapping;
-
+         
          // ExportRoomsInView option will only be enabled if it is not currently disabled AND the "export elements visible in view" option is checked
          bool? cboVisibleElementInCurrentView = checkboxVisibleElementsCurrView.IsChecked;
          checkBoxExportRoomsInView.IsEnabled = checkBoxExportRoomsInView.IsEnabled && cboVisibleElementInCurrentView.HasValue ? cboVisibleElementInCurrentView.Value : false;
@@ -496,6 +578,15 @@ namespace BIM.IFC.Export.UI
 
          checkbox_UseVisibleRevitNameAsEntityName.IsChecked = configuration.UseVisibleRevitNameAsEntityName;
          checkbox_UseVisibleRevitNameAsEntityName.IsEnabled = true;
+
+         checkbox_ExportHostAsSingleEntity.IsChecked = configuration.ExportHostAsSingleEntity;
+         checkbox_ExportHostAsSingleEntity.IsEnabled = true;
+
+         checkbox_OwnerHistoryLastModified.IsChecked = configuration.OwnerHistoryLastModified;
+         checkbox_OwnerHistoryLastModified.IsEnabled = true;
+
+         checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities.IsChecked = configuration.ExportBarsInUniformSetsAsSeparateIFCEntities;
+         checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities.IsEnabled = true;
 
          if (configuration.IFCVersion.Equals(IFCVersion.IFC2x3FM))
          {
@@ -677,6 +768,7 @@ namespace BIM.IFC.Export.UI
          m_configurationsMap.Remove(configuration.Name);
          listBoxConfigurations.Items.Remove(configuration);
          listBoxConfigurations.SelectedIndex = 0;
+         IFCExport.LastSelectedConfig.Remove(configuration.Name);
       }
 
       /// <summary>
@@ -705,50 +797,49 @@ namespace BIM.IFC.Export.UI
             return;
          }
 
-         SaveFileDialog saveFileDialog = new SaveFileDialog();
-         saveFileDialog.AddExtension = true;
-
-         saveFileDialog.DefaultExt = "json";
-         saveFileDialog.Filter = Properties.Resources.ConfigurationFilePrefix + " (*.json)|*.json";
-         saveFileDialog.FileName = Properties.Resources.ConfigurationFilePrefix + " - " + configuration.Name + ".json";
-         saveFileDialog.InitialDirectory = GetDefaultDirectory();
-         saveFileDialog.OverwritePrompt = false;
-
-         bool? fileDialogResult = saveFileDialog.ShowDialog();
-         if (fileDialogResult.HasValue && fileDialogResult.Value)
+         FileSaveDialog fileSaveDialog = new FileSaveDialog(Properties.Resources.ConfigurationFilePrefix + " (*.json)|*.json");
+         fileSaveDialog.InitialFileName = GetDefaultDirectory() + "\\" + Properties.Resources.ConfigurationFilePrefix + " - " + configuration.Name + ".json";
+         
+         if (fileSaveDialog.Show() == ItemSelectionDialogResult.Confirmed)
          {
-            IFCExportConfiguration configToSave = configuration.Clone();
-            configToSave.Name = Path.GetFileNameWithoutExtension(saveFileDialog.FileName);
-            using (StreamWriter sw = new StreamWriter(saveFileDialog.FileName))
+            try
             {
-               JavaScriptSerializer js = new JavaScriptSerializer();
-               sw.Write(SerializerUtils.FormatOutput(js.Serialize(configToSave)));
+               ModelPath modelPath = fileSaveDialog.GetSelectedModelPath();
+               string fileName = ModelPathUtils.ConvertModelPathToUserVisiblePath(modelPath);
+               IFCExportConfiguration configToSave = configuration.Clone();
+               configToSave.Name = Path.GetFileNameWithoutExtension(fileName);
+               using (StreamWriter sw = new StreamWriter(fileName))
+               {
+                  JsonSerializerSettings dateFormatSettings = new JsonSerializerSettings
+                  {
+                     DateFormatHandling = DateFormatHandling.MicrosoftDateFormat
+                  };
+                  sw.Write(SerializerUtils.FormatOutput(JsonConvert.SerializeObject(configToSave, dateFormatSettings)));
+               }
+            }
+            catch
+            {
+               // TODO: Give error.
             }
          }
       }
       private void buttonLoadSetup_Click(object sender, RoutedEventArgs e)
       {
-         OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
-
-         // Set filter for file extension and default file extension 
-         openFileDialog.DefaultExt = ".json";
-         openFileDialog.Filter = Properties.Resources.ConfigurationFilePrefix + " (*.json)|*.json";
-         openFileDialog.InitialDirectory = GetDefaultDirectory();
+         FileOpenDialog fileOpenDialog = new FileOpenDialog(Properties.Resources.ConfigurationFilePrefix + " (*.json)|*.json");
+         fileOpenDialog.Title = Properties.Resources.LoadSetup;
 
          // Display OpenFileDialog by calling ShowDialog method 
-         bool? result = openFileDialog.ShowDialog();
-
-         // Get the selected file name and display in a TextBox 
-         if (result.HasValue && result.Value)
+         if (fileOpenDialog.Show() == ItemSelectionDialogResult.Confirmed)
          {
+            // Get the selected file name and display in a TextBox 
             try
             {
-               using (StreamReader sr = new StreamReader(openFileDialog.FileName))
+               ModelPath modelPath = fileOpenDialog.GetSelectedModelPath();
+               string fileName = ModelPathUtils.ConvertModelPathToUserVisiblePath(modelPath);
+
+               using (StreamReader sr = new StreamReader(fileName))
                {
-                  JavaScriptSerializer jsConvert = new JavaScriptSerializer();
-                  jsConvert.RegisterConverters(new JavaScriptConverter[] {
-                     new IFCExportConfigurationConverter() });
-                  IFCExportConfiguration configuration = jsConvert.Deserialize<IFCExportConfiguration>(sr.ReadToEnd());
+                  IFCExportConfiguration configuration = JsonConvert.DeserializeObject<IFCExportConfiguration>(sr.ReadToEnd(), new IFCExportConfigurationConverter());
                   if (configuration != null)
                   {
                      if (m_configurationsMap.HasName(configuration.Name))
@@ -789,6 +880,8 @@ namespace BIM.IFC.Export.UI
             m_configurationsMap.Remove(oldName);
             m_configurationsMap.AddOrReplace(configuration);
             UpdateConfigurationsList(newName);
+            if (IFCExport.LastSelectedConfig.ContainsKey(oldName))
+               IFCExport.LastSelectedConfig.Remove(oldName);
          }
       }
 
@@ -969,6 +1062,37 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportBaseQuantities = GetCheckbuttonChecked(checkBox);
          }
+
+         SynchronizeCheckboxes(checkBox, checkboxExportBaseQuantities, checkboxBaseQuantitiesMapping);
+      }
+
+      // Temporary duplication of the checkbox logic to keep the two checkboxes in sync.
+      // Duplicating checkboxes willbe removed when the UI is finished.
+      private void SynchronizeCheckboxes(CheckBox sender, CheckBox checkBox1, CheckBox checkBox2)
+      {
+         if (sender == checkBox1)
+         {
+            checkBox2.IsChecked = checkBox1.IsChecked;
+            return;
+         }
+
+         if (sender == checkBox2)
+            checkBox1.IsChecked = checkBox2.IsChecked;
+      }
+
+      /// <summary>
+      /// Updates the result after the ExportCeilingGrids is picked.
+      /// </summary>
+      /// <param name="sender">The source of the event.</param>
+      /// <param name="e">Event arguments that contains the event data.</param>
+      private void checkboxExportCeilingGrids_Checked(object sender, RoutedEventArgs e)
+      {
+         CheckBox checkBox = (CheckBox)sender;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.ExportCeilingGrids = GetCheckbuttonChecked(checkBox);
+         }
       }
 
       /// <summary>
@@ -999,6 +1123,8 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportInternalRevitPropertySets = GetCheckbuttonChecked(checkBox);
          }
+
+         SynchronizeCheckboxes(checkBox, checkboxInternalPropertySets, checkboxRevitPropertySetsMapping);
       }
 
       /// <summary>
@@ -1014,6 +1140,8 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportIFCCommonPropertySets = GetCheckbuttonChecked(checkBox);
          }
+
+         SynchronizeCheckboxes(checkBox, checkboxIFCCommonPropertySets, checkboxIFCCommonPropertySetsMapping);
       }
 
       /// <summary>
@@ -1120,6 +1248,8 @@ namespace BIM.IFC.Export.UI
             }
 
             UpdateExchangeRequirement(configuration);
+
+            UpdateFacilityType(configuration);
          }
 
          if (configuration.IFCVersion.Equals(IFCVersion.IFC2x3FM))
@@ -1298,6 +1428,8 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportMaterialPsets = GetCheckbuttonChecked(checkBox);
          }
+
+         SynchronizeCheckboxes(checkBox, checkboxExportMaterialPsets, checkboxMaterialPropertySetsMapping);
       }
 
       /// <summary>
@@ -1313,6 +1445,8 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportSchedulesAsPsets = GetCheckbuttonChecked(checkBox);
          }
+
+         SynchronizeCheckboxes(checkBox, checkboxExportSchedulesAsPsets, checkboxSchedulesMapping);
       }
 
       /// <summary>
@@ -1374,6 +1508,23 @@ namespace BIM.IFC.Export.UI
             configuration.ExportUserDefinedPsets = GetCheckbuttonChecked(checkBox);
             userDefinedPropertySetFileName.IsEnabled = configuration.ExportUserDefinedPsets;
             buttonBrowse.IsEnabled = configuration.ExportUserDefinedPsets;
+            checkboxUseTypePropertiesInInstacePSets.IsEnabled = configuration.ExportUserDefinedPsets;
+            checkboxUseTypePropertiesInInstacePSets.IsChecked = false;
+         }
+      }
+
+      /// <summary>
+      /// Update checkbox for exporting type properties for the instances
+      /// </summary>
+      /// <param name="sender">The source of the event.</param>
+      /// <param name="e">Event arguments that contains the event data.</param>
+      private void checkboxUseTypePropertiesInInstacePSets_Checked(object sender, RoutedEventArgs e)
+      {
+         CheckBox checkBox = (CheckBox)sender;
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         if (configuration != null)
+         {
+            configuration.UseTypePropertiesInInstacePSets = GetCheckbuttonChecked(checkBox);
          }
       }
 
@@ -1403,7 +1554,7 @@ namespace BIM.IFC.Export.UI
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
 
-         OpenFileDialog dlg = new OpenFileDialog();
+         Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
 
          // Set filter for file extension and default file extension 
          dlg.DefaultExt = ".txt";
@@ -1438,7 +1589,7 @@ namespace BIM.IFC.Export.UI
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
 
-         OpenFileDialog dlg = new OpenFileDialog();
+         Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
 
          dlg.DefaultExt = ".txt";
          dlg.Filter = Properties.Resources.UserDefinedParameterMappingTable + @"|*.txt";
@@ -1517,6 +1668,18 @@ namespace BIM.IFC.Export.UI
          addressInformationWindow.ShowDialog();
       }
 
+      private void buttonCategoryMapping_Click(object sender, RoutedEventArgs e)
+      {
+         IFCCategoryMapping categoryMapping = new IFCCategoryMapping()
+         {
+            Owner = this
+         };
+         categoryMapping.ShowDialog();
+
+         // Refresh the category mapping pulldown in case we deleted an option.
+         InitComboBoxCategoryMapping(IFCExport.TheDocument);
+      }
+
       private void buttonClassification_Click(object sender, RoutedEventArgs e)
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
@@ -1562,6 +1725,42 @@ namespace BIM.IFC.Export.UI
          configuration.UseTypeNameOnlyForIfcType = false;
       }
 
+      private void Checkbox_ExportHostAsSingleEntity_Checked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.ExportHostAsSingleEntity = true;
+      }
+
+      private void Checkbox_ExportHostAsSingleEntity_Unchecked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.ExportHostAsSingleEntity = false;
+      }
+
+      private void Checkbox_OwnerHistoryLastModified_Checked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.OwnerHistoryLastModified = true;
+      }
+
+      private void Checkbox_OwnerHistoryLastModified_Unchecked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.OwnerHistoryLastModified = false;
+      }
+
+      private void checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities_Checked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.ExportBarsInUniformSetsAsSeparateIFCEntities = true;
+      }
+
+      private void checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities_Unchecked(object sender, RoutedEventArgs e)
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         configuration.ExportBarsInUniformSetsAsSeparateIFCEntities = false;
+      }
+
       private void Checkbox_UseVisibleRevitName_Checked(object sender, RoutedEventArgs e)
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
@@ -1583,6 +1782,54 @@ namespace BIM.IFC.Export.UI
          } 
       }
 
+      private void comboBoxFacilityType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+      {
+         if (comboBoxFacilityType.SelectedValue != null)
+         {
+            IFCExportConfiguration configuration = GetSelectedConfiguration();
+            configuration.FacilityType = IFCFacilityTypes.GetFacilityEnum(comboBoxFacilityType.SelectedValue.ToString());
+            UpdateFacilityPredefinedType(configuration);
+         }
+      }
+
+      private void comboBoxFacilityPredefinedType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+      {
+         if (comboBoxFacilityPredefinedType.SelectedValue != null)
+         {
+            IFCExportConfiguration configuration = GetSelectedConfiguration();
+            configuration.FacilityPredefinedType = 
+               IFCFacilityTypes.GetFacilityPredefinedTypeEnum(configuration.FacilityType, 
+               comboBoxFacilityPredefinedType.SelectedValue.ToString());
+         }
+      }
+
+      private void comboBoxCategoryMapping_SelectionChanged(object sender, SelectionChangedEventArgs e)
+      {
+         if (comboBoxCategoryMapping.SelectedValue != null)
+         {
+            Document doc = IFCExport.TheDocument;
+            IFCExportConfiguration configuration = GetSelectedConfiguration();
+            string categoryMappingName = (string)comboBoxCategoryMapping.SelectedItem;
+
+            try
+            {
+               if (!string.IsNullOrWhiteSpace(categoryMappingName) &&
+                  IFCCategoryTemplate.FindByName(doc, categoryMappingName) != null)
+               {
+                  configuration.CategoryMapping = categoryMappingName;
+               }
+               else
+               {
+                  configuration.CategoryMapping = null;
+               }
+            }
+            catch
+            {
+               configuration.CategoryMapping = null;
+            }
+         }
+      }
+      
       private void UpdateExchangeRequirement(IFCExportConfiguration configuration)
       {
          if (IFCExchangeRequirements.ExchangeRequirements.ContainsKey(configuration.IFCVersion))
@@ -1597,6 +1844,48 @@ namespace BIM.IFC.Export.UI
          }
 
          comboBoxExchangeRequirement.IsEnabled = !configuration.IsBuiltIn;
+      }
+
+      private void UpdateFacilityPredefinedType(IFCExportConfiguration configuration)
+      {
+         System.Windows.Visibility predefinedTypeVisibility = System.Windows.Visibility.Hidden;
+         KnownFacilityTypes facilityType = configuration.FacilityType;
+         if (IFCFacilityTypes.FacilityTypes.ContainsKey(configuration.IFCVersion))
+         {
+            IList<string> facilityPredefinedTypes = IFCFacilityTypes.FacilityPredefinedTypesForUI(facilityType);
+            comboBoxFacilityPredefinedType.ItemsSource = facilityPredefinedTypes;
+            comboBoxFacilityPredefinedType.SelectedItem = IFCFacilityTypes.ToFullLabel(facilityType, configuration.FacilityPredefinedType);
+
+            if ((facilityPredefinedTypes?.Count ?? 0) > 0)
+            {
+               predefinedTypeVisibility = System.Windows.Visibility.Visible;
+            }
+         }
+
+         comboBoxFacilityPredefinedType.Visibility = predefinedTypeVisibility;
+         labelFacilityPredefinedType.Visibility = predefinedTypeVisibility;
+      }
+      private void UpdateFacilityType(IFCExportConfiguration configuration)
+      {
+         if (IFCFacilityTypes.FacilityTypes.ContainsKey(configuration.IFCVersion))
+         {
+            comboBoxFacilityType.ItemsSource = IFCFacilityTypes.FacilityTypesForUI(configuration.IFCVersion);
+            comboBoxFacilityType.SelectedItem = configuration.FacilityType.ToFullLabel();
+
+            comboBoxFacilityType.Visibility = System.Windows.Visibility.Visible;
+            labelFacilityType.Visibility = System.Windows.Visibility.Visible;
+         }
+         else
+         {
+            comboBoxFacilityType.ItemsSource = null;
+            comboBoxFacilityType.SelectedItem = null;
+
+            comboBoxFacilityType.Visibility = System.Windows.Visibility.Hidden;
+            labelFacilityType.Visibility = System.Windows.Visibility.Hidden;
+         }
+
+         UpdateFacilityPredefinedType(configuration);
+         comboBoxFacilityType.IsEnabled = true;
       }
 
       private void TextBox_EPSG_TextChanged(object sender, TextChangedEventArgs e)
@@ -1725,8 +2014,10 @@ namespace BIM.IFC.Export.UI
       private void button_ExcludeElement_Click(object sender, RoutedEventArgs e)
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
-         string desc = "";
-         EntityTree entityTree = new EntityTree(configuration.IFCVersion, configuration.ExcludeFilter, desc, singleNodeSelection: false)
+
+         EntityTree entityTree = new EntityTree(configuration.IFCVersion, 
+            configuration.ExcludeFilter, desc: "", singleNodeSelection: false,
+            EntityTree.SelectionStrategyType.Exclusion, synchronizeSelectionWithType: true)
          {
             Owner = this,
             Title = Properties.Resources.IFCEntitySelection
@@ -1745,6 +2036,24 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportLinkedFiles = attributes.ExportAs;
          }
+      }
+
+      private void buttonDefaultPropertyMappingSetup_Click(object sender, RoutedEventArgs e)
+      {
+         IFCPropertyMapping defaultPropertyMapping = new()
+         {
+            Owner = this
+         };
+         defaultPropertyMapping.ShowDialog();
+      }
+
+      private void buttonUserDefinedPropertyMappingSetup_Click(object sender, RoutedEventArgs e)
+      {
+         IFCUserDefinedPropertyMapping userDefinedPropertyMapping = new()
+         {
+            Owner = this
+         };
+         userDefinedPropertyMapping.ShowDialog();
       }
    }
 }

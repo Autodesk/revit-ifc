@@ -19,7 +19,7 @@ namespace Revit.IFC.Export.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -111,6 +111,15 @@ namespace Revit.IFC.Export.Properties {
         internal static string IFCProcessingFabricAreas {
             get {
                 return ResourceManager.GetString("IFCProcessingFabricAreas", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC Export: Processing Groups: {0} of {1} (Group ID: {2}).
+        /// </summary>
+        internal static string IFCProcessingGroups {
+            get {
+                return ResourceManager.GetString("IFCProcessingGroups", resourceCulture);
             }
         }
         

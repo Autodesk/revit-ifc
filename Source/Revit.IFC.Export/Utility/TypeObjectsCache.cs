@@ -33,12 +33,13 @@ namespace Revit.IFC.Export.Utility
    /// 4. The corresponding IFC entity type.
    /// 5. The corresponding IFC predefined type.
    /// 6. Override material id.
+   /// 7. Type of elements contained in assembly.
    /// </summary>
-   public sealed class TypeObjectKey : Tuple<ElementId, ElementId, bool, IFCEntityType, string, ElementId>
+   public sealed class TypeObjectKey : Tuple<ElementId, ElementId, bool, IFCEntityType, string, ElementId, bool>
    {
       public TypeObjectKey(ElementId elementId, ElementId levelId, bool flipped,
-         IFCExportInfoPair exportType, ElementId materialId) :
-         base(elementId, levelId, flipped, exportType.ExportType, exportType.ValidatedPredefinedType, materialId)
+         IFCExportInfoPair exportType, ElementId materialId, bool inAssembly) :
+         base(elementId, levelId, flipped, exportType.ExportType, exportType.PredefinedType, materialId, inAssembly)
       { }
 
       public ElementId ElementId { get { return Item1; } }
@@ -46,12 +47,14 @@ namespace Revit.IFC.Export.Utility
       public ElementId LevelId { get { return Item2; } }
 
       public bool IsFlipped { get { return Item3; } }
-      
+
       public IFCEntityType EntityType { get { return Item4; } }
 
       public string PredefinedType { get { return Item5; } }
 
       public ElementId MaterialId { get { return Item6; } }
+
+      public bool InAssembly { get { return Item7; } }
    }
 
    /// <summary>
@@ -122,6 +125,12 @@ namespace Revit.IFC.Export.Utility
          if (!AlternateGUIDCounter.TryGetValue(key, out int index))
             return null;
          return index;
+      }
+
+      public new void Clear()
+      {
+         AlternateGUIDCounter.Clear();
+         base.Clear();
       }
    }
 }

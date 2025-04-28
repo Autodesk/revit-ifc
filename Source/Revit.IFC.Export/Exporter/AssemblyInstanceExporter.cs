@@ -37,20 +37,6 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    class AssemblyInstanceExporter
    {
-      private static IFCElementAssemblyType GetPredefinedTypeFromObjectType(string objectType)
-      {
-         if (string.IsNullOrEmpty(objectType))
-            return IFCElementAssemblyType.NotDefined;
-
-         foreach (IFCElementAssemblyType val in Enum.GetValues(typeof(IFCElementAssemblyType)))
-         {
-            if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(objectType, val.ToString()))
-               return val;
-         }
-
-         return IFCElementAssemblyType.UserDefined;
-      }
-
       /// <summary>
       /// Exports an element as an IFC assembly.
       /// </summary>
@@ -70,7 +56,6 @@ namespace Revit.IFC.Export.Exporter
             return true;      // Already processed before
 
          IFCFile file = exporterIFC.GetFile();
-
          using (IFCTransaction tr = new IFCTransaction(file))
          {
             IFCAnyHandle assemblyInstanceHnd = null;
@@ -84,7 +69,7 @@ namespace Revit.IFC.Export.Exporter
             ElementId overrideContainerId = ElementId.InvalidElementId;
 
             string ifcEnumType;
-            IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(exporterIFC, element, out ifcEnumType);
+            IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(element, out ifcEnumType);
             if (exportAs.ExportInstance == IFCEntityType.IfcSystem)
             {
                string name = NamingUtil.GetNameOverride(element, NamingUtil.GetIFCName(element));
@@ -107,7 +92,7 @@ namespace Revit.IFC.Export.Exporter
             {
                // Check for containment override
                IFCAnyHandle overrideContainerHnd = null;
-               overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+               overrideContainerId = ParameterUtil.OverrideContainmentParameter(element, out overrideContainerHnd);
 
                if (overrideContainerId == null || overrideContainerId == ElementId.InvalidElementId)
                   overrideContainerId = ExporterCacheManager.LevelInfoCache.GetLevelIdOfObject(element);
@@ -119,7 +104,7 @@ namespace Revit.IFC.Export.Exporter
                   localPlacement = placementSetter.LocalPlacement;
                   levelInfo = placementSetter.LevelInfo;
 
-                  assemblyInstanceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, exporterIFC, element, guid,
+                  assemblyInstanceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, file, element, guid,
                      ownerHistory, localPlacement, representation);
                }
             }
@@ -171,7 +156,7 @@ namespace Revit.IFC.Export.Exporter
                continue;
             }
 
-            Transform relTrf = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(assemblyPlacement, elementPlacement);
+            Transform relTrf = ExporterUtil.GetRelativePlacementOffsetTransformWithoutDirFix(exporterIFC, assemblyPlacement, elementPlacement);
             Transform inverseTrf = relTrf.Inverse;
 
             IFCFile file = exporterIFC.GetFile();
@@ -232,9 +217,7 @@ namespace Revit.IFC.Export.Exporter
 
          foreach (ElementId memberId in memberIds)
          {
-            IFCAnyHandle memberHnd = ExporterCacheManager.ElementToHandleCache.Find(memberId);
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(memberHnd))
-               memberHnds.Add(memberHnd);
+            memberHnds.AddIfNotNull(ExporterCacheManager.ElementToHandleCache.Find(memberId));
          }
 
          if (memberHnds.Count == 0)
@@ -250,7 +233,7 @@ namespace Revit.IFC.Export.Exporter
          {
             // Check for containment override
             IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, assemblyElem, out overrideContainerHnd);
+            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(assemblyElem, out overrideContainerHnd);
 
             using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, assemblyElem, null, null, overrideContainerId, overrideContainerHnd))
             {

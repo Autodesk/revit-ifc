@@ -52,31 +52,25 @@ namespace Revit.IFC.Export.Exporter
             // CQ_TODO: Clean up this code by at least factoring it out.
 
             // If we are exporting a duct segment, we may need to split it into parts by level. Create a list of ranges.
-            IList<ElementId> levels = new List<ElementId>();
-            IList<IFCRange> ranges = new List<IFCRange>();
+            IDictionary<ElementId, IFCRange> levelsAndRanges = null;
 
             // We will not split duct segments if the assemblyId is set, as we would like to keep the original duct segment
             // associated with the assembly, on the level of the assembly.
             if ((exportType.ExportType == IFCEntityType.IfcDuctSegmentType) &&
                (ExporterCacheManager.ExportOptionsCache.WallAndColumnSplitting) &&
-               (element.AssemblyInstanceId == ElementId.InvalidElementId))
+               !ExporterUtil.IsContainedInAssembly(element))
             {
-               LevelUtil.CreateSplitLevelRangesForElement(exporterIFC, exportType, element, out levels,
-                                                          out ranges);
+               levelsAndRanges = LevelUtil.CreateSplitLevelRangesForElement(exportType, element);
             }
 
-            int numPartsToExport = ranges.Count;
+            int numPartsToExport = levelsAndRanges?.Count ?? 0;
             {
                ElementId catId = CategoryUtil.GetSafeCategoryId(element);
 
                BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                if (0 == numPartsToExport)
                {
-                  // Check for containment override
-                  IFCAnyHandle overrideContainerHnd = null;
-                  ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-
-                  using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+                  using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null))
                   {
                      IFCAnyHandle localPlacementToUse = setter.LocalPlacement;
                      BodyData bodyData = null;
@@ -92,7 +86,7 @@ namespace Revit.IFC.Export.Exporter
                            return false;
                         }
 
-                        ExportAsMappedItem(exporterIFC, element, exportType, ifcEnumType, 
+                        ExportAsMappedItem(exporterIFC, element, exportType, 
                            extraParams, setter, false, localPlacementToUse,
                            productRepresentation, productWrapper);
                      }
@@ -100,20 +94,21 @@ namespace Revit.IFC.Export.Exporter
                }
                else
                {
-                  for (int ii = 0; ii < numPartsToExport; ii++)
+                  foreach (KeyValuePair<ElementId, IFCRange> levelAndRange in levelsAndRanges)
                   {
                      // Check for containment override
                      IFCAnyHandle overrideContainerHnd = null;
-                     ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
+                     ParameterUtil.OverrideContainmentParameter(element, out overrideContainerHnd);
 
-                     using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, levels[ii], overrideContainerHnd))
+                     using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null,
+                        levelAndRange.Key, overrideContainerHnd))
                      {
                         IFCAnyHandle localPlacementToUse = setter.LocalPlacement;
 
                         using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
                         {
                            SolidMeshGeometryInfo solidMeshCapsule =
-                               GeometryUtil.GetClippedSolidMeshGeometry(geometryElement, ranges[ii]);
+                               GeometryUtil.GetClippedSolidMeshGeometry(geometryElement, levelAndRange.Value);
 
                            IList<Solid> solids = solidMeshCapsule.GetSolids();
                            IList<Mesh> polyMeshes = solidMeshCapsule.GetMeshes();
@@ -147,16 +142,14 @@ namespace Revit.IFC.Export.Exporter
                            }
                            else
                            {
-                              IList<GeometryObject> exportedGeometries = new List<GeometryObject>();
-                              exportedGeometries.Add(geometryElement);
+                              List<GeometryObject> exportedGeometries = [ geometryElement ];
                               bodyData = BodyExporter.ExportBody(exporterIFC, element, catId,
                                                                  ElementId.InvalidElementId,
                                                                  exportedGeometries, bodyExporterOptions,
                                                                  extraParams);
                            }
 
-                           List<IFCAnyHandle> bodyReps = new List<IFCAnyHandle>();
-                           bodyReps.Add(bodyData.RepresentationHnd);
+                           List<IFCAnyHandle> bodyReps = [ bodyData.RepresentationHnd ];
 
                            IFCAnyHandle productRepresentation =
                                IFCInstanceExporter.CreateProductDefinitionShape(exporterIFC.GetFile(), null,
@@ -167,7 +160,7 @@ namespace Revit.IFC.Export.Exporter
                               return false;
                            }
 
-                           ExportAsMappedItem(exporterIFC, element, exportType, ifcEnumType,
+                           ExportAsMappedItem(exporterIFC, element, exportType,
                               extraParams, setter, true, localPlacementToUse, 
                               productRepresentation, productWrapper);
                         }
@@ -182,7 +175,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       private static void ExportAsMappedItem(ExporterIFC exporterIFC, Element element, 
-         IFCExportInfoPair exportType, string ifcEnumType, IFCExportBodyParams extraParams,
+         IFCExportInfoPair exportType, IFCExportBodyParams extraParams,
          PlacementSetter setter, bool isSplitByLevel, IFCAnyHandle localPlacementToUse, 
          IFCAnyHandle productRepresentation, ProductWrapper productWrapper)
       {
@@ -194,9 +187,12 @@ namespace Revit.IFC.Export.Exporter
          Options geomOptions = GeometryUtil.GetIFCExportGeometryOptions();
          bool hasMaterialAssociatedToType = false;
 
+         IFCFile file = exporterIFC.GetFile();
+
          if (type != null)
          {
-            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType, ElementId.InvalidElementId);
+            bool containedInAssembly = ExporterUtil.IsContainedInAssembly(element);
+            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType, ElementId.InvalidElementId, containedInAssembly);
             
             FamilyTypeInfo currentTypeInfo = 
                ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
@@ -207,8 +203,7 @@ namespace Revit.IFC.Export.Exporter
                IList<IFCAnyHandle> repMapListOpt = new List<IFCAnyHandle>();
 
                string typeGuid = FamilyExporterUtil.GetGUIDForFamilySymbol(element as FamilyInstance, type, exportType);
-               styleHandle = FamilyExporterUtil.ExportGenericType(exporterIFC, exportType, ifcEnumType, 
-                  propertySetsOpt, repMapListOpt, element, type, typeGuid);
+               styleHandle = FamilyExporterUtil.ExportGenericType(file, exportType, propertySetsOpt, repMapListOpt, element, type, typeGuid);
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
                {
                   productWrapper.RegisterHandleWithElementType(type, exportType, styleHandle, null);
@@ -255,7 +250,7 @@ namespace Revit.IFC.Export.Exporter
 
          // For MEP object creation
          IFCAnyHandle instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportType,
-            exporterIFC, element, instanceGUID, ownerHistory, localPlacementToUse, 
+            exporterIFC.GetFile(), element, instanceGUID, ownerHistory, localPlacementToUse, 
             productRepresentation);
          
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))

@@ -76,6 +76,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
             return true;
 
+         m_Area = UnitUtil.ScaleArea(CalculateSpatialElementGrossFloorArea(element as SpatialElement));
+         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+            return true;
+
          if (extrusionCreationData == null)
             return false;
 
@@ -85,6 +89,45 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             return true;
 
          return false;
+      }
+
+      private double CalculateSpatialElementGrossFloorArea(SpatialElement spatialElement)
+      {
+         double area = 0.0;
+
+         if (spatialElement == null)
+            return area;
+
+         // Get the outer boundary loops of the SpatialElement.
+         IList<IList<BoundarySegment>> boundaryLoops = spatialElement.GetBoundarySegments(new SpatialElementBoundaryOptions());
+
+         //Search for a outer loop with the largest area.
+         foreach (IList<BoundarySegment> boundaryLoop in boundaryLoops)
+         {
+            CurveLoop curveLoop = new CurveLoop();
+            foreach (BoundarySegment boundarySegment in boundaryLoop)
+            {
+               try
+               {
+                  Curve curve = boundarySegment.GetCurve();
+                  curveLoop.Append(curve);
+               }
+               catch (Autodesk.Revit.Exceptions.ArgumentException)
+               {
+                  //For some special cases, BoundarySegments of the element are not valid for CurveLoop creation
+                  //(curveLoop.Append(curve) throws exception because "This curve will make the loop discontinuous.") 
+
+                  return 0.0;
+               }
+            }
+
+            double loopArea = ExporterIFCUtils.ComputeAreaOfCurveLoops(new List<CurveLoop>() { curveLoop });
+
+            if (area < loopArea)
+               area = loopArea;
+         }
+
+         return area;
       }
 
       /// <summary>

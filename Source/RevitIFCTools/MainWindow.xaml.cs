@@ -19,6 +19,7 @@
 
 using System;
 using System.Windows;
+using RevitIFCTools.ParameterExpr;
 
 namespace RevitIFCTools
 {
@@ -51,7 +52,7 @@ namespace RevitIFCTools
 
       private void button_paramexpr_Click(object sender, RoutedEventArgs e)
       {
-         ParameterExpr.ExprTester exprTest = new ParameterExpr.ExprTester();
+         ExprTester exprTest = new ParameterExpr.ExprTester();
          exprTest.ShowDialog();
       }
 

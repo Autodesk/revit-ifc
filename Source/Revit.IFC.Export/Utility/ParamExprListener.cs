@@ -256,7 +256,7 @@ namespace Revit.IFC.Export.Utility
             if (FinalParameterValue is double)
             {
                double? paramValueDouble = FinalParameterValue as double?;
-               formattedValue = UnitFormatUtils.Format(RevitElement.Document.GetUnits(), paramExprNodeProp.uomTypeId, paramValueDouble.Value, false);
+               formattedValue = UnitFormatUtils.Format(ExporterCacheManager.DocumentUnits, paramExprNodeProp.uomTypeId, paramValueDouble.Value, false);
                FinalParameterValue = UnitUtils.ConvertToInternalUnits(paramValueDouble.Value, paramExprNodeProp.uomTypeId);
             }
          }

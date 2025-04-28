@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
-using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 
 namespace Revit.IFC.Common.Extensions
 {
@@ -83,7 +83,7 @@ namespace Revit.IFC.Common.Extensions
          get { return classificationEditionDate; }
          set
          {
-            classificationEditionDate = value.Date;
+            classificationEditionDate = new DateTime(value.Ticks, DateTimeKind.Utc);
             // Call OnPropertyChanged whenever the property is updated
             OnPropertyChanged("datePicker1");
          }
@@ -123,7 +123,7 @@ namespace Revit.IFC.Common.Extensions
       /// This property is only used for the UI message. It will not be stored in the schema
       /// </summary>
       private string classificationTabMsg;
-      [ScriptIgnore]
+      [JsonIgnore]
       public string ClassificationTabMsg
       {
          get { return classificationTabMsg; }

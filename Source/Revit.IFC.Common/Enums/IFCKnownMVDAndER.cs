@@ -6,10 +6,6 @@ using System.Threading.Tasks;
 
 namespace Revit.IFC.Common.Enums
 {
-   //public enum KnownMVDNames
-   //{
-   //}
-
    /// <summary>
    /// Enumeration for known Exchange Requirements
    /// </summary>
@@ -19,5 +15,15 @@ namespace Revit.IFC.Common.Enums
       BuildingService,
       Structural,
       NotDefined
+   }
+
+   public enum KnownFacilityTypes
+   {
+      NotDefined,
+      Building,
+      Bridge,
+      Railway,
+      Road,
+      MarineFacility
    }
 }

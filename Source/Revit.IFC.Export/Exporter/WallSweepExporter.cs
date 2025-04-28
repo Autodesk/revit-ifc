@@ -50,8 +50,8 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          HostObjectExporter.ExportHostObjectMaterials(exporterIFC, wallSweep, productWrapper.GetAnElement(),
-             geometryElement, productWrapper,
-             ElementId.InvalidElementId, Toolkit.IFCLayerSetDirection.Axis2, null, null);
+            geometryElement, productWrapper,
+            ElementId.InvalidElementId, Toolkit.IFCLayerSetDirection.Axis2, null, null);
       }
    }
 }

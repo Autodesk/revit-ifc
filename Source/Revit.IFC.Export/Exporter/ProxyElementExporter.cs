@@ -47,11 +47,8 @@ namespace Revit.IFC.Export.Exporter
          if (element == null || geometryElement == null)
             return exported;
 
-         if (exportType == null)
-         {
-            exportType = new IFCExportInfoPair(IFCEntityType.IfcBuildingElementProxy, IFCEntityType.IfcBuildingElementProxyType, "NOTDEFINED");
-         }
-
+         exportType ??= new IFCExportInfoPair(IFCEntityType.IfcBuildingElementProxy, IFCEntityType.IfcBuildingElementProxyType, null);
+         
          IFCFile file = exporterIFC.GetFile();
 
          using (IFCTransaction tr = new IFCTransaction(file))

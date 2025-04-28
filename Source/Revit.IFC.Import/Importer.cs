@@ -195,7 +195,7 @@ namespace Revit.IFC.Import
          Importer importer = new Importer();
          TheImporter = importer;
          TheCache = IFCImportCache.Create(originalDocument, ifcFileName);
-         TheOptions = importer.m_ImportOptions = IFCImportOptions.Create(importOptions, ifcFileName, originalDocument);
+         TheOptions = importer.m_ImportOptions = IFCImportOptions.Create(importOptions);
          TheLog = IFCImportLog.CreateLog(ifcFileName, "log.html", !TheOptions.DisableLogging);
          return importer;
       }
@@ -222,14 +222,13 @@ namespace Revit.IFC.Import
 
          // Check to see if the projInfo ImportMethod parameter equals the current method of import.
          // If it does not, then update current method to match original method.
-         bool isHybridImport = false;
+         IFCHybridImportOptions hybridImportOptions = null;
          Parameter originalImportMethod = projInfo.LookupParameter(ImportMethodParameter);
          if ((originalImportMethod?.StorageType ?? StorageType.None) == StorageType.String)
          {
-            isHybridImport = Enum.TryParse(originalImportMethod.AsString(), true, out ImportMethod existingMethod) && 
-               existingMethod == ImportMethod.Hybrid;
+            hybridImportOptions = IFCHybridImportOptions.Create(originalImportMethod.AsString());
          }
-         TheOptions.IsHybridImport = isHybridImport;
+         TheOptions.HybridImportOptions = hybridImportOptions;
 
          // We won't catch any exceptions here, yet.
          // There could be a number of reasons why this fails, to be investigated.
@@ -340,7 +339,7 @@ namespace Revit.IFC.Import
       }
 
       /// <summary>
-      /// Retuns the GUID associated with the importer, for DirectShape creation.
+      /// Returns the GUID associated with the importer, for DirectShape creation.
       /// </summary>
       static public string ImportAppGUID()
       {
@@ -525,41 +524,43 @@ namespace Revit.IFC.Import
             IList<Element> directShapeElements = collector.ToElements();
             // This is inefficient, but we need to reliably get the IFCGuids
 
-            // HybridMap is for IFC GlobalId --> ElementId.  This is used for almost all of the Hybrid IFC Import processing.
-            // reverseLookup is for ElementId --> IFC GlobalId.  This is used to find the ElementId associated with a given IFC GlobalId (for logging purposes).
-            IDictionary<ElementId, string> reverseLookup = new Dictionary<ElementId, string>();
-            foreach (KeyValuePair<string, ElementId> pair in TheHybridInfo.HybridMap)
+            if (Importer.TheHybridInfo?.HybridMap != null)
             {
-               try
+               // HybridMap is for IFC STEP Id --> ElementId.  This is used for almost all of the Hybrid IFC Import processing.
+               // reverseLookup is for ElementId --> IFC STEP Id.  This is used to find the ElementId associated with a given IFC STEP Id (for logging purposes).
+               IDictionary<ElementId, string> reverseLookup = new Dictionary<ElementId, string>();
+               foreach (KeyValuePair<string, ElementId> pair in TheHybridInfo.HybridMap)
                {
-                  ElementId elementId = pair.Value;
-                  string ifcGuid = pair.Key;
-                  reverseLookup.Add(pair.Value, pair.Key);
+                  try
+                  {
+                     ElementId elementId = pair.Value;
+                     string stepId = pair.Key;
+                     reverseLookup.Add(elementId, stepId);
+                  }
+                  catch (ArgumentException ex)
+                  {
+                     TheLog.LogWarning(-1, $"Duplicate ElementId found when reversing Hybrid Map for logging {ex.Message}", false);
+                  }
                }
-               catch (ArgumentException ex)
-               {
-                  TheLog.LogWarning(-1, $"Duplicate ElementId found when reversing Hybrid Map for logging {ex.Message}", false);
-               }
-            }
 
-            // Log (into journal) IFC GlobalIds & ElementIds that were imported by AnyCAD or via Revit alone.
-            ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: Count of DirectShapes imported via AnyCAD:  {Importer.TheHybridInfo.HybridElements.Count}", false);
-            foreach (Element element in directShapeElements)
-            {
-               string ifcGuid;
-               if (reverseLookup.TryGetValue(element.Id, out ifcGuid))
+               // Log (into journal) IFC STEP Ids & ElementIds that were imported by AnyCAD or via Revit alone.
+               ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: Count of DirectShapes imported via AnyCAD:  {Importer.TheHybridInfo.HybridElements.Count}", false);
+               foreach (Element element in directShapeElements)
                {
-                  ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: AnyCAD DirectShape (IFC GUID, ElementId): ({ifcGuid}, {element.Id})", false);
+                  string stepId;
+                  if (reverseLookup.TryGetValue(element.Id, out stepId))
+                  {
+                     ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: AnyCAD DirectShape (IFC STEP Id, ElementId): ({stepId}, {element.Id})", false);
+                  }
                }
-            }
 
-            ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: Count of DirectShapes falling back to Revit:  {numDirectShapes - Importer.TheHybridInfo.HybridElements.Count}", false);
-            foreach (Element element in directShapeElements)
-            {
-               if (reverseLookup.ContainsKey(element.Id))
-                  continue;
-               string ifcGuid = IFCGUIDUtil.GetGUID(element);
-               ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: Fallback DirectShape (IFC GUID, ElementId): ({ifcGuid}, {element.Id})", false);
+               ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: Count of DirectShapes falling back to Revit:  {numDirectShapes - Importer.TheHybridInfo.HybridElements.Count}", false);
+               foreach (Element element in directShapeElements)
+               {
+                  if (reverseLookup.ContainsKey(element.Id))
+                     continue;
+                  ifcDocument.Application.WriteJournalComment($"Hybrid IFC Import: Fallback DirectShape ElementId: ({element.Id})", false);
+               }
             }
          }
       }
@@ -590,9 +591,9 @@ namespace Revit.IFC.Import
          {
             string linkedFileName = IFCImportFile.GetRevitFileName(localFileName);
 
-            // NOTE: This will update IsHybridImport if we are reloading an existing document - we will use
+            // NOTE: This will update HybridImportOptions if we are reloading an existing document - we will use
             // whatever method we originally used.  If a user wants to switch, they will have to delete the
-            // cache file.  Do not use IsHybridImport before this call.
+            // cache file.  Do not use HybridImportOptions before this call.
             (ifcDocument, doUpdate) = LoadOrCreateLinkDocument(originalDocument, linkedFileName);
          }
          else
@@ -624,7 +625,7 @@ namespace Revit.IFC.Import
             // localFileName = file path from where input will occur.
             // Do Hybrid Import if needed.
             //
-            if (TheOptions.IsHybridImport)
+            if (TheOptions.HybridImportOptions != null)
             {
                BasePoint originalSurveyPoint = BasePoint.GetSurveyPoint(ifcDocument);
                XYZ originalPosition = originalSurveyPoint.SharedPosition;
@@ -647,10 +648,13 @@ namespace Revit.IFC.Import
                      if (!newPosition.IsAlmostEqualTo(originalPosition))
                      {
                         TheHybridInfo.LargeCoordinateOriginOffset = originalPosition - newPosition;
+                        TheHybridInfo.OriginalLargeCoordinateOriginOffset = TheHybridInfo.LargeCoordinateOriginOffset;
                      }
                   }
                }
             }
+
+            m_ImportCache.ReadSharedParametersFile(ifcDocument, localFileName);
 
             // TheFile will contain the same value as the return value for this function.
             IFCImportFile.Create(localFileName, m_ImportOptions, ifcDocument, transaction);
@@ -696,7 +700,7 @@ namespace Revit.IFC.Import
 
          string fullIFCFileName = importer.FullFileName;
          IDictionary<string, string> options = importer.GetOptions();
-         TheOptions = m_ImportOptions = IFCImportOptions.Create(options, fullIFCFileName, importer.Document);
+         TheOptions = m_ImportOptions = Create(options);
 
          // An early check, based on the options set - if we are allowed to use an up-to-date existing file on disk, use it.
          try
@@ -728,9 +732,9 @@ namespace Revit.IFC.Import
          finally
          {
             TheLog?.Close();
-            TheLog = null;
             IFCImportFile.TheFile?.Close();
             TheHybridInfo = null;
+            TheLog = null;
          }
       }
 
@@ -748,9 +752,13 @@ namespace Revit.IFC.Import
          return "IFC importer";
       }
 
-      public System.Guid GetServerId()
+      /// <summary>
+      /// Returns the server id for the link service.
+      /// </summary>
+      /// <returns>The GUID representing the server id.</returns>
+      public Guid GetServerId()
       {
-         return new Guid("88743F28-A2E1-4935-949D-4DB7A724A150");
+         return new Guid(ImportAppGUID());
       }
 
       public ExternalServiceId GetServiceId()

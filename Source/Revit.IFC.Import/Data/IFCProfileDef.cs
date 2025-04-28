@@ -98,7 +98,7 @@ namespace Revit.IFC.Import.Data
          catch (Exception ex)
          {
             if (ex == null || ex.Message == null || !ex.Message.Contains("Curve length is too small"))
-               throw ex;
+               throw;
 
             // Returning false allows the calling code to try a backup for the curve loop,
             // in cases where the issue arises from filleting, for example.
@@ -116,7 +116,7 @@ namespace Revit.IFC.Import.Data
          catch (Autodesk.Revit.Exceptions.ArgumentException ex)
          {
             if (ex == null || ex.Message == null || !ex.Message.Contains("discontinuous"))
-               throw ex;
+               throw;
 
             // Returning false allows the calling code to try a backup for the curve loop,
             // in cases where the issue arises from filleting, for example.
@@ -297,7 +297,7 @@ namespace Revit.IFC.Import.Data
          IList<IIFCProfileSegment> segments = new List<IIFCProfileSegment>();
          for (int ii = 0; ii < sz; ii++)
          {
-            segments.Add(new IFCProfileLineSegment(corners[ii], corners[(ii + 1) % sz]));
+            AddValidLineSegment(segments, corners[ii], corners[(ii + 1) % sz]);
          }
          if (!AppendSegmentsToCurveLoop(curveLoop, segments))
             return null;
@@ -539,6 +539,11 @@ namespace Revit.IFC.Import.Data
          double girth = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(profileDef, "Girth", out found);
          if (!found)
             return;
+
+         if (MathUtil.IsAlmostEqual(girth, wallThickness))
+         {
+            Importer.TheLog.LogWarning(Id, "Girth and Wall Thickness are equal for IfcCShapeProfileDef.  May result in duplicate points.", false);
+         }
 
          // Optional parameters
          double centerOptX = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "CentreOfGravityInX", 0.0);
@@ -991,14 +996,13 @@ namespace Revit.IFC.Import.Data
          Line line1 = Line.CreateUnbound(tShapePoints[1], flangeDir);
          Line line2 = Line.CreateUnbound(tShapePoints[3], webDir);
 
-         IntersectionResultArray intersectResultArray;
-         SetComparisonResult intersectResultComp = line1.Intersect(line2, out intersectResultArray);
-         if ((intersectResultComp != SetComparisonResult.Overlap) || (intersectResultArray.Size != 1))
+         CurveIntersectResult intersectResult = line1.Intersect(line2, CurveIntersectResultOption.Detailed);
+         if ((null == intersectResult || intersectResult.Result != SetComparisonResult.Overlap) || (intersectResult.GetOverlaps()?.Count != 1))
          {
             Importer.TheLog.LogError(Id, "Couldn't calculate profile point in IfcTShapeProfileDef.", true);
          }
        
-         tShapePoints[2] = intersectResultArray.get_Item(0).XYZPoint;
+         tShapePoints[2] = intersectResult.GetOverlaps()[0].Point;
          tShapePoints[5] = new XYZ(-tShapePoints[2][0], tShapePoints[2][1], tShapePoints[2][2]);
 
          // TODO: support fillets!

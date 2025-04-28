@@ -79,20 +79,6 @@ namespace Revit.IFC.Import.Utility
       }
 
       /// <summary>
-      /// Choice of Import Method stored to ProjectInfo.
-      /// </summary>
-      public enum ImportMethod
-      {
-         Hybrid,
-         Legacy
-      }
-
-      /// <summary>
-      /// Simply returns whether the CurrentImportMethod is Hybrid or Legacy.  Useful when checking for previous import.
-      /// </summary>
-      public ImportMethod CurrentImportMethod => IsHybridImport ? ImportMethod.Hybrid : ImportMethod.Legacy;
-
-      /// <summary>
       /// Defines parameter storing Import Method in ProjectInfo.
       /// </summary>
       public static string ImportMethodParameter => "Import Method";
@@ -136,6 +122,21 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       public bool VerboseLogging { get; protected set; } = false;
 
+      /// <summary>
+      /// Indicates where in the Revit Project the IFC File's origin maps to.
+      /// </summary>
+      public IFCLinkPosition LinkPosition { get; protected set; } = IFCLinkPosition.InternalOrigin;
+
+      /// <summary>
+      /// Indicates the orientation of the Linked Document within the Host Document.
+      /// </summary>
+      public IFCLinkOrientation LinkOrientation { get; protected set; } = IFCLinkOrientation.ProjectNorth;
+
+      /// <summary>
+      /// If true, the link instance is shifted by difference between shared positions of project base points. 
+      /// </summary>
+      public bool AdjustSharedPosition { get; protected set; } = false;
+      
       /// <summary>
       /// If true, process bounding box geometry found in the file.  If false, ignore.
       /// </summary>
@@ -202,14 +203,31 @@ namespace Revit.IFC.Import.Utility
       /// Indicates whether the current IFC Import is Hybrid or not.
       /// True:  Hybrid (legacy + AnyCAD)
       /// False:  legacy only
+      /// Note that this covers the processing of geometry only.  Other parameters cover other aspects.
       /// </summary>
-      public bool IsHybridImport { get; set; } = false;
+      public IFCHybridImportOptions HybridImportOptions { get; set; } = null;
+
+      /// <summary>
+      /// Query method to check whether property sets are being processed via AnyCAD.
+      /// </summary>
+      /// <returns>True if property sets were processed via AnyCAD.</returns>
+      public bool UsingHybridPropertySets() => (HybridImportOptions?.HybridPropertySets ?? false);
+
+      /// <summary>
+      /// Query method to check whether property sets are being processed via AnyCAD and the given host object was already processed.
+      /// </summary>
+      /// <param name="hostIfcObjectStepId">The host entity to query.</param>
+      /// <returns>True if property sets were processed via AnyCAD.</returns>
+      public bool UsingHybridPropertySetsForHostObject(int hostIfcObjectStepId)
+      {
+         return UsingHybridPropertySets() && IFCImportHybridInfo.HasHybridMapInformation(hostIfcObjectStepId);
+      }
 
       protected IFCImportOptions()
       {
       }
 
-      protected IFCImportOptions(IDictionary<string, string> options, string ifcFileName, Document doc)
+      protected IFCImportOptions(IDictionary<string, string> options)
       {
          // "Intent": covers what the import operation is intended to create.
          // The two options are:
@@ -274,6 +292,18 @@ namespace Revit.IFC.Import.Utility
          if (verboseLogging.HasValue)
             VerboseLogging = verboseLogging.Value;
 
+         string LinkOrientationOption = OptionsUtil.GetNamedStringOption(options, "LinkOrientation");
+         if (Enum.TryParse(LinkOrientationOption, out IFCLinkOrientation linkOrientationEnum))
+         {
+            LinkOrientation = linkOrientationEnum;
+         }
+
+         string linkPosition = OptionsUtil.GetNamedStringOption(options, "LinkPosition");
+         if (Enum.TryParse(linkPosition, out IFCLinkPosition linkPositionEnum))
+         {
+            LinkPosition = linkPositionEnum;
+         }
+
          bool? forceImport = OptionsUtil.GetNamedBooleanOption(options, "ForceImport");
          if (forceImport.HasValue)
             ForceImport = forceImport.Value;
@@ -319,22 +349,10 @@ namespace Revit.IFC.Import.Utility
          ImportIFCOptions importIFCOptions = ImportIFCOptions.GetImportIFCOptions();
          string linkProcessor = importIFCOptions.LinkProcessor;
 
-         string revitVersion = doc.Application.VersionBuild;
-         if (revitVersion.StartsWith("24.0"))
-         {
-            // For Revit 24.0.x, only use hybrid import if revit.ini has "AnyCAD" set.
-            IsHybridImport = (string.Compare(linkProcessor, "AnyCAD", true) == 0) &&
-               (ifcFileName.EndsWith(".ifc")) && (Processor is IFCDefaultProcessor);
-         }
-         else
-         {
-            // For Revit 24.1.x
-            // Use hybrid import if revit.ini does not have "Legacy" in it and we are using
-            // the default (Revit) processor.  For other processors (e.g., Navis), revert
-            // to Legacy.
-            IsHybridImport = (string.Compare(linkProcessor, "Legacy", true) != 0) &&
-               (Processor is IFCDefaultProcessor);
-         }
+         // Use hybrid import if revit.ini does not have "Legacy" in it and we are using
+         // the default (Revit) processor.  For other processors (e.g., Navis), revert
+         // to Legacy.
+         HybridImportOptions = (Processor is IFCDefaultProcessor) ? IFCHybridImportOptions.Create(linkProcessor) : null;
       }
 
       /// <summary>
@@ -342,9 +360,9 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       /// <param name="options">The user-set options for this import.</param>
       /// <returns>The new IFCImportOptions class.</returns>
-      static public IFCImportOptions Create(IDictionary<string, string> options, string ifcFileName, Document doc)
+      static public IFCImportOptions Create(IDictionary<string, string> options)
       {
-         return new IFCImportOptions(options, ifcFileName, doc);
+         return new IFCImportOptions(options);
       }
    }
 }

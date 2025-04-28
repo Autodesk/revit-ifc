@@ -71,7 +71,7 @@ namespace Revit.IFC.Import.Data
 
          HashSet<IFCAnyHandle> ifcCfsFaces =
              IFCAnyHandleUtil.GetValidAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(ifcConnectedFaceSet, "CfsFaces");
-         if (ifcCfsFaces?.Count == 0)
+         if ((ifcCfsFaces?.Count ?? 0) == 0)
          {
             Importer.TheLog.LogError(ifcConnectedFaceSet.StepId, "No faces in connected face set, aborting.", false);
             return;
@@ -115,7 +115,7 @@ namespace Revit.IFC.Import.Data
             catch (Exception ex)
             {
                if (!AllowInvalidFace)
-                  throw ex;
+                  throw;
                else
                {
                   shapeEditScope.BuilderScope.AbortCurrentFace();

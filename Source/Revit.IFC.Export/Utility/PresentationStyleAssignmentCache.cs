@@ -36,14 +36,13 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The dictionary mapping from a text element type to an IfcPresentationStyleAssignment handle. 
       /// </summary>
-      private Dictionary<ElementId, IFCAnyHandle> m_Styles;
+      private Dictionary<ElementId, IFCAnyHandle> Styles { get; set; } = new();
 
       /// <summary>
       /// Constructs a default PresentationStyleAssignmentCache object.
       /// </summary>
       public PresentationStyleAssignmentCache()
       {
-         m_Styles = new Dictionary<ElementId, IFCAnyHandle>();
       }
 
       /// <summary>
@@ -54,7 +53,7 @@ namespace Revit.IFC.Export.Utility
       public IFCAnyHandle Find(ElementId materialId)
       {
          IFCAnyHandle presentationStyleAssignment;
-         if (m_Styles.TryGetValue(materialId, out presentationStyleAssignment))
+         if (Styles.TryGetValue(materialId, out presentationStyleAssignment))
          {
             // Make sure the handle isn't stale.
             try
@@ -68,7 +67,7 @@ namespace Revit.IFC.Export.Utility
             {
             }
 
-            m_Styles.Remove(materialId);
+            Styles.Remove(materialId);
          }
 
          return null;
@@ -81,13 +80,18 @@ namespace Revit.IFC.Export.Utility
       /// <param name="handle">The IfcPresentationStyleAssignment handle.</param>
       public void Register(ElementId elementId, IFCAnyHandle handle)
       {
-         if (m_Styles.ContainsKey(elementId))
+         if (Styles.ContainsKey(elementId))
             throw new Exception("TextStyleCache already contains handle for elementId " + elementId);
 
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
-            m_Styles[elementId] = handle;
+            Styles[elementId] = handle;
          else
             throw new Exception("Invalid Handle.");
+      }
+
+      public void Clear()
+      {
+         Styles.Clear();
       }
    }
 }

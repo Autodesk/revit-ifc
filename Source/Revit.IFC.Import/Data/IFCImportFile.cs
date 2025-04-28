@@ -35,6 +35,7 @@ using ICSharpCode.SharpZipLib.Core;
 using System.Xml;
 using IFCImportOptions = Revit.IFC.Import.Utility.IFCImportOptions;
 using System.Reflection;
+using static Revit.IFC.Import.Utility.IFCImportOptions;
 
 namespace Revit.IFC.Import.Data
 {
@@ -485,18 +486,35 @@ namespace Revit.IFC.Import.Data
          try
          { 
             TheFile.Process(ifcFilePath, options, doc);
+
             // Store the original levels in the template file for Open IFC.  On export, we will delete these levels if we created any.
             // Note that we always have to preserve one level, regardless of what the ActiveView is.
             if (doc != null)
             {
-               IFCBuildingStorey.ExistingLevelIdToReuse = ElementId.InvalidElementId;
+               // At this point, we have a Document that may contain Levels already.
+               // The first unconstrained one should be used when "creating" the IFCBuildingStorey later.
+               // If there is none, create a new Level corresponding to the first constrained one.
+               IFCBuildingStorey.ExistingUnConstrainedLevelToReuse = ElementId.InvalidElementId;
+               IFCBuildingStorey.ExistingConstrainedLevel = ElementId.InvalidElementId;
 
+               // First check ActiveView Level.  If set, then use it either as constrained or unconstrained Level.
                View activeView = doc.ActiveView;
                if (activeView != null)
                {
                   Level genLevel = activeView.GenLevel;
+
                   if (genLevel != null)
-                     IFCBuildingStorey.ExistingLevelIdToReuse = genLevel.Id;
+                  {
+                     if (IFCBuildingStorey.IsConstrainedToScopeBox(genLevel))
+                     {
+                        Importer.TheCache.ConstrainedLevels.Add(genLevel.Id);
+                        IFCBuildingStorey.ExistingConstrainedLevel = genLevel.Id;
+                     }
+                     else
+                     {
+                        IFCBuildingStorey.ExistingUnConstrainedLevelToReuse = genLevel.Id;
+                     }
+                  }
                }
 
                // For Link IFC, we will delete any unused levels at the end.  Instead, we want to try to reuse them.
@@ -506,15 +524,38 @@ namespace Revit.IFC.Import.Data
                FilteredElementCollector levelCollector = new FilteredElementCollector(doc);
                ICollection<Element> levels = levelCollector.OfClass(typeof(Level)).ToElements();
                ICollection<ElementId> levelIdsToDelete = new HashSet<ElementId>();
-               foreach (Element level in levels)
+               foreach (Element element in levels)
                {
+                  Level level = element as Level;
                   if (level == null)
                      continue;
 
-                  if (IFCBuildingStorey.ExistingLevelIdToReuse == ElementId.InvalidElementId)
-                     IFCBuildingStorey.ExistingLevelIdToReuse = level.Id;
-                  else if (level.Id != IFCBuildingStorey.ExistingLevelIdToReuse)
+                  bool constrainedToScopeBox = IFCBuildingStorey.IsConstrainedToScopeBox(level);
+                  if (constrainedToScopeBox)
+                  {
+                     Importer.TheCache.ConstrainedLevels.Add(level.Id);
+                  }
+
+                  if (IFCBuildingStorey.ExistingUnConstrainedLevelToReuse == ElementId.InvalidElementId)
+                  {
+                     if (!constrainedToScopeBox)
+                     {
+                        IFCBuildingStorey.ExistingUnConstrainedLevelToReuse = level.Id;
+                        if (IFCBuildingStorey.ExistingConstrainedLevel != ElementId.InvalidElementId)
+                        {
+                           levelIdsToDelete.Add(IFCBuildingStorey.ExistingConstrainedLevel);
+                           IFCBuildingStorey.ExistingConstrainedLevel = ElementId.InvalidElementId;
+                        }
+                     }
+                     else if (IFCBuildingStorey.ExistingConstrainedLevel == ElementId.InvalidElementId)
+                     {
+                        IFCBuildingStorey.ExistingConstrainedLevel = level.Id;
+                     }
+                  }
+                  else if ((level.Id != IFCBuildingStorey.ExistingUnConstrainedLevelToReuse) && (level.Id != IFCBuildingStorey.ExistingConstrainedLevel))
+                  {
                      levelIdsToDelete.Add(level.Id);
+                  }
                }
 
                if (deleteLevelsNow)
@@ -618,10 +659,11 @@ namespace Revit.IFC.Import.Data
             else
                parametersToSet.AddStringParameter(doc, projInfo, category, TheFile.IFCProject, "Revit Importer Version", IFCImportOptions.ImporterVersion, -1);
 
+            string legacyOrHybrid = IFCHybridImportOptions.ToString(Importer.TheOptions.HybridImportOptions);
             if (originalImportMethod != null)
-               parametersToSet.AddStringParameter(originalImportMethod, Importer.TheOptions.CurrentImportMethod.ToString());
+               parametersToSet.AddStringParameter(originalImportMethod, legacyOrHybrid);
             else
-               parametersToSet.AddStringParameter(doc, projInfo, category, TheFile.IFCProject, IFCImportOptions.ImportMethodParameter, Importer.TheOptions.CurrentImportMethod.ToString(), -1);
+               parametersToSet.AddStringParameter(doc, projInfo, category, TheFile.IFCProject, ImportMethodParameter, legacyOrHybrid, -1);
          }
       }
 
@@ -631,7 +673,7 @@ namespace Revit.IFC.Import.Data
 
          // Don't delete the last level in the document, even if it wasn't used.  This would happen when
          // updating a document with 1 level with a new document with 0 levels.
-         if (elementId == IFCBuildingStorey.ExistingLevelIdToReuse)
+         if ((elementId == IFCBuildingStorey.ExistingUnConstrainedLevelToReuse) || Importer.TheCache.ConstrainedLevels.Contains(elementId))
             return true;
 
          return false;
@@ -745,6 +787,11 @@ namespace Revit.IFC.Import.Data
          return GenerateRevitFileName(baseFileName);
       }
 
+      /// <summary>
+      /// This rotates the Link such that North in the Link is North in the Revit Project.  May differ from True North.
+      /// </summary>
+      /// <param name="document">The document into which Link is placed, and will define North.</param>
+      /// <param name="instance">The Link instance to place in the Document.</param>
       private static void RotateInstanceToProjectNorth(Document document, RevitLinkInstance instance)
       {
          if (document == null || instance == null)
@@ -772,6 +819,69 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
+      /// This rotates the Link such that North will be defined as it is in the Link, not as what is defined in the Host Document.
+      /// </summary>
+      /// <param name="linkInstance">The Link that defines the coordinate system used to find True North.</param>
+      private static void RotateInstanceToLinkNorth(RevitLinkInstance linkInstance)
+      {
+         if (linkInstance == null)
+            return;
+
+         Document linkDocument = linkInstance.GetLinkDocument();
+         ProjectLocation linkLocation = linkDocument?.ActiveProjectLocation;
+         ProjectPosition linkPosition = linkLocation?.GetProjectPosition(XYZ.Zero);
+         if (linkPosition == null)
+            return;
+
+         double linkAngle = linkPosition.Angle;
+
+         if (MathUtil.IsAlmostZero(linkAngle))
+            return;
+
+         Line zAxis = Line.CreateBound(XYZ.Zero, XYZ.BasisZ);
+         Location instanceLocation = linkInstance.Location;
+         if (!instanceLocation.Rotate(zAxis, linkAngle))
+         {
+            Importer.TheLog.LogError(-1, "Couldn't rotate link according to its north.  This may result in an incorrect orientation.", false);
+         }
+      }
+
+      /// <summary>
+      /// Moves the Link to the corresponding place within the Host Document.
+      /// </summary>
+      /// <param name="originalDocument">The Document into which Link instance is placed.</param>
+      /// <param name="linkInstance">The Link Instance ussed to position the Link.</param>
+      /// <param name="position">This defines where to place the Link.</param>
+      private static void MoveInstanceToAlignPoint(Document originalDocument, RevitLinkInstance linkInstance, IFCLinkPosition position)
+      {
+         if ((originalDocument == null) || (linkInstance == null))
+            return;
+
+         if ((position != IFCLinkPosition.ProjectBasePoint) && (position != IFCLinkPosition.SurveyPoint))
+            return;
+
+         Document linkedDocument = linkInstance.GetLinkDocument();
+         if (linkedDocument == null)
+            return;
+
+         XYZ originalPoint = (position == IFCLinkPosition.ProjectBasePoint) ? BasePoint.GetProjectBasePoint(originalDocument)?.Position : BasePoint.GetSurveyPoint(originalDocument)?.Position;
+         XYZ linkedPoint = BasePoint.GetProjectBasePoint(linkedDocument)?.Position;
+
+         if ((originalPoint == null) || (linkedPoint == null))
+            return;
+
+         XYZ translationVector = originalPoint - linkedPoint;
+         if (translationVector.IsZeroLength())
+            return;
+
+         Location instanceLocation = linkInstance.Location;
+         if (!instanceLocation.Move(translationVector))
+         {
+            Importer.TheLog.LogError(-1, $"Couldn't move link to position defined by {position}.  This may result in an incorrect position.", false);
+         }
+      }
+
+      /// <summary>
       /// Link in the new created document to parent document.
       /// </summary>
       /// <param name="originalIFCFileName">The full path to the original IFC file.  Same as baseLocalFileName if the IFC file is not on a server.</param>
@@ -779,12 +889,16 @@ namespace Revit.IFC.Import.Data
       /// <param name="ifcDocument">The newly imported IFC file document.</param>
       /// <param name="originalDocument">The document to contain the IFC link.</param>
       /// <param name="useExistingType">True if the RevitLinkType already exists.</param>
-      /// <param name="doSave">True if we should save the document.  This should only be false if we are reusing a cached document.</param>
+      /// <param name="doSave">Indicates whether the .IFC.RVT file (also used for IFC cache on reload) should be saved.</param>
       /// <returns>The element id of the RevitLinkType for this link operation.</returns>
-      public static ElementId LinkInFile(string originalIFCFileName, string baseLocalFileName, Document ifcDocument, Document originalDocument, bool useExistingType, bool doSave)
+      public static ElementId LinkInFile(string originalIFCFileName, string baseLocalFileName,
+                                         Document ifcDocument, Document originalDocument,
+                                         bool useExistingType, bool doSave)
       {
          bool saveSucceded = true;
          string fileName = GenerateRevitFileName(baseLocalFileName);
+
+         #region SaveLinkedFile
 
          if (doSave)
          {
@@ -826,6 +940,8 @@ namespace Revit.IFC.Import.Data
             }
          }
 
+         #endregion
+
          if (!ifcDocument.IsLinked)
             ifcDocument.Close(false);
 
@@ -865,9 +981,11 @@ namespace Revit.IFC.Import.Data
          if (ifcResource == null)
             Importer.TheLog.LogError(-1, "Couldn't create local IFC cached file.  Aborting import.", true);
 
-
          if (!doReloadFrom)
          {
+
+            #region Link Without Reload
+
             Transaction linkTransaction = new Transaction(originalDocument);
             linkTransaction.Start(Resources.IFCLinkFile);
 
@@ -884,17 +1002,114 @@ namespace Revit.IFC.Import.Data
                if (revitLinkTypeId != ElementId.InvalidElementId)
                {
                   RevitLinkInstance linkInstance = RevitLinkInstance.Create(originalDocument, revitLinkTypeId);
+                  Document linkDocument = linkInstance?.GetLinkDocument();
+                  if (linkDocument == null)
+                  {
+                     Importer.TheLog.LogError(-1, "Unable to create Link Instance for IFC File in Host Document -- Aborting Link.", true);
+                  }
+
+                  XYZ hostSharedCoordinatesOrigin = BasePoint.GetSurveyPoint(originalDocument)?.Position;
+                  XYZ hostProjectBasePointShared = BasePoint.GetProjectBasePoint(originalDocument)?.SharedPosition;
+                  XYZ hostInternalOriginShared = (hostSharedCoordinatesOrigin == null) ? null : -hostSharedCoordinatesOrigin;
+                  if ((hostSharedCoordinatesOrigin == null) || (hostProjectBasePointShared == null) || (hostInternalOriginShared == null))
+                  {
+                     Importer.TheLog.LogError(-1, "Unable to retrieve three primary shared origins Host Document -- Aborting Link.", true);
+                  }
+
+                  // Log all coordinates for Verbose Logging.
+                  if (Importer.TheOptions.VerboseLogging)
+                  {
+                     XYZ hostProjectBasePoint = BasePoint.GetProjectBasePoint(originalDocument).Position;
+
+                     XYZ hostSurveyPointShared = BasePoint.GetSurveyPoint(originalDocument).SharedPosition;
+
+                     XYZ linkProjectBasePoint = BasePoint.GetProjectBasePoint(linkDocument).Position;
+                     XYZ linkProjectBasePointShared = BasePoint.GetProjectBasePoint(linkDocument).SharedPosition;
+                     XYZ linkSurveyPoint = BasePoint.GetSurveyPoint(linkDocument)?.Position;
+                     XYZ linkSurveyPointShared = BasePoint.GetSurveyPoint(linkDocument).SharedPosition;
+
+                     XYZ internalOrigin = XYZ.Zero;
+                     XYZ linkInternalOriginShared = -linkSurveyPoint;
+
+                     Importer.TheLog.LogComment(-1, $"-------------------------------- BEGIN IFC LINK POSITION INFO -----------------", false);
+                     Importer.TheLog.LogComment(-1, $"> HOST DOCUMENT > Internal Origin:  Position: {internalOrigin}. Shared Position: {hostInternalOriginShared}", false);
+                     Importer.TheLog.LogComment(-1, $"> HOST DOCUMENT > Project Base Point:  Position: {hostProjectBasePoint}, Shared Position: {hostProjectBasePointShared}", false);
+                     Importer.TheLog.LogComment(-1, $"> HOST DOCUMENT > Survey Point:  Position: {hostSharedCoordinatesOrigin}, Shared Position: {hostSurveyPointShared}", false);
+                     Importer.TheLog.LogComment(-1, $"> LINK DOCUMENT > Internal Origin:  Position: {internalOrigin}. Shared Position: {linkInternalOriginShared}", false);
+                     Importer.TheLog.LogComment(-1, $"> LINK DOCUMENT > Project Base Point:  Position: {linkProjectBasePoint}, Shared Position: {linkProjectBasePointShared}", false);
+                     Importer.TheLog.LogComment(-1, $"> LINK DOCUMENT > Survey Point:  Position: {linkSurveyPoint}, Shared Position: {linkSurveyPointShared}", false);
+                     Importer.TheLog.LogComment(-1, $"> Large Coordinate Offset:  Original: {Importer.TheHybridInfo.OriginalLargeCoordinateOriginOffset}, Current: {Importer.TheHybridInfo.LargeCoordinateOriginOffset}", false);
+                     Importer.TheLog.LogComment(-1, $"> Destination Position: {Importer.TheOptions.LinkPosition.ToString()}, Destination Orientation: {Importer.TheOptions.LinkOrientation.ToString()}", false);
+                     Importer.TheLog.LogComment(-1, $"-------------------------------- END IFC LINK POSITION INFO -----------------", false);
+                  }
+
+                  #region Large Coordinates post-processing
+
+                  // LargeCoordinateOriginOffset equals the distance that the Link Instance has been moved from its original position, to the Revit Internal Origin.
+                  // To move the Link Instance back to its original location, use the inverse of the OriginalLargeCoordinateOriginOffset.
+                  // Subtract the shared coordinates of the target point to ensure correct coordinates.
+                  XYZ originalLargeCoordinateOriginOffset = Importer.TheHybridInfo?.OriginalLargeCoordinateOriginOffset ?? XYZ.Zero;
+                  if (!originalLargeCoordinateOriginOffset.IsZeroLength())
+                  {
+                     XYZ targetPoint = Importer.TheOptions.LinkPosition switch
+                     {
+                        IFCLinkPosition.InternalOrigin => hostInternalOriginShared,
+                        IFCLinkPosition.ProjectBasePoint => hostProjectBasePointShared,
+                        IFCLinkPosition.SurveyPoint => hostSharedCoordinatesOrigin,
+                        _ => hostInternalOriginShared    // Always defaulting to Internal Origin.
+                     };
+
+                     XYZ adjustmentOffset = (-originalLargeCoordinateOriginOffset) - targetPoint;
+                     if (XYZ.IsWithinLengthLimits(adjustmentOffset))
+                     {
+                        Location rvtLinkLocation = linkInstance.Location;
+                        rvtLinkLocation.Move(adjustmentOffset);
+                     }
+                     else
+                     {
+                        Importer.TheLog.LogWarning(-1, $"IFC Import:  IFC Origin is outside IFC Import Threshold.  IFC Origin has been moved to target point:  {Importer.TheOptions.LinkPosition}.", false);
+                     }
+                  }
+
+                  #endregion
+
+                  #region Link Orientation
+
+                  // Default:  Rotate link to Revit Project North (not True North).
                   RotateInstanceToProjectNorth(originalDocument, linkInstance);
+
+                  // Handle True North orientation.
+                  if (Importer.TheOptions.LinkOrientation == IFCLinkOrientation.TrueNorth)
+                  {
+                     RotateInstanceToLinkNorth(linkInstance);
+                  }
+
+                  #endregion
+
+                  #region Link Positioning
+
+                  // For targets of ProjectBasePoint and SurveyPoint only, move the LinkInstance to align with the target point.
+                  // If the IFC Origin was outside IFC Import Threshold, treat as if the target is "Internal Origin".
+                  if (Importer.TheOptions.LinkPosition != IFCLinkPosition.InternalOrigin)
+                  {
+                     MoveInstanceToAlignPoint(originalDocument, linkInstance, Importer.TheOptions.LinkPosition);
+                  }
+
+                  #endregion
                }
 
                Importer.PostDelayedLinkErrors(originalDocument);
                linkTransaction.Commit();
+
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                linkTransaction.RollBack();
-               throw ex;
+               throw;
             }
+
+            #endregion
+
          }
          else // reload from
          {
@@ -1151,8 +1366,11 @@ namespace Revit.IFC.Import.Data
          }
          else if (schemaName.Equals("IFC4X3", StringComparison.OrdinalIgnoreCase))
          {
-            //schemaVersion = IFCSchemaVersion.IFC4x3; 
             schemaVersion = IFCSchemaVersion.IFC4x3;
+         }
+         else if (schemaName.Equals("IFC4X3_ADD2", StringComparison.OrdinalIgnoreCase))
+         {
+            schemaVersion = IFCSchemaVersion.IFC4x3_ADD2;
          }
          else
             throw new ArgumentException("Invalid or unsupported schema: " + schemaName);

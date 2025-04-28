@@ -40,12 +40,10 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="filledRegion">The filled region element.</param>
-      /// <param name="geometryElement">The geometry element.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
-      public static void Export(ExporterIFC exporterIFC, FilledRegion filledRegion,
-          GeometryElement geometryElement, ProductWrapper productWrapper)
+      public static void Export(ExporterIFC exporterIFC, FilledRegion filledRegion, ProductWrapper productWrapper)
       {
-         if (filledRegion == null || geometryElement == null)
+         if (filledRegion == null)
             return;
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
@@ -83,10 +81,7 @@ namespace Revit.IFC.Export.Exporter
             ElementId categoryId = CategoryUtil.GetSafeCategoryId(filledRegion);
 
             // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, filledRegion, out overrideContainerHnd);
-
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, filledRegion, null, orientTrf, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, filledRegion, orientTrf))
             {
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                int loopCount = sortedLoops.Count;
@@ -115,7 +110,7 @@ namespace Revit.IFC.Export.Exporter
                   HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { representItem };
                   IFCAnyHandle context2D = ExporterCacheManager.Get2DContextHandle(IFCRepresentationIdentifier.Annotation);
                   IFCAnyHandle bodyRepHnd = RepresentationUtil.CreateAnnotationSetRep(exporterIFC, filledRegion, categoryId,
-                     context2D, bodyItems);
+                     context2D, bodyItems, false);
 
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
                      return;

@@ -20,6 +20,7 @@
 using Autodesk.Revit.DB;
 using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.Export.Toolkit.IFC4x3;
 
 namespace BIM.IFC.Export.UI
 {
@@ -96,6 +97,120 @@ namespace BIM.IFC.Export.UI
                return Resources.ER_BuildingService;
             case KnownERNames.Structural:
                return Resources.ER_Structural;
+            default:
+               return string.Empty;
+         }
+      }
+
+      /// <summary>
+      /// Get the UI Name for the Facility type. Note that this string may be localized.
+      /// </summary>
+      /// <param name="facilityTypeEnum">The facility type enum value.</param>
+      /// <returns>The localized facility type name.</returns>
+      public static string ToFullLabel(this KnownFacilityTypes facilityTypeEnum)
+      {
+         switch (facilityTypeEnum)
+         {
+            case KnownFacilityTypes.Bridge:
+               return Resources.FacilityBridge;
+            case KnownFacilityTypes.Building:
+               return Resources.FacilityBuilding;
+            case KnownFacilityTypes.MarineFacility:
+               return Resources.FacilityMarineFacility;
+            case KnownFacilityTypes.Railway:
+               return Resources.FacilityRailway;
+            case KnownFacilityTypes.Road:
+               return Resources.FacilityRoad;
+            default:
+               return string.Empty;
+         }
+      }
+
+      /// <summary>
+      /// Get the UI Name for the IfcBridgeTypeEnum. Note that this string may be localized.
+      /// </summary>
+      /// <param name="bridgeTypeEnum">The bridge type enum value.</param>
+      /// <returns>The localized bridge type name.</returns>
+      public static string ToFullLabel(this IFCBridgeType facilityTypeEnum)
+      {
+         switch (facilityTypeEnum)
+         {
+            case IFCBridgeType.ARCHED:
+               return Resources.BridgeArched;
+            case IFCBridgeType.CABLE_STAYED:
+               return Resources.BridgeCableStayed;
+            case IFCBridgeType.CANTILEVER:
+               return Resources.BridgeCantilever;
+            case IFCBridgeType.CULVERT:
+               return Resources.BridgeCulvert;
+            case IFCBridgeType.FRAMEWORK:
+               return Resources.BridgeFramework;
+            case IFCBridgeType.GIRDER:
+               return Resources.BridgeGirder;
+            case IFCBridgeType.NOTDEFINED:
+               return Resources.NotDefined;
+            case IFCBridgeType.SUSPENSION:
+               return Resources.BridgeSuspension;
+            case IFCBridgeType.TRUSS:
+               return Resources.BridgeTruss;
+            case IFCBridgeType.USERDEFINED:
+               return Resources.UserDefined;
+            default:
+               return string.Empty;
+         }
+      }
+
+      /// <summary>
+      /// Get the UI Name for the IfcMarineFacilityTypeEnum. Note that this string may be localized.
+      /// </summary>
+      /// <param name="marineFacilityTypeEnum">The marine facility type enum value.</param>
+      /// <returns>The localized marine facility type name.</returns>
+      public static string ToFullLabel(this IFCMarineFacilityType facilityTypeEnum)
+      {
+         switch (facilityTypeEnum)
+         {
+            case IFCMarineFacilityType.BARRIERBEACH:
+               return Resources.MarineFacilityBarrierBeach;
+            case IFCMarineFacilityType.BREAKWATER:
+               return Resources.MarineFacilityBreakwater;
+            case IFCMarineFacilityType.CANAL:
+               return Resources.MarineFacilityCanal;
+            case IFCMarineFacilityType.DRYDOCK:
+               return Resources.MarineFacilityDryDock;
+            case IFCMarineFacilityType.FLOATINGDOCK:
+               return Resources.MarineFacilityFloatingDock;
+            case IFCMarineFacilityType.HYDROLIFT:
+               return Resources.MarineFacilityHydrolift;
+            case IFCMarineFacilityType.JETTY:
+               return Resources.MarineFacilityJetty;
+            case IFCMarineFacilityType.LAUNCHRECOVERY:
+               return Resources.MarineFacilityLaunchRecovery;
+            case IFCMarineFacilityType.MARINEDEFENCE:
+               return Resources.MarineFacilityMarineDefense;
+            case IFCMarineFacilityType.NAVIGATIONALCHANNEL:
+               return Resources.MarineFacilityNavigationalChannel;
+            case IFCMarineFacilityType.NOTDEFINED:
+               return Resources.NotDefined;
+            case IFCMarineFacilityType.PORT:
+               return Resources.MarineFacilityPort;
+            case IFCMarineFacilityType.QUAY:
+               return Resources.MarineFacilityQuay;
+            case IFCMarineFacilityType.REVETMENT:
+               return Resources.MarineFacilityRevetment;
+            case IFCMarineFacilityType.SHIPLIFT:
+               return Resources.MarineFacilityShipLift;
+            case IFCMarineFacilityType.SHIPLOCK:
+               return Resources.MarineFacilityShipLock;
+            case IFCMarineFacilityType.SHIPYARD:
+               return Resources.MarineFacilityShipyard;
+            case IFCMarineFacilityType.SLIPWAY:
+               return Resources.MarineFacilitySlipway;
+            case IFCMarineFacilityType.USERDEFINED:
+               return Resources.UserDefined;
+            case IFCMarineFacilityType.WATERWAY:
+               return Resources.MarineFacilityWaterway;
+            case IFCMarineFacilityType.WATERWAYSHIPLIFT:
+               return Resources.MarineFacilityWaterwayShiplift;
             default:
                return string.Empty;
          }

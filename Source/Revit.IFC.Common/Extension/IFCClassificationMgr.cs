@@ -163,10 +163,14 @@ namespace Revit.IFC.Common.Extensions
          Schema schema = GetSchema();
          if (schema != null)
          {
+            IList<DataStorage> oldSavedClassification = GetClassificationInStorage(document, schema);
+
+            if (oldSavedClassification.Count == 0 && classification.IsClassificationEmpty())
+               return;
+
             Transaction transaction = new Transaction(document, "Update saved IFC classification");
             transaction.Start();
 
-            IList<DataStorage> oldSavedClassification = GetClassificationInStorage(document, schema);
             if (oldSavedClassification.Count > 0)
             {
                List<ElementId> dataStorageToDelete = new List<ElementId>();

@@ -112,7 +112,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcCurtainWall))
          {
-            BoundingBoxXYZ boundingBox = (element as Wall).get_BoundingBox(null);
+            BoundingBoxXYZ boundingBox = element.get_BoundingBox(null);
             if (boundingBox != null)
                m_Height = boundingBox.Max.Z - boundingBox.Min.Z;
          }

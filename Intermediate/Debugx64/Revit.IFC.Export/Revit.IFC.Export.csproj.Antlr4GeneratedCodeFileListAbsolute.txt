@@ -1,0 +1,12 @@
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprGrammarLexer.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprGrammarParser.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprGrammarListener.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprGrammarBaseListener.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprGrammarVisitor.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprGrammarBaseVisitor.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprResolverParserLexer.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprResolverParserParser.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprResolverParserListener.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprResolverParserBaseListener.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprResolverParserVisitor.cs
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Export\ParamExprResolverParserBaseVisitor.cs

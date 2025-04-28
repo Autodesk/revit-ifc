@@ -73,6 +73,13 @@ namespace Revit.IFC.Export.Utility
 
          ExporterCacheManager.ElementToHandleCache.Register(element.Id, handle, exportType);
          ExporterCacheManager.HandleToElementCache.Register(handle, element.Id);
+
+         if (SpatialElementExporter.IsZoneCompatible(exportType))
+         {
+            IFCFile file = ExporterIFC.GetFile();
+            SpatialElementExporter.CreateZoneInfos(file, element, handle);
+            SpatialElementExporter.CreateSpaceOccupantInfo(file, element, handle);
+         }
       }
 
       /// <summary>
@@ -173,29 +180,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Gets the first handle of a particular type, or null if none exists.
-      /// </summary>
-      /// <param name="type">The entity type.</param>
-      /// <returns>The handle, or null.</returns>
-      public IFCAnyHandle GetElementOfType(IFCEntityType type)
-      {
-         foreach (IFCAnyHandle handle in CreatedHandles)
-         {
-            if (IFCAnyHandleUtil.IsSubTypeOf(handle, type))
-               return handle;
-         }
-
-         ICollection<IFCAnyHandle> internalObjects = InternalWrapper.GetAllObjects();
-         foreach (IFCAnyHandle handle in internalObjects)
-         {
-            if (IFCAnyHandleUtil.IsSubTypeOf(handle, type))
-               return handle;
-         }
-
-         return null;
-      }
-
-      /// <summary>
       /// Get all handles in the wrapper.
       /// </summary>
       /// <returns>The collection of handles.</returns>
@@ -211,8 +195,7 @@ namespace Revit.IFC.Export.Utility
          // of disposal of entities, and in general a move to .NET only created entities.
          foreach (IFCAnyHandle internalObject in internalObjects)
          {
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(internalObject))
-               allObjects.Add(internalObject);
+            allObjects.AddIfNotNull(internalObject);
          }
 
          allObjects.UnionWith(CreatedHandles);
@@ -338,6 +321,24 @@ namespace Revit.IFC.Export.Utility
       {
          CreatedHandles.Add(handle);
       }
+
+      /// <summary>
+      /// Add temporary part handle to associate with the IfcProduct in this wrapper.
+      /// </summary>
+      /// <param name="handle">The element handle.</param>
+      /// <param name="setter">The placement setter.</param>
+      /// <param name="data">The extrusion creation data (can be null.)</param>
+      /// <param name="relateToLevel">Relate to the level in the setter, or not.</param>
+      public void AddPart(IFCAnyHandle handle, PlacementSetter setter, IFCExportBodyParams data, bool relateToLevel)
+      {
+         IFCLevelInfo levelInfo = setter.LevelInfo;
+         bool actuallyRelateToLevel = relateToLevel && (levelInfo != null);
+         InternalWrapper.AddElement(handle, levelInfo, data?.Data, actuallyRelateToLevel);
+         if (levelInfo == null && relateToLevel)
+            ExporterCacheManager.LevelInfoCache.OrphanedElements.Add(handle);
+         CreatedHandles.Add(handle);
+      }
+
       /// <summary>
       /// Adds a material handle to associate with the IfcProduct in this wrapper.
       /// </summary>

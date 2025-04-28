@@ -1,0 +1,17 @@
+C:\git\IFC-for-Revit\2026\Source\Revit.IFC.Common\bin\Debugx64\BIMOne.Revit.IFC.Common.dll
+C:\git\IFC-for-Revit\2026\Source\Revit.IFC.Common\bin\Debugx64\BIMOne.Revit.IFC.Common.pdb
+C:\git\IFC-for-Revit\2026\Source\Revit.IFC.Common\bin\Debugx64\RevitAPI.xml
+C:\git\IFC-for-Revit\2026\Source\Revit.IFC.Common\bin\Debugx64\RevitAPIIFC.xml
+C:\git\IFC-for-Revit\2026\Source\Revit.IFC.Common\bin\Debugx64\Newtonsoft.Json.xml
+C:\git\IFC-for-Revit\2026\Source\Revit.IFC.Common\bin\Debugx64\RevitAPI.dll
+C:\git\IFC-for-Revit\2026\Source\Revit.IFC.Common\bin\Debugx64\RevitAPIIFC.dll
+C:\git\IFC-for-Revit\2026\Source\Revit.IFC.Common\bin\Debugx64\Newtonsoft.Json.dll
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Common\Revit.IFC.Common.csproj.AssemblyReference.cache
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Common\Revit.IFC.Common.GeneratedMSBuildEditorConfig.editorconfig
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Common\Revit.IFC.Common.csproj.CoreCompileInputs.cache
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Common\Revit.IFC.Common.sourcelink.json
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Common\Revit.IF.4E53D487.Up2Date
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Common\BIMOne.Revit.IFC.Common.dll
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Common\refint\BIMOne.Revit.IFC.Common.dll
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Common\BIMOne.Revit.IFC.Common.pdb
+C:\git\IFC-for-Revit\2026\Intermediate\Debugx64\Revit.IFC.Common\ref\BIMOne.Revit.IFC.Common.dll

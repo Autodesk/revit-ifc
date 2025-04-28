@@ -108,28 +108,6 @@ namespace Revit.IFC.Import.Utility
             }
          }
 
-         if (Importer.TheOptions.IsHybridImport && Importer.TheHybridInfo != null &&
-             IFCAnyHandleUtil.IsTypeOf(ifcRelAssignsOrAggregates, IFCEntityType.IfcRelAggregates) &&
-             (relatedTo is IFCElement ifcElementRelatedTo))
-         {
-            if (Importer.TheHybridInfo.ContainerMap == null)
-            {
-               Importer.TheHybridInfo.ContainerMap = new Dictionary<int, HashSet<IFCObjectDefinition>>();
-            }
-
-            HashSet<IFCObjectDefinition> containedObjectDefinitions = null;
-            if (Importer.TheHybridInfo.ContainerMap.TryGetValue(ifcElementRelatedTo.Id, out containedObjectDefinitions))
-            {
-               containedObjectDefinitions.UnionWith(relatedObjectSet);
-            }
-            else
-            {
-               containedObjectDefinitions = new HashSet<IFCObjectDefinition>();
-               containedObjectDefinitions.UnionWith(relatedObjectSet);
-               Importer.TheHybridInfo.ContainerMap.Add(ifcElementRelatedTo.Id, containedObjectDefinitions);
-            }
-         }
-
          return relatedObjectSet;
       }
 
@@ -248,7 +226,8 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       /// <param name="ifcRelDefinesByProperties">The IfcRelDefinesByProperties handle.</param>
       /// <param name="propertySets">The map of property sets that will be modified by this function based on the IfcRelDefinesByProperties handle.</param>
-      static public void ProcessIFCRelDefinesByProperties(IFCAnyHandle ifcRelDefinesByProperties, IDictionary<string, IFCPropertySetDefinition> propertySets)
+      /// <param name="hostIfcObjectId">The STEP Id of the IFC entity which invoked this method.</param>
+      static public void ProcessIFCRelDefinesByProperties(IFCAnyHandle ifcRelDefinesByProperties, IDictionary<string, IFCPropertySetDefinition> propertySets, int hostIfcObjectId)
       {
          IFCAnyHandle propertySetDefinition = IFCAnyHandleUtil.GetInstanceAttribute(ifcRelDefinesByProperties, "RelatingPropertyDefinition");
 
@@ -258,7 +237,7 @@ namespace Revit.IFC.Import.Utility
             return;
          }
 
-         IFCPropertySetDefinition ifcPropertySet = IFCPropertySetDefinition.ProcessIFCPropertySetDefinition(propertySetDefinition);
+         IFCPropertySetDefinition ifcPropertySet = IFCPropertySetDefinition.ProcessIFCPropertySetDefinition(propertySetDefinition, hostIfcObjectId);
 
          if (ifcPropertySet != null)
          {

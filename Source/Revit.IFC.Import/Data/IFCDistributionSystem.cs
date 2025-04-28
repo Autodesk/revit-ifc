@@ -138,12 +138,12 @@ namespace Revit.IFC.Import.Data
          return new IFCDistributionSystem(ifcDistributionSystem);
       }
 
+
       /// <summary>
-      /// Indicates whether we should create a separate DirectShape for this IFC entity.
-      /// For IfcDistributionSystem, a DirectShape should be created.
+      /// Indicates that IfcDistributionSystem can act as a container.  This may create another DirectShape Element, depending on circumstances.
       /// </summary>
-      /// <returns>True if a DirectShape container is created, False otherwise.</returns>
-      public override bool CreateContainer() { return true; }
+      /// <returns>True if an IfcDistributionSystem indicated that it can be a container.</returns>
+      public override bool CanContainRelatedEntities => true;
 
       /// <summary>
       /// Creates internal parameters for the IFCDistributionSystem. 

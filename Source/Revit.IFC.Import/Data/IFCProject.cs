@@ -101,6 +101,25 @@ namespace Revit.IFC.Import.Data
          return false;
       }
 
+      private void UpdateProjectLocation(ProjectLocation projectLocation, XYZ geoRef, double trueNorth)
+      {
+         ProjectPosition originalPosition = projectLocation?.GetProjectPosition(XYZ.Zero);
+         if (originalPosition == null)
+         {
+            return;
+         }
+
+         // If we are using legacy import, we might be doing a re-link where the position changed.
+         // If not, then we always defer to the ATF portion.
+         XYZ originalRef = Importer.TheOptions.HybridImportOptions != null ?
+            new XYZ(originalPosition.EastWest, originalPosition.NorthSouth, originalPosition.Elevation) :
+            XYZ.Zero;
+         XYZ refToUse = originalRef.IsZeroLength() ? geoRef : originalRef;
+
+         ProjectPosition projectPosition = new ProjectPosition(refToUse.X, refToUse.Y, refToUse.Z, trueNorth);
+         projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
+      }
+
       /// <summary>
       /// Processes IfcProject attributes.
       /// </summary>
@@ -257,13 +276,11 @@ namespace Revit.IFC.Import.Data
             }
 
             ProjectLocation projectLocation = IFCImportFile.TheFile.Document.ActiveProjectLocation;
-            ProjectPosition projectPosition;
             if (projectLocation != null)
             {
                if (hasMapConv)
                {
-                  projectPosition = new ProjectPosition(geoRef.X, geoRef.Y, geoRef.Z, trueNorth);
-                  projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
+                  UpdateProjectLocation(projectLocation, geoRef, trueNorth);
 
                   if (!string.IsNullOrEmpty(geoRefName))
                   {
@@ -313,8 +330,7 @@ namespace Revit.IFC.Import.Data
                      }
                   }
 
-                  projectPosition = new ProjectPosition(geoRef.X, geoRef.Y, geoRef.Z, trueNorth);
-                  projectLocation.SetProjectPosition(XYZ.Zero, projectPosition);
+                  UpdateProjectLocation(projectLocation, geoRef, trueNorth);
                }
             }
          }
@@ -403,6 +419,12 @@ namespace Revit.IFC.Import.Data
          // This is only for relink.
          foreach (ElementId gridId in Importer.TheCache.GridNameToElementMap.Values)
          {
+            // Temporary workaround if Grid Element is already updated (relinked) by HybridElement.
+            if (Importer.TheHybridInfo?.HybridElements?.Contains(gridId) ?? false)
+            {
+               continue;
+            }
+
             Grid grid = doc.GetElement(gridId) as Grid;
             if (grid == null)
                continue;

@@ -44,7 +44,7 @@ namespace Revit.IFC.Export.Exporter
       public static void Export(ExporterIFC exporterIFC, TextNote textNote, ProductWrapper productWrapper)
       {
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, textNote, out string predefinedType);
+         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(textNote, out string predefinedType);
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return;
 
@@ -117,7 +117,7 @@ namespace Revit.IFC.Export.Exporter
                HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { repItemHnd };
                IFCAnyHandle context2d = ExporterCacheManager.Get2DContextHandle(IFCRepresentationIdentifier.Annotation);
                IFCAnyHandle bodyRepHnd = RepresentationUtil.CreateAnnotationSetRep(exporterIFC, 
-                  textNote, catId, context2d, bodyItems);
+                  textNote, catId, context2d, bodyItems, false);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
                   throw new Exception("Failed to create shape representation.");
@@ -135,7 +135,7 @@ namespace Revit.IFC.Export.Exporter
                }
                else
                {
-                  instHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC,
+                  instHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType, file,
                      textNote, guid, ExporterCacheManager.OwnerHistoryHandle,
                      setter.LocalPlacement, prodShapeHnd);
                }

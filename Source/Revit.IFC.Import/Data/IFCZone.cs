@@ -85,14 +85,16 @@ namespace Revit.IFC.Import.Data
       /// <returns>True if the IFC entity geometry should be duplicated, False otherwise.</returns>
       public override bool ContainerFilteredEntity(IFCEntity entity)
       {
-         return (entity is IFCSpace);
+         if (entity == null)
+            return false;
+
+         return (entity.EntityType == IFCEntityType.IfcSpace) || (entity.EntityType == IFCEntityType.IfcSpatialZone);
       }
 
       /// <summary>
-      /// Indicates whether we should create a separate DirectShape Element for this IFC entity.
-      /// For IfcZone, a DirectShape should be created.
+      /// Indicates that IfcZone can act as a container.  This may create another DirectShape Element, depending on circumstances.
       /// </summary>
-      /// <returns>True if a DirectShape container is created, False otherwise.</returns>
-      public override bool CreateContainer() { return true; }
+      /// <returns>True if an IfcZone indicated that it can be a container.</returns>
+      public override bool CanContainRelatedEntities => true;
    }
 }

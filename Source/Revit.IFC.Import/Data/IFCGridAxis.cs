@@ -226,6 +226,12 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcGridAxis);
 
+         if (Importer.TheHybridInfo?.HybridMap?.TryGetValue(Id.ToString(), out ElementId hybridElementId) ?? false)
+         {
+            CreatedElementId = hybridElementId;
+            return;
+         }
+            
          IFCAnyHandle axisCurve = IFCImportHandleUtil.GetRequiredInstanceAttribute(ifcGridAxis, "AxisCurve", true);
          AxisCurve = IFCCurve.ProcessIFCCurve(axisCurve);
 
@@ -340,7 +346,7 @@ namespace Revit.IFC.Import.Data
 
          if (ParentGrid != null && ParentGrid.ObjectLocation != null)
          {
-            Transform lcs = ParentGrid.ObjectLocation.TotalTransform;
+            Transform lcs = ParentGrid.ObjectLocation.TotalTransformAfterOffset;
             axisCurve = axisCurve.CreateTransformed(lcs);
          }
 
@@ -390,7 +396,16 @@ namespace Revit.IFC.Import.Data
       public void Create(Document doc, Transform lcs)
       {
          if (!IsValidForCreation)
+         {
             return;
+         }
+
+         ElementId hybridElementId = ElementId.InvalidElementId;
+         Importer.TheHybridInfo?.HybridMap?.TryGetValue(Id.ToString(), out hybridElementId);
+         if (hybridElementId != null && hybridElementId != ElementId.InvalidElementId)
+         {
+            return;
+         }
 
          // These are hardwired values to ensure that the Grid is visible in the
          // current view, in feet.  Note that there is an assumption that building stories
@@ -413,7 +428,7 @@ namespace Revit.IFC.Import.Data
             }
             return;
          }
-         
+
          Curve baseCurve = GetAxisCurve();
          if (baseCurve == null)
          {

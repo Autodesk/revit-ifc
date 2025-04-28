@@ -84,6 +84,12 @@ namespace Revit.IFC.Import.Data
          }
       }
 
+      private enum IFCIndexType
+      {
+         LineIndex,
+         ArcIndex
+      };
+
       protected override void Process(IFCAnyHandle ifcCurve)
       {
          base.Process(ifcCurve);
@@ -108,7 +114,7 @@ namespace Revit.IFC.Import.Data
             if (IFCImportFile.HasUndefinedAttribute(ex))
                IFCImportFile.TheFile.DowngradeIFC4SchemaTo(IFCSchemaVersion.IFC4);
             else
-               throw ex;
+               throw;
          }
 
          IFCCartesianPointList pointList = IFCCartesianPointList.ProcessIFCCartesianPointList(points);
@@ -118,11 +124,52 @@ namespace Revit.IFC.Import.Data
          CurveLoop curveLoop = null;
          IList<XYZ> pointXYZs = null;
 
+         IList<IFCIndexType> indexTypes = new List<IFCIndexType>();
+         if (segments != null)
+         {
+            foreach (IFCData segment in segments)
+            {
+               string indexType = ValidateSegment(segment);
+               if (indexType == null)
+               {
+                  break;
+               }
+
+               if (indexType.Equals("IfcLineIndex", StringComparison.OrdinalIgnoreCase))
+               {
+                  indexTypes.Add(IFCIndexType.LineIndex);
+               }
+               else if (indexType.Equals("IfcArcIndex", StringComparison.OrdinalIgnoreCase))
+               {
+                  indexTypes.Add(IFCIndexType.ArcIndex);
+               }
+               else
+               {
+                  break;
+               }
+            }
+
+            if (indexTypes.Count != segments.Count)
+            {
+               Importer.TheLog.LogError(Id, "Unknown segment type in IfcIndexedPolyCurve, ignoring.", false);
+               segments = null;
+            }
+         }
+
          if (segments == null)
          {
             // Simple case: no segment information, just treat the curve as a polyline.
             pointXYZs = pointListXYZs;
-            curveLoop = IFCGeometryUtil.CreatePolyCurveLoop(pointXYZs, null, Id, false);
+
+            // Special case:
+            // If there are only three points (A, B, C), and C actually equals A, then the Curve should actually be considered as going from A->B only.
+            // Since this method specifies closeCurve as false, CreatePolyLoop will reject (A, B, A) as invalid, but will not reject (A, B).
+            if (((pointXYZs?.Count ?? 0) == 3) && pointXYZs[0].IsAlmostEqualTo(pointXYZs[2]))
+            {
+               pointXYZs.RemoveAt(2);
+            }
+
+            curveLoop = IFCGeometryUtil.CreatePolyCurveLoop(pointXYZs, null, Id, closeCurve: false);
          }
          else
          {
@@ -138,82 +185,80 @@ namespace Revit.IFC.Import.Data
             pointXYZs = new List<XYZ>();
 
             IList<XYZ> currentLineSegmentPoints = new List<XYZ>();
-            foreach (IFCData segment in segments)
+            int count = segments.Count;
+            for (int ii = 0; ii < count; ii++)
             {
-               string indexType = ValidateSegment(segment);
-               if (indexType == null)
+               IFCAggregate segmentInfo = segments[ii].AsAggregate();
+               switch (indexTypes[ii])
                {
-                  Importer.TheLog.LogError(Id, "Unknown segment type in IfcIndexedPolyCurve.", false);
-                  continue;
-               }
-
-               IFCAggregate segmentInfo = segment.AsAggregate();
-
-               if (indexType.Equals("IfcLineIndex", StringComparison.OrdinalIgnoreCase))
-               {
-                  foreach (IFCData segmentInfoIndex in segmentInfo)
-                  {
-                     int? currentIndex = GetValidIndex(segmentInfoIndex, numPoints);
-                     if (currentIndex == null)
-                        continue;
-
-                     // We want to aggregate line segments, but if we have no points
-                     // yet, we need to always add the start point.
-                     int validCurrentIndex = currentIndex.Value;
-                     if (lastIndex != validCurrentIndex || currentLineSegmentPoints.Count == 0)
+                  case IFCIndexType.LineIndex:
                      {
-                        XYZ currPt = pointListXYZs[validCurrentIndex];
-                        pointXYZs.Add(currPt);
-                        currentLineSegmentPoints.Add(currPt);
-                        lastIndex = validCurrentIndex;
+                        foreach (IFCData segmentInfoIndex in segmentInfo)
+                        {
+                           int? currentIndex = GetValidIndex(segmentInfoIndex, numPoints);
+                           if (currentIndex == null)
+                              continue;
+
+                           // We want to aggregate line segments, but if we have no points
+                           // yet, we need to always add the start point.
+                           int validCurrentIndex = currentIndex.Value;
+                           if (lastIndex != validCurrentIndex || currentLineSegmentPoints.Count == 0)
+                           {
+                              XYZ currPt = pointListXYZs[validCurrentIndex];
+                              pointXYZs.Add(currPt);
+                              currentLineSegmentPoints.Add(currPt);
+                              lastIndex = validCurrentIndex;
+                           }
+                        }
+                        break;
                      }
-                  }
-               }
-               else if (indexType.Equals("IfcArcIndex", StringComparison.OrdinalIgnoreCase))
-               {
-                  // Create any line segments that haven't been already created.
-                  CreateLineSegments(curveLoop, currentLineSegmentPoints);
-                  
-                  if (segmentInfo.Count != 3)
-                  {
-                     Importer.TheLog.LogError(Id, "Invalid IfcArcIndex in IfcIndexedPolyCurve.", false);
-                     continue;
-                  }
+                  case IFCIndexType.ArcIndex:
+                     {
+                        // Create any line segments that haven't been already created.
+                        CreateLineSegments(curveLoop, currentLineSegmentPoints);
 
-                  int? startIndex = GetValidIndex(segmentInfo[0], numPoints);
-                  int? pointIndex = GetValidIndex(segmentInfo[1], numPoints);
-                  int? endIndex = GetValidIndex(segmentInfo[2], numPoints);
+                        if (segmentInfo.Count != 3)
+                        {
+                           Importer.TheLog.LogError(Id, "Invalid IfcArcIndex in IfcIndexedPolyCurve.", false);
+                           continue;
+                        }
 
-                  if (startIndex == null || pointIndex == null || endIndex == null)
-                     continue;
+                        int? startIndex = GetValidIndex(segmentInfo[0], numPoints);
+                        int? pointIndex = GetValidIndex(segmentInfo[1], numPoints);
+                        int? endIndex = GetValidIndex(segmentInfo[2], numPoints);
 
-                  Arc arcSegment = null;
-                  XYZ startPoint = pointListXYZs[startIndex.Value];
-                  XYZ pointOnArc = pointListXYZs[pointIndex.Value];
-                  XYZ endPoint = pointListXYZs[endIndex.Value];
-                  try
-                  {
-                     arcSegment = Arc.Create(startPoint, endPoint, pointOnArc);
-                     if (arcSegment != null)
-                        curveLoop.Append(arcSegment);
-                  }
-                  catch
-                  {
-                     // We won't do anything here; it may be that the arc is very small, and can
-                     // be repaired as a gap in the curve loop.  If it can't, this will fail later.
-                     // We will monitor usage to see if anything more needs to be done here.
-                  }
+                        if (startIndex == null || pointIndex == null || endIndex == null)
+                           continue;
 
-                  if (lastIndex != startIndex.Value)
-                     pointXYZs.Add(startPoint);
-                  pointXYZs.Add(pointOnArc);
-                  pointXYZs.Add(endPoint);
-                  lastIndex = endIndex.Value;
-               }
-               else
-               {
-                  Importer.TheLog.LogError(Id, "Unsupported segment type in IfcIndexedPolyCurve.", false);
-                  continue;
+                        Arc arcSegment = null;
+                        XYZ startPoint = pointListXYZs[startIndex.Value];
+                        XYZ pointOnArc = pointListXYZs[pointIndex.Value];
+                        XYZ endPoint = pointListXYZs[endIndex.Value];
+                        try
+                        {
+                           arcSegment = Arc.Create(startPoint, endPoint, pointOnArc);
+                           if (arcSegment != null)
+                              curveLoop.Append(arcSegment);
+                        }
+                        catch
+                        {
+                           // We won't do anything here; it may be that the arc is very small, and can
+                           // be repaired as a gap in the curve loop.  If it can't, this will fail later.
+                           // We will monitor usage to see if anything more needs to be done here.
+                        }
+
+                        if (lastIndex != startIndex.Value)
+                           pointXYZs.Add(startPoint);
+                        pointXYZs.Add(pointOnArc);
+                        pointXYZs.Add(endPoint);
+                        lastIndex = endIndex.Value;
+                        break;
+                     }
+                  default:
+                     {
+                        Importer.TheLog.LogError(Id, "Unknown segment type in IfcIndexedPolyCurve.", false);
+                        continue;
+                     }
                }
             }
 

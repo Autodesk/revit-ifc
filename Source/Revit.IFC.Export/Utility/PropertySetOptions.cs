@@ -18,6 +18,7 @@
 //
 using System;
 using System.Collections.Generic;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 
@@ -35,11 +36,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Override for the RevitPropertySets value from UI or API options.
       /// </summary>
-      private bool? ExportInternalRevitOverride
-      {
-         get;
-         set;
-      }
+      private bool? ExportInternalRevitOverride { get; set; } = null;
 
       /// <summary>
       /// Whether or not to include RevitPropertySets
@@ -48,130 +45,44 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            if (ExportInternalRevitOverride != null) return (bool)ExportInternalRevitOverride;
-            return m_ExportInternalRevit;
+            return ExportInternalRevitOverride.GetValueOrDefault(m_ExportInternalRevit);
          }
       }
 
       /// <summary>
       /// Override for the ExportIFCCommonPropertySets value from UI or API options.
       /// </summary>
-      private bool? ExportIFCCommonOverride
-      {
-         get;
-         set;
-      }
+      private bool? ExportIFCCommonOverride { get; set; } = null;
 
       /// <summary>
       /// Whether or not to include IFCCommonPropertySets
       /// </summary>
-      public bool ExportIFCCommon
-      {
-         get
-         {
-            // if the option is set by alternate UI, return the setting in UI.
-            if (ExportIFCCommonOverride != null)
-               return (bool)ExportIFCCommonOverride;
-            // otherwise return true by default.
-            return true;
-         }
-      }
-
-      /// <summary>
-      /// Override for the ExportMaterialPsets value from UI or API options.
-      /// </summary>
-      private bool? ExportMaterialPsetsOverride
-      {
-         get;
-         set;
-      }
+      public bool ExportIFCCommon { get; set; } = true;
 
       /// <summary>
       /// Whether or not to include material property sets.
       /// </summary>
-      public bool ExportMaterialPsets
-      {
-         get
-         {
-            // if the option is set by alternate UI, return the setting in UI.
-            if (ExportMaterialPsetsOverride != null)
-               return (bool)ExportMaterialPsetsOverride;
-            // otherwise return false by default.
-            return false;
-         }
-      }
-
-      /// <summary>
-      /// Override for the ExportSchedulesAsPsets value from UI or API options.
-      /// </summary>
-      private bool? ExportSchedulesAsPsetsOverride
-      {
-         get;
-         set;
-      }
+      public bool ExportMaterialPsets { get; set; } = false;
 
       /// <summary>
       /// Whether or not to use schedules as templates for custom property sets.
       /// </summary>
-      public bool ExportSchedulesAsPsets
-      {
-         get
-         {
-            // if the option is set by alternate UI, return the setting in UI.
-            if (ExportSchedulesAsPsetsOverride != null)
-               return (bool)ExportSchedulesAsPsetsOverride;
-            // otherwise return false by default.
-            return false;
-         }
-      }
-
-      /// <summary>
-      /// Override for the ExportSpecificSchedules value from UI or API options.
-      /// </summary>
-      private bool? ExportSpecificSchedulesOverride
-      {
-         get;
-         set;
-      }
+      public bool ExportSchedulesAsPsets { get; set; } = false;
 
       /// <summary>
       /// Whether or not to use only specific schedules as templates for custom property sets.
       /// </summary>
-      public bool ExportSpecificSchedules
-      {
-         get
-         {
-            // if the option is set by alternate UI, return the setting in UI.
-            if (ExportSpecificSchedulesOverride != null)
-               return (bool)ExportSpecificSchedulesOverride;
-            // otherwise return false by default.
-            return false;
-         }
-      }
+      public bool ExportSpecificSchedules { get; set; } = false;
 
       /// <summary>
-      /// Override for the ExportUserDefinedPsets value from UI or API options.
+      /// Whether or not export base quantities.
       /// </summary>
-      public bool? ExportUserDefinedPsetsOverride
-      {
-         get;
-         set;
-      }
+      public bool ExportIFCBaseQuantities { get; set; } = false;
 
       /// <summary>
       /// Whether or not to export User Defined Pset as defined in the text file corresponding to this export.
       /// </summary>
-      public bool ExportUserDefinedPsets
-      {
-         get
-         {
-            // if the option is set by alternate UI, return the setting in UI.
-            if (ExportUserDefinedPsetsOverride != null)
-               return (bool)ExportUserDefinedPsetsOverride;
-            // otherwise return false by default.
-            return false;
-         }
-      }
+      public bool ExportUserDefinedPsets { get; set; } = false;
 
       /// <summary>
       /// The file name of the user defined property set file, if we are exporting user defined property sets.
@@ -180,12 +91,15 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            if (!ExportUserDefinedPsets)
-               return null;
-            return m_ExportUserDefinedPsetsFileName;
+            return ExportUserDefinedPsets ? m_ExportUserDefinedPsetsFileName : null;
          }
-         protected set { m_ExportUserDefinedPsetsFileName = value; }
+         protected set 
+         { 
+            m_ExportUserDefinedPsetsFileName = value; 
+         }
       }
+
+      public bool UseTypePropertiesInInstacePSets { get; set; } = false;
 
       /// <summary>
       /// Private default constructor.
@@ -198,35 +112,47 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC handle passed during export.</param>
       /// <returns>The new cache.</returns>
-      /// <remarks>Please initialize this after all other code, as it relies on a consistent cache otherwise.</remarks>
-      public static PropertySetOptions Create(ExporterIFC exporterIFC, ExportOptionsCache cache)
+      public static PropertySetOptions Create(ExporterIFC exporterIFC, Document document, IFCVersion version)
       {
-         IDictionary<String, String> options = exporterIFC.GetOptions();
+         IDictionary<string, string> options = exporterIFC.GetOptions();
 
-         PropertySetOptions propertySetOptions = new PropertySetOptions();
+         // TODO: Have more than one.
+         IFCParameterTemplate parameterTemplate = IFCParameterTemplate.GetOrCreateInSessionTemplate(document);
 
-         propertySetOptions.m_ExportInternalRevit = (!(cache.ExportAs2x3CoordinationView2 || cache.ExportAs2x3COBIE24DesignDeliverable));
+         PropertySetOptions propertySetOptions = new();
+
+         propertySetOptions.m_ExportInternalRevit = !(OptionsUtil.ExportAs2x3CoordinationView2(version) ||
+            OptionsUtil.ExportAs2x3COBIE24DesignDeliverable(version));
 
          // "Revit property sets" override
-         propertySetOptions.ExportInternalRevitOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportInternalRevitPropertySets");
+         propertySetOptions.ExportInternalRevitOverride = parameterTemplate.ExportRevitElementParameters;
 
-         // "ExportIFCCommonPropertySets" override
-         propertySetOptions.ExportIFCCommonOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportIFCCommonPropertySets");
+         // "ExportIFCCommonPropertySets"
+         propertySetOptions.ExportIFCCommon = parameterTemplate.ExportIFCCommonPropertySets;
 
-         // "ExportMaterialPsets" override
-         propertySetOptions.ExportMaterialPsetsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportMaterialPsets");
+         // "ExportMaterialPsets"
+         propertySetOptions.ExportMaterialPsets = parameterTemplate.ExportRevitMaterialParameters;
 
-         // "ExportSchedulesAsPsets" override
-         propertySetOptions.ExportSchedulesAsPsetsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportSchedulesAsPsets");
+         // "ExportSchedulesAsPsets"
+         propertySetOptions.ExportSchedulesAsPsets = parameterTemplate.ExportRevitSchedules;
 
-         // "ExportUserDefinedPsets" override
-         propertySetOptions.ExportUserDefinedPsetsOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportUserDefinedPsets");
+         // ExportBaseQuantities
+         propertySetOptions.ExportIFCBaseQuantities = parameterTemplate.ExportIFCBaseQuantities;
+
+         // "ExportUserDefinedPsets"
+         propertySetOptions.ExportUserDefinedPsets = 
+            OptionsUtil.GetNamedBooleanOption(options, "ExportUserDefinedPsets").GetValueOrDefault(false);
+
+         // "UseTypePropertiesInInstacePSets"
+         propertySetOptions.UseTypePropertiesInInstacePSets =
+            OptionsUtil.GetNamedBooleanOption(options, "UseTypePropertiesInInstacePSets").GetValueOrDefault(false);
 
          // "ExportUserDefinedPsetsFileName" override
          propertySetOptions.ExportUserDefinedPsetsFileName = OptionsUtil.GetNamedStringOption(options, "ExportUserDefinedPsetsFileName");
 
-         // "ExportSpecificSchedules" overrid
-         propertySetOptions.ExportSpecificSchedulesOverride = OptionsUtil.GetNamedBooleanOption(options, "ExportSpecificSchedules");
+         // "ExportSpecificSchedules"
+         propertySetOptions.ExportSpecificSchedules = 
+            OptionsUtil.GetNamedBooleanOption(options, "ExportSpecificSchedules").GetValueOrDefault(false);
 
          return propertySetOptions;
       }

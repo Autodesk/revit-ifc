@@ -38,22 +38,28 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="elementHandle">The element handle to create openings.</param>
       /// <param name="element">The element to create openings.</param>
-      /// <param name="info">The extrusion data.</param>
+      /// <param name="partInfo">The tepmporary part info.</param>
+      /// <param name="extrusionData">The extrusion data.</param>
       /// <param name="extraParams">The extrusion creation data.</param>
       /// <param name="offsetTransform">The offset transform from ExportBody, or the identity transform.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="originalPlacement">The original placement handle.</param>
       /// <param name="setter">The PlacementSetter.</param>
       /// <param name="wrapper">The ProductWrapper.</param>
-      private static void CreateOpeningsIfNecessaryBase(IFCAnyHandle elementHandle, Element element, IList<IFCExtrusionData> info,
+      private static void CreateOpeningsIfNecessaryBase(IFCAnyHandle elementHandle, Element element, TemporaryPartInfo partInfo, IList<IFCExtrusionData> extrusionData,
          IFCExportBodyParams extraParams, Transform offsetTransform, ExporterIFC exporterIFC,
          IFCAnyHandle originalPlacement, PlacementSetter setter, ProductWrapper wrapper)
       {
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(elementHandle))
             return;
 
-         int sz = info.Count;
-         if (sz == 0)
+         bool usePartInfo = false;
+         if (partInfo != null &&
+            ExporterCacheManager.TemporaryPartsCache.HasTemporaryParts(element.Id) &&
+            ExporterCacheManager.TemporaryPartsCache.GetPartExportType(element.Id) == ExporterUtil.ExportPartAs.Part)
+            usePartInfo = true;
+
+         if (extrusionData.Count == 0)
             return;
 
          using (TransformSetter transformSetter = TransformSetter.Create())
@@ -69,11 +75,11 @@ namespace Revit.IFC.Export.Utility
             string openingObjectType = "Opening";
 
             int openingNumber = 1;
-            for (int curr = info.Count - 1; curr >= 0; curr--)
+            for (int curr = extrusionData.Count - 1; curr >= 0; curr--)
             {
                IFCAnyHandle extrusionHandle = 
-                  ExtrusionExporter.CreateExtrudedSolidFromExtrusionData(exporterIFC, element, 
-                  info[curr], out _);
+                  ExtrusionExporter.CreateExtrudedSolidFromExtrusionData(exporterIFC, element,
+                  extrusionData[curr], out _);
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(extrusionHandle))
                   continue;
 
@@ -83,6 +89,7 @@ namespace Revit.IFC.Export.Utility
                IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
                IFCAnyHandle representationHnd = RepresentationUtil.CreateSweptSolidRep(
                   exporterIFC, element, categoryId, contextOfItems, bodyItems, null, null);
+
                IList<IFCAnyHandle> representations = IFCAnyHandleUtil.IsNullOrHasNoValue(representationHnd) ?
                   null : new List<IFCAnyHandle>() { representationHnd };
 
@@ -93,9 +100,11 @@ namespace Revit.IFC.Export.Utility
                string guid = GUIDUtil.GenerateIFCGuidFrom(
                   GUIDUtil.CreateGUIDString(IFCEntityType.IfcOpeningElement, openingNumber.ToString(), elementHandle));
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-               string openingName = NamingUtil.GetIFCNamePlusIndex(element, openingNumber++);
-               string openingDescription = NamingUtil.GetDescriptionOverride(element, null);
-               string openingTag = NamingUtil.GetTagOverride(element);
+               string openingName = usePartInfo ?
+                  NamingUtil.AddIFCNameIndex(partInfo.IfcName, openingNumber++):
+                  NamingUtil.GetIFCNamePlusIndex(element, openingNumber++);
+               string openingDescription = usePartInfo ? null : NamingUtil.GetDescriptionOverride(element, null);
+               string openingTag = usePartInfo ? partInfo.IfcTag : NamingUtil.GetTagOverride(element);
                
                IFCAnyHandle openingElement = IFCInstanceExporter.CreateOpeningElement(exporterIFC, 
                   guid, ownerHistory, openingName, openingDescription, openingObjectType,
@@ -103,7 +112,7 @@ namespace Revit.IFC.Export.Utility
                IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement);
                wrapper.AddElement(null, openingElement, setter, extraParams, true, exportInfo);
                
-               if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities && (extraParams != null))
+               if (ExporterCacheManager.ExportIFCBaseQuantities() && (extraParams != null))
                   PropertyUtil.CreateOpeningQuantities(exporterIFC, openingElement, extraParams);
 
                string voidGuid = GUIDUtil.GenerateIFCGuidFrom(
@@ -119,22 +128,21 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="elementHandle">The element handle to create openings.</param>
       /// <param name="element">The element to create openings.</param>
-      /// <param name="info">The extrusion data.</param>
+      /// <param name="extrusionData">The extrusion data.</param>
       /// <param name="offsetTransform">The offset transform from ExportBody, or the identity transform.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="originalPlacement">The original placement handle.</param>
       /// <param name="setter">The PlacementSetter.</param>
       /// <param name="wrapper">The ProductWrapper.</param>
-      public static void CreateOpeningsIfNecessary(IFCAnyHandle elementHandle, Element element, IList<IFCExtrusionData> info, Transform offsetTransform,
-         ExporterIFC exporterIFC, IFCAnyHandle originalPlacement,
-         PlacementSetter setter, ProductWrapper wrapper)
+      public static void CreateOpeningsIfNecessary(IFCAnyHandle elementHandle, Element element, IList<IFCExtrusionData> extrusionData, 
+        Transform offsetTransform, ExporterIFC exporterIFC, IFCAnyHandle originalPlacement, PlacementSetter setter, ProductWrapper wrapper)
       {
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(elementHandle))
             return;
 
          using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
          {
-            CreateOpeningsIfNecessaryBase(elementHandle, element, info, extraParams, offsetTransform, exporterIFC, originalPlacement, setter, wrapper);
+            CreateOpeningsIfNecessaryBase(elementHandle, element, partInfo: null, extrusionData, extraParams, offsetTransform, exporterIFC, originalPlacement, setter, wrapper);
          }
       }
 
@@ -144,21 +152,41 @@ namespace Revit.IFC.Export.Utility
       /// <param name="elementHandle">The element handle to create openings.</param>
       /// <param name="element">The element to create openings.</param>
       /// <param name="extraParams">The extrusion creation data.</param>
+      /// <param name="offsetTransform">The offset transform from ExportBody, or the identity transform.</param>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="originalPlacement">The original placement handle.</param>
       /// <param name="setter">The PlacementSetter.</param>
       /// <param name="wrapper">The ProductWrapper.</param>
       public static void CreateOpeningsIfNecessary(IFCAnyHandle elementHandle, Element element, IFCExportBodyParams extraParams,
-         Transform offsetTransform, ExporterIFC exporterIFC, IFCAnyHandle originalPlacement,
-         PlacementSetter setter, ProductWrapper wrapper)
+         Transform offsetTransform, ExporterIFC exporterIFC, IFCAnyHandle originalPlacement, PlacementSetter setter, ProductWrapper wrapper)
       {
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(elementHandle))
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(elementHandle) || extraParams == null)
             return;
 
-         ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
+         IList<IFCExtrusionData> extrusionData = extraParams.GetOpenings();
+         CreateOpeningsIfNecessaryBase(elementHandle, element, partInfo: null, extrusionData, extraParams, offsetTransform, exporterIFC, originalPlacement, setter, wrapper);
+         extraParams.ClearOpenings();
+      }
 
-         IList<IFCExtrusionData> info = extraParams.GetOpenings();
-         CreateOpeningsIfNecessaryBase(elementHandle, element, info, extraParams, offsetTransform, exporterIFC, originalPlacement, setter, wrapper);
+      /// <summary>
+      /// Creates openings associated with an extrusion, if there are any.
+      /// </summary>
+      /// <param name="elementHandle">The element handle to create openings.</param>
+      /// <param name="element">The element to create openings.</param>
+      /// <param name="extraParams">The extrusion creation data.</param>
+      /// <param name="offsetTransform">The offset transform from ExportBody, or the identity transform.</param>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="originalPlacement">The original placement handle.</param>
+      /// <param name="setter">The PlacementSetter.</param>
+      /// <param name="wrapper">The ProductWrapper.</param>
+      public static void CreateOpeningsIfNecessary(IFCAnyHandle elementHandle, Element element, TemporaryPartInfo partInfo, IFCExportBodyParams extraParams,
+         Transform offsetTransform, ExporterIFC exporterIFC, IFCAnyHandle originalPlacement, PlacementSetter setter, ProductWrapper wrapper)
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(elementHandle) || extraParams == null)
+            return;
+
+         IList<IFCExtrusionData> extrusionData = extraParams.GetOpenings();
+         CreateOpeningsIfNecessaryBase(elementHandle, element, partInfo, extrusionData, extraParams, offsetTransform, exporterIFC, originalPlacement, setter, wrapper);
          extraParams.ClearOpenings();
       }
 
@@ -170,8 +198,8 @@ namespace Revit.IFC.Export.Utility
          if (extraParams == null)
             return false;
 
-         IList<IFCExtrusionData> info = extraParams.GetOpenings();
-         return (info.Count > 0);
+         IList<IFCExtrusionData> extrusionData = extraParams.GetOpenings();
+         return (extrusionData.Count > 0);
       }
 
       /// <summary>
@@ -268,15 +296,14 @@ namespace Revit.IFC.Export.Utility
             // including a line as part of the elevation profile of the wall.
             // As such, we will restrict which element types we check for CanExportElement.
             if ((openingElem is WallSweep) &&
-               (!ElementFilteringUtil.CanExportElement(exporterIFC, openingElem, true)))
+               (!ElementFilteringUtil.CanExportElement(openingElem, true)))
                continue;
 
             IList<IFCExtrusionData> extrusionDataList = openingData.GetExtrusionData();
             IFCAnyHandle parentHandle = FindParentHandle(elementHandles, curveLoops, extrusionDataList);
 
             string predefinedType;
-            IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, 
-               openingElem, out predefinedType);
+            IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(openingElem, out predefinedType);
             bool exportingDoorOrWindow = (exportType.ExportInstance == IFCEntityType.IfcDoor ||
                exportType.ExportType == IFCEntityType.IfcDoorType ||
                exportType.ExportInstance == IFCEntityType.IfcWindow ||
@@ -292,7 +319,7 @@ namespace Revit.IFC.Export.Utility
                    element.Id, parentHandle, setter.LevelId);
                if (delayedCreator != null)
                {
-                  ExporterCacheManager.DoorWindowDelayedOpeningCreatorCache.Add(delayedCreator);
+                  ExporterCacheManager.DoorWindowDelayedOpeningCreatorCache.Add(delayedCreator, true);
                   continue;
                }
             }
@@ -433,7 +460,7 @@ namespace Revit.IFC.Export.Utility
             openingGUID, ownerHistory, openingName, openingDescription, openingObjectType,
             openingPlacement, prodRep, openingTag);
          IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement, openingObjectType);
-         if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+         if (ExporterCacheManager.ExportIFCBaseQuantities())
             PropertyUtil.CreateOpeningQuantities(exporterIFC, openingHnd, extrusionCreationData);
 
          if (localWrapper != null)
@@ -517,7 +544,7 @@ namespace Revit.IFC.Export.Utility
                ExporterUtil.CreateLocalPlacement(file, hostPlacement, null), openingProdRepHnd, openingTag);
             IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement, openingObjectType);
             IFCExportBodyParams ecData = null;
-            if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+            if (ExporterCacheManager.ExportIFCBaseQuantities())
             {
                double height, width;
                ecData = new IFCExportBodyParams();
@@ -608,8 +635,8 @@ namespace Revit.IFC.Export.Utility
          //To handle such cases using bounding box height instead of thickness.
          //
          double slopeValue = 0.0;
-         ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_SLOPE, out slopeValue);
-         if (MathUtil.IsAlmostZero(slopeValue))
+         Parameter slopeParam = ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_SLOPE, out slopeValue);
+         if (slopeParam != null && MathUtil.IsAlmostZero(slopeValue))
          {
             if (hostElement is Floor)
                ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM, out extrusionLength);
@@ -620,7 +647,8 @@ namespace Revit.IFC.Export.Utility
          }
          else
          {
-            BoundingBoxXYZ hostElementBoundingBox = hostElement.get_BoundingBox(hostElement.Document.GetElement(hostElement.OwnerViewId) as View);
+            View view = ExporterUtil.GetViewForElementGeometry(hostElement);
+            BoundingBoxXYZ hostElementBoundingBox = hostElement.get_BoundingBox(view);
             extrusionLength = hostElementBoundingBox.Max.Z - hostElementBoundingBox.Min.Z;
 
             //Need to recheck the ExtrusionDirection.

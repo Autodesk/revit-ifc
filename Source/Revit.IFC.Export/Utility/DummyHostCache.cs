@@ -76,5 +76,10 @@ namespace Revit.IFC.Export.Utility
             return true;
          return false;
       }
+
+      public void Clear()
+      {
+         m_DummyHostDictionary.Clear();
+      }
    }
 }

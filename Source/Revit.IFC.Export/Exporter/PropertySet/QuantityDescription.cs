@@ -39,7 +39,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// The quantities stored in this quantity description.
       /// </summary>
-      IList<QuantityEntry> Entries { get; set; } = new List<QuantityEntry>();
+      public IList<QuantityEntry> Entries { get; set; } = new List<QuantityEntry>();
 
       /// <summary>
       /// Defines the building code used to calculate the element quantity.

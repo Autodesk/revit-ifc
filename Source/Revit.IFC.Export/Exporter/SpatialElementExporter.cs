@@ -27,7 +27,8 @@ using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-
+using System.Linq;
+using static Revit.IFC.Export.Utility.ParameterUtil;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -83,12 +84,12 @@ namespace Revit.IFC.Export.Exporter
       public static void ExportSpatialElement(ExporterIFC exporterIFC, SpatialElement spatialElement, ProductWrapper productWrapper)
       {
          string ifcEnumType;
-         IFCExportInfoPair exportInfo = ExporterUtil.GetProductExportType(exporterIFC, spatialElement, out ifcEnumType);
+         IFCExportInfoPair exportInfo = ExporterUtil.GetProductExportType(spatialElement, out ifcEnumType);
 
          // Force the default export to IfcSpace for Spatial Element if it is set to UnKnown
          if (exportInfo.IsUnKnown)
          {
-            exportInfo.SetValueWithPair(IFCEntityType.IfcSpace, ifcEnumType);
+            exportInfo.SetByTypeAndPredefinedType(IFCEntityType.IfcSpace, ifcEnumType);
          }
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
@@ -101,18 +102,21 @@ namespace Revit.IFC.Export.Exporter
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, spatialElement, null, null))
             {
                SpatialElementGeometryResults spatialElemGeomResult = null;
-               if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, exportInfo, out spatialElemGeomResult))
+               IFCAnyHandle spaceHnd = CreateIFCSpace(exporterIFC, spatialElement,
+                  productWrapper, setter, exportInfo, out spatialElemGeomResult);
+               if (IFCAnyHandleUtil.IsNullOrHasNoValue(spaceHnd))
+               {
                   return;
-
-               bool isArea = (spatialElement is Area);
+               }
 
                // Do not create boundary information for areas.
-               if (!isArea && (ExporterCacheManager.ExportOptionsCache.SpaceBoundaryLevel == 1))
+               if (!(spatialElement is Area) && 
+                  (ExporterCacheManager.ExportOptionsCache.SpaceBoundaryLevel == 1))
                {
                   Document document = spatialElement.Document;
                   ElementId levelId = spatialElement.LevelId;
-                  IFCLevelInfo levelInfo = exporterIFC.GetLevelInfo(levelId);
-                  double baseHeightNonScaled = (levelInfo != null) ? levelInfo.Elevation : 0.0;
+                  IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(levelId);
+                  double baseHeightNonScaled = spatialElement.Level?.Elevation ?? 0.0;
 
                   try
                   {
@@ -145,7 +149,9 @@ namespace Revit.IFC.Export.Exporter
                            if (boundingElement == null)
                               continue;
 
-                           bool isObjectExt = CategoryUtil.IsElementExternal(boundingElement);
+                           IFCInternalOrExternal internalOrExternal = IFCInternalOrExternal.NotDefined;
+                           if (CategoryUtil.IsElementExternal(boundingElement).HasValue)
+                              internalOrExternal = CategoryUtil.IsElementExternal(boundingElement).Value ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
 
                            IFCGeometryInfo info = IFCGeometryInfo.CreateSurfaceGeometryInfo(spatialElement.Document.Application.VertexTolerance);
 
@@ -162,7 +168,7 @@ namespace Revit.IFC.Export.Exporter
                                  boundingElement.Id, setter.LevelId, 
                                  connectionGeometry, 
                                  IFCPhysicalOrVirtual.Physical,
-                                 isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
+                                 internalOrExternal);
 
                               if (!ProcessIFCSpaceBoundary(exporterIFC, spaceBoundary, file))
                                  ExporterCacheManager.SpaceBoundaryCache.Add(spaceBoundary);
@@ -204,7 +210,10 @@ namespace Revit.IFC.Export.Exporter
                         else if (boundingElement is Autodesk.Revit.DB.Architecture.Room)
                            physOrVirt = IFCPhysicalOrVirtual.NotDefined;
 
-                        bool isObjectExt = CategoryUtil.IsElementExternal(boundingElement);
+                        IFCInternalOrExternal internalOrExternal = IFCInternalOrExternal.NotDefined;
+                        if (CategoryUtil.IsElementExternal(boundingElement).HasValue)
+                           internalOrExternal = CategoryUtil.IsElementExternal(boundingElement).Value ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
+
                         bool isObjectPhys = (physOrVirt == IFCPhysicalOrVirtual.Physical);
 
                         SpaceBoundary spaceBoundary = new SpaceBoundary(null, 
@@ -212,8 +221,8 @@ namespace Revit.IFC.Export.Exporter
                            boundingElement.Id,
                            setter.LevelId, 
                            !IFCAnyHandleUtil.IsNullOrHasNoValue(connectionGeometry) ? connectionGeometry : null,
-                           physOrVirt, 
-                           isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
+                           physOrVirt,
+                           internalOrExternal);
 
                         if (!ProcessIFCSpaceBoundary(exporterIFC, spaceBoundary, file))
                            ExporterCacheManager.SpaceBoundaryCache.Add(spaceBoundary);
@@ -340,7 +349,7 @@ namespace Revit.IFC.Export.Exporter
                                  spatialElement.Id, elemId, setter.LevelId, 
                                  !IFCAnyHandleUtil.IsNullOrHasNoValue(insConnectionGeom) ? insConnectionGeom : null, 
                                  physOrVirt,
-                                 isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
+                                 internalOrExternal);
                               if (!ProcessIFCSpaceBoundary(exporterIFC, instBoundary, file))
                                  ExporterCacheManager.SpaceBoundaryCache.Add(instBoundary);
                            }
@@ -348,9 +357,6 @@ namespace Revit.IFC.Export.Exporter
                      }
                   }
                }
-
-               CreateZoneInfos(exporterIFC, file, spatialElement, productWrapper);
-               CreateSpaceOccupantInfo(file, spatialElement, productWrapper);
             }
             transaction.Commit();
          }
@@ -363,7 +369,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC"> The ExporterIFC object.</param>
       /// <param name="document">The Revit document.</param>
       /// <returns>The set of exported spaces.  This is used to try to export using the standard routine for spaces that failed.</returns>
-      public static ISet<ElementId> ExportSpatialElement2ndLevel(Revit.IFC.Export.Exporter.Exporter ifcExporter, ExporterIFC exporterIFC, Document document)
+      public static ISet<ElementId> ExportSpatialElement2ndLevel(Exporter ifcExporter, ExporterIFC exporterIFC, Document document)
       {
          ISet<ElementId> exportedSpaceIds = new HashSet<ElementId>();
 
@@ -403,7 +409,7 @@ namespace Revit.IFC.Export.Exporter
                      if (!ElementFilteringUtil.IsElementVisible(spatialElement))
                         continue;
 
-                     if (!ElementFilteringUtil.ShouldElementBeExported(exporterIFC, spatialElement, false))
+                     if (!ElementFilteringUtil.ShouldElementBeExported(spatialElement, false))
                         continue;
 
                      if (ElementFilteringUtil.IsRoomInInvalidPhase(spatialElement))
@@ -425,8 +431,12 @@ namespace Revit.IFC.Export.Exporter
                            {
                               // We won't use the SpatialElementGeometryResults, as these are 1st level boundaries, not 2nd level.
                               SpatialElementGeometryResults results = null;
-                              if (!CreateIFCSpace(exporterIFC, spatialElement, productWrapper, setter, null, out results))
+                              IFCAnyHandle spaceHnd = CreateIFCSpace(exporterIFC,
+                                 spatialElement, productWrapper, setter, null, out results);
+                              if (IFCAnyHandleUtil.IsNullOrHasNoValue(spaceHnd))
+                              {
                                  continue;
+                              }
 
                               exportedSpaceIds.Add(spatialElement.Id);
 
@@ -456,8 +466,6 @@ namespace Revit.IFC.Export.Exporter
                                     }
                                  }
                               }
-                              CreateZoneInfos(exporterIFC, file, spatialElement, productWrapper);
-                              CreateSpaceOccupantInfo(file, spatialElement, productWrapper);
 
                               ExporterUtil.ExportRelatedProperties(exporterIFC, spatialElement, productWrapper);
                            }
@@ -506,12 +514,14 @@ namespace Revit.IFC.Export.Exporter
          else if (boundingElement is Autodesk.Revit.DB.Architecture.Room)
             physOrVirt = IFCPhysicalOrVirtual.NotDefined;
 
-         bool isObjectExt = CategoryUtil.IsElementExternal(boundingElement);
+         IFCInternalOrExternal internalOrExternal = IFCInternalOrExternal.NotDefined;
+         if (CategoryUtil.IsElementExternal(boundingElement).HasValue)
+            internalOrExternal = CategoryUtil.IsElementExternal(boundingElement).Value ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
 
          SpaceBoundary spaceBoundary = new SpaceBoundary(name, spatialElement.Id,
             boundingElement?.Id ?? ElementId.InvalidElementId,
             levelId, connectionGeometry, physOrVirt,
-            isObjectExt ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal);
+            internalOrExternal);
 
          if (!ProcessIFCSpaceBoundary(exporterIFC, spaceBoundary, file))
             ExporterCacheManager.SpaceBoundaryCache.Add(spaceBoundary);
@@ -595,7 +605,7 @@ namespace Revit.IFC.Export.Exporter
       {
          IFCFile file = exporterIFC.GetFile();
 
-         Polyloop outerLoop = surface.GetPolyloop();
+         Polyloop outerLoop = surface.GetPolyloops().FirstOrDefault();
          IList<XYZ> outerLoopPoints = outerLoop.GetPoints();
 
          IList<XYZ> newOuterLoopPoints = new List<XYZ>();
@@ -607,7 +617,7 @@ namespace Revit.IFC.Export.Exporter
          IList<IList<XYZ>> innerLoopPoints = new List<IList<XYZ>>();
          foreach (EnergyAnalysisOpening opening in openings)
          {
-            IList<XYZ> openingPoints = opening.GetPolyloop().GetPoints();
+            IList<XYZ> openingPoints = opening.GetPolyloops().FirstOrDefault().GetPoints();
             List<XYZ> newOpeningPoints = new List<XYZ>();
             foreach (XYZ openingPoint in openingPoints)
             {
@@ -632,7 +642,7 @@ namespace Revit.IFC.Export.Exporter
       {
          IFCFile file = exporterIFC.GetFile();
 
-         Polyloop outerLoop = opening.GetPolyloop();
+         Polyloop outerLoop = opening.GetPolyloops().FirstOrDefault();
          IList<XYZ> outerLoopPoints = outerLoop.GetPoints();
 
          List<XYZ> newOuterLoopPoints = new List<XYZ>();
@@ -658,13 +668,12 @@ namespace Revit.IFC.Export.Exporter
       static double GetScaledHeight(SpatialElement spatialElement, ElementId levelId, IFCLevelInfo levelInfo)
       {
          Document document = spatialElement.Document;
-         bool isArea = spatialElement is Area;
-
+         
          ElementId topLevelId = ElementId.InvalidElementId;
          double topOffset = 0.0;
 
          // These values are internally set for areas, but are invalid.  Ignore them and just use the level height.
-         if (!isArea)
+         if (!(spatialElement is Area))
          {
             ParameterUtil.GetElementIdValueFromElement(spatialElement, BuiltInParameter.ROOM_UPPER_LEVEL, out topLevelId);
             ParameterUtil.GetDoubleValueFromElement(spatialElement, BuiltInParameter.ROOM_UPPER_OFFSET, out topOffset);
@@ -815,6 +824,23 @@ namespace Revit.IFC.Export.Exporter
             "Space Category (BOMA)", "http://www.BOMA.org");
       }
 
+      static void AddAreaToAreaScheme(Element spatialElement, IFCAnyHandle spaceHnd)
+      {
+         Element areaScheme = (spatialElement as Area)?.AreaScheme;
+
+         if (areaScheme != null)
+         {
+            ElementId areaSchemeId = areaScheme.Id;
+            HashSet<IFCAnyHandle> areas = null;
+            if (!ExporterCacheManager.AreaSchemeCache.TryGetValue(areaSchemeId, out areas))
+            {
+               areas = new HashSet<IFCAnyHandle>();
+               ExporterCacheManager.AreaSchemeCache[areaSchemeId] = areas;
+            }
+            areas.Add(spaceHnd);
+         }
+      }
+
       /// <summary>
       /// Creates IFC room/space/area item, not include boundaries. 
       /// </summary>
@@ -822,8 +848,8 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="spatialElement">The spatial element.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
       /// <param name="setter">The PlacementSetter.</param>
-      /// <returns>True if created successfully, false otherwise.</returns>
-      static bool CreateIFCSpace(ExporterIFC exporterIFC, SpatialElement spatialElement, ProductWrapper productWrapper,
+      /// <returns>Returns the created handle, or null.</returns>
+      static IFCAnyHandle CreateIFCSpace(ExporterIFC exporterIFC, SpatialElement spatialElement, ProductWrapper productWrapper,
           PlacementSetter setter, IFCExportInfoPair exportInfo, out SpatialElementGeometryResults results)
       {
          results = null;
@@ -833,13 +859,14 @@ namespace Revit.IFC.Export.Exporter
 
          // Avoid throwing for a spatial element with no location.
          if (spatialElement.Location == null)
-            return false;
+            return null;
 
          IList<CurveLoop> curveLoops = null;
          GeometryElement geomElem = null;
 
          Area spatialElementAsArea = spatialElement as Area;
 
+         // Advanced Option Use2DRoomBoundaryForRoomVolumeCreation --> No Geometry Element used.
          if (!ExporterCacheManager.ExportOptionsCache.Use2DRoomBoundaryForRoomVolumeCreation)
          {
             geomElem = (spatialElement as Autodesk.Revit.DB.Architecture.Room)?.ClosedShell;
@@ -854,18 +881,18 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
-         // If the override container paramater is detected, the LevelInfo and LocalPlacement will be overriden
+         // If the override container parameter is detected, the LevelInfo and LocalPlacement will be overridden
          IFCAnyHandle overrideContainer;
-         ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, spatialElement, out overrideContainer);
+         ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(spatialElement, out overrideContainer);
 
          ElementId levelId = spatialElement.LevelId;
-         IFCLevelInfo levelInfo = exporterIFC.GetLevelInfo(levelId);
+         IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(levelId);
 
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(overrideContainer))
          {
             if (overrideContainerId != ElementId.InvalidElementId)
             {
-               levelInfo = exporterIFC.GetLevelInfo(overrideContainerId);
+               levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(overrideContainerId);
                levelId = overrideContainerId;
             }
             else
@@ -876,7 +903,7 @@ namespace Revit.IFC.Export.Exporter
 
          double scaledRoomHeight = GetScaledHeight(spatialElement, levelId, levelInfo);
          if (scaledRoomHeight <= 0.0)
-            return false;
+            return null;
 
          double dArea = 0.0;  // Will be calculated later.
          IFCFile file = exporterIFC.GetFile();
@@ -893,45 +920,34 @@ namespace Revit.IFC.Export.Exporter
             {
                ElementId catId = CategoryUtil.GetSafeCategoryId(spatialElement);
 
+               // 'SweptSolid' requires CurveLoops for its 'Body' geometry.
+               // 'BRep' requires CurveLoops for mandatory 'Footprint' geometry only.
                IFCAnyHandle repHnd = null;
-               if (geomElem != null)
+               SpatialElementBoundaryOptions options = GetSpatialElementBoundaryOptions(spatialElement);
+
+               try
                {
-                  BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.Medium);
-                  repHnd = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC, spatialElement,
-                      catId, geomElem, bodyExporterOptions, null, extraParams, false);
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(repHnd))
-                  {
-                     repHnd = null;
-                     extraParams.ClearOpenings();
-                  }
+                  curveLoops = ExporterIFCUtils.GetRoomBoundaryAsCurveLoopArray(spatialElement, options, true);
+                  if (curveLoops == null || curveLoops.Count == 0)
+                     return null;
+               }
+               catch
+               {
+                  return null;
                }
 
-               if (repHnd == null)
+               double bottomOffset;
+               ParameterUtil.GetDoubleValueFromElement(spatialElement, BuiltInParameter.ROOM_LOWER_OFFSET, out bottomOffset);
+
+               double elevation = spatialElement.Level?.Elevation ?? 0.0;
+               XYZ orig = new XYZ(0, 0, elevation + bottomOffset);
+               Transform lcs = Transform.CreateTranslation(orig); // room calculated as level offset.
+
+               // Attempt 1:  'SweptSolid' IfcShapeRepresentation (with a 'BoudingBox').
+               // For Use2DRoomBoundaryForRoomVolumeCreation no Bounding Box will be created.
+               IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, XYZ.BasisZ, scaledRoomHeight, true, out _);
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
                {
-                  SpatialElementBoundaryOptions options = GetSpatialElementBoundaryOptions(spatialElement);
-
-                  try
-                  {
-                     curveLoops = ExporterIFCUtils.GetRoomBoundaryAsCurveLoopArray(spatialElement, options, true);
-                     if (curveLoops == null || curveLoops.Count == 0)
-                        return false;
-                  }
-                  catch
-                  {
-                     return false;
-                  }
-
-                  double bottomOffset;
-                  ParameterUtil.GetDoubleValueFromElement(spatialElement, BuiltInParameter.ROOM_LOWER_OFFSET, out bottomOffset);
-
-                  double elevation = (levelInfo != null) ? levelInfo.Elevation : 0.0;
-                  XYZ orig = new XYZ(0, 0, elevation + bottomOffset);
-                  Transform lcs = Transform.CreateTranslation(orig); // room calculated as level offset.
-
-                  IFCAnyHandle shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, XYZ.BasisZ, scaledRoomHeight, true, out _);
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
-                     return false;
-
                   // Spaces shouldn't have styled items.
                   HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { shapeRep };
 
@@ -946,17 +962,65 @@ namespace Revit.IFC.Export.Exporter
                   repHnd = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
                }
 
+               // Attempt 2:  'BRep' IfcShapeRepresentation and 'Footprint' IfcShapeRepresentation.
+               // This will not run for Use2DRoomBoundaryForRoomVolumeCreation advanced option.
+               if ((repHnd == null) && (geomElem != null))
+               {
+                  // Attempt to create Body Geometry for IfcSpace.
+                  BodyData bodyData;
+                  BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(true, ExportOptionsCache.ExportTessellationLevel.Medium);
+                  repHnd = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC, spatialElement,
+                      catId, geomElem, bodyExporterOptions, null, extraParams, out bodyData, false);
+
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(repHnd))
+                  {
+                     if (bodyData.RepresentationHnd == null)
+                     {
+                        repHnd = null;
+                     }
+                     else if (bodyData.ShapeRepresentationType == ShapeRepresentationType.Brep)
+                     {
+                        IList<IFCAnyHandle> representations = new List<IFCAnyHandle>();
+                        FootPrintInfo fInfo = new FootPrintInfo(curveLoops, lcs);
+                        IFCAnyHandle footprintShapeRep = fInfo.CreateFootprintShapeRepresentation(exporterIFC);
+                        representations.Add(footprintShapeRep);
+                        IFCAnyHandleUtil.AddRepresentations(repHnd, representations);
+                     }
+                  }
+               }
+
+               // Attempt 3 (final fallback): Try 'SweptSolid' using the CurveLoops, forcing the Use2DRoomBoundaryForRoomVolumeCreation option.
+               // If the Use2DRoomBoundaryForRoomVolumeCreation was already set, this was already done for attempt 1, so there is no need to  do it again here.
+               // Also the CurveLoops were used to build the FootPrint, so this should be equivalent to using any 'FootPrint' alternate representation.
+               if ((repHnd == null) && !ExporterCacheManager.ExportOptionsCache.Use2DRoomBoundaryForRoomVolumeCreation)
+               {
+                  shapeRep = ExtrusionExporter.CreateExtrudedSolidFromCurveLoop(exporterIFC, null, curveLoops, lcs, XYZ.BasisZ, scaledRoomHeight, true, out _);
+                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(shapeRep))
+                     return null;
+
+                  // Spaces shouldn't have styled items.
+                  HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { shapeRep };
+
+                  IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
+                  shapeRep = RepresentationUtil.CreateSweptSolidRep(exporterIFC, spatialElement, catId, contextOfItems, bodyItems, null, null);
+                  IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>() { shapeRep };
+
+                  repHnd = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, shapeReps);
+               }
+
                if (ParameterUtil.GetDoubleValueFromElement(spatialElement, BuiltInParameter.ROOM_AREA, out dArea) != null)
-                  dArea = UnitUtil.ScaleArea(dArea);
+               dArea = UnitUtil.ScaleArea(dArea);
 
                extraParams.ScaledHeight = scaledRoomHeight;
                extraParams.ScaledArea = dArea;
 
                if (exportInfo.ExportInstance == IFCEntityType.IfcSpace)
                {
-                  IFCInternalOrExternal internalOrExternal = CategoryUtil.IsElementExternal(spatialElement) ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
-                  string preDefinedType = string.IsNullOrWhiteSpace(exportInfo.ValidatedPredefinedType) ?
-                     "NOTDEFINED" : exportInfo.ValidatedPredefinedType;
+                  IFCInternalOrExternal internalOrExternal = IFCInternalOrExternal.NotDefined;
+                  if(CategoryUtil.IsElementExternal(spatialElement).HasValue)
+                     internalOrExternal = CategoryUtil.IsElementExternal(spatialElement).Value ? IFCInternalOrExternal.External : IFCInternalOrExternal.Internal;
+                  
+                  string preDefinedType = exportInfo.GetPredefinedTypeOrDefault();
 
                   spaceHnd = IFCInstanceExporter.CreateSpace(exporterIFC, spatialElement, 
                      GUIDUtil.CreateGUID(spatialElement), ExporterCacheManager.OwnerHistoryHandle,
@@ -965,7 +1029,7 @@ namespace Revit.IFC.Export.Exporter
                }
                else
                {
-                  spaceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, exporterIFC, 
+                  spaceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, file, 
                      spatialElement, GUIDUtil.CreateGUID(spatialElement), 
                      ExporterCacheManager.OwnerHistoryHandle, extraParams.GetLocalPlacement(), repHnd);
                }
@@ -981,21 +1045,7 @@ namespace Revit.IFC.Export.Exporter
             if (spaceHnd != null)
             {
                productWrapper.AddSpace(spatialElement, spaceHnd, levelInfo, extraParams, true, exportInfo);
-               if (spatialElementAsArea != null)
-               {
-                  Element areaScheme = spatialElementAsArea.AreaScheme;
-                  if (areaScheme != null)
-                  {
-                     ElementId areaSchemeId = areaScheme.Id;
-                     HashSet<IFCAnyHandle> areas = null;
-                     if (!ExporterCacheManager.AreaSchemeCache.TryGetValue(areaSchemeId, out areas))
-                     {
-                        areas = new HashSet<IFCAnyHandle>();
-                        ExporterCacheManager.AreaSchemeCache[areaSchemeId] = areas;
-                     }
-                     areas.Add(spaceHnd);
-                  }
-               }
+               AddAreaToAreaScheme(spatialElement, spaceHnd);
             }
          }
 
@@ -1003,13 +1053,13 @@ namespace Revit.IFC.Export.Exporter
          ExporterCacheManager.SpaceInfoCache.SetSpaceHandle(spatialElement, spaceHnd);
 
          // Find Ceiling as a Space boundary and keep the relationship in a cache for use later
-         bool ret = GetCeilingSpaceBoundary(spatialElement, out results);
+         GetCeilingSpaceBoundary(spatialElement, out results);
 
          if (!MathUtil.IsAlmostZero(dArea))
          {
             // TODO: Determine if we even need this for IFC2x2, or just IFC2x3.  This is a workaround for the pre-2010 GSA requirements, that don't have their own MVD.
             bool mvdSupportDesignGrossArea = ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || ExporterCacheManager.ExportOptionsCache.ExportAs2x3CoordinationView1;
-            bool addonMVDSupportDesignGrossArea = !ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities;
+            bool addonMVDSupportDesignGrossArea = !ExporterCacheManager.ExportIFCBaseQuantities();
             if (mvdSupportDesignGrossArea && addonMVDSupportDesignGrossArea)
             {
                string strSpaceNumber = null;
@@ -1026,8 +1076,8 @@ namespace Revit.IFC.Export.Exporter
          // Export Classifications for SpatialElement for GSA/COBIE.
          if (ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE)
             CreateCOBIESpaceClassifications(file, spaceHnd, spatialElement);
-         
-         return true;
+
+         return spaceHnd;
       }
 
       /// <summary>
@@ -1109,49 +1159,57 @@ namespace Revit.IFC.Export.Exporter
          HashSet<IFCAnyHandle> properties = new HashSet<IFCAnyHandle>();
 
          string paramValue = "";
-         if (ParameterUtil.GetStringValueFromElement(element, "Spatial Zone Conditioning Requirement", out paramValue) != null)
+         if (GetStringValueFromElement(element, "Spatial Zone Conditioning Requirement", out paramValue) != null)
          {
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(paramValue);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "SpatialZoneConditioningRequirement", null, paramVal, null);
+            IFCData paramVal = IFCDataUtil.CreateAsLabel(paramValue);
+            PropertyDescription propertyDescription = new PropertyDescription("SpatialZoneConditioningRequirement");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file,
+               propertyDescription, paramVal, null);
             properties.Add(propSingleValue);
          }
 
          if (ParameterUtil.GetStringValueFromElement(element, "HVAC System Type", out paramValue) != null)
          {
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(paramValue);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "HVACSystemType", null, paramVal, null);
+            IFCData paramVal = IFCDataUtil.CreateAsLabel(paramValue);
+            PropertyDescription propertyDescription = new PropertyDescription("HVACSystemType");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, propertyDescription, paramVal, null);
             properties.Add(propSingleValue);
          }
 
-         if (ParameterUtil.GetStringValueFromElement(element, "User Defined HVAC System Type", out paramValue) != null)
+         if (GetStringValueFromElement(element, "User Defined HVAC System Type", out paramValue) != null)
          {
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(paramValue);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "UserDefinedHVACSystemType", null, paramVal, null);
+            IFCData paramVal = IFCDataUtil.CreateAsLabel(paramValue);
+            PropertyDescription propertyDescription = new PropertyDescription("UserDefinedHVACSystemType");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file,
+               propertyDescription, paramVal, null);
             properties.Add(propSingleValue);
          }
 
          double infiltrationRate = 0.0;
          if (ParameterUtil.GetDoubleValueFromElement(element, "Infiltration Rate", out infiltrationRate) != null)
          {
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsReal(infiltrationRate);
-            IFCAnyHandle unitHnd = !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ? ExporterCacheManager.UnitsCache["ACH"] : null;
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "InfiltrationRate", null, paramVal, unitHnd);
+            IFCData paramVal = IFCDataUtil.CreateAsReal(infiltrationRate);
+            IFCAnyHandle unitHnd = !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ? ExporterCacheManager.UnitsCache.FindUserDefinedUnit("ACH") : null;
+            PropertyDescription propertyDescription = new PropertyDescription("InfiltrationRate");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, propertyDescription, paramVal, unitHnd);
             properties.Add(propSingleValue);
          }
 
          int isDaylitZone = 0;
-         if (ParameterUtil.GetIntValueFromElement(element, "Is Daylit Zone", out isDaylitZone) != null)
+         if (GetIntValueFromElement(element, "Is Daylit Zone", out isDaylitZone) != null)
          {
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsBoolean(isDaylitZone != 0);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "IsDaylitZone", null, paramVal, null);
+            IFCData paramVal = IFCDataUtil.CreateAsBoolean(isDaylitZone != 0);
+            PropertyDescription propertyDescription = new PropertyDescription("IsDaylitZone");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, propertyDescription, paramVal, null);
             properties.Add(propSingleValue);
          }
 
          int numberOfDaylightSensors = 0;
          if (ParameterUtil.GetIntValueFromElement(element, "Number of Daylight Sensors", out numberOfDaylightSensors) != null)
          {
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsInteger(numberOfDaylightSensors);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "NumberOfDaylightSensors", null, paramVal, null);
+            IFCData paramVal = IFCDataUtil.CreateAsInteger(numberOfDaylightSensors);
+            PropertyDescription propertyDescription = new PropertyDescription("NumberOfDaylightSensors");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, propertyDescription, paramVal, null);
             properties.Add(propSingleValue);
          }
 
@@ -1159,16 +1217,17 @@ namespace Revit.IFC.Export.Exporter
          if (ParameterUtil.GetDoubleValueFromElement(element, "Design Illuminance", out designIlluminance) != null)
          {
             double scaledValue = UnitUtil.ScaleIlluminance(designIlluminance);
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsReal(designIlluminance);
-            IFCAnyHandle unitHnd = !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ? ExporterCacheManager.UnitsCache["LUX"] : null;
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "DesignIlluminance", null, paramVal, unitHnd);
+            IFCData paramVal = IFCDataUtil.CreateAsIlluminanceMeasure(designIlluminance);
+            PropertyDescription propertyDescription = new PropertyDescription("DesignIlluminance");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, propertyDescription, paramVal, null);
             properties.Add(propSingleValue);
          }
 
-         if (ParameterUtil.GetStringValueFromElement(element, "Lighting Controls Type", out paramValue) != null)
+         if (GetStringValueFromElement(element, "Lighting Controls Type", out paramValue) != null)
          {
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(paramValue);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "LightingControlsType", null, paramVal, null);
+            IFCData paramVal = IFCDataUtil.CreateAsLabel(paramValue);
+            PropertyDescription propertyDescription = new PropertyDescription("LightingControlsType");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, propertyDescription, paramVal, null);
             properties.Add(propSingleValue);
          }
 
@@ -1183,131 +1242,13 @@ namespace Revit.IFC.Export.Exporter
          return null;
       }
 
-
-      /// <summary>
-      /// Get the name of the net planned area property, depending on the current schema, for levels and zones.
-      /// </summary>
-      /// <returns>The name of the net planned area property.</returns>
-      /// <remarks>Note that PSet_SpaceCommon has had the property "NetPlannedArea" since IFC2x3.</remarks>
-      static public string GetLevelAndZoneNetPlannedAreaName()
-      {
-         return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? "NetAreaPlanned" : "NetPlannedArea";
-      }
-
-      /// <summary>
-      /// Get the name of the gross planned area property, depending on the current schema, for levels and zones.
-      /// </summary>
-      /// <returns>The name of the net planned area property.</returns>
-      /// <remarks>Note that PSet_SpaceCommon has had the property "GrossPlannedArea" since IFC2x3.</remarks>
-      static public string GetLevelAndZoneGrossPlannedAreaName()
-      {
-         return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? "GrossAreaPlanned" : "GrossPlannedArea";
-      }
-
       /// <summary>
       /// Creates zone common property set.
       /// </summary>
-      /// <param name="exporterIFC">The exporter.</param>
       /// <param name="file">The file.</param>
       /// <param name="element">The element.</param>
+      /// <param name="index">The index to use for the shared parameter names.</param>
       /// <returns>The handle.</returns>
-      static private IFCAnyHandle CreateZoneCommonPSet(ExporterIFC exporterIFC, IFCFile file, Element element)
-      {
-         // Property Sets.  We don't use the generic Property Set mechanism because Zones aren't "real" elements.
-         HashSet<IFCAnyHandle> properties = new HashSet<IFCAnyHandle>();
-
-         IFCAnyHandle propSingleValue = PropertyUtil.CreateLabelPropertyFromElement(file, element,
-             "ZoneCategory", BuiltInParameter.INVALID, "Category", PropertyValueType.SingleValue, null);
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            properties.Add(propSingleValue);
-         }
-
-         string grossPlannedAreaName = GetLevelAndZoneGrossPlannedAreaName();
-         propSingleValue = PropertyUtil.CreateAreaMeasurePropertyFromElement(file, exporterIFC, element,
-             "Pset_ZoneCommon." + grossPlannedAreaName, BuiltInParameter.INVALID, grossPlannedAreaName, PropertyValueType.SingleValue);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            // For backward compatibility
-            propSingleValue = PropertyUtil.CreateAreaMeasurePropertyFromElement(file, exporterIFC, element,
-                "Zone" + grossPlannedAreaName, BuiltInParameter.INVALID, grossPlannedAreaName, PropertyValueType.SingleValue);
-         }
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-            properties.Add(propSingleValue);
-
-         string netPlannedAreaName = GetLevelAndZoneNetPlannedAreaName();
-         propSingleValue = PropertyUtil.CreateAreaMeasurePropertyFromElement(file, exporterIFC, element,
-             "Pset_ZoneCommon." + netPlannedAreaName, BuiltInParameter.INVALID, netPlannedAreaName, PropertyValueType.SingleValue);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            // For backward compatibility
-            propSingleValue = PropertyUtil.CreateAreaMeasurePropertyFromElement(file, exporterIFC, element,
-                "Zone" + netPlannedAreaName, BuiltInParameter.INVALID, netPlannedAreaName, PropertyValueType.SingleValue);
-         }
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-            properties.Add(propSingleValue);
-
-         propSingleValue = PropertyUtil.CreateBooleanPropertyFromElement(file, element,
-             "Pset_ZoneCommon.PubliclyAccessible", "PubliclyAccessible", PropertyValueType.SingleValue);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            propSingleValue = PropertyUtil.CreateBooleanPropertyFromElement(file, element,
-               "ZonePubliclyAccessible", "PubliclyAccessible", PropertyValueType.SingleValue);
-         }
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            properties.Add(propSingleValue);
-         }
-
-         propSingleValue = PropertyUtil.CreateBooleanPropertyFromElement(file, element,
-             "Pset_ZoneCommon.HandicapAccessible", "HandicapAccessible", PropertyValueType.SingleValue);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            propSingleValue = PropertyUtil.CreateBooleanPropertyFromElement(file, element,
-               "ZoneHandicapAccessible", "HandicapAccessible", PropertyValueType.SingleValue);
-
-         }
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            properties.Add(propSingleValue);
-         }
-
-         propSingleValue = PropertyUtil.CreateBooleanPropertyFromElement(file, element,
-            "Pset_ZoneCommon.IsExternal", "IsExternal", PropertyValueType.SingleValue);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            propSingleValue = PropertyUtil.CreateBooleanPropertyFromElement(file, element,
-               "ZoneIsExternal", "IsExternal", PropertyValueType.SingleValue);
-
-         }
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            properties.Add(propSingleValue);
-         }
-
-         propSingleValue = PropertyUtil.CreateIdentifierPropertyFromElement(file, element,
-            "Pset_ZoneCommon.Reference", BuiltInParameter.INVALID, "Reference", PropertyValueType.SingleValue);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            propSingleValue = PropertyUtil.CreateIdentifierPropertyFromElement(file, element,
-               "ZoneReference", BuiltInParameter.INVALID, "Reference", PropertyValueType.SingleValue);
-         }
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propSingleValue))
-         {
-            properties.Add(propSingleValue);
-         }
-
-         if (properties.Count > 0)
-         {
-            string psetGuid = GUIDUtil.GenerateIFCGuidFrom(
-               GUIDUtil.CreateGUIDString(element, "Pset_ZoneCommon"));
-            return IFCInstanceExporter.CreatePropertySet(file, psetGuid, 
-               ExporterCacheManager.OwnerHistoryHandle, "Pset_ZoneCommon", null, properties);
-         }
-
-         return null;
-      }
-
       /// <summary>
       /// Creates the ePset_SpaceOccupant.
       /// </summary>
@@ -1320,17 +1261,21 @@ namespace Revit.IFC.Export.Exporter
          HashSet<IFCAnyHandle> properties = new HashSet<IFCAnyHandle>();
 
          string paramValue = "";
-         if (ParameterUtil.GetStringValueFromElement(element, "Space Occupant Organization Abbreviation", out paramValue) != null)
+         if (GetStringValueFromElement(element, "Space Occupant Organization Abbreviation", out paramValue) != null)
          {
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(paramValue);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "SpaceOccupantOrganizationAbbreviation", null, paramVal, null);
+            IFCData paramVal = IFCDataUtil.CreateAsLabel(paramValue);
+            PropertyDescription propertyDescription = new PropertyDescription("SpaceOccupantOrganizationAbbreviation");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file,
+               propertyDescription, paramVal, null);
             properties.Add(propSingleValue);
          }
 
          if (ParameterUtil.GetStringValueFromElement(element, "Space Occupant Organization Name", out paramValue) != null)
          {
-            IFCData paramVal = Revit.IFC.Export.Toolkit.IFCDataUtil.CreateAsLabel(paramValue);
-            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, "SpaceOccupantOrganizationName", null, paramVal, null);
+            IFCData paramVal = IFCDataUtil.CreateAsLabel(paramValue);
+            PropertyDescription propertyDescription = new PropertyDescription("SpaceOccupantOrganizationName");
+            IFCAnyHandle propSingleValue = IFCInstanceExporter.CreatePropertySingleValue(file, propertyDescription,
+               paramVal, null);
             properties.Add(propSingleValue);
          }
 
@@ -1380,10 +1325,13 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The exporterIFC object.</param>
       /// <param name="file">The IFCFile object.</param>
       /// <param name="element">The element.</param>
-      /// <param name="productWrapper">The ProductWrapper.</param>
-      static void CreateSpaceOccupantInfo(IFCFile file, Element element, ProductWrapper productWrapper)
+      /// <param name="spaceHnd">The space handle.</param>
+      public static void CreateSpaceOccupantInfo(IFCFile file, Element element, IFCAnyHandle spaceHnd)
       {
-         IFCAnyHandle spaceHnd = productWrapper.GetElementOfType(IFCEntityType.IfcSpace);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(spaceHnd))
+         {
+            return;
+         }
 
          bool exportToCOBIE = ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE;
 
@@ -1447,11 +1395,9 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
-      static private void CreateGSAInformation(ExporterIFC exporterIFC, Element element, 
+      static private void CreateGSAInformation(IFCFile file, Element element, 
          ZoneInfo zoneInfo, string zoneObjectType)
       {
-         IFCFile file = exporterIFC.GetFile();
-
          bool isSpatialZone = NamingUtil.IsEqualIgnoringCaseAndSpaces(zoneObjectType, "SpatialZone");
          if (isSpatialZone)
          {
@@ -1489,13 +1435,16 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Collect information to create zones and cache them to create when end export.
       /// </summary>
-      /// <param name="exporterIFC">The exporterIFC object.</param>
       /// <param name="file">The IFCFile object.</param>
       /// <param name="element">The element.</param>
-      /// <param name="productWrapper">The ProductWrapper.</param>
-      static void CreateZoneInfos(ExporterIFC exporterIFC, IFCFile file, Element element, 
-         ProductWrapper productWrapper)
+      /// <param name="spaceHandle">The space handle.</param>
+      static public void CreateZoneInfos(IFCFile file, Element element, IFCAnyHandle spaceHandle)
       {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(spaceHandle))
+         {
+            return;
+         }
+
          bool exportToCOBIE = ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE;
 
          // Extra zone information, since Revit doesn't have architectural zones.
@@ -1514,13 +1463,11 @@ namespace Revit.IFC.Export.Exporter
 
             string zoneClassificationCode = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.ClassificationCode);
             
-            IFCAnyHandle roomHandle = productWrapper.GetElementOfType(IFCEntityType.IfcSpace);
-
             ZoneInfo zoneInfo = ExporterCacheManager.ZoneInfoCache.Find(zoneName);
             if (zoneInfo == null)
             {
-               IFCAnyHandle zoneCommonPropertySetHandle = CreateZoneCommonPSet(exporterIFC, file, element);
-               zoneInfo = new ZoneInfo(zoneInfoFinder, roomHandle, zoneCommonPropertySetHandle);
+               zoneInfo = new ZoneInfo(zoneInfoFinder, spaceHandle);
+               zoneInfo.CollectZoneCommonPSetData(file, element, zoneInfoFinder.CurrentZoneNumber);
                zoneInfo.ConditionalAddClassification(file, zoneClassificationCode);
                ExporterCacheManager.ZoneInfoCache.Register(zoneName, zoneInfo);
             }
@@ -1528,19 +1475,31 @@ namespace Revit.IFC.Export.Exporter
             {
                // If description, long name or object type were empty, overwrite.
                zoneInfo.UpdateZoneInfo(zoneInfoFinder);
-               zoneInfo.RoomHandles.Add(roomHandle);
+               zoneInfo.RoomHandles.Add(spaceHandle);
+               zoneInfo.CollectZoneCommonPSetData(file, element, zoneInfoFinder.CurrentZoneNumber);
                zoneInfo.ConditionalAddClassification(file, zoneClassificationCode);
-
-               if (IFCAnyHandleUtil.IsNullOrHasNoValue(zoneInfo.ZoneCommonProperySetHandle))
-                  zoneInfo.ZoneCommonProperySetHandle = CreateZoneCommonPSet(exporterIFC, file, element);
             }
 
             if (exportToCOBIE)
             {
                string zoneObjectType = zoneInfoFinder.GetPropZoneValue(ZoneInfoLabel.ObjectType);
-               CreateGSAInformation(exporterIFC, element, zoneInfo, zoneObjectType);
+               CreateGSAInformation(file, element, zoneInfo, zoneObjectType);
             }
          } while (zoneInfoFinder.IncrementCount()); // prevent infinite loop.
+      }
+
+      /// <summary>
+      /// Determine if the export instance type is compatible with IfcZone.
+      /// </summary>
+      /// <param name="exportType">The export type to check.</param>
+      /// <returns>True if non-null, and an entity instance type that can go in a zone.</returns>
+      public static bool IsZoneCompatible(IFCExportInfoPair exportType)
+      {
+         if (exportType == null)
+            return false;
+
+         return exportType.ExportInstance == IFCEntityType.IfcSpace ||
+            exportType.ExportInstance == IFCEntityType.IfcSpatialZone;
       }
    }
 }

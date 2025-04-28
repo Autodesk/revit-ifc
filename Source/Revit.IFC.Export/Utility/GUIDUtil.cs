@@ -226,7 +226,7 @@ namespace Revit.IFC.Export.Utility
          string ifcGUID = CreateGUIDBase(element, parameterName, out shouldStore);
          if (shouldStore && ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID ||
              (ExporterCacheManager.ExportOptionsCache.GUIDOptions.Use2009BuildingStoreyGUIDs && element is Level))
-            ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(element.Id, parameterName)] = ifcGUID;
+            ExporterCacheManager.GUIDsToStoreCache[(element.Id, parameterName)] = ifcGUID;
 
          return new GUIDString(ifcGUID, GUIDString.KeyType.IFCGUID);
       }
@@ -258,7 +258,7 @@ namespace Revit.IFC.Export.Utility
 
       private static GUIDString CreateInternal(bool useInstanceGeometry,
       Element instanceOrSymbol, IFCExportInfoPair exportInfoPair, bool isFlipped,
-      ElementId levelId, int? index, bool useEntityType, ElementId materialId)
+      ElementId levelId, int? index, bool useEntityType, ElementId materialId, bool inAssembly)
       {
          int subElementIndex = ExporterStateManager.GetCurrentRangeIndex();
          bool hasLevelId = (levelId != ElementId.InvalidElementId);
@@ -294,7 +294,7 @@ namespace Revit.IFC.Export.Utility
             {
                IFCEntityType entityType =
                   useInstanceGeometry ? exportInfoPair.ExportInstance : exportInfoPair.ExportType;
-               string predefinedType = exportInfoPair.ValidatedPredefinedType ?? string.Empty;
+               string predefinedType = exportInfoPair.PredefinedType ?? string.Empty;
                hash += " Entity: " + entityType.ToString() + ":" + predefinedType;
             }
 
@@ -306,6 +306,8 @@ namespace Revit.IFC.Export.Utility
 
             if (hasMaterialId)
                hash += " Material: " + materialId.ToString();
+
+            hash += " InAssembly: " + inAssembly.ToString();
 
             return CreateGUIDString(instanceOrSymbol, hash);
          }
@@ -319,9 +321,10 @@ namespace Revit.IFC.Export.Utility
          bool isFlipped = typeKey?.IsFlipped ?? false;
          ElementId levelId = typeKey?.LevelId ?? ElementId.InvalidElementId;
          ElementId materialId = typeKey?.MaterialId ?? ElementId.InvalidElementId;
+         bool inAssembly = typeKey?.InAssembly ?? false;
 
          GUIDString guidString = CreateInternal(useInstanceGeometry, instanceOrSymbol,
-            exportInfoPair, isFlipped, levelId, index, false, materialId);
+            exportInfoPair, isFlipped, levelId, index, false, materialId, inAssembly);
 
          // We want to preserve existing GUIDs, so we will only use entityType if there is a
          // conflict.
@@ -329,7 +332,7 @@ namespace Revit.IFC.Export.Utility
             return guidString;
 
          return CreateInternal(useInstanceGeometry, instanceOrSymbol,
-               exportInfoPair, isFlipped, levelId, index, true, materialId);
+               exportInfoPair, isFlipped, levelId, index, true, materialId, inAssembly);
       }
 
       /// <summary>
@@ -419,7 +422,7 @@ namespace Revit.IFC.Export.Utility
          if ((projectInfo != null) && ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID)
          {
             if (parameterId != BuiltInParameter.INVALID)
-               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(projectInfo.Id, parameterId)] = ifcGUID;
+               ExporterCacheManager.GUIDsToStoreCache[(projectInfo.Id, parameterId)] = ifcGUID;
          }
          return ifcGUID;
       }
@@ -454,7 +457,7 @@ namespace Revit.IFC.Export.Utility
          {
             string ifcGUID = GenerateIFCGuidFrom(CreateLevel(level));
             if (ExporterCacheManager.ExportOptionsCache.GUIDOptions.StoreIFCGUID)
-               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(level.Id, BuiltInParameter.IFC_GUID)] = ifcGUID;
+               ExporterCacheManager.GUIDsToStoreCache[(level.Id, BuiltInParameter.IFC_GUID)] = ifcGUID;
             return ifcGUID;
          }
 
@@ -479,8 +482,9 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="useInstanceGeometry">True if we are using instance geometry.</param>
       /// <param name="instanceOrSymbol">The family instance or symbol.</param>
-      /// <param name="entityType">The entity type.</param>
-      /// <param name="isFlipped">True is the instance is flipped, only for doors and windows.</param>
+      /// <param name="exportInfoPair">The entity type.</param>
+      /// <param name="typeKey">Extra information about the use of this element.</param>
+      /// <param name="index">The optional index, if we are creating multiple instances from this type.</param>
       /// <returns>The GUID.</returns>
       public static string GenerateIFCGuidFrom(bool useInstanceGeometry, Element instanceOrSymbol,
          IFCExportInfoPair exportInfoPair, TypeObjectKey typeKey, int? index)
@@ -493,7 +497,7 @@ namespace Revit.IFC.Export.Utility
       /// Create a unique, consistent GUID for a family instance or symbol.
       /// </summary>
       /// <param name="instanceOrSymbol">The family instance or symbol.</param>
-      /// <param name="entityType">The entity type.</param>
+      /// <param name="exportInfoPair">The entity type information.</param>
       /// <returns>The GUID.</returns>
       public static string GenerateIFCGuidFrom(Element instanceOrSymbol,
          IFCExportInfoPair exportInfoPair)
@@ -580,7 +584,7 @@ namespace Revit.IFC.Export.Utility
                ExporterCacheManager.ExportOptionsCache.GUIDOptions.AllowGUIDParameterOverride)
             {
                BuiltInParameter parameterName = (element is ElementType) ? BuiltInParameter.IFC_TYPE_GUID : BuiltInParameter.IFC_GUID;
-               ExporterCacheManager.GUIDsToStoreCache[new KeyValuePair<ElementId, BuiltInParameter>(element.Id, parameterName)] = guid;
+               ExporterCacheManager.GUIDsToStoreCache[(element.Id, parameterName)] = guid;
             }
          }
          else

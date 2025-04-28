@@ -152,10 +152,13 @@ namespace Revit.IFC.Export.Utility
 
             // We will always have at least one panel definition as long as the panelOperation is not
             // NotDefined.
-            string panelOperaton = GetPanelOperationFromDoorStyleOperation(doorWindowInfo.DoorOperationTypeString);
+            string panelOperaton = GetPanelOperationFromDoorStyleOperation(doorWindowInfo?.DoorOperationTypeString);
+
+            bool flippedX = doorWindowInfo?.FlippedX ?? false;
+            bool flippedY = doorWindowInfo?.FlippedY ?? false;
 
             // If the panel operation is defined we'll allow no panel position for the 1st panel.
-            bool flip = doorWindowInfo.FlippedX ^ doorWindowInfo.FlippedY;
+            bool flip = flippedX ^ flippedY;
             string panelPosition = GetIFCDoorPanelPosition(familyInstance, panelNumber, flip);
 
             doorPanelInfoList.Add(new DoorPanelInformation(panelDepth, panelWidth, panelOperaton, panelPosition));
@@ -894,8 +897,10 @@ namespace Revit.IFC.Export.Utility
             // TODO: Check this code for inserts in tapered walls.
             if (wallIsVertical == insertIsVertical) // For vertical inserts in vertical walls and slanted inserts in slanted walls
             {
+               XYZ wallExtrusionDir = WallExporter.GetWallExtrusionDirection(wall) ?? XYZ.BasisZ;
+
                // Create a plane that goes through the center of the wall along its length
-               XYZ localExtrusionDir = openingTrf.OfVector(WallExporter.GetWallExtrusionDirection(wall));
+               XYZ localExtrusionDir = openingTrf.OfVector(wallExtrusionDir);
                Transform curveData = curve.ComputeDerivatives(curve.GetEndParameter(0), false);
                if (curveData.BasisX.IsZeroLength())
                   return null;
@@ -1052,7 +1057,7 @@ namespace Revit.IFC.Export.Utility
          string openingVoidsGUID = GUIDUtil.CreateSubElementGUID(doorWindowElement, (int)IFCDoorSubElements.DoorOpeningRelVoid);
          IFCInstanceExporter.CreateRelVoidsElement(file, openingVoidsGUID, ownerHistory, null, null, hostObjHnd, openingHnd);
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
+         if (ExporterCacheManager.ExportIFCBaseQuantities())
          {
             using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
             {

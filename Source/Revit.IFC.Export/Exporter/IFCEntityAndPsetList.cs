@@ -1,12 +1,6 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Script.Serialization;
-using System.Runtime.Serialization;
-using System.Xml;
+using Newtonsoft.Json;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -83,7 +77,7 @@ namespace Revit.IFC.Export.Utility
          /// <summary>
          /// Pset list for MVD
          /// </summary>
-         public IList<string> PropertySetList { get; set; } = new List<string>();
+         public List<string> PropertySetList { get; set; } = new();
 
          /// <summary>
          /// Entity list for MVD
@@ -91,8 +85,8 @@ namespace Revit.IFC.Export.Utility
          public IList<string> EntityList { get; set; } = new List<string>();
       }
 
-      IDictionary<string, IFCEntityAndPsetList> CertifiedEntityAndPsetDict { get; set; } = new Dictionary<string, IFCEntityAndPsetList>();
-
+      Dictionary<string, IFCEntityAndPsetList> CertifiedEntityAndPsetDict { get; set; } = new();
+      
       /// <summary>
       /// IFCCertifiedEntitiesAndPSets Constructor
       /// </summary>
@@ -103,10 +97,7 @@ namespace Revit.IFC.Export.Utility
 
          if (File.Exists(filePath))
          {
-            // JavaScriptSerializer does not support mapping of Json array into Hashset (it expects List) and this code below gets the data into Lists first
-            //   and then transfers the data to the final form using Hashset for performance reason
-            JavaScriptSerializer jsonConvert = new JavaScriptSerializer();
-            IDictionary<string, IFCEntityAndPsetListRawFromJson> CertifiedEntityAndPsetList = jsonConvert.Deserialize<IDictionary<string, IFCEntityAndPsetListRawFromJson>>(File.ReadAllText(filePath));
+            IDictionary<string, IFCEntityAndPsetListRawFromJson> CertifiedEntityAndPsetList = JsonConvert.DeserializeObject<IDictionary<string, IFCEntityAndPsetListRawFromJson>>(File.ReadAllText(filePath));
             // Copy the data to the desired format using Hashset in IFCEntityAndPsetList
             foreach (KeyValuePair<string, IFCEntityAndPsetListRawFromJson> entPsetData in CertifiedEntityAndPsetList)
             {
@@ -142,15 +133,10 @@ namespace Revit.IFC.Export.Utility
          if (CertifiedEntityAndPsetDict.Count == 0)
             return true;
          IFCEntityAndPsetList theList;
-         if (CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
-         {
-            if (theList.PsetIsInTheList(psetName))
-               return true;
-            else
-               return false;
-         }
-         else
+         if (!CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
             return true;
+
+         return theList.PsetIsInTheList(psetName);
       }
 
       /// <summary>
@@ -165,15 +151,10 @@ namespace Revit.IFC.Export.Utility
          if (CertifiedEntityAndPsetDict.Count == 0)
             return true;
          IFCEntityAndPsetList theList;
-         if (CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
-         {
-            if (theList.EntityIsInTheList(psetName))
-               return true;
-            else
-               return false;
-         }
-         else
+         if (!CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
             return true;
+
+         return theList.EntityIsInTheList(psetName);
       }
 
       /// <summary>
@@ -199,15 +180,10 @@ namespace Revit.IFC.Export.Utility
          if (CertifiedEntityAndPsetDict.Count == 0)
             return true;
          IFCEntityAndPsetList theList;
-         if (CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
-         {
-            if (theList.EntityIsInTheList(entityName))
-               return true;
-            else
-               return false;
-         }
-         else
+         if (!CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
             return true;
+
+         return theList.EntityIsInTheList(entityName);
       }
    }
 }

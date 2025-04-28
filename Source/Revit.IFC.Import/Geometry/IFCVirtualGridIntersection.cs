@@ -140,14 +140,17 @@ namespace Revit.IFC.Import.Geometry
          Curve secondOffsetCurve = (!MathUtil.IsAlmostZero(offsetDistances[1])) ?
             secondCurve.CreateOffset(offsetDistances[1], referenceVector) : secondCurve;
 
-         IntersectionResultArray resultArray;
-         SetComparisonResult result = firstOffsetCurve.Intersect(secondOffsetCurve, out resultArray);
-         if (result != SetComparisonResult.Overlap || resultArray == null || resultArray.Size == 0)
+         CurveIntersectResult result = firstOffsetCurve.Intersect(secondOffsetCurve, CurveIntersectResultOption.Detailed);
+         if (   null == result 
+             || result.Result != SetComparisonResult.Overlap 
+             || result.GetOverlaps()?.Count != 1)
+         {
             return;
+         }
 
-         IntersectionResult intersectionPoint = resultArray.get_Item(0);
-         XYZ origin = intersectionPoint.XYZPoint + offsetDistances[2] * referenceVector;
-         Transform derivatives = firstCurve.ComputeDerivatives(intersectionPoint.UVPoint.U, false);
+         CurveOverlapPoint intersectionPoint = result.GetOverlaps()[0];
+         XYZ origin = intersectionPoint.Point + offsetDistances[2] * referenceVector;
+         Transform derivatives = firstCurve.ComputeDerivatives(intersectionPoint.FirstParameter, false);
          LocalCoordinateSystem = Transform.CreateTranslation(origin);
          LocalCoordinateSystem.BasisX = derivatives.BasisX;
          LocalCoordinateSystem.BasisY = referenceVector.CrossProduct(derivatives.BasisX);

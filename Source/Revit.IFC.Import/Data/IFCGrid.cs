@@ -386,6 +386,13 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcGrid);
 
+         ElementId hybridElementId = ElementId.InvalidElementId;
+         Importer.TheHybridInfo?.HybridMap?.TryGetValue(Id.ToString(), out hybridElementId);
+         if (hybridElementId != null && hybridElementId != ElementId.InvalidElementId)
+         {
+            return;
+         }
+            
          // We will be lenient and allow for missing U and V axes.
          UAxes = ProcessOneAxis(ifcGrid, IFCAxesType.UAxes);
          VAxes = ProcessOneAxis(ifcGrid, IFCAxesType.VAxes);
@@ -458,6 +465,11 @@ namespace Revit.IFC.Import.Data
       /// <param name="hasDefaultLayerAssignmentName">True if defaultLayerAssignmentName isn't empty.</param>
       private void SetCurrentPresentationLayerNames(string defaultLayerAssignmentName, bool hasDefaultLayerAssignmentName)
       {
+         if (Importer.TheOptions.UsingHybridPropertySets())
+         {
+            return;
+         }
+
          PresentationLayerNames.Clear();
 
          // We will get the presentation layer names from either the grid lines or the grid, with
@@ -499,14 +511,35 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">The document.</param>
       protected override void Create(Document doc)
       {
-         Transform lcs = (ObjectLocation != null) ? ObjectLocation.TotalTransform : Transform.Identity;
-
-         CreateOneDirection(UAxes, doc, lcs);
-         CreateOneDirection(VAxes, doc, lcs);
-         CreateOneDirection(WAxes, doc, lcs);
+         string idAsString = Id.ToString();
 
          ISet<ElementId> createdElementIds = new HashSet<ElementId>();
-         GetCreatedElementIds(createdElementIds);
+         if (Importer.TheHybridInfo?.HybridMap?.TryGetValue(idAsString, out ElementId hybridElementId) ?? false)
+         {
+            CreatedElementId = hybridElementId;
+            createdElementIds.Add(hybridElementId);
+            string prefix = idAsString + "_";
+            foreach (KeyValuePair<string, ElementId> entry in Importer.TheHybridInfo.HybridMap)
+            {
+               // This is a workaround to import Grids via ATF but still consume the IFCParameters through the legacy import.
+               // The hybrid map can have multiple elementIds for 1 STEPId. For every other ElementId there will be an unique SubSTEPId.
+               // For example: STEPId = 173, SubSTEPId = 173_1, SubSTEPId = 173_2, etc.
+               if (entry.Key.StartsWith(prefix))
+               {
+                  createdElementIds.Add(entry.Value);
+               }
+            }
+         }
+         else
+         {
+            Transform lcs = ObjectLocation?.TotalTransformAfterOffset ?? Transform.Identity;
+
+            CreateOneDirection(UAxes, doc, lcs);
+            CreateOneDirection(VAxes, doc, lcs);
+            CreateOneDirection(WAxes, doc, lcs);
+
+            GetCreatedElementIds(createdElementIds);
+         }
 
          // We want to get the presentation layer from the Grid representation, if any.
          IFCPresentationLayerAssignment defaultLayerAssignment = GetTheFirstPresentationLayerAssignment();

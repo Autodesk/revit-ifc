@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Export.Utility;
 
 namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 {
@@ -69,7 +70,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// </returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         m_NumberOfStoreys = ExporterIFCUtils.GetNumBuildingStoreys(exporterIFC);
+         m_NumberOfStoreys = ExporterCacheManager.LevelInfoCache?.LevelsById?.Count ?? 0;
          return true;
       }
 

@@ -65,7 +65,7 @@ namespace Revit.IFC.Export.Exporter
 
          // Get all the grids from cache and sorted in levels.
          //IDictionary<ElementId, List<Grid>> levelGrids = GetAllGrids(exporterIFC);
-         IDictionary<Tuple<ElementId, string>, List<Grid>> levelGrids = GetAllGrids(document, exporterIFC);
+         IDictionary<Tuple<ElementId, string>, List<Grid>> levelGrids = GetAllGrids(document);
          
          // Get grids in each level and export.
          foreach (Tuple<ElementId,string> levelId in levelGrids.Keys)
@@ -292,7 +292,7 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle productRep = IFCInstanceExporter.CreateProductDefinitionShape(ifcFile, null, null, representations);
 
                // We will associate the grid with its level, unless there are no levels in the file, in which case we'll associate it with the building.
-               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, levelId);
+               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(levelId);
                bool useLevelInfo = (levelInfo != null);
                IFCAnyHandle gridLevelHandle = useLevelInfo ? levelInfo.GetBuildingStorey() : ExporterCacheManager.BuildingHandle;
 
@@ -341,11 +341,12 @@ namespace Revit.IFC.Export.Exporter
          IDictionary<ElementId, List<IFCAnyHandle>> gridRepMap = new Dictionary<ElementId, List<IFCAnyHandle>>();
 
          IFCFile ifcFile = exporterIFC.GetFile();
-         Grid baseGrid = sameDirectionAxes[0];
+         Line baseGridAxisAsLine = sameDirectionAxes[0].Curve as Line;
 
          Transform lcs = Transform.Identity;
 
-         List<IFCAnyHandle> ifcGridAxes = new List<IFCAnyHandle>();
+         List<IFCAnyHandle> ifcGridAxes = new();
+         XYZ projectionDirection = lcs.BasisZ;
 
          foreach (Grid grid in sameDirectionAxes)
          {
@@ -356,37 +357,34 @@ namespace Revit.IFC.Export.Exporter
                gridRepresentationData.m_IFCCADLayer = RepresentationUtil.GetPresentationLayerOverride(grid);
             }
 
+            Curve currentGridAxis = grid.Curve;
+            bool sameSense = true;
+            if (baseGridAxisAsLine != null)
+            {
+               Line axisLine = currentGridAxis as Line;
+               sameSense = axisLine?.Direction.IsAlmostEqualTo(baseGridAxisAsLine.Direction) ?? true;
+               if (!sameSense)
+               {
+                  currentGridAxis = currentGridAxis.CreateReversed();
+               }
+            }
+
             // Get the handle of curve.
-            XYZ projectionDirection = lcs.BasisZ;
             IFCAnyHandle axisCurve;
             if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             {
-               axisCurve = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, grid.Curve, lcs, projectionDirection);
+               axisCurve = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, currentGridAxis, lcs, projectionDirection);
             }
             else
             {
-               IFCGeometryInfo info = IFCGeometryInfo.CreateCurveGeometryInfo(exporterIFC, lcs, projectionDirection, false);
-               ExporterIFCUtils.CollectGeometryInfo(exporterIFC, info, grid.Curve, XYZ.Zero, false);
-               IList<IFCAnyHandle> curves = info.GetCurves();
-               if (curves.Count != 1)
-                  throw new Exception("IFC: expected 1 curve when export curve element.");
-
-               axisCurve = curves[0];
-            }
-
-            bool sameSense = true;
-            if (baseGrid.Curve is Line)
-            {
-               Line baseLine = baseGrid.Curve as Line;
-               Line axisLine = grid.Curve as Line;
-               sameSense = (axisLine.Direction.IsAlmostEqualTo(baseLine.Direction));
+               axisCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(exporterIFC.GetFile(), exporterIFC, currentGridAxis,
+                  false, null, GeometryUtil.TrimCurvePreference.UsePolyLineOrTrim, null);
             }
 
             IFCAnyHandle ifcGridAxis = IFCInstanceExporter.CreateGridAxis(ifcFile, grid.Name, axisCurve, sameSense);
             ifcGridAxes.Add(ifcGridAxis);
 
-            HashSet<IFCAnyHandle> AxisCurves = new HashSet<IFCAnyHandle>();
-            AxisCurves.Add(axisCurve);
+            HashSet<IFCAnyHandle> AxisCurves = new() { axisCurve };
 
             IFCAnyHandle repItemHnd = IFCInstanceExporter.CreateGeometricCurveSet(ifcFile, AxisCurves);
 
@@ -429,9 +427,9 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Get all the grids and add to the map with its level.
       /// </summary>
-      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="document">The current document.</param>
       /// <returns>The map with sorted grids by level.</returns>
-      private static IDictionary<Tuple<ElementId, string>, List<Grid>> GetAllGrids(Document document, ExporterIFC exporterIFC)
+      private static IDictionary<Tuple<ElementId, string>, List<Grid>> GetAllGrids(Document document)
       {
          View currentView = ExporterCacheManager.ExportOptionsCache.FilterViewForExport;
          Level currentLevel = currentView?.GenLevel;
@@ -440,15 +438,18 @@ namespace Revit.IFC.Export.Exporter
          
          if (currentLevel != null)
          {
-            levelIds.Add(currentLevel.Elevation, currentLevel.Id);
+            levelIds.Add(currentLevel.ProjectElevation, currentLevel.Id);
          }
          else
          {
-            foreach (ElementId levelId in ExporterCacheManager.LevelInfoCache.BuildingStoriesByElevation)
+            foreach (ElementId levelId in ExporterCacheManager.LevelInfoCache.GetBuildingStoriesByElevation())
             {
                Level level = document.GetElement(levelId) as Level;
-               if (!levelIds.ContainsKey(level.Elevation))
-                  levelIds.Add(level.Elevation, levelId);
+               double? projectElevation = level?.ProjectElevation;
+               if (projectElevation.HasValue && !levelIds.ContainsKey(projectElevation.Value))
+               {
+                  levelIds.Add(projectElevation.Value, levelId);
+               }
             }
          }
 
@@ -500,9 +501,10 @@ namespace Revit.IFC.Export.Exporter
 
          foreach (Grid grid in gridsOneLevel)
          {
-            if (grid.Curve is Line)
+            Curve gridAxis = grid.Curve;
+            if (gridAxis is Line)
             {
-               Line line = grid.Curve as Line;
+               Line line = gridAxis as Line;
                XYZ directionVector = line.Direction;
                if (!linearGrids.ContainsKey(directionVector))
                {
@@ -511,9 +513,9 @@ namespace Revit.IFC.Export.Exporter
 
                linearGrids[directionVector].Add(grid);
             }
-            if (grid.Curve is Arc)
+            else if (gridAxis is Arc)
             {
-               Arc arc = grid.Curve as Arc;
+               Arc arc = gridAxis as Arc;
                XYZ arcCenter = arc.Center;
                if (!radialGrids.ContainsKey(arcCenter))
                {
@@ -535,12 +537,13 @@ namespace Revit.IFC.Export.Exporter
          foreach (Grid exportedGrid in exportedLinearGrids)
          {
             Line line = exportedGrid.Curve as Line;
-            if (linearGrids.ContainsKey(line.Direction))
+            XYZ direction = line.Direction;
+            if (linearGrids.ContainsKey(direction))
             {
-               linearGrids[line.Direction].Remove(exportedGrid);
-               if (linearGrids[line.Direction].Count == 0)
+               linearGrids[direction].Remove(exportedGrid);
+               if (linearGrids[direction].Count == 0)
                {
-                  linearGrids.Remove(line.Direction);
+                  linearGrids.Remove(direction);
                }
             }
          }

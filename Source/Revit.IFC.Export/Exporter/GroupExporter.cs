@@ -69,50 +69,70 @@ namespace Revit.IFC.Export.Exporter
             string longName = NamingUtil.GetLongNameOverride(element, null);
 
             string ifcEnumType;
-            IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(exporterIFC, element, out ifcEnumType);
+            IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(element, out ifcEnumType);
+            IFCEntityType ifcEntityType = exportAs.ExportInstance;
+            
+            // Try special cases first.  The assumption is that the Create functions return null if the
+            // schema is invalid.
+            switch (ifcEntityType)
+            {
+               case IFCEntityType.IfcBuiltSystem:
+                  groupHnd = IFCInstanceExporter.CreateBuiltSystem(file, exportAs, guid, ownerHistory, name, description, objectType, longName);
+                  break;
+               case IFCEntityType.IfcBuildingSystem:
+                  groupHnd = IFCInstanceExporter.CreateBuildingSystem(file, exportAs, guid, ownerHistory, name, description, objectType, longName);
+                  break;
+               case IFCEntityType.IfcDistributionSystem:
+                  groupHnd = IFCInstanceExporter.CreateDistributionSystem(file, guid, ownerHistory, name, description, objectType, longName, exportAs.PredefinedType);
+                  break;
+               case IFCEntityType.IfcFurniture:
+                  groupHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, file, element, guid, ownerHistory, null, null);
+                  break;
+               case IFCEntityType.IfcSystem:
+                  groupHnd = IFCInstanceExporter.CreateSystem(file, guid, ownerHistory, name, description, objectType);
+                  break;
+            }
 
-            if (exportAs.ExportInstance == IFCEntityType.IfcGroup)
+            if (groupHnd == null || exportAs.ExportInstance == IFCEntityType.IfcGroup)
             {
                groupHnd = IFCInstanceExporter.CreateGroup(file, guid, ownerHistory, name, description, objectType);
             }
-            else if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-            {
-               if (exportAs.ExportInstance == IFCEntityType.IfcBuildingSystem)
-                  groupHnd = IFCInstanceExporter.CreateBuildingSystem(file, exportAs, guid, ownerHistory, name, description, objectType, longName);
-               else if (exportAs.ExportInstance == IFCEntityType.IfcFurniture)
-                  groupHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, exporterIFC, element, guid, ownerHistory, null, null);
-            }
 
             if (groupHnd == null)
+            {
                return false;
+            }
 
             GroupInfo groupInfo = ExporterCacheManager.GroupCache.RegisterGroup(element.Id, groupHnd);
 
             if (IFCAnyHandleUtil.IsSubTypeOf(groupHnd, IFCEntityType.IfcProduct))
             {
-               IFCAnyHandle overrideContainerHnd = null;
-               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-
-               using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+               using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null))
                {
                   IFCAnyHandle localPlacementToUse;
                   ElementId roomId = setter.UpdateRoomRelativeCoordinates(element, out localPlacementToUse);
-                  
+
                   bool containedInSpace = (roomId != ElementId.InvalidElementId);
                   productWrapper.AddElement(element, groupHnd, setter.LevelInfo, null, !containedInSpace, exportAs);
-                  
+
                   if (containedInSpace)
                      ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, groupHnd);
                }
             }
             else
+            {
                productWrapper.AddElement(element, groupHnd, exportAs);
+            }
 
             // Check or set the cached Group's export type
             if (groupInfo.GroupType.ExportInstance == IFCEntityType.UnKnown)
+            {
                ExporterCacheManager.GroupCache.RegisterOrUpdateGroupType(element.Id, exportAs);
+            }
             else if (groupInfo.GroupType.ExportInstance != exportAs.ExportInstance)
+            {
                throw new InvalidOperationException("Inconsistent Group export entity type");
+            }
 
             tr.Commit();
             return true;

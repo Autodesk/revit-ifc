@@ -507,6 +507,8 @@ namespace BIM.IFC.Export.UI
                return;
             }
 
+            TheDocument.Application.WriteJournalComment(@"Jrn.Data ""File Name"", ""IDOK"", " + @"""" + textBoxSetupFileName.Text + @"""", true);
+
             IFCExportConfiguration selectedConfig = GetSelectedConfiguration();
             if (OptionsUtil.ExportAs4DesignTransferView(selectedConfig.IFCVersion))
             {
@@ -527,7 +529,8 @@ namespace BIM.IFC.Export.UI
                selectedConfig = LastSelectedConfig[selectedConfig.Name];
 
             // This check will be done only for IFC4 and above as this only affects IfcMapConversion use that starts in IFC4 onward
-            if (!OptionsUtil.ExportAsOlderThanIFC4(selectedConfig.IFCVersion))
+            if (!OptionsUtil.ExportAsOlderThanIFC4(selectedConfig.IFCVersion) &&
+               !string.IsNullOrWhiteSpace(selectedConfig.GeoRefEPSGCode))
             {
                // Check whether the resulting offset (to wcs) will be too large due to geo-reference information, raise warning
                BasePoint surveyPoint = BasePoint.GetSurveyPoint(TheDocument);

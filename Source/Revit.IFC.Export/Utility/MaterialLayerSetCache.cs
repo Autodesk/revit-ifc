@@ -35,26 +35,22 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The dictionary mapping from an ElementId to an IfcMaterialLayerSet handle. 
       /// </summary>
-      private IDictionary<ElementId, IFCAnyHandle> ElementIdToMatLayerSetDictionary
-      { get; set; } = new Dictionary<ElementId, IFCAnyHandle>();
+      private Dictionary<ElementId, IFCAnyHandle> ElementIdToMatLayerSetDictionary { get; set; } = new();
 
       /// <summary>
       /// The dictionary mapping from an ElementId to an IfcMaterialProfileSet handle. 
       /// </summary>
-      private IDictionary<ElementId, IFCAnyHandle> ElementIdToMatProfileSetDictionary
-      { get; set; } = new Dictionary<ElementId, IFCAnyHandle>();
+      private Dictionary<ElementId, IFCAnyHandle> ElementIdToMatProfileSetDictionary { get; set; } = new();
 
       /// <summary>
       /// The dictionary mapping from an ElementId to an IfcMaterialConstituentSet handle. 
       /// </summary>
-      private IDictionary<ElementId, MaterialLayerSetInfo> ElementIdToMaterialLayerSetInfo
-      { get; set; } = new Dictionary<ElementId, MaterialLayerSetInfo>();
+      private Dictionary<ElementId, MaterialLayerSetInfo> ElementIdToMaterialLayerSetInfo { get; set; } = new();
 
       /// <summary>
       /// The dictionary mapping from an ElementId to a primary IfcMaterial handle. 
       /// </summary>
-      private IDictionary<ElementId, IFCAnyHandle> ElementIdToMaterialHndDictionary
-      { get; set; } = new Dictionary<ElementId, IFCAnyHandle>();
+      private Dictionary<ElementId, IFCAnyHandle> ElementIdToMaterialHndDictionary { get; set; } = new();
 
       /// <summary>
       /// Finds the IfcMaterialLayerSet handle from the dictionary.
@@ -177,6 +173,14 @@ namespace Revit.IFC.Export.Utility
       public void UnregisterPrimaryMaterialHnd(ElementId elementId)
       {
          ElementIdToMaterialHndDictionary.Remove(elementId);
+      }
+
+      public void Clear()
+      {
+         ElementIdToMatLayerSetDictionary.Clear();
+         ElementIdToMatProfileSetDictionary.Clear();
+         ElementIdToMaterialLayerSetInfo.Clear();
+         ElementIdToMaterialHndDictionary.Clear();
       }
    }
 }

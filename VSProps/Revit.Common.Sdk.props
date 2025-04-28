@@ -1,0 +1,40 @@
+<Project>
+  <Import Project="$(SolutionDir)VSProps\Revit.NetVersion.props" />
+  <PropertyGroup>  
+    <Platforms>x64</Platforms>
+	  <Configurations>Debug;Release;Slow_Debug</Configurations>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <BaseIntermediateOutputPath>$(SolutionDir)\Intermediate\$(Configuration)$(Platform)\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)</IntermediateOutputPath>
+	  <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+	  <PlatformTarget>x64</PlatformTarget>	
+	  <CopyDebugSymbolFilesFromPackages>true</CopyDebugSymbolFilesFromPackages>
+	  <CopyDocumentationFilesFromPackages>true</CopyDocumentationFilesFromPackages>
+	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	  <GenerateDependencyFile>false</GenerateDependencyFile>
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <ThirdPartyVersion>x64\Release</ThirdPartyVersion>
+    <ThirdPartyRelease>Release</ThirdPartyRelease>
+    <ThirdPartySuffix/>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <ThirdPartyVersion>x64\Release</ThirdPartyVersion>
+    <ThirdPartyRelease>Release</ThirdPartyRelease>
+    <ThirdPartySuffix/>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Slow_Debug|x64' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <ThirdPartyVersion>x64\Debug</ThirdPartyVersion>
+    <ThirdPartyRelease>Debug</ThirdPartyRelease>
+    <ThirdPartySuffix>d</ThirdPartySuffix>
+  </PropertyGroup>
+</Project>

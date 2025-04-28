@@ -34,25 +34,19 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The dictionary mapping from a host element to its parts. 
       /// </summary>
-      private Dictionary<ElementId, Dictionary<ElementId, List<KeyValuePair<Part, IFCRange>>>> m_HostToPartsDictionary = new Dictionary<ElementId, Dictionary<ElementId, List<KeyValuePair<Part, IFCRange>>>>();
+      private Dictionary<ElementId, Dictionary<ElementId, List<KeyValuePair<PartOrGeometry, IFCRange>>>> HostToPartsDictionary = new();
 
       /// <summary>
       /// Finds the parts from the dictionary.
       /// </summary>
-      /// <param name="hostId">
-      /// The id of host element.
-      /// </param>
-      /// <param name="LevelId">
-      /// The id of level to finding the parts.
-      /// </param>
-      /// <returns>
-      /// The list of parts.
-      /// </returns>
-      public List<KeyValuePair<Part, IFCRange>> Find(ElementId hostId, ElementId LevelId)
+      /// <param name="hostId">The id of host element.</param>
+      /// <param name="LevelId">The id of level to finding the parts.</param>
+      /// <returns>The list of parts.</returns>
+      public List<KeyValuePair<PartOrGeometry, IFCRange>> Find(ElementId hostId, ElementId LevelId)
       {
-         Dictionary<ElementId, List<KeyValuePair<Part, IFCRange>>> levelParts;
-         List<KeyValuePair<Part, IFCRange>> partsList;
-         if (m_HostToPartsDictionary.TryGetValue(hostId, out levelParts))
+         Dictionary<ElementId, List<KeyValuePair<PartOrGeometry, IFCRange>>> levelParts;
+         List<KeyValuePair<PartOrGeometry, IFCRange>> partsList;
+         if (HostToPartsDictionary.TryGetValue(hostId, out levelParts))
          {
             if (levelParts.TryGetValue(LevelId, out partsList))
                return partsList;
@@ -63,18 +57,14 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Adds the list of parts to the dictionary.
       /// </summary>
-      /// <param name="hostId">
-      /// The host element elementId.
-      /// </param>
-      /// <param name="partsList">
-      /// The list of parts.
-      /// </param>
-      public void Register(ElementId hostId, Dictionary<ElementId, List<KeyValuePair<Part, IFCRange>>> levelParts)
+      /// <param name="hostId">The host element elementId.</param>
+      /// <param name="partsList">The list of parts.</param>
+      public void Register(ElementId hostId, Dictionary<ElementId, List<KeyValuePair<PartOrGeometry, IFCRange>>> levelParts)
       {
          if (HasRegistered(hostId))
             return;
 
-         m_HostToPartsDictionary[hostId] = levelParts;
+         HostToPartsDictionary[hostId] = levelParts;
       }
 
       /// <summary>
@@ -84,9 +74,12 @@ namespace Revit.IFC.Export.Utility
       /// <returns>True if registered, false otherwise.</returns>
       public bool HasRegistered(ElementId hostId)
       {
-         if (m_HostToPartsDictionary.ContainsKey(hostId))
-            return true;
-         return false;
+         return HostToPartsDictionary.ContainsKey(hostId);
+      }
+
+      public void Clear()
+      {
+         HostToPartsDictionary.Clear();
       }
    }
 }

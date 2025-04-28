@@ -30,49 +30,45 @@ namespace Revit.IFC.Export.Utility
    public class MEPCache
    {
       /// <summary>
-      /// The dictionary mapping from a MEP element elementId to an Ifc handle. 
-      /// </summary>
-      /// <remarks>ElementId can't be used as a key for a SortedDictionary.</remarks>
-      private IDictionary<long, IFCAnyHandle> m_MEPElementHandleDictionary = new SortedDictionary<long, IFCAnyHandle>();
-
-      /// <summary>
-      /// A list of connectors
-      /// </summary>
-      public List<ConnectorSet> MEPConnectors = new List<ConnectorSet>();
-
-      /// <summary>
-      /// A cache of elements (Ducts and Pipes) that may have coverings (Linings and/or Insulations).
-      /// </summary>
-      public HashSet<ElementId> CoveredElementsCache = new HashSet<ElementId>();
-
-      /// <summary>
       /// A cache of elements (Cable Trays and Conduits) that may be assigned to systems
       /// </summary>
-      public HashSet<ElementId> CableElementsCache = new HashSet<ElementId>();
+      public HashSet<ElementId> CableElementsCache { get; set; } = new();
 
       /// <summary>
       /// The dictionary mapping from an exported connector to an Ifc handle. 
       /// </summary>
-      public IDictionary<Connector, IFCAnyHandle> ConnectorCache = new Dictionary<Connector, IFCAnyHandle>();
+      public Dictionary<Connector, IFCAnyHandle> ConnectorCache { get; set; } = new();
 
       /// <summary>
       /// The dictionary mapping from an exported connector to its description string. 
       /// </summary>
-      public IDictionary<Connector, string> ConnectorDescriptionCache = new Dictionary<Connector, string>();
+      public Dictionary<Connector, string> ConnectorDescriptionCache = new();
 
       /// <summary>
-      /// Finds the Ifc handle from the dictionary.
+      /// A cache of elements (Ducts and Pipes) that may have coverings (Linings and/or Insulations) and their categories.
       /// </summary>
-      /// <param name="elementId">
-      /// The element elementId.
-      /// </param>
-      /// <returns>
-      /// The Ifc handle.
-      /// </returns>
+      public Dictionary<ElementId, ElementId> CoveredElementsCache { get; set; } = new();
+
+      /// <summary>
+      /// A list of connectors
+      /// </summary>
+      public List<ConnectorSet> MEPConnectors { get; set; } = new();
+
+      /// <summary>
+      /// The dictionary mapping from a MEP element elementId to an Ifc handle. 
+      /// </summary>
+      /// <remarks>ElementId can't be used as a key for a SortedDictionary.</remarks>
+      private SortedDictionary<long, IFCAnyHandle> MEPElementHandleDictionary { get; set; } = new();
+
+      /// <summary>
+      /// Finds the IFC handle from the dictionary.
+      /// </summary>
+      /// <param name="elementId">The element elementId.</param>
+      /// <returns>The IFC handle.</returns>
       public IFCAnyHandle Find(ElementId elementId)
       {
          IFCAnyHandle handle;
-         if (m_MEPElementHandleDictionary.TryGetValue(elementId.Value, out handle))
+         if (MEPElementHandleDictionary.TryGetValue(elementId.Value, out handle))
          {
             return handle;
          }
@@ -80,26 +76,21 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Adds the Ifc handle to the dictionary and connectors.
+      /// Adds the IFC handle to the dictionary and connectors.
       /// </summary>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <param name="handle">
-      /// The Ifc handle.
-      /// </param>
+      /// <param name="element">The element.</param>
+      /// <param name="handle">The IFC handle.</param>
       public void Register(Element element, IFCAnyHandle handle)
       {
          long idVal = element.Id.Value;
-         if (m_MEPElementHandleDictionary.ContainsKey(idVal))
+         if (MEPElementHandleDictionary.ContainsKey(idVal))
             return;
 
-         m_MEPElementHandleDictionary[idVal] = handle;
+         MEPElementHandleDictionary[idVal] = handle;
 
          ConnectorSet connectorts = GetConnectors(element);
          if (connectorts != null)
             MEPConnectors.Add(connectorts);
-
       }
 
       /// <summary>
@@ -116,46 +107,52 @@ namespace Revit.IFC.Export.Utility
 
       /// <summary>
       /// Gets a set of all connectors hosted by a single element.
-      /// From http://thebuildingcoder.typepad.com/blog/2010/06/retrieve-mep-elements-and-connectors.html.
+      /// Modified from http://thebuildingcoder.typepad.com/blog/2010/06/retrieve-mep-elements-and-connectors.html.
       /// </summary>
-      /// <param name="e">The element that may host connectors</param>
+      /// <param name="element">The element that may host connectors</param>
       /// <returns>A set of connectors</returns>
-      static ConnectorSet GetConnectors(Element e)
+      static ConnectorSet GetConnectors(Element element)
       {
-         ConnectorSet connectors = null;
-
          try
          {
-            if (e is FamilyInstance)
+            if (element is FamilyInstance)
             {
-               MEPModel m = ((FamilyInstance)e).MEPModel;
-               if (m != null && m.ConnectorManager != null)
-               {
-                  connectors = m.ConnectorManager.Connectors;
-               }
+               return (element as FamilyInstance)?.MEPModel?.ConnectorManager?.Connectors;
             }
-            else if (e is Wire)
+
+            if (element is Wire)
             {
-               connectors = ((Wire)e).ConnectorManager.Connectors;
+               return (element as Wire)?.ConnectorManager?.Connectors;
             }
-            else if (e is MEPCurve)
+
+            if (element is MEPCurve)
             {
-               connectors = ((MEPCurve)e).ConnectorManager.Connectors;
+               return (element as MEPCurve)?.ConnectorManager?.Connectors;
             }
          }
          catch
          {
          }
 
-         return connectors;
+         return null;
       }
 
       public void CacheConnectorHandle(Connector connector, IFCAnyHandle handle)
       {
-         if (!ConnectorCache.ContainsKey(connector) && handle != null)
+         if (handle != null && !ConnectorCache.ContainsKey(connector))
          {
             ConnectorCache.Add(connector, handle);
          }
+      }
+
+      public void Clear()
+      {
+         CableElementsCache.Clear();
+         ConnectorCache.Clear();
+         ConnectorDescriptionCache.Clear();
+         CoveredElementsCache.Clear();
+         MEPConnectors.Clear();
+         MEPElementHandleDictionary.Clear();
       }
    }
 }

@@ -277,7 +277,7 @@ namespace Revit.IFC.Common.Utility
 
       /// <summary>
       /// Get EPSG code from SiteLocation.GeoCoordinateSystemDefinition which is a full definition in XML regarding a specific Projected Coordinate System
-      /// IFC expects only EPSG code as described in teh schema https://standards.buildingsmart.org/MVD/RELEASE/IFC4/ADD2_TC1/RV1_2/HTML/schema/ifcrepresentationresource/lexical/ifccoordinatereferencesystem.htm
+      /// IFC expects only EPSG code as described in the schema https://standards.buildingsmart.org/MVD/RELEASE/IFC4/ADD2_TC1/RV1_2/HTML/schema/ifcrepresentationresource/lexical/ifccoordinatereferencesystem.htm
       /// </summary>
       /// <param name="siteLocation">The project SiteLocation</param>
       /// <returns>returns EPSG string if found, null otherwise</returns>
@@ -292,24 +292,60 @@ namespace Revit.IFC.Common.Utility
          if (string.IsNullOrEmpty(xmlGeoCoordDef))
             return (projectedCRSName, projectedCRSDesc, epsgStr, geodeticDatum, uom);
 
-         bool foundAll = false;
+         // The XML file may have a number of "Authority"s in it.  We want to take the correct one.
+         int authorityDepth = int.MaxValue; 
          XmlTextReader reader = new XmlTextReader(new StringReader(xmlGeoCoordDef));
-         while (reader.Read() && !foundAll)
+         while (reader.Read())
          {
-            if (!(reader.NodeType == XmlNodeType.Element && reader.Name.Equals("ProjectedCoordinateSystem", StringComparison.InvariantCultureIgnoreCase)))
+            if (reader.NodeType != XmlNodeType.Element)
                continue;
 
-            while (reader.Read() && !foundAll)
+            if (reader.Name.Equals("Alias", StringComparison.InvariantCultureIgnoreCase) && reader.Depth < authorityDepth)
             {
-               if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("Name", StringComparison.InvariantCultureIgnoreCase))
+               int aliasReadDepth = reader.Depth;
+
+               string idAsString = reader.GetAttribute("id");
+               int.TryParse(idAsString, out int id);
+               while (reader.Read() && reader.Depth > aliasReadDepth)
+               {
+                  if (reader.NodeType != XmlNodeType.Element)
+                  {
+                     continue;
+                  }
+
+                  if (reader.Name.Equals("NameSpace", StringComparison.InvariantCultureIgnoreCase))
+                  {
+                     string nameSpaceValue = reader.ReadElementContentAsString();
+                     if (nameSpaceValue.Equals("EPSG Code", StringComparison.InvariantCultureIgnoreCase))
+                     {
+                        epsgStr = "EPSG:" + idAsString;
+                        authorityDepth = aliasReadDepth;
+                     }
+                  }
+               }
+            }
+               
+            if (!reader.Name.Equals("ProjectedCoordinateSystem", StringComparison.InvariantCultureIgnoreCase))
+               continue;
+
+            int startDepth = reader.Depth;
+            while (reader.Read() && reader.Depth > startDepth)
+            {
+               if (reader.NodeType != XmlNodeType.Element)
+               {
+                  continue;
+               }
+
+               if (reader.Name.Equals("Name", StringComparison.InvariantCultureIgnoreCase))
                {
                   if (string.IsNullOrEmpty(projectedCRSName))        // Prevent from being overwritten
                      projectedCRSName = reader.ReadElementContentAsString();
                }
-               else if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("Authority", StringComparison.InvariantCultureIgnoreCase))
+               else if (reader.Name.Equals("Authority", StringComparison.InvariantCultureIgnoreCase) &&
+                  reader.Depth < authorityDepth)
                {
                   string authVal = reader.ReadElementContentAsString();
-                  if (authVal.StartsWith("EPSG", StringComparison.InvariantCultureIgnoreCase) && string.IsNullOrEmpty(epsgStr))
+                  if (authVal.StartsWith("EPSG", StringComparison.InvariantCultureIgnoreCase))
                   {
                      // The Authority value may vary in format. We are looking for the item that is whole number
                      string[] tokens = authVal.Split(' ', ',');
@@ -320,21 +356,23 @@ namespace Revit.IFC.Common.Utility
                         if (int.TryParse(tok, out epsgCode))
                         {
                            epsgStr = "EPSG:" + tok;
+                           authorityDepth = reader.Depth;
+                           break;
                         }
                      }
                   }
                }
-               else if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("Description", StringComparison.InvariantCultureIgnoreCase))
+               else if (reader.Name.Equals("Description", StringComparison.InvariantCultureIgnoreCase))
                {
                   if (string.IsNullOrEmpty(projectedCRSDesc))        // Prevent from being overwritten
                      projectedCRSDesc = reader.ReadElementContentAsString();
                }
-               else if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("DatumId", StringComparison.InvariantCultureIgnoreCase))
+               else if (reader.Name.Equals("DatumId", StringComparison.InvariantCultureIgnoreCase))
                {
                   if (string.IsNullOrEmpty(geodeticDatum))        // Prevent from being overwritten
                      geodeticDatum = reader.ReadElementContentAsString();
                }
-               else if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("Axis", StringComparison.InvariantCultureIgnoreCase))
+               else if (reader.Name.Equals("Axis", StringComparison.InvariantCultureIgnoreCase))
                {
                   uom = reader.GetAttribute("uom").ToUpper();
                   uom = uom.Replace("METER", "METRE");
@@ -459,6 +497,9 @@ namespace Revit.IFC.Common.Utility
 
                BasePoint surveyPoint = BasePoint.GetSurveyPoint(doc);
                BasePoint projectBasePoint = BasePoint.GetProjectBasePoint(doc);
+               if (surveyPoint == null || projectBasePoint == null)
+                  return (eastings, northings, orthogonalHeight, angleTN, origAngleTN);
+
                (double svNorthings, double svEastings, double svElevation, double svAngle, double pbNorthings, 
                   double pbEastings, double pbElevation, double pbAngle) = ProjectLocationInfo(doc, surveyPoint.Position, projectBasePoint.Position);
                origAngleTN = pbAngle;

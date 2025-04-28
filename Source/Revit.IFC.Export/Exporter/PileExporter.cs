@@ -52,11 +52,7 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null))
             {
                using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
@@ -104,7 +100,7 @@ namespace Revit.IFC.Export.Exporter
                   }
                   if (exportParts)
                   {
-                     PartExporter.ExportHostPart(exporterIFC, element, pile, productWrapper, setter, setter.LocalPlacement, null);
+                     PartExporter.ExportHostPart(exporterIFC, element, pile, setter, setter.LocalPlacement, null);
                   }
                   else
                   {

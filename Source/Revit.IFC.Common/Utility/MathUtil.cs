@@ -51,13 +51,8 @@ namespace Revit.IFC.Common.Utility
       /// <summary>
       /// Returns a small value for use in comparing doubles.
       /// </summary>
-      /// <returns>
-      /// The value.
-      /// </returns>
-      public static double Eps()
-      {
-         return 1.0e-9;
-      }
+      /// <returns>The value.</returns>
+      public static double Eps() => 1.0e-9;
 
       public static double SmallGap()
       {
