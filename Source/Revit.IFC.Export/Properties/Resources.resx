@@ -135,6 +135,9 @@
   <data name="IFCProcessingFabricAreas" xml:space="preserve">
     <value>IFC Export: Processing Fabric Areas: {0} of {1} (Fabric Area ID: {2})</value>
   </data>
+  <data name="IFCProcessingGroups" xml:space="preserve">
+    <value>IFC Export: Processing Groups: {0} of {1} (Group ID: {2})</value>
+  </data>
   <data name="IFCProcessingNonSpatialElements" xml:space="preserve">
     <value>IFC Export: Processing Non Spatial Elements: {0} of {1} (Element ID: {2})</value>
   </data>

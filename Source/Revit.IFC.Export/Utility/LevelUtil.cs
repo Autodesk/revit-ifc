@@ -80,15 +80,37 @@ namespace Revit.IFC.Export.Utility
          return allLevels;
       }
 
+      public static (ElementId, IFCAnyHandle) FindContainer(ExporterIFC exporterIFC, string containerName)
+      {
+         if (string.IsNullOrEmpty(containerName))
+            return (ElementId.InvalidElementId, null);
+
+         if (containerName.Equals("IFCSITE", StringComparison.CurrentCultureIgnoreCase))
+            return (ElementId.InvalidElementId, ExporterCacheManager.SiteHandle);
+
+         if (containerName.Equals("IFCBUILDING", StringComparison.CurrentCultureIgnoreCase))
+            return (ElementId.InvalidElementId, ExporterCacheManager.BuildingHandle);
+
+         // Find Level that is designated as the override by iterating through all the Levels for the name match
+         IFCAnyHandle overrideContainerHnd = null;
+         if (ExporterCacheManager.LevelInfoCache.LevelsByName.TryGetValue(containerName, out ElementId elementId))
+         {
+            if (elementId != ElementId.InvalidElementId)
+            {
+               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, elementId);
+               if (levelInfo != null)
+                  overrideContainerHnd = levelInfo.GetBuildingStorey();
+            }
+         }
+
+         return (elementId, overrideContainerHnd);
+      }
+
       /// <summary>
       /// Checks to see if a particular level is a building story.  Returns true as default.
       /// </summary>
-      /// <param name="level">
-      /// The level.
-      /// </param>
-      /// <returns>
-      /// True if the level is a building story, false otherwise.
-      /// </returns>
+      /// <param name="level">The level.</param>
+      /// <returns>True if the level is a building story, false otherwise.</returns>
       public static bool IsBuildingStory(Level level)
       {
          if (level == null)
@@ -363,7 +385,7 @@ namespace Revit.IFC.Export.Utility
                ElementId firstLevelId = GetBaseLevelIdForElement(element);
                bool foundFirstLevel = (firstLevelId == ElementId.InvalidElementId);
 
-               IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.BuildingStoriesByElevation;
+               IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.GetBuildingStoriesByElevation();
                foreach (ElementId levelId in levelIds)
                {
                   if (!foundFirstLevel)

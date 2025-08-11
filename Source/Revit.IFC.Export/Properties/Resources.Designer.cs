@@ -115,6 +115,15 @@ namespace Revit.IFC.Export.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IFC Export: Processing Groups: {0} of {1} (Group ID: {2}).
+        /// </summary>
+        internal static string IFCProcessingGroups {
+            get {
+                return ResourceManager.GetString("IFCProcessingGroups", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IFC Export: Processing Non Spatial Elements: {0} of {1} (Element ID: {2}).
         /// </summary>
         internal static string IFCProcessingNonSpatialElements {

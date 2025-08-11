@@ -1468,15 +1468,6 @@ namespace Revit.IFC.Export.Utility
             {
                exportInfo = new IFCExportInfoPair(prodHndType);
             }
-
-            // Need to handle backward compatibility for IFC2x3
-            if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnishingElement)
-               && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
-            {
-               IFCEntityType altProdHndType = IFCEntityType.UnKnown;
-               if (Enum.TryParse<IFCEntityType>("IfcFurnitureType", true, out altProdHndType))
-                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.PredefinedType);
-            }
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(prodHnd, IFCEntityType.IfcTypeObject))
          {
@@ -1489,15 +1480,6 @@ namespace Revit.IFC.Export.Utility
             else
             {
                exportInfo.SetByType(prodHndType);
-            }
-
-            // Need to handle backward compatibility for IFC2x3
-            if (IFCAnyHandleUtil.IsTypeOf(prodHnd, IFCEntityType.IfcFurnitureType)
-               && (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2))
-            {
-               IFCEntityType altProdHndType = IFCEntityType.UnKnown;
-               if (Enum.TryParse<IFCEntityType>("IfcFurnishingElement", true, out altProdHndType))
-                  exportInfo.SetValue(prodHndType, altProdHndType, exportInfo.PredefinedType);
             }
          }
          else
@@ -2351,6 +2333,23 @@ namespace Revit.IFC.Export.Utility
          Element element, out string enumTypeValue)
       {
          return GetExportType(exporterIFC, element, IFCEntityType.IfcObject, out enumTypeValue);
+      }
+
+      /// <summary>
+      /// Gets the export entity and predefined type information as reported by built-in parameters.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="restrictedGroup">The base class of the allowed entity instances.</param>
+      /// <returns>The IFCExportInfoPair.</returns>
+      public static IFCExportInfoPair GetExportTypeFromParameters(Element element, IFCEntityType restrictedGroup)
+      {
+         IFCExportInfoPair exportType = GetIFCExportElementParameterInfo(element, restrictedGroup);
+
+         string pdefFromParam = GetExportTypeFromTypeParameter(element, null);
+         if (!string.IsNullOrEmpty(pdefFromParam))
+            exportType.PredefinedType = pdefFromParam;
+
+         return exportType;
       }
 
       /// <summary>
@@ -3218,5 +3217,17 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">Element to check.</param>
       /// <returns>True if non-null Element is part of Assembly, false otherwise.</returns>
       public static bool IsContainedInAssembly(Element element) => ((element?.AssemblyInstanceId ?? ElementId.InvalidElementId) != ElementId.InvalidElementId);
+
+      /// <summary>
+      /// Get the view containing the geometry for this element.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <returns>The associated view, if any.</returns>
+      public static View GetViewForElementGeometry(Element element)
+      {
+         return ExporterCacheManager.ExportOptionsCache.UseActiveViewGeometry ?
+            ExporterCacheManager.ExportOptionsCache.ActiveView :
+            element.Document.GetElement(element.OwnerViewId) as View;
+      }
    }
 }

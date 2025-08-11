@@ -38,21 +38,17 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The dictionary mapping from an IFC handle to ElementId. 
       /// </summary>
-      private Dictionary<IFCAnyHandle, ElementId> m_HandleToElementCache = new Dictionary<IFCAnyHandle, ElementId>();
+      private Dictionary<IFCAnyHandle, ElementId> HandleToElement { get; set; } = new();
 
       /// <summary>
       /// Finds the ElementId from the dictionary.
       /// </summary>
-      /// <param name="hnd">
-      /// The handle.
-      /// </param>
-      /// <returns>
-      /// The ElementId.
-      /// </returns>
+      /// <param name="hnd">The handle.</param>
+      /// <returns>The ElementId.</returns>
       public ElementId Find(IFCAnyHandle hnd)
       {
          ElementId id;
-         if (m_HandleToElementCache.TryGetValue(hnd, out id))
+         if (HandleToElement.TryGetValue(hnd, out id))
          {
             return id;
          }
@@ -62,18 +58,14 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Adds the handle to the dictionary.
       /// </summary>
-      /// <param name="handle">
-      /// The handle.
-      /// </param>
-      /// <param name="elementId">
-      /// The material element elementId.
-      /// </param>
+      /// <param name="handle">The handle.</param>
+      /// <param name="elementId">The ElementId.</param>
       public void Register(IFCAnyHandle handle, ElementId elementId)
       {
-         if (m_HandleToElementCache.ContainsKey(handle))
+         if (HandleToElement.ContainsKey(handle))
             return;
 
-         m_HandleToElementCache[handle] = elementId;
+         HandleToElement[handle] = elementId;
       }
 
       /// <summary>
@@ -82,12 +74,17 @@ namespace Revit.IFC.Export.Utility
       /// <param name="handle">the handle</param>
       public void Delete(IFCAnyHandle handle)
       {
-         if (m_HandleToElementCache.ContainsKey(handle))
+         if (HandleToElement.ContainsKey(handle))
          {
-            ElementId elem = m_HandleToElementCache[handle];
-            m_HandleToElementCache.Remove(handle);
+            ElementId elem = HandleToElement[handle];
+            HandleToElement.Remove(handle);
             ExporterCacheManager.ElementToHandleCache.Delete(elem);
          }
+      }
+
+      public void Clear()
+      {
+         HandleToElement.Clear();
       }
    }
 }

@@ -140,7 +140,6 @@ namespace Revit.IFC.Export.Utility
 
          return newShapeRepresentation;
       }
-
       /// <summary>
       /// Creates a shape representation and register it to shape representation layer.
       /// </summary>
@@ -268,7 +267,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="categoryId">The category id.</param>
       /// <param name="contextOfItems">The context for which the different subtypes of representation are valid.</param>
       /// <param name="bodyItems">Set of geometric representation items that are defined for this representation.</param>
-      /// <param name="originalShapeRepresentation">The original shape representation.</param>
+      /// <param name="originalRepresentation">The original shape representation.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateSweptSolidRep(ExporterIFC exporterIFC, Element element, ElementId categoryId, IFCAnyHandle contextOfItems,
           ISet<IFCAnyHandle> bodyItems, IFCAnyHandle originalRepresentation, string ifcCADLayerOverride)

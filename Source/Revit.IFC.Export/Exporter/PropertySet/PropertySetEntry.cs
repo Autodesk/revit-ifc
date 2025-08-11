@@ -371,10 +371,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          PropertyType = propertyType;
       }
 
-      private string GetParameterValueById(Element element, ElementId paramId)
+      private string GetPartialParameterValueOnePass(Element element, ElementId paramId)
       {
          if (element == null)
-            return string.Empty;
+         {
+            return null;
+         }
 
          Parameter parameter = null;
          if (ParameterUtils.IsBuiltInParameter(paramId))
@@ -383,22 +385,47 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          }
          else
          {
-            ParameterElement parameterElem = element.Document.GetElement(paramId) as ParameterElement;           
-            if (parameterElem == null)
-               return string.Empty;
-            parameter = element.get_Parameter(parameterElem.GetDefinition());
+            ParameterElement parameterElem = element.Document.GetElement(paramId) as ParameterElement;
+            if (parameterElem != null)
+            {
+               parameter = element.get_Parameter(parameterElem.GetDefinition());
+            }
          }
 
-         return parameter?.AsValueString() ?? string.Empty;
+         return parameter?.AsValueString();
+      }
+    
+      private string GetPartialParameterValueById(Element element, ProjectInfo projectInformation, ElementId paramId)
+      {
+         // We need to look in (up to) 3 places: the Element, the ElementType, and ProjectInformation, in that order.
+         string value = GetPartialParameterValueOnePass(element, paramId);
+         if (value == null && element != null && !(element is ElementType))
+         {
+            Element elementType = element.Document.GetElement(element.GetTypeId());
+            value = GetPartialParameterValueOnePass(elementType, paramId);
+         }
+
+         if (value == null && projectInformation != null)
+         {
+            value = GetPartialParameterValueOnePass(projectInformation, paramId);
+         }
+
+         return value ?? string.Empty;
       }
 
       private IFCAnyHandle CreateTextPropertyFromCombinedParameterData(IFCFile file, Element element)
       {
          string parameterString = string.Empty;
+         ProjectInfo projectInfo = element?.Document?.ProjectInformation;
          foreach (var parameterData in CombinedParameterData)
          {
+            string currentPart = GetPartialParameterValueById(element, projectInfo, parameterData.ParamId);
+            if (string.IsNullOrEmpty(currentPart))
+            {
+               continue;
+            }
             parameterString += parameterData.Prefix;
-            parameterString += GetParameterValueById(element, parameterData.ParamId);
+            parameterString += currentPart;
             parameterString += (parameterData.Suffix + parameterData.Separator);
          }
 
@@ -426,6 +453,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          // API for this.
          if (CombinedParameterData != null)
          {
+            if (elementOrConnector.Element == null)
+            {
+               // We don't support connectors for combined parameters.
+               return null;
+            }
             return CreateTextPropertyFromCombinedParameterData(file, elementOrConnector.Element);
          }
 

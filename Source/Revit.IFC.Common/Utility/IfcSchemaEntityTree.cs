@@ -419,6 +419,15 @@ namespace Revit.IFC.Common.Utility
             return "IfcWindowStyle";
          else if (string.Compare(instanceName, "IFCDoor", true) == 0 && exportAsOlderThanIFC4)
             return "IFCDoorStyle";
+         // IfcReinforcingBarType, IfcReinforcingMeshType, IfcTendonAnchorType, and IfcTendonType
+         // are type entities introduced only in IFC 4. For older schemas, we use the basic type entity instead.
+         else if (exportAsOlderThanIFC4 &&
+            ((string.Compare(instanceName, "IfcReinforcingBar", true) == 0) ||
+            (string.Compare(instanceName, "IfcReinforcingMesh", true) == 0) ||
+            (string.Compare(instanceName, "IfcTendonAnchor", true) == 0) ||
+            (string.Compare(instanceName, "IfcTendon", true) == 0)))
+            return "IfcReinforcingElementType";
+
          return instanceName + "Type";
       }
       

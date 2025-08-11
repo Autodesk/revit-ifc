@@ -244,7 +244,7 @@ namespace Revit.IFC.Export.Exporter
          return rectangularProfileDef;
       }
 
-      private static bool GetCenterAndRadiusOfCurveLoop(CurveLoop curveLoop, out XYZ center, out double radius)
+      public static bool GetCenterAndRadiusOfCurveLoop(CurveLoop curveLoop, out XYZ center, out double radius)
       {
          IList<Arc> arcs = new List<Arc>();
          center = new XYZ();
@@ -286,7 +286,7 @@ namespace Revit.IFC.Export.Exporter
           XYZ projDir)
       {
          int numLoops = curveLoops.Count;
-         if (numLoops > 2)
+         if (numLoops > 2 || numLoops == 0)
             return null;
 
          IFCFile file = exporterIFC.GetFile();
@@ -1325,10 +1325,14 @@ namespace Revit.IFC.Export.Exporter
                {
                   extraClippingData.MaterialIds = extraClippingData.MaterialIds.Union(currentExtraClippingData.MaterialIds).ToList();
                   IFCAnyHandle repHandle = currRetVal.Handle;
-                  if (extraClippingData.HasBooleanResult) // if both have boolean and clipping result, use boolean one.
-                     extrusionBooleanBodyItems.Add(repHandle);
-                  else if (extraClippingData.HasClippingResult)
+                  if (currentExtraClippingData.HasBooleanResult) // if both have boolean and clipping result, use boolean one.
                   {
+                     extraClippingData.HasBooleanResult = true;
+                     extrusionBooleanBodyItems.Add(repHandle);
+                  }
+                  else if (currentExtraClippingData.HasClippingResult)
+                  {
+                     extraClippingData.HasClippingResult = true;
                      extrusionClippingBodyItems.Add(repHandle);
                      // This potentially is exported as a StandardCase element (if it is a single clipping), keep the information of the profile and material
                      if ((addInfo & GenerateAdditionalInfo.GenerateProfileDef) != 0)
@@ -1365,7 +1369,9 @@ namespace Revit.IFC.Export.Exporter
                // currRetVal will only have one extrusion.  Use the analyzer from the "last" extrusion.  Should only really be used for one extrusion.
                retVal.Analyzer = currRetVal.Analyzer;
                if (currRetVal.BaseRepresentationItems.Count > 0)
+               {
                   retVal.BaseRepresentationItems.Add(currRetVal.BaseRepresentationItems[0]);
+               }
             }
 
             IFCAnyHandle contextOfItemsBody = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
@@ -1828,13 +1834,12 @@ namespace Revit.IFC.Export.Exporter
          GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody,
          string profileName = null)
       {
-         IList<Solid> solids = new List<Solid>();
-         solids.Add(solid);
+         List<Solid> solids = [solid];
 
          HandleAndAnalyzer handleAndAnalyzer = CreateExtrusionWithClippingBase(exporterIFC, element, isVoid, catId,
              solids, basePlane, planeOrig, projDir, range, out extraClippingData, addInfo: addInfo, profileName: profileName);
 
-         HandleAndData ret = new HandleAndData();
+         HandleAndData ret = new();
          ret.Handle = handleAndAnalyzer.Handle;     // Add the "Body" representation
          ret.FootprintInfo = handleAndAnalyzer.FootPrintInfo;    //Add the "FootPrint" representation
          ret.BaseRepresentationItems = handleAndAnalyzer.BaseRepresentationItems;
@@ -1868,7 +1873,6 @@ namespace Revit.IFC.Export.Exporter
 
          XYZ extrusionDir = extrusionLCS.BasisZ;
          IList<IFCAnyHandle> profileCurves;
-
          // A list of IfcCurve entities.
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
          {

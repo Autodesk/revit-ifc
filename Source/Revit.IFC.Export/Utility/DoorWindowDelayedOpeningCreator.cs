@@ -263,7 +263,7 @@ namespace Revit.IFC.Export.Utility
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(openingPlacement))
                {
                   IFCAnyHandle origObjectPlacement = IFCAnyHandleUtil.GetObjectPlacement(DoorWindowHnd);
-                  Transform relTransform = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(origObjectPlacement, openingPlacement);
+                  Transform relTransform = ExporterUtil.GetRelativePlacementOffsetTransformWithoutDirFix(exporterIFC, origObjectPlacement, openingPlacement);
 
                   IFCAnyHandle newLocalPlacement = ExporterUtil.CreateLocalPlacement(file, openingPlacement,
                       relTransform.Origin, relTransform.BasisZ, relTransform.BasisX);

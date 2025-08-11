@@ -176,6 +176,11 @@ namespace Revit.IFC.Import.Utility
       public IDictionary<string, ElementId> GridNameToElementMap { get; } = new Dictionary<string, ElementId>();
 
       /// <summary>
+      /// Set of Levels constrained to scope boxes.
+      /// </summary>
+      public ISet<ElementId> ConstrainedLevels { get; set; } = new HashSet<ElementId>();
+
+      /// <summary>
       /// The view plane type if, if ViewPlanTypeIdInitialized is true and we found one.
       /// </summary>
       public ElementId ViewPlanTypeId { get; set; } = ElementId.InvalidElementId;

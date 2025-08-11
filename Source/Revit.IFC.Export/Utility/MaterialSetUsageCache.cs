@@ -62,5 +62,12 @@ namespace Revit.IFC.Export.Utility
             return null;
          return handle;
       }
+
+      public override void Clear()
+      {
+         UsageToHashCache.Clear();
+         HashToUsageCache.Clear();
+         base.Clear();
+      }
    }
 }

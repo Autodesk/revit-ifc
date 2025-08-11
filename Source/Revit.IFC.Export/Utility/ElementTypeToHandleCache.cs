@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Windows.Input;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
@@ -71,24 +73,20 @@ namespace Revit.IFC.Export.Utility
       /// The dictionary mapping from an ElementType to an  handle.
       /// The key is made up by ElementId, IFC entity to export to, and the predefinedtype. PredefinedType will be assigned to a value "NULL" for the default if not specified
       /// </summary>
-      private Dictionary<ElementTypeKey, IFCAnyHandle> m_ElementTypeToHandleDictionary = new Dictionary<ElementTypeKey, IFCAnyHandle>(keyComparer);
-      private Dictionary<IFCAnyHandle, ElementTypeKey> m_HandleToElementTypeDictionary = new Dictionary<IFCAnyHandle, ElementTypeKey>();
-      private HashSet<ElementType> m_RegisteredElementType = new HashSet<ElementType>(new ElementTypeComparer());
+      private Dictionary<ElementTypeKey, IFCAnyHandle> ElementTypeToHandleDictionary { get; set; } = new(keyComparer);
+      private Dictionary<IFCAnyHandle, ElementTypeKey> HandleToElementTypeDictionary { get; set; } = new();
+      private HashSet<ElementType> RegisteredElementType { get; set; } = new(new ElementTypeComparer());
 
       /// <summary>
       /// Finds the handle from the dictionary.
       /// </summary>
-      /// <param name="elementId">
-      /// The element elementId.
-      /// </param>
-      /// <returns>
-      /// The handle.
-      /// </returns>
+      /// <param name="elementId">The element elementId.</param>
+      /// <returns>The handle.</returns>
       public IFCAnyHandle Find(ElementType elementType, IFCExportInfoPair exportType)
       {
          IFCAnyHandle handle;
          var key = new ElementTypeKey(elementType, exportType);
-         if (m_ElementTypeToHandleDictionary.TryGetValue(key, out handle))
+         if (ElementTypeToHandleDictionary.TryGetValue(key, out handle))
          {
             return handle;
          }
@@ -103,7 +101,7 @@ namespace Revit.IFC.Export.Utility
       public ElementTypeKey Find(IFCAnyHandle typeHnd)
       {
          ElementTypeKey etKey;
-         if (m_HandleToElementTypeDictionary.TryGetValue(typeHnd, out etKey))
+         if (HandleToElementTypeDictionary.TryGetValue(typeHnd, out etKey))
          {
             return etKey;
          }
@@ -117,7 +115,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>true/false</returns>
       public bool IsRegistered(ElementType elType)
       {
-         if (m_RegisteredElementType.Contains(elType))
+         if (RegisteredElementType.Contains(elType))
             return true;
          return false;
       }
@@ -132,17 +130,17 @@ namespace Revit.IFC.Export.Utility
          foreach (ElementTypeKey key in keys)
          {
             IFCAnyHandle handle;
-            if (m_ElementTypeToHandleDictionary.TryGetValue(key, out handle))
+            if (ElementTypeToHandleDictionary.TryGetValue(key, out handle))
             {
                try
                {
                   bool isType = IFCAnyHandleUtil.IsSubTypeOf(handle, key.Item2);
                   if (!isType)
-                     m_ElementTypeToHandleDictionary.Remove(key);
+                     ElementTypeToHandleDictionary.Remove(key);
                }
                catch
                {
-                  m_ElementTypeToHandleDictionary.Remove(key);
+                  ElementTypeToHandleDictionary.Remove(key);
                }
             }
          }
@@ -151,22 +149,25 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Adds the handle to the dictionary.
       /// </summary>
-      /// <param name="elementId">
-      /// The element elementId.
-      /// </param>
-      /// <param name="handle">
-      /// The handle.
-      /// </param>
+      /// <param name="elementId">The element elementId.</param>
+      /// <param name="handle">The handle.</param>
       public void Register(ElementType elementType, IFCExportInfoPair exportType, IFCAnyHandle handle)
       {
          var key = new ElementTypeKey(elementType, exportType);
 
-         if (m_ElementTypeToHandleDictionary.ContainsKey(key) || exportType.ExportType == IFCEntityType.UnKnown)
+         if (ElementTypeToHandleDictionary.ContainsKey(key) || exportType.ExportType == IFCEntityType.UnKnown)
             return;
 
-         m_ElementTypeToHandleDictionary[key] = handle;
-         m_HandleToElementTypeDictionary[handle] = key;
-         m_RegisteredElementType.Add(key.Item1);
+         ElementTypeToHandleDictionary[key] = handle;
+         HandleToElementTypeDictionary[handle] = key;
+         RegisteredElementType.Add(key.Item1);
+      }
+
+      public void Clear()
+      {
+         ElementTypeToHandleDictionary.Clear();
+         HandleToElementTypeDictionary.Clear();
+         RegisteredElementType.Clear();
       }
    }
 }

@@ -14,12 +14,16 @@ namespace Revit.IFC.Export.Utility
       /// At the end of export these units are assigned to IfcProject
       public static UnitInfo GetOrCreateUnitInfo(ForgeTypeId specTypeId)
       {
-         UnitInfo unitInfo = null;
          if (specTypeId == null)
-            return unitInfo;
+            return null;
 
-         if (ExporterCacheManager.UnitsCache.FindUnitInfo(specTypeId, out unitInfo))
-            return unitInfo;
+         if (ExporterCacheManager.UnitsCache.FindUnitInfo(specTypeId, out UnitInfo unitInfo))
+         {
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(unitInfo?.Handle))
+               ExporterCacheManager.UnitsCache.UnregisterUnitInfo(specTypeId);
+            else
+               return unitInfo;
+         }
 
          IFCFile file = ExporterCacheManager.ExporterIFC?.GetFile();
          if (file == null)
@@ -148,7 +152,7 @@ namespace Revit.IFC.Export.Utility
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs2x3CoordinationView2)
          {
-            FormatOptions currencyFormatOptions = ExporterCacheManager.Document.GetUnits().GetFormatOptions(SpecTypeId.Currency);
+            FormatOptions currencyFormatOptions = ExporterCacheManager.DocumentUnits.GetFormatOptions(SpecTypeId.Currency);
             ForgeTypeId currencySymbol = currencyFormatOptions.GetSymbolTypeId();
 
             IFCAnyHandle currencyUnit = null;

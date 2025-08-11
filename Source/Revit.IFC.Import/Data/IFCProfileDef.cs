@@ -297,7 +297,7 @@ namespace Revit.IFC.Import.Data
          IList<IIFCProfileSegment> segments = new List<IIFCProfileSegment>();
          for (int ii = 0; ii < sz; ii++)
          {
-            segments.Add(new IFCProfileLineSegment(corners[ii], corners[(ii + 1) % sz]));
+            AddValidLineSegment(segments, corners[ii], corners[(ii + 1) % sz]);
          }
          if (!AppendSegmentsToCurveLoop(curveLoop, segments))
             return null;
@@ -539,6 +539,11 @@ namespace Revit.IFC.Import.Data
          double girth = IFCImportHandleUtil.GetRequiredScaledLengthAttribute(profileDef, "Girth", out found);
          if (!found)
             return;
+
+         if (MathUtil.IsAlmostEqual(girth, wallThickness))
+         {
+            Importer.TheLog.LogWarning(Id, "Girth and Wall Thickness are equal for IfcCShapeProfileDef.  May result in duplicate points.", false);
+         }
 
          // Optional parameters
          double centerOptX = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "CentreOfGravityInX", 0.0);

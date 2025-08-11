@@ -608,8 +608,8 @@ namespace Revit.IFC.Export.Utility
          //To handle such cases using bounding box height instead of thickness.
          //
          double slopeValue = 0.0;
-         ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_SLOPE, out slopeValue);
-         if (MathUtil.IsAlmostZero(slopeValue))
+         Parameter slopeParam = ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_SLOPE, out slopeValue);
+         if (slopeParam != null && MathUtil.IsAlmostZero(slopeValue))
          {
             if (hostElement is Floor)
                ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM, out extrusionLength);
@@ -620,7 +620,8 @@ namespace Revit.IFC.Export.Utility
          }
          else
          {
-            BoundingBoxXYZ hostElementBoundingBox = hostElement.get_BoundingBox(hostElement.Document.GetElement(hostElement.OwnerViewId) as View);
+            View view = ExporterUtil.GetViewForElementGeometry(hostElement);
+            BoundingBoxXYZ hostElementBoundingBox = hostElement.get_BoundingBox(view);
             extrusionLength = hostElementBoundingBox.Max.Z - hostElementBoundingBox.Min.Z;
 
             //Need to recheck the ExtrusionDirection.

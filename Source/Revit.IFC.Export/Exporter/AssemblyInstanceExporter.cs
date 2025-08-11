@@ -171,7 +171,7 @@ namespace Revit.IFC.Export.Exporter
                continue;
             }
 
-            Transform relTrf = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(assemblyPlacement, elementPlacement);
+            Transform relTrf = ExporterUtil.GetRelativePlacementOffsetTransformWithoutDirFix(exporterIFC, assemblyPlacement, elementPlacement);
             Transform inverseTrf = relTrf.Inverse;
 
             IFCFile file = exporterIFC.GetFile();

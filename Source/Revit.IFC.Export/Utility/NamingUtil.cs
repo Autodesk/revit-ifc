@@ -660,6 +660,11 @@ namespace Revit.IFC.Export.Utility
       public static string GetIFCNamePlusIndex(Element element, int index)
       {
          string elementName = GetIFCName(element);
+         return AddIFCNameIndex(elementName, index);
+      }
+
+      public static string AddIFCNameIndex(string elementName, int index)
+      {
          if (index >= 0)
          {
             elementName += ":";

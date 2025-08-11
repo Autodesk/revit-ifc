@@ -441,6 +441,15 @@ namespace Revit.IFC.Export.Exporter
 
          IList<CurveLoop> boundaryLoops = null;
 
+         // Continue only if the infill wall is ordinary. The other cases will be handled by the BRep exporter.
+         if (!wallElement.HasPhases())
+         {
+            Plane basePlane = GeometryUtil.CreatePlaneFromTransformNearOrigin(wallLCS);
+            if (solids.Count != 1 || !GeometryUtil.TryGetExtrusionEndFaces(solids[0], basePlane, basePlane.Origin,
+               tryNonPerpendicularExtrusion: false, checkOrdinarity: true, out _, out _))
+               return null;
+         }
+
          if (unscaledFootprintArea < (approximateUnscaledBaseArea * .95 - 2 * unscaledHorizontalWidth))
          {
             // Can't handle the case where we don't have a simple extrusion to begin with.
@@ -493,7 +502,7 @@ namespace Revit.IFC.Export.Exporter
                bodyItemHnd = null;
             }
             //If there is clipping right next to the opening it can cause incorrect geometry as far one clipping face will be missed. In this case, export wall it as BRep.
-            else if (wallHasOpening && hasClipping && IsOpeningsIntersectClippings(wallElement, openingDataList))
+            else if (wallHasOpening && hasClipping && OpeningsIntersectClippings(wallElement, openingDataList))
             {
                tr.RollBack();
                return null;
@@ -581,7 +590,8 @@ namespace Revit.IFC.Export.Exporter
       }
 
       // Get a list of solids and meshes, but only if we haven't already done so.
-      private static void GetSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, GeometryElement geometryElement, IFCRange range, ref IList<Solid> solids, ref IList<Mesh> meshes, out bool hasCutsWallSweep)
+      private static void GetSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, GeometryElement geometryElement, 
+         IFCRange range, ref IList<Solid> solids, ref IList<Mesh> meshes, out bool hasCutsWallSweep)
       {
          hasCutsWallSweep = false;
 
@@ -612,7 +622,10 @@ namespace Revit.IFC.Export.Exporter
 
             solids.Add(solidInfo.Solid);
          }
-         IList<GeometryObject> geomList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, ref solids, ref meshes);
+
+         meshes = solidMeshInfo.MeshesList;
+
+         FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, ref solids, ref meshes);
       }
 
       // Get List of Solids that are from Wall Sweep
@@ -1108,17 +1121,22 @@ namespace Revit.IFC.Export.Exporter
                         IFCAnyHandle prodRep = null;
                         IFCAnyHandle hostShapeRepFromPartsList = null;
 
-                        if (!exportParts && exportByComponents)
+                        if (!exportParts)
                         {
-                           partECData = new IFCExportBodyParams();
-                           hostShapeRepFromPartsList = PartExporter.ExportHostPartAsShapeAspects(exporterIFC,
-                              element, prodRep, localWrapper, setter, localPlacement, overrideLevelId, layersetInfo,
-                              partECData, solidsOfWallSweep);
-                           if (IFCAnyHandleUtil.IsNullOrHasNoValue(hostShapeRepFromPartsList))
+                           prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, null);
+
+                           if (exportByComponents)
                            {
-                              partECData.ClearOpenings();
-                              extraParams.ClearOpenings();
-                              exportByComponents = false;
+                              partECData = new IFCExportBodyParams();
+                              hostShapeRepFromPartsList = PartExporter.ExportHostPartAsShapeAspects(exporterIFC,
+                                 element, prodRep, localWrapper, setter, localPlacement, overrideLevelId, layersetInfo,
+                                 partECData, solidsOfWallSweep);
+                              if (IFCAnyHandleUtil.IsNullOrHasNoValue(hostShapeRepFromPartsList))
+                              {
+                                 partECData.ClearOpenings();
+                                 extraParams.ClearOpenings();
+                                 exportByComponents = false;
+                              }
                            }
                         }
 
@@ -1235,7 +1253,7 @@ namespace Revit.IFC.Export.Exporter
                               boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, Transform.Identity);
                            representations.AddIfNotNull(boundingBoxRep);
 
-                           prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
+                           IFCAnyHandleUtil.SetAttribute(prodRep, "Representations", representations);
                         }
 
                         ElementId matId = ElementId.InvalidElementId;
@@ -1903,7 +1921,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="wallElement">The wall element.</param>
       /// <param name="openingDataList">The wall openings data.</param>
       /// <returns>Returns true if any of wall openings intersect with floor clippings</returns>
-      static bool IsOpeningsIntersectClippings(Wall wallElement, IList<IFCOpeningData> openingDataList)
+      static bool OpeningsIntersectClippings(Wall wallElement, IList<IFCOpeningData> openingDataList)
       {
          Document doc = wallElement.Document;
          ICollection<ElementId> joinedElements = JoinGeometryUtils.GetJoinedElements(doc, wallElement);
@@ -1919,6 +1937,8 @@ namespace Revit.IFC.Export.Exporter
             if (openingGeometry == null)
                continue;
 
+            BoundingBoxXYZ openingElementBoundingBox = openingElement.get_BoundingBox(null);
+
             SolidMeshGeometryInfo openingSolidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(openingGeometry);
             foreach (ElementId joinedElementId in joinedElements)
             {
@@ -1926,12 +1946,17 @@ namespace Revit.IFC.Export.Exporter
                if (joinedElement == null || !(joinedElement is Floor))
                   continue;
 
+               //Checking bounding boxes first to avoid unnecessary geometry calculations.
+               //If bounding boxes don't overlap, we can skip the further looking for intersections.
+               BoundingBoxXYZ joinedElementBoundingBox = joinedElement.get_BoundingBox(null);
+               if(!GeometryUtil.BoundingBoxesOverlap(openingElementBoundingBox, joinedElementBoundingBox))
+                  continue;
+
                GeometryElement joinedElementGeometry = joinedElement.get_Geometry(new Options());
                if (joinedElementGeometry == null)
                   continue;
 
-               SolidMeshGeometryInfo joinedElementSolidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(openingGeometry);
-
+               SolidMeshGeometryInfo joinedElementSolidMeshInfo = GeometryUtil.GetSplitSolidMeshGeometry(joinedElementGeometry);
                foreach (SolidInfo openingSolidInfo in openingSolidMeshInfo.SolidInfoList)
                {
                   foreach (SolidInfo joinedElementSolidInfo in joinedElementSolidMeshInfo.SolidInfoList)

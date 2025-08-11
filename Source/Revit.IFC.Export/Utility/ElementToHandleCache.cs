@@ -36,8 +36,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The dictionary mapping from an ElementId to a handle and its export information. 
       /// </summary>
-      public Dictionary<ElementId, Tuple<IFCAnyHandle, IFCExportInfoPair>> ElementIdToHandleAndInfo
-      { get; private set; } = new Dictionary<ElementId, Tuple<IFCAnyHandle, IFCExportInfoPair>>();
+      public Dictionary<ElementId, Tuple<IFCAnyHandle, IFCExportInfoPair>> ElementIdToHandleAndInfo { get; private set; } = new();
 
       /// <summary>
       /// Finds the handle from the dictionary.
@@ -146,6 +145,11 @@ namespace Revit.IFC.Export.Utility
             ElementIdToHandleAndInfo.Remove(elementId);
             ExporterCacheManager.HandleToElementCache.Delete(handle);
          }
+      }
+
+      public void Clear()
+      {
+         ElementIdToHandleAndInfo.Clear();
       }
    }
 }

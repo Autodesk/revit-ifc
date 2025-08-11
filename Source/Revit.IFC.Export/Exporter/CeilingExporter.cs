@@ -53,9 +53,9 @@ namespace Revit.IFC.Export.Exporter
       {
          string ifcEnumType = ExporterUtil.GetIFCTypeFromExportTable(ceiling);
          string pdefFromParam = ExporterUtil.GetExportTypeFromTypeParameter(ceiling, null);
-         if (!String.IsNullOrEmpty(pdefFromParam))
+         if (!string.IsNullOrEmpty(pdefFromParam))
             ifcEnumType = pdefFromParam;
-         if (String.IsNullOrEmpty(ifcEnumType))
+         if (string.IsNullOrEmpty(ifcEnumType))
             ifcEnumType = "CEILING";
          ExportCovering(exporterIFC, ceiling, ref geomElement, ifcEnumType, productWrapper);
       }
@@ -87,14 +87,14 @@ namespace Revit.IFC.Export.Exporter
             bool exportParts = exportPartAs == ExporterUtil.ExportPartAs.Part;
 
             if (exportParts && !PartExporter.CanExportElementInPartExport(element, element.LevelId, false))
+            {
                return;
+            }
 
             // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
             List<IFCAnyHandle> representations = new();
 
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null))
             {
                using (IFCExportBodyParams ecData = new())
                {

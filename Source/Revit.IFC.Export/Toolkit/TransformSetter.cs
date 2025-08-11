@@ -199,15 +199,16 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
-      ///    Initializes the transformation in the transform setter.
+      /// Initializes the transformation in the transform setter.
       /// </summary>
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="bbox">The bounding box.</param>
       /// <param name="ecData">The extrusion creation data which contains the local placement.</param>
       /// <param name="unscaledTrfOrig">The scaled local placement origin.</param>
-      /// <param name="locationCurve">The optional location curve.</param>
+      /// <param name="location">The optional location.</param>
+      /// <param name="useInstanceGeometry">True if the instance geometry is used.</param>
       /// <returns>The transform corresponding to the movement, if any.</returns>
-      public Transform InitializeFromBoundingBox(ExporterIFC exporterIFC, BoundingBoxXYZ bbox, IFCExportBodyParams ecData, Location location, out XYZ unscaledTrfOrig)
+      public Transform InitializeFromBoundingBox(ExporterIFC exporterIFC, BoundingBoxXYZ bbox, IFCExportBodyParams ecData, Location location, bool useInstanceGeometry, out XYZ unscaledTrfOrig)
       {
          unscaledTrfOrig = new XYZ();
          if (ecData == null)
@@ -245,7 +246,7 @@ namespace Revit.IFC.Export.Toolkit
                if (angle > 0.5 * Math.PI && angle < Math.PI || angle > -0.5 * Math.PI && angle < 0)
                   corner = new XYZ(corner.X, corner.Y, bbox.Max.Z);
             }
-            else if (locationPoint != null)
+            else if (useInstanceGeometry && locationPoint != null)
             {
                corner = new XYZ(0.0, 0.0, locationPoint.Point.Z);
             }

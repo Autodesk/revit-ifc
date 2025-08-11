@@ -36,15 +36,11 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return null;
 
-         // Check for containment override
-         IFCAnyHandle overrideContainerHnd = null;
-         ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-
          IFCFile file = exporterIFC.GetFile();
          IFCAnyHandle instanceHandle = null;
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, element, null))
             {
                using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
@@ -176,12 +172,14 @@ namespace Revit.IFC.Export.Exporter
          IFCExportBodyParams extraParams = typeInfo.extraParams;
 
          Transform offsetTransform = Transform.Identity;
+         DoorWindowInfo doorWindowInfo = new DoorWindowInfo();
 
          // We will create a new mapped type if we haven't already created the type.
          // GUID_TODO: This assumes that there are no types relating to objects split by level,
          // or to doors/windows that are flipped.
+         bool containedInAssembly = ExporterUtil.IsContainedInAssembly(element);
          var typeKey = new TypeObjectKey(symbolId, ElementId.InvalidElementId,
-            false, exportType, ElementId.InvalidElementId);
+            false, exportType, ElementId.InvalidElementId, containedInAssembly);
 
          FamilyTypeInfo currentTypeInfo = 
             ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
@@ -219,7 +217,7 @@ namespace Revit.IFC.Export.Exporter
                extraParams.GetLocalPlacement());
 
             IFCAnyHandle typeStyle = FamilyInstanceExporter.CreateTypeEntityHandle(exporterIFC,
-               typeKey, ref typeInfo, null, representations3D, repMapTrfList, null, null,
+               typeKey, ref typeInfo, doorWindowInfo, representations3D, repMapTrfList, null, null,
                element, elementType, elementType, ElementId.InvalidElementId, false, false,
                exportType, out HashSet<IFCAnyHandle> propertySets);
 
@@ -335,7 +333,7 @@ namespace Revit.IFC.Export.Exporter
                      else
                      {
                         // Create material association in case if bodyData is null
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, typeInfo.MaterialIdList);
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, element, instanceHandle, typeInfo.MaterialIdList);
                      }
                   }
 

@@ -381,7 +381,7 @@ namespace Revit.IFC.Export.Exporter
                if (typeId != ElementId.InvalidElementId)
                   containedElementIds.Add(typeId);
             }
-            ExporterCacheManager.ViewScheduleElementCache.Add(new KeyValuePair<ElementId, HashSet<ElementId>>(schedule.Id, containedElementIds));
+            ExporterCacheManager.ViewScheduleElementCache.TryAdd(schedule.Id, containedElementIds);
 
             IDictionary<ElementId, Element> cachedElementTypes = new Dictionary<ElementId, Element>();
 

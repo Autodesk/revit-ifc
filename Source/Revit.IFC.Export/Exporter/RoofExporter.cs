@@ -148,7 +148,7 @@ namespace Revit.IFC.Export.Exporter
                      productWrapper.AddElement(roof, roofHnd, placementSetter.LevelInfo, ecData, true, roofExportType);
 
                      if (!(roof is RoofBase))
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, materialIds);
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, roof, roofHnd, materialIds);
 
                      Transform offsetTransform = (bodyData != null) ? bodyData.OffsetTransform : Transform.Identity;
 
@@ -185,7 +185,7 @@ namespace Revit.IFC.Export.Exporter
                            }
                            else if (bodyData != null)
                            {
-                              CategoryUtil.CreateMaterialAssociation(exporterIFC, slabHnd, bodyData.MaterialIds);
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, roof, slabHnd, bodyData.MaterialIds);
                            }
                         }
                      }
@@ -205,7 +205,7 @@ namespace Revit.IFC.Export.Exporter
                            else if (layersetInfo != null && layersetInfo.MaterialIds != null)
                            {
                               materialIds = layersetInfo.MaterialIds.Select(x => x.BaseMatId).ToList();
-                              CategoryUtil.CreateMaterialAssociation(exporterIFC, roofHnd, materialIds);
+                              CategoryUtil.CreateMaterialAssociation(exporterIFC, roof, roofHnd, materialIds);
                            }
                         }
                      }
@@ -225,14 +225,15 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="roof">The roof element.</param>
       /// <param name="geometryElement">The geometry element.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
-      public static void Export(ExporterIFC exporterIFC, RoofBase roof, ref GeometryElement geometryElement, ProductWrapper productWrapper)
+      public static void Export(ExporterIFC exporterIFC, RoofBase roof, ref GeometryElement geometryElement, 
+         ProductWrapper productWrapper)
       {
          IFCFile file = exporterIFC.GetFile();
          using (IFCTransaction tr = new IFCTransaction(file))
          {
             // export parts or not
             bool exportParts = PartExporter.CanExportParts(roof);
-            bool exportAsCurtainRoof = CurtainSystemExporter.IsCurtainSystem(roof);
+            bool isCurtainRoof = CurtainSystemExporter.IsCurtainSystem(roof);
 
             if (exportParts)
             {
@@ -240,7 +241,7 @@ namespace Revit.IFC.Export.Exporter
                   return;
                ExportRoofAsParts(exporterIFC, roof, geometryElement, productWrapper); // Right now, only flat roof could have parts.
             }
-            else if (exportAsCurtainRoof)
+            else if (isCurtainRoof)
             {
                CurtainSystemExporter.ExportCurtainRoof(exporterIFC, roof, productWrapper);
             }
@@ -369,6 +370,7 @@ namespace Revit.IFC.Export.Exporter
                            // If element is floor, then the profile curve loop of hostObjectSubComponent is computed from the top face of the floor
                            // else if element is roof, then the profile curve loop is taken from the bottom face of the roof instead 
                            XYZ extrusionDir = elementIsFloor ? -XYZ.BasisZ : XYZ.BasisZ;
+                           bool reverseMaterialList = !elementIsFloor;
 
                            ElementId catId = CategoryUtil.GetSafeCategoryId(element);
 
@@ -450,17 +452,11 @@ namespace Revit.IFC.Export.Exporter
                               }
                               else
                               {
-                                 List<MaterialLayerSetInfo.MaterialInfo> MaterialIds = layersetInfo.MaterialIds;
-                                 ElementId typeElemId = element.GetTypeId();
-                                 // From CollectMaterialLayerSet() Roofs with no components are only allowed one material. It arbitrarily chooses the thickest material.
-                                 // To be consistant with Roof(as Slab), we will reverse the order.
-                                 IFCAnyHandle materialLayerSet = ExporterCacheManager.MaterialSetCache.FindLayerSet(typeElemId);
-                                 bool materialHandleIsNotValid = IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet);
-                                 if (IFCAnyHandleUtil.IsNullOrHasNoValue(materialLayerSet) || materialHandleIsNotValid)
-                                    MaterialIds.Reverse();
+                                 IList<MaterialLayerSetInfo.MaterialInfo> materialIds = reverseMaterialList ?
+                                    layersetInfo.MaterialIds.Reverse<MaterialLayerSetInfo.MaterialInfo>().ToList() : layersetInfo.MaterialIds;
 
-                                 double scaleProj = extrusionDir.DotProduct(plane.Normal);
-                                 foreach (MaterialLayerSetInfo.MaterialInfo matLayerInfo in MaterialIds)
+                                 double offsetDirection = extrusionDir.DotProduct(plane.Normal) > MathUtil.Eps() ? 1.0 : -1.0;
+                                 foreach (MaterialLayerSetInfo.MaterialInfo matLayerInfo in materialIds)
                                  {
                                     double itemExtrDepth = matLayerInfo.Width;
                                     double scaledItemExtrDepth = UnitUtil.ScaleLength(itemExtrDepth) * slope;
@@ -476,7 +472,7 @@ namespace Revit.IFC.Export.Exporter
                                     bodyItems.Add(itemShapeRep);
                                     matLayerNames.Add(matLayerInfo.LayerName);
 
-                                    XYZ offset = new XYZ(0, 0, itemExtrDepth / scaleProj);   // offset is calculated as extent in the direction of extrusion
+                                    XYZ offset = new XYZ(0, 0, itemExtrDepth * offsetDirection);   // offset is calculated as extent in the direction of extrusion
                                     lcs.Origin += offset;
                                  }
                               }
@@ -532,7 +528,7 @@ namespace Revit.IFC.Export.Exporter
 
                                  // Create type
                                  IFCAnyHandle slabRoofTypeHnd = ExporterUtil.CreateGenericTypeFromElement(element,
-                                    roofExportType, exporterIFC.GetFile(), productWrapper);
+                                    subInfoPair, exporterIFC.GetFile(), productWrapper);
                                  ExporterCacheManager.TypeRelationsCache.Add(slabRoofTypeHnd, slabHnd);
 
                                  elementHandles.Add(slabHnd);
@@ -579,7 +575,10 @@ namespace Revit.IFC.Export.Exporter
 
                            productWrapper.AddElement(element, hostObjectHandle, setter, extrusionCreationData, true, roofExportType);
 
-                           ExporterUtil.RelateObjects(exporterIFC, null, hostObjectHandle, slabHandles);
+                           if ((slabHandles?.Count ?? 0) > 0)
+                           {
+                              ExporterUtil.RelateObjects(exporterIFC, null, hostObjectHandle, slabHandles);
+                           }
 
                            int noOpening = OpeningUtil.AddOpeningsToElement(exporterIFC, elementHandles, hostObjectOpeningLoops, element, null, maximumScaledDepth,
                                null, setter, localPlacement, productWrapper);

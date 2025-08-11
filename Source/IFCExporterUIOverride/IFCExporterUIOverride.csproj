@@ -23,17 +23,6 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.props" />
   <ItemGroup>
-	<Reference Include="Autodesk.UI.Windows">
-	  <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\Autodesk.UI.Windows.dll</HintPath>
-	</Reference>
-	<Reference Include="Autodesk.Weave.Wpf">
-	  <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\Autodesk.Weave.Wpf.dll</HintPath>
-	</Reference>
-	<Reference Include="UserInterfaceUtility">
-	  <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\UserInterfaceUtility.dll</HintPath>
-	</Reference>
-  </ItemGroup>
-  <ItemGroup>
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
   </ItemGroup>
   <ItemGroup>
@@ -112,6 +101,7 @@
     <PostBuildEvent>
 $(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dll $(AddinGUID)
 </PostBuildEvent>
+    <BaseOutputPath>C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2025.bundle\Contents\2025</BaseOutputPath>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -147,5 +137,16 @@ $(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dl
   <ItemGroup>
     <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj" />
     <ProjectReference Include="..\Revit.IFC.Export\Revit.IFC.Export.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Autodesk.UI.Windows">
+      <HintPath>..\..\..\API\2025\Autodesk.UI.Windows.dll</HintPath>
+    </Reference>
+    <Reference Include="Autodesk.Weave.Wpf">
+      <HintPath>..\..\..\API\2025\Autodesk.Weave.Wpf.dll</HintPath>
+    </Reference>
+    <Reference Include="UserInterfaceUtility">
+      <HintPath>..\..\..\API\2025\UserInterfaceUtility.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

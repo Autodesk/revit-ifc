@@ -104,6 +104,8 @@ The export alternate interface is loaded when users access the Export functional
 <li>IFC 2x3 GSA Concept Design BIM 2010 – This is a variant of the standard IFC 2x3 used for submitting files to the US Government Services Administration.  Additional property sets will be included.</li> 
 <li>IFC 4 Reference View - This version is buildingSMART IFC certification (IFC4 RV 1.2) certified version for Architectural and Structural export Exchange Requirements. MEP export and Import are still on-going</li>
 <li>IFC 4 Design Transfer View</li>
+<li>IFC4x3</li>
+<li>IFC-SG Regulatory Requirements View</li>
 </menu>
 <p><strong>Exchange Requirement</strong>: Exchange Requirements (only for IFC4 Reference View)</p>
 <menu><li>Architectural Reference Exchange</li>
@@ -169,7 +171,7 @@ The export alternate interface is loaded when users access the Export functional
 <p><strong>Use Type name only for IFCType name</strong>: This option override the default type name using just the name of the type</p>
 <p><strong>Use visible Revit name as the IFCEntity name</strong>: Ths option override the default element name using what shown in Revit as the object name</p>
 
-<p>There are 10 built-in setups in the user interface:</p>    
+<p>There are 12 built-in setups in the user interface:</p>    
 <menu>
 <li>IFC 2x3 Coordination View 2.0</li>
 <li>IFC 2x3 Coordination View</li>
@@ -181,6 +183,8 @@ The export alternate interface is loaded when users access the Export functional
 <li>IFC 4 Reference View [Structural]</li>
 <li>IFC 4 Reference View [BuildingService]</li>
 <li>IFC 4 Design Transfer View</li>
+<li>IFC4x3</li>
+<li>IFC-SG Regulatory Requirements View</li>
 
 </menu>
     <p>These correspond to the file type options in the standard Revit UI. When selected, the individual options will adjust accordingly. 
@@ -236,6 +240,74 @@ working on expanding and eventually removing this limit, and we will be tracking
 <p>or if you have an inquiry specific to this add-in, send us an e-mail to: <a href="mailto:Revit.apps@autodesk.com">Revit.apps@autodesk.com</a></p>
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
+<div class="version">25.4.3.0</div><div class="versioninfo-bullet">
+      <br><p>
+         General:
+			<ul>
+				<li>This is the major release of IFC Exporter 25.4.3 for Revit 2025. 
+				<li>It contains a various improvements and bug fixes for the previous 25.4.0 version. 
+			</ul>	
+       </p>
+	   <br>
+	   <p>
+         Improvements and Bug Fixes:
+			<ul>
+				<li>Added angle units for some exported IFC files that only contained calculated angle values.
+				<li>Added explicit handling for IfcReinforcingElement type entity exceptions in schemas prior to IFC4.
+				<li>Added export of fabric reinforcement type to IFC.
+				<li>Added import of presentation layer assignment for the Open IFC feature.
+				<li>Added the ability to control rebar spatial containment when exporting to IFC.
+				<li>Added the ability to control the entity type of wall parts when exporting to IFC. (GitHub #756)
+				<li>Allowed export of map conversion scale attribute to IFC.
+				<li>Allowed export of material constituent fraction to IFC. (GitHub #651)
+				<li>Allowed groups to be exported as all IfcSystem types in IFC4.3 (and previous) versions.
+				<li>Export some specific geometry as IfcConnectedFaceSet instead of IfcClosedShell.
+				<li>Fix duplicated exported faces.
+				<li>Fix Schema - IfcMaterialProfileSetUsage.AssociatedTo for 4x3.
+				<li>Fixed IfcProductDefinitionShape.ShapeOfProduct export.
+				<li>Fixed a bug wrong geometry of curtain walls exported to IFC.
+				<li>Fixed a validation issue for Schema Entity Rule - IfcShapeModel.WR11 for 2x3, IFC4, 4x3.
+				<li>Fixed an issue to allow export of some files containing tapered walls with inserts to IFC.
+				<li>Fixed an issue to allow sub-categories turned off in the view to not be exported when choosing to export only elements in the view to IFC, regardless of the category mapping settings.
+				<li>Fixed an issue to include meshes when exporting DirectShape objects categorized as walls to IFC.
+				<li>Fixed an issue where an assembly gets exploded in IFC export when elements are DirectShapes.
+				<li>Fixed correct use of Operation Type attributes for Doors for IFC4 and 4x3.
+				<li>Fixed export of IfcSite.CompositionType attribute.
+				<li>Fixed export of multiple openings drawn using the Shaft tool that had the first outline verged exported.
+				<li>Fixed export of walls with openings placed next to clippings.
+				<li>Fixed export of wrong type entity for IfcSlab for IFC4x3.
+				<li>Fixed invalid exported IfcRelConnectsPortToElement.
+				<li>Fixed placement of assembly elements with vector correction.
+				<li>Fixed the instance view for a link with view overrides when the Revit model is exported using the Export as separate IFCs option.
+				<li>Fixed the placement of openings in exported columns. (GitHub #746)
+				<li>Fixed the positioning of some ceiling grids exported to IFC using metric templates.
+				<li>Fixed the problem with Unable to change the IFC Predefined Type for the IFC4 file exported from Revit.
+				<li>Fixed type properties export to IFC with user property set for furniture (IfcFurnishingElementType).
+				<li>Fixed unexpected errors exporting to IFC4 this small structural beam with Base Quantities.
+				<li>Fixed unexpected errors while exporting door elements to the IFC file at Doors-Shaft.
+				<li>Fixed user-defined Table property data type.
+				<li>Improved alignment of doors that are slightly off-axis.
+				<li>Improved export of combined parameters in schedules to IFC as property sets when they contained type parameter components, project information components, or were empty.
+				<li>Improved export of some shape-edited floors to IFC.
+				<li>Improved export of some swept geometry to IFC.
+				<li>Improved export of volumetric quantities to IFC.
+				<li>Improved linking of IFC files when using templates that had constrained levels.
+				<li>Improved linking of some grid lines and axes from slightly invalid IFC4 files.
+				<li>Improved placement of some linked files when doing a federated export to IFC.
+				<li>Improved positioning of elements within assembly when exporting to IFC.
+				<li>Improved positioning of some elements that are contained in assembly when exporting to IFC.
+				<li>Improved support for some EPSG codes when exporting to IFC4 or higher.
+				<li>Improved the accuracy of some quantity calculations when exporting IFC files.
+				<li>Improved the export of wall infills to IFC.
+				<li>Removed an export of uncertified IfcExtendedMaterialProperties to ifc2x3CV2.
+				<li>Removed deprecated attributes LandTitleID /SiteAddress in IFC4.3, supported by Pset_LandRegistration and Pset_Address instead.
+				<li>Updated IfcDoorTypeOperationEnum for 4x3 to fix warnings during export to IFC.
+			</ul>
+		</p>
+		<br>
+	</div>
+	<br>
+	
 <div class="version">25.4.0.27</div><div class="versioninfo-bullet">
       <br><p>
          General:

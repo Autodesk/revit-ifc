@@ -2,17 +2,17 @@
   <ItemGroup>
     <Reference Include="RevitAPI">
       <SpecificVersion>False</SpecificVersion>
-	  <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPI.dll</HintPath>
+	  <HintPath>..\..\..\API\2025\RevitAPI.dll</HintPath>
 	  <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIUI">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPIUI.dll</HintPath>
+      <HintPath>..\..\..\API\2025\RevitAPIUI.dll</HintPath>
 	  <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIIFC">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\API\2025\RevitAPIIFC.dll</HintPath>
 	  <Private>False</Private>
     </Reference>
   </ItemGroup>

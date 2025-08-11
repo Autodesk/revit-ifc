@@ -120,12 +120,10 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            // Check for containment override
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, sheet, out IFCAnyHandle overrideContainerHnd);
             if (!(sheet.Document?.GetElement(sheet.GetTypeId()) is FabricSheetType fsType))
                return false;
 
-            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, sheet, null, null, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, sheet, null))
             {
                using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
@@ -309,6 +307,13 @@ namespace Revit.IFC.Export.Exporter
             fabricSheets.Add(handle);
          }
          cfg.ProductWrapper.AddElement(cfg.Sheet, handle, cfg.PlacementSetter?.LevelInfo, cfg.EcData, true, exportInfo);
+
+         if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
+         {
+            IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(cfg.Sheet, exportInfo, cfg.File, cfg.ProductWrapper);
+            ExporterCacheManager.TypeRelationsCache.Add(type, handle);
+         }
+
          CategoryUtil.CreateMaterialAssociation(cfg.ExporterIFC, handle, cfg.MaterialId);
 
          return true;
