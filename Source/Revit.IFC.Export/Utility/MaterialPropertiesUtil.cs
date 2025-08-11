@@ -39,6 +39,13 @@ namespace Revit.IFC.Export.Utility
       /// <param name="exporterIFC">The IFC exporter object.</param>
       public static void ExportMaterialProperties(IFCFile file, ExporterIFC exporterIFC)
       {
+         bool materialPropertiesAreAllowed =
+           !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ||
+           ExporterCacheManager.CertifiedEntitiesAndPsetsCache.AllowPredefPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "IfcExtendedMaterialProperties");
+
+         if (!materialPropertiesAreAllowed)
+            return;
+
          Document document = ExporterCacheManager.Document;
 
          foreach (KeyValuePair<ElementId, Tuple<IFCAnyHandle, IFCExportInfoPair>> cachedMaterial in ExporterCacheManager.MaterialHandleCache.ElementIdToHandleAndInfo)
@@ -57,8 +64,14 @@ namespace Revit.IFC.Export.Utility
                ExportStructuralParameters(file, document, material, materialHnd);
                ExportThermalParameters(file, document, material, materialHnd);
 
+               // 1. Maps project/shared parameters to 'built-in material properties'
+               // For example, export IfcMechanicalMaterialProperties.DynamicViscosity Revit material project/shared parameter to IfcMechanicalMaterialProperties.DynamicViscosity attribute
+               // 2. Exports some hardcoded mapped Revit material parameters (see MaterialBuildInParameterUtil class) to 'built-in material properties'
+               // For example, export Revit material parameter Density('Physical' tab) to IfcGeneralMaterialProperties.MassDensity attribute
                ExportMappedMaterialProperties(file, exporterIFC, material, materialHnd);
 
+               // Export internal Revit properties
+               // For example, non-ifc project parameters to IfcExtendedMaterialProperties 
                PropertyUtil.CreateInternalRevitPropertySets(exporterIFC, material, new HashSet<IFCAnyHandle>() { materialHnd }, true);
             }
          }

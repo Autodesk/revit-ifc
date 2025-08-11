@@ -7,10 +7,10 @@
    <ItemGroup>
       <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
    </ItemGroup>
-  <ItemGroup>
-    <Reference Include="RevitAPI">
-      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPI.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+   <ItemGroup>
+     <Reference Include="RevitAPI">
+       <HintPath>..\..\..\API\2025\RevitAPI.dll</HintPath>
+     </Reference>
+   </ItemGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.targets" />
 </Project>

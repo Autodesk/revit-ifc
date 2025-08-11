@@ -148,7 +148,9 @@ namespace Revit.IFC.Export.Utility
          filters.Add(classFilter);
 
          // Design options
-         filters.Add(GetDesignOptionFilter());
+         ElementFilter designOptionsFilter = GetDesignOptionFilter();
+         if(designOptionsFilter != null)
+            filters.Add(designOptionsFilter);
 
          // Phases: only for non-spatial elements.  For spatial elements, we will do a check afterwards.
          if (!forSpatialElements && ExporterUtil.ExportingHostModel())
@@ -193,6 +195,9 @@ namespace Revit.IFC.Export.Utility
                return new LogicalOrFilter(designOptionFilter, activeDesignOptionFilter);
             }
          }
+
+         if (!ExporterUtil.ExportingHostModel())
+            return null;
 
          return designOptionFilter;
       }
@@ -251,10 +256,18 @@ namespace Revit.IFC.Export.Utility
       /// <returns>True if the element should be exported, false otherwise.</returns>
       public static bool ShouldCategoryBeExported(Category category, bool allowSeparateOpeningExport)
       {
+         // If the category isn't visible, we don't need to check further.
+         if (!IsCategoryVisible(category, ExporterCacheManager.ExportOptionsCache.FilterViewForExport))
+         {
+            return false;
+         }
+
          ElementId categoryId = category?.Id ?? ElementId.InvalidElementId;
          if (ExporterUtil.GetCategoryInfoById(categoryId, null, out ExportIFCCategoryInfo info))
+         {
             return ShouldExportMappingInfo(info, null, allowSeparateOpeningExport);
-
+         }
+         
          ElementId parentCategoryId = category?.Parent?.Id ?? ElementId.InvalidElementId;
          if (parentCategoryId != ElementId.InvalidElementId)
          {
@@ -262,8 +275,8 @@ namespace Revit.IFC.Export.Utility
                return ShouldExportMappingInfo(info, null, allowSeparateOpeningExport);
          }
 
-         // the category is not in the mapping template
-         return IsCategoryVisible(category, ExporterCacheManager.ExportOptionsCache.FilterViewForExport);
+         // The category is not in the mapping template, and not invisible in the view, return true.
+         return true;
       }
 
       /// <summary>
@@ -663,7 +676,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>True if the category is visible, false otherwise.</returns>
       public static bool IsCategoryVisible(Category category, View filterView)
       {
-         // This routine is generally used to decide whether or not to export geometry assigned to a praticular category.
+         // This routine is generally used to decide whether or not to export geometry assigned to a particular category.
          // Default behavior is to return true, even for a null category.  In general, we want to err on the side of showing geometry over hiding it.
          if (category == null || filterView == null)
             return true;

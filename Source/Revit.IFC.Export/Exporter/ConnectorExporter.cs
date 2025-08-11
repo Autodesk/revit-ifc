@@ -298,16 +298,22 @@ namespace Revit.IFC.Export.Exporter
                return;
 
             // Check the outElement to see if it is a Wire; if so, get its connections and "skip" the wire.
-            if (outElement is Wire)
+            Wire wire = outElement as Wire;
+            if (wire != null)
             {
                if (m_ProcessedWires.Contains(outElement.Id))
                   return;
                m_ProcessedWires.Add(outElement.Id);
-               ExporterCacheManager.SystemsCache.AddElectricalSystem((outElement as Wire).MEPSystem.Id);
+
+               MEPSystem system = wire.MEPSystem;
+               if (system != null)
+               {
+                  ExporterCacheManager.SystemsCache.AddElectricalSystem(system.Id);
+               }
 
                try
                {
-                  ConnectorSet wireConnectorSet = MEPCache.GetConnectorsForWire(outElement as Wire);
+                  ConnectorSet wireConnectorSet = MEPCache.GetConnectorsForWire(wire);
                   if (wireConnectorSet != null)
                   {
                      foreach (Connector connectedToWire in wireConnectorSet)

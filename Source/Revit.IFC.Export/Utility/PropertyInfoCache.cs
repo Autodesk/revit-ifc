@@ -36,92 +36,26 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class PropertyInfoCache
    {
-      /// <summary>
-      /// The DoublePropertyInfoCache object.
-      /// </summary>
-      IDictionary<PropertyType, DoublePropertyInfoCache> m_DoublePropertyInfoCacheMap = null;
+      private Dictionary<PropertyType, DoublePropertyInfoCache> DoubleCacheMap { get; set; } = new();
 
       /// <summary>
       /// The StringPropertyInfoCache object.
       /// </summary>
-      IDictionary<PropertyType, StringPropertyInfoCache> m_StringPropertyInfoCacheMap = null;
+      private Dictionary<PropertyType, StringPropertyInfoCache> StringCacheMap { get; set; } = new();
 
       /// <summary>
       /// The BooleanPropertyInfoCache object.
       /// </summary>
-      BooleanPropertyInfoCache m_BooleanPropertyInfoCache = null;
+      public BooleanPropertyInfoCache BooleanCache { get; private set; } = new();
 
       /// <summary>
       /// The LogicalPropertyInfoCache object.
       /// </summary>
-      LogicalPropertyInfoCache m_LogicalPropertyInfoCache = null;
-
+      public LogicalPropertyInfoCache LogicalCache { get; private set; } = new();
       /// <summary>
       /// The IntegerPropertyInfoCache object.
       /// </summary>
-      IntegerPropertyInfoCache m_IntegerPropertyInfoCache = null;
-
-      private IDictionary<PropertyType, DoublePropertyInfoCache> DoubleCacheMap
-      {
-         get
-         {
-            if (m_DoublePropertyInfoCacheMap == null)
-               m_DoublePropertyInfoCacheMap = new Dictionary<PropertyType, DoublePropertyInfoCache>();
-            return m_DoublePropertyInfoCacheMap;
-         }
-      }
-
-      /// <summary>
-      /// The StringPropertyInfoCache object.
-      /// </summary>
-      private IDictionary<PropertyType, StringPropertyInfoCache> StringCacheMap
-      {
-         get
-         {
-            if (m_StringPropertyInfoCacheMap == null)
-               m_StringPropertyInfoCacheMap = new Dictionary<PropertyType, StringPropertyInfoCache>();
-            return m_StringPropertyInfoCacheMap;
-         }
-      }
-
-      /// <summary>
-      /// The BooleanPropertyInfoCache object.
-      /// </summary>
-      public BooleanPropertyInfoCache BooleanCache
-      {
-         get
-         {
-            if (m_BooleanPropertyInfoCache == null)
-               m_BooleanPropertyInfoCache = new BooleanPropertyInfoCache();
-            return m_BooleanPropertyInfoCache;
-         }
-      }
-
-      /// <summary>
-      /// The LogicalPropertyInfoCache object.
-      /// </summary>
-      public LogicalPropertyInfoCache LogicalCache
-      {
-         get
-         {
-            if (m_LogicalPropertyInfoCache == null)
-               m_LogicalPropertyInfoCache = new LogicalPropertyInfoCache();
-            return m_LogicalPropertyInfoCache;
-         }
-      }
-
-      /// <summary>
-      /// The IntegerPropertyInfoCache object.
-      /// </summary>
-      public IntegerPropertyInfoCache IntegerCache
-      {
-         get
-         {
-            if (m_IntegerPropertyInfoCache == null)
-               m_IntegerPropertyInfoCache = new IntegerPropertyInfoCache();
-            return m_IntegerPropertyInfoCache;
-         }
-      }
+      public IntegerPropertyInfoCache IntegerCache { get; private set; } = new();
 
       /// <summary>
       /// The StringPropertyInfoCache object for Text property type.
@@ -189,5 +123,13 @@ namespace Revit.IFC.Export.Utility
          return doublePropertyInfoCache;
       }
 
+      public void Clear()
+      {
+         DoubleCacheMap.Clear();
+         StringCacheMap.Clear();
+         BooleanCache.Clear();
+         LogicalCache.Clear();
+         IntegerCache.Clear();
+      }
    }
 }

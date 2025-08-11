@@ -19,8 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
@@ -32,42 +30,15 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class SystemsCache
    {
-      private IDictionary<ElementId, ISet<IFCAnyHandle>> m_BuiltInSystemsCache;
-      private IDictionary<string, ICollection<IFCAnyHandle>> m_CustomSystemsCache;
-      private IDictionary<ElementId, ISet<IFCAnyHandle>> m_ElectricalSystemsCache;
+      public Dictionary<ElementId, ISet<IFCAnyHandle>> BuiltInSystemsCache { get; private set; } = new();
+      public Dictionary<string, ICollection<IFCAnyHandle>> CustomSystemsCache { get; private set; } = new();
+      public Dictionary<ElementId, ISet<IFCAnyHandle>> ElectricalSystemsCache { get; private set; } = new();
 
       /// <summary>
       /// Creates a new SystemsCache.
       /// </summary>
       public SystemsCache()
       {
-         m_BuiltInSystemsCache = new Dictionary<ElementId, ISet<IFCAnyHandle>>();
-         m_CustomSystemsCache = new Dictionary<string, ICollection<IFCAnyHandle>>();
-         m_ElectricalSystemsCache = new Dictionary<ElementId, ISet<IFCAnyHandle>>();
-      }
-
-      /// <summary>
-      /// Get the list of systems.
-      /// </summary>
-      public IDictionary<ElementId, ISet<IFCAnyHandle>> BuiltInSystemsCache
-      {
-         get { return m_BuiltInSystemsCache; }
-      }
-
-      /// <summary>
-      /// Get the list of Electrical systems.  The members will be determined at the end of export.
-      /// </summary>
-      public IDictionary<ElementId, ISet<IFCAnyHandle>> ElectricalSystemsCache
-      {
-         get { return m_ElectricalSystemsCache; }
-      }
-
-      /// <summary>
-      /// Get the list of custom systems.
-      /// </summary>
-      public IDictionary<string, ICollection<IFCAnyHandle>> CustomSystemsCache
-      {
-         get { return m_CustomSystemsCache; }
       }
 
       /// <summary>
@@ -81,7 +52,7 @@ namespace Revit.IFC.Export.Utility
          if (!CustomSystemsCache.TryGetValue(systemName, out systemValue))
          {
             systemValue = new HashSet<IFCAnyHandle>();
-            CustomSystemsCache.Add(new KeyValuePair<string, ICollection<IFCAnyHandle>>(systemName, systemValue));
+            CustomSystemsCache.TryAdd(systemName, systemValue);
          }
          return systemValue;
       }
@@ -100,7 +71,7 @@ namespace Revit.IFC.Export.Utility
          if (!BuiltInSystemsCache.TryGetValue(systemElement.Id, out system))
          {
             system = new HashSet<IFCAnyHandle>();
-            BuiltInSystemsCache.Add(new KeyValuePair<ElementId, ISet<IFCAnyHandle>>(systemElement.Id, system));
+            BuiltInSystemsCache.TryAdd(systemElement.Id, system);
          }
 
          return system;
@@ -146,8 +117,7 @@ namespace Revit.IFC.Export.Utility
       {
          if (!ElectricalSystemsCache.ContainsKey(systemId))
          {
-            KeyValuePair<ElementId, ISet<IFCAnyHandle>> entry = new KeyValuePair<ElementId, ISet<IFCAnyHandle>>(systemId, new HashSet<IFCAnyHandle>());
-            ElectricalSystemsCache.Add(entry);
+            ElectricalSystemsCache.TryAdd(systemId, new HashSet<IFCAnyHandle>());
          }
       }
 
@@ -162,6 +132,13 @@ namespace Revit.IFC.Export.Utility
             throw new InvalidOperationException("Error getting system.");
 
          ElectricalSystemsCache[systemId].Add(handle);
+      }
+
+      public void Clear()
+      {
+         BuiltInSystemsCache.Clear();
+         CustomSystemsCache.Clear();
+         ElectricalSystemsCache.Clear();
       }
    }
 }

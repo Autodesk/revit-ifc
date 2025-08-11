@@ -39,9 +39,16 @@ namespace Revit.IFC.Import.Data
       public ElementId CreatedViewId { get; protected set; } = ElementId.InvalidElementId;
 
       /// <summary>
-      /// If the ActiveView is level-based, we can't delete it.  Instead, use it for the first level "created".
+      /// If the ActiveView is level-based, we can't delete it.
+      /// If this is set and an IFCBuildingStorey exists in the IFC file, then re-use this Level rather when "creating" a new Level.
       /// </summary>
-      public static ElementId ExistingLevelIdToReuse { get; set; } = ElementId.InvalidElementId;
+      public static ElementId ExistingUnConstrainedLevelToReuse { get; set; } = ElementId.InvalidElementId;
+
+      /// <summary>
+      /// If the ActiveView is level-based, we can't delete it.
+      /// If an IFCBuildingStorey exists in the IFC file, then create a new Level rather than reusing this Level.
+      /// </summary>
+      public static ElementId ExistingConstrainedLevel { get; set; } = ElementId.InvalidElementId;
 
       /// <summary>
       /// Get the default family type for creating ViewPlans.
@@ -78,6 +85,20 @@ namespace Revit.IFC.Import.Data
             }
          }
          return Importer.TheCache.ViewPlanTypeId;
+      }
+
+      /// <summary>
+      /// Determines if Level if constrained to a Scope Box or not.
+      /// </summary>
+      /// <param name="level">Level to check.</param>
+      /// <returns>True if constrained, False otherwise.</returns>
+      public static bool IsConstrainedToScopeBox(Element level)
+      {
+         Parameter datumVolumeParameter = level?.get_Parameter(BuiltInParameter.DATUM_VOLUME_OF_INTEREST);
+         if (datumVolumeParameter == null)
+            return false;
+
+         return (datumVolumeParameter.AsElementId() != ElementId.InvalidElementId);
       }
 
       /// <summary>
@@ -121,29 +142,54 @@ namespace Revit.IFC.Import.Data
          bool reusedLevel = false;
          bool foundLevel = false;
 
+         // If any Level is constrained, never reuse it and never move it.
          if (level == null)
          {
-            if (ExistingLevelIdToReuse != ElementId.InvalidElementId)
+            // Re-using existing unconstrained Level.
+            if (ExistingUnConstrainedLevelToReuse != ElementId.InvalidElementId)
             {
-               level = doc.GetElement(ExistingLevelIdToReuse) as Level;
+               level = doc.GetElement(ExistingUnConstrainedLevelToReuse) as Level;
                Importer.TheCache.UseElement(level);
-               ExistingLevelIdToReuse = ElementId.InvalidElementId;
+               ExistingUnConstrainedLevelToReuse = ElementId.InvalidElementId;
                reusedLevel = true;
             }
          }
          else
+         {
             foundLevel = true;
+         }
 
          double referenceElevation = GetReferenceElevation();
          double totalElevation = (ObjectLocation?.TotalTransformAfterOffset?.Origin.Z ?? 0.0) + referenceElevation;
 
          if (level == null)
+         {
             level = Level.Create(doc, totalElevation);
+         }
          else
-            level.Elevation = totalElevation;
+         {
+            if (Importer.TheCache.ConstrainedLevels.Contains(level.Id))
+            {
+               if (level.Elevation == totalElevation)
+               {
+                  Importer.TheCache.UseElement(level);
+                  Importer.TheCache.ConstrainedLevels.Remove(level.Id);
+               }
+               else
+               {
+                  level = Level.Create(doc, totalElevation);
+               }
+            }
+            else
+            {
+               level.Elevation = totalElevation;
+            }
+         }
 
          if (level != null)
+         {
             CreatedElementId = level.Id;
+         }
 
          if (CreatedElementId != ElementId.InvalidElementId)
          {

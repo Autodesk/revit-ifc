@@ -76,33 +76,17 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class SpaceInfoCache
    {
-      Dictionary<ElementId, SpaceInfo> m_SpaceInfos = new Dictionary<ElementId, SpaceInfo>();
+      public Dictionary<ElementId, SpaceInfo> SpaceInfos { get; private set; } = new();
 
       /// <summary>
       /// Returns true if any architectural rooms are cached.
       /// </summary>
-      public bool ContainsRooms
-      {
-         get;
-         set;
-      }
+      public bool ContainsRooms { get; set; } = false;
 
       /// <summary>
       /// Returns true if any MEP spaces are cached.
       /// </summary>
-      public bool ContainsSpaces
-      {
-         get;
-         set;
-      }
-
-      /// <summary>
-      /// The direction of the SpaceInfos mapping to SpatialElement ids.
-      /// </summary>
-      public Dictionary<ElementId, SpaceInfo> SpaceInfos
-      {
-         get { return m_SpaceInfos; }
-      }
+      public bool ContainsSpaces { get; set; } = false;
 
       /// <summary>
       /// Finds the SpaceInfo.
@@ -111,8 +95,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns></returns>
       public SpaceInfo FindSpaceInfo(ElementId spatialElementId)
       {
-         SpaceInfo spaceInfo;
-         m_SpaceInfos.TryGetValue(spatialElementId, out spaceInfo);
+         SpaceInfos.TryGetValue(spatialElementId, out SpaceInfo spaceInfo);
          return spaceInfo;
       }
 
@@ -123,8 +106,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The handle.</returns>
       public IFCAnyHandle FindSpaceHandle(ElementId spatialElementId)
       {
-         SpaceInfo spaceInfo;
-         if (m_SpaceInfos.TryGetValue(spatialElementId, out spaceInfo))
+         if (SpaceInfos.TryGetValue(spatialElementId, out SpaceInfo spaceInfo))
             return spaceInfo.SpaceHandle;
          return null;
       }
@@ -136,15 +118,15 @@ namespace Revit.IFC.Export.Utility
       /// <param name="spaceHandle">The space handle.</param>
       public void SetSpaceHandle(Element spatialElement, IFCAnyHandle spaceHandle)
       {
-         SpaceInfo spaceInfo;
-         if (m_SpaceInfos.TryGetValue(spatialElement.Id, out spaceInfo))
+         if (SpaceInfos.TryGetValue(spatialElement.Id, out SpaceInfo spaceInfo))
          {
             spaceInfo.SpaceHandle = spaceHandle;
          }
          else
          {
-            m_SpaceInfos[spatialElement.Id] = new SpaceInfo(spaceHandle);
+            SpaceInfos[spatialElement.Id] = new SpaceInfo(spaceHandle);
          }
+
          if (!ContainsRooms)
             ContainsRooms = spatialElement is Room;
          if (!ContainsSpaces)
@@ -162,15 +144,18 @@ namespace Revit.IFC.Export.Utility
          if (spaceInfo == null)
          {
             spaceInfo = new SpaceInfo();
-            m_SpaceInfos[spatialElementId] = spaceInfo;
+            SpaceInfos[spatialElementId] = spaceInfo;
          }
          spaceInfo.RelatedElements.Add(elemHandle);
       }
 
       public SpaceInfoCache()
       {
-         ContainsRooms = false;
-         ContainsSpaces = false;
+      }
+
+      public void Clear()
+      {
+         SpaceInfos.Clear();
       }
    }
 }

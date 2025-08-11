@@ -153,7 +153,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
                   break;
                case QuantityType.Weight:
-                  quantityHnd = IFCInstanceExporter.CreateQuantityWeight(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
+               case QuantityType.Mass:
+                  // NOTE: There is no distinction between weight and mass currently in IFC4.quantityHnd = IFCInstanceExporter.CreateQuantityWeight(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
                   break;
                case QuantityType.Count:
                   quantityHnd = IFCInstanceExporter.CreateQuantityCount(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (int)val);

@@ -81,7 +81,7 @@ namespace Revit.IFC.Export.Exporter
             {
                foreach (IFCAnyHandle elemHnd in elemHnds)
                {
-                  CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialIds);
+                  CategoryUtil.CreateMaterialAssociation(exporterIFC, hostObject, elemHnd, materialIds);
                }
             }
 

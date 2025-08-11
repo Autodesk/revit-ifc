@@ -485,18 +485,35 @@ namespace Revit.IFC.Import.Data
          try
          { 
             TheFile.Process(ifcFilePath, options, doc);
+
             // Store the original levels in the template file for Open IFC.  On export, we will delete these levels if we created any.
             // Note that we always have to preserve one level, regardless of what the ActiveView is.
             if (doc != null)
             {
-               IFCBuildingStorey.ExistingLevelIdToReuse = ElementId.InvalidElementId;
+               // At this point, we have a Document that may contain Levels already.
+               // The first unconstrained one should be used when "creating" the IFCBuildingStorey later.
+               // If there is none, create a new Level corresponding to the first constrained one.
+               IFCBuildingStorey.ExistingUnConstrainedLevelToReuse = ElementId.InvalidElementId;
+               IFCBuildingStorey.ExistingConstrainedLevel = ElementId.InvalidElementId;
 
+               // First check ActiveView Level.  If set, then use it either as constrained or unconstrained Level.
                View activeView = doc.ActiveView;
                if (activeView != null)
                {
                   Level genLevel = activeView.GenLevel;
+
                   if (genLevel != null)
-                     IFCBuildingStorey.ExistingLevelIdToReuse = genLevel.Id;
+                  {
+                     if (IFCBuildingStorey.IsConstrainedToScopeBox(genLevel))
+                     {
+                        Importer.TheCache.ConstrainedLevels.Add(genLevel.Id);
+                        IFCBuildingStorey.ExistingConstrainedLevel = genLevel.Id;
+                     }
+                     else
+                     {
+                        IFCBuildingStorey.ExistingUnConstrainedLevelToReuse = genLevel.Id;
+                     }
+                  }
                }
 
                // For Link IFC, we will delete any unused levels at the end.  Instead, we want to try to reuse them.
@@ -506,15 +523,38 @@ namespace Revit.IFC.Import.Data
                FilteredElementCollector levelCollector = new FilteredElementCollector(doc);
                ICollection<Element> levels = levelCollector.OfClass(typeof(Level)).ToElements();
                ICollection<ElementId> levelIdsToDelete = new HashSet<ElementId>();
-               foreach (Element level in levels)
+               foreach (Element element in levels)
                {
+                  Level level = element as Level;
                   if (level == null)
                      continue;
 
-                  if (IFCBuildingStorey.ExistingLevelIdToReuse == ElementId.InvalidElementId)
-                     IFCBuildingStorey.ExistingLevelIdToReuse = level.Id;
-                  else if (level.Id != IFCBuildingStorey.ExistingLevelIdToReuse)
+                  bool constrainedToScopeBox = IFCBuildingStorey.IsConstrainedToScopeBox(level);
+                  if (constrainedToScopeBox)
+                  {
+                     Importer.TheCache.ConstrainedLevels.Add(level.Id);
+                  }
+
+                  if (IFCBuildingStorey.ExistingUnConstrainedLevelToReuse == ElementId.InvalidElementId)
+                  {
+                     if (!constrainedToScopeBox)
+                     {
+                        IFCBuildingStorey.ExistingUnConstrainedLevelToReuse = level.Id;
+                        if (IFCBuildingStorey.ExistingConstrainedLevel != ElementId.InvalidElementId)
+                        {
+                           levelIdsToDelete.Add(IFCBuildingStorey.ExistingConstrainedLevel);
+                           IFCBuildingStorey.ExistingConstrainedLevel = ElementId.InvalidElementId;
+                        }
+                     }
+                     else if (IFCBuildingStorey.ExistingConstrainedLevel == ElementId.InvalidElementId)
+                     {
+                        IFCBuildingStorey.ExistingConstrainedLevel = level.Id;
+                     }
+                  }
+                  else if ((level.Id != IFCBuildingStorey.ExistingUnConstrainedLevelToReuse) && (level.Id != IFCBuildingStorey.ExistingConstrainedLevel))
+                  {
                      levelIdsToDelete.Add(level.Id);
+                  }
                }
 
                if (deleteLevelsNow)
@@ -631,7 +671,7 @@ namespace Revit.IFC.Import.Data
 
          // Don't delete the last level in the document, even if it wasn't used.  This would happen when
          // updating a document with 1 level with a new document with 0 levels.
-         if (elementId == IFCBuildingStorey.ExistingLevelIdToReuse)
+         if ((elementId == IFCBuildingStorey.ExistingUnConstrainedLevelToReuse) || Importer.TheCache.ConstrainedLevels.Contains(elementId))
             return true;
 
          return false;

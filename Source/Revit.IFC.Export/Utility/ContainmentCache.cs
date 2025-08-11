@@ -34,11 +34,9 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class ContainmentCache 
    {
-      public Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> Cache { get; set; } = 
-         new Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>>();
+      public Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> Cache { get; set; } = new();
 
-      Dictionary<IFCAnyHandle, string> ContainerGUIDs { get; set; }  = 
-         new Dictionary<IFCAnyHandle, string>();
+      Dictionary<IFCAnyHandle, string> ContainerGUIDs { get; set; } = new();
 
       /// <summary>
       /// Get the GUID for the IFCRELAGGREGATES.
@@ -83,6 +81,12 @@ namespace Revit.IFC.Export.Utility
       {
          HashSet<IFCAnyHandle> containedItems = GetContainedItemsForHandle(container, guid);
          containedItems.UnionWith(objectHnds);
+      }
+
+      public void Clear()
+      {
+         Cache.Clear();
+         ContainerGUIDs.Clear();
       }
    }
 }

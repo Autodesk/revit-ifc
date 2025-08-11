@@ -395,32 +395,28 @@ namespace Revit.IFC.Export.Utility
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="instanceHandle">The IFC instance handle.</param>
       /// <param name="materialId">The list of material ids.</param>
-      public static void CreateMaterialAssociation(ExporterIFC exporterIFC, 
+      public static void CreateMaterialAssociation(ExporterIFC exporterIFC, Element element,
          IFCAnyHandle instanceHandle, ICollection<ElementId> materialList)
       {
          // Create material association if any.
          bool createConstituentSet = (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4);
          HashSet<IFCAnyHandle> materials = createConstituentSet ? null : new HashSet<IFCAnyHandle>();
          ISet<ElementId> alreadySeenIds = createConstituentSet ? new HashSet<ElementId>() : null;
-
          IFCAnyHandle matHnd = null;
          foreach (ElementId materialId in materialList)
          {
             matHnd = GetOrCreateMaterialHandle(exporterIFC, materialId);
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(matHnd))
                continue;
-
             // Strictly speaking, we only need at most one material if createConstituentSet is true.
             if (createConstituentSet)
                alreadySeenIds.Add(materialId);
             else
                materials.Add(matHnd);
          }
-
          int numMaterials = createConstituentSet ? alreadySeenIds.Count : materials.Count;
          if (numMaterials == 0)
             return;
-
          // If there is only one material, we will associate the one material directly.
          // matHnd above is guaranteed to have a valid value if numMaterials > 0.
          if (numMaterials == 1)
@@ -430,16 +426,34 @@ namespace Revit.IFC.Export.Utility
          }
 
          IFCFile file = exporterIFC.GetFile();
-         
+
          if (createConstituentSet)
          {
-            ExporterCacheManager.MaterialConstituentCache.Reset();
-            HashSet<IFCAnyHandle> constituentSet = new HashSet<IFCAnyHandle>();
-            // in IFC4 we will create IfcConstituentSet instead of MaterialList, create the associated IfcConstituent here from IfcMaterial
+            double totalVolume = 0.0;
+            Dictionary<ElementId, double> volumeMaterialIdDict = new Dictionary<ElementId, double>();
             foreach (ElementId materialId in alreadySeenIds)
             {
+               double currVolume = 0.0;
+               if (materialId != ElementId.InvalidElementId)
+                  currVolume = element.GetMaterialVolume(materialId);
+               volumeMaterialIdDict[materialId] = currVolume;
+               totalVolume += currVolume;
+            }
+
+            ISet<Tuple<ElementId, double>> alreadySeenMaterialIds = new HashSet<Tuple<ElementId, double>>();
+            foreach (ElementId materialId in alreadySeenIds)
+            {
+               alreadySeenMaterialIds.Add(new Tuple<ElementId, double>(materialId, 
+                  MathUtil.IsAlmostZero(totalVolume) ? 0.0 : volumeMaterialIdDict[materialId] / totalVolume));
+            }
+            
+            ExporterCacheManager.MaterialConstituentCache.Clear();
+            HashSet<IFCAnyHandle> constituentSet = new HashSet<IFCAnyHandle>();
+            // in IFC4 we will create IfcConstituentSet instead of MaterialList, create the associated IfcConstituent here from IfcMaterial
+            foreach (Tuple<ElementId, double> materialIdAndFraction in alreadySeenMaterialIds)
+            {
                constituentSet.AddIfNotNull(GetOrCreateMaterialConstituent(exporterIFC, 
-                  materialId));
+                  materialIdAndFraction.Item1, materialIdAndFraction.Item2));
             }
 
             GetOrCreateMaterialConstituentSet(file, instanceHandle, constituentSet);
@@ -495,7 +509,7 @@ namespace Revit.IFC.Export.Utility
 
          if (createConstituentSet)
          {
-            ExporterCacheManager.MaterialConstituentCache.Reset();
+            ExporterCacheManager.MaterialConstituentCache.Clear();
             IDictionary<IFCAnyHandle, IFCAnyHandle> mapRepItemToItemDict = new Dictionary<IFCAnyHandle, IFCAnyHandle>();
             string repType = null;
             IFCAnyHandle prodRep = null;
@@ -558,6 +572,24 @@ namespace Revit.IFC.Export.Utility
                }
             }
 
+            double totalVolume = 0.0;
+            IDictionary<ElementId, double> volumeMaterialIdDict = new Dictionary<ElementId, double>();
+            foreach (KeyValuePair<MaterialConstituentInfo, HashSet<IFCAnyHandle>> repItemInfoSet in repItemInfoGroup)
+            {
+               ElementId materialId = repItemInfoSet.Key.MaterialId;
+               double currVolume = (materialId != ElementId.InvalidElementId) ? element.GetMaterialVolume(materialId) : 0.0;
+               volumeMaterialIdDict[materialId] = currVolume;
+               totalVolume += currVolume;
+            }
+
+            if (!MathUtil.IsAlmostZero(totalVolume))
+            {
+               foreach (KeyValuePair<MaterialConstituentInfo, HashSet<IFCAnyHandle>> repItemInfoSet in repItemInfoGroup)
+               {
+                  repItemInfoSet.Key.Fraction = volumeMaterialIdDict[repItemInfoSet.Key.MaterialId] / totalVolume;
+               }
+            }
+
             HashSet<IFCAnyHandle> constituentSet = new HashSet<IFCAnyHandle>();
             // in IFC4 we will create IfcConstituentSet instead of MaterialList, create the associated IfcConstituent here from IfcMaterial
             foreach (KeyValuePair<MaterialConstituentInfo, HashSet<IFCAnyHandle>> repItemInfoSet in repItemInfoGroup)
@@ -598,7 +630,7 @@ namespace Revit.IFC.Export.Utility
             elementType, element);
          if (matIds.Count > 0)
          {
-            CreateMaterialAssociation(exporterIFC, typeStyle, matIds);
+            CreateMaterialAssociation(exporterIFC, elementType, typeStyle, matIds);
             addedMaterialAssociation = true;
 
             if (typeInfo.MaterialIdList.Count == 0)
@@ -606,7 +638,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          if (!addedMaterialAssociation)
-            CreateMaterialAssociation(exporterIFC, typeStyle, typeInfo.MaterialIdList);
+            CreateMaterialAssociation(exporterIFC, elementType, typeStyle, typeInfo.MaterialIdList);
 
          return;
       }
@@ -651,23 +683,24 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Get or Create (if not yet exists) a handle for IfcMaterialConstituent. It points to an IfcMaterial
+      /// Get or Create (if not yet exists) a handle for IfcMaterialConstituent with default name. It points to an IfcMaterial
       /// </summary>
       /// <param name="exporterIFC"></param>
       /// <param name="materialId"></param>
+      /// <param name="fraction"></param>
       /// <returns>The Handle to IfcMaterialConstituent</returns>
-      public static IFCAnyHandle GetOrCreateMaterialConstituent(ExporterIFC exporterIFC, ElementId materialId)
+      public static IFCAnyHandle GetOrCreateMaterialConstituent(ExporterIFC exporterIFC, ElementId materialId, double fraction)
       {
-         IFCAnyHandle materialConstituentHandle = ExporterCacheManager.MaterialConstituentCache.Find(materialId);
+         IFCAnyHandle materialConstituentHandle = ExporterCacheManager.MaterialConstituentCache.Find(materialId, fraction);
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(materialConstituentHandle))
          {
             Document document = ExporterCacheManager.Document;
-            IFCAnyHandle materialHnd = GetOrCreateMaterialHandle(exporterIFC, materialId);
+            GetOrCreateMaterialHandle(exporterIFC, materialId);
 
             //Material constituent name will be defaulted to the same as the material name
             Material material = document.GetElement(materialId) as Material;
             string constituentName = (material != null) ? NamingUtil.GetMaterialName(material) : "<Unnamed>";
-            MaterialConstituentInfo constInfo = new MaterialConstituentInfo(constituentName, materialId);
+            MaterialConstituentInfo constInfo = new MaterialConstituentInfo(constituentName, materialId, fraction);
 
             materialConstituentHandle = GetOrCreateMaterialConstituent(exporterIFC, constInfo);
          }
@@ -679,7 +712,7 @@ namespace Revit.IFC.Export.Utility
       /// Get or Create (if not yet exists) a handle for IfcMaterialConstituent. It points to an IfcMaterial
       /// </summary>
       /// <param name="exporterIFC"></param>
-      /// <param name="materialId"></param>
+      /// <param name="constInfo"></param>
       /// <returns>The Handle to IfcMaterialConstituent</returns>
       public static IFCAnyHandle GetOrCreateMaterialConstituent(ExporterIFC exporterIFC, MaterialConstituentInfo constInfo)
       {
@@ -692,7 +725,10 @@ namespace Revit.IFC.Export.Utility
             Material material = document.GetElement(constInfo.MaterialId) as Material;
             string category = (material != null) ? NamingUtil.GetMaterialCategoryName(material) : string.Empty;
 
-            materialConstituentHandle = IFCInstanceExporter.CreateMaterialConstituent(exporterIFC.GetFile(), materialHnd, name: constInfo.ComponentCat, category: category);
+            IFCData fractionData = IFCDataUtil.CreateAsNormalisedRatioMeasure(constInfo.Fraction);
+
+            materialConstituentHandle = IFCInstanceExporter.CreateMaterialConstituent(exporterIFC.GetFile(), materialHnd, 
+               name: constInfo.ComponentCat, category: category, fraction: fractionData);
             ExporterCacheManager.MaterialConstituentCache.Register(constInfo, materialConstituentHandle);
          }
 

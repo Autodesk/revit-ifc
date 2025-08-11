@@ -31,11 +31,15 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class PropertySetCache
    {
-      private IDictionary<long, Tuple<ISet<IFCAnyHandle>, ISet<IFCAnyHandle>>> Cache
-         { get; set; } = new SortedDictionary<long, Tuple<ISet<IFCAnyHandle>, ISet<IFCAnyHandle>>>();
+      private SortedDictionary<long, Tuple<ISet<IFCAnyHandle>, ISet<IFCAnyHandle>>> Cache { get; set; } = new();
 
-      public PropertySetCache() 
-      { 
+      public PropertySetCache()
+      {
+      }
+
+      public bool ContainsKey(ElementId elementId)
+      {
+         return Cache.ContainsKey(elementId.Value);
       }
 
       /// <summary>
@@ -50,13 +54,13 @@ namespace Revit.IFC.Export.Utility
             return false;
 
          existingHandles.Item2.UnionWith(elementHandles);
-         return true;   
+         return true;
       }
 
-      public void Add(ElementId elementId, ISet<IFCAnyHandle> propertySetHandles, 
+      public void Add(ElementId elementId, ISet<IFCAnyHandle> propertySetHandles,
          ISet<IFCAnyHandle> elementHandles)
       {
-         Tuple<ISet<IFCAnyHandle>, ISet<IFCAnyHandle>> newHandles = 
+         Tuple<ISet<IFCAnyHandle>, ISet<IFCAnyHandle>> newHandles =
             Tuple.Create(propertySetHandles, elementHandles);
 
          Cache[elementId.Value] = newHandles;
@@ -76,6 +80,11 @@ namespace Revit.IFC.Export.Utility
                   ownerHandle, null, null, elementPropertySets.Item2, propertySetHandle);
             }
          }
+      }
+
+      public void Clear()
+      {
+         Cache.Clear();
       }
    }
 }

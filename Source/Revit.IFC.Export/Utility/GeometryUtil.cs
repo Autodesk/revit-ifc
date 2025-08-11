@@ -2769,9 +2769,14 @@ namespace Revit.IFC.Export.Utility
                if (sz < 2)
                   return null;
 
+               // Original CurveLoop may have been is closed.
+               // Only remove the last point in polylinePoints if it really is the same as the first.
                if (!curveLoop.IsOpen())
                {
-                  polylinePts.RemoveAt(sz - 1);
+                  if (polylinePts[0].IsAlmostEqualTo(polylinePts[polylinePts.Count - 1]))
+                  {
+                     polylinePts.RemoveAt(sz - 1);
+                  }
                   needToClose = true;
                }
             }
@@ -2864,14 +2869,49 @@ namespace Revit.IFC.Export.Utility
                currPts.Add(UnitUtil.ScaleLength(projectPoint));
             }
 
-            if (polylinePoints.Count > 0)
+            // polylinePoints is accumulating projected points.
+            // currPts are the points from the current curve.
+            // If there are currently no points in polylinePoints --> just add all currPts to polylinePoints.
+            if (polylinePoints.Count == 0)
             {
-               if (currPts.Count > 1)
+               polylinePoints.AddRange(currPts);
+            }
+            else
+            {
+               // Otherwise look at both ends of both collections.
+               UV lastPolylinePoint = polylinePoints[polylinePoints.Count - 1];
+               UV firstPolylinePoint = polylinePoints[0];
+               UV lastCurrPt = currPts[currPts.Count - 1];
+               UV firstCurrPt = currPts[0];
+
+               if (lastPolylinePoint.IsAlmostEqualTo(firstCurrPt))
                {
                   currPts.RemoveAt(0);
+                  polylinePoints.AddRange(currPts);
+               }
+               else if (lastPolylinePoint.IsAlmostEqualTo(lastCurrPt))
+               {
+                  currPts.Reverse();
+                  currPts.RemoveAt(0);
+                  polylinePoints.AddRange(currPts);
+               }
+               else if (firstPolylinePoint.IsAlmostEqualTo(firstCurrPt))
+               {
+                  currPts.Reverse();
+                  polylinePoints.RemoveAt(0);
+                  polylinePoints.InsertRange(0, currPts);
+               }
+               else if (firstPolylinePoint.IsAlmostEqualTo(lastCurrPt))
+               {
+                  polylinePoints.RemoveAt(0);
+                  polylinePoints.InsertRange(0, currPts);
+               }
+               else
+               {
+                  // Default:  just add currPts to the end.
+                  polylinePoints.AddRange(currPts);
                }
             }
-            polylinePoints.AddRange(currPts);
          }
          else
          {
@@ -3222,6 +3262,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="needToClose">True if the curve needs to be close.</param>
       /// <param name="pts">The polyline points.</param>
       /// <param name="segments">The curve segments.</param>
+      /// <param mame="filterDuplicates">Filter duplicate points.  Example use case:  curves projected </param>
       /// <returns>The created IFC curve.</returns>
       static IFCAnyHandle CreateCurveFromComponents(IFCFile file, bool useSimpleBoundary, bool needToClose, IList<UV> pts, IList<IFCAnyHandle> segments)
       {
@@ -3251,22 +3292,58 @@ namespace Revit.IFC.Export.Utility
             if (sz < 2)
                return null;
 
-
+            int uniqueUVFuzzyCompare(UV first, UV second)
             {
-               IList<IFCAnyHandle> polyLinePts = new List<IFCAnyHandle>();
-               foreach (UV pt in pts)
+               if (first == null)
                {
-                  polyLinePts.Add(ExporterUtil.CreateCartesianPoint(file, pt));
+                  return (second == null) ? 0 : -1;
                }
 
-               if (needToClose)
-                  polyLinePts.Add(polyLinePts[0]);
+               if (second == null)
+               {
+                  return 1;
+               }
 
-               if (polyLinePts.Count < 2)
-                  return null;
+               if (!first.IsAlmostEqualTo(second))
+               {
+                  double tolerance = ExporterCacheManager.LengthPrecision;
+                  for (int ii = 0; ii < 2; ii++)
+                  {
+                     double diff = first[ii] - second[ii];
+                     if (diff < -tolerance)
+                        return -1;
+                     if (diff > tolerance)
+                        return 1;
+                  }
+               }
 
-               profileCurve = IFCInstanceExporter.CreatePolyline(file, polyLinePts);
+               return 0;
             }
+
+            SortedSet<UV> uniqueSet = new(Comparer<UV>.Create(uniqueUVFuzzyCompare));
+            List<UV> uniquePoints = new();
+            foreach (UV pt in pts)
+            {
+               if (uniqueSet.Contains(pt))
+                  continue;
+
+               uniqueSet.Add(pt);
+               uniquePoints.Add(pt);
+            }
+
+            IList<IFCAnyHandle> polyLinePts = new List<IFCAnyHandle>();
+            foreach (UV pt in uniquePoints)
+            {
+               polyLinePts.Add(ExporterUtil.CreateCartesianPoint(file, pt));
+            }
+
+            if (needToClose)
+               polyLinePts.Add(polyLinePts[0]);
+
+            if (polyLinePts.Count < 2)
+               return null;
+
+            profileCurve = IFCInstanceExporter.CreatePolyline(file, polyLinePts);
          }
          else
          {
@@ -3948,8 +4025,108 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Try to create valid extrusion and extract its end faces.
+      /// </summary>
+      /// <param name="solid">the solid geometry</param>
+      /// <param name="basePlane">base plane of the profile</param>
+      /// <param name="planeOrigin">the plane origin</param>
+      /// <param name="tryNonPerpendicularExtrusion">option to try non perpendicular extrusion</param>
+      /// <param name="checkOrdinarity">option to accept only ordinarity extrusion</param>
+      /// <param name="extrusionEndFaces">output extrusion end faces</param>
+      /// <param name="faceBoundaries">output face boundaries</param>
+      /// <returns>trues if valid extrusion can be created</returns>
+      public static bool TryGetExtrusionEndFaces(Solid solid, Plane basePlane, XYZ planeOrigin, bool tryNonPerpendicularExtrusion,
+         bool checkOrdinarity, out IList<Face> extrusionEndFaces, out IList<CurveLoop> faceBoundaries)
+      {
+         extrusionEndFaces = new List<Face>();
+         faceBoundaries = new List<CurveLoop>();
+
+         Plane extrusionAnalyzerPlane = CreatePlaneByXYVectorsContainingPoint(basePlane.XVec, basePlane.YVec, planeOrigin);
+         ExtrusionAnalyzer elementAnalyzer = ExtrusionAnalyzer.Create(solid, extrusionAnalyzerPlane, basePlane.Normal);
+
+         XYZ baseLoopOffset = null;
+
+         if (!MathUtil.IsAlmostZero(elementAnalyzer.StartParameter))
+            baseLoopOffset = elementAnalyzer.StartParameter * basePlane.Normal;
+
+         Face extrusionBase = elementAnalyzer.GetExtrusionBase();
+
+         // Ensure there are only 2 unaligned faces and all the rest must be fully aligned
+         IDictionary<Face, ExtrusionAnalyzerFaceAlignment> allFaces = elementAnalyzer.CalculateFaceAlignment();
+         IList<Face> fullyAlignedFaces = new List<Face>();
+         IList<Face> candidateEndFaces = new List<Face>();
+         foreach (KeyValuePair<Face, ExtrusionAnalyzerFaceAlignment> item in allFaces)
+         {
+            if (item.Value == ExtrusionAnalyzerFaceAlignment.FullyAligned)
+            {
+               // For ordinary extrusion, there will be no unaligned faces. The end faces of extrusion should be fully aligned. 
+               //   The idetification will be based on their normal = the extrusion base plane normal
+               if (!tryNonPerpendicularExtrusion
+                  && (item.Key.ComputeNormal(UV.Zero).IsAlmostEqualTo(basePlane.Normal) || item.Key.ComputeNormal(UV.Zero).IsAlmostEqualTo(basePlane.Normal.Negate())))
+                  candidateEndFaces.Add(item.Key);
+               else
+                  fullyAlignedFaces.Add(item.Key);
+            }
+            else if (tryNonPerpendicularExtrusion && item.Value == ExtrusionAnalyzerFaceAlignment.Unaligned)
+               candidateEndFaces.Add(item.Key);
+         }
+
+         if (candidateEndFaces.Count != 2)
+            return false;
+
+         if (checkOrdinarity && (allFaces.Count - fullyAlignedFaces.Count - candidateEndFaces.Count > 0))
+            return false;
+
+         if (!MathUtil.IsAlmostEqual(candidateEndFaces[0].Area, candidateEndFaces[1].Area))
+            return false;
+
+         // All faces will be planar at this time
+         XYZ f1Normal = candidateEndFaces[0].ComputeNormal(new UV(0, 0));
+         XYZ f2Normal = candidateEndFaces[1].ComputeNormal(new UV(0, 0));
+         if (!f1Normal.IsAlmostEqualTo(f2Normal) && !f1Normal.IsAlmostEqualTo(f2Normal.Negate()))
+            return false;
+
+         HashSet<Face> adjoiningFaces = new HashSet<Face>();
+         EdgeArray faceOuterBoundary = candidateEndFaces[0].EdgeLoops.get_Item(0);
+         double f1Perimeter = 0;
+         foreach (Edge edge in faceOuterBoundary)
+         {
+            Face adjoiningFace = edge.GetFace(1);
+            if (adjoiningFace.Equals(candidateEndFaces[0]))
+               adjoiningFace = edge.GetFace(0);
+            adjoiningFaces.Add(adjoiningFace);
+            f1Perimeter += edge.AsCurve().Length;
+         }
+
+         faceOuterBoundary = candidateEndFaces[1].EdgeLoops.get_Item(0);
+         double f2Perimeter = 0;
+         foreach (Edge edge in faceOuterBoundary)
+         {
+            Face adjoiningFace = edge.GetFace(1);
+            if (adjoiningFace.Equals(candidateEndFaces[0]))
+               adjoiningFace = edge.GetFace(0);
+            if (adjoiningFaces.Contains(adjoiningFace))
+               adjoiningFaces.Remove(adjoiningFace);
+            f2Perimeter += edge.AsCurve().Length;
+         }
+
+         if (!MathUtil.IsAlmostEqual(f1Perimeter, f2Perimeter) && adjoiningFaces.Count > 0)
+            return false;
+
+         IList<FaceBoundaryType> faceBoundaryTypes;
+         faceBoundaries = GetFaceBoundaries(candidateEndFaces[0], XYZ.Zero, out faceBoundaryTypes);
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && faceBoundaryTypes.Contains(FaceBoundaryType.Complex))
+            return false;
+
+         extrusionEndFaces.Add(candidateEndFaces[0]);
+         extrusionEndFaces.Add(candidateEndFaces[1]);
+
+         return true;
+      }
+
+      /// <summary>
       /// Function to get ExtrusionBase profile. It is used especially in IFC4 Reference View because of limitation of geometry in RV. When a structural member
-      ///   object is exported as tessellated geometry, profile information is still needed for a valid IfcMaterialProfile. This function does it 
+      /// object is exported as tessellated geometry, profile information is still needed for a valid IfcMaterialProfile. This function does it 
       /// </summary>
       /// <param name="exporterIFC">exporterIFC</param>
       /// <param name="solid">the solid geometry</param>
@@ -3963,90 +4140,14 @@ namespace Revit.IFC.Export.Utility
          out IList<Face> extrusionEndFaces, bool tryNonPerpendicularExtrusion = false)
       {
          IFCAnyHandle extrudedAreaProfile = null;
-         extrusionEndFaces = new List<Face>();
+         IList<CurveLoop> faceBoundaries = null;
+
+         if (!TryGetExtrusionEndFaces(solid, basePlane, planeOrigin, tryNonPerpendicularExtrusion,
+            checkOrdinarity: false, out extrusionEndFaces, out faceBoundaries))
+            return extrudedAreaProfile;
 
          try
          {
-            Plane extrusionAnalyzerPlane = GeometryUtil.CreatePlaneByXYVectorsContainingPoint(basePlane.XVec, basePlane.YVec, planeOrigin);
-            ExtrusionAnalyzer elementAnalyzer = ExtrusionAnalyzer.Create(solid, extrusionAnalyzerPlane, basePlane.Normal);
-
-            XYZ baseLoopOffset = null;
-
-            if (!MathUtil.IsAlmostZero(elementAnalyzer.StartParameter))
-               baseLoopOffset = elementAnalyzer.StartParameter * basePlane.Normal;
-
-            Face extrusionBase = elementAnalyzer.GetExtrusionBase();
-
-            // 1. Ensure there are only 2 unaligned faces and all the rest must be fully aligned
-            IDictionary<Face, ExtrusionAnalyzerFaceAlignment> allFaces = elementAnalyzer.CalculateFaceAlignment();
-            IList<Face> fullyAlignedFaces = new List<Face>();
-            IList<Face> candidateEndFaces = new List<Face>();
-            foreach (KeyValuePair<Face, ExtrusionAnalyzerFaceAlignment> item in allFaces)
-            {
-               if (item.Value == ExtrusionAnalyzerFaceAlignment.FullyAligned)
-               {
-                  // For ordinary extrusion, there will be no unaligned faces. The end faces of extrusion should be fully aligned. 
-                  //   The idetification will be based on their normal = the extrusion base plane normal
-                  if (!tryNonPerpendicularExtrusion
-                     && (item.Key.ComputeNormal(UV.Zero).IsAlmostEqualTo(basePlane.Normal) || item.Key.ComputeNormal(UV.Zero).IsAlmostEqualTo(basePlane.Normal.Negate())))
-                     candidateEndFaces.Add(item.Key);
-                  else
-                     fullyAlignedFaces.Add(item.Key);
-               }
-               else if (tryNonPerpendicularExtrusion && item.Value == ExtrusionAnalyzerFaceAlignment.Unaligned)
-                  candidateEndFaces.Add(item.Key);
-            }
-
-            if (candidateEndFaces.Count != 2)
-               return extrudedAreaProfile;
-
-            //if (allFaces.Count - fullyAlignedFaces.Count - candidateEndFaces.Count > 0)
-            //   return extrudedAreaProfile;
-
-            if (!MathUtil.IsAlmostEqual(candidateEndFaces[0].Area, candidateEndFaces[1].Area))
-               return extrudedAreaProfile;
-
-            // All faces will be planar at this time
-            XYZ f1Normal = candidateEndFaces[0].ComputeNormal(new UV(0, 0));
-            XYZ f2Normal = candidateEndFaces[1].ComputeNormal(new UV(0, 0));
-            if (!f1Normal.IsAlmostEqualTo(f2Normal) && !f1Normal.IsAlmostEqualTo(f2Normal.Negate()))
-               return extrudedAreaProfile;
-
-            HashSet<Face> adjoiningFaces = new HashSet<Face>();
-            EdgeArray faceOuterBoundary = candidateEndFaces[0].EdgeLoops.get_Item(0);
-            double f1Perimeter = 0;
-            foreach (Edge edge in faceOuterBoundary)
-            {
-               Face adjoiningFace = edge.GetFace(1);
-               if (adjoiningFace.Equals(candidateEndFaces[0]))
-                  adjoiningFace = edge.GetFace(0);
-               adjoiningFaces.Add(adjoiningFace);
-               f1Perimeter += edge.AsCurve().Length;
-            }
-
-            faceOuterBoundary = candidateEndFaces[1].EdgeLoops.get_Item(0);
-            double f2Perimeter = 0;
-            foreach (Edge edge in faceOuterBoundary)
-            {
-               Face adjoiningFace = edge.GetFace(1);
-               if (adjoiningFace.Equals(candidateEndFaces[0]))
-                  adjoiningFace = edge.GetFace(0);
-               if (adjoiningFaces.Contains(adjoiningFace))
-                  adjoiningFaces.Remove(adjoiningFace);
-               f2Perimeter += edge.AsCurve().Length;
-            }
-
-            if (!MathUtil.IsAlmostEqual(f1Perimeter, f2Perimeter) && adjoiningFaces.Count > 0)
-               return extrudedAreaProfile;
-
-            IList<FaceBoundaryType> faceBoundaryTypes;
-            IList<CurveLoop> faceBoundaries = GetFaceBoundaries(candidateEndFaces[0], XYZ.Zero, out faceBoundaryTypes);
-            if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && faceBoundaryTypes.Contains(FaceBoundaryType.Complex))
-               return extrudedAreaProfile;
-
-            extrusionEndFaces.Add(candidateEndFaces[0]);
-            extrusionEndFaces.Add(candidateEndFaces[1]);
-
             // For IFC4 RV, only IfcIndexedPolyCurve can be created, use CreateIFCCurveFromCurveLoop to create the IFC curve and use the default/identity transform for it
             IFCAnyHandle curveHandle = GeometryUtil.CreateCompositeOrIndexedCurve(exporterIFC, faceBoundaries[0].ToList(), Transform.Identity, faceBoundaries[0].GetPlane().Normal);
             if (faceBoundaries.Count == 1)
@@ -4383,52 +4484,58 @@ namespace Revit.IFC.Export.Utility
       {
          IList<Curve> curveList = new List<Curve>();
          // If all curve option is set, set all flags to true
-         if (allCurveType)
-         {
-            inclArc = true;
-            inclLine = true;
-            inclEllipse = true;
-            inclSpline = true;
-         }
-         else if (!allCurveType && !(inclArc || inclLine || inclEllipse || inclSpline))
-            return curveList;       // Nothing is marked included, return empty list
-
-         Document doc = element.Document;
-         if (element.LevelId == ElementId.InvalidElementId)
-            return curveList;
-
-         Level level = element.Document.GetElement(element.LevelId) as Level;
-         if (level.FindAssociatedPlanViewId() == ElementId.InvalidElementId)
-            return curveList;
-
-         ViewPlan planView = doc.GetElement(level.FindAssociatedPlanViewId()) as ViewPlan;
-
-         Options options = GeometryUtil.GetIFCExportGeometryOptions();
-         Options opt = new Options();
-         opt.View = planView;
-         opt.ComputeReferences = options.ComputeReferences;
-         opt.IncludeNonVisibleObjects = options.IncludeNonVisibleObjects;
+         if (!allCurveType && !(inclArc || inclLine || inclEllipse || inclSpline)) if (allCurveType)
+               return curveList;       // Nothing is marked included, return empty list
 
          IList<Curve> curveListCache;
-         if (ExporterCacheManager.Object2DCurvesCache.TryGetValue(element.Symbol.Id, out curveListCache))
-            return curveListCache;
-         GeometryElement geoms = element.Symbol.get_Geometry(opt);
-         foreach (GeometryObject geomObj in geoms)
+         if (!ExporterCacheManager.Object2DCurvesCache.TryGetValue(element.Symbol.Id, out curveListCache))
          {
-            if (inclArc && geomObj is Arc)
-               curveList.Add(geomObj as Arc);
+            Document doc = element.Document;
+            if (element.LevelId == ElementId.InvalidElementId)
+               return curveList;
 
-            if (inclLine && geomObj is Line)
-               curveList.Add(geomObj as Line);
+            Level level = element.Document.GetElement(element.LevelId) as Level;
+            if (level.FindAssociatedPlanViewId() == ElementId.InvalidElementId)
+               return curveList;
 
-            if (inclEllipse && geomObj is Ellipse)
-               curveList.Add(geomObj as Ellipse);
+            ViewPlan planView = doc.GetElement(level.FindAssociatedPlanViewId()) as ViewPlan;
 
-            if (inclSpline && (geomObj is HermiteSpline || geomObj is NurbSpline))
-               curveList.Add(geomObj as Curve);
+            Options defaultOptions = GetIFCExportGeometryOptions();
+            Options currentOptions = new Options();
+            currentOptions.View = planView;
+            currentOptions.ComputeReferences = defaultOptions.ComputeReferences;
+            currentOptions.IncludeNonVisibleObjects = defaultOptions.IncludeNonVisibleObjects;
+
+            curveListCache = new List<Curve>();
+
+            GeometryElement geoms = element.Symbol.get_Geometry(currentOptions);
+            foreach (GeometryObject geomObj in geoms)
+            {
+               if (geomObj is Curve)
+                  curveListCache.Add(geomObj as Curve);
+            }
+
+            // Add into the cache to reduce repeated efforts to get the 2D geometries for the same Symbol
+            ExporterCacheManager.Object2DCurvesCache.Add(element.Symbol.Id, curveListCache);
          }
-         // Add into the cache to reduce repeated efforts to get the 2D geometries for the same Symbol
-         ExporterCacheManager.Object2DCurvesCache.Add(element.Symbol.Id, curveList);
+
+         if (allCurveType)
+         {
+            return curveListCache;
+         }
+
+         foreach (Curve curve in curveListCache)
+         {
+            if (inclArc && curve is Arc)
+               curveList.Add(curve);
+            else if (inclLine && curve is Line)
+               curveList.Add(curve);
+            else if (inclEllipse && curve is Ellipse)
+               curveList.Add(curve);
+            else if (inclSpline && (curve is HermiteSpline || curve is NurbSpline))
+               curveList.Add(curve);
+         }
+
          return curveList;
       }
 

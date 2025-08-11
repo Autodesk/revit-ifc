@@ -1186,46 +1186,20 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The element id of the container.</returns>
       public static ElementId OverrideContainmentParameter(ExporterIFC exporterIFC, Element element, out IFCAnyHandle overrideContainerHnd)
       {
-         ElementId containerElemId = ElementId.InvalidElementId;
-         // Special case whether an object should be assigned to the Site or Building container
          overrideContainerHnd = null;
-         string containerOverrideName = null;
-         if (ParameterUtil.GetStringValueFromElement(element, "OverrideElementContainer", out containerOverrideName) == null)
-            ParameterUtil.GetStringValueFromElement(element, "IfcSpatialContainer", out containerOverrideName);
-         if (!string.IsNullOrEmpty(containerOverrideName))
-         {
-            if (containerOverrideName.Equals("IFCSITE", StringComparison.CurrentCultureIgnoreCase))
-            {
-               overrideContainerHnd = ExporterCacheManager.SiteHandle;
-               return containerElemId;
-            }
-            else if (containerOverrideName.Equals("IFCBUILDING", StringComparison.CurrentCultureIgnoreCase))
-            {
-               overrideContainerHnd = ExporterCacheManager.BuildingHandle;
-               return containerElemId;
-            }
 
-            // Find Level that is designated as the override by iterating through all the Levels for the name match
-            FilteredElementCollector collector = new FilteredElementCollector(element.Document);
-            ICollection<Element> collection = collector.OfClass(typeof(Level)).ToElements();
-            foreach (Element level in collection)
-            {
-               if (level.Name.Equals(containerOverrideName, StringComparison.CurrentCultureIgnoreCase))
-               {
-                  containerElemId = level.Id;
-                  break;
-               }
-            }
-            if (containerElemId != ElementId.InvalidElementId)
-            {
-               IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(exporterIFC, containerElemId);
-               if (levelInfo != null)
-                  overrideContainerHnd = levelInfo.GetBuildingStorey();
-               if (overrideContainerHnd != null)
-                  return containerElemId;
-            }
+         if (element == null)
+         {
+            return ElementId.InvalidElementId;
          }
 
+         // Special case whether an object should be assigned to the Site or Building container
+         if (GetStringValueFromElement(element, "OverrideElementContainer", out string containerOverrideName) == null)
+         {
+            GetStringValueFromElement(element, "IfcSpatialContainer", out containerOverrideName);
+         }
+
+         (ElementId containerElemId, overrideContainerHnd) = LevelUtil.FindContainer(exporterIFC, containerOverrideName);
          return containerElemId;
       }
 

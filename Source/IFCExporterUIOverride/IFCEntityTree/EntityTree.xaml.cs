@@ -55,6 +55,8 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       private static ISet<string> AllowedCategoriesForIfcAnnotation = new HashSet<string>();
 
+      private static string VersionForSession { get; set; } = IfcSchemaEntityTree.SchemaName(IFCVersion.IFC4x3);
+
       private static void InitAllowedCategoryIdsForIfcAnnotation()
       {
          if (AllowedCategoryIdsForIfcAnnotation.Count == 0)

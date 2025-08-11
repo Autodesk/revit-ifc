@@ -67,8 +67,7 @@ namespace Revit.IFC.Export.Exporter
 
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Map2DHandle))
             {
-               if (repMapList == null)
-                  repMapList = new List<IFCAnyHandle>();
+               repMapList ??= new List<IFCAnyHandle>();
                repMapList.Add(typeInfo.Map2DHandle);
             }
          }
@@ -141,10 +140,12 @@ namespace Revit.IFC.Export.Exporter
          if (familyInstance.Invisible || geometryElement == null)
             return;
 
-         // Don't export family instance if it has a curtain grid host; the host will be in charge of exporting.
+         // Skip exporting the family instance if it has a curtain grid host,
+         // as the host is responsible for export. Ensure the host itself is exported.
          Element host = familyInstance.Host;
-         if (CurtainSystemExporter.IsCurtainSystem(host) || 
+         if ((CurtainSystemExporter.IsCurtainSystem(host) ||
             CurtainSystemExporter.IsLegacyCurtainElement(host))
+            && ExporterCacheManager.NonSpatialElements.Contains(host.Id))
             return;
 
          FamilySymbol familySymbol = familyInstance.Symbol;
@@ -278,8 +279,7 @@ namespace Revit.IFC.Export.Exporter
 
             if (representations2D != null)
             {
-               if (origin == null)
-                  origin = ExporterUtil.CreateAxis2Placement3D(file);
+               origin ??= ExporterUtil.CreateAxis2Placement3D(file);
                foreach (IFCAnyHandle rep in representations2D)
                {
                   IFCAnyHandle currentOrigin = origin;
@@ -355,16 +355,16 @@ namespace Revit.IFC.Export.Exporter
                      if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
                      {
                         typeStyle = IFCInstanceExporter.CreateDoorStyle(file, familySymbol,
-                           guid, propertySets, repMapList, doorWindowInfo.DoorOperationTypeString,
+                           guid, propertySets, repMapList, doorWindowInfo?.DoorOperationTypeString,
                            DoorWindowUtil.GetDoorStyleConstruction(familyInstance),
                            paramTakesPrecedence, sizeable);
                      }
                      else
                      {
                         typeStyle = IFCInstanceExporter.CreateDoorType(file, familySymbol,
-                           guid, propertySets, repMapList, doorWindowInfo.PreDefinedType,
-                           doorWindowInfo.DoorOperationTypeString, paramTakesPrecedence,
-                           doorWindowInfo.UserDefinedOperationType);
+                           guid, propertySets, repMapList, doorWindowInfo?.PreDefinedType,
+                           doorWindowInfo?.DoorOperationTypeString, paramTakesPrecedence,
+                           doorWindowInfo?.UserDefinedOperationType);
                      }
                      break;
                   }
@@ -502,12 +502,14 @@ namespace Revit.IFC.Export.Exporter
          if (materialProfileSet == null)
             return false;
 
-         // RV does not support IfcMaterialProfileSetUsage, material assignment should be directly to
-         // the MaterialProfileSet.
+         IFCAnyHandle materialEntityToAssociate = materialProfileSet;
+
+         // RV does not support IfcMaterialProfileSetUsage, material assignment should be directly to the MaterialProfileSet.
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-            CategoryUtil.CreateMaterialProfileSetUsage(file, materialProfileSet, cardinalPoint);
-         else
-            CategoryUtil.CreateMaterialAssociation(instanceHandle, materialProfileSet);
+         {
+            materialEntityToAssociate = CategoryUtil.CreateMaterialProfileSetUsage(file, materialProfileSet, cardinalPoint);
+         }
+         CategoryUtil.CreateMaterialAssociation(instanceHandle, materialEntityToAssociate);
 
          return true;
       }
@@ -605,8 +607,9 @@ namespace Revit.IFC.Export.Exporter
          bool flipped = doorWindowInfo?.FlippedSymbol ?? false;
          ElementId overrideMaterialId = ExporterUtil.GetSingleMaterial(familyInstance);
 
+         bool containedInAssembly = ExporterUtil.IsContainedInAssembly(familyInstance);
          var typeKey = new TypeObjectKey(originalFamilySymbol.Id,
-            overrideLevelId, flipped, exportType, overrideMaterialId);
+            overrideLevelId, flipped, exportType, overrideMaterialId, containedInAssembly);
 
          FamilyTypeInfo currentTypeInfo = 
             ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
@@ -1047,8 +1050,10 @@ namespace Revit.IFC.Export.Exporter
                }
 
                if (!addedMaterialAssociation)
-                  CategoryUtil.CreateMaterialAssociation(exporterIFC, typeStyle, typeInfo.MaterialIdList);
-
+               {
+                  Element elementType = doc.GetElement(familyInstance.GetTypeId());
+                  CategoryUtil.CreateMaterialAssociation(exporterIFC, elementType, typeStyle, typeInfo.MaterialIdList);
+               }
                ClassificationUtil.CreateClassification(exporterIFC, file, familySymbol, typeStyle);        // Create other generic classification from ClassificationCode(s)
                ClassificationUtil.CreateUniformatClassification(exporterIFC, file, originalFamilySymbol, typeStyle);
             }
@@ -1163,32 +1168,40 @@ namespace Revit.IFC.Export.Exporter
 
             // Adjust the Origin is in the Family Instance Trf in the Z direction only.
             // For BReps and Tessellations, retrieve an adjustment using the FamilySymbol origin.
-            XYZ adjustedOrigin = trf.Origin;
+            double newOffset = trf.Origin.Z;
             if (!string.IsNullOrEmpty(shapeType) && (shapeType.Contains("Brep") || shapeType.Equals("Tessellation")))
             {
                LocationPoint loc = familyInstance.Location as LocationPoint;
                if (loc != null)
                {
-                  //XYZ familyInstanceAssemblyOffset = exporterIFC.GetFamilyInstanceAssemblyOffset(familyInstance);
-                  XYZ familyInstanceAssemblyOffset = XYZ.Zero;
-                  LocationPoint familySymbolLocation = familyInstance.Symbol.Location as LocationPoint;
-                  if (familySymbolLocation != null)
-                     familyInstanceAssemblyOffset = XYZ.Zero - familySymbolLocation.Point;
-                  adjustedOrigin = new XYZ(trf.Origin.X, trf.Origin.Y, loc.Point.Z + familyInstanceAssemblyOffset.Z);
+                  newOffset = loc.Point.Z;
+
+                  // Apply only when the familyInstance tranformation normal is vertical.
+                  if (MathUtil.IsAlmostEqual(Math.Abs(trf.BasisZ.DotProduct(XYZ.BasisZ)), 1.0))
+                  {
+                     //XYZ familyInstanceAssemblyOffset = exporterIFC.GetFamilyInstanceAssemblyOffset(familyInstance);
+                     XYZ familyInstanceAssemblyOffset = XYZ.Zero;
+                     LocationPoint familySymbolLocation = familyInstance.Symbol.Location as LocationPoint;
+                     if (familySymbolLocation != null)
+                        familyInstanceAssemblyOffset = XYZ.Zero - familySymbolLocation.Point;
+                     
+                     newOffset += (trf.BasisZ.Z > MathUtil.Eps()) ?
+                        familyInstanceAssemblyOffset.Z : -familyInstanceAssemblyOffset.Z;
+                  }
                }
                else
                {
                   BoundingBoxXYZ bbox = familyInstance.get_BoundingBox(null);
                   if (bbox != null)
                   {
-                     adjustedOrigin = new XYZ(trf.Origin.X, trf.Origin.Y, bbox.Min.Z);
+                     newOffset = bbox.Min.Z;
                   }
                }
 
                // The current trf includes a style transformation derived from ExtrusionCreationData. 
                // But it was not utilized for representation creation in Brep/Tessellation cases, 
                // using the original coordinates instead, to avoid potential incorrect coordinates.
-               trf.Origin = adjustedOrigin;
+               trf.Origin = new XYZ(originalTrf.Origin.X, originalTrf.Origin.Y, newOffset);
             }
          }
 
@@ -1265,8 +1278,9 @@ namespace Revit.IFC.Export.Exporter
                            wrapper, setter, extraParams, instanceGUID, ownerHistory, exportParts ? null : repHnd, overrideLocalPlacement);
 
                         IFCAnyHandle placementToUse = GetPlacementToUse(file, instanceHandle, localPlacement, extraParams, originalTrf, typeInfo.StyleTransform, useInstanceGeometry);
+                        Transform offsetTransformToUse = GetOffsetTransformtoUse(offsetTransform, setter.Offset, useInstanceGeometry);
 
-                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransform,
+                        OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, familyInstance, extraParams, offsetTransformToUse,
                               exporterIFC, placementToUse, setter, wrapper);
                         wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
 
@@ -1293,14 +1307,17 @@ namespace Revit.IFC.Export.Exporter
 
                         IFCAnyHandle doorWindowLocalPlacement = !IFCAnyHandleUtil.IsNullOrHasNoValue(overrideLocalPlacement) ?
                               overrideLocalPlacement : localPlacement;
+
+                        bool hasType = !IFCAnyHandleUtil.IsNullOrHasNoValue(typeInfo.Style);
+
                         if (exportType.ExportType == IFCEntityType.IfcDoorType || exportType.ExportInstance == IFCEntityType.IfcDoor)
                            instanceHandle = IFCInstanceExporter.CreateDoor(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                               doorWindowLocalPlacement, repHnd, height, width, doorWindowInfo.PreDefinedType,
-                              doorWindowInfo.DoorOperationTypeString, doorWindowInfo.UserDefinedOperationType);
+                              hasType ? null : doorWindowInfo.DoorOperationTypeString, doorWindowInfo.UserDefinedOperationType);
                         else
                            instanceHandle = IFCInstanceExporter.CreateWindow(exporterIFC, familyInstance, instanceGUID, ownerHistory,
                               doorWindowLocalPlacement, repHnd, height, width, doorWindowInfo.PreDefinedType, DoorWindowUtil.GetIFCWindowPartitioningType(originalFamilySymbol),
-                              doorWindowInfo.UserDefinedPartitioningType);
+                              hasType ? null : doorWindowInfo.UserDefinedPartitioningType);
                         wrapper.AddElement(familyInstance, instanceHandle, setter, extraParams, true, exportType);
 
                         SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, instanceHandle, familyInstance.Id,
@@ -1449,7 +1466,6 @@ namespace Revit.IFC.Export.Exporter
                {
                   if (exportParts)
                      PartExporter.ExportHostPart(exporterIFC, familyInstance, instanceHandle, familyProductWrapper, setter, null, overrideLevelId);
-                  //PartExporter.ExportHostPart(exporterIFC, familyInstance, instanceHandle, familyProductWrapper, setter, setter.LocalPlacement, overrideLevelId);
 
                   if (ElementFilteringUtil.IsMEPType(exportType) || ElementFilteringUtil.ProxyForMEPType(familyInstance, exportType))
                   {
@@ -1481,7 +1497,7 @@ namespace Revit.IFC.Export.Exporter
                      else
                      {
                         // Create material association in case if bodyData is null
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, typeInfo.MaterialIdList);
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, familyInstance, instanceHandle, typeInfo.MaterialIdList);
                      }
                   }
 
@@ -1800,11 +1816,8 @@ namespace Revit.IFC.Export.Exporter
       static StreamWriter outFile = null;
       public static void PrintDbgInfo(params string[] inputArgs)
       {
-         if (outFile == null)
-         {
-            outFile = new StreamWriter(@"e:\temp\debug2dinfo.txt");
-         }
-
+         outFile ??= new StreamWriter(@"e:\temp\debug2dinfo.txt");
+         
          string data = "\t\t";
          foreach (string inputArg in inputArgs)
             data += " " + inputArg;

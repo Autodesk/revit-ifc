@@ -17,10 +17,10 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\API\2025\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPIIFC.dll</HintPath>
+      <HintPath>..\..\..\API\2025\RevitAPIIFC.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

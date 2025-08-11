@@ -45,8 +45,7 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
-      public IDictionary<IFCAnyHandle, ISet<IFCAnyHandle>> Cache { get; } =
-         new SortedDictionary<IFCAnyHandle, ISet<IFCAnyHandle>>(new IFCAnyHandleComparer());
+      public SortedDictionary<IFCAnyHandle, ISet<IFCAnyHandle>> Cache { get; } = new(new IFCAnyHandleComparer());
 
       public ICollection<IFCAnyHandle> Keys { get { return Cache.Keys; } }
       
@@ -66,8 +65,7 @@ namespace Revit.IFC.Export.Utility
          }
          else
          {
-            HashSet<IFCAnyHandle> products = new HashSet<IFCAnyHandle>();
-            products.Add(product);
+            HashSet<IFCAnyHandle> products = new() { product };
             Cache[handle] = products;
          }
       }
@@ -98,6 +96,11 @@ namespace Revit.IFC.Export.Utility
             return null;
 
          return ExporterUtil.CleanRefObjects(cacheHandles);
+      }
+
+      public virtual void Clear()
+      {
+         Cache.Clear();
       }
    }
 }

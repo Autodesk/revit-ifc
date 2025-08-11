@@ -1,11 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.Serialization;
-using System.Xml;
 using Newtonsoft.Json;
 
 namespace Revit.IFC.Export.Utility
@@ -83,7 +77,7 @@ namespace Revit.IFC.Export.Utility
          /// <summary>
          /// Pset list for MVD
          /// </summary>
-         public IList<string> PropertySetList { get; set; } = new List<string>();
+         public List<string> PropertySetList { get; set; } = new();
 
          /// <summary>
          /// Entity list for MVD
@@ -91,8 +85,8 @@ namespace Revit.IFC.Export.Utility
          public IList<string> EntityList { get; set; } = new List<string>();
       }
 
-      IDictionary<string, IFCEntityAndPsetList> CertifiedEntityAndPsetDict { get; set; } = new Dictionary<string, IFCEntityAndPsetList>();
-
+      Dictionary<string, IFCEntityAndPsetList> CertifiedEntityAndPsetDict { get; set; } = new();
+      
       /// <summary>
       /// IFCCertifiedEntitiesAndPSets Constructor
       /// </summary>
@@ -139,15 +133,10 @@ namespace Revit.IFC.Export.Utility
          if (CertifiedEntityAndPsetDict.Count == 0)
             return true;
          IFCEntityAndPsetList theList;
-         if (CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
-         {
-            if (theList.PsetIsInTheList(psetName))
-               return true;
-            else
-               return false;
-         }
-         else
+         if (!CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
             return true;
+
+         return theList.PsetIsInTheList(psetName);
       }
 
       /// <summary>
@@ -162,15 +151,10 @@ namespace Revit.IFC.Export.Utility
          if (CertifiedEntityAndPsetDict.Count == 0)
             return true;
          IFCEntityAndPsetList theList;
-         if (CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
-         {
-            if (theList.EntityIsInTheList(psetName))
-               return true;
-            else
-               return false;
-         }
-         else
+         if (!CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
             return true;
+
+         return theList.EntityIsInTheList(psetName);
       }
 
       /// <summary>
@@ -196,15 +180,10 @@ namespace Revit.IFC.Export.Utility
          if (CertifiedEntityAndPsetDict.Count == 0)
             return true;
          IFCEntityAndPsetList theList;
-         if (CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
-         {
-            if (theList.EntityIsInTheList(entityName))
-               return true;
-            else
-               return false;
-         }
-         else
+         if (!CertifiedEntityAndPsetDict.TryGetValue(mvdName, out theList))
             return true;
+
+         return theList.EntityIsInTheList(entityName);
       }
    }
 }

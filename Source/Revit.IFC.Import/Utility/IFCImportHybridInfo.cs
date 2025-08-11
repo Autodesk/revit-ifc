@@ -782,12 +782,21 @@ namespace Revit.IFC.Import.Utility
       /// Retrieves the ElementId for an IFC entity, based on the STEP Id of the entity.
       /// </summary>
       /// <param name="stepId">STEP Id of the IFC entity.</param>
-      /// <returns>ElementId of the IFC entity, or ElementId.InvalidElementId if not in the HybridMap, or null if Hybrid IFC Import not running.</returns>
+      /// <returns>ElementId of the IFC entity, or ElementId.InvalidElementId if not in the HybridMap, or null if Hybrid IFC Import not running, or stepId is invalid.</returns>
       public static ElementId GetHybridMapInformation(int stepId)
       {
-         if (!Importer.TheOptions.IsHybridImport || Importer.TheHybridInfo?.HybridMap == null || (stepId <= 0))
+         if (!Importer.TheOptions.IsHybridImport || (Importer.TheHybridInfo?.HybridMap == null))
+         {
+            Importer.TheLog.LogWarning(-1, "Trying to get Hybrid Map Information when Hybrid Import not running.", true);
             return null;
+         }
 
+         if (stepId <= 0)
+         {
+            Importer.TheLog.LogWarning(-1, "Trying to get Hybrid Map Information for Invalid STEP Id.", true);
+            return null;
+         }
+         
          string stepIdAsString = stepId.ToString();
          if (Importer.TheHybridInfo.HybridMap.TryGetValue(stepIdAsString, out ElementId hybridElementId))
          {

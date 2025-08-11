@@ -136,5 +136,12 @@ namespace Revit.IFC.Export.Utility
             relatedObjects.Add(instanceHandle);
          }
       }
+
+      public override void Clear()
+      {
+         MatConstituentSetDictionary.Clear();
+         ElementIdToHandle.Clear();
+         base.Clear();
+      }
    }
 }

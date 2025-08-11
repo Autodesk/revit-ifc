@@ -178,6 +178,8 @@ namespace Revit.IFC.Import.Data
          {
             if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcPolygonalFaceSet))
                return IFCPolygonalFaceSet.ProcessIFCPolygonalFaceSet(ifcRepresentationItem);
+            if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC4) && IFCAnyHandleUtil.IsSubTypeOf(ifcRepresentationItem, IFCEntityType.IfcIndexedPolygonalFace))
+               return IFCIndexedPolygonalFace.ProcessIFCIndexedPolygonalFace(ifcRepresentationItem);
          }
          catch (Exception ex)
          {

@@ -25,11 +25,6 @@
      <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj" />
      <ProjectReference Include="..\Revit.IFC.Export\Revit.IFC.Export.csproj" />
    </ItemGroup>
-   <ItemGroup>
-     <Reference Include="RevitAPI">
-       <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPI.dll</HintPath>
-     </Reference>
-   </ItemGroup>
   
    <ItemGroup>
          <PackageReference Include="Antlr4.Runtime">
@@ -42,6 +37,11 @@
      <Page Include="IFCEntityListWin.xaml" />
      <Page Include="MainWindow.xaml" />
      <Page Include="ParameterExpr\ExprTester.xaml" />
+   </ItemGroup>
+   <ItemGroup>
+     <Reference Include="RevitAPI">
+       <HintPath>..\..\..\API\2025\RevitAPI.dll</HintPath>
+     </Reference>
    </ItemGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.targets" />
 

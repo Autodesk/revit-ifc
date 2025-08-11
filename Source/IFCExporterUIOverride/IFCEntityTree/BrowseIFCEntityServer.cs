@@ -179,7 +179,11 @@ namespace BIM.IFC.Export.UI.IFCEntityTree
       /// <returns>the server guid</returns>
       public Guid GetServerId()
       {
+#if IFC_OPENSOURCE
+         return new Guid("{22CAF64D-50B7-4C9E-9C4B-D4D92041650E}");
+#else
          return new Guid("{DB5C5B21-BB95-4520-972D-ED6889A7A543}");
+#endif
       }
 
       /// <summary>

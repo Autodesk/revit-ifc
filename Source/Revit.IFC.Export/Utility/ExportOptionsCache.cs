@@ -111,9 +111,10 @@ namespace Revit.IFC.Export.Utility
 
       public IDictionary<long, string> FederatedLinkInfo { get; set; } = null;
 
-      /// Private default constructor.
+      /// <summary>
+      /// Public default constructor.
       /// </summary>
-      private ExportOptionsCache()
+      public ExportOptionsCache()
       {
       }
 
@@ -126,8 +127,8 @@ namespace Revit.IFC.Export.Utility
          XYZ retVal = null;
 
          //split string to components by removing seprator characters
-         string[] separator = new string[] { ",", "(", ")", " " };
-         string[] sList = new string[3] { "", "", "" };
+         string[] separator = [ ",", "(", ")", " " ];
+         string[] sList = [ "", "", "" ];
          sList = value.Split(separator, StringSplitOptions.RemoveEmptyEntries);
          //should remain only 3 values if everything is OK
 
@@ -140,7 +141,7 @@ namespace Revit.IFC.Export.Utility
             double valY = double.Parse(sList[1], CultureInfo.InvariantCulture);
             double valZ = double.Parse(sList[2], CultureInfo.InvariantCulture);
             //if no exception then put it in return value
-            retVal = new XYZ(valX, valY, valZ);
+            retVal = new(valX, valY, valZ);
          }
          catch (FormatException)
          {
@@ -160,11 +161,11 @@ namespace Revit.IFC.Export.Utility
          try
          {
             //spit string by separator; it should remain 4 items
-            string[] separator = new string[] { ";" };
-            string[] sList = new string[4] { "", "", "", "" };
+            string[] separator = [ ";" ];
+            string[] sList = [ "", "", "", "" ];
 
             sList = value.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            Transform tr = new Transform(Transform.Identity);
+            Transform tr = new(Transform.Identity);
             // parse each item in part
             tr.Origin = ParseXYZ(sList[0]);
             tr.BasisX = ParseXYZ(sList[1]);
@@ -199,10 +200,11 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
-      private static IList<ElementId> ParseElementIds(string elementsToExportValue)
+      private static List<ElementId> ParseElementIds(string elementsToExportValue)
       {
          string[] elements = elementsToExportValue.Split(';');
-         List<ElementId> ids = new List<ElementId>();
+         List<ElementId> ids = [];
+
          foreach (string element in elements)
          {
             ElementId elementId;
@@ -226,8 +228,7 @@ namespace Revit.IFC.Export.Utility
          if (federatedInfoString == null)
             return null;
 
-         IDictionary<long, string> federatedLinkInfo = 
-            new SortedDictionary<long, string>();
+         SortedDictionary<long, string> federatedLinkInfo = new();
 
          string[] idsAndGuids = federatedInfoString.Split(';');
          foreach (string idAndGuid in idsAndGuids)
@@ -264,7 +265,7 @@ namespace Revit.IFC.Export.Utility
       {
          IDictionary<string, string> options = exporterIFC.GetOptions();
 
-         ExportOptionsCache cache = new ExportOptionsCache();
+         ExportOptionsCache cache = new();
          cache.FileVersion = exporterIFC.FileVersion;
          cache.FullFileName = exporterIFC.FileName;
          cache.FileNameOnly = Path.GetFileName(cache.FullFileName);
@@ -376,8 +377,7 @@ namespace Revit.IFC.Export.Utility
          {
             ElementId elementId = ParseElementId(singleElementValue);
 
-            List<ElementId> ids = new List<ElementId>();
-            ids.Add(elementId);
+            List<ElementId> ids = [ elementId ];
             cache.ElementsForExport = ids;
          }
          else if (options.TryGetValue("SingleElementGeometry", out string singleElementGeometryValue))
@@ -390,7 +390,7 @@ namespace Revit.IFC.Export.Utility
          }
          else if (options.TryGetValue("ElementsForExport", out string elementsToExportValue))
          {
-            IList<ElementId> ids = ParseElementIds(elementsToExportValue);
+            List<ElementId> ids = ParseElementIds(elementsToExportValue);
             cache.ElementsForExport = ids;
          }
          else
@@ -457,7 +457,7 @@ namespace Revit.IFC.Export.Utility
          // Set the phase we are exporting
          cache.ActivePhaseId = ElementId.InvalidElementId;
 
-         String activePhaseElementValue;
+         string activePhaseElementValue;
          if (options.TryGetValue("ActivePhaseId", out activePhaseElementValue))
             cache.ActivePhaseId = ParseElementId(activePhaseElementValue);
 
@@ -590,9 +590,9 @@ namespace Revit.IFC.Export.Utility
                break;
             }
          }
+
          // Ensure the cache is set to the default (ActiveProjectLocation) if not set
-         if (ExporterCacheManager.SelectedSiteProjectLocation == null)
-            ExporterCacheManager.SelectedSiteProjectLocation = document.ActiveProjectLocation;
+         ExporterCacheManager.SelectedSiteProjectLocation ??= document.ActiveProjectLocation;
       }
 
       /// <summary>

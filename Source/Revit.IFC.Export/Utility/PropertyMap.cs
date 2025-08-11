@@ -225,7 +225,7 @@ namespace Revit.IFC.Export.Utility
       /// </returns>
       public TEnum GetIfcPropertyAtOrDefault<TEnum>(int index, TEnum defaultValue) where TEnum : struct
       {
-         if ((IfcPropertyTypes?.Count ?? 0) == 0 || IfcPropertyTypes.Count >= index || index < 0)
+         if ((IfcPropertyTypes?.Count ?? 0) == 0 || IfcPropertyTypes.Count <= index || index < 0)
             return defaultValue;
 
          if (Enum.TryParse(IfcPropertyTypes[index], true, out TEnum t))

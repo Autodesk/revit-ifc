@@ -95,13 +95,10 @@ namespace Revit.IFC.Export.Exporter
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
             // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null))
             {
                IFCAnyHandle localPlacement = setter.LocalPlacement;
-               
+
                bool allowAdvancedCurve = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
                const GeometryUtil.TrimCurvePreference trimCurvePreference = GeometryUtil.TrimCurvePreference.UsePolyLineOrTrim;
 

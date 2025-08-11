@@ -403,8 +403,8 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle referenceSurfaceHandle = ExtrusionExporter.CreateSurfaceOfLinearExtrusionFromCurve(exporterIFC, directrix, axisLCS, 1.0, 1.0,
              out IFCAnyHandle curveHandle);
 
-         // Should this be moved up?  Check.
-         XYZ scaledOrigin = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, axisLCS.Origin);
+         XYZ axisLCSOrigin = AdjustSweptSolidOrigin(axisLCS.Origin, curveLoops[0], profileLCS);
+         XYZ scaledOrigin = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, axisLCSOrigin);
          XYZ scaledXDir = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, axisLCS.BasisX).Normalize();
          XYZ scaledNormal = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, axisLCS.BasisZ).Normalize();
 
@@ -616,14 +616,16 @@ namespace Revit.IFC.Export.Exporter
 
                for (int kk = 0; kk < numVertices; kk++)
                {
-                  IList<IFCAnyHandle> polyLoopHandles = new List<IFCAnyHandle>(4);
-                  polyLoopHandles.Add(secondLoop[kk]);
-                  polyLoopHandles.Add(secondLoop[(kk + 1) % numVertices]);
-                  polyLoopHandles.Add(firstLoop[(kk + 1) % numVertices]);
-                  polyLoopHandles.Add(firstLoop[kk]);
+                  IList<IFCAnyHandle> polyLoopHandles = new List<IFCAnyHandle>(4)
+                  {
+                     secondLoop[kk],
+                     secondLoop[(kk + 1) % numVertices],
+                     firstLoop[(kk + 1) % numVertices],
+                     firstLoop[kk]
+                  };
 
                   IFCAnyHandle face = BodyExporter.CreateFaceFromVertexList(file, polyLoopHandles);
-                  facetHnds.Add(face);
+                  facetHnds.AddIfNotNull(face);
                }
             }
          }
@@ -661,6 +663,31 @@ namespace Revit.IFC.Export.Exporter
          }
 
          return facetHnds;
+      }
+
+      /// <summary>
+      /// In case of circular swept area profile the LCS origin can be below or above the swept area solid symmetric plane 
+      /// (it depends on the start point of the circular profile).
+      /// It results in the solid being shifted in the direction of direcrix normal.
+      /// Here we correct the origin on the value calculated from the profile center and LCS origin
+      /// </summary>
+      /// <param name="origin">The LCS origin.</param>
+      /// <param name="curveLoop">The curve loop.</param>
+      /// <param name="profileLCS">The profile transformation.</param>
+      /// <returns>Adjusted origin.</returns>
+      private static XYZ AdjustSweptSolidOrigin(XYZ origin, CurveLoop curveLoop, Transform profileLCS)
+      {
+         if (curveLoop == null)
+            return origin;
+
+         if (!ExtrusionExporter.GetCenterAndRadiusOfCurveLoop(curveLoop, out XYZ profileCenter, out _))
+            return origin;
+
+         XYZ directrixNormal = profileLCS.BasisX;
+         double projectedDistance = directrixNormal.DotProduct(profileCenter - profileLCS.Origin);
+         XYZ correctionVector = 2.0 * directrixNormal * projectedDistance;
+
+         return origin + correctionVector;
       }
    }
 }

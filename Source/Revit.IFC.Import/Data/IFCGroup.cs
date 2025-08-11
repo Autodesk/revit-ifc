@@ -160,15 +160,14 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Indicates whether there should be a DirectShape container created for this IFCGroup or not.
-      /// Defaults to false.
+      /// Indicates whether this IfcGroup can result in a container DirectShape.
       /// </summary>
-      /// <returns>True if Direct Shape should be created, False otherwise.</returns>
-      public virtual bool CreateContainer() { return false; }
+      /// <returns>True if this IfcGroup can result in a DirectShape, False otherwise.</returns>
+      public virtual bool CanContainRelatedEntities => false;
 
       /// <summary>
       /// Create a DirectShape container for an IFC Group if the specific IFC Group requests it.
-      /// CreateContainer() -- indicates that the IFC Group may have a DirectShape.
+      /// CanContainRelatedEntitiess() -- Whether or not the IfcGroup may have a DirectShape that contains Related entities
       /// ContainerDuplicatesGeometry() -- Indicates that not only should a DirectShape be created, it should also have geometry.
       ///    This should be true in most cases, but can be governed by a specific API option (e.g., with IFCZones).
       /// ContainerFilteredEntity() -- This allows the IFCGroup to filter certain IFCEntities (e.g., only IFCZones consider IFCSpaces).
@@ -176,22 +175,28 @@ namespace Revit.IFC.Import.Data
       /// <param name="doc">Document containing new DirectShape.</param>
       protected override void Create(Document doc)
       {
-         // Only create DirectShape container when the specific IFC Group requests it.
-         //
-         if (CreateContainer())
+         if (CanContainRelatedEntities)
          {
-            // Hybrid IFC Import will duplicate geometry by creating references to the geometry.
-            if (Importer.TheOptions.IsHybridImport)
+            ElementId containerElementId = (IFCImportHybridInfo.GetHybridMapInformation(Id) ?? ElementId.InvalidElementId);
+            if (containerElementId != ElementId.InvalidElementId)
             {
-               CreatedElementId = Importer.TheHybridInfo?.CreateContainer(this);
+               // Case 1:  Found container entity in HybridMap --> just assign CreatedElementId.
+               Importer.TheLog.LogComment(Id, $"Found DirectShape Element in Hybrid Import for IfcGroup:  {containerElementId}", false);
+               CreatedElementId = containerElementId;
+            }
+            else if (Importer.TheOptions.IsHybridImport)
+            {
+               // Case 2:  Hybrid Import but container entity not in HybridMap.  related objects using IfcImportHybridInfo.CreateContainer().
+               CreatedElementId = Importer.TheHybridInfo.CreateContainer(this);
+               Importer.TheLog.LogComment(Id, $"Created new DirectShape Element in Hybrid Import for IfcGroup:  {CreatedElementId}", false);
             }
             else
             {
+               // Otherwse, not running Hybrid Import at all.  Just duplicate related objects.
                IList<GeometryObject> geometryObjects = new List<GeometryObject>();
 
                // As strange as it sounds, current behavior is for some IFCGroups to have no geometry.
                // If this is the case, do not create geometry.
-               // 
                if (ContainerDuplicatesGeometry())
                {
                   foreach (IFCObjectDefinition relatedObject in RelatedObjects)

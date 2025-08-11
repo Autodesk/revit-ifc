@@ -196,8 +196,9 @@ namespace Revit.IFC.Export.Exporter
 
          if (type != null)
          {
-            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType, ElementId.InvalidElementId);
-            
+            bool containedInAssembly = ExporterUtil.IsContainedInAssembly(element);
+            var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType, ElementId.InvalidElementId, containedInAssembly);
+
             FamilyTypeInfo currentTypeInfo = 
                ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
 

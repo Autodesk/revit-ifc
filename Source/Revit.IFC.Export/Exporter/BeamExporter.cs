@@ -346,7 +346,7 @@ namespace Revit.IFC.Export.Exporter
             // If we found solids and meshes, and they are all invisible, don't export the beam.
             // If we didn't find solids and meshes, we won't export the beam with ExportBeamAsStandardElement, but will allow the generic
             // family export routine to work.
-            if ((visibleGeomObjects == null || visibleGeomObjects.Count == 0) && (solids.Count > 0 || meshes.Count > 0))
+            if (((visibleGeomObjects?.Count ?? 0) == 0) && (solids.Count > 0 || meshes.Count > 0))
                return null;
          }
 
@@ -427,9 +427,7 @@ namespace Revit.IFC.Export.Exporter
             Transform orientTrf = canExportAxis ? axisInfo.LCSAsTransform : null;
 
             // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null, orientTrf, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, orientTrf))
             {
                IFCAnyHandle localPlacement = setter.LocalPlacement;
                using (IFCExportBodyParams extrusionCreationData = new IFCExportBodyParams())
@@ -508,7 +506,7 @@ namespace Revit.IFC.Export.Exporter
                      if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                         bodyExporterOptions.CollectMaterialAndProfile = false;
                      else
-                     bodyExporterOptions.CollectMaterialAndProfile = true;
+                        bodyExporterOptions.CollectMaterialAndProfile = true;
 
                      if (geomObjects != null && geomObjects.Count == 1 && geomObjects[0] is Solid)
                      {
@@ -543,7 +541,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
-                  beam = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, element, instanceGUID, 
+                  beam = IFCInstanceExporter.CreateGenericIFCEntity(exportType, exporterIFC, element, instanceGUID,
                      ExporterCacheManager.OwnerHistoryHandle, extrusionCreationData.GetLocalPlacement(), prodRep);
 
                   IFCAnyHandle mpSetUsage;
@@ -562,7 +560,7 @@ namespace Revit.IFC.Export.Exporter
                   PropertyUtil.CreateBeamColumnBaseQuantities(exporterIFC, beam, element, typeInfo, null);
 
                   if (materialIds.Count != 0)
-                     CategoryUtil.CreateMaterialAssociation(exporterIFC, beam, materialIds);
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, element, beam, materialIds);
 
                   // Register the beam's IFC handle for later use by truss and beam system export.
                   ExporterCacheManager.ElementToHandleCache.Register(element.Id, beam, exportType);

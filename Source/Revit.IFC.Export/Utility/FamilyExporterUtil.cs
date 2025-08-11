@@ -216,11 +216,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="extraParams">The extrusion creation data.</param>
       /// <param name="instanceGUID">The guid.</param>
       /// <param name="ownerHistory">The owner history handle.</param>
-      /// <param name="instanceName">The name.</param>
-      /// <param name="instanceDescription">The description.</param>
-      /// <param name="instanceObjectType">The object type.</param>
       /// <param name="productRepresentation">The representation handle.</param>
-      /// <param name="instanceTag">The tag for the entity, usually based on the element id.</param>
       /// <param name="overrideLocalPlacement">The local placement to use instead of the one in the placement setter, if appropriate.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle ExportGenericInstance(IFCExportInfoPair type,
@@ -424,7 +420,6 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
          IFCAnyHandle typeHandle = null;
 
-
          try
          {
             // Skip export type object that does not have associated IfcTypeObject
@@ -573,17 +568,22 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="solids">The list of solids, possibly empty.</param>
       /// <param name="meshes">The list of meshes, possibly empty.</param>
       /// <returns>The combined list of solids and meshes that are visible given category export settings and view visibility settings.</returns>
-      public static List<GeometryObject> RemoveInvisibleSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, ref IList<Solid> solids, ref IList<Mesh> meshes, 
+      public static List<GeometryObject> RemoveInvisibleSolidsAndMeshes(Document doc, ExporterIFC exporterIFC, 
+         ref IList<Solid> solids, ref IList<Mesh> meshes, 
          IList<Solid> excludeSolids = null)
       {
          // Remove excluded solids from the original list of solids
-         List<GeometryObject> geomObjectsIn = new List<GeometryObject>();
-         geomObjectsIn.AddRange(RemoveExcludedSolid(solids, excludeSolids));
+         List<GeometryObject> geomObjectsIn = [.. RemoveExcludedSolid(solids, excludeSolids)];
 
          if (meshes != null && meshes.Count > 0)
             geomObjectsIn.AddRange(meshes);
 
-         List<GeometryObject> geomObjectsOut = new List<GeometryObject>();
+         if (doc == null)
+         {
+            return geomObjectsIn;
+         }
+
+         List<GeometryObject> geomObjectsOut = [];
 
          View filterView = ExporterCacheManager.ExportOptionsCache.FilterViewForExport;
 

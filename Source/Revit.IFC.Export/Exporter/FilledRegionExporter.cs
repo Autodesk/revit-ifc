@@ -81,10 +81,7 @@ namespace Revit.IFC.Export.Exporter
             ElementId categoryId = CategoryUtil.GetSafeCategoryId(filledRegion);
 
             // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, filledRegion, out overrideContainerHnd);
-
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, filledRegion, null, orientTrf, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, filledRegion, orientTrf))
             {
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                int loopCount = sortedLoops.Count;

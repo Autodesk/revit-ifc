@@ -444,8 +444,12 @@ namespace Revit.IFC.Export.Utility
                if (MathUtil.IsAlmostZero(scaledWidth))
                   continue;
 
+               IFCData fractionData = null;
+               if (!MathUtil.IsAlmostZero(TotalThickness))
+                  fractionData = IFCDataUtil.CreateAsNormalisedRatioMeasure(scaledWidth / TotalThickness);
+
                IFCAnyHandle materialConstituent = IFCInstanceExporter.CreateMaterialConstituent(file, materialHnds[ii],
-                  name: layerName, description: description, category: category);
+                  name: layerName, description: description, category: category, fraction: fractionData);
                layers.Add(materialConstituent);
 
                IFCAnyHandle layerQtyHnd = IFCInstanceExporter.CreateQuantityLength(file, "Width", description, null, scaledWidth);

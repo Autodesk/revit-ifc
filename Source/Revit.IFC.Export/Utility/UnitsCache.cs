@@ -89,6 +89,14 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Removes associated UnitInfo from dictionary
+      /// </summary>
+      public void UnregisterUnitInfo(ForgeTypeId specTypeId)
+      {
+         m_unitInfoTable.Remove(specTypeId);
+      }
+
+      /// <summary>
       /// Extracts the unit handles to assign to a project 
       /// </summary>
       /// <returns>Unit handles set</returns>
@@ -156,6 +164,14 @@ namespace Revit.IFC.Export.Utility
       public void RegisterUserDefinedUnit(string unitName, IFCAnyHandle unitHnd)
       {
          this[unitName] = unitHnd;
+      }
+
+      public new void Clear()
+      {
+         m_unitInfoTable.Clear();
+         m_auxiliaryUnitCache.Clear();
+         m_derivedUnitElementCache.Clear();
+         base.Clear();
       }
 
       #region Scale/unscale methods

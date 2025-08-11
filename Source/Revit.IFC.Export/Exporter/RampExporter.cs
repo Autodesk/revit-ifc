@@ -458,7 +458,7 @@ namespace Revit.IFC.Export.Exporter
                            IFCAnyHandleUtil.OverrideNameAttribute(flightTypeHnd, flightName);
                            ExporterCacheManager.TypeRelationsCache.Add(flightTypeHnd, rampFlightHnd);
 
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, rampFlightHnd, bodyData.MaterialIds);
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, ramp, rampFlightHnd, bodyData.MaterialIds);
 
                            IFCAnyHandle psetRampFlightCommonHnd = CreatePSetRampFlightCommon(file, ramp, rampFlightIndex, flightItem.topFace);
 
@@ -525,7 +525,7 @@ namespace Revit.IFC.Export.Exporter
                            IFCAnyHandleUtil.OverrideNameAttribute(landingTypeHnd, landingName);
                            ExporterCacheManager.TypeRelationsCache.Add(landingTypeHnd, rampLandingHnd);
 
-                           CategoryUtil.CreateMaterialAssociation(exporterIFC, rampLandingHnd, bodyData.MaterialIds);
+                           CategoryUtil.CreateMaterialAssociation(exporterIFC, ramp, rampLandingHnd, bodyData.MaterialIds);
 
                            IFCAnyHandle psetSlabCommonHnd = CreatePSetRampLandingCommon(file, ramp, landingIndex);
 
@@ -581,7 +581,7 @@ namespace Revit.IFC.Export.Exporter
                         IFCAnyHandle rampHnd = IFCInstanceExporter.CreateRamp(exporterIFC, ramp, guid, ownerHistory,
                               localPlacement, representation, exportTypePair.GetPredefinedTypeOrDefault());
                         productWrapper.AddElement(ramp, rampHnd, placementSetter.LevelInfo, ecData, true, exportTypePair);
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, rampHnd, bodyData.MaterialIds);
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, ramp,rampHnd, bodyData.MaterialIds);
 
                         string typeGuid = GUIDUtil.CreateGUID(rampType);
                         IFCAnyHandle rampTypeHnd = IFCInstanceExporter.CreateGenericIFCType(exportTypePair,
@@ -597,7 +597,7 @@ namespace Revit.IFC.Export.Exporter
                         components.Add(containedRampHnd);
                         componentExtrusionData.Add(ecData);
                         //productWrapper.AddElement(containedRampHnd, placementSetter.LevelInfo, ecData, false);
-                        CategoryUtil.CreateMaterialAssociation(exporterIFC, containedRampHnd, bodyData.MaterialIds);
+                        CategoryUtil.CreateMaterialAssociation(exporterIFC, ramp, containedRampHnd, bodyData.MaterialIds);
 
                         string guid = GUIDUtil.CreateGUID(ramp);
                         IFCAnyHandle localPlacement = ecData.GetLocalPlacement();

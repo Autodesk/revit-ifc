@@ -1245,7 +1245,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             double netVolume = UnitUtil.ScaleVolume(unscaledArea * unscaledLength);
             if (!MathUtil.IsAlmostZero(netVolume))
             {
-               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "NetVolume", null, null, netVolume);
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "NetVolume", null, null, netVolume);
                quantityHnds.Add(quantityHnd);
             }
 
@@ -1262,7 +1262,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                double grossVolume = UnitUtil.ScaleVolume(unscaledArea * unscaledLength);
                if (!MathUtil.IsAlmostZero(grossVolume))
                {
-                  IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "GrossVolume", null, null, grossVolume);
+                  IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "GrossVolume", null, null, grossVolume);
                   quantityHnds.Add(quantityHnd);
                }
             }

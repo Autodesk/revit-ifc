@@ -332,7 +332,7 @@ namespace Revit.IFC.Export.Exporter
          GeometryElement geometryElement = partElement.get_Geometry(options);
          if (geometryElement == null)
             return null;
-
+         
          try
          {
             IFCFile file = exporterIFC.GetFile();
@@ -373,6 +373,7 @@ namespace Revit.IFC.Export.Exporter
                      geometryElement = SolidMeshGeometryInfo.GetTransformedGeometry(geometryElement, hostTrf.Inverse,
                         ExporterCacheManager.AllocatedGeometryObjectCache);
                   }
+                  
                   // The host placement setter has registered the transform. Since the part geometry is transformed relative to the host, 
                   //   the placement for the part needs to be inversed
                   if (hostElement is FamilyInstance)
@@ -445,7 +446,19 @@ namespace Revit.IFC.Export.Exporter
 
                      IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
-                     IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(exporterIFC, (hostElement != null) ? hostElement : partElement, out _);
+                     // Try to get the export type from the part's built-in parameters, and if that fails, from the host element.
+                     IFCExportInfoPair exportType = null;
+                     if (hostElement == null)
+                     {
+                        exportType = ExporterUtil.GetProductExportType(exporterIFC, partElement, out _);
+                     }
+                     else
+                     {
+                        exportType = ExporterUtil.GetExportTypeFromParameters(partElement, IFCEntityType.IfcProduct);
+                        if (exportType.IsUnKnown)
+                           exportType = ExporterUtil.GetProductExportType(exporterIFC, hostElement, out _);
+                     }
+
                      string ifcEnumType = exportType.GetPredefinedTypeOrDefault();
                      string partGUID = GUIDUtil.GenerateIFCGuidFrom(partElement, exportType);
                      IFCAnyHandle ifcPart = null;
@@ -523,7 +536,7 @@ namespace Revit.IFC.Export.Exporter
                      //Add the exported part to exported cache.
                      TraceExportedParts(partElement, partExportLevelId, standaloneExport ? ElementId.InvalidElementId : hostElement.Id);
 
-                     CategoryUtil.CreateMaterialAssociation(exporterIFC, ifcPart, bodyData.MaterialIds);
+                     CategoryUtil.CreateMaterialAssociation(exporterIFC, partElement, ifcPart, bodyData.MaterialIds);
                   }
                   else
                   {
@@ -731,7 +744,7 @@ namespace Revit.IFC.Export.Exporter
                   case MaterialLayerSetInfo.CompareTwoLists.ListsReversedEqual:
                      {
                         layersetInfoList = new List<MaterialLayerSetInfo.MaterialInfo>(layersetInfo.MaterialIds);
-                        layersetInfoList = layersetInfoList.Reverse().ToList();
+                        layersetInfoList.Reverse();
                         break;
                      }
                   case MaterialLayerSetInfo.CompareTwoLists.ListsUnequal:
@@ -743,7 +756,7 @@ namespace Revit.IFC.Export.Exporter
                         IList<ElementId> newMatInfoList = layersetInfoList.Where(x => !MathUtil.IsAlmostZero(x.Width)).Select(x => x.BaseMatId).ToList();
                         compStat = MaterialLayerSetInfo.CompareMaterialInfoList(newMatInfoList, matInfoList);
                         if (compStat == MaterialLayerSetInfo.CompareTwoLists.ListsReversedEqual)
-                           layersetInfoList = layersetInfoList.Reverse().ToList();
+                           layersetInfoList.Reverse();
                         break;
                      }
                   default:
@@ -1087,14 +1100,11 @@ namespace Revit.IFC.Export.Exporter
       private static bool ElementCanHaveMultipleComponents(Element hostElement)
       {
          // Currently only objects with multi-layer/structure are supported
-         if (hostElement is Floor
+         return hostElement is Floor
             || hostElement is RoofBase
             || hostElement is Ceiling
             || hostElement is Wall
-            || hostElement is FamilyInstance)
-            return true;
-         else
-            return false;
+            || hostElement is FamilyInstance;
       }
 
       /// <summary>
@@ -1234,6 +1244,7 @@ namespace Revit.IFC.Export.Exporter
             }
             levelRangePairList.Add(new KeyValuePair<ElementId, IFCRange>(orphanLevelId, highestRange));
          }
+
          if (levelRangePairList.Count > 0)
          {
             ExporterCacheManager.DummyHostCache.Register(hostElement.Id, levelRangePairList);
@@ -1253,7 +1264,7 @@ namespace Revit.IFC.Export.Exporter
          BoundingBoxXYZ boundingBox = part.get_BoundingBox(null);
 
          // The levels should have been sorted.
-         IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.BuildingStoriesByElevation;
+         IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.GetBuildingStoriesByElevation();
          // Find the nearest bottom level.
          foreach (ElementId levelId in levelIds)
          {

@@ -286,11 +286,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle buildingElementProxy = null;
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            // Check for containment override
-            IFCAnyHandle overrideContainerHnd = null;
-            ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, element, out overrideContainerHnd);
-
-            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
+            using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, element, null))
             {
                using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                {
@@ -432,7 +428,7 @@ namespace Revit.IFC.Export.Exporter
                return null;   // Rebar doesn't create a group.
             }
 
-            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, rebarElement))
+            using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, rebarElement, null))
             {
                IFCAnyHandle prodRep = null;
 

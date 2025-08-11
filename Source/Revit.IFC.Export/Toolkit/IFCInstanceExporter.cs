@@ -25,8 +25,6 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using Revit.IFC.Export.Exporter.PropertySet;
-using System.Xml.Linq;
 
 namespace Revit.IFC.Export.Toolkit
 {
@@ -3948,6 +3946,37 @@ namespace Revit.IFC.Export.Toolkit
          }
       }
 
+      private static void SetSpecificEntityData(IFCAnyHandle genericIFCEntity, IFCEntityType entityType, Element element)
+      {
+         switch (entityType)
+         {
+            case IFCEntityType.IfcElementAssembly:
+               {
+                  IFCAnyHandleUtil.SetAttribute(genericIFCEntity, "AssemblyPlace", IFCAssemblyPlace.NotDefined);
+                  return;
+               }
+            case IFCEntityType.IfcSite:
+               {
+                  IFCAnyHandleUtil.SetAttribute(genericIFCEntity, "CompositionType", IFCElementComposition.Partial);
+                  return;
+               }
+            case IFCEntityType.IfcMechanicalFastener:
+               {
+                  if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
+                  {
+                     // In IFC4 NominalDiameter and NominalLength attributes have been deprecated. PredefinedType attribute was added.
+                     IFCAnyHandleUtil.SetAttribute(genericIFCEntity, "PredefinedType", IFC4.IFCMechanicalFastenerType.USERDEFINED);
+                  }
+                  else
+                  {
+                     IFCAnyHandleUtil.SetAttribute(genericIFCEntity, "NominalDiameter", element?.get_Parameter(BuiltInParameter.COUPLER_WIDTH)?.AsDouble());
+                     IFCAnyHandleUtil.SetAttribute(genericIFCEntity, "NominalLength", element?.get_Parameter(BuiltInParameter.COUPLER_LENGTH)?.AsDouble());
+                  }
+                  return;
+               }
+         }
+      }
+
       /// <summary>
       /// Creates an IFC entity of the given type.
       /// </summary>
@@ -3983,15 +4012,7 @@ namespace Revit.IFC.Export.Toolkit
          SetPredefinedType(genericIFCEntity, entityToCreate);
 
          // Special cases here.  TODO: Provide some interface to pass these in.
-         switch (entityToCreate.ExportInstance)
-         {
-            case IFCEntityType.IfcElementAssembly:
-               {
-                  IFCAnyHandleUtil.SetAttribute(genericIFCEntity, "AssemblyPlace", IFCAssemblyPlace.NotDefined);
-                  break;
-               }
-         }
-
+         SetSpecificEntityData(genericIFCEntity, entityToCreate.ExportInstance, element);
          return genericIFCEntity;
       }
 
@@ -4218,15 +4239,15 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
-      /// Create an IfcBuildingSystem and assign it to the file. This is new in IFC4
+      /// Create an IfcBuildingSystem and assign it to the file. This is new in IFC4.
       /// </summary>
-      /// <param name="file"></param>
-      /// <param name="guid"></param>
-      /// <param name="ownerHistory"></param>
-      /// <param name="name"></param>
-      /// <param name="description"></param>
-      /// <param name="objectType"></param>
-      /// <returns></returns>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateBuildingSystem(IFCFile file, IFCExportInfoPair entityToCreate, string guid, IFCAnyHandle ownerHistory, string name,
          string description, string objectType, string longName)
       {
@@ -4240,6 +4261,31 @@ namespace Revit.IFC.Export.Toolkit
             IFCAnyHandleUtil.SetAttribute(buildingSystem, "LongName", longName, false);
 
          return buildingSystem;
+      }
+
+      /// <summary>
+      /// Create an IfcBuiltSystem and assign it to the file. This is new in IFC4.3.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="guid">The GUID.</param>
+      /// <param name="ownerHistory">The owner history.</param>
+      /// <param name="name">The name.</param>
+      /// <param name="description">The description.</param>
+      /// <param name="objectType">The object type.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateBuiltSystem(IFCFile file, IFCExportInfoPair entityToCreate, string guid, IFCAnyHandle ownerHistory, string name,
+         string description, string objectType, string longName)
+      {
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3)
+            return null;
+
+         IFCAnyHandle builtSystem = CreateInstance(file, IFCEntityType.IfcBuiltSystem, null);
+         SetGroup(builtSystem, guid, ownerHistory, name, description, objectType);
+         IFCAnyHandleUtil.SetAttribute(builtSystem, "PredefinedType", entityToCreate.GetPredefinedTypeOrDefault(), true);
+         if (!string.IsNullOrEmpty(longName))
+            IFCAnyHandleUtil.SetAttribute(builtSystem, "LongName", longName, false);
+
+         return builtSystem;
       }
 
       /// <summary>
@@ -4906,24 +4952,15 @@ namespace Revit.IFC.Export.Toolkit
 
       private static string GetValidatedDoorTypeOperation(string originalOperation)
       {
-         bool exportAs4 = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3;
          string validatedPreDefinedType =
             IFCValidateEntry.ValidateStrEnum<IFC4.IFCDoorTypeOperation>(originalOperation);
-         if (validatedPreDefinedType != null)
-         {
-            if (exportAs4 || validatedPreDefinedType.IndexOf("DOOR", StringComparison.InvariantCultureIgnoreCase) == -1)
-               return validatedPreDefinedType;
-            return validatedPreDefinedType.Replace("DOOR", "PANEL");
-         }
+         if (validatedPreDefinedType != null && ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3)
+            return validatedPreDefinedType;
 
          validatedPreDefinedType =
             IFCValidateEntry.ValidateStrEnum<IFC4x3.IFCDoorTypeOperation>(originalOperation);
          if (validatedPreDefinedType != null)
-         {
-            if (!exportAs4 || validatedPreDefinedType.IndexOf("PANEL", StringComparison.InvariantCultureIgnoreCase) == -1)
-               return validatedPreDefinedType;
-            return validatedPreDefinedType.Replace("PANEL", "DOOR");
-         }
+            return validatedPreDefinedType;
 
          return null;
       }
@@ -5339,7 +5376,7 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       public static IFCAnyHandle CreateMaterialConstituent(IFCFile file, IFCAnyHandle material, string name = null, string description = null,
-           double? fraction = null, string category = null)
+           IFCData fraction = null, string category = null)
       {
          IFCAnyHandle materialConstituent = CreateInstance(file, IFCEntityType.IfcMaterialConstituent, null);
          IFCAnyHandleUtil.SetAttribute(materialConstituent, "Material", material);
@@ -5348,7 +5385,7 @@ namespace Revit.IFC.Export.Toolkit
             IFCAnyHandleUtil.SetAttribute(materialConstituent, "Name", name);
          if (description != null)
             IFCAnyHandleUtil.SetAttribute(materialConstituent, "Description", description);
-         if (fraction.HasValue)
+         if (fraction != null)
             IFCAnyHandleUtil.SetAttribute(materialConstituent, "Fraction", fraction);
          if (category != null)
             IFCAnyHandleUtil.SetAttribute(materialConstituent, "Category", category);
@@ -5781,8 +5818,8 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="latitude">The latitude.</param>
       /// <param name="longitude">The longitude.</param>
       /// <param name="elevation">The elevation.</param>
-      /// <param name="landTitleNumber">The title number.</param>
-      /// <param name="address">The address.</param>
+      /// <param name="landTitleNumber">The title number. Deprecated in IFC4x3.</param>
+      /// <param name="address">The address. Deprecated in IFC4x3.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateSite(ExporterIFC exporterIFC, Element element, string guid, IFCAnyHandle ownerHistory, string name,
           string description, string objectType, IFCAnyHandle objectPlacement, IFCAnyHandle representation, string longName,
@@ -5793,8 +5830,14 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.SetAttribute(site, "RefLatitude", latitude);
          IFCAnyHandleUtil.SetAttribute(site, "RefLongitude", longitude);
          IFCAnyHandleUtil.SetAttribute(site, "RefElevation", elevation);
-         IFCAnyHandleUtil.SetAttribute(site, "LandTitleNumber", landTitleNumber);
-         IFCAnyHandleUtil.SetAttribute(site, "SiteAddress", address);
+
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAs4x3)
+         {
+            // All of these have been deprecated in IFC4x3, and should be included in 
+            // Pset_LandRegistration.LandTitleID and Pset_Address instead.
+            IFCAnyHandleUtil.SetAttribute(site, "LandTitleNumber", landTitleNumber);
+            IFCAnyHandleUtil.SetAttribute(site, "SiteAddress", address);
+         }
          SetSpatialStructureElement(site, element, guid, ownerHistory, name, description, objectType, objectPlacement, representation, longName, compositionType);
          return site;
       }
@@ -5991,10 +6034,16 @@ namespace Revit.IFC.Export.Toolkit
       {
          if (coordIndex == null)
             throw new ArgumentNullException("CoordIndex");
-         if (coordIndex == null)
+         if (innerCoordIndices == null)
             throw new ArgumentNullException("InnerCoordIndices");
          if (coordIndex.Count < 3)
             throw new IndexOutOfRangeException("CoordIndex must be at least 3 members");
+
+         foreach (IList<int> innerCoordinate in innerCoordIndices)
+         {
+            if (innerCoordinate == null)
+               throw new ArgumentNullException("InnerCoordinateIndex");
+         }
 
          IFCAnyHandle indexedPolygonalFaceWithVoids = CreateInstance(file, IFCEntityType.IfcIndexedPolygonalFaceWithVoids, null);
          IFCAnyHandleUtil.SetAttribute(indexedPolygonalFaceWithVoids, "CoordIndex", coordIndex);

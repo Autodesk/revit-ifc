@@ -26,9 +26,6 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.Common.Extensions;
-using Revit.IFC.Export.Exporter.PropertySet;
-using System.Linq;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -57,11 +54,7 @@ namespace Revit.IFC.Export.Exporter
          {
             using (IFCTransformSetter transformSetter = IFCTransformSetter.Create())
             {
-               // Check for containment override
-               IFCAnyHandle overrideContainerHnd = null;
-               ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, slabElement, out overrideContainerHnd);
-
-               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, slabElement, null, null, overrideContainerId, overrideContainerHnd))
+               using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, slabElement, null))
                {
                   using (IFCExportBodyParams ecData = new IFCExportBodyParams())
                   {
@@ -266,7 +259,9 @@ namespace Revit.IFC.Export.Exporter
             bool exportParts = exportPartAs == ExporterUtil.ExportPartAs.Part;
 
             if (exportParts && !PartExporter.CanExportElementInPartExport(floorElement, floorElement.LevelId, false))
+            {
                return;
+            }
 
             using (IFCTransaction tr = new IFCTransaction(file))
             {
@@ -295,10 +290,7 @@ namespace Revit.IFC.Export.Exporter
                using (IFCTransformSetter transformSetter = IFCTransformSetter.Create())
                {
                   // Check for containment override
-                  IFCAnyHandle overrideContainerHnd = null;
-                  ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(exporterIFC, floorElement, out overrideContainerHnd);
-
-                  using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, floorElement, null, null, overrideContainerId, overrideContainerHnd))
+                  using (PlacementSetter placementSetter = PlacementSetter.Create(exporterIFC, floorElement, null))
                   {
                      IFCAnyHandle localPlacement = placementSetter.LocalPlacement;
 
@@ -579,7 +571,10 @@ namespace Revit.IFC.Export.Exporter
                         // Wawan: Currently it will not work well with cases that the geometry has multiple solid lumps that will be exported as separate slab because
                         // Openings data is for the whole element and there is no straightforward way to match the openings with the lumps curently
                         if (ecData.GetOpenings().Count == 0 && numReps == 1)
-                           openingCreatedCount = OpeningUtil.AddOpeningsToElement(exporterIFC, slabHnd, floorElement, null, ecData.ScaledHeight, null, placementSetter, localPlacement, productWrapper);
+                        {
+                           Transform lcs = GeometryUtil.CreateTransformFromPlane(floorPlane);
+                           openingCreatedCount = OpeningUtil.AddOpeningsToElement(exporterIFC, slabHnd, floorElement, lcs, ecData.ScaledHeight, null, placementSetter, localPlacement, productWrapper);
+                        }
                      }
 
                      typeHandle = ExporterUtil.CreateGenericTypeFromElement(floorElement, exportType, file, productWrapper);
