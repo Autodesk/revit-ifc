@@ -184,8 +184,8 @@ namespace RevitIFCTools
                }
             }
 
-            // Process IFC2x3 QTO properties
-            procPdef.Process2x3QtoSets(schemaName);
+            // Process IFC2x2/IFC2x3 QTO properties
+            procPdef.ProcessPreIfc4QtoSets(schemaName);
 
             procPdef.ProcessPredefinedPsets(schemaName);
 
