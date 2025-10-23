@@ -455,8 +455,7 @@ namespace Revit.IFC.Export.Exporter
          // Create IfcBuilding first here
          if (NeedBuilding())
          {
-            IFCAnyHandle facilityPlacement = CreateBuildingPlacement(exporterIFC.GetFile());
-            CreateFacilityFromProjectInfo(exporterIFC, document, facilityPlacement, true);
+            CreateFacilityFromProjectInfo(exporterIFC, document, true, out _);
          }
 
          ExportOptionsCache exportOptionsCache = ExporterCacheManager.ExportOptionsCache;
@@ -1407,10 +1406,6 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
          IFCAnyHandle applicationHandle = CreateApplicationInformation(file, document);
 
-         CreateGlobalCartesianOrigin(exporterIFC);
-         CreateGlobalDirection(exporterIFC);
-         CreateGlobalDirection2D(exporterIFC);
-
          // Initialize common properties before creating any rooted entities.
          InitializePropertySets();
          InitializeQuantities(ExporterCacheManager.ExportOptionsCache.FileVersion);
@@ -1482,8 +1477,6 @@ namespace Revit.IFC.Export.Exporter
          using (IFCTransaction transaction = new IFCTransaction(file))
          {
             // create building
-            IFCAnyHandle buildingPlacement = CreateBuildingPlacement(file);
-
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
 
             // create levels
@@ -1493,7 +1486,7 @@ namespace Revit.IFC.Export.Exporter
             bool exportBuilding = ExportBuilding(allLevels);
 
             // Skip Building if there is no Storey to be exported
-            if (CreateFacilityFromProjectInfo(exporterIFC, document, buildingPlacement, exportBuilding) != null)
+            if (CreateFacilityFromProjectInfo(exporterIFC, document, exportBuilding, out IFCAnyHandle facilityPlacement) != null)
             {        
                IList<Element> unassignedBaseLevels = new List<Element>();
 
@@ -1562,7 +1555,7 @@ namespace Revit.IFC.Export.Exporter
                   double elevation = UnitUtil.ScaleLength(elev);
                   XYZ orig = new(0.0, 0.0, elevation);
 
-                  IFCAnyHandle placement = ExporterUtil.CreateLocalPlacement(file, buildingPlacement, orig, null, null);
+                  IFCAnyHandle placement = ExporterUtil.CreateLocalPlacement(file, facilityPlacement, orig, null, null);
                   string bsObjectType = NamingUtil.GetObjectTypeOverride(level, null);
                   IFCElementComposition ifcComposition = LevelUtil.GetElementCompositionTypeOverride(level);
 
@@ -1875,8 +1868,7 @@ namespace Revit.IFC.Export.Exporter
                // if at this point the facilityHnd is null, which means that the model does not
                // have Site nor any Level assigned to the FacilityPart, create the IfcFacility 
                // as the general container for all the elements (should be backward compatible).
-               IFCAnyHandle facilityPlacement = CreateBuildingPlacement(file);
-               facilityHandle = CreateFacilityFromProjectInfo(exporterIFC, document, facilityPlacement, true);
+               facilityHandle = CreateFacilityFromProjectInfo(exporterIFC, document, true, out _);
                ExporterCacheManager.BuildingHandle = facilityHandle;
                projectHasFacility = true;
             }
@@ -2556,7 +2548,7 @@ namespace Revit.IFC.Export.Exporter
 
             try
             {
-               string productName = System.Diagnostics.FileVersionInfo.GetVersionInfo(application?.GetType().Assembly.Location).ProductName;
+               string productName = System.Diagnostics.FileVersionInfo.GetVersionInfo(application?.GetType().Assembly.Location).ProductName.Replace(" ", " - ");
                VersionBuildName = productName + " " + VersionBuild;
             }
             catch
@@ -2849,7 +2841,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The IFC exporter object.</param>
       /// <param name="doc">The document provides the ProjectLocation.</param>
       /// <returns>The collection contains the 3D/2D context (not sub-context) handles of IFC file.</returns>
-      private HashSet<IFCAnyHandle> CreateContextInformation(ExporterIFC exporterIFC, Document doc, out IList<double> directionRatios)
+      private HashSet<IFCAnyHandle> CreateContextInformation(ExporterIFC exporterIFC, Document doc)
       {
          HashSet<IFCAnyHandle> repContexts = new HashSet<IFCAnyHandle>();
 
@@ -2868,15 +2860,17 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle wcs = null;
          XYZ unscaledOrigin = XYZ.Zero;
 
+         List<double> directionRatios;
+
          if (ExporterCacheManager.ExportOptionsCache.ExportingSeparateLink())
          {
             if (CoordReferenceInfo.MainModelGeoRefOrWCS != null)
             {
                unscaledOrigin = CoordReferenceInfo.MainModelGeoRefOrWCS.Origin;
-               directionRatios = new List<double>(2) { CoordReferenceInfo.MainModelGeoRefOrWCS.BasisY.X, CoordReferenceInfo.MainModelGeoRefOrWCS.BasisY.Y };
+               directionRatios = new() { CoordReferenceInfo.MainModelGeoRefOrWCS.BasisY.X, CoordReferenceInfo.MainModelGeoRefOrWCS.BasisY.Y };
             }
             else
-               directionRatios = new List<double>(2) { 0.0, 1.0 };
+               directionRatios = new() { 0.0, 1.0 };
 
             if (CoordReferenceInfo.CrsInfo.CrsInfoNotSet || ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             {
@@ -2903,9 +2897,9 @@ namespace Revit.IFC.Export.Exporter
 
             CoordReferenceInfo.MainModelTNAngle = geoRefInfo.origAngleTN;
             double trueNorthAngleConverted = geoRefInfo.angleTN + Math.PI / 2.0;
-            directionRatios = new List<Double>(2) { Math.Cos(trueNorthAngleConverted), Math.Sin(trueNorthAngleConverted) };
+            directionRatios = new() { Math.Cos(trueNorthAngleConverted), Math.Sin(trueNorthAngleConverted) };
 
-            unscaledOrigin = new XYZ(geoRefInfo.eastings, geoRefInfo.northings, geoRefInfo.orthogonalHeight);
+            unscaledOrigin = new(geoRefInfo.eastings, geoRefInfo.northings, geoRefInfo.orthogonalHeight);
             if (string.IsNullOrEmpty(ExporterCacheManager.ExportOptionsCache.GeoRefEPSGCode) ||
                ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
             {
@@ -2927,7 +2921,7 @@ namespace Revit.IFC.Export.Exporter
             wcs = ExporterUtil.CreateAxis2Placement3D(file, XYZ.Zero, null, null);
          }
 
-         IFCAnyHandle trueNorth = IFCInstanceExporter.CreateDirection(file, directionRatios);
+         IFCAnyHandle trueNorth = ExporterUtil.CreateDirection(file, directionRatios);
          int dimCount = 3;
          IFCAnyHandle context3D = IFCInstanceExporter.CreateGeometricRepresentationContext(file, null,
              "Model", dimCount, precision, wcs, trueNorth);
@@ -2944,7 +2938,6 @@ namespace Revit.IFC.Export.Exporter
          // For the rest, we will create sub-contexts as we need them.
          ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
 
-         // TODO: Fix regression tests whose line numbers change as a result of missing handles.
          if (!ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
          {
             ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Box);
@@ -3216,8 +3209,7 @@ namespace Revit.IFC.Export.Exporter
 
          UnitMappingUtil.CreateCobieUnits();
 
-         IList<double> directionRatios = null;
-         HashSet<IFCAnyHandle> repContexts = CreateContextInformation(exporterIFC, doc, out directionRatios);
+         HashSet<IFCAnyHandle> repContexts = CreateContextInformation(exporterIFC, doc);
 
          string projectName = null;
          string projectLongName = null;
@@ -3479,103 +3471,6 @@ namespace Revit.IFC.Export.Exporter
          return postalAddress;
       }
       
-      /// <summary>
-      /// Creates the global direction and sets the cardinal directions in 3D.
-      /// </summary>
-      /// <param name="exporterIFC">The IFC exporter object.</param>
-      private void CreateGlobalDirection(ExporterIFC exporterIFC)
-      {
-         // Note that we do not use the ExporterUtil.CreateDirection functions below, as they try
-         // to match the input XYZ to one of the "global" directions that we are creating below.
-         IFCAnyHandle xDirPos = null;
-         IFCAnyHandle xDirNeg = null;
-         IFCAnyHandle yDirPos = null;
-         IFCAnyHandle yDirNeg = null;
-         IFCAnyHandle zDirPos = null;
-         IFCAnyHandle zDirNeg = null;
-
-         IFCFile file = exporterIFC.GetFile();
-         IList<double> xxp = new List<double>();
-         xxp.Add(1.0); xxp.Add(0.0); xxp.Add(0.0);
-         xDirPos = IFCInstanceExporter.CreateDirection(file, xxp);
-
-         IList<double> xxn = new List<double>();
-         xxn.Add(-1.0); xxn.Add(0.0); xxn.Add(0.0);
-         xDirNeg = IFCInstanceExporter.CreateDirection(file, xxn);
-
-         IList<double> yyp = new List<double>();
-         yyp.Add(0.0); yyp.Add(1.0); yyp.Add(0.0);
-         yDirPos = IFCInstanceExporter.CreateDirection(file, yyp);
-
-         IList<double> yyn = new List<double>();
-         yyn.Add(0.0); yyn.Add(-1.0); yyn.Add(0.0);
-         yDirNeg = IFCInstanceExporter.CreateDirection(file, yyn);
-
-         IList<double> zzp = new List<double>();
-         zzp.Add(0.0); zzp.Add(0.0); zzp.Add(1.0);
-         zDirPos = IFCInstanceExporter.CreateDirection(file, zzp);
-
-         IList<double> zzn = new List<double>();
-         zzn.Add(0.0); zzn.Add(0.0); zzn.Add(-1.0);
-         zDirNeg = IFCInstanceExporter.CreateDirection(file, zzn);
-
-         ExporterIFCUtils.SetGlobal3DDirectionHandles(true, xDirPos, yDirPos, zDirPos);
-         ExporterIFCUtils.SetGlobal3DDirectionHandles(false, xDirNeg, yDirNeg, zDirNeg);
-      }
-
-      /// <summary>
-      /// Creates the global direction and sets the cardinal directions in 2D.
-      /// </summary>
-      /// <param name="exporterIFC">The IFC exporter object.</param>
-      private void CreateGlobalDirection2D(ExporterIFC exporterIFC)
-      {
-         IFCAnyHandle xDirPos2D = null;
-         IFCAnyHandle xDirNeg2D = null;
-         IFCAnyHandle yDirPos2D = null;
-         IFCAnyHandle yDirNeg2D = null;
-         IFCFile file = exporterIFC.GetFile();
-
-         IList<double> xxp = new List<double>();
-         xxp.Add(1.0); xxp.Add(0.0);
-         xDirPos2D = IFCInstanceExporter.CreateDirection(file, xxp);
-
-         IList<double> xxn = new List<double>();
-         xxn.Add(-1.0); xxn.Add(0.0);
-         xDirNeg2D = IFCInstanceExporter.CreateDirection(file, xxn);
-
-         IList<double> yyp = new List<double>();
-         yyp.Add(0.0); yyp.Add(1.0);
-         yDirPos2D = IFCInstanceExporter.CreateDirection(file, yyp);
-
-         IList<double> yyn = new List<double>();
-         yyn.Add(0.0); yyn.Add(-1.0);
-         yDirNeg2D = IFCInstanceExporter.CreateDirection(file, yyn);
-         ExporterIFCUtils.SetGlobal2DDirectionHandles(true, xDirPos2D, yDirPos2D);
-         ExporterIFCUtils.SetGlobal2DDirectionHandles(false, xDirNeg2D, yDirNeg2D);
-      }
-
-      /// <summary>
-      /// Creates the global cartesian origin then sets the 3D and 2D origins.
-      /// </summary>
-      /// <param name="exporterIFC">The IFC exporter object.</param>
-      private void CreateGlobalCartesianOrigin(ExporterIFC exporterIFC)
-      {
-
-         IFCAnyHandle origin2d = null;
-         IFCAnyHandle origin = null;
-
-         IFCFile file = exporterIFC.GetFile();
-         IList<double> measure = new List<double>();
-         measure.Add(0.0); measure.Add(0.0); measure.Add(0.0);
-         origin = IFCInstanceExporter.CreateCartesianPoint(file, measure);
-
-         IList<double> measure2d = new List<double>();
-         measure2d.Add(0.0); measure2d.Add(0.0);
-         origin2d = IFCInstanceExporter.CreateCartesianPoint(file, measure2d);
-         ExporterIFCUtils.SetGlobal3DOriginHandle(origin);
-         ExporterIFCUtils.SetGlobal2DOriginHandle(origin2d);
-      }
-
       private static bool ValidateContainedHandle(IFCAnyHandle initialHandle)
       {
          if (ExporterCacheManager.ElementsInAssembliesCache.Contains(initialHandle))
@@ -3821,14 +3716,11 @@ namespace Revit.IFC.Export.Exporter
          m_QuantitiesToExport = null;
       }
 
-      private IFCAnyHandle CreateBuildingPlacement(IFCFile file)
-      {
-         return IFCInstanceExporter.CreateLocalPlacement(file, null, ExporterUtil.CreateAxis2Placement3D(file));
-      }
-
       private IFCAnyHandle CreateFacilityFromProjectInfo(ExporterIFC exporterIFC, Document document, 
-         IFCAnyHandle facilityPlacement, bool allowBuildingExport)
+         bool allowBuildingExport, out IFCAnyHandle facilityPlacement)
       {
+         facilityPlacement = null;
+
          KnownFacilityTypes facilityType = ExporterCacheManager.ExportOptionsCache.FacilityType;
          bool exportingBuilding = facilityType == KnownFacilityTypes.Building;
          if (exportingBuilding && !allowBuildingExport)
@@ -3875,6 +3767,8 @@ namespace Revit.IFC.Export.Exporter
 
          string facilityGUID = GUIDUtil.CreateProjectLevelGUID(document, GUIDUtil.ProjectLevelGUIDType.Building);
          IFCAnyHandle facilityHandle = null;
+
+         facilityPlacement = IFCInstanceExporter.CreateLocalPlacement(file, null, ExporterUtil.CreateAxis2Placement3D(file));
 
          switch (facilityType)
          {

@@ -56,7 +56,7 @@ namespace Revit.IFC.Export.Exporter
             return true;      // Already processed before
 
          IFCFile file = exporterIFC.GetFile();
-         using (IFCTransaction tr = new IFCTransaction(file))
+         using (IFCTransaction tr = new(file))
          {
             IFCAnyHandle assemblyInstanceHnd = null;
 
@@ -68,8 +68,7 @@ namespace Revit.IFC.Export.Exporter
             bool relateToLevel = true;
             ElementId overrideContainerId = ElementId.InvalidElementId;
 
-            string ifcEnumType;
-            IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(element, out ifcEnumType);
+            IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(element, out string ifcEnumType);
             if (exportAs.ExportInstance == IFCEntityType.IfcSystem)
             {
                string name = NamingUtil.GetNameOverride(element, NamingUtil.GetIFCName(element));
@@ -77,8 +76,7 @@ namespace Revit.IFC.Export.Exporter
                string objectType = NamingUtil.GetObjectTypeOverride(element, NamingUtil.GetFamilyAndTypeName(element));
                assemblyInstanceHnd = IFCInstanceExporter.CreateSystem(file, guid, ownerHistory, name, description, objectType);
 
-               HashSet<IFCAnyHandle> relatedBuildings = 
-                  new HashSet<IFCAnyHandle>() { ExporterCacheManager.BuildingHandle };
+               HashSet<IFCAnyHandle> relatedBuildings = new() { ExporterCacheManager.BuildingHandle };
                
                string relServicesBuildingsGuid = GUIDUtil.GenerateIFCGuidFrom(
                   GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelServicesBuildings, assemblyInstanceHnd));
@@ -91,8 +89,7 @@ namespace Revit.IFC.Export.Exporter
             else
             {
                // Check for containment override
-               IFCAnyHandle overrideContainerHnd = null;
-               overrideContainerId = ParameterUtil.OverrideContainmentParameter(element, out overrideContainerHnd);
+               overrideContainerId = ParameterUtil.OverrideContainmentParameter(element, out IFCAnyHandle overrideContainerHnd);
 
                if (overrideContainerId == null || overrideContainerId == ElementId.InvalidElementId)
                   overrideContainerId = ExporterCacheManager.LevelInfoCache.GetLevelIdOfObject(element);
@@ -213,7 +210,7 @@ namespace Revit.IFC.Export.Exporter
       static void ExportAssemblyInstanceWithMembers(ExporterIFC exporterIFC, Element assemblyElem,
           ICollection<ElementId> memberIds, IFCElementAssemblyType assemblyType, ProductWrapper productWrapper)
       {
-         HashSet<IFCAnyHandle> memberHnds = new HashSet<IFCAnyHandle>();
+         HashSet<IFCAnyHandle> memberHnds = new();
 
          foreach (ElementId memberId in memberIds)
          {

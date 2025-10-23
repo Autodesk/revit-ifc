@@ -40,7 +40,7 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       public static IFCAnyHandle GetMemberTypeHandle(ExporterIFC exporterIFC, Element stringer)
       {
-         Element stringerType = stringer.Document.GetElement(stringer.GetTypeId());
+         ElementType stringerType = stringer.Document.GetElement(stringer.GetTypeId()) as ElementType;
          IFCAnyHandle memberType = ExporterCacheManager.ElementToHandleCache.Find(stringerType.Id);
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(memberType))
          {

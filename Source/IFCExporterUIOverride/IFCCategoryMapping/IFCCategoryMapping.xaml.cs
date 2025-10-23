@@ -769,6 +769,7 @@ namespace BIM.IFC.Export.UI
                   {
                      taskDialog.MainInstruction = Properties.Resources.IFCInvalidCategoryMappingFile;
                      taskDialog.MainIcon = Autodesk.Revit.UI.TaskDialogIcon.TaskDialogIconWarning;
+                     taskDialog.TitleAutoPrefix = false;
                      TaskDialogResult taskDialogResult = taskDialog.Show();
                   }
                }

@@ -187,21 +187,11 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Creates IfcAxis2Placement3D object.
       /// </summary>
-      /// <param name="file">
-      /// The IFC file.
-      /// </param>
-      /// <param name="origin">
-      /// The origin.
-      /// </param>
-      /// <param name="zDirection">
-      /// The Z direction.
-      /// </param>
-      /// <param name="xDirection">
-      /// The X direction.
-      /// </param>
-      /// <returns>
-      /// The handle.
-      /// </returns>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="origin">The origin.</param>
+      /// <param name="zDirection">The Z direction.</param>
+      /// <param name="xDirection">The X direction.</param>
+      /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateAxis(IFCFile file, XYZ origin, XYZ zDirection, XYZ xDirection)
       {
          IFCAnyHandle direction = null;
@@ -210,8 +200,7 @@ namespace Revit.IFC.Export.Utility
 
          if (origin != null)
          {
-            IList<double> measure = new List<double>();
-            measure.Add(origin.X); measure.Add(origin.Y); measure.Add(origin.Z);
+            List<double> measure = new() { origin.X, origin.Y, origin.Z };
             location = CreateCartesianPoint(file, measure);
          }
          else
@@ -223,15 +212,13 @@ namespace Revit.IFC.Export.Utility
 
          if (exportzDirectionAndxDirection)
          {
-            IList<double> axisPts = new List<double>();
-            axisPts.Add(zDirection.X); axisPts.Add(zDirection.Y); axisPts.Add(zDirection.Z);
+            List<double> axisPts = new() { zDirection.X, zDirection.Y, zDirection.Z };
             direction = CreateDirection(file, axisPts);
          }
 
          if (exportzDirectionAndxDirection)
          {
-            IList<double> axisPts = new List<double>();
-            axisPts.Add(xDirection.X); axisPts.Add(xDirection.Y); axisPts.Add(xDirection.Z);
+            List<double> axisPts = new() { xDirection.X, xDirection.Y, xDirection.Z };
             refDirection = CreateDirection(file, axisPts);
          }
 
@@ -252,7 +239,7 @@ namespace Revit.IFC.Export.Utility
       /// </returns>
       public static IFCAnyHandle CreateDirection(IFCFile file, IList<double> realList)
       {
-         IList<double> cleanList = new List<double>();
+         List<double> cleanList = new();
 
          foreach (double measure in realList)
          {
@@ -277,13 +264,13 @@ namespace Revit.IFC.Export.Utility
                {
                   if (!MathUtil.IsAlmostZero(cleanList[(ii + 1) % 3]) || !MathUtil.IsAlmostZero(cleanList[(ii + 2) % 3]))
                      break;
-                  return ExporterIFCUtils.GetGlobal3DDirectionHandles(true)[ii];
+                  return ExporterIFCUtils.GetGlobal3DDirectionHandle(ii, true);
                }
                else if (MathUtil.IsAlmostEqual(cleanList[ii], -1.0))
                {
                   if (!MathUtil.IsAlmostZero(cleanList[(ii + 1) % 3]) || !MathUtil.IsAlmostZero(cleanList[(ii + 2) % 3]))
                      break;
-                  return ExporterIFCUtils.GetGlobal3DDirectionHandles(false)[ii];
+                  return ExporterIFCUtils.GetGlobal3DDirectionHandle(ii, false);
                }
             }
          }
@@ -295,13 +282,13 @@ namespace Revit.IFC.Export.Utility
                {
                   if (!MathUtil.IsAlmostZero(cleanList[1 - ii]))
                      break;
-                  return ExporterIFCUtils.GetGlobal2DDirectionHandles(true)[ii];
+                  return ExporterIFCUtils.GetGlobal2DDirectionHandle(ii, true);
                }
                else if (MathUtil.IsAlmostEqual(cleanList[ii], -1.0))
                {
                   if (!MathUtil.IsAlmostZero(cleanList[1 - ii]))
                      break;
-                  return ExporterIFCUtils.GetGlobal2DDirectionHandles(false)[ii];
+                  return ExporterIFCUtils.GetGlobal2DDirectionHandle(ii, false);
                }
             }
          }
@@ -324,10 +311,7 @@ namespace Revit.IFC.Export.Utility
       /// </returns>
       public static IFCAnyHandle CreateDirection(IFCFile file, XYZ direction)
       {
-         IList<double> measure = new List<double>();
-         measure.Add(direction.X);
-         measure.Add(direction.Y);
-         measure.Add(direction.Z);
+         List<double> measure = new() { direction.X, direction.Y, direction.Z };
          return CreateDirection(file, measure);
       }
 
@@ -462,20 +446,14 @@ namespace Revit.IFC.Export.Utility
          IFCAnyHandle axisHandle = null;
          if (exportDirAndRef)
          {
-            List<double> measure = new List<double>();
-            measure.Add(axis.X);
-            measure.Add(axis.Y);
-            measure.Add(axis.Z);
+            List<double> measure = new() { axis.X, axis.Y, axis.Z };
             axisHandle = CreateDirection(file, measure);
          }
 
          IFCAnyHandle refDirectionHandle = null;
          if (exportDirAndRef)
          {
-            List<double> measure = new List<double>();
-            measure.Add(refDirection.X);
-            measure.Add(refDirection.Y);
-            measure.Add(refDirection.Z);
+            List<double> measure = new() { refDirection.X, refDirection.Y, refDirection.Z };
             refDirectionHandle = CreateDirection(file, measure);
          }
 
@@ -3055,11 +3033,11 @@ namespace Revit.IFC.Export.Utility
       public static Transform GetTransformFromLocalPlacementHnd(IFCAnyHandle ecsHnd, bool unscaleOrigin)
       {
          if (!IFCAnyHandleUtil.IsTypeOf(ecsHnd, IFCEntityType.IfcLocalPlacement))
-            return null;
+            return Transform.Identity;
 
          IFCAnyHandle relPlacement = IFCAnyHandleUtil.GetInstanceAttribute(ecsHnd, "RelativePlacement");       // expected: IfcAxis2Placement3D
          if (!IFCAnyHandleUtil.IsTypeOf(relPlacement, IFCEntityType.IfcAxis2Placement3D))
-            return null;
+            return Transform.Identity;
 
          IFCAnyHandle zDir = IFCAnyHandleUtil.GetInstanceAttribute(relPlacement, "Axis");                      // IfcDirection
          IFCAnyHandle xDir = IFCAnyHandleUtil.GetInstanceAttribute(relPlacement, "RefDirection");              // IfcDirection

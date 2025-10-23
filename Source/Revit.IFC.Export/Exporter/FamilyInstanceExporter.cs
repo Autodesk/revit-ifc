@@ -641,19 +641,13 @@ namespace Revit.IFC.Export.Exporter
             IList<IFCAnyHandle> representations3D = new List<IFCAnyHandle>();
             IList<IFCAnyHandle> representations2D = new List<IFCAnyHandle>();
 
-            IFCAnyHandle dummyPlacement = null;
             if (doorWindowInfo != null)
             {
                doorWindowTrf = ExporterIFCUtils.GetTransformForDoorOrWindow(familyInstance, originalFamilySymbol,
-                     doorWindowInfo.FlippedX, doorWindowInfo.FlippedY);
-            }
-            else
-            {
-               dummyPlacement = ExporterUtil.CreateLocalPlacement(file, null, null);
-               extraParams.SetLocalPlacement(dummyPlacement);
+                  doorWindowInfo.FlippedX, doorWindowInfo.FlippedY);
             }
 
-            Element exportGeometryElement = useInstanceGeometry ? (Element)familyInstance : (Element)originalFamilySymbol;
+            Element exportGeometryElement = useInstanceGeometry ? familyInstance : originalFamilySymbol;
             GeometryElement exportGeometry = exportGeometryElement.get_Geometry(options);
 
             // There are 2 possible paths for a Family Instance to be exported as a Swept Solid.
@@ -960,9 +954,13 @@ namespace Revit.IFC.Export.Exporter
             }
 
             if (doorWindowInfo != null)
+            {
                typeInfo.StyleTransform = doorWindowTrf.Inverse;
+            }
             else
+            {
                typeInfo.StyleTransform = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, extraParams.GetLocalPlacement());
+            }
 
             if (typeInfo.MaterialAndProfile != null)
             {
@@ -1163,36 +1161,14 @@ namespace Revit.IFC.Export.Exporter
                }
             }
 
-            // Adjust the Origin is in the Family Instance Trf in the Z direction only.
-            // For BReps and Tessellations, retrieve an adjustment using the FamilySymbol origin.
+            // For Brep or Tessellation shape types, adjust the Z-origin of the transformation.
+            // These representation types are generated using original coordinates and do not rely on the style transformation
+            // that present in the current 'trf' derived from ExtrusionCreationData.
             double newOffset = trf.Origin.Z;
             if (!string.IsNullOrEmpty(shapeType) && (shapeType.Contains("Brep") || shapeType.Equals("Tessellation")))
             {
-               LocationPoint loc = familyInstance.Location as LocationPoint;
-               if (loc != null)
-               {
-                  newOffset = loc.Point.Z;
-
-                  // Apply only when the familyInstance tranformation normal is vertical.
-                  if (MathUtil.IsAlmostEqual(Math.Abs(trf.BasisZ.DotProduct(XYZ.BasisZ)), 1.0))
-                  {
-                     XYZ familyInstanceAssemblyOffset = exporterIFC.GetFamilyInstanceAssemblyOffset(familyInstance);
-                     newOffset += (trf.BasisZ.Z > MathUtil.Eps()) ?
-                        familyInstanceAssemblyOffset.Z : -familyInstanceAssemblyOffset.Z;
-                  }
-               }
-               else
-               {
-                  BoundingBoxXYZ bbox = familyInstance.get_BoundingBox(null);
-                  if (bbox != null)
-                  {
-                     newOffset = bbox.Min.Z;
-                  }
-               }
-
-               // The current trf includes a style transformation derived from ExtrusionCreationData. 
-               // But it was not utilized for representation creation in Brep/Tessellation cases, 
-               // using the original coordinates instead, to avoid potential incorrect coordinates.
+               // To maintain correct placement, replace the Z value of the transform's origin
+               // with the original transformation's Z origin. X and Y remain unchanged.
                trf.Origin = new XYZ(originalTrf.Origin.X, originalTrf.Origin.Y, newOffset);
             }
          }

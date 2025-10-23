@@ -291,7 +291,7 @@ namespace Revit.IFC.Export.Utility
                      yDir = yDir.Negate();
 
                   // Check the center location in the X-direction to determine LEFT/RIGHT
-                  if (trfArc.Center.X >= -tolForArcCenter && trfArc.Center.X <= tolForArcCenter)
+                  if (Math.Abs(trfArc.Center.X) <= tolForArcCenter)
                   {
                      // on the LEFT
                      if ((yDir.Y > 0.0 && trfArc.YDirection.Y > 0.0) || (yDir.Y < 0.0 && trfArc.YDirection.Y < 0.0))

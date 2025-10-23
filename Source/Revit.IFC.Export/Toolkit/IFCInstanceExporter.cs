@@ -222,54 +222,52 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
-      /// Set IfcElementType entity
-      /// </summary>
-      /// <param name="typeHandle">the Type Handle</param>
-      /// <param name="revitType">Revit Type</param>
-      /// <param name="guid">the guid</param>
-      /// <param name="ownerHistory">the OwnerHistory</param>
-      /// <param name="name">Name</param>
-      /// <param name="description">Description</param>
-      /// <param name="applicableOccurrence">ApplicableOccurrence</param>
-      /// <param name="propertySets">PropertySets</param>
-      /// <param name="representationMaps">RepresentationMape</param>
-      /// <param name="tag">Tag</param>
-      /// <param name="elementType">ElementType</param>
-      private static void SetElementTypeComplete(IFCAnyHandle typeHandle, Element revitType,
-         string guid, IFCAnyHandle ownerHistory, string name, string description,
-         string applicableOccurrence, HashSet<IFCAnyHandle> propertySets,
-         IList<IFCAnyHandle> representationMaps, string tag,
-          string elementType)
-      {
-         string overrideElementType = NamingUtil.GetElementTypeOverride(revitType, elementType);
-         if (overrideElementType != null)
-            IFCAnyHandleUtil.SetAttribute(typeHandle, "ElementType", overrideElementType);
-
-         SetTypeProduct(typeHandle, revitType, guid, ownerHistory, name, description, applicableOccurrence, propertySets, representationMaps, tag);
-      }
-
-      /// <summary>
       /// Set IfcElementType entity with minimum parameters for backward compatibility of existing 
-      /// codes for creating Type.
+      /// codes for creating Type, and returns if the element type attribute value is appropriate for the
+      /// predefined type.
       /// </summary>
       /// <param name="typeHandle">The Type handle.</param>
-      /// <param name="elementType">The Element type.</param>
+      /// <param name="element">The Element, usually but not necessarily an ElementType.</param>
+      /// <param name="predefinedType">The PredefinedType attribute value.</param>
       /// <param name="guid">The IFC global Id.</param>
       /// <param name="propertySets">The related property sets.</param>
       /// <param name="representationMaps">The related representation maps.</param>
-      private static void SetElementType(IFCAnyHandle typeHandle, Element elementType, string guid,
-         HashSet<IFCAnyHandle> propertySets, IList<IFCAnyHandle> representationMaps)
+      /// <remarks>
+      /// It is disallowed to have the predefined type to be USERDEFINED, but the ElementType attribute to be empty.
+      /// In this case, we will reset predefinedType to NOTDEFINED.
+      /// </remarks>
+      private static void SetElementType(IFCAnyHandle typeHandle, Element element, ref string predefinedType,
+         string guid, HashSet<IFCAnyHandle> propertySets, IList<IFCAnyHandle> representationMaps)
       {
          // Note that we could generate the guid from the elementType, but that isn't always correct
          // for FamilySymbols.  As such, we pass it in in these cases, but calculate it as a fallback.
-         if (guid == null)
-            guid = GUIDUtil.CreateGUID(elementType);
+         guid ??= GUIDUtil.CreateGUID(element);
 
-         string overrideElementType = NamingUtil.GetElementTypeOverride(elementType, null);
-         if (overrideElementType != null && typeHandle.IsSubTypeOf("IFCELEMENTTYPE"))
-            IFCAnyHandleUtil.SetAttribute(typeHandle, "ElementType", overrideElementType);
+         // It is possible that we pass in the instance as a fake type here.
+         if (string.Compare(predefinedType, "USERDEFINED") == 0)
+         {
+            string baseElementType = (element is ElementType) ? NamingUtil.GetFamilyName(element as ElementType) :
+               NamingUtil.GetFamilyAndTypeName(element);
 
-         SetTypeProduct(typeHandle, elementType, guid, ExporterCacheManager.OwnerHistoryHandle, null, null, null, propertySets, representationMaps, null);
+            string elementType = NamingUtil.GetElementTypeOverride(element, baseElementType);
+            if (string.IsNullOrEmpty(elementType))
+            {
+               predefinedType = "NOTDEFINED";
+            }
+            else
+            {
+               try
+               {
+                  // Not everything has "ElementType".
+                  IFCAnyHandleUtil.SetAttribute(typeHandle, "ElementType", elementType);
+               }
+               catch
+               {
+               }
+            }
+         }
+
+         SetTypeProduct(typeHandle, element, guid, ExporterCacheManager.OwnerHistoryHandle, null, null, null, propertySets, representationMaps, null);
       }
 
       /// <summary>
@@ -436,16 +434,40 @@ namespace Revit.IFC.Export.Toolkit
          string guid, IFCAnyHandle ownerHistory, string name, string description,
          string objectType)
       {
-         string overrideObjectType = (element != null) ?
-            NamingUtil.GetObjectTypeOverride(obj, element, objectType) :
-            objectType;
+         string overrideObjectType = objectType;
 
-         if (string.IsNullOrEmpty(overrideObjectType) && (element != null))
+         if (element != null)
          {
-            overrideObjectType = NamingUtil.GetFamilyAndTypeName(element);
+            // Older than IFC4 may not have Predefined Type set.  If the predefined type is null, 
+            string enumTypeValue = null;
+            IFCExportInfoPair exportType = ExporterUtil.GetObjectExportType(element, out enumTypeValue);
+            bool calcObjectType = false;
+            // If predefinedType is USERDEFINED, we have to export some value.  Otherwise it is OK to export nothing.
+            bool forceObjectType = false;
+
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            {
+               string predefinedType = exportType?.PredefinedType;
+               forceObjectType = !string.IsNullOrWhiteSpace(predefinedType);
+               calcObjectType = !forceObjectType || predefinedType == "USERDEFINED";
+            }
+            else
+            {
+               calcObjectType = string.Compare(exportType?.PredefinedType ?? enumTypeValue, "USERDEFINED") == 0;
+            }
+
+            if (calcObjectType)
+            {
+               if (forceObjectType)
+               {
+                  objectType ??= NamingUtil.GetFamilyAndTypeName(element);
+               }
+               overrideObjectType = NamingUtil.GetObjectTypeOverride(obj, element, objectType);
+            }
          }
 
-         IFCAnyHandleUtil.SetAttribute(obj, "ObjectType", overrideObjectType);
+         // Whitespace should be considered as null.
+         IFCAnyHandleUtil.SetAttribute(obj, "ObjectType", string.IsNullOrWhiteSpace(overrideObjectType) ? null : overrideObjectType);
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
          {
@@ -1145,7 +1167,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="predefinedType">The predefined types.</param>
       /// <returns>The handle.</returns>
       /// <remarks>IfcCurtainWallType is new to IFC2x3; we will use IfcTypeObject for IFC2x2.</remarks>
-      public static IFCAnyHandle CreateCurtainWallType(IFCFile file, Element revitType,
+      public static IFCAnyHandle CreateCurtainWallType(IFCFile file, ElementType revitType,
          string guid, HashSet<IFCAnyHandle> propertySets,
          List<IFCAnyHandle> representationMaps, string elementTag, string predefinedType)
       {
@@ -1153,14 +1175,13 @@ namespace Revit.IFC.Export.Toolkit
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
          {
             curtainWallType = CreateInstance(file, IFCEntityType.IfcTypeObject, revitType);
-            SetElementType(curtainWallType, revitType, guid, propertySets, null);
+            SetElementType(curtainWallType, revitType, ref predefinedType, guid, propertySets, null);
          }
          else
          {
             curtainWallType = CreateInstance(file, IFCEntityType.IfcCurtainWallType, revitType);
+            SetElementType(curtainWallType, revitType, ref predefinedType, guid, propertySets, representationMaps);
             SetSpecificEnumAttr(curtainWallType, "PredefinedType", predefinedType, "IfcCurtainWallType");
-
-            SetElementType(curtainWallType, revitType, guid, propertySets, representationMaps);
          }
 
          return curtainWallType;
@@ -2176,14 +2197,15 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="elementTag">The tag that represents the entity.</param>
       /// <param name="elementType">The type name.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateSpaceType(IFCFile file, Element revitType,
+      public static IFCAnyHandle CreateSpaceType(IFCFile file, ElementType revitType,
          string guid, HashSet<IFCAnyHandle> propertySets,
          IList<IFCAnyHandle> representationMaps, string predefinedType)
       {
          IFCAnyHandle spaceType = CreateInstance(file, IFCEntityType.IfcSpaceType, revitType);
-         SetElementType(spaceType, revitType, guid, propertySets, representationMaps);
+         SetElementType(spaceType, revitType, ref predefinedType, guid, propertySets, representationMaps);
          if (!string.IsNullOrEmpty(predefinedType))
             IFCAnyHandleUtil.SetAttribute(spaceType, "PredefinedType", predefinedType, true);
+         
          return spaceType;
       }
 
@@ -2224,11 +2246,11 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="relateingElement">The element to which the structure contributes.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateRelContainedInSpatialStructure(IFCFile file, string guid, IFCAnyHandle ownerHistory,
-          string name, string description, HashSet<IFCAnyHandle> relatedElements, IFCAnyHandle relateingElement)
+          string name, string description, HashSet<IFCAnyHandle> relatedElements, IFCAnyHandle relatingElement)
       {
          IFCAnyHandle relContainedInSpatialStructure = CreateInstance(file, IFCEntityType.IfcRelContainedInSpatialStructure, null);
          IFCAnyHandleUtil.SetAttribute(relContainedInSpatialStructure, "RelatedElements", relatedElements);
-         IFCAnyHandleUtil.SetAttribute(relContainedInSpatialStructure, "RelatingStructure", relateingElement);
+         IFCAnyHandleUtil.SetAttribute(relContainedInSpatialStructure, "RelatingStructure", relatingElement);
          SetRelConnects(relContainedInSpatialStructure, guid, ownerHistory, name, description);
          return relContainedInSpatialStructure;
       }
@@ -3749,13 +3771,13 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="elementType">The type name.</param>
       /// <param name="predefinedType">The predefined types.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateMemberType(IFCFile file, Element revitType,
+      public static IFCAnyHandle CreateMemberType(IFCFile file, ElementType revitType,
          string guid, HashSet<IFCAnyHandle> propertySets,
          IList<IFCAnyHandle> representationMaps, string predefinedType)
       {
          IFCAnyHandle memberType = CreateInstance(file, IFCEntityType.IfcMemberType, revitType);
+         SetElementType(memberType, revitType, ref predefinedType, guid, propertySets, representationMaps);
          SetSpecificEnumAttr(memberType, "PredefinedType", predefinedType, "IfcMemberType");
-         SetElementType(memberType, revitType, guid, propertySets, representationMaps);
          return memberType;
       }
 
@@ -3847,14 +3869,13 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="elementType">The type name.</param>
       /// <param name="predefinedType">The predefined types.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateBeamType(IFCFile file, Element revitType,
+      public static IFCAnyHandle CreateBeamType(IFCFile file, ElementType revitType,
          string guid, HashSet<IFCAnyHandle> propertySets,
          IList<IFCAnyHandle> representationMaps, string predefinedType)
       {
          IFCAnyHandle beamType = CreateInstance(file, IFCEntityType.IfcBeamType, revitType);
+         SetElementType(beamType, revitType, ref predefinedType, guid, propertySets, representationMaps);
          SetSpecificEnumAttr(beamType, "PredefinedType", predefinedType, "IfcBeamType");
-
-         SetElementType(beamType, revitType, guid, propertySets, representationMaps);
          return beamType;
       }
 
@@ -3873,13 +3894,12 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="elementType">The type name.</param>
       /// <param name="predefinedType">The predefined types.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateColumnType(IFCFile file, Element revitType, string guid,
+      public static IFCAnyHandle CreateColumnType(IFCFile file, ElementType revitType, string guid,
          HashSet<IFCAnyHandle> propertySets, IList<IFCAnyHandle> representationMaps, string predefinedType)
       {
          IFCAnyHandle columnType = CreateInstance(file, IFCEntityType.IfcColumnType, revitType);
-         // IFCAnyHandleUtil.SetAttribute(columnType, "PredefinedType", predefinedType);
+         SetElementType(columnType, revitType, ref predefinedType, guid, propertySets, representationMaps);
          SetSpecificEnumAttr(columnType, "PredefinedType", predefinedType, "IfcColumnType");
-         SetElementType(columnType, revitType, guid, propertySets, representationMaps);
          return columnType;
       }
 
@@ -4064,12 +4084,17 @@ namespace Revit.IFC.Export.Toolkit
             typeEntityToCreateForGUID.SetByTypeAndPredefinedType(entityTypeToUse, predefinedType);
             guid = GUIDUtil.GenerateIFCGuidFrom(elementType, typeEntityToCreateForGUID);
          }
-         SetElementType(genericIFCType, elementType, guid, propertySets, representationMaps);
+
+         string predefinedTypeOrDefault = typeEntityToCreate.GetPredefinedTypeOrDefault();
+         SetElementType(genericIFCType, elementType, ref predefinedTypeOrDefault, guid, propertySets, representationMaps);
 
          // Earlier types in IFC2x_ may not have PredefinedType property. Ignore error
          try
          {
-            IFCAnyHandleUtil.SetAttribute(genericIFCType, "PredefinedType", typeEntityToCreate.GetPredefinedTypeOrDefault(), true);
+            if (!string.IsNullOrEmpty(predefinedTypeOrDefault))
+            {
+               IFCAnyHandleUtil.SetAttribute(genericIFCType, "PredefinedType", predefinedTypeOrDefault, true);
+            }
          }
          catch { }
 
@@ -4093,13 +4118,15 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="elementType">The type name.</param>
       /// <param name="predefinedType">The predefined types.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreatePipeSegmentType(IFCFile file, Element revitType,
+      public static IFCAnyHandle CreatePipeSegmentType(IFCFile file, ElementType revitType,
           string guid, HashSet<IFCAnyHandle> propertySets, IList<IFCAnyHandle> representationMaps,
-          IFCPipeSegmentType predefinedType)
+          IFCPipeSegmentType ifcPipeSegmentType)
       {
          IFCAnyHandle pipeSegmentType = CreateInstance(file, IFCEntityType.IfcPipeSegmentType, revitType);
+
+         string predefinedType = ifcPipeSegmentType.ToString();
+         SetElementType(pipeSegmentType, revitType, ref predefinedType, guid, propertySets, representationMaps);
          IFCAnyHandleUtil.SetAttribute(pipeSegmentType, "PredefinedType", predefinedType);
-         SetElementType(pipeSegmentType, revitType, guid, propertySets, representationMaps);
          return pipeSegmentType;
       }
 
@@ -4120,7 +4147,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="elementType">The type name.</param>
       /// <param name="predefinedType">The predefined types.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateFurnitureType(IFCFile file, Element revitType,
+      public static IFCAnyHandle CreateFurnitureType(IFCFile file, ElementType revitType,
           string guid, HashSet<IFCAnyHandle> propertySets, IList<IFCAnyHandle> representationMaps,
           string elementTag, string elementType, string assemblyPlaceStr, string predefinedType)
       {
@@ -4143,10 +4170,15 @@ namespace Revit.IFC.Export.Toolkit
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
             predefinedType = IFCValidateEntry.GetValidIFCPredefinedTypeType(predefinedType, predefinedType, "IFCFurnitureType");
+         }
+
+         SetElementType(furnitureType, revitType, ref predefinedType, guid, propertySets, representationMaps);
+
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         {
             IFCAnyHandleUtil.SetAttribute(furnitureType, "PredefinedType", predefinedType, true);
          }
 
-         SetElementType(furnitureType, revitType, guid, propertySets, representationMaps);
          return furnitureType;
       }
 
@@ -4318,15 +4350,16 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="elementTag">The tag that represents the entity.</param>
       /// <param name="elementType">The type name.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateSystemFurnitureElementType(IFCFile file, Element revitType,
+      public static IFCAnyHandle CreateSystemFurnitureElementType(IFCFile file, ElementType revitType,
          string guid, HashSet<IFCAnyHandle> propertySets,
          IList<IFCAnyHandle> representationMaps, string predefinedType)
       {
          IFCAnyHandle systemFurnitureElementType = CreateInstance(file, IFCEntityType.IfcSystemFurnitureElementType, revitType);
-         SetElementType(systemFurnitureElementType, revitType, guid, propertySets, representationMaps);
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-            if (!string.IsNullOrEmpty(predefinedType))
-               IFCAnyHandleUtil.SetAttribute(systemFurnitureElementType, "PredefinedType", predefinedType, true);
+
+         SetElementType(systemFurnitureElementType, revitType, ref predefinedType, guid, propertySets, representationMaps);
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && !string.IsNullOrEmpty(predefinedType))
+            IFCAnyHandleUtil.SetAttribute(systemFurnitureElementType, "PredefinedType", predefinedType, true);
+         
          return systemFurnitureElementType;
       }
 
@@ -4999,23 +5032,23 @@ namespace Revit.IFC.Export.Toolkit
       /// false if the attached style shape takes precedence.</param>
       /// <param name="userDefinedOperationType">Designator for the user defined operation type, shall only be provided, if the value of OperationType is set to USERDEFINED.</param>
       /// <returns></returns>
-      public static IFCAnyHandle CreateDoorType(IFCFile file, Element revitType,
+      public static IFCAnyHandle CreateDoorType(IFCFile file, ElementType revitType,
          string guid, HashSet<IFCAnyHandle> propertySets,
          IList<IFCAnyHandle> representationMaps, string preDefinedType, string operationType,
          bool parameterTakesPrecedence, string userDefinedOperationType)
       {
          IFCAnyHandle doorType = CreateInstance(file, IFCEntityType.IfcDoorType, revitType);
          string validatedPreDefinedType = IFCValidateEntry.ValidateStrEnum<IFC4.IFCDoorType>(preDefinedType);
-         IFCAnyHandleUtil.SetAttribute(doorType, "PreDefinedType", validatedPreDefinedType, true);
          string validatedOperationType = GetValidatedDoorTypeOperation(operationType);
          IFCAnyHandleUtil.SetAttribute(doorType, "OperationType", validatedOperationType, true);
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             IFCAnyHandleUtil.SetAttribute(doorType, "ParameterTakesPrecedence", parameterTakesPrecedence);
-         if (String.Compare(validatedOperationType, "USERDEFINED", true) == 0 && !string.IsNullOrEmpty(userDefinedOperationType))
+         if (string.Compare(validatedOperationType, "USERDEFINED", true) == 0 && !string.IsNullOrEmpty(userDefinedOperationType))
             IFCAnyHandleUtil.SetAttribute(doorType, "UserDefinedOperationType", userDefinedOperationType);
 
-         SetElementType(doorType, revitType, guid, propertySets, representationMaps);
+         SetElementType(doorType, revitType, ref validatedPreDefinedType, guid, propertySets, representationMaps);
+         IFCAnyHandleUtil.SetAttribute(doorType, "PreDefinedType", validatedPreDefinedType, true);
          return doorType;
       }
 
@@ -5073,22 +5106,24 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="paramTakesPrecedence">The Boolean value reflects, whether the parameter given in the attached lining and panel properties exactly define the geometry (TRUE), or whether the attached style shape take precedence (FALSE). In the last case the parameter have only informative value. If not provided, no such information can be infered. </param>
       /// <param name="userDefinedPartitioningType">Designator for the user defined partitioning type, shall only be provided, if the value of PartitioningType is set to USERDEFINED.</param>
       /// <returns></returns>
-      public static IFCAnyHandle CreateWindowType(IFCFile file, Element revitType,
+      public static IFCAnyHandle CreateWindowType(IFCFile file, ElementType revitType,
          string guid, HashSet<IFCAnyHandle> propertySets,
          IList<IFCAnyHandle> representationMaps, string preDefinedType,
          string partitioningType, bool paramTakesPrecedence, string userDefinedPartitioningType)
       {
          IFCAnyHandle windowType = CreateInstance(file, IFCEntityType.IfcWindowType, revitType);
          string validatedPreDefinedType = IFCValidateEntry.ValidateStrEnum<IFC4.IFCWindowType>(preDefinedType);
-         IFCAnyHandleUtil.SetAttribute(windowType, "PreDefinedType", validatedPreDefinedType, true);
          string validatedPartitioningType = IFCValidateEntry.ValidateStrEnum<IFC4.IFCWindowTypePartitioning>(partitioningType);
          IFCAnyHandleUtil.SetAttribute(windowType, "PartitioningType", validatedPartitioningType, true);
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             IFCAnyHandleUtil.SetAttribute(windowType, "ParameterTakesPrecedence", paramTakesPrecedence);
-         if (String.Compare(validatedPartitioningType, "USERDEFINED", true) == 0 && !string.IsNullOrEmpty(userDefinedPartitioningType))
+         if (string.Compare(validatedPartitioningType, "USERDEFINED", true) == 0 && !string.IsNullOrEmpty(userDefinedPartitioningType))
             IFCAnyHandleUtil.SetAttribute(windowType, "UserDefinedPartitioningType", userDefinedPartitioningType);
-         SetElementType(windowType, revitType, guid, propertySets, representationMaps);
+         
+         SetElementType(windowType, revitType, ref validatedPreDefinedType, guid, propertySets, representationMaps);
+         IFCAnyHandleUtil.SetAttribute(windowType, "PreDefinedType", validatedPreDefinedType, true);
+
          return windowType;
       }
 
