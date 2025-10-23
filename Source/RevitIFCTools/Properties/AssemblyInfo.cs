@@ -12,7 +12,7 @@ using System.Windows;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("RevitIFCTools")]
-[assembly: AssemblyCopyright("Copyright ©  2012-2024")]
+[assembly: AssemblyCopyright("Copyright ©  2012-2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -52,5 +52,5 @@ using System.Windows;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("windows7.0")]
-[assembly: AssemblyVersion("25.2.0.0")]
-[assembly: AssemblyFileVersion("25.2.0.0")]
+[assembly: AssemblyVersion("25.4.4.0")]
+[assembly: AssemblyFileVersion("25.4.4.0")]
