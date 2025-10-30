@@ -985,17 +985,16 @@ namespace Revit.IFC.Export.Utility
          IFCAnyHandle surfStyleHnd = CategoryUtil.GetOrCreateMaterialStyle(document, file, materialId);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(surfStyleHnd))
          {
-            ISet<IFCAnyHandle> styles = new HashSet<IFCAnyHandle>();
-            styles.Add(surfStyleHnd);
+            IFCAnyHandle style = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ?
+               IFCInstanceExporter.CreatePresentationStyleAssignment(file, new HashSet<IFCAnyHandle>() { surfStyleHnd }) :
+               surfStyleHnd;
+            
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(style))
+            {
+               return;
+            }
 
-            if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-            {
-               IFCInstanceExporter.CreatePresentationStyleAssignment(file, styles);
-            }
-            else
-            {
-               IFCInstanceExporter.CreateStyledItem(file, bodyItem, styles as HashSet<IFCAnyHandle>, null);
-            }
+            IFCInstanceExporter.CreateStyledItem(file, bodyItem, new() { style }, null);
          }
       }
    }

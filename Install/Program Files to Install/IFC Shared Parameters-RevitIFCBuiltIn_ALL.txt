@@ -8625,8 +8625,8 @@ PARAM	c3a0ed1e-419f-43a4-a0d3-b88bbb1ce593	IfcRampLanding.IfcQtyGrossVolume	VOLU
 PARAM	785453d0-915c-47a2-a024-fed0cdaf39bf	IfcRampLanding.IfcQtyGrossWeight	NUMBER		2	1		1
 PARAM	925f5c62-001f-4777-87e2-862c97393149	IfcRampLanding.IfcQtyNetWeight	NUMBER		2	1		1
 PARAM	8635020d-0c0e-4f3a-ab32-a0ad3b6bfff2	BIM Standards URL	URL		2	1		1
-PARAM	5267e00f-cf59-45eb-8317-bcd7028fa748	OmniClass Number	TEXT		2	1		1
-PARAM	90847638-6cac-41fa-9db4-2e151700858f	OmniClass Title	TEXT		2	1		1
+PARAM	5267e00f-cf59-45eb-8317-bcd7028fa748	Classification Number	TEXT		2	1		1
+PARAM	90847638-6cac-41fa-9db4-2e151700858f	Classification Title	TEXT		2	1		1
 PARAM	0823de64-1327-4b89-a69c-3820b898d926	Space Type (Owner) Reference	TEXT		2	1		1
 PARAM	a52ff1af-7a41-4bee-b956-4866bf6feca0	Space Type (Owner) Name	TEXT		2	1		1
 PARAM	ec9e9682-f7a2-4a5a-aefc-c77c16401e23	Space Category (Owner) Reference	TEXT		2	1		1

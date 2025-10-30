@@ -674,36 +674,42 @@ namespace Revit.IFC.Export.Utility
          return elementName;
       }
 
+      public static string GetFamilyName(ElementType elementType)
+      {
+         if (elementType == null)
+            return null;
+
+         string familyName = elementType?.FamilyName ?? string.Empty;
+
+         if (familyName == "???")
+         {
+            return null;
+         }
+
+         return familyName;
+      }
+
       public static string GetFamilyAndTypeName(Element element)
       {
          if (element == null)
             return null;
 
-         string familyName = null;
-         string typeName = null;
+         ElementType elementType = (element as ElementType) ?? 
+            (element.Document.GetElement(element.GetTypeId()) as ElementType);
 
-         ElementType elementType = element.Document.GetElement(element.GetTypeId()) as ElementType;
-         if (elementType != null)
-         {
-            typeName = elementType.Name;
-            if (typeName == "???")
-               typeName = "";
-
-            familyName = elementType.FamilyName;
-            if (familyName == "???")
-               familyName = "";
-         }
-
+         string typeName = elementType?.Name ?? string.Empty;
+         string familyName = elementType?.FamilyName ?? string.Empty;
+         
          // set famSym name.
-         if (!string.IsNullOrEmpty(familyName))
+         if (familyName != string.Empty && familyName != "???")
          {
-            if (!string.IsNullOrEmpty(typeName))
+            if (typeName != string.Empty && typeName != "???")
                return familyName + ":" + typeName;
 
             return familyName;
          }
 
-         return typeName;
+         return typeName == "???" ? string.Empty : typeName;
       }
 
       /// <summary>

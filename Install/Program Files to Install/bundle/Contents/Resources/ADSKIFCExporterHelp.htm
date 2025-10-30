@@ -1,10 +1,8 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/TR/REC-html40" xml:lang="en" dir="ltr" class="js">
 <head>
 <meta http-equiv=Content-Type content="text/html; charset=utf-8">
 <title>Revit Exchange - Revit IFC Help</title>
-</head>
-
 <style> 
 html, body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, hr, pre, code, form, fieldset, legend, input, textarea, blockquote, table, th, td {
   padding: 0;
@@ -237,14 +235,37 @@ working on expanding and eventually removing this limit, and we will be tracking
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
 <div class="versionset">
+	<div class="version">26.4.0.0</div><div class="versioninfo-bullet">
+	      <br><p>
+	         General:
+			<ul>
+				<li>This is the major release of IFC Exporter 26.4 for Revit 2026.
+				<li>It contains various improvements and bug fixes for the previous 26.1 version.
+			</ul>
+	      </p>
+	   <br>
+	   <p>
+	         Improvements and Bug Fixes:
+	         </p><ul>
+	            <li>Corrected placement of assembly instances when exporting to IFC.
+	            <li>Ensured rebar and related elements retain the proper material associations in IFC output.
+	            <li>Fixed exported space elevation so IFC output reflects the correct Z values. (GitHub #907)
+	            <li>Improved positioning of exported area elements to better align with the source model. (GitHub #891)
+	            <li>Improved room export ordering to keep schedules consistent with the Revit model.
+	         </ul>
+		<br>
+	   </div>
+</div>
+<br>
+<div class="versionset">
 	<div class="version">26.1.0.0</div><div class="versioninfo-bullet">
-      <br><p>
-         General:
-
-         <ul>
-            <li>This is the first version of IFC Extension for Revit 2026.
-         </ul>
-   </div>
+	      <br><p>
+	         General:
+	
+	         </p><ul>
+	            <li>This is the first version of IFC Extension for Revit 2026.
+	         </li></ul>
+	   </div>
 </div>
 
 </body>

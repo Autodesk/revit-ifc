@@ -2240,8 +2240,6 @@ namespace Revit.IFC.Export.Utility
 
          XYZ centerPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, arc.Center);
 
-         IFCAnyHandle centerPointHandle = ExporterUtil.CreateCartesianPoint(file, centerPoint);
-
          XYZ xDirection = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, arc.XDirection);
          IFCAnyHandle axis = ExporterUtil.CreateAxis2Placement3D(file, centerPoint, arc.Normal, xDirection);
 
@@ -2267,8 +2265,6 @@ namespace Revit.IFC.Export.Utility
          IFCFile file = exporterIFC.GetFile();
 
          XYZ centerPoint = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, ellipticalArc.Center);
-
-         IFCAnyHandle centerPointHandle = ExporterUtil.CreateCartesianPoint(file, centerPoint);
 
          XYZ xDirection = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, ellipticalArc.XDirection);
          IFCAnyHandle axis = ExporterUtil.CreateAxis2Placement3D(file, centerPoint, ellipticalArc.Normal, xDirection);

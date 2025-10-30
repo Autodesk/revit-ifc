@@ -49,8 +49,7 @@ namespace Revit.IFC.Export.Exporter
          if (element == null)
             return;
 
-         HashSet<IFCAnyHandle> areaHandles = null;
-         if (!ExporterCacheManager.AreaSchemeCache.TryGetValue(element.Id, out areaHandles))
+         if (!ExporterCacheManager.AreaSchemeCache.TryGetValue(element.Id, out HashSet<IFCAnyHandle> areaHandles))
             return;
 
          if (areaHandles == null || areaHandles.Count == 0)
@@ -61,7 +60,7 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return;
 
-         using (IFCTransaction tr = new IFCTransaction(file))
+         using (IFCTransaction tr = new(file))
          {
             string guid = GUIDUtil.CreateGUID(element);
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
@@ -73,7 +72,7 @@ namespace Revit.IFC.Export.Exporter
 
             IFCAnyHandle areaScheme = IFCInstanceExporter.CreateGroup(file, guid,
                 ownerHistory, name, description, objectType);
-            IFCExportInfoPair exportInfo = new IFCExportInfoPair(elementClassTypeEnum);
+            IFCExportInfoPair exportInfo = new(elementClassTypeEnum);
             productWrapper.AddElement(element, areaScheme, exportInfo);
 
             string groupGuid = GUIDUtil.GenerateIFCGuidFrom(

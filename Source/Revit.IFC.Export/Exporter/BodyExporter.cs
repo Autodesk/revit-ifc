@@ -792,14 +792,30 @@ namespace Revit.IFC.Export.Exporter
          return (unmatchedEdgeSz == 0);
       }
 
+      /// <summary>
+      /// Projects a point onto the infinite plane described by a planar surface, even if it is outside of the planar 
+      /// surface bounds.
+      /// </summary>
+      /// <param name="face">The face.</param>
+      /// <param name="originalPoint">The point to project.</param>
+      /// <returns>A point on the unbounded plane.</returns>
+      private static XYZ SafeProjection(PlanarFace face, XYZ originalPoint)
+      {
+         XYZ xVector = face.XVector;
+         XYZ yVector = face.YVector;
+         XYZ origin = face.Origin;
+         XYZ relativePoint = originalPoint - origin;
+         xVector *= xVector.DotProduct(relativePoint);
+         yVector *= yVector.DotProduct(relativePoint);
+         return origin + xVector + yVector;
+      }
+
       // This is a simplified routine for solids that are composed of planar faces with
       // polygonal edges.  This allows us to use the edges as the boundaries of the faces.
       private static bool ExportPlanarBodyIfPossible(ExporterIFC exporterIFC, Solid solid,
           IList<FaceSetInfo> currentFaceHashSetList, Transform lcs)
       {
-         IFCFile file = exporterIFC.GetFile();
-
-         IList<PlanarFace> planarFaces = new List<PlanarFace>();
+         List<PlanarFace> planarFaces = [];
          foreach (Face face in solid.Faces)
          {
             PlanarFace planarFace = face as PlanarFace;
@@ -809,22 +825,21 @@ namespace Revit.IFC.Export.Exporter
             planarFaces.Add(planarFace);
          }
 
-         double vertexTolerance = ExporterCacheManager.Document.Application.VertexTolerance;
-         IFCXYZFuzzyComparer ifcXYZFuzzyComparer = new IFCXYZFuzzyComparer(vertexTolerance);
+         IFCXYZFuzzyComparer ifcXYZFuzzyComparer = new(ExporterCacheManager.LengthPrecision);
          
          // Prepare polyloop data and check the polyloops for duplicate points before creating
          // IFC instances to avoid unnecessary points and faces in the IFC document.
-         IDictionary<PlanarFace, IList<IList<XYZ>>> polyloops = new Dictionary<PlanarFace, IList<IList<XYZ>>>();
-         ICollection<IList<IList<int>>> faceSetIndices = new HashSet<IList<IList<int>>>();
+         Dictionary<PlanarFace, IList<IList<XYZ>>> polyloops = new();
+         HashSet<IList<IList<int>>> faceSetIndices = new();
          foreach (PlanarFace planarFace in planarFaces)
          {
             EdgeArrayArray edgeArrayArray = planarFace.EdgeLoops;
-            IList<IList<XYZ>> edgeArrayVertices = new List<IList<XYZ>>();
+            List<IList<XYZ>> edgeArrayVertices = [];
 
             foreach (EdgeArray edgeArray in edgeArrayArray)
             {
-               ISet<XYZ> uniqueVertices = new SortedSet<XYZ>(ifcXYZFuzzyComparer);
-               IList<XYZ> vertices = new List<XYZ>();
+               SortedSet<XYZ> uniqueVertices = new(ifcXYZFuzzyComparer);
+               List<XYZ> vertices = [];
 
                foreach (Edge edge in edgeArray)
                {
@@ -834,12 +849,13 @@ namespace Revit.IFC.Export.Exporter
                   // Don't add last point to vertices, as this will be added in the next edge.
                   for (int idx = 0; idx < numPoints - 1; idx++)
                   {
-                     uniqueVertices.Add(curvePoints[idx]);
-                     vertices.Add(curvePoints[idx]);
+                     XYZ pointOnPlane = SafeProjection(planarFace, curvePoints[idx]);
+                     uniqueVertices.Add(pointOnPlane);
+                     vertices.Add(pointOnPlane);
                   }
                }
 
-               // Polyloop contains duplicates or small edges
+               // Polyloop contains mostly duplicates or small edges
                if (uniqueVertices.Count < 3)
                {
                   return false;
@@ -851,14 +867,16 @@ namespace Revit.IFC.Export.Exporter
             polyloops.Add(planarFace, edgeArrayVertices);
          }
 
-         HashSet<IFCAnyHandle> currentFaceSet = new HashSet<IFCAnyHandle>();
-         IDictionary<XYZ, IFCAnyHandle> vertexCache = new SortedDictionary<XYZ, IFCAnyHandle>(ifcXYZFuzzyComparer);
+         IFCFile file = exporterIFC.GetFile();
+
+         HashSet<IFCAnyHandle> currentFaceSet = new();
+         SortedDictionary<XYZ, IFCAnyHandle> vertexCache = new(ifcXYZFuzzyComparer);
          foreach (KeyValuePair<PlanarFace, IList<IList<XYZ>>> polyloop in polyloops)
          {
-            IList<IList<int>> planarFaceIndices = new List<IList<int>>();
+            List<IList<int>> planarFaceIndices = [];
 
-            HashSet<IFCAnyHandle> faceBounds = new HashSet<IFCAnyHandle>();
-            IList<IList<IFCAnyHandle>> edgeArrayVertices = new List<IList<IFCAnyHandle>>();
+            HashSet<IFCAnyHandle> faceBounds = new();
+            List<IList<IFCAnyHandle>> edgeArrayVertices = [];
             XYZ faceNormal = polyloop.Key.FaceNormal;
             int outerEdgeArrayIndex = 0;
             int edgeArraySize = polyloop.Value.Count;
@@ -866,10 +884,10 @@ namespace Revit.IFC.Export.Exporter
 
             foreach (IList<XYZ> edgeLoop in polyloop.Value)
             {
-               IList<int> edgeLoopIndices = new List<int>();
+               List<int> edgeLoopIndices = [];
 
-               IList<IFCAnyHandle> vertices = new List<IFCAnyHandle>();
-               IList<XYZ> vertexXYZs = new List<XYZ>();
+               List<IFCAnyHandle> vertices = [];
+               List<XYZ> vertexXYZs = [];
 
                foreach (XYZ vertex in edgeLoop)
                {
@@ -2059,7 +2077,7 @@ namespace Revit.IFC.Export.Exporter
                            // The extrusion direction is either null or too small to normalize
                            return null;
                         }
-                        var dirIFC = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, dir);
+                        XYZ dirIFC = ExporterIFCUtils.TransformAndScaleVector(exporterIFC, dir);
                         dirIFC = basePlaneTrf.Inverse.OfVector(dirIFC);
 
                         IFCAnyHandle direction = ExporterUtil.CreateDirection(file, dirIFC);
@@ -3027,8 +3045,7 @@ namespace Revit.IFC.Export.Exporter
          }
          else
          {
-            double vertexTolerance = ExporterCacheManager.LengthPrecision;
-            IFCXYZFuzzyComparer ifcXYZFuzzyComparer = new IFCXYZFuzzyComparer(vertexTolerance);
+            IFCXYZFuzzyComparer ifcXYZFuzzyComparer = new IFCXYZFuzzyComparer(ExporterCacheManager.LengthPrecision);
 
             SortedDictionary<XYZ, IFCAnyHandle> createdVertices = new SortedDictionary<XYZ, IFCAnyHandle>(ifcXYZFuzzyComparer);
 

@@ -209,9 +209,9 @@ namespace Revit.IFC.Export.Exporter
                   shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(cfg.ExporterIFC, cfg.Sheet, 
                      cfgCategoryId, contextOfItems, bodyItems, null);
                }
-               IList<IFCAnyHandle> shapeReps = new List<IFCAnyHandle>();
-               if (shapeRep != null)
-                  shapeReps.Add(shapeRep);
+
+               List<IFCAnyHandle> shapeReps = [];
+               shapeReps.AddIfNotNull(shapeRep);
 
                IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(cfg.File, null, null, shapeReps);
                IFCAnyHandle handle = IFCInstanceExporter.CreateReinforcingBar(cfg.ExporterIFC, cfg.Sheet, guid, ExporterCacheManager.OwnerHistoryHandle,

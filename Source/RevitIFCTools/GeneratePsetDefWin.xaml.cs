@@ -79,6 +79,10 @@ namespace RevitIFCTools
          logF = new StreamWriter(Path.Combine(tempFolder, "GeneratePsetDefWin.log"));
          textBox_OutputMsg.Clear();
 
+         outputFilename = textBox_OutputFile.Text;
+         SharedParFileName = textBox_SharedParFile.Text;
+         SharedParFileNameType = textBox_ShParFileType.Text;
+
          string parFileNameOut = Path.Combine(Path.GetDirectoryName(SharedParFileName), Path.GetFileNameWithoutExtension(SharedParFileName) + "_out.txt");
          stSharedPar = File.CreateText(parFileNameOut);
          IDictionary<string, SharedParameterDef> existingParDict = ProcessPsetDefinition.processExistingParFile(SharedParFileName);
@@ -138,10 +142,10 @@ namespace RevitIFCTools
             procPsetDef.ProcessSchemaPsetDef(schemaFolder, qto, keywordsToProcess);
          }
 
-         // Process IFC2x3 QTO properties
+         // Process IFC2x2/IFC2x3 QTO properties
          foreach (string schemaName in IfcSchemaProcessed)
          {
-            procPsetDef.Process2x3QtoSets(schemaName);
+            procPsetDef.ProcessPreIfc4QtoSets(schemaName);
          }
 
          // Process predefined properties
@@ -569,7 +573,6 @@ namespace RevitIFCTools
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
                      outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
                }
-               //}
 
                // Process each property
                foreach (PsetProperty prop in pDef.properties)

@@ -983,7 +983,7 @@ namespace Revit.IFC.Export.Utility
             string exporterVersion = "Unknown Exporter version";
             if (File.Exists(assemblyFile))
             {
-               exporterVersion = "IFC " + FileVersionInfo.GetVersionInfo(assemblyFile).FileVersion;
+               exporterVersion = FileVersionInfo.GetVersionInfo(assemblyFile).FileVersion;
             }
             return exporterVersion;
          }
