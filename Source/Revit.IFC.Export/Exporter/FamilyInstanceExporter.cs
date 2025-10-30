@@ -240,7 +240,7 @@ namespace Revit.IFC.Export.Exporter
          TypeObjectKey typeKey, ref FamilyTypeInfo typeInfo, DoorWindowInfo doorWindowInfo,
          IList<IFCAnyHandle> representations3D, IList<Transform> trfRepMapList,
          IList<IFCAnyHandle> representations2D, IDictionary<IFCAnyHandle, Transform> trfRep2DMapList, Element familyInstance, ElementType familySymbol,
-         ElementType originalFamilySymbol, ElementId overrideLevelId, bool useInstanceGeometry, 
+         ElementType originalFamilySymbol, ElementId overrideLevelId, bool useInstanceGeometry,
          bool exportParts, IFCExportInfoPair exportType, out HashSet<IFCAnyHandle> propertySets)
       {
          // for many
@@ -611,7 +611,7 @@ namespace Revit.IFC.Export.Exporter
          var typeKey = new TypeObjectKey(originalFamilySymbol.Id,
             overrideLevelId, flipped, exportType, overrideMaterialId, containedInAssembly);
 
-         FamilyTypeInfo currentTypeInfo = 
+         FamilyTypeInfo currentTypeInfo =
             ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
          bool foundNotEmpty = currentTypeInfo.IsValid();
          bool foundButEmpty = false;
@@ -814,9 +814,9 @@ namespace Revit.IFC.Export.Exporter
                      if (exportType.ExportInstance == IFCEntityType.IfcSlab || exportType.ExportInstance == IFCEntityType.IfcPlate)
                         bodyExporterOptions.CollectFootprintHandle = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
 
-                     GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);  
+                     GeometryObject potentialPathGeom = GetPotentialCurveOrPolyline(exportGeometryElement, options);
                      bodyData = BodyExporter.ExportBody(exporterIFC, familyInstance, categoryId, ExporterUtil.GetSingleMaterial(familyInstance),
-                           geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName, instanceGeometry:useInstanceGeometry);
+                           geomObjects, bodyExporterOptions, extraParams, potentialPathGeom, profileName: profileName, instanceGeometry: useInstanceGeometry);
                      typeInfo.MaterialIdList = bodyData.MaterialIds;
                      offsetTransform = bodyData.OffsetTransform;
 
@@ -1172,24 +1172,25 @@ namespace Revit.IFC.Export.Exporter
             if (!string.IsNullOrEmpty(shapeType) && (shapeType.Contains("Brep") || shapeType.Equals("Tessellation")))
             {
                LocationPoint loc = familyInstance.Location as LocationPoint;
-               if (loc != null)
+               BasePoint basePoint = BasePoint.GetProjectBasePoint(familyInstance.Document);
+               // If base point position is zero length we should not apply location point offset.
+               if (loc != null && !basePoint.SharedPosition.IsZeroLength())
                {
                   newOffset = loc.Point.Z;
 
                   // Apply only when the familyInstance tranformation normal is vertical.
                   if (MathUtil.IsAlmostEqual(Math.Abs(trf.BasisZ.DotProduct(XYZ.BasisZ)), 1.0))
                   {
-                     //XYZ familyInstanceAssemblyOffset = exporterIFC.GetFamilyInstanceAssemblyOffset(familyInstance);
                      XYZ familyInstanceAssemblyOffset = XYZ.Zero;
                      LocationPoint familySymbolLocation = familyInstance.Symbol.Location as LocationPoint;
                      if (familySymbolLocation != null)
                         familyInstanceAssemblyOffset = XYZ.Zero - familySymbolLocation.Point;
-                     
+
                      newOffset += (trf.BasisZ.Z > MathUtil.Eps()) ?
                         familyInstanceAssemblyOffset.Z : -familyInstanceAssemblyOffset.Z;
                   }
                }
-               else
+               else if (loc == null)
                {
                   BoundingBoxXYZ bbox = familyInstance.get_BoundingBox(null);
                   if (bbox != null)
@@ -1475,7 +1476,7 @@ namespace Revit.IFC.Export.Exporter
                      {
                         ExporterCacheManager.MEPCache.CoveredElementsCache[familyInstance.Id] = categoryId;
                      }
-                     
+
                      // For cable trays and conduits, we might create systems during the end of export.
                      if (CanHaveSystemDefinition(exportType, categoryId))
                         ExporterCacheManager.MEPCache.CableElementsCache.Add(familyInstance.Id);
@@ -1817,7 +1818,7 @@ namespace Revit.IFC.Export.Exporter
       public static void PrintDbgInfo(params string[] inputArgs)
       {
          outFile ??= new StreamWriter(@"e:\temp\debug2dinfo.txt");
-         
+
          string data = "\t\t";
          foreach (string inputArg in inputArgs)
             data += " " + inputArg;

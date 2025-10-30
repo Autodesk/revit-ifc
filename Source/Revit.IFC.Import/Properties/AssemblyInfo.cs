@@ -7,12 +7,12 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("IFC Import for Revit")]
-[assembly: AssemblyCopyright("@2012-2024 Autodesk, Inc. All rights reserved.")]
+[assembly: AssemblyCopyright("@2012-2025 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("25.4.3.0")]
-[assembly: AssemblyFileVersion("25.4.3.0")]
+[assembly: AssemblyVersion("25.4.4.0")]
+[assembly: AssemblyFileVersion("25.4.4.0")]
 
 
 
