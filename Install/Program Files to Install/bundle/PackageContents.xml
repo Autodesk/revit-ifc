@@ -4,6 +4,6 @@
   <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2026" SeriesMax="R2026" />
   <Components Description="2026">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2026" SeriesMax="R2026" />
-    <ComponentEntry AppName="IFC For Revit 2026" Version="26.4.0" ModuleName="./Contents/2026/Revit.IFC.addin" AppDescription="IFC For Revit 2026" />
+    <ComponentEntry AppName="IFC For Revit 2026" Version="26.4.1" ModuleName="./Contents/2026/Revit.IFC.addin" AppDescription="IFC For Revit 2026" />
   </Components>
 </ApplicationPackage>

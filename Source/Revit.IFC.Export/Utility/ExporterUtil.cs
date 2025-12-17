@@ -3183,6 +3183,26 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// A function to determine if configuration settings suggest exporting the element as parts.
+      /// </summary>
+      /// <param name="layerCount">The number of layers</param>
+      /// <returns>False if we shouldn't export parts, true if further checks don't restrict it.</returns>
+      public static bool ShouldExportPartsForRV(int layerCount)
+      {
+         if (ExporterCacheManager.ExportOptionsCache.ExportParts)
+            return true;
+
+         if (layerCount < 2)
+            return false;
+
+         if (ExporterCacheManager.ExportOptionsCache.ExchangeRequirement != KnownERNames.Structural)
+            return false;
+
+         return ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ||
+            ExporterCacheManager.ExportOptionsCache.ExportAs4x3ReferenceView;
+      }
+
+      /// <summary>
       /// Creates parts for element if it is possible.
       /// </summary>
       /// <param name="element">the element</param>
@@ -3202,10 +3222,7 @@ namespace Revit.IFC.Export.Utility
             ExporterCacheManager.TemporaryPartsCache.GeometriesCount(elementId) : 
             PartUtils.GetAssociatedParts(element.Document, element.Id, false, true).Count;
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportParts ||
-            (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView &&
-            ExporterCacheManager.ExportOptionsCache.ExchangeRequirement == KnownERNames.Structural &&
-            associatedPartsCount > 1))
+         if (ShouldExportPartsForRV(associatedPartsCount))
             return ExportPartAs.Part;
 
          // If we get here, exportParts is false.
