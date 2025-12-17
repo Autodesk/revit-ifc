@@ -693,7 +693,7 @@ namespace Revit.IFC.Export.Exporter
       static IFCExportInfoPair CreateRampExportInfoPair(IFCEntityType entityName, IFCEntityType entityType, string predefType)
       {
          // For IFC4 and Structural Exchange Requirement export, ramps will be exported as IFCSlab type
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && 
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && 
             (ExporterCacheManager.ExportOptionsCache.ExchangeRequirement == KnownERNames.Structural))
          {
             entityName = IFCEntityType.IfcSlab;
