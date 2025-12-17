@@ -89,7 +89,12 @@ namespace BIM.IFC.Export.UI
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
             exchangeRequirement:KnownERNames.BuildingService));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true));
-		   AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
+            exchangeRequirement:KnownERNames.Architecture));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
+            exchangeRequirement:KnownERNames.Structural));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
+            exchangeRequirement:KnownERNames.BuildingService));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFCSG, 1, true, true, false, false, false, true, false, false, true, false, linkedFileExportAs, includeSteelElements: true));
       }
 

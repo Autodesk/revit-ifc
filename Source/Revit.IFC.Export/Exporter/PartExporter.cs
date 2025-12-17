@@ -1222,10 +1222,7 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>True if host element should be exported as parts, false otherwise.</returns>
       public static bool ShouldExportParts(Element hostElement, int layersCount)
       {
-         return hostElement != null && (ExporterCacheManager.ExportOptionsCache.ExportParts ||
-            (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView &&
-            ExporterCacheManager.ExportOptionsCache.ExchangeRequirement == KnownERNames.Structural &&
-            layersCount > 1));
+         return hostElement != null && ExporterUtil.ShouldExportPartsForRV(layersCount);
       }
       /// <summary>
       /// Checks if element has associated parts and all conditions are met for exporting it as Parts.
