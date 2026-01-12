@@ -386,8 +386,8 @@ namespace Revit.IFC.Import.Data
                   // Lower down this method we then pass lcs to the consumer element, so that it can apply
                   // the transform as required.
                   Transform transformToUse = Importer.TheProcessor.ApplyTransforms ? lcs : Transform.Identity;
-                  if (Importer.TheOptions.IsHybridImport && (
-                     Importer.TheHybridInfo != null))
+                  bool applyHybridOffset = Importer.TheOptions.IsHybridImport && Importer.TheHybridInfo != null && ObjectLocation?.RelativeTo == null;
+                  if (applyHybridOffset)
                   {
                      transformToUse.Origin += Importer.TheHybridInfo.LargeCoordinateOriginOffset;
                   }

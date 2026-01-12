@@ -117,7 +117,7 @@ namespace Revit.IFC.Export.Exporter
                HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { repItemHnd };
                IFCAnyHandle context2d = ExporterCacheManager.Get2DContextHandle(IFCRepresentationIdentifier.Annotation);
                IFCAnyHandle bodyRepHnd = RepresentationUtil.CreateAnnotationSetRep(exporterIFC, 
-                  textNote, catId, context2d, bodyItems);
+                  textNote, catId, context2d, bodyItems, false);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
                   throw new Exception("Failed to create shape representation.");

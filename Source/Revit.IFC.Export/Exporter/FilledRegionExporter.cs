@@ -115,7 +115,7 @@ namespace Revit.IFC.Export.Exporter
                   HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { representItem };
                   IFCAnyHandle context2D = ExporterCacheManager.Get2DContextHandle(IFCRepresentationIdentifier.Annotation);
                   IFCAnyHandle bodyRepHnd = RepresentationUtil.CreateAnnotationSetRep(exporterIFC, filledRegion, categoryId,
-                     context2D, bodyItems);
+                     context2D, bodyItems, false);
 
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepHnd))
                      return;

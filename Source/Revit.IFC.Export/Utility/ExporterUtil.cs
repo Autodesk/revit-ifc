@@ -2847,7 +2847,9 @@ namespace Revit.IFC.Export.Utility
          if (exportParts)
             return ExportPartAs.Part;
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && !exportParts && layersOrPartsCount > 1)
+         if ((ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ||
+            ExporterCacheManager.ExportOptionsCache.ExportAs4x3ReferenceView) &&
+            !exportParts && layersOrPartsCount > 1)
          {
             return ExportPartAs.ShapeAspect;
          }
@@ -2872,6 +2874,26 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// A function to determine if configuration settings suggest exporting the element as parts.
+      /// </summary>
+      /// <param name="layerCount">The number of layers</param>
+      /// <returns>False if we shouldn't export parts, true if further checks don't restrict it.</returns>
+      public static bool ShouldExportPartsForRV(int layerCount)
+      {
+         if (ExporterCacheManager.ExportOptionsCache.ExportParts)
+            return true;
+
+         if (layerCount < 2)
+            return false;
+
+         if (ExporterCacheManager.ExportOptionsCache.ExchangeRequirement != KnownERNames.Structural)
+            return false;
+
+         return ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ||
+            ExporterCacheManager.ExportOptionsCache.ExportAs4x3ReferenceView;
+      }
+
+      /// <summary>
       /// Creates parts for element if it is possible.
       /// </summary>
       /// <param name="element">the element</param>
@@ -2881,7 +2903,9 @@ namespace Revit.IFC.Export.Utility
       {
          ExportPartAs exportPartAs = ShouldExportByComponentsOrParts(element, layersCount);
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && (exportPartAs == ExportPartAs.Part || exportPartAs == ExportPartAs.ShapeAspect))
+         if ((ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView ||
+            ExporterCacheManager.ExportOptionsCache.ExportAs4x3ReferenceView) &&
+            (exportPartAs == ExportPartAs.Part || exportPartAs == ExportPartAs.ShapeAspect))
          {
             Document doc = element.Document;
             ICollection<ElementId> ids = new List<ElementId>() { element.Id };
