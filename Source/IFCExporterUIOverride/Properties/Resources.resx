@@ -951,7 +951,7 @@
     <value>Export as separate IFCs</value>
   </data>
   <data name="IFCVersion4x3" xml:space="preserve">
-    <value>IFC4x3</value>
+    <value>IFC4x3 Reference View</value>
   </data>
   <data name="ExportMaterialPropertySets" xml:space="preserve">
     <value>Export material property sets</value>
