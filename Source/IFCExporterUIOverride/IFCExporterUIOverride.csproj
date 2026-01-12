@@ -79,7 +79,7 @@
     </Reference>
     <Reference Include="UserInterfaceUtility, Version=24.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\API\2025\UserInterfaceUtility.dll</HintPath>
+      <HintPath>..\..\..\API\2024\UserInterfaceUtility.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
