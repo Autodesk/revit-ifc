@@ -195,8 +195,7 @@ namespace Revit.IFC.Export.Exporter
 
          IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cachePoints = new Dictionary<IFCFuzzyXYZ, IFCAnyHandle>();
          const GeometryUtil.TrimCurvePreference trimCurvePreference = GeometryUtil.TrimCurvePreference.TrimmedCurve;
-         IFCAnyHandle ifcCurveHnd = GeometryUtil.CreateIFCCurveFromRevitCurve(exporterIFC.GetFile(), exporterIFC,
-            curve, true, cachePoints, trimCurvePreference, null);
+         IFCAnyHandle ifcCurveHnd = GeometryUtil.CreateIFCCurveFromRevitCurve(exporterIFC.GetFile(), exporterIFC, curve, true, cachePoints, trimCurvePreference, null);
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcCurveHnd))
             return null;
          IList<IFCAnyHandle> axis_items = new List<IFCAnyHandle>();

@@ -72,34 +72,6 @@ namespace Revit.IFC.Export.Exporter
          return true;
       }
 
-      /// <summary>
-      /// Exports a curve element to the appropriate IFC entity.
-      /// </summary>
-      public static void ExportCurveElement(ExporterIFC exporterIFC, CurveElement curveElement, 
-         GeometryElement geometryElement, ProductWrapper productWrapper)
-      {
-         if (geometryElement == null || !ShouldCurveElementBeExported(curveElement))
-            return;
-
-         SketchPlane sketchPlane = curveElement.SketchPlane;
-         if (sketchPlane == null)
-            return;
-
-         ExportCurveBasedElementCommon(exporterIFC, curveElement, geometryElement, productWrapper, sketchPlane);
-      }
-
-      /// <summary>
-      /// Exports a site property line element to the appropriate IFC entity.
-      /// </summary>
-      public static void ExportPropertyLineElement(ExporterIFC exporterIFC, PropertyLine propertyLine,
-         GeometryElement geometryElement, ProductWrapper productWrapper)
-      {
-         if (geometryElement == null)
-            return;
-
-         ExportCurveBasedElementCommon(exporterIFC, propertyLine, geometryElement, productWrapper, null);
-      }
-
       private static void ExportCurveBasedElementCommon(ExporterIFC exporterIFC, Element element,
          GeometryElement geometryElement, ProductWrapper productWrapper, SketchPlane sketchPlane)
       {
@@ -107,12 +79,16 @@ namespace Revit.IFC.Export.Exporter
          IFCExportInfoPair exportType =
             ExporterUtil.GetProductExportType(exporterIFC, element, out ifcEnumType);
 
+         // Check the intended IFC entity or type name is in the exclude list specified in the UI
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(exportType.ExportInstance))
             return;
 
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
          ElementId sketchPlaneId = sketchPlane?.Id ?? ElementId.InvalidElementId;
 
+         // If we are exporting an IfcAnnotation, we will do a little extra work to get the local placement close
+         // to the sketch plane origin, if there is a sketch plane.  We could also do this in the generic case, 
+         // but for now just keeping the existing IfcAnnotation code more or less the same.
          bool exportingAnnotation = exportType.ExportInstance == IFCEntityType.IfcAnnotation;
          IFCFile file = exporterIFC.GetFile();
 
@@ -176,7 +152,43 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
-      private static IFCAnyHandle CreateAnnotationProductRepresentation(ExporterIFC exporterIFC,
+      /// <summary>
+      /// Exports a curve element to the appropriate IFC entity.
+      /// </summary>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="curveElement">The curve element to be exported.</param>
+      /// <param name="geometryElement">The geometry element.</param>
+      /// <param name="productWrapper">The ProductWrapper.</param>
+      public static void ExportCurveElement(ExporterIFC exporterIFC, CurveElement curveElement, 
+         GeometryElement geometryElement, ProductWrapper productWrapper)
+      {
+         if (geometryElement == null || !ShouldCurveElementBeExported(curveElement))
+            return;
+
+         SketchPlane sketchPlane = curveElement.SketchPlane;
+         if (sketchPlane == null)
+            return;
+
+         ExportCurveBasedElementCommon(exporterIFC, curveElement, geometryElement, productWrapper, sketchPlane);
+      }
+
+      /// <summary>
+      /// Exports a site property line element to the appropriate IFC entity.
+      /// </summary>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="propertyLine">The site property line element to be exported.</param>
+      /// <param name="geometryElement">The geometry element.</param>
+      /// <param name="productWrapper">The ProductWrapper.</param>
+      public static void ExportPropertyLineElement(ExporterIFC exporterIFC, PropertyLine propertyLine,
+         GeometryElement geometryElement, ProductWrapper productWrapper)
+      {
+         if (geometryElement == null)
+            return;
+
+         ExportCurveBasedElementCommon(exporterIFC, propertyLine, geometryElement, productWrapper, null);
+      }
+
+      static IFCAnyHandle CreateAnnotationProductRepresentation(ExporterIFC exporterIFC, 
          IFCFile file, Element curveElement, ElementId categoryId, IFCAnyHandle repItemHnd)
       {
          HashSet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>() { repItemHnd };
@@ -202,9 +214,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="curveElement">The curve element.</param>
       /// <param name="categoryId">The category id.</param>
-      /// <param name="sketchPlaneId">The sketch plane id.</param>
       /// <param name="curveLCS">The curve local coordinate system.</param>
-      /// <param name="curveStyle">The curve style.</param>
       /// <param name="placementSetter">The placemenet setter.</param>
       /// <param name="localPlacement">The local placement.</param>
       /// <param name="repItemHnd">The representation item.</param>

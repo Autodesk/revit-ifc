@@ -526,8 +526,8 @@ namespace Revit.IFC.Export.Utility
       /// <param name="categoryId">The category id.</param>
       /// <param name="contextOfItems">The context for which the different subtypes of representation are valid.</param>
       /// <param name="bodyItems">Set of geometric representation items that are defined for this representation.</param>
-      /// <param name="is3D">If true, creates a GeometricSet instead of an Annotation2D.</param>
       /// <returns>The handle.</returns>
+      /// <param name="is3D">If true, creates a GeometricSet instead of an Annotation2D.</param>
       public static IFCAnyHandle CreateAnnotationSetRep(ExporterIFC exporterIFC, Element element, ElementId categoryId,
             IFCAnyHandle contextOfItems, HashSet<IFCAnyHandle> bodyItems, bool is3D)
       {

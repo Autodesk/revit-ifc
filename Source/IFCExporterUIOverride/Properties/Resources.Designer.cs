@@ -745,20 +745,20 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Export IFC.
-        /// </summary>
-        public static string ExportIFC {
-            get {
-                return ResourceManager.GetString("ExportIFC", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to If this option is checked, don&apos;t create a container for floors and roofs unless exporting parts..
         /// </summary>
         public static string ExportHostAsSingleEntityTooltip {
             get {
                 return ResourceManager.GetString("ExportHostAsSingleEntityTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export IFC.
+        /// </summary>
+        public static string ExportIFC {
+            get {
+                return ResourceManager.GetString("ExportIFC", resourceCulture);
             }
         }
         

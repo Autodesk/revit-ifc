@@ -1,4 +1,4 @@
-//
+﻿//
 // BIM IFC library: this library works with Autodesk(R) Revit(R) to export IFC files containing model geometry.
 // Copyright (C) 2012-2016  Autodesk, Inc.
 // 
@@ -1195,8 +1195,8 @@ namespace Revit.IFC.Export.Exporter
       {
          bool allowAdvancedCurve = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
          const GeometryUtil.TrimCurvePreference trimCurvePreference = GeometryUtil.TrimCurvePreference.BaseCurve;
-         IFCAnyHandle baseCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC, curve,
-            allowAdvancedCurve, cartesianPoints, trimCurvePreference, null);
+         IFCAnyHandle baseCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, 
+            exporterIFC, curve, allowAdvancedCurve, cartesianPoints, trimCurvePreference, null);
 
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(baseCurve))
             return null;
@@ -1210,8 +1210,10 @@ namespace Revit.IFC.Export.Exporter
       {
          bool allowAdvancedCurve = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
          const GeometryUtil.TrimCurvePreference trimCurvePreference = GeometryUtil.TrimCurvePreference.TrimmedCurve;
-         IFCAnyHandle ifcCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC, curve, allowAdvancedCurve,
-            cartesianPoints, trimCurvePreference, additionalTrf);
+         IFCAnyHandle ifcCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC,
+            curve, allowAdvancedCurve, cartesianPoints, trimCurvePreference, additionalTrf);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcCurve))
+            return null;
          IFCAnyHandle sweptCurve = null;
 
          bool isBound = false;

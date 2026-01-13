@@ -3751,28 +3751,28 @@ namespace Revit.IFC.Export.Utility
             if (curve.IsBound)
             {
                Line curveLine = curve as Line;
-            if (trimCurvePreference == TrimCurvePreference.UsePolyLineOrTrim)
-            {
-               ifcCurve = CreateLineSegment(exporterIFC, curveLine);
-            }
-            else
-            {
-               // Create line based trimmed curve for Axis
-               IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints, additionalTrf);
-               XYZ dir = (additionalTrf == null) ? curveLine.Direction : additionalTrf.OfVector(curveLine.Direction);
-               IFCAnyHandle vector = VectorToIfcVector(exporterIFC, dir);
-               ifcCurve = IFCInstanceExporter.CreateLine(file, curveOrigin, vector);
-
-               if (trimCurvePreference == TrimCurvePreference.TrimmedCurve)
+               if (trimCurvePreference == TrimCurvePreference.UsePolyLineOrTrim)
                {
-                  IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints, additionalTrf);
-                  HashSet<IFCData> trim1 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(startPoint) };
-                  IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints, additionalTrf);
-                  HashSet<IFCData> trim2 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(endPoint) };
-
-                  ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+                  ifcCurve = CreateLineSegment(exporterIFC, curveLine);
                }
-            }
+               else
+               {
+                  // Create line based trimmed curve for Axis
+                  IFCAnyHandle curveOrigin = XYZtoIfcCartesianPoint(exporterIFC, curveLine.Origin, cartesianPoints, additionalTrf);
+                  XYZ dir = (additionalTrf == null) ? curveLine.Direction : additionalTrf.OfVector(curveLine.Direction);
+                  IFCAnyHandle vector = VectorToIfcVector(exporterIFC, dir);
+                  ifcCurve = IFCInstanceExporter.CreateLine(file, curveOrigin, vector);
+
+                  if (trimCurvePreference == TrimCurvePreference.TrimmedCurve)
+                  {
+                     IFCAnyHandle startPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(0), cartesianPoints, additionalTrf);
+                     HashSet<IFCData> trim1 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(startPoint) };
+                     IFCAnyHandle endPoint = XYZtoIfcCartesianPoint(exporterIFC, curveLine.GetEndPoint(1), cartesianPoints, additionalTrf);
+                     HashSet<IFCData> trim2 = new HashSet<IFCData>() { IFCData.CreateIFCAnyHandle(endPoint) };
+
+                     ifcCurve = IFCInstanceExporter.CreateTrimmedCurve(file, ifcCurve, trim1, trim2, true, IFCTrimmingPreference.Cartesian);
+                  }
+               }
             }
          }
          // if the Curve is an Arc do following

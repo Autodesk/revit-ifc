@@ -1,4 +1,4 @@
-//
+﻿//
 // Revit IFC Import library: this library works with Autodesk(R) Revit(R) to import IFC files.
 // Copyright (C) 2013  Autodesk, Inc.
 // 
@@ -402,8 +402,7 @@ namespace Revit.IFC.Import.Data
                // geometry, but it will contain parameters that are needed for the DirectShape imported for Hybrid IFC Import.
                if (Importer.TheOptions.IsHybridImport && GlobalId != null)
                {
-                  ElementId hybridElementId = ElementId.InvalidElementId;
-                  if ((Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out hybridElementId) ?? false) &&
+                  if ((Importer.TheHybridInfo?.HybridMap?.TryGetValue(GlobalId, out ElementId hybridElementId) ?? false) &&
                      hybridElementId != ElementId.InvalidElementId)
                   {
                      // "Create" a DirectShape Element.
