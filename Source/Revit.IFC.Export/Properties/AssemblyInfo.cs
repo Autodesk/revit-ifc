@@ -9,12 +9,12 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("IFC Exporter for Revit")]
-[assembly: AssemblyCopyright("© 2012-2025 Autodesk, Inc. All rights reserved.")]
+[assembly: AssemblyCopyright("ï¿½ 2012-2025 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("25.4.4.0")]
-[assembly: AssemblyFileVersion("25.4.4.0")]
+[assembly: AssemblyVersion("25.4.40.0")]
+[assembly: AssemblyFileVersion("25.4.40.0")]
 
 
 // Version information can now be found in Source\Foundation\RevitENU\Version.cs

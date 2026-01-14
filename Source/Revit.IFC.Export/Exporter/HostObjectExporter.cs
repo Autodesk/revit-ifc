@@ -77,7 +77,9 @@ namespace Revit.IFC.Export.Exporter
             // Among all the calls of this method the problem of material association absence was found only 
             // for CeilingAndFloor host object type (see JIRA item REVIT-164913)
             if (containsBRepGeometry && (hostObject is CeilingAndFloor)
-               && materialIds.Count > 0 && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+               && materialIds.Count > 0
+               && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView
+               && !ExporterCacheManager.ExportOptionsCache.ExportAs4x3ReferenceView)
             {
                foreach (IFCAnyHandle elemHnd in elemHnds)
                {
@@ -113,7 +115,9 @@ namespace Revit.IFC.Export.Exporter
                      SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, elemHnd, hostObject.Id, levelId);
 
                      // Even if it is Tessellated geometry in IFC4RV, the material layer will still be assigned
-                     if (containsBRepGeometry && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                     if (containsBRepGeometry 
+                        && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView 
+                        && !ExporterCacheManager.ExportOptionsCache.ExportAs4x3ReferenceView)
                         continue;
 
                      HashSet<IFCAnyHandle> relDecomposesSet = IFCAnyHandleUtil.GetRelDecomposes(elemHnd);

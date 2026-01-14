@@ -1618,7 +1618,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IFC4x3.
+        ///   Looks up a localized string similar to IFC4x3 Reference View.
         /// </summary>
         public static string IFCVersion4x3 {
             get {

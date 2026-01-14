@@ -13,8 +13,8 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("Revit.IFC.Import.Core")]
 [assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyCopyright("@2012-2025 Autodesk, Inc. All rights reserved.")]
-[assembly: AssemblyVersion("25.4.4.0")]
-[assembly: AssemblyFileVersion("25.4.4.0")]
+[assembly: AssemblyVersion("25.4.40.0")]
+[assembly: AssemblyFileVersion("25.4.40.0")]
 
 // Version information can now be found in Source\Foundation\RevitENU\Version.cs
 //
