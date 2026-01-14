@@ -10,12 +10,12 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Autodesk")]
 [assembly: AssemblyProduct("IFC Exporter for Revit")]
-[assembly: AssemblyCopyright("© 2012-2023 Autodesk, Inc. All rights reserved.")]
+[assembly: AssemblyCopyright("ï¿½ 2012-2023 Autodesk, Inc. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("24.3.20.0")]
-[assembly: AssemblyFileVersion("24.3.20.0")]
+[assembly: AssemblyVersion("24.3.40.0")]
+[assembly: AssemblyFileVersion("24.3.40.0")]
 
 #endif
 

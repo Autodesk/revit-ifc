@@ -745,6 +745,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If this option is checked, don&apos;t create a container for floors and roofs unless exporting parts..
+        /// </summary>
+        public static string ExportHostAsSingleEntityTooltip {
+            get {
+                return ResourceManager.GetString("ExportHostAsSingleEntityTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export IFC.
         /// </summary>
         public static string ExportIFC {
@@ -1267,7 +1276,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IFC4x3 [Experimental].
+        ///   Looks up a localized string similar to IFC4x3 Reference View.
         /// </summary>
         public static string IFCVersion4x3 {
             get {
@@ -2392,29 +2401,11 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Template name.
-        /// </summary>
-        public static string TemplateName {
-            get {
-                return ResourceManager.GetString("TemplateName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Enter unique template name..
         /// </summary>
         public static string TemplateNameTooltip {
             get {
                 return ResourceManager.GetString("TemplateNameTooltip", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Template Settings.
-        /// </summary>
-        public static string TemplateSettings {
-            get {
-                return ResourceManager.GetString("TemplateSettings", resourceCulture);
             }
         }
         
