@@ -1,4 +1,4 @@
-﻿//
+//
 // BIM IFC library: this library works with Autodesk(R) Revit(R) to export IFC files containing model geometry.
 // Copyright (C) 2012  Autodesk, Inc.
 // 
@@ -1463,13 +1463,13 @@ namespace RevitIFCTools
 
          psetD.properties.Add(new PsetProperty()
          {
-            Name = "GrossFootprintArea",
+            Name = "GrossFootPrintArea",
             PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
          });
 
          psetD.properties.Add(new PsetProperty()
          {
-            Name = "NetFootprintArea",
+            Name = "NetFootPrintArea",
             PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
          });
 
@@ -1954,13 +1954,13 @@ namespace RevitIFCTools
 
          psetD.properties.Add(new PsetProperty()
          {
-            Name = "GrossFootprintArea",
+            Name = "GrossFootPrintArea",
             PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
          });
 
          psetD.properties.Add(new PsetProperty()
          {
-            Name = "NetFootprintArea",
+            Name = "NetFootPrintArea",
             PropertyType = new PropertySingleValue() { DataType = "IfcAreaMeasure" }
          });
 
