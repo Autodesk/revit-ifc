@@ -85,6 +85,8 @@ namespace Revit.IFC.Export.Exporter
             {
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                int loopCount = sortedLoops.Count;
+               IFCAnyHandle localPlacement = setter.LocalPlacement;
+
                for (int loopIndex = 0; loopIndex < loopCount; loopIndex++)
                {
                   IList<CurveLoop> curveLoopList = sortedLoops[loopIndex];
@@ -122,8 +124,10 @@ namespace Revit.IFC.Export.Exporter
                      GUIDUtil.CreateGUIDString(filledRegion, index));
                   IFCAnyHandle productShape = IFCInstanceExporter.CreateProductDefinitionShape(file, 
                      null, null, shapeReps);
+                  IFCAnyHandle currentLocalPlacement = (loopIndex == 0) ? localPlacement : 
+                     ExporterUtil.CopyLocalPlacement(file, localPlacement);
                   IFCAnyHandle annotation = IFCInstanceExporter.CreateAnnotation(exporterIFC, 
-                     filledRegion, annotationGuid, ownerHistory, setter.LocalPlacement, 
+                     filledRegion, annotationGuid, ownerHistory, currentLocalPlacement, 
                      productShape, null);
 
                   productWrapper.AddAnnotation(annotation, setter.LevelInfo, true);

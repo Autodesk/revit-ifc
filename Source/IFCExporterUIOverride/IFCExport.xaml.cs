@@ -29,6 +29,7 @@ using System.Windows.Controls;
 using Revit.IFC.Common.Extensions;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Utility;
 
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
@@ -510,7 +511,7 @@ namespace BIM.IFC.Export.UI
             TheDocument.Application.WriteJournalComment(@"Jrn.Data ""File Name"", ""IDOK"", " + @"""" + textBoxSetupFileName.Text + @"""", true);
 
             IFCExportConfiguration selectedConfig = GetSelectedConfiguration();
-            if (OptionsUtil.ExportAs4DesignTransferView(selectedConfig.IFCVersion))
+            if (OptionsUtil.ExportAs4DesignTransferView(selectedConfig.IFCVersion) || OptionsUtil.ExportAs4x3DesignTransferView(selectedConfig.IFCVersion))
             {
                TaskDialog taskDialog = new TaskDialog(Properties.Resources.IFCExportGenericWarning);
                taskDialog.MainInstruction = String.Format(Properties.Resources.IFC4DTVWarning, selectedConfig.FileVersionDescription);
@@ -680,6 +681,11 @@ namespace BIM.IFC.Export.UI
             }
          }
 
+         if (string.IsNullOrEmpty(defaultDirectory) && TheDocument.IsDetached)
+         {
+            defaultDirectory = Directory.GetCurrentDirectory();
+         }
+
          if ((defaultDirectory == null) || (!System.IO.Directory.Exists(defaultDirectory)))
             defaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
@@ -760,7 +766,7 @@ namespace BIM.IFC.Export.UI
 
          if (selectedConfig != null)
          {
-            if (!IFCPhaseAttributes.Validate(selectedConfig.ActivePhaseId))
+            if (!IFCPhaseAttributes.Validate(selectedConfig.ActivePhaseId, IFCCommandOverrideApplication.TheDocument))
                selectedConfig.ActivePhaseId = ElementId.InvalidElementId.Value;
 
             UpdateTextBoxesContent(selectedConfig);
@@ -856,5 +862,6 @@ namespace BIM.IFC.Export.UI
          // The SelectionChanged event will be activated after the Modify Config Window is closed
          currentSelectedSetup.SelectionChanged += currentSelectedSetup_SelectionChanged;
       }
+
    }
 }

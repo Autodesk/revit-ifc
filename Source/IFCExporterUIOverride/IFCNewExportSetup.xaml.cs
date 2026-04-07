@@ -18,6 +18,7 @@
 //
 
 using Autodesk.UI.Windows;
+using Revit.IFC.Export.Utility;
 using System;
 using System.Windows;
 using System.Windows.Controls;

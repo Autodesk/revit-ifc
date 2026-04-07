@@ -131,6 +131,9 @@ namespace Revit.IFC.Export.Utility
          if (!ElectricalSystemsCache.ContainsKey(systemId))
             throw new InvalidOperationException("Error getting system.");
 
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
+            return;
+
          ElectricalSystemsCache[systemId].Add(handle);
       }
 

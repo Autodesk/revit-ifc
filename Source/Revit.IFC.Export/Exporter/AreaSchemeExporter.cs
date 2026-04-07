@@ -66,7 +66,7 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
             string name = NamingUtil.GetNameOverride(element, element.Name);
             string description = NamingUtil.GetDescriptionOverride(element, null);
-            string objectType = NamingUtil.GetObjectTypeOverride(element, NamingUtil.GetFamilyAndTypeName(element));
+            string objectType = NamingUtil.GetDefaultObjectType(element);
 
             string elementTag = NamingUtil.CreateIFCElementId(element);
 

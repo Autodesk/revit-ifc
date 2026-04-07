@@ -21,6 +21,7 @@ using Autodesk.UI.Windows;
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using Revit.IFC.Export.Utility;
 
 namespace BIM.IFC.Export.UI
 {

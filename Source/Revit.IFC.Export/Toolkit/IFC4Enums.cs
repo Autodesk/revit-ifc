@@ -300,7 +300,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4
    }
 
 
-   public enum IFCBuildingSystem
+   public enum IFCBuildingSystemType
    {
       FENESTRATION
   , FOUNDATION

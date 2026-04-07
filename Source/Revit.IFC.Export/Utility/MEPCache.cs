@@ -129,6 +129,11 @@ namespace Revit.IFC.Export.Utility
             {
                return (element as MEPCurve)?.ConnectorManager?.Connectors;
             }
+
+            if (element is FabricationPart)
+            {
+               return (element as FabricationPart)?.ConnectorManager?.Connectors;
+            }
          }
          catch
          {

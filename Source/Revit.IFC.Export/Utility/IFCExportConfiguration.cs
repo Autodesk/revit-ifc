@@ -25,16 +25,13 @@ using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 
-using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Extensions;
-using Revit.IFC.Export.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Windows.Forms;
-using static System.Windows.Forms.Design.AxImporter;
+using Revit.IFC.Export.Properties;
 
-namespace BIM.IFC.Export.UI
+namespace Revit.IFC.Export.Utility
 {
    /// <summary>
    /// Compare 2 configurations
@@ -75,13 +72,11 @@ namespace BIM.IFC.Export.UI
          }
          set
          {
-            if (IFCExchangeRequirements.ExchangeRequirements.ContainsKey(IFCVersion))
+            if (value == KnownERNames.NotDefined || 
+               (IFCExchangeRequirements.ExchangeRequirements.TryGetValue(IFCVersion, out IList<KnownERNames> erList) &&
+               (erList?.Contains(value) ?? false)))
             {
-               IList<KnownERNames> erList = IFCExchangeRequirements.ExchangeRequirements[IFCVersion];
-               if (erList != null && erList.Contains(value))
-               {
-                  m_ExchangeRequirement = value;
-               }
+               m_ExchangeRequirement = value;
             }
          }
       }
@@ -121,6 +116,8 @@ namespace BIM.IFC.Export.UI
       }
 
       public string CategoryMapping { get; set; } = null;
+
+      public string PropertyMapping { get; set; } = null;
 
       /// <summary>
       /// The IFCFileFormat of the configuration.
@@ -441,6 +438,14 @@ namespace BIM.IFC.Export.UI
       private static IFCExportConfiguration s_inSessionConfiguration = null;
 
       /// <summary>
+      /// Properties that should be ignored when updating built-in configurations.
+      /// </summary>
+      private static readonly HashSet<string> s_excludedPropertiesForBuiltInUpdate = new HashSet<string>
+      {
+         "ExportUserDefinedPsetsFileName"
+      };
+
+      /// <summary>
       /// Whether the configuration is builtIn or not.
       /// </summary>
       [JsonIgnore]
@@ -568,7 +573,7 @@ namespace BIM.IFC.Export.UI
          {
             case IFCVersion.IFCSG:
                {
-                  configuration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\IFC-SG Property Mapping Export.txt";
+                  configuration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\IFC+SG Property Sets.txt";
                   configuration.GeoRefCRSName = "SVY21";
                   configuration.GeoRefCRSDesc = "SVY21 / Singapore TM";
                   configuration.GeoRefEPSGCode = "EPSG:3414";
@@ -580,6 +585,11 @@ namespace BIM.IFC.Export.UI
                   configuration.IncludeSiteElevation = true;
                   configuration.UseOnlyTriangulation = true;
                   configuration.SitePlacement = SiteTransformBasis.Project;
+                  break;
+               }
+            case IFCVersion.IFC2x3FM:
+               {
+                  configuration.ExportUserDefinedPsetsFileName = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\IFC2x3 COBie 2.4 Design Deliverable.txt";
                   break;
                }
             default:
@@ -651,7 +661,9 @@ namespace BIM.IFC.Export.UI
       {
          if (IsBuiltIn && Name.Equals(updatedConfig.Name))
          {
-            IDictionary<string, object> updConfigDict = updatedConfig.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(updatedConfig));
+            IDictionary<string, object> updConfigDict = updatedConfig.GetType().GetProperties()
+               .Where(x => !s_excludedPropertiesForBuiltInUpdate.Contains(x.Name))
+               .ToDictionary(x => x.Name, x => x.GetValue(updatedConfig));
 
             foreach (PropertyInfo prop in GetType().GetProperties())
             {
@@ -664,46 +676,36 @@ namespace BIM.IFC.Export.UI
          }
       }
 
-      private bool UpdateParameterTemplate(IFCParameterTemplate parameterTemplate, string propertyName, object propertyVal)
+      private (bool useLegacyParameterMappingOptions, IFCParameterTemplate parameterTemplate) GetParameterMappingOptionsSource(Document document, bool isNewParameterMappingEnabled)
       {
-         switch (propertyName)
+         bool useLegacyParameterMappingOptions = !isNewParameterMappingEnabled || IsBuiltIn;
+
+         IFCParameterTemplate parameterTemplate = null;
+         if (!useLegacyParameterMappingOptions)
          {
-            case "ExportBaseQuantities":
-               parameterTemplate.ExportIFCBaseQuantities = ExportBaseQuantities;
-               break;
-            case "ExportIFCCommonPropertySets":
-               parameterTemplate.ExportIFCCommonPropertySets = (bool)propertyVal;
-               break;
-            case "ExportInternalRevitPropertySets":
-               parameterTemplate.ExportRevitElementParameters = (bool)propertyVal;
-               break;
-            case "ExportMaterialPsets":
-               parameterTemplate.ExportRevitMaterialParameters = (bool)propertyVal;
-               break;
-            case "ExportSchedulesAsPsets":
-               parameterTemplate.ExportRevitSchedules = (bool)propertyVal;
-               break;
-            default:
-               return false;
+            parameterTemplate = string.IsNullOrEmpty(PropertyMapping)
+                ? IFCParameterTemplate.GetOrCreateInSessionTemplate(document)
+                : IFCParameterTemplate.FindByName(document, PropertyMapping);
+
+            if (parameterTemplate == null)
+               useLegacyParameterMappingOptions = true;
          }
 
-         return true;
+         return (useLegacyParameterMappingOptions, parameterTemplate);
       }
 
       /// <summary>
       /// Updates the IFCExportOptions with the settings in this configuration.
       /// </summary>
+      /// <param name="document">The Revit document.</param>
       /// <param name="options">The IFCExportOptions to update.</param>
       /// <param name="filterViewId">The id of the view that will be used to select which elements to export.</param>
-      public void UpdateOptions(IFCExportOptions options, ElementId filterViewId)
+      public void UpdateOptions(Document document, IFCExportOptions options, ElementId filterViewId, bool isNewParameterMappingEnabled)
       {
-         // This is a temporary home.
-         IFCParameterTemplate parameterTemplate = IFCParameterTemplate.GetOrCreateInSessionTemplate(IFCCommandOverrideApplication.TheDocument);
-
          options.FilterViewId = VisibleElementsOfCurrentView ? filterViewId : ElementId.InvalidElementId;
 
-         // Temporary until UI is created.
-         options.AddOption("ParameterMappingTableName", Resources.InSessionConfiguration);
+         (bool useLegacyParameterMappingOptions, IFCParameterTemplate parameterTemplate) = 
+            GetParameterMappingOptionsSource(document, isNewParameterMappingEnabled);
 
          foreach (PropertyInfo prop in GetType().GetProperties())
          {
@@ -716,7 +718,7 @@ namespace BIM.IFC.Export.UI
                   options.FileVersion = IFCVersion;
                   break;
                case "ActivePhaseId":
-                  if (options.FilterViewId == ElementId.InvalidElementId && IFCPhaseAttributes.Validate(ActivePhaseId))
+                  if (options.FilterViewId == ElementId.InvalidElementId && IFCPhaseAttributes.Validate(ActivePhaseId, document))
                      options.AddOption(prop.Name, ActivePhaseId.ToString());
                   break;
                case "SpaceBoundaries":
@@ -737,18 +739,33 @@ namespace BIM.IFC.Export.UI
                   string classificationJsonStr = JsonConvert.SerializeObject(ClassificationSettings, dateFormatSettings);
                   options.AddOption(prop.Name, classificationJsonStr);
                   break;
-               default:
-                  object propVal = prop.GetValue(this, null);
-                  if (propVal != null)
+               case "PropertyMapping":
+                  if (!useLegacyParameterMappingOptions && parameterTemplate != null)
                   {
-                     if (!UpdateParameterTemplate(parameterTemplate, prop.Name, propVal))
-                     {
-                        options.AddOption(prop.Name, propVal.ToString());
-                     }
+                     options.AddOption(prop.Name, parameterTemplate.Name);
                   }
+                  break;
+               case "ExportIFCCommonPropertySets":
+               case "ExportInternalRevitPropertySets":
+               case "ExportBaseQuantities":
+               case "ExportMaterialPsets":
+               case "ExportSchedulesAsPsets":
+               case "ExportUserDefinedPsets":
+                  if (useLegacyParameterMappingOptions)
+                  {
+                     var val = prop.GetValue(this, null);
+                     if (val != null)
+                        options.AddOption(prop.Name, val.ToString());
+                  }
+                  break;
+               default: 
+                  var propVal = prop.GetValue(this, null);
+                  if (propVal != null)
+                     options.AddOption(prop.Name, propVal.ToString());
                   break;
             }
          }
+         options.ExportBaseQuantities = ExportBaseQuantities;
       }
 
 

@@ -27,6 +27,7 @@ using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Autodesk.Revit.DB.Mechanical;
+using System.Linq;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -1016,18 +1017,24 @@ namespace Revit.IFC.Export.Exporter
                   // only for Wall, not FamilyInstance.
                   if (exportingWallElement && geometryElement != null)
                   {
-                     // There is a problem in the API where some walls with vertical structures are overreporting their height,
-                     // making it appear as if there are clipping problems on export.  We will work around this by getting the
-                     // height directly from the solid(s).
+                     // There is a problem in the API where some walls with vertical structures are overreporting
+                     // their height, making it appear as if there are clipping problems on export.  We will work
+                     // around this by getting the height directly from the solid(s).
+                     // This can also overreport, though, so we will use the smallest of the two.  Note that this
+                     // is just a heuristic, so we will try to use the best approximation possible.
                      if (solids.Count > 0 && meshes.Count == 0)
                      {
                         zSpan = GetBoundingBoxOfSolids(solids);
                      }
-                     else
+                     
+                     BoundingBoxXYZ boundingBox = wallElement.get_BoundingBox(null);
+                     if (boundingBox != null)
                      {
-                        BoundingBoxXYZ boundingBox = wallElement.get_BoundingBox(null);
-                        if (boundingBox != null)
-                           zSpan = GetBoundingBoxZRange(boundingBox);
+                        IFCRange zSpanAlt = GetBoundingBoxZRange(boundingBox);
+                        if (zSpan == null || (zSpanAlt.Start >= zSpan.Start && zSpanAlt.End <= zSpan.End))
+                        {
+                           zSpan = zSpanAlt;
+                        }
                      }
 
                      if (zSpan == null)
@@ -1318,8 +1325,7 @@ namespace Revit.IFC.Export.Exporter
                               }
                               else
                               {
-                                 IList<GeometryObject> geomElemList = new List<GeometryObject>();
-                                 geomElemList.Add(geometryElement);
+                                 List<GeometryObject> geomElemList = new() { geometryElement };
                                  bodyData = BodyExporter.ExportBody(exporterIFC, element, catId, overrideMaterialId,
                                      geomElemList, bodyExporterOptions, extraParams);
                                  bodyRep = bodyData.RepresentationHnd;
@@ -1369,7 +1375,7 @@ namespace Revit.IFC.Export.Exporter
                         }
 
                         ElementId matId = ElementId.InvalidElementId;
-                        string objectType = NamingUtil.CreateIFCObjectName(exporterIFC, element);
+                        string objectType = NamingUtil.GetDefaultObjectType(element);
                         IFCAnyHandle wallHnd = null;
 
                         string elemGUID = CalculateElementGUID(element);
@@ -1378,8 +1384,8 @@ namespace Revit.IFC.Export.Exporter
                            && (exportType.ExportInstance == IFCEntityType.IfcWall || exportType.ExportInstance == IFCEntityType.IfcWallStandardCase))
                         {
                            // Make sure to use the "Adjusted Enum Type" here.
-                           wallHnd = IFCInstanceExporter.CreateWallStandardCase(exporterIFC, element, elemGUID, ownerHistory,
-                                  localPlacement, prodRep, adjustedEnumType);
+                           wallHnd = IFCInstanceExporter.CreateWallStandardCase(file, element, elemGUID, ownerHistory,
+                              localPlacement, prodRep, adjustedEnumType);
 
                            // This will override the default "ExportType" in the cache for this Element to be
                            // (EntityInstanceType = IfcWallStandardCase, PredefinedType = adjustedEnumType).
@@ -1447,12 +1453,12 @@ namespace Revit.IFC.Export.Exporter
                         {
                            if (!exportParts)
                            {
-                              // Only export one material for 2x2; for future versions, export the whole list.
+                              // Only export one material for 2x2; for future versions, export the
+                              // whole list.
+                              // We will associate the material id with the type later.
                               if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || !exportingHostObject)
                               {
                                  matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(solids, meshes, element);
-                                 if (matId != ElementId.InvalidElementId)
-                                    CategoryUtil.CreateMaterialAssociation(exporterIFC, wallHnd, matId);
                               }
 
                               if (exportingInplaceOpenings)
@@ -1706,7 +1712,7 @@ namespace Revit.IFC.Export.Exporter
             if (exportParts && !PartExporter.CanExportElementInPartExport(wallElement, validRange ? overrideLevelId : wallElement.LevelId, validRange))
                return null;
 
-            string objectType = NamingUtil.CreateIFCObjectName(exporterIFC, element);
+            string objectType = NamingUtil.GetDefaultObjectType(element);
             IFCAnyHandle wallHnd = null;
 
             string elemGUID = null;

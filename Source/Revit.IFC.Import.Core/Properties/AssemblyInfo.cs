@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -12,9 +12,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Revit.IFC.Import.Core")]
 [assembly: AssemblyDescription("Revit.IFC.Import.Core")]
 [assembly: AssemblyCompany("Autodesk")]
-[assembly: AssemblyCopyright("@2012-2025 Autodesk, Inc. All rights reserved.")]
-[assembly: AssemblyVersion("26.4.1.0")]
-[assembly: AssemblyFileVersion("26.4.1.0")]
+[assembly: AssemblyCopyright("@2012-2026 Autodesk, Inc. All rights reserved.")]
+[assembly: AssemblyVersion("27.0.1.0")]
+[assembly: AssemblyFileVersion("27.0.1.0")]
 
 // Version information can now be found in Source\Foundation\RevitENU\Version.cs
 //

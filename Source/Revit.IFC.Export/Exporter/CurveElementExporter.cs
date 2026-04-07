@@ -108,7 +108,7 @@ namespace Revit.IFC.Export.Exporter
                foreach (Curve curve in curvesFromGeomElem)
                {
                   curves.AddIfNotNull(GeometryUtil.CreateIFCCurveFromRevitCurve(file,
-                     exporterIFC, curve, allowAdvancedCurve, null, trimCurvePreference, null));
+                     exporterIFC, curve, allowAdvancedCurve, null, trimCurvePreference));
                }
 
                HashSet<IFCAnyHandle> curveSet = new HashSet<IFCAnyHandle>(curves);

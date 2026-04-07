@@ -25,6 +25,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
+using System.Linq;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -160,7 +161,7 @@ namespace Revit.IFC.Export.Exporter
                }
             }
             // Export AdvancedFace before use fallback BREP
-            else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView)
+            else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView || ExporterCacheManager.ExportOptionsCache.ExportAs4x3DesignTransferView)
             {
                IFCAnyHandle advancedBRep = BodyExporter.ExportBodyAsAdvancedBrep(exporterIFC, subElem, geomElem);
                if (bodyItems.AddIfNotNull(advancedBRep))
@@ -172,13 +173,17 @@ namespace Revit.IFC.Export.Exporter
             if (useFallbackBREP)
             {
                ExporterIFCUtils.CollectGeometryInfo(exporterIFC, info, geomElem, XYZ.Zero, false);
-               HashSet<IFCAnyHandle> faces = new HashSet<IFCAnyHandle>(info.GetSurfaces());
-               IFCAnyHandle outer = IFCInstanceExporter.CreateClosedShell(file, faces);
 
-               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(outer))
+               IList<ICollection<IFCAnyHandle>> faceSetList = info.GetFaces();
+               foreach (ICollection<IFCAnyHandle> faces in faceSetList)
                {
-                  bodyItems.Add(RepresentationUtil.CreateFacetedBRep(exporterIFC, document,
-                     false, outer, ElementId.InvalidElementId));
+                  IFCAnyHandle outer = IFCInstanceExporter.CreateClosedShell(file, faces.ToHashSet());
+
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(outer))
+                  {
+                     bodyItems.Add(RepresentationUtil.CreateFacetedBRep(exporterIFC, document,
+                        false, outer, ElementId.InvalidElementId));
+                  }
                }
             }
          }
@@ -196,7 +201,9 @@ namespace Revit.IFC.Export.Exporter
          {
             shapeRep = RepresentationUtil.CreateTessellatedRep(exporterIFC, wallElement, catId, contextOfItems, bodyItems, null);
          }
-         else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView && !useFallbackBREP)
+         else if ((ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView || ExporterCacheManager.ExportOptionsCache.ExportAs4x3DesignTransferView) 
+            && !useFallbackBREP)
+
          {
             shapeRep = RepresentationUtil.CreateAdvancedBRepRep(exporterIFC, wallElement, catId, contextOfItems, bodyItems, null);
          }
@@ -298,7 +305,7 @@ namespace Revit.IFC.Export.Exporter
                setter = PlacementSetter.Create(exporterIFC, element, orientationTrf);
                localPlacement = setter.LocalPlacement;
 
-               string objectType = NamingUtil.CreateIFCObjectName(exporterIFC, element);
+               string objectType = NamingUtil.GetDefaultObjectType(element);
 
                IFCAnyHandle prodRepHnd = null;
                string elemGUID = GUIDUtil.CreateGUID(element);

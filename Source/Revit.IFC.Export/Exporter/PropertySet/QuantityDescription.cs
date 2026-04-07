@@ -46,6 +46,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </summary>
       public string MethodOfMeasurement { get; set; } = String.Empty;
 
+      /// <summary>
+      /// Determines whether this quantity set description is user-defined.
+      /// </summary>
+      public bool IsUserDefined { get; set; } = false;
+
       public QuantityDescription() { }
 
       public QuantityDescription(string baseName, IFCEntityType entityType)
@@ -62,8 +67,38 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="entry">The entry to add.</param>
       public void AddEntry(QuantityEntry entry)
       {
+         PropertySetupType propertyMappingSetup = IsUserDefined ?
+            PropertySetupType.UserDefinedPropertySets : PropertySetupType.IfcBaseQuantities;
+
+         IFCPropertyMappingInfo mappedRevitParameter = GetMappedRevitParameterForDescription(propertyMappingSetup, entry.PropertyName);
+
+         if (mappedRevitParameter != null)
+         {
+            entry.IsExcluded = !mappedRevitParameter.ExportFlag;
+
+            ElementId parameterId = mappedRevitParameter.RevitPropertyId;
+            string parameterName = mappedRevitParameter.RevitPropertyName;
+            if (ParameterUtils.IsBuiltInParameter(parameterId))
+            {
+               entry.SetRevitBuiltInParameter((BuiltInParameter)parameterId.Value);
+            }
+            else if (!string.IsNullOrEmpty(parameterName))
+            {
+               entry.SetRevitParameterName(parameterName);
+            }
+         }
+
          entry.UpdateEntry();
          Entries.Add(entry);
+      }
+
+      /// <summary>
+      /// Remove an entry from the quantity map.
+      /// </summary>
+      /// <param name="entry">The entry to remove.</param>
+      public bool RemoveEntry(QuantityEntry entry)
+      {
+         return Entries.Remove(entry);
       }
 
       /// <summary>

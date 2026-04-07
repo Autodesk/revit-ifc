@@ -23,9 +23,9 @@ using System.Linq;
 using System.Text;
 
 using Autodesk.Revit.DB;
-using BIM.IFC.Export.UI.Properties;
+using Revit.IFC.Export.Properties;
 
-namespace BIM.IFC.Export.UI
+namespace Revit.IFC.Export.Utility
 {
    /// <summary>
    /// Represents the choices for which phase to export.
@@ -38,12 +38,17 @@ namespace BIM.IFC.Export.UI
       public ElementId PhaseId { get; set; }
 
       /// <summary>
+      /// The document associated with this phase attributes.
+      /// </summary>
+      public Document Document { get; set; } = null;
+
+      /// <summary>
       /// The name of the default phase to export (the last phase).
       /// </summary>
       /// <returns></returns>
-      static public string GetDefaultPhaseName()
+      static public string GetDefaultPhaseName(Document document)
       {
-         PhaseArray phases = IFCCommandOverrideApplication.TheDocument.Phases;
+         PhaseArray phases = document?.Phases;
          if (phases == null || phases.Size == 0)
             return "";
          Phase lastPhase = phases.get_Item(phases.Size - 1);
@@ -54,13 +59,13 @@ namespace BIM.IFC.Export.UI
       /// True if the ElementId represents a valid phase.
       /// </summary>
       /// <returns>True if it is valid, false otherwise.</returns>
-      static public bool Validate(long phaseId)
+      static public bool Validate(long phaseId, Document document)
       {
          ElementId checkPhaseId = new ElementId(phaseId);
          if (checkPhaseId == ElementId.InvalidElementId)
             return false;
 
-         Element checkPhase = IFCCommandOverrideApplication.TheDocument.GetElement(checkPhaseId);
+         Element checkPhase = document?.GetElement(checkPhaseId);
          return checkPhase is Phase;
       }
 
@@ -68,8 +73,9 @@ namespace BIM.IFC.Export.UI
       /// Constructs the space boundary levels.
       /// </summary>
       /// <param name="level"></param>
-      public IFCPhaseAttributes(ElementId phaseId)
+      public IFCPhaseAttributes(ElementId phaseId, Document document)
       {
+         Document = document;
          PhaseId = phaseId;
       }
 
@@ -79,11 +85,11 @@ namespace BIM.IFC.Export.UI
       /// <returns>The name of the phase.</returns>
       public override string ToString()
       {
-         Element element = IFCCommandOverrideApplication.TheDocument.GetElement(PhaseId);
+         Element element = Document?.GetElement(PhaseId);
          if (element != null && element is Phase)
             return element.Name;
          else
-            return String.Format(Resources.DefaultPhase, GetDefaultPhaseName());
+            return String.Format(Resources.DefaultPhase, GetDefaultPhaseName(Document));
       }
    }
 }

@@ -61,6 +61,78 @@ namespace Revit.IFC.Export.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Arched (ARCHED).
+        /// </summary>
+        internal static string BridgeArched {
+            get {
+                return ResourceManager.GetString("BridgeArched", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cable Stayed (CABLESTAYED).
+        /// </summary>
+        internal static string BridgeCableStayed {
+            get {
+                return ResourceManager.GetString("BridgeCableStayed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cantilever (CANTILEVER).
+        /// </summary>
+        internal static string BridgeCantilever {
+            get {
+                return ResourceManager.GetString("BridgeCantilever", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Culvert (CULVERT).
+        /// </summary>
+        internal static string BridgeCulvert {
+            get {
+                return ResourceManager.GetString("BridgeCulvert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Framework (FRAMEWORK).
+        /// </summary>
+        internal static string BridgeFramework {
+            get {
+                return ResourceManager.GetString("BridgeFramework", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Girder (GIRDER).
+        /// </summary>
+        internal static string BridgeGirder {
+            get {
+                return ResourceManager.GetString("BridgeGirder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Suspension (SUSPENSION).
+        /// </summary>
+        internal static string BridgeSuspension {
+            get {
+                return ResourceManager.GetString("BridgeSuspension", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Truss (TRUSS).
+        /// </summary>
+        internal static string BridgeTruss {
+            get {
+                return ResourceManager.GetString("BridgeTruss", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Conical Face Profile Curve.
         /// </summary>
         internal static string ConicalFaceProfileCurve {
@@ -70,11 +142,236 @@ namespace Revit.IFC.Export.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Default phase to export.
+        /// </summary>
+        internal static string DefaultPhase {
+            get {
+                return ResourceManager.GetString("DefaultPhase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete old configuration.
+        /// </summary>
+        internal static string DeleteOldConfiguration {
+            get {
+                return ResourceManager.GetString("DeleteOldConfiguration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete old IFC export setups.
+        /// </summary>
+        internal static string DeleteOldSetups {
+            get {
+                return ResourceManager.GetString("DeleteOldSetups", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Architectural Reference Exchange.
+        /// </summary>
+        internal static string ER_Architecture {
+            get {
+                return ResourceManager.GetString("ER_Architecture", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Architecture.
+        /// </summary>
+        internal static string ER_ArchitectureShort {
+            get {
+                return ResourceManager.GetString("ER_ArchitectureShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to MEP Reference Exchange.
+        /// </summary>
+        internal static string ER_BuildingService {
+            get {
+                return ResourceManager.GetString("ER_BuildingService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to BuildingService.
+        /// </summary>
+        internal static string ER_BuildingServiceShort {
+            get {
+                return ResourceManager.GetString("ER_BuildingServiceShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Structural Reference Exchange.
+        /// </summary>
+        internal static string ER_Structural {
+            get {
+                return ResourceManager.GetString("ER_Structural", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Structural.
+        /// </summary>
+        internal static string ER_StructuralShort {
+            get {
+                return ResourceManager.GetString("ER_StructuralShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bridge (IfcBridge).
+        /// </summary>
+        internal static string FacilityBridge {
+            get {
+                return ResourceManager.GetString("FacilityBridge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Building (IfcBuilding).
+        /// </summary>
+        internal static string FacilityBuilding {
+            get {
+                return ResourceManager.GetString("FacilityBuilding", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Marine Facility (IfcMarineFacility).
+        /// </summary>
+        internal static string FacilityMarineFacility {
+            get {
+                return ResourceManager.GetString("FacilityMarineFacility", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Railway (IfcRailway).
+        /// </summary>
+        internal static string FacilityRailway {
+            get {
+                return ResourceManager.GetString("FacilityRailway", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Road (IfcRoad).
+        /// </summary>
+        internal static string FacilityRoad {
+            get {
+                return ResourceManager.GetString("FacilityRoad", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC2x3 COBie 2.4 Design Deliverable View.
+        /// </summary>
+        internal static string IFC2x3FM {
+            get {
+                return ResourceManager.GetString("IFC2x3FM", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC4 for General Use.
+        /// </summary>
+        internal static string IFC4 {
+            get {
+                return ResourceManager.GetString("IFC4", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC4 Design Transfer View [Unofficial].
+        /// </summary>
+        internal static string IFC4DTV {
+            get {
+                return ResourceManager.GetString("IFC4DTV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC4 Reference View.
+        /// </summary>
+        internal static string IFC4RV {
+            get {
+                return ResourceManager.GetString("IFC4RV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC4.3 Design Transfer View [Unofficial].
+        /// </summary>
+        internal static string IFC4x3DTV {
+            get {
+                return ResourceManager.GetString("IFC4x3DTV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC4.3 Reference View.
+        /// </summary>
+        internal static string IFC4x3RV {
+            get {
+                return ResourceManager.GetString("IFC4x3RV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IFC Export Complete.
         /// </summary>
         internal static string IFCExportComplete {
             get {
                 return ResourceManager.GetString("IFCExportComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot add new Property {0} to Reserved Property Set {1}..
+        /// </summary>
+        internal static string IFCExportWarningCannotAddPropertyToReservedPropertySet {
+            get {
+                return ResourceManager.GetString("IFCExportWarningCannotAddPropertyToReservedPropertySet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User-defined Property Set {0} contains reserved string {1}. Extending property set name to {2}..
+        /// </summary>
+        internal static string IFCExportWarningCannotAddUserDefinedPropertySet {
+            get {
+                return ResourceManager.GetString("IFCExportWarningCannotAddUserDefinedPropertySet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC 2x3 Coordination View 2.0.
+        /// </summary>
+        internal static string IFCMVD2x3CV2 {
+            get {
+                return ResourceManager.GetString("IFCMVD2x3CV2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC 2x3 Basic FM Handover View.
+        /// </summary>
+        internal static string IFCMVDFMHandOver {
+            get {
+                return ResourceManager.GetString("IFCMVDFMHandOver", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC 2x3 GSA Concept Design BIM 2010.
+        /// </summary>
+        internal static string IFCMVDGSA {
+            get {
+                return ResourceManager.GetString("IFCMVDGSA", resourceCulture);
             }
         }
         
@@ -160,6 +457,240 @@ namespace Revit.IFC.Export.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IFC+SG Regulatory Requirements View.
+        /// </summary>
+        internal static string IFCSG {
+            get {
+                return ResourceManager.GetString("IFCSG", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC 2x2 Coordination View.
+        /// </summary>
+        internal static string IFCVersion2x2 {
+            get {
+                return ResourceManager.GetString("IFCVersion2x2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC 2x3 Coordination View.
+        /// </summary>
+        internal static string IFCVersion2x3 {
+            get {
+                return ResourceManager.GetString("IFCVersion2x3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC4x3.
+        /// </summary>
+        internal static string IFCVersion4x3 {
+            get {
+                return ResourceManager.GetString("IFCVersion4x3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unrecognized IFC version.
+        /// </summary>
+        internal static string IFCVersionUnrecognized {
+            get {
+                return ResourceManager.GetString("IFCVersionUnrecognized", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &lt;In-Session Setup&gt;.
+        /// </summary>
+        internal static string InSessionConfiguration {
+            get {
+                return ResourceManager.GetString("InSessionConfiguration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Barrier Beach (BARRIERBEACH).
+        /// </summary>
+        internal static string MarineFacilityBarrierBeach {
+            get {
+                return ResourceManager.GetString("MarineFacilityBarrierBeach", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Breakwater (BREAKWATER).
+        /// </summary>
+        internal static string MarineFacilityBreakwater {
+            get {
+                return ResourceManager.GetString("MarineFacilityBreakwater", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Canal (CANAL).
+        /// </summary>
+        internal static string MarineFacilityCanal {
+            get {
+                return ResourceManager.GetString("MarineFacilityCanal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dry Dock (DRYDOCK).
+        /// </summary>
+        internal static string MarineFacilityDryDock {
+            get {
+                return ResourceManager.GetString("MarineFacilityDryDock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Floating Dock (FLOATINGDOCK).
+        /// </summary>
+        internal static string MarineFacilityFloatingDock {
+            get {
+                return ResourceManager.GetString("MarineFacilityFloatingDock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hydrolift (HYDROLIFT).
+        /// </summary>
+        internal static string MarineFacilityHydrolift {
+            get {
+                return ResourceManager.GetString("MarineFacilityHydrolift", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Jetty (JETTY).
+        /// </summary>
+        internal static string MarineFacilityJetty {
+            get {
+                return ResourceManager.GetString("MarineFacilityJetty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Launch Recovery Facility (LAUNCHRECOVERYFACILITY).
+        /// </summary>
+        internal static string MarineFacilityLaunchRecovery {
+            get {
+                return ResourceManager.GetString("MarineFacilityLaunchRecovery", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Marine Defense (MARINEDEFENCE).
+        /// </summary>
+        internal static string MarineFacilityMarineDefense {
+            get {
+                return ResourceManager.GetString("MarineFacilityMarineDefense", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Navigational Channel (NAVIGATIONALCHANNEL).
+        /// </summary>
+        internal static string MarineFacilityNavigationalChannel {
+            get {
+                return ResourceManager.GetString("MarineFacilityNavigationalChannel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Port (PORT).
+        /// </summary>
+        internal static string MarineFacilityPort {
+            get {
+                return ResourceManager.GetString("MarineFacilityPort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Quay (QUAY).
+        /// </summary>
+        internal static string MarineFacilityQuay {
+            get {
+                return ResourceManager.GetString("MarineFacilityQuay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Revetment (REVETMENT).
+        /// </summary>
+        internal static string MarineFacilityRevetment {
+            get {
+                return ResourceManager.GetString("MarineFacilityRevetment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shiplift (SHIPLIFT).
+        /// </summary>
+        internal static string MarineFacilityShipLift {
+            get {
+                return ResourceManager.GetString("MarineFacilityShipLift", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ship Lock (SHIPLOCK).
+        /// </summary>
+        internal static string MarineFacilityShipLock {
+            get {
+                return ResourceManager.GetString("MarineFacilityShipLock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shipyard (SHIPYARD).
+        /// </summary>
+        internal static string MarineFacilityShipyard {
+            get {
+                return ResourceManager.GetString("MarineFacilityShipyard", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Slipway (SLIPWAY).
+        /// </summary>
+        internal static string MarineFacilitySlipway {
+            get {
+                return ResourceManager.GetString("MarineFacilitySlipway", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waterway (WATERWAY).
+        /// </summary>
+        internal static string MarineFacilityWaterway {
+            get {
+                return ResourceManager.GetString("MarineFacilityWaterway", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waterway Shiplift (WATERWAYSHIPLIFT).
+        /// </summary>
+        internal static string MarineFacilityWaterwayShiplift {
+            get {
+                return ResourceManager.GetString("MarineFacilityWaterwayShiplift", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not Defined.
+        /// </summary>
+        internal static string NotDefined {
+            get {
+                return ResourceManager.GetString("NotDefined", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to (Type).
         /// </summary>
         internal static string PropertySetTypeSuffix {
@@ -187,11 +718,47 @@ namespace Revit.IFC.Export.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Save changes to IFC export configuration.
+        /// </summary>
+        internal static string SaveConfigurationChanges {
+            get {
+                return ResourceManager.GetString("SaveConfigurationChanges", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Setup.
+        /// </summary>
+        internal static string Setup {
+            get {
+                return ResourceManager.GetString("Setup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Shape.
         /// </summary>
         internal static string Shape {
             get {
                 return ResourceManager.GetString("Shape", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Update IFC export setups.
+        /// </summary>
+        internal static string UpdateExportSetups {
+            get {
+                return ResourceManager.GetString("UpdateExportSetups", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User Defined.
+        /// </summary>
+        internal static string UserDefined {
+            get {
+                return ResourceManager.GetString("UserDefined", resourceCulture);
             }
         }
     }

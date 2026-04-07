@@ -104,6 +104,7 @@ namespace Revit.IFC.Export.Toolkit
          return hnd;
       }
 
+      
       #region private validation and set methods goes here
 
       /// <summary>
@@ -435,7 +436,6 @@ namespace Revit.IFC.Export.Toolkit
          string objectType)
       {
          string overrideObjectType = objectType;
-
          if (element != null)
          {
             // Older than IFC4 may not have Predefined Type set.  If the predefined type is null, 
@@ -1134,17 +1134,17 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="elementTag">The tag for the identifier of the element.</param>
       /// <param name="representation">The representation object assigned to the wall.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateWallStandardCase(ExporterIFC exporterIFC, Element element, string guid, IFCAnyHandle ownerHistory,
+      public static IFCAnyHandle CreateWallStandardCase(IFCFile file, Element element, string guid, IFCAnyHandle ownerHistory,
           IFCAnyHandle objectPlacement, IFCAnyHandle representation, string preDefinedType)
       {
          IFCAnyHandle wallStandardCase;
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            wallStandardCase = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcWall, element);   // We export IfcWall only beginning IFC4
+            wallStandardCase = CreateInstance(file, IFCEntityType.IfcWall, element);   // We export IfcWall only beginning IFC4
             SetSpecificEnumAttr(wallStandardCase, "PredefinedType", preDefinedType, "IfcWallType");
          }
          else
-            wallStandardCase = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcWallStandardCase, element);
+            wallStandardCase = CreateInstance(file, IFCEntityType.IfcWallStandardCase, element);
 
          SetElement(wallStandardCase, element, guid, ownerHistory, null, null, null, objectPlacement, representation, null);
 
@@ -2615,8 +2615,17 @@ namespace Revit.IFC.Export.Toolkit
           string name, string description, string methodOfMeasurement, HashSet<IFCAnyHandle> quantities)
       {
          IFCAnyHandle elementQuantity = CreateInstance(file, IFCEntityType.IfcElementQuantity, null);
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 &&
+            string.IsNullOrEmpty(methodOfMeasurement))
+         {
+            methodOfMeasurement = "BaseQuantities";
+         }
+
          if (!string.IsNullOrEmpty(methodOfMeasurement))
+         {
             IFCAnyHandleUtil.SetAttribute(elementQuantity, "MethodOfMeasurement", methodOfMeasurement);
+         }
+
          IFCAnyHandleUtil.SetAttribute(elementQuantity, "Quantities", quantities);
          SetPropertySetDefinition(elementQuantity, guid, ownerHistory, name, description);
          ExporterCacheManager.QtoSetCreated.Add((elemHnd, name));
@@ -3636,13 +3645,11 @@ namespace Revit.IFC.Export.Toolkit
       /// </summary>
       /// <param name="file">The file.</param>
       /// <param name="location">The origin.</param>
-      /// <param name="axis">The Z direction.</param>
       /// <param name="refDirection">The X direction.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateAxis2Placement2D(IFCFile file, IFCAnyHandle location, IFCAnyHandle axis, IFCAnyHandle refDirection)
+      public static IFCAnyHandle CreateAxis2Placement2D(IFCFile file, IFCAnyHandle location, IFCAnyHandle refDirection)
       {
          IFCAnyHandle axis2Placement2D = CreateInstance(file, IFCEntityType.IfcAxis2Placement2D, null);
-         IFCAnyHandleUtil.SetAttribute(axis2Placement2D, "Axis", axis);
          IFCAnyHandleUtil.SetAttribute(axis2Placement2D, "RefDirection", refDirection);
          SetPlacement(axis2Placement2D, location);
          return axis2Placement2D;
@@ -6944,14 +6951,24 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="objectType">The object type.</param>
       /// <param name="objectPlacement">The object placement.</param>
       /// <param name="representation">The geometric representation of the entity.</param>
+      /// <param name="uAxes">The grid lines along the U axis.</param>
+      /// <param name="vAxes">The grid lines along the V axis.</param>
+      /// <param name="wAxes">The optional grid lines along the W axis.</param>
+      /// <param name="predefinedType">The optional predefined type.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateGrid(ExporterIFC exporterIFC, string guid, IFCAnyHandle ownerHistory, string name,
-          IFCAnyHandle objectPlacement, IFCAnyHandle representation, IList<IFCAnyHandle> uAxes, IList<IFCAnyHandle> vAxes, IList<IFCAnyHandle> wAxes)
+      public static IFCAnyHandle CreateGrid(IFCFile file, string guid, IFCAnyHandle ownerHistory, string name,
+          IFCAnyHandle objectPlacement, IFCAnyHandle representation, IList<IFCAnyHandle> uAxes, IList<IFCAnyHandle> vAxes, 
+          IList<IFCAnyHandle> wAxes, string predefinedType)
       {
-         IFCAnyHandle grid = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcGrid, null);
+         IFCAnyHandle grid = CreateInstance(file, IFCEntityType.IfcGrid, null);
          IFCAnyHandleUtil.SetAttribute(grid, "UAxes", uAxes);
          IFCAnyHandleUtil.SetAttribute(grid, "VAxes", vAxes);
          IFCAnyHandleUtil.SetAttribute(grid, "wAxes", wAxes);
+
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         {
+            SetSpecificEnumAttr(grid, "PredefinedType", predefinedType, "IfcGridType");
+         }
 
          SetProduct(grid, null, guid, ownerHistory, name, null, null, objectPlacement, representation);
          return grid;

@@ -16,14 +16,250 @@
         mc:Ignorable="d"
         Title="{x:Static p:Resources.ManageDefaultPropertySets}"
         SaveWindowSettings="True"
-        Height="559" Width="947" MinHeight="283" MinWidth="730">
-   <Grid weave:PanelProperties.Spacing="S">
+        Height="559" Width="947" MinHeight="283" MinWidth="730" Closing="ChildWindow_Closing" PreviewKeyDown="ChildWindow_PreviewKeyDown" weave:WindowProperties.ContentPadding="None">
+
+   <Grid weave:PanelProperties.Spacing="None">
 
       <Grid.Resources>
+         <local:EditButtonVisibilityConverter x:Key="EditButtonVisibilityConverter"/>
+         <local:IsIFCColumnReadOnlyConverter x:Key="IsIFCColumnReadOnlyConverter"/>
+         <local:EmptyToDefaulConverter x:Key="EmptyToDefaulConverter"/>
+         <local:SetupNameToButtonVisibilityConverter x:Key="SetupNameToButtonVisibilityConverter"/>
+         <local:SelectedSetupToFilterVisibilityConverter x:Key="SelectedSetupToFilterVisibilityConverter"/>
+         <local:BoolToRowBackgroundColorConverter x:Key="BoolToRowBackgroundColorConverter"/>
+         <local:BoolToGlyphColorConverter x:Key="BoolToGlyphColorConverter"/>
+         <local:RowIndexConverter x:Key="RowIndexConverter"/>
+         <local:TreeViewIndexConverter x:Key="TreeViewIndexConverter"/>
+         <local:ElementIdToTooltipConverter x:Key="ElementIdToTooltipConverter"/>
+         <SolidColorBrush x:Key="RowOutlineFocusedColor">#FF38ABDF</SolidColorBrush>
 
-         <local:SetupNameConverter x:Key="SetupNameConverter"/>
+         <Style x:Key="TreeViewStyle" TargetType="TreeView" BasedOn="{x:Static weaveRoot:Styles.TreeViewStyle}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="Template">
+               <Setter.Value>
+                  <ControlTemplate TargetType="TreeView">
+                     <Border Name="Border" CornerRadius="1" BorderThickness="1">
+                        <ScrollViewer Focusable="False" CanContentScroll="False" Padding="4" HorizontalScrollBarVisibility="Auto">
+                           <ItemsPresenter />
+                        </ScrollViewer>
+                     </Border>
+                  </ControlTemplate>
+               </Setter.Value>
+            </Setter>
+         </Style>
+
+         <Style x:Key="ExpandCollapseToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="0,6,0,0"/>
+            <Setter Property="Template">
+               <Setter.Value>
+                  <ControlTemplate TargetType="ToggleButton">
+                     <Grid Width="15"
+                          Height="13"
+                          Background="Transparent">
+                        <VisualStateManager.VisualStateGroups>
+                           <VisualStateGroup x:Name="CheckStates">
+                              <VisualState x:Name="Checked">
+                                 <Storyboard>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)"
+                                                                   Storyboard.TargetName="Collapsed">
+                                       <DiscreteObjectKeyFrame KeyTime="0"
+                                        Value="{x:Static Visibility.Hidden}"/>
+                                    </ObjectAnimationUsingKeyFrames>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)"
+                                                                   Storyboard.TargetName="Expanded">
+                                       <DiscreteObjectKeyFrame KeyTime="0"
+                                                               Value="{x:Static Visibility.Visible}"/>
+                                    </ObjectAnimationUsingKeyFrames>
+                                 </Storyboard>
+                              </VisualState>
+                              <VisualState x:Name="Unchecked"/>
+                              <VisualState x:Name="Indeterminate"/>
+                           </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Path x:Name="Collapsed"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Margin="1,1,1,1"
+                              Data="M 4 0 L 8 4 L 4 8 Z">
+                           <Path.Resources>
+                              <SolidColorBrush x:Key="GlyphColor">#FF444444</SolidColorBrush>
+                              <SolidColorBrush x:Key="GlyphColorDark">#FFFFFFFF</SolidColorBrush>
+                           </Path.Resources>
+                           <Path.Fill>
+                              <MultiBinding Converter="{StaticResource BoolToGlyphColorConverter}">
+                                 <Binding Path="IsRevitThemeDark" RelativeSource="{RelativeSource Mode=FindAncestor,AncestorType=Window}"/>
+                                 <Binding RelativeSource="{RelativeSource Self}"/>
+                              </MultiBinding>
+                           </Path.Fill>
+                        </Path>
+                        <Path x:Name="Expanded"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Margin="1,1,1,1"
+                              Data="M 0 4 L 8 4 L 4 8 Z"
+                              Visibility="Hidden">
+
+                           <Path.Resources>
+                              <SolidColorBrush x:Key="GlyphColor">#FF444444</SolidColorBrush>
+                              <SolidColorBrush x:Key="GlyphColorDark">#FFFFFFFF</SolidColorBrush>
+                           </Path.Resources>
+                           <Path.Fill>
+                              <MultiBinding Converter="{StaticResource BoolToGlyphColorConverter}">
+                                 <Binding Path="IsRevitThemeDark" RelativeSource="{RelativeSource Mode=FindAncestor,AncestorType=Window}"/>
+                                 <Binding RelativeSource="{RelativeSource Self}"/>
+                              </MultiBinding>
+                           </Path.Fill>
+                        </Path>
+                     </Grid>
+                  </ControlTemplate>
+               </Setter.Value>
+            </Setter>
+         </Style>
+
+         <Style x:Key="TreeViewItemFocusVisual">
+            <Setter Property="Control.Template">
+               <Setter.Value>
+                  <ControlTemplate>
+                     <Border>
+                        <Rectangle Margin="0,0,0,0"
+                                   StrokeThickness="5"
+                                   Stroke="Black"
+                                   StrokeDashArray="1 2"
+                                   Opacity="0"/>
+                     </Border>
+                  </ControlTemplate>
+               </Setter.Value>
+            </Setter>
+         </Style>
+
+         <Style x:Key="{x:Type TreeViewItem}" TargetType="{x:Type TreeViewItem}" BasedOn="{x:Static weaveRoot:Styles.TreeViewItemStyle}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="HorizontalContentAlignment" Value="{Binding Path=HorizontalContentAlignment,
+               RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
+            <Setter Property="VerticalContentAlignment" Value="{Binding Path=VerticalContentAlignment,
+               RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
+            <Setter Property="Padding" Value="1,0,0,0"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource TreeViewItemFocusVisual}"/>
+            <Setter Property="Template">
+               <Setter.Value>
+                  <ControlTemplate TargetType="{x:Type TreeViewItem}">
+                     <Grid>
+                        <Grid.ColumnDefinitions>
+                           <ColumnDefinition Width="Auto"/>
+                           <ColumnDefinition MinWidth="19" MaxWidth="19"/>
+                           <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                           <RowDefinition Height="Auto"/>
+                           <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <VisualStateManager.VisualStateGroups>
+                           <VisualStateGroup x:Name="ExpansionStates">
+                              <VisualState x:Name="Expanded">
+                                 <Storyboard>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)"
+                                                                   Storyboard.TargetName="ItemsHost">
+                                       <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Visible}"/>
+                                    </ObjectAnimationUsingKeyFrames>
+                                 </Storyboard>
+                              </VisualState>
+                              <VisualState x:Name="Collapsed"/>
+                           </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+
+                        <Rectangle x:Name="RowBackground" Grid.ColumnSpan="1" SnapsToDevicePixels="true" StrokeThickness="0"
+                                    Width="Auto">
+                           <Rectangle.Resources>
+                              <SolidColorBrush x:Key="RowBackgroundFocusedColor">#CDEAF7</SolidColorBrush>
+                              <SolidColorBrush x:Key="RowBackgroundFocusedColorDark">#006EAF</SolidColorBrush>
+                           </Rectangle.Resources>
+                        </Rectangle>
+                        <ToggleButton x:Name="Expander" Style="{StaticResource ExpandCollapseToggleStyle}"
+                                      ClickMode="Press"
+                                      Grid.Column="1"
+                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"/>
+                        <Border x:Name="Bd"
+                                Grid.Column="0"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                           <ContentPresenter x:Name="PART_Header"
+                                              ContentSource="Header"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                        </Border>
+                        <ItemsPresenter x:Name="ItemsHost"
+                                        Grid.Row="1"
+                                        Grid.Column="0"
+                                        Grid.ColumnSpan="20"
+                                        Visibility="Collapsed"/>
+                     </Grid>
+                     <ControlTemplate.Triggers>
+                        <Trigger Property="HasItems" Value="false">
+                           <Setter TargetName="Expander"
+                                    Property="Visibility"
+                                    Value="Hidden"/>
+                        </Trigger>
+                        <MultiTrigger>
+                           <MultiTrigger.Conditions>
+                              <Condition Property="HasHeader" Value="false"/>
+                              <Condition Property="Width" Value="Auto"/>
+                           </MultiTrigger.Conditions>
+                           <Setter TargetName="PART_Header"
+                                    Property="MinWidth"
+                                    Value="75"/>
+                        </MultiTrigger>
+                        <MultiTrigger>
+                           <MultiTrigger.Conditions>
+                              <Condition Property="HasHeader" Value="false"/>
+                              <Condition Property="Height" Value="Auto"/>
+                           </MultiTrigger.Conditions>
+                           <Setter TargetName="PART_Header"
+                                    Property="MinHeight"
+                                    Value="19"/>
+                        </MultiTrigger>
+
+                        <MultiDataTrigger>
+                           <MultiDataTrigger.Conditions>
+                              <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                              <Condition Binding="{Binding IsMouseOver, ElementName=ItemsHost}" Value="false"/>
+                           </MultiDataTrigger.Conditions>
+                           <Setter Property="Fill" TargetName="RowBackground" Value="#1a808080"/>
+                        </MultiDataTrigger>
+
+                        <MultiDataTrigger>
+                           <MultiDataTrigger.Conditions>
+                              <Condition Binding="{Binding IsFocused, RelativeSource={RelativeSource Self}}" Value="True"/>
+                              <Condition Binding="{Binding IsFocused, ElementName=ItemsHost}" Value="false"/>
+                              <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
+                           </MultiDataTrigger.Conditions>
+
+                           <Setter Property="Fill" TargetName="RowBackground">
+                              <Setter.Value>
+                                 <MultiBinding Converter="{StaticResource BoolToRowBackgroundColorConverter}">
+                                    <Binding Path="IsRevitThemeDark" RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=Window}"/>
+                                    <Binding RelativeSource="{RelativeSource Self}"/>
+                                 </MultiBinding>
+                              </Setter.Value>
+                           </Setter>
+                           <Setter Property="BorderBrush" TargetName="Bd" Value="{StaticResource RowOutlineFocusedColor}"/>
+                        </MultiDataTrigger>
+
+                     </ControlTemplate.Triggers>
+                  </ControlTemplate>
+               </Setter.Value>
+            </Setter>
+         </Style>
+
          <Style TargetType="{x:Type ListBox}" BasedOn="{x:Static weaveRoot:Styles.ListBoxStyle}"/>
-         <Style TargetType="{x:Type ListBoxItem}" BasedOn="{x:Static weaveRoot:Styles.ListBoxItemStyle}"/>
+         <Style x:Key="ListBoxItemStyle" TargetType="ListBoxItem" BasedOn="{x:Static weaveRoot:Styles.ListBoxItemStyle}">
+            <Setter Property="ToolTip" Value="{Binding}"/>
+         </Style>
          <Style TargetType="{x:Type CheckBox}" BasedOn="{x:Static weaveRoot:Styles.CheckBoxStyle}"/>
          <Style x:Key="CheckBoxStyle" TargetType="{x:Type CheckBox}" BasedOn="{x:Static weaveRoot:Styles.CheckBoxStyle}">
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -34,11 +270,18 @@
          <Style TargetType="{x:Type Label}" BasedOn="{x:Static weaveRoot:Styles.LabelStyle}"/>
          <Style TargetType="{x:Type TextBox}" BasedOn="{x:Static weaveRoot:Styles.TextBoxStyle}"/>
          <Style TargetType="{x:Type TextBlock}" BasedOn="{x:Static weaveRoot:Styles.TextBlockStyle}"/>
+         <Style x:Key="TextBlockStyle" TargetType="{x:Type TextBlock}" BasedOn="{x:Static weaveRoot:Styles.TextBlockStyle}">
+            <Setter Property="Margin" Value="0,5,0,0"/>
+            <Setter Property="weave:TextBlockProperties.Variant" Value="BodyRegular"/>
+         </Style>
          <Style x:Key="DataGridCellStyle" TargetType="DataGridCell" BasedOn="{x:Static weaveRoot:Styles.DataGridCellStyle}">
             <Setter Property="Margin" Value="0,0,0,0"/>
          </Style>
          <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{x:Static weaveRoot:Styles.DataGridColumnHeaderStyle}">
             <Setter Property="Margin" Value="0,0,0,0"/>
+         </Style>
+         <Style x:Key="StackPanelStyle" TargetType="{x:Type StackPanel}">
+            <Setter Property="Orientation" Value="Horizontal"/>
          </Style>
       </Grid.Resources>
 
@@ -47,60 +290,168 @@
          <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
       <Grid.ColumnDefinitions>
-         <ColumnDefinition Width="Auto"/>
-         <ColumnDefinition Width="Auto"/>
-         <ColumnDefinition Width="*"/>
+         <ColumnDefinition Width="1*" MaxWidth="280" MinWidth="{Binding ActualWidth, ElementName=dockPanelMappingTemplates}"/>
+         <ColumnDefinition Width="1*" MinWidth="{Binding MinWidth, ElementName=dockPanelPropertySetups}"/>
+         <ColumnDefinition Width="2*"/>
       </Grid.ColumnDefinitions>
 
       <Border Grid.Column="0" weave:BorderProperties.SurfaceLevel="Level250">
-         <StackPanel Orientation="Vertical" Width="214">
-            <TextBlock Text="{x:Static p:Resources.PropertySetups}" weave:TextBlockProperties.Variant="BodyRegular"/>
-            <ListBox Name="listBox_PropertySetups" ItemsSource="{Binding PropertySetups}" SelectedValue="{Binding SelectedPropertySetup}" SelectionChanged="listBox_PropertySetups_SelectionChanged"/>
-         </StackPanel>
-      </Border>
-      <Border Grid.Column="1" weave:BorderProperties.SurfaceLevel="Level200">
-         <DockPanel weave:PanelProperties.Spacing="S" Height="Auto">
-            <Grid Width="225" DockPanel.Dock="Top" >
-
-               <Grid.RowDefinitions>
-                  <RowDefinition Height="Auto"/>
-                  <RowDefinition Height="Auto"/>
-                  <RowDefinition Height="Auto"/>
-               </Grid.RowDefinitions>
-               <TextBlock Grid.Row="0" Name="textBlock_SelectedSetupName" weave:TextBlockProperties.Variant="BodyRegular"/>
-               <StackPanel Orientation="Horizontal" Grid.Row="1">
-                  <StackPanel Orientation="Vertical" Width="108" Margin="8,7,0,0">
-                     <TextBlock x:Name="textBlock_Schema" Text="{x:Static p:Resources.IFCSchema}" weave:TextBlockProperties.Variant="CaptionRegular"/>
-                     <ComboBox x:Name="comboBox_IFCSchema" ItemsSource="{Binding IfcSchemas}" SelectedValue="{Binding SelectedIfcSchema}" SelectionChanged="comboBox_IFCSchema_SelectionChanged"/>
-                  </StackPanel>
-                  <Button Name ="button_Filter" HorizontalAlignment="Left"
-                          Margin="0,2,0,0"
-                          weave:ButtonProperties.Variant="SquareIcon" 
-                          weave:ButtonProperties.IconName="FilterS" 
-                          weave:ButtonProperties.ContentType="IconLeft" 
-                          Width="84" Click="button_Filter_Click">
-                     <Label Content="{x:Static p:Resources.Filter}"/>
-                  </Button>
+         <DockPanel Margin="8,0,0,0">
+            <DockPanel Name="dockPanelMappingTemplates" MinWidth="222" Margin="0,8,0,0">
+               <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,4">
+                  <TextBlock Text="{x:Static p:Resources.ParameterMappingSettings}" weave:TextBlockProperties.Variant="BodyRegular"/>
                </StackPanel>
-               <ListBox Name="listBox_PropertySets" Grid.Row="2" ItemsSource="{Binding PropertySetCollection}"
-                        SelectedValue="{Binding SelectedPropertySet}" Height="364"
-                        SelectionChanged="listBox_PropertySets_SelectionChanged" weave:ItemsControlProperties.ScrollBarVariant="Default"
-                        ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
-                  <ListBox.ItemTemplate>
-                     <HierarchicalDataTemplate>
-                        <CheckBox Content="{Binding Name}" IsChecked="{Binding ExportFlag}"/>
-                     </HierarchicalDataTemplate>
-                  </ListBox.ItemTemplate>
+               <StackPanel Name="stackPanel_buttons" Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,4,0,4" HorizontalAlignment="Stretch">
+                  <ctrl:IconButton Name="button_Add" IconName="AddS" Click="button_Add_Click">
+                     <Button.ToolTip>
+                        <ToolTip Content="{x:Static p:Resources.CreateNewTemplateTooltip}" Placement="Top"/>
+                     </Button.ToolTip>
+                  </ctrl:IconButton>
+                  <ctrl:IconButton Name="button_Import" IconName="ImportS" Click="button_Import_Click">
+                     <Button.ToolTip>
+                        <ToolTip Content="{x:Static p:Resources.ImportTemplateTooltip}" Placement="Top"/>
+                     </Button.ToolTip>
+                  </ctrl:IconButton>
+                  <ctrl:IconButton Name="button_Copy" IconName="CopyS" Click="button_Copy_Click">
+                     <Button.ToolTip>
+                        <ToolTip Content="{x:Static p:Resources.CopyTemplateTooltip}" Placement="Top"/>
+                     </Button.ToolTip>
+                  </ctrl:IconButton>
+                  <ctrl:IconButton Name="button_Save" IconName="SaveS" Click="button_Save_Click">
+                     <Button.ToolTip>
+                        <ToolTip Content="{x:Static p:Resources.SaveTemplateTooltip}" Placement="Top"/>
+                     </Button.ToolTip>
+                  </ctrl:IconButton>
+                  <ctrl:IconButton Name="button_Export" IconName="ExportMoveS" Click="button_Export_Click">
+                     <Button.ToolTip>
+                        <ToolTip Content="{x:Static p:Resources.ExportTemplateTooltip}" Placement="Top"/>
+                     </Button.ToolTip>
+                  </ctrl:IconButton>
+                  <ctrl:IconButton Name="button_Rename" IconName="RenameS" Click="button_Rename_Click">
+                     <Button.ToolTip>
+                        <ToolTip Content="{x:Static p:Resources.RenameTemplateTooltip}" Placement="Top"/>
+                     </Button.ToolTip>
+                  </ctrl:IconButton>
+                  <ctrl:IconButton Name="button_Delete" IconName="TrashS" Click="button_Delete_Click">
+                     <Button.ToolTip>
+                        <ToolTip Content="{x:Static p:Resources.DeleteTemplateTooltip}" Placement="Top"/>
+                     </Button.ToolTip>
+                  </ctrl:IconButton>
+               </StackPanel>
+               <ListBox Name="listBox_MappingTemplates" ItemContainerStyle="{StaticResource ListBoxItemStyle}" 
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto" HorizontalContentAlignment="Left"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     SelectionChanged="listBox_MappingTemplates_SelectionChanged"
+                     Margin="0,4,0,4">
+                  <ListBox.Resources>
+                     <Style TargetType="ToolTip" BasedOn="{x:Static weaveRoot:Styles.ToolTipStyle}">
+                        <Setter Property="Placement" Value="Bottom"/>
+                     </Style>
+                  </ListBox.Resources>
                </ListBox>
-            </Grid>
+            </DockPanel>
          </DockPanel>
       </Border>
-      <Border Grid.Column="2" weave:BorderProperties.SurfaceLevel="Level100">
-         <DockPanel>
-            <DockPanel DockPanel.Dock="Top" Margin="0,4,0,4">
-               <TextBlock Name="textBlock_PropertySetName" Text="{Binding ElementName=listBox_PropertySets, Path=SelectedItem.Name}"
-                          weave:TextBlockProperties.Variant="BodyRegular" Width="Auto"  Margin="0,0,0,4"/>
-               <Button Name="button_ResetAll" Margin="4,0,-4,0" weave:ButtonProperties.Variant="Flat" Click="button_ResetAll_Click" HorizontalAlignment="Right" VerticalContentAlignment="Center" VerticalAlignment="Center">
+
+      <Border Grid.Column="1" weave:BorderProperties.SurfaceLevel="Level200">
+         <DockPanel Name="dockPanelPropertySetups" weave:PanelProperties.Spacing="S" Margin="0,0,0,0" MinWidth="225" HorizontalAlignment="Stretch">
+            <TextBlock Name="textBlock_SelectedTemplateName" weave:TextBlockProperties.Variant="BodyRegular" Margin="13,0,0,3" DockPanel.Dock="Top"/>
+            <StackPanel Orientation="Horizontal" Width="Auto" Margin="13,0,0,6" DockPanel.Dock="Top">
+               <TextBlock x:Name="textBlock_Schema" Text="{x:Static p:Resources.IFCSchema}" weave:TextBlockProperties.Variant="CaptionRegular" VerticalAlignment="Center"/>
+               <ComboBox x:Name="comboBox_IFCSchema" ItemsSource="{Binding IfcSchemas}" Margin="10,0,0,0" SelectedValue="{Binding SelectedIfcSchema}" SelectionChanged="comboBox_IFCSchema_SelectionChanged" VerticalContentAlignment="Center" VerticalAlignment="Top"/>
+            </StackPanel>
+            <Grid Margin="13,2,8,0" DockPanel.Dock="Top">
+               <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="*"/>
+               </Grid.ColumnDefinitions>
+               <ctrl:IconButton Name="button_Filter" IconName="FilterS" Grid.Column="0" Margin="0,0,0,0"/>
+               <Grid Grid.Column="1" Margin="8,0,0,0" HorizontalAlignment="Stretch">
+                  <TextBox Name="textBox_Search" HorizontalAlignment="Stretch"
+                                 Height="Auto" Padding="0,0,20,0"
+                                 MinWidth="80"
+                                 weave:TextBoxProperties.Variant="Box" 
+                                 weave:TextBoxProperties.HintText="{x:Static p:Resources.TypeToFilter}" 
+                                 TextChanged="textBox_Search_TextChanged" VerticalAlignment="Top"/>
+                  <ctrl:IconButton Name ="button_PropertySetClean"
+                                IconName="CloseSUI" 
+                                HorizontalAlignment="Right" Click="button_PropertySetClean_Click" VerticalAlignment="Center"/>
+               </Grid>
+            </Grid>
+
+            <TreeView Name="treeView_PropertySetups" Margin="0,5,0,0" DockPanel.Dock="Top" Style="{StaticResource TreeViewStyle}"
+                            ItemsSource="{Binding SetupInfos}" weave:TreeViewProperties.ShowGuidelines="False" 
+                            weave:TreeViewProperties.Indicator="Caret"
+                            SelectedItemChanged="treeView_PropertySetups_SelectedItemChanged">
+               <TreeView.ItemTemplate>
+                  <HierarchicalDataTemplate ItemsSource="{Binding PSetMappingInfos}">
+                     <StackPanel Orientation="Vertical">
+                        <StackPanel Style="{StaticResource StackPanelStyle}">
+                           <CheckBox IsChecked="{Binding ExportSetup}"
+                                     IsEnabled="{Binding DataContext.IsCustomConfiguration, RelativeSource={RelativeSource AncestorType=Window}}"
+                                     AutomationProperties.AutomationId="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem},
+                                     StringFormat=checkBox_Setup_{0}, Converter={StaticResource TreeViewIndexConverter} }">
+                              <CheckBox.ToolTip>
+                                 <ToolTip Content="{x:Static p:Resources.SelectedPropertySetCheckboxTooltip}" Placement="Bottom"/>
+                              </CheckBox.ToolTip>
+                           </CheckBox>
+                           <TextBlock Text="{Binding SetupName}" Style="{StaticResource TextBlockStyle}"/>
+                        </StackPanel>
+                        <Button Name="button_AddPropertySet" HorizontalAlignment="Left" Margin="25,4,4,4"
+                                Content="{x:Static p:Resources.AddPropertySet}" weave:ButtonProperties.Variant="Outline"
+                                Click="button_AddPropertySet_Click"
+                                Visibility="{Binding PropertySetup, Converter={StaticResource SetupNameToButtonVisibilityConverter}}"
+                                AutomationProperties.AutomationId="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem},
+                                StringFormat=button_AddPropertySet_{0}, Converter={StaticResource TreeViewIndexConverter} }"/>
+                     </StackPanel>
+                     <HierarchicalDataTemplate.ItemTemplate>
+                        <DataTemplate>
+                           <StackPanel Style="{StaticResource StackPanelStyle}" Margin="20,0,0,0">
+                              <CheckBox IsChecked="{Binding ExportFlag}"
+                                       IsEnabled="{Binding DataContext.IsCustomConfiguration, RelativeSource={RelativeSource AncestorType=Window}}"
+                                       AutomationProperties.AutomationId="{Binding AutomationId}"
+                                       Click="checkBox_PropertySet_Click">
+                                 <CheckBox.ToolTip>
+                                    <ToolTip Content="{x:Static p:Resources.SelectedPropertySetCheckboxTooltip}" Placement="Bottom"/>
+                                 </CheckBox.ToolTip>
+                              </CheckBox>
+                              <TextBlock Text="{Binding Name}" Style="{StaticResource TextBlockStyle}"/>
+                           </StackPanel>
+                        </DataTemplate>
+                     </HierarchicalDataTemplate.ItemTemplate>
+                  </HierarchicalDataTemplate>
+               </TreeView.ItemTemplate>
+            </TreeView>
+         </DockPanel>
+      </Border>
+
+      <Border Grid.Column="2" weave:BorderProperties.SurfaceLevel="Level100" Margin="0,8,0,0">
+         <DockPanel Margin="8,0,8,0">
+            <Grid DockPanel.Dock="Top" Margin="0,4,0,4">
+               <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+               </Grid.ColumnDefinitions>
+               <StackPanel Grid.Column="0" Orientation="Vertical">
+                  <TextBlock Name="textBlock_PropertySetName" 
+                             weave:TextBlockProperties.Variant="BodyRegular" Width="Auto"  Margin="0,0,0,4"/>
+                  <StackPanel Name="filterCategoryStackPanel" Margin="0,4,0,0"
+                              Orientation="Vertical"
+                              weave:PanelProperties.Spacing="Xs"
+                              Visibility="{Binding ElementName=treeView_PropertySetups, Path=SelectedItem, Converter={StaticResource SelectedSetupToFilterVisibilityConverter}}">
+                     <TextBlock Name="textBlock_PropertySetFilterLabel"
+                             Text="{x:Static p:Resources.FilterByCategory}"
+                             weave:TextBlockProperties.Variant="CaptionRegular" Width="Auto"
+                              Visibility="{Binding ElementName=button_ResetAll, Path=Visibility}"/>
+                     <ComboBox Name="comboBox_CategoryName"  Width="200"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsEnabled="{Binding IsCustomConfiguration}" 
+                            Visibility="{Binding ElementName=button_ResetAll, Path=Visibility}"
+                            SelectionChanged="comboBox_CategoryName_SelectionChanged"/>
+                  </StackPanel>
+               </StackPanel>
+               <Button Grid.Column="1" Name="button_ResetAll" Margin="4,0,-4,0" weave:ButtonProperties.Variant="Flat" Click="button_ResetAll_Click" HorizontalAlignment="Right" VerticalContentAlignment="Center" VerticalAlignment="Center">
                   <StackPanel Orientation="Horizontal" Width="Auto" VerticalAlignment="Center">
                      <Image Source="../icons/data-refresh.png" Width="Auto" HorizontalAlignment="Stretch"/>
                      <TextBlock Name="label_ResetAll" Text="{x:Static p:Resources.ResetAll}" weave:TextBlockProperties.Variant="BodyRegular"  Margin="4,0,-4,0" HorizontalAlignment="Right"/>
@@ -109,11 +460,16 @@
                      <ToolTip Content="{x:Static p:Resources.ResetToDefault}" Placement="Left"/>
                   </Button.ToolTip>
                </Button>
-            </DockPanel>
-            
-            <Image Name="image_EmptyState" Width="488" Height="266" Source="../icons/empty-state.png" HorizontalAlignment="Stretch" Margin="4"/>           
+            </Grid>
 
-            <DataGrid Name="dataGrid_PropertyMapping" ItemsSource="{Binding PropertyCollection}"
+            <StackPanel Orientation="Vertical">
+               <TextBlock Name="textBlock_EmptyStatePsetsInfo" HorizontalAlignment="Center" weave:TextBlockProperties.Variant="H3Medium" TextWrapping="Wrap" TextAlignment="Center" Margin="8"/>
+               <Image Name="image_EmptyStatePsets" Width="488" Height="266" Source="../icons/empty-state.png" HorizontalAlignment="Stretch" Margin="4"/>
+               <TextBlock Name="textBlock_EmptyStatePsets" Text="{x:Static p:Resources.EmptyStatePropertySet}" HorizontalAlignment="Center" weave:TextBlockProperties.Variant="H3Regular"
+                          TextWrapping="Wrap" TextAlignment="Center" Margin="8"/>
+            </StackPanel>
+
+            <DataGrid Name="dataGrid_PropertyMapping" ItemsSource="{Binding ObservableProperties}"
                       weave:FrameworkElementProperties.ApplyWeaveStyles="True"
                       AutoGenerateColumns="False"                      
                       HorizontalAlignment="Center"
@@ -132,14 +488,14 @@
                       RowHeight="27" Margin="0,4,0,4">
 
                <DataGrid.Columns>
-
-                  <DataGridTemplateColumn IsReadOnly="True">
+                  <DataGridTemplateColumn>
                      <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
                            <StackPanel Orientation="Horizontal">
-                              <CheckBox Name="checkBox_ExportFlagAll" IsChecked="{Binding DataContext.ExportFlagAll, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}">
+                              <CheckBox Name="checkBox_ExportFlagAll" IsChecked="{Binding DataContext.ExportFlagAll, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                       IsEnabled="{Binding DataContext.IsCustomConfiguration, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}">
                                  <CheckBox.ToolTip>
-                                    <ToolTip Content="{x:Static p:Resources.SelectedCheckboxTooltip}" Placement="Bottom"/>
+                                    <ToolTip Content="{x:Static p:Resources.SelectedPropertiesCheckboxTooltip}" Placement="Bottom"/>
                                  </CheckBox.ToolTip>
                               </CheckBox>
                            </StackPanel>
@@ -151,9 +507,14 @@
                               <Setter.Value>
                                  <ControlTemplate TargetType="DataGridCell">
                                     <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
-                                       <CheckBox Name="checkBox_ExportFlag" Style="{StaticResource CheckBoxStyle}" IsChecked="{Binding Path=ExportFlag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch">
+                                       <CheckBox Name="checkBox_ExportFlag" Style="{StaticResource CheckBoxStyle}" IsChecked="{Binding Path=ExportFlag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding DataContext.IsCustomConfiguration, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                 Click="ExportFlagClick" HorizontalAlignment="Stretch"
+                                                  AutomationProperties.AutomationId="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, 
+                                                                                      StringFormat=checkBox_ExportFlag_{0}, 
+                                                                                      Converter={StaticResource RowIndexConverter} }">
                                           <CheckBox.ToolTip>
-                                             <ToolTip Content="{x:Static p:Resources.SelectedCheckboxTooltip}" Placement="Bottom"/>
+                                             <ToolTip Content="{x:Static p:Resources.SelectedPropertiesCheckboxTooltip}" Placement="Bottom"/>
                                           </CheckBox.ToolTip>
                                        </CheckBox>
                                     </StackPanel>
@@ -164,27 +525,57 @@
                      </DataGridTemplateColumn.CellStyle>
                   </DataGridTemplateColumn>
 
-                  <DataGridTemplateColumn Header="{x:Static p:Resources.IFCProperty}" Width="*" IsReadOnly="True"
-                     CellStyle="{StaticResource DataGridCellStyle}" HeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                  <DataGridTemplateColumn Header="{x:Static p:Resources.IFCProperty}" Width="*"
+                                          CellStyle="{StaticResource DataGridCellStyle}" HeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                      <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                           <Grid>
+                           <Grid Background="{Binding ElementName=textBox_IFCProperty, Path=Background}">
                               <Grid.ColumnDefinitions>
+                                 <ColumnDefinition Width="*"/>
                                  <ColumnDefinition Width="auto"/>
                               </Grid.ColumnDefinitions>
 
-                              <Border Grid.Column="0">
-                                 <TextBox Name="textBox_IFCProperty" Text="{Binding Path=IFCPropertyName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                              <Border Grid.Column="0" Background="{Binding ElementName=textBox_IFCProperty, Path=Background}">
+                                 <TextBox Name="textBox_IFCProperty" HorizontalAlignment="Stretch" VerticalAlignment="Center" BorderThickness="0"
+                                          Text="{Binding Path=IFCPropertyName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EmptyToDefaulConverter}}"
+                                          IsReadOnly="{Binding ElementName=treeView_PropertySetups, Path=SelectedItem, Converter={StaticResource IsIFCColumnReadOnlyConverter}}"
+                                          AutomationProperties.AutomationId="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow},
+                                                                              StringFormat=textBox_IFCProperty_{0}, 
+                                                                              Converter={StaticResource RowIndexConverter} }">
+                                    <TextBox.Style>
+                                       <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                          <Style.Triggers>
+                                             <DataTrigger Binding="{Binding ElementName=treeView_PropertySetups, Path=SelectedItem, Converter={StaticResource EditButtonVisibilityConverter}, ConverterParameter=false}"
+                                                          Value="Hidden">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                             </DataTrigger>
+                                          </Style.Triggers>
+                                       </Style>
+                                    </TextBox.Style>
+                                 </TextBox>
+                              </Border>
+                              <Border Grid.Column="1" Background="{Binding ElementName=textBox_IFCProperty, Path=Background}">
+                                 <ctrl:IconButton Name="button_IFCPropertyEdit" IconName="EditS" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                         IsEnabled="{Binding DataContext.IsCustomConfiguration, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                         Background="{Binding ElementName=textBox_IFCProperty, Path=Background}"
+                                         Visibility="{Binding ElementName=treeView_PropertySetups, Path=SelectedItem, Converter={StaticResource EditButtonVisibilityConverter}, ConverterParameter=false}">
+                                    <Button.ToolTip>
+                                       <ToolTip Content="{x:Static p:Resources.Edit}" Placement="Bottom"/>
+                                    </Button.ToolTip>
+                                 </ctrl:IconButton>
                               </Border>
                            </Grid>
                         </DataTemplate>
                      </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>
 
-                  <DataGridTemplateColumn Header="{x:Static p:Resources.RevitProperty}" Width="*" IsReadOnly="True" CellStyle="{StaticResource DataGridCellStyle}" HeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                  <DataGridTextColumn Header="{x:Static p:Resources.DataType}" Binding="{Binding Path=PropertyDataType}" Width="*" IsReadOnly="True"
+                                      CellStyle="{StaticResource DataGridCellStyle}" HeaderStyle="{StaticResource DataGridColumnHeaderStyle}"/>
+
+                  <DataGridTemplateColumn Header="{x:Static p:Resources.RevitProperty}" Width="*" CellStyle="{StaticResource DataGridCellStyle}" HeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                      <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                           <Grid>
+                           <Grid Background="{Binding ElementName=textBox_RevitProperty, Path=Background}">
                               <Grid.Resources>
                               </Grid.Resources>
 
@@ -193,50 +584,68 @@
                                  <ColumnDefinition Width="auto"/>
                               </Grid.ColumnDefinitions>
 
-                              <Border Grid.Column="0">
-                                 <TextBox Name="textBox_RevitProperty" Text="{Binding Path=RevitPropertyName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" VerticalAlignment="Center" BorderThickness="0"/>
+                              <Border Grid.Column="0" Background="{Binding ElementName=textBox_RevitProperty, Path=Background}">
+                                 <TextBox Name="textBox_RevitProperty" HorizontalAlignment="Stretch" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"
+                                          Text="{Binding Path=RevitPropertyName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EmptyToDefaulConverter}}"
+                                          ToolTip="{Binding Converter={StaticResource ElementIdToTooltipConverter}}">
+                                    <TextBox.Style>
+                                       <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                          <Style.Triggers>
+                                             <DataTrigger Binding="{Binding ElementName=treeView_PropertySetups, Path=SelectedItem, Converter={StaticResource EditButtonVisibilityConverter}, ConverterParameter=true}"
+                                                          Value="Hidden">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                             </DataTrigger>
+                                          </Style.Triggers>
+                                       </Style>
+                                    </TextBox.Style>
+                                 </TextBox>
                               </Border>
-                              <Border Grid.Column="1">
-                                 <Button Name="button_RevitPropertyEdit" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="EditS" HorizontalAlignment="Right" VerticalAlignment="Center">
+                              <Border Grid.Column="1" Background="{Binding ElementName=textBox_RevitProperty, Path=Background}">
+                                 <ctrl:IconButton Name="button_RevitPropertyEdit" Click="button_RevitPropertyEdit_Click" IconName="EditS" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                         IsEnabled="{Binding DataContext.IsCustomConfiguration, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                         Background="{Binding ElementName=textBox_RevitProperty, Path=Background}"
+                                         Visibility="{Binding ElementName=treeView_PropertySetups, Path=SelectedItem, Converter={StaticResource EditButtonVisibilityConverter}, ConverterParameter=true}">
                                     <Button.ToolTip>
                                        <ToolTip Content="{x:Static p:Resources.Edit}" Placement="Bottom"/>
                                     </Button.ToolTip>
-                                 </Button>
+                                 </ctrl:IconButton>
                               </Border>
                            </Grid>
                         </DataTemplate>
                      </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>
 
-                  <DataGridTemplateColumn Header="{x:Static p:Resources.Reset}" IsReadOnly="True">
+                  <DataGridTemplateColumn Header="{x:Static p:Resources.Reset}">
                      <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                           <Button Name="button_Reset" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="DataRefreshS" Click="button_Reset_Click" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                           <ctrl:IconButton Name="button_Reset" IconName="DataRefreshS" Click="button_Reset_Click" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                           IsEnabled="{Binding DataContext.IsCustomConfiguration, RelativeSource={RelativeSource AncestorType=DataGrid}}">
                               <Button.ToolTip>
                                  <ToolTip Content="{x:Static p:Resources.ResetRowToDefault}" Placement="Bottom"/>
                               </Button.ToolTip>
-                           </Button>
+                           </ctrl:IconButton>
                         </DataTemplate>
                      </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>
-
                </DataGrid.Columns>
             </DataGrid>
-
          </DockPanel>
       </Border>
-      <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center">
-         <ctrl:WeaveIcon RegularIcon="Info" VerticalAlignment="Top"/>
+
+      <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="8,8,0,8">
+         <ctrl:WeaveIcon IconName="InfoS" VerticalAlignment="Top"/>
          <TextBlock Name="textBlock_Help" HorizontalAlignment="Left" VerticalAlignment="Center">
-            <Hyperlink>
+            <Hyperlink Click="OnHelpClick">
                <Run Name="run_Help" Text="{x:Static p:Resources.ParameterMappingHelp}" x:Uid="LearnMoreHyperlink"/>
             </Hyperlink>
          </TextBlock>
       </StackPanel>
 
-      <StackPanel Orientation="Horizontal" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" weave:PanelProperties.Spacing="S">
+      <StackPanel Margin="0,8,0,8" Orientation="Horizontal" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" weave:PanelProperties.Spacing="S">
          <Button x:Name="button_Ok" Content="{x:Static p:Resources.OK}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Solid" Click="button_Ok_Click"/>
          <Button x:Name="button_Cancel" Content="{x:Static p:Resources.Cancel}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Outline" Click="button_Cancel_Click" Margin="0,0,7,0"/>
       </StackPanel>
+
    </Grid>
+
 </auiw:ChildWindow>

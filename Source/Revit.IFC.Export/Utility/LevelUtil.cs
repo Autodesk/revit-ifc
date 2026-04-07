@@ -309,12 +309,18 @@ namespace Revit.IFC.Export.Utility
             priortizedParameterList.Add(BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM);
          }
          else if (elem is Truss)
+         {
             priortizedParameterList.Add(BuiltInParameter.TRUSS_ELEMENT_REFERENCE_LEVEL_PARAM);
+         }
          else if (elem is Stairs || StairsExporter.IsLegacyStairs(elem))
+         {
             priortizedParameterList.Add(BuiltInParameter.STAIRS_BASE_LEVEL_PARAM);
+         }
          else if (elem is ExtrusionRoof)
+         {
             priortizedParameterList.Add(BuiltInParameter.ROOF_CONSTRAINT_LEVEL_PARAM);
-
+         }
+         
          // If the level parameter was found, use it.  Otherwise, try asking the element directly.
          foreach (BuiltInParameter levelParameterVal in priortizedParameterList)
          {
@@ -334,12 +340,30 @@ namespace Revit.IFC.Export.Utility
             if (level != null)
                return level.Id;
          }
-
-         if (elem is SlabEdge)
+         else if (elem is SlabEdge)
          {
             ElementId levelId = ExporterCacheManager.LevelInfoCache.GetSlabEdgeLevelId(elem.Id);
             if (levelId != ElementId.InvalidElementId)
                return levelId;
+         }
+         else if (elem is Part)
+         {
+            ElementId levelId = elem.LevelId;
+            if (levelId != null && levelId != ElementId.InvalidElementId)
+            {
+               return levelId;
+            }
+
+            Part partElement = elem as Part;
+            Element hostElement = PartExporter.FindRootParent(partElement);
+            if (hostElement != null)
+            {
+               ElementId hostCategoryId = CategoryUtil.GetSafeCategoryId(hostElement);
+               if ((partElement.OriginalCategoryId ?? hostCategoryId) == hostCategoryId)
+               {
+                  return hostElement.LevelId;
+               }
+            }
          }
 
          return elem.LevelId;

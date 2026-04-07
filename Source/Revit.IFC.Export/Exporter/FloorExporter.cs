@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.DB.Structure;
+using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
@@ -164,7 +165,7 @@ namespace Revit.IFC.Export.Exporter
       // Augment the information from the internally created handles.  This includes:
       // 1. Adding material information
       // 2. Patching the presentation layer assignment
-      private static void AugmentHandleInformation(ExporterIFC exporterIFC, Element element, 
+      private static void AugmentHandleInformation(ExporterIFC exporterIFC, Element element,
          GeometryElement geometryElement, ICollection<IFCAnyHandle> entityHandles)
       {
          // Not supported for IFC2x2.  Avoid computations below.
@@ -180,7 +181,7 @@ namespace Revit.IFC.Export.Exporter
          // reconcile the difference during the end export operation.
          string ifcCADLayerOverride = RepresentationUtil.GetPresentationLayerOverride(element);
          bool fixIfcCADLayerOverride = !string.IsNullOrWhiteSpace(ifcCADLayerOverride);
-         
+
          if (!fixIfcCADLayerOverride && !fixMaterialId)
             return;
 
@@ -208,7 +209,7 @@ namespace Revit.IFC.Export.Exporter
 
                if (fixMaterialId)
                {
-                  HashSet<IFCAnyHandle> repItemSet = 
+                  HashSet<IFCAnyHandle> repItemSet =
                      IFCAnyHandleUtil.GetAggregateInstanceAttribute<HashSet<IFCAnyHandle>>(representation, "Items");
                   foreach (IFCAnyHandle repItem in repItemSet)
                   {
@@ -236,7 +237,7 @@ namespace Revit.IFC.Export.Exporter
 
          string ifcEnumType;
          IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(floorElement, out ifcEnumType);
-         
+
          if (!ElementFilteringUtil.IsElementVisible(floorElement))
             return;
 
@@ -277,7 +278,8 @@ namespace Revit.IFC.Export.Exporter
                   // Try to export the Floor slab as a container.  If that succeeds, we are done.
                   // If we do export the floor as a container, it will take care of the local placement and transform there, so we need to leave
                   // this out of the IFCTransformSetter and PlacementSetter scopes below, or else we'll get double transforms.
-                  IFCAnyHandle floorHnd = RoofExporter.ExportRoofOrFloorAsContainer(exporterIFC, floorElement, geometryElement, productWrapper);
+                  IFCAnyHandle floorHnd = RoofExporter.ExportRoofOrFloorAsContainer(exporterIFC, floorElement, geometryElement,
+                     productWrapper, exportType);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(floorHnd))
                   {
                      tr.Commit();
@@ -427,7 +429,7 @@ namespace Revit.IFC.Export.Exporter
 
                               if (exportedAsInternalExtrusion)
                               {
-                                 AugmentHandleInformation(exporterIFC, floorElement, 
+                                 AugmentHandleInformation(exporterIFC, floorElement,
                                     geometryElement, prodReps);
 
                                  for (int ii = 0; ii < prodReps.Count; ii++)
@@ -500,7 +502,7 @@ namespace Revit.IFC.Export.Exporter
                      switch (exportType.ExportInstance)
                      {
                         case IFCEntityType.IfcCovering:
-                           exportType.PredefinedType = IFCValidateEntry.GetValidIFCType<IFCCoveringType>(floorElement, ifcEnumType, "FLOORING");
+                           exportType.PredefinedType ??= IFCValidateEntry.GetValidIFCType<IFCCoveringType>(floorElement, ifcEnumType, "FLOORING");
                            break;
                         case IFCEntityType.IfcSlab:
                            {
@@ -512,7 +514,7 @@ namespace Revit.IFC.Export.Exporter
                                  if (counterPartId != ElementId.InvalidElementId)
                                  {
                                     Element counterpartElem = doc.GetElement(counterPartId);
-                                  
+
                                     if (counterpartElem != null && counterpartElem is AnalyticalElement)
                                     {
                                        AnalyzeAs slabAnalyzeAs = (counterpartElem as AnalyticalElement).AnalyzeAs;
@@ -521,7 +523,7 @@ namespace Revit.IFC.Export.Exporter
                                  }
                               }
 
-                              exportType.PredefinedType = IFCValidateEntry.GetValidIFCType<IFCSlabType>(floorElement, ifcEnumType, isBaseSlab ? "BASESLAB" : "FLOOR");
+                              exportType.PredefinedType ??= IFCValidateEntry.GetValidIFCType<IFCSlabType>(floorElement, ifcEnumType, isBaseSlab ? "BASESLAB" : "FLOOR");
                            }
                            break;
                      }
@@ -545,8 +547,8 @@ namespace Revit.IFC.Export.Exporter
                            IFCAnyHandleUtil.OverrideNameAttribute(slabHnd, ifcName);
 
                         IFCInstanceExporter.SetPredefinedType(slabHnd, exportType);
-                        
-                        if(exportParts)
+
+                        if (exportParts)
                         {
                            PartExporter.ExportHostPart(exporterIFC, floorElement, slabHnd, placementSetter, localPlacementHnd, null, setMaterialNameToPartName);
                         }
@@ -600,8 +602,13 @@ namespace Revit.IFC.Export.Exporter
                      if (exportedAsInternalExtrusion && openingCreatedCount == 0)
                      {
                         ISet<IFCAnyHandle> oldCreatedObjects = productWrapper.GetAllObjects();
-                        ExporterIFCUtils.ExportExtrudedSlabOpenings(exporterIFC, floorElement, placementSetter.LevelInfo,
-                           localPlacements[0], slabHnds, extrusionLoops, floorPlane, productWrapper.ToNative());
+                        
+                        IList<IFCOpeningDimensions> openingDimensions = 
+                           ExporterIFCUtils.ExportExtrudedSlabOpeningsAndReturnInfo(exporterIFC, floorElement, placementSetter.LevelInfo,
+                              localPlacements[0], slabHnds, extrusionLoops, floorPlane, productWrapper.ToNative());
+
+                        CreateOpeningQuantities(exporterIFC, openingDimensions);
+                        
                         ISet<IFCAnyHandle> newCreatedObjects = productWrapper.GetAllObjects();
                         newCreatedObjects.ExceptWith(oldCreatedObjects);
                         RegisterHandlesToOverrideGUID(floorElement, newCreatedObjects);
@@ -615,20 +622,20 @@ namespace Revit.IFC.Export.Exporter
                      if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
                      {
                         HostObjectExporter.ExportHostObjectMaterials(exporterIFC, floorElement, productWrapper.GetAnElement(),
-                                 geometryElement, productWrapper, ElementId.InvalidElementId, IFCLayerSetDirection.Axis3, false, typeHandle);
+                           geometryElement, productWrapper, ElementId.InvalidElementId, IFCLayerSetDirection.Axis3, false, typeHandle);
                      }
                      else
                      {
                         if (nonBrepSlabHnds.Count > 0)
                         {
                            HostObjectExporter.ExportHostObjectMaterials(exporterIFC, floorElement, nonBrepSlabHnds,
-                               geometryElement, productWrapper, ElementId.InvalidElementId, IFCLayerSetDirection.Axis3, false, typeHandle);
+                              geometryElement, productWrapper, ElementId.InvalidElementId, IFCLayerSetDirection.Axis3, false, typeHandle);
                         }
 
                         if (brepSlabHnds.Count > 0)
                         {
                            HostObjectExporter.ExportHostObjectMaterials(exporterIFC, floorElement, brepSlabHnds,
-                               geometryElement, productWrapper, ElementId.InvalidElementId, IFCLayerSetDirection.Axis3, true, typeHandle);
+                              geometryElement, productWrapper, ElementId.InvalidElementId, IFCLayerSetDirection.Axis3, true, typeHandle);
                         }
                      }
                   }
@@ -664,6 +671,29 @@ namespace Revit.IFC.Export.Exporter
             return IFCSlabType.BaseSlab;
 
          return IFCSlabType.Floor;
+      }
+
+      /// <summary>
+      /// Creates IFC quantities for opening elements using type-safe C# methods.
+      /// </summary>
+      /// <param name="file">The IFC file.</param>
+      /// <param name="openingDimensions">Opening dimensional data from C++ geometry calculation.</param>
+      private static void CreateOpeningQuantities(ExporterIFC exporterIFC, 
+         IList<IFCOpeningDimensions> openingDimensions)
+      {
+         if (openingDimensions == null || openingDimensions.Count == 0)
+            return;
+         
+         IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+         
+         foreach (IFCOpeningDimensions dimensions in openingDimensions)
+         {
+            if (dimensions == null || !dimensions.GetOpeningHandle().HasValue)
+               continue;
+
+            PropertyUtil.CreateOpeningQuantities(exporterIFC, dimensions.GetOpeningHandle(),
+               dimensions.Depth, dimensions.Height, dimensions.Width, dimensions.Area);
+         }
       }
    }
 }

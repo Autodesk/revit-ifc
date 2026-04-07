@@ -1187,6 +1187,27 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4X3
       NOTKNOWN,
       UNSET}
 
+   public enum PEnum_DoorPanelOperationEnum {
+      DOUBLE_ACTING,
+      FIXEDPANEL,
+      FOLDING,
+      REVOLVING,
+      ROLLINGUP,
+      SLIDING,
+      SWINGING,
+      OTHER,
+      NOTKNOWN,
+      UNSET,
+      NOTDEFINED}
+
+   public enum PEnum_DoorPanelPositionEnum {
+      LEFT,
+      MIDDLE,
+      RIGHT,
+      OTHER,
+      NOTKNOWN,
+      UNSET}
+
    public enum PEnum_TurnstileType {
       SWINGGATEBRAKE,
       THREEPOLEROTARYBRAKE,
@@ -2086,6 +2107,24 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4X3
    public enum PEnum_PackingCareType {
       FRAGILE,
       HANDLEWITHCARE,
+      OTHER,
+      NOTKNOWN,
+      UNSET}
+
+   public enum PEnum_PermeableCoveringOperationEnum {
+      GRILL,
+      LOUVER,
+      SCREEN,
+      OTHER,
+      NOTKNOWN,
+      UNSET}
+
+   public enum PEnum_WindowPanelPositionEnum {
+      BOTTOM,
+      LEFT,
+      MIDDLE,
+      RIGHT,
+      TOP,
       OTHER,
       NOTKNOWN,
       UNSET}
@@ -3038,7 +3077,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4X3
    public enum PEnum_UncertaintyBasis {
       ASSESSMENT,
       ESTIMATE,
-      INTERPRITATION,
+      INTERPRETATION,
       MEASUREMENT,
       OBSERVATION,
       NOTKNOWN,
@@ -3215,6 +3254,24 @@ namespace Revit.IFC.Export.Exporter.PropertySet.IFC4X3
    public enum PEnum_TransitionWidthType {
       CONST,
       LINEAR}
+
+   public enum PEnum_WindowPanelOperationEnum {
+      BOTTOMHUNG,
+      FIXEDCASEMENT,
+      OTHEROPERATION,
+      PIVOTHORIZONTAL,
+      PIVOTVERTICAL,
+      REMOVABLECASEMENT,
+      SIDEHUNGLEFTHAND,
+      SIDEHUNGRIGHTHAND,
+      SLIDINGHORIZONTAL,
+      SLIDINGVERTICAL,
+      TILTANDTURNLEFTHAND,
+      TILTANDTURNRIGHTHAND,
+      TOPHUNG,
+      OTHER,
+      NOTKNOWN,
+      UNSET}
 
    public enum PEnum_CommunicationStandard {
       ETHERNET,

@@ -279,10 +279,12 @@ namespace Revit.IFC.Export.Utility
 
          if (lowestPosition > double.MinValue)
          {
+            double vertexEps = ExporterCacheManager.Document.Application.VertexTolerance;
+
             for (int ii = 0; ii < BuildingStoriesByElevation.Count - 2; ++ii)
             {
-               if (lowestPosition >= (BuildingStoriesByElevation.Keys[ii] - LevelUtil.LevelExtension) && 
-                  lowestPosition < BuildingStoriesByElevation.Keys[ii + 1])
+               if (lowestPosition >= (BuildingStoriesByElevation.Keys[ii] - LevelUtil.LevelExtension - vertexEps) && 
+                  lowestPosition < BuildingStoriesByElevation.Keys[ii + 1] - vertexEps)
                {
                   if (ii == 0)
                      levelId = BuildingStoriesByElevation.Values[ii + 1];

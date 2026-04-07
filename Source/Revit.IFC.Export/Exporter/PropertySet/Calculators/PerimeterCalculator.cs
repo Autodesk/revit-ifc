@@ -17,19 +17,21 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Exporter.PropertySet.IFC2X2;
+using Revit.IFC.Export.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Export.Utility;
-using Revit.IFC.Common.Utility;
+using System.Windows.Media.Media3D;
 
 namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 {
    /// <summary>
-   /// A calculation class to calculate perimeter for a space.
+   /// A calculation class to calculate perimeter for a host object.
    /// </summary>
    class PerimeterCalculator : PropertyCalculator
    {
@@ -44,7 +46,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       static PerimeterCalculator s_Instance = new PerimeterCalculator();
 
       /// <summary>
-      /// The SpacePerimeterCalculator instance.
+      /// The PerimeterCalculator instance.
       /// </summary>
       public static PerimeterCalculator Instance
       {
@@ -52,34 +54,32 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       }
 
       /// <summary>
-      /// Calculates perimeter for a space.
+      /// Calculates perimeter for a space or floor.
       /// </summary>
-      /// <param name="exporterIFC">
-      /// The ExporterIFC object.
-      /// </param>
-      /// <param name="extrusionCreationData">
-      /// The IFCExportBodyParams.
-      /// </param>
-      /// <param name="element">
-      /// The element to calculate the value.
-      /// </param>
-      /// <param name="elementType">
-      /// The element type.
-      /// </param>
-      /// <returns>
-      /// True if the operation succeed, false otherwise.
-      /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <returns>True if the operation succeed, false otherwise.</returns>
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, 
+         Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Perimeter, entryMap.CompatibleRevitParameterName, "IfcQtyPerimeter");
-
+         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Perimeter,
+            entryMap.CompatibleRevitParameterName, "IfcQtyPerimeter");
          if (m_Perimeter > MathUtil.Eps())
+         {
+            m_Perimeter = UnitUtil.ScaleLength(m_Perimeter);
             return true;
+         }
 
-         if (extrusionCreationData == null)
-            return false;
+         ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.HOST_PERIMETER_COMPUTED, out m_Perimeter);
+         if (m_Perimeter > MathUtil.Eps())
+         {
+            m_Perimeter = UnitUtil.ScaleLength(m_Perimeter);
+            return true;
+         }
 
-         m_Perimeter = extrusionCreationData.ScaledOuterPerimeter;
+         m_Perimeter = extrusionCreationData?.ScaledOuterPerimeter ?? 0.0;
          return m_Perimeter > MathUtil.Eps();
       }
 
@@ -92,6 +92,64 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       public override double GetDoubleValue()
       {
          return m_Perimeter;
+      }
+   }
+
+   /// <summary>
+   /// A calculation class to calculate perimeter for a space.
+   /// </summary>
+   class GrossPerimeterCalculator : PropertyCalculator
+   {
+      /// <summary>
+      /// A double variable to keep the calculated value.
+      /// </summary>
+      private double m_GrossPerimeter = 0;
+
+      /// <summary>
+      /// A static instance of this class.
+      /// </summary>
+      static GrossPerimeterCalculator s_Instance = new();
+
+      /// <summary>
+      /// The GrossPerimeterCalculator instance.
+      /// </summary>
+      public static GrossPerimeterCalculator Instance
+      {
+         get { return s_Instance; }
+      }
+
+      /// <summary>
+      /// Calculates perimeter for a space or floor.
+      /// </summary>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="extrusionCreationData">The IFCExportBodyParams.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <returns>True if the operation succeed, false otherwise.</returns>
+      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      {
+         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_GrossPerimeter,
+            entryMap.CompatibleRevitParameterName, "IfcQtyGrossPerimeter");
+
+         if (m_GrossPerimeter > MathUtil.Eps())
+         {
+            m_GrossPerimeter = UnitUtil.ScaleLength(m_GrossPerimeter);
+            return true;
+         }
+
+         m_GrossPerimeter = extrusionCreationData?.ScaledOuterPerimeter ?? 0.0;
+         return m_GrossPerimeter > MathUtil.Eps();
+      }
+
+      /// <summary>
+      /// Gets the calculated double value.
+      /// </summary>
+      /// <returns>
+      /// The double value.
+      /// </returns>
+      public override double GetDoubleValue()
+      {
+         return m_GrossPerimeter;
       }
    }
 }

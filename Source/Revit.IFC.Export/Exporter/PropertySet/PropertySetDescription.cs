@@ -51,18 +51,19 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       static private void Initialize()
       {
          m_BuiltInSpecificParameterMapping = new Dictionary<KeyValuePair<string, string>, BuiltInParameter>();
-         AddEntry("Pset_ManufacturerTypeInformation", "Manufacturer", BuiltInParameter.ALL_MODEL_MANUFACTURER);
          AddEntry("Pset_CoveringCommon", "TotalThickness", BuiltInParameter.CEILING_THICKNESS);
          AddEntry("Pset_LightFixtureTypeCommon", "TotalWattage", BuiltInParameter.LIGHTING_FIXTURE_WATTAGE);
+         AddEntry("Pset_ManufacturerTypeInformation", "Manufacturer", BuiltInParameter.ALL_MODEL_MANUFACTURER);
          AddEntry("Pset_RoofCommon", "TotalArea", BuiltInParameter.HOST_AREA_COMPUTED);
-         
+         AddEntry("Qto_SpaceBaseQuantities", "GrossPerimeter", BuiltInParameter.ROOM_PERIMETER);
+
          m_BuiltInGeneralParameterMapping = new Dictionary<string, BuiltInParameter>();
-         AddEntry("Span", BuiltInParameter.INSTANCE_LENGTH_PARAM);
          AddEntry("CeilingCovering", BuiltInParameter.ROOM_FINISH_CEILING);
-         AddEntry("WallCovering", BuiltInParameter.ROOM_FINISH_WALL);
-         AddEntry("FloorCovering", BuiltInParameter.ROOM_FINISH_FLOOR);
          AddEntry("FireRating", BuiltInParameter.FIRE_RATING);
-         AddEntry("ThermalTransmittance", BuiltInParameter.ANALYTICAL_HEAT_TRANSFER_COEFFICIENT);
+         AddEntry("FloorCovering", BuiltInParameter.ROOM_FINISH_FLOOR);
+         AddEntry("Span", BuiltInParameter.INSTANCE_LENGTH_PARAM);
+         AddEntry("ThermalTransmittance", BuiltInParameter.ANALYTICAL_THERMAL_TRANSMITTANCE);
+         AddEntry("WallCovering", BuiltInParameter.ROOM_FINISH_WALL);
       }
 
       static private IDictionary<KeyValuePair<string, string>, BuiltInParameter> BuiltInSpecificParameterMapping
@@ -122,21 +123,58 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public bool AddTypePropertiesToInstance { get; set; }
 
       /// <summary>
+      /// Determines whether this property set description is user-defined.
+      /// </summary>
+      public bool IsUserDefined { get; set; } = false;
+
+      /// <summary>
       /// The entries stored in this property set description.
       /// </summary>
       public void AddEntry(PropertySetEntry entry)
       {
-         //if the PropertySetDescription name and PropertySetEntry name are in the dictionary, 
-         Tuple<string, string> key = new Tuple<string, string>(this.Name, entry.PropertyName);
-         if (ExporterCacheManager.PropertyMapCache.ContainsKey(key))
-         {
-            //replace the PropertySetEntry.RevitParameterName by the value in the cache.
-            entry.SetRevitParameterName(ExporterCacheManager.PropertyMapCache[key]);
-         }
+         PropertySetupType propertyMappingSetup = IsUserDefined ?
+            PropertySetupType.UserDefinedPropertySets : PropertySetupType.IfcCommonPropertySets;
 
-         entry.SetRevitBuiltInParameter(RevitBuiltInParameterMapper.GetRevitBuiltInParameter(key.Item1, key.Item2));
+         IFCPropertyMappingInfo mappedRevitParameter = GetMappedRevitParameterForDescription(propertyMappingSetup, entry.PropertyName);
+
+         if (mappedRevitParameter != null)
+         {
+            entry.IsExcluded = !mappedRevitParameter.ExportFlag;
+            
+            ElementId parameterId = mappedRevitParameter.RevitPropertyId;
+            string parameterName = mappedRevitParameter.RevitPropertyName;
+            if (ParameterUtils.IsBuiltInParameter(parameterId))
+            {
+               entry.SetRevitBuiltInParameter((BuiltInParameter)parameterId.Value);
+            }
+            else if (!string.IsNullOrEmpty(parameterName))
+            {
+               entry.SetRevitParameterName(parameterName);
+            }
+         }
+         else
+         {
+            //if the PropertySetDescription name and PropertySetEntry name are in the dictionary, 
+            Tuple<string, string> key = new Tuple<string, string>(this.Name, entry.PropertyName);
+            if (ExporterCacheManager.PropertyMapCache.ContainsKey(key))
+            {
+               //replace the PropertySetEntry.RevitParameterName by the value in the cache.
+               entry.SetRevitParameterName(ExporterCacheManager.PropertyMapCache[key]);
+            }
+
+            entry.SetRevitBuiltInParameter(RevitBuiltInParameterMapper.GetRevitBuiltInParameter(key.Item1, key.Item2));
+         }
          entry.UpdateEntry();
          m_Entries.Add(entry);
+      }
+
+      /// <summary>
+      /// Remove an entry from the property map.
+      /// </summary>
+      /// <param name="entry">The entry to remove.</param>
+      public bool RemoveEntry(PropertySetEntry entry)
+      {
+         return Entries.Remove(entry);
       }
 
       private string UsablePropertyName(IFCAnyHandle propHnd, IDictionary<string, IFCAnyHandle> propertiesByName)
@@ -188,8 +226,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          // Get the property from Type for this element if the pset is for schedule or 
          // if element doesn't have an associated type (e.g. IfcRoof)
-         bool lookInType = ExporterCacheManager.ViewScheduleElementCache.ContainsKey(this.ViewScheduleId)
-                           || IFCAnyHandleUtil.IsTypeOneOf(handle, PropertyUtil.EntitiesWithNoRelatedType);
+         bool lookInType = (ExporterUtil.ExportingHostModel() &&
+            ExporterCacheManager.ViewScheduleElementCache.ContainsKey(ViewScheduleId)) || 
+            (AddTypePropertiesToInstance && 
+            IFCAnyHandleUtil.IsTypeOneOf(handle, PropertyUtil.EntitiesWithNoRelatedType));
 
          foreach (PropertySetEntry entry in m_Entries)
          {

@@ -64,7 +64,6 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          // Get all the grids from cache and sorted in levels.
-         //IDictionary<ElementId, List<Grid>> levelGrids = GetAllGrids(exporterIFC);
          IDictionary<Tuple<ElementId, string>, List<Grid>> levelGrids = GetAllGrids(document);
          
          // Get grids in each level and export.
@@ -235,8 +234,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="sameDirectionAxesU">The U axes of grids.</param>
       /// <param name="sameDirectionAxesV">The V axes of grids.</param>
       /// <param name="sameDirectionAxesW">The W axes of grids.</param>
-      public static void ExportGrid(ExporterIFC exporterIFC, ElementId levelId, 
-         string gridName, string hashCode,
+      public static void ExportGrid(ExporterIFC exporterIFC, ElementId levelId, string gridName, string hashCode,
          List<Grid> sameDirectionAxesU, List<Grid> sameDirectionAxesV, List<Grid> sameDirectionAxesW)
       {
          List<IFCAnyHandle> axesU = null;
@@ -246,8 +244,8 @@ namespace Revit.IFC.Export.Exporter
 
          using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, true))
          {
-            IFCFile ifcFile = exporterIFC.GetFile();
-            using (IFCTransaction transaction = new IFCTransaction(ifcFile))
+            IFCFile file = exporterIFC.GetFile();
+            using (IFCTransaction transaction = new IFCTransaction(file))
             {
                GridRepresentationData gridRepresentationData = new GridRepresentationData();
 
@@ -289,21 +287,23 @@ namespace Revit.IFC.Export.Exporter
                }
                representations.Add(shapeRepresentation);
 
-               IFCAnyHandle productRep = IFCInstanceExporter.CreateProductDefinitionShape(ifcFile, null, null, representations);
+               IFCAnyHandle productRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
 
                // We will associate the grid with its level, unless there are no levels in the file, in which case we'll associate it with the building.
                IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(levelId);
-               bool useLevelInfo = (levelInfo != null);
-               IFCAnyHandle gridLevelHandle = useLevelInfo ? levelInfo.GetBuildingStorey() : ExporterCacheManager.BuildingHandle;
+               IFCAnyHandle gridLevelHandle = levelInfo != null ? levelInfo.GetBuildingStorey() : ExporterCacheManager.BuildingHandle;
 
                string gridGUID = GUIDUtil.GenerateIFCGuidFrom(
                   GUIDUtil.CreateGUIDString(IFCEntityType.IfcGrid, gridName + ":" + hashCode, gridLevelHandle));
 
+               ExporterUtil.GetCategoryInfoById(new ElementId(BuiltInCategory.OST_Grids), null, out ExportIFCCategoryInfo catInfo);
+               string predefinedType = catInfo?.IFCPredefinedType;
+
                IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
                IFCAnyHandle levelObjectPlacement = (gridLevelHandle != null) ? IFCAnyHandleUtil.GetObjectPlacement(gridLevelHandle) : null;
-               IFCAnyHandle copyLevelPlacement = (levelObjectPlacement != null) ? ExporterUtil.CopyLocalPlacement(ifcFile, levelObjectPlacement) : null;
-               IFCAnyHandle ifcGrid = IFCInstanceExporter.CreateGrid(exporterIFC, gridGUID, 
-                  ownerHistory, gridName, copyLevelPlacement, productRep, axesU, axesV, axesW);
+               IFCAnyHandle copyLevelPlacement = (levelObjectPlacement != null) ? ExporterUtil.CopyLocalPlacement(file, levelObjectPlacement) : null;
+               IFCAnyHandle ifcGrid = IFCInstanceExporter.CreateGrid(file, gridGUID, 
+                  ownerHistory, gridName, copyLevelPlacement, productRep, axesU, axesV, axesW, predefinedType);
 
                productWrapper.AddElement(null, ifcGrid, levelInfo, null, true, null);
 
@@ -343,10 +343,10 @@ namespace Revit.IFC.Export.Exporter
          IFCFile ifcFile = exporterIFC.GetFile();
          Line baseGridAxisAsLine = sameDirectionAxes[0].Curve as Line;
 
-         Transform lcs = Transform.Identity;
-
          List<IFCAnyHandle> ifcGridAxes = new();
-         XYZ projectionDirection = lcs.BasisZ;
+         XYZ projectionDirection = XYZ.BasisZ;
+
+         Transform lcs = Transform.Identity;
 
          foreach (Grid grid in sameDirectionAxes)
          {
@@ -357,16 +357,22 @@ namespace Revit.IFC.Export.Exporter
                gridRepresentationData.m_IFCCADLayer = RepresentationUtil.GetPresentationLayerOverride(grid);
             }
 
+            // NOTE: This code only properly deals with the case where the grid axis is a Line or an Arc.
             Curve currentGridAxis = grid.Curve;
             bool sameSense = true;
             if (baseGridAxisAsLine != null)
             {
                Line axisLine = currentGridAxis as Line;
                sameSense = axisLine?.Direction.IsAlmostEqualTo(baseGridAxisAsLine.Direction) ?? true;
-               if (!sameSense)
-               {
-                  currentGridAxis = currentGridAxis.CreateReversed();
-               }
+            }
+            else if (currentGridAxis is Arc currentGridAxisAsArc)
+            {
+               sameSense = MathUtil.IsAlmostEqual(currentGridAxisAsArc.Normal.Z, 1.0);
+            }
+
+            if (!sameSense)
+            {
+               currentGridAxis = currentGridAxis.CreateReversed();
             }
 
             // Get the handle of curve.
@@ -378,8 +384,12 @@ namespace Revit.IFC.Export.Exporter
             else
             {
                axisCurve = GeometryUtil.CreateIFCCurveFromRevitCurve(exporterIFC.GetFile(), exporterIFC, currentGridAxis,
-                  false, null, GeometryUtil.TrimCurvePreference.UsePolyLineOrTrim, null);
+                  false, null, GeometryUtil.TrimCurvePreference.Use2DPolyLineOrTrim);
             }
+
+            // TODO: File error here.
+            if (axisCurve == null)
+               continue;
 
             IFCAnyHandle ifcGridAxis = IFCInstanceExporter.CreateGridAxis(ifcFile, grid.Name, axisCurve, sameSense);
             ifcGridAxes.Add(ifcGridAxis);

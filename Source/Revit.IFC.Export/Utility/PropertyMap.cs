@@ -20,11 +20,139 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows;
+using System.Windows.Forms.VisualStyles;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Exporter.PropertySet;
+using Revit.IFC.Export.Properties;
 
 namespace Revit.IFC.Export.Utility
 {
+   /// <summary>
+   /// Validates user-defined property sets to ensure correct creation and modification.
+   /// It is considered invalid for the following changes:
+   /// 1. Any property set starting with "PSet_" that is not a standard property set.  For instance:
+   ///   Invalid:   PropertySet:   PSet_MyPropertySet   T  IfcElementType
+   ///   Valid:     PropertySet:   PSet_WallCommon      T  IfcElementType
+   ///   
+   /// 2. Any change to a valid property set other than a remap of an existing property.  For instance:
+   ///   Invalid:    MyNewIFCProperty  Text  MyRevitParameter
+   ///   Valid:      AcousticRating    Text  MyRevitParameter
+   /// 
+   /// This gives the following combinations:
+   /// (1.) Valid and (2.) Valid ==> No warning, combination is allowed.
+   /// (1.) Invalid ==> Warning for (1.), Property Set name is extended with an "e" on the beginning, and the Property Set is treated as a non-standard Property Set.
+   /// (1.) Valid and (2.) Invalid ==> Warning for (2.).
+   /// 
+   /// It is possible that this validation is done outside a transaction.  IFC Export, however, occurs within a transaction.
+   /// So this will also keep track of "delayed" warnings if needed.
+   /// </summary>
+   public class UserDefinedPropertySetValidator
+   {
+      /// <summary>
+      /// String to identify reserved property set names.
+      /// </summary>
+      public static string ReservedString => "PSet_";
+
+      /// <summary>
+      /// Returns PropertySetDescription is property set identifies a property set.
+      /// </summary>
+      /// <param name="propertySet">Property set name.</param>
+      /// <returns>PropertySetDescription if the property set is a standard property set, null otherwise.</returns>
+      public PropertySetDescription GetPropertySetDescriptionForStandardPropertySet(string propertySet)
+      {
+         if (!ResemblesStandardPropertySet(propertySet))
+            return null;
+
+         PropertySetDescription psetDescription = null;
+         if (PropertySetDescriptionMap.TryGetValue(propertySet, out psetDescription))
+         {
+            return psetDescription;
+         }
+
+         foreach (IList<PropertySetDescription> psetDescriptionList in ExporterCacheManager.ParameterCache.PropertySets)
+         {
+            foreach (PropertySetDescription psetDesc in psetDescriptionList)
+            {
+               PropertySetDescriptionMap[psetDesc.Name] = psetDesc;
+               if (propertySet == psetDesc.Name)
+               {
+                  return psetDesc;
+               }
+            }
+         }
+
+         return null;
+      }
+
+      /// <summary>
+      /// Indicates if user-defined property set resembles a standard property set.
+      /// That is, if it starts with "PSet_".
+      /// </summary>
+      /// <param name="propertySet">Property Set name to check.</param>
+      /// <returns>True if the property set name resembles a standard property set, false otherwise.</returns>
+      public bool ResemblesStandardPropertySet (string propertySet)
+      {
+         if (string.IsNullOrWhiteSpace(propertySet) || string.IsNullOrWhiteSpace(ReservedString))
+            return false;
+
+         if (propertySet.Length < ReservedString.Length)
+            return false;
+
+         return propertySet.StartsWith(ReservedString, StringComparison.InvariantCultureIgnoreCase);
+      }
+
+      /// <summary>
+      /// Checks to see if a property set resembles a standard property set, but is not.  If so, then this extended the property set name
+      /// to have a non-standard naming pattern.  That is, add an "e" to the beginning of the property set name.
+      /// </summary>
+      /// <param name="propertySet">Property Set to check.</param>
+      /// <returns>String representing the extended property set, or the passed-in property set name.</returns>
+      public (string name, bool changed) ExtendPropertySetNameIfNeeded(string propertySet)
+      {
+         PropertySetDescription pSetDesc = GetPropertySetDescriptionForStandardPropertySet(propertySet);
+
+         if (pSetDesc == null)
+         {
+            // Not a standard property set - safe to use the original name
+            return (propertySet, false);
+         }
+
+         // Found a standard property set - add prefix to the name
+         string extendedPropertySetName = $"e{propertySet}";
+         ExporterCacheManager.DelayedWarnings.Add(string.Format(Resources.IFCExportWarningCannotAddUserDefinedPropertySet, propertySet, ReservedString, extendedPropertySetName));
+         return (extendedPropertySetName, true);
+      }
+
+      /// <summary>
+      /// Indicates if Property is in the given Property Set.
+      /// </summary>
+      /// <param name="description">Description of the Property Set.</param>
+      /// <param name="property">Name of the property to check.</param>
+      /// <returns>True if the property is in the Property Set, false otherwise.</returns>
+      public bool IsPropertyInPropertySetDescription (PropertySetDescription description, string property)
+      {
+         if ((description == null) || string.IsNullOrWhiteSpace(property))
+            return false;
+
+         foreach (PropertySetEntry entry in description.Entries)
+         {
+            if (entry.PropertyName == property)
+            {
+               return true;
+            }
+         }
+
+         return false;
+      }
+
+      /// <summary>
+      /// Allows for lookup of Property Set Name --> PropertySetDescription.
+      /// </summary>
+      public IDictionary<string, PropertySetDescription> PropertySetDescriptionMap { get; set; } = new Dictionary<string, PropertySetDescription>();
+   }
+
    /// <summary>
    /// Represents the Revit parameter to get from element.
    /// </summary>
@@ -36,7 +164,7 @@ namespace Revit.IFC.Export.Utility
       public BuiltInParameter BuiltInParameter { get; private set; } = BuiltInParameter.INVALID;
 
       /// <summary>
-      /// Gets custom Revit paramater name.
+      /// Gets custom Revit parameter name.
       /// </summary>
       public string RevitParameter { get; private set; } = null;
 
@@ -308,8 +436,8 @@ namespace Revit.IFC.Export.Utility
          {
             // add the line
             string[] split = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-            if (split.Length == 3)
-               parameterMap.Add(Tuple.Create(split[0], split[1]), split[2]);
+            if (split.Length >= 3)
+               parameterMap.TryAdd(Tuple.Create(split[0], split[1]), split[2]);
          }
       }
 
@@ -346,6 +474,8 @@ namespace Revit.IFC.Export.Utility
             {
                string line;
 
+               UserDefinedPropertySetValidator validator = new UserDefinedPropertySetValidator();
+
                // current property set
                UserDefinedPropertySet userDefinedPropertySet = null;
                while ((line = sr.ReadLine()) != null)
@@ -358,9 +488,10 @@ namespace Revit.IFC.Export.Utility
                   string[] split = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
                   if (split.Length >=4 && string.Compare(split[0], "PropertySet:", true) == 0) // Any entry with less than 3 parameters is malformed.
                   {
+                     (string propertySetName, _) = validator.ExtendPropertySetNameIfNeeded(split[1]);
                      userDefinedPropertySet = new UserDefinedPropertySet()
                      {
-                        Name = split[1],
+                        Name = propertySetName,
                         Type = split[2],
                         IfcEntities = split[3].Split(new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                      };
@@ -369,16 +500,27 @@ namespace Revit.IFC.Export.Utility
                   }
                   else if (split.Length >= 2 && userDefinedPropertySet != null) // Skip property definitions outside of property set block.
                   {
-                     UserDefinedProperty userDefinedProperty = new UserDefinedProperty();
-                     userDefinedProperty.Name = split[0];
-                     userDefinedProperty.ParseIfcPropertyTypes(split[1]);
+                     string propertyName = split[0];
 
-                     if (split.Length >= 3)
+                     PropertySetDescription psetDesc = validator.GetPropertySetDescriptionForStandardPropertySet(userDefinedPropertySet.Name);
+                     if ((psetDesc == null) || validator.IsPropertyInPropertySetDescription(psetDesc, propertyName))
                      {
-                        userDefinedProperty.ParseRevitParameters(split[2]);
-                     }
+                        UserDefinedProperty userDefinedProperty = new UserDefinedProperty();
+                        userDefinedProperty.Name = propertyName;
 
-                     userDefinedPropertySet.Properties.Add(userDefinedProperty);
+                        userDefinedProperty.ParseIfcPropertyTypes(split[1]);
+
+                        if (split.Length >= 3)
+                        {
+                           userDefinedProperty.ParseRevitParameters(split[2]);
+                        }
+
+                        userDefinedPropertySet.Properties.Add(userDefinedProperty);
+                     }
+                     else
+                     {
+                        ExporterCacheManager.DelayedWarnings.Add(string.Format(Resources.IFCExportWarningCannotAddPropertyToReservedPropertySet, propertyName, userDefinedPropertySet.Name));
+                     }
                   }
                }
             }

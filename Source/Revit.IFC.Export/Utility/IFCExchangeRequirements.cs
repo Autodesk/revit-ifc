@@ -20,12 +20,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
-using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.Export.Properties;
 
-namespace BIM.IFC.Export.UI
+namespace Revit.IFC.Export.Utility
 {
-   class IFCExchangeRequirements
+   public class IFCExchangeRequirements
    {
       /// <summary>
       /// The list of Known Exchange Requirements
@@ -49,7 +49,7 @@ namespace BIM.IFC.Export.UI
             KnownExchangeRequirementsLocalized.Add(ifcVersion, erNameListForUI);
 
             // For IFC4.3RV
-            ifcVersion = IFCVersion.IFC4x3;
+            ifcVersion = IFCVersion.IFC4x3RV;
             KnownExchangeRequirements.Add(ifcVersion, new List<KnownERNames>() { KnownERNames.Architecture, KnownERNames.BuildingService, KnownERNames.Structural });
             KnownExchangeRequirementsLocalized.Add(ifcVersion, erNameListForUI);
          }

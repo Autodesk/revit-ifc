@@ -112,7 +112,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Get DoublePropertyInfoCache object for the particular type
       /// </summary>
-      public DoublePropertyInfoCache GetDoubleChache(PropertyType propertyType)
+      public DoublePropertyInfoCache GetDoubleCache(PropertyType propertyType)
       {
          DoublePropertyInfoCache doublePropertyInfoCache;
          if (!DoubleCacheMap.TryGetValue(propertyType, out doublePropertyInfoCache))

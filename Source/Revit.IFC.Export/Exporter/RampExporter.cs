@@ -560,7 +560,7 @@ namespace Revit.IFC.Export.Exporter
                         IFCAnyHandle rampTypeHnd = ExporterCacheManager.ElementTypeToHandleCache.Find(rampType, exportTypePair);
                         if (IFCAnyHandleUtil.IsNullOrHasNoValue(rampTypeHnd))
                         {
-                           string typeGuid = GUIDUtil.CreateGUID(rampType);
+                           string typeGuid = GUIDUtil.GenerateIFCGuidFrom(rampType, exportTypePair);
                            rampTypeHnd = IFCInstanceExporter.CreateGenericIFCType(exportTypePair,
                               rampType, typeGuid, exporterIFC.GetFile(), null, null);
                            productWrapper.RegisterHandleWithElementType(rampType, exportTypePair, rampTypeHnd, null);
@@ -896,166 +896,462 @@ namespace Revit.IFC.Export.Exporter
 
       private static void CreateQuantitySetRampFlight(ExporterIFC exporterIFC, IFCFile file, IFCAnyHandle rampFlightHnd, Element element, (Solid body, Face topFace) geometry, int flightIndex)
       {
-         HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
-         double area = geometry.topFace.Area;
-         if (!MathUtil.IsAlmostZero(area))
+         string quantitySetName = "Qto_RampFlightBaseQuantities";
+         PropertySetupType propertySetup = PropertySetupType.IfcBaseQuantities;
+         if (PropertyUtil.IsPropertySetExcluded(propertySetup, quantitySetName))
+            return;
+
+         HashSet<IFCAnyHandle> quantityHnds = new();
+         double dblVal = 0.0;
+
+         // NetArea
+         string quantityName = "NetArea";
+         IFCPropertyMappingInfo info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            area = UnitUtil.ScaleArea(area);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "NetArea", null, null, area);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               double area = geometry.topFace.Area;
+               if (!MathUtil.IsAlmostZero(area))
+               {
+                  dblVal = UnitUtil.ScaleArea(area);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         double volume = geometry.body.Volume;
-         if (!MathUtil.IsAlmostZero(volume))
+         // NetVolume
+         quantityName = "NetVolume";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            volume = UnitUtil.ScaleVolume(volume);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "NetVolume", null, null, volume);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Volume, out dblVal);
+
+            if (!valueFound)
+            {
+               double volume = geometry.body.Volume;
+               if (!MathUtil.IsAlmostZero(volume))
+               {
+                  dblVal = UnitUtil.ScaleVolume(volume);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
          // For the rest of quantities, we cannot determine the quantities for freeform RampFlight and therefore it will rely on parameters
-         double doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyLength (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyLength", out doubleParam) != null)
+
+         // Length
+         quantityName = "Length";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            doubleParam = UnitUtil.ScaleLength(doubleParam);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Length", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd); 
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyLength (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyLength", out doubleParam) != null)
+               {
+                  dblVal = UnitUtil.ScaleLength(doubleParam);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyWidth (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyWidth", out doubleParam) != null)
+         // Width
+         quantityName = "Width";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            doubleParam = UnitUtil.ScaleLength(doubleParam);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Width", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyWidth (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyWidth", out doubleParam) != null)
+               {
+                  dblVal = UnitUtil.ScaleLength(doubleParam);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyGrossArea (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyGrossArea", out doubleParam) != null)
+         // GrossArea
+         quantityName = "GrossArea";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            doubleParam = UnitUtil.ScaleArea(doubleParam);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "GrossArea", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyGrossArea (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyGrossArea", out doubleParam) != null)
+               {
+                  dblVal = UnitUtil.ScaleArea(doubleParam);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyGrossVolume (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyGrossVolume", out doubleParam) != null)
+         // GrossVolume
+         quantityName = "GrossVolume";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            doubleParam = UnitUtil.ScaleVolume(doubleParam);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "GrossVolume", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Volume, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyGrossVolume (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampFlight.IfcQtyGrossVolume", out doubleParam) != null)
+               {
+                  dblVal = UnitUtil.ScaleVolume(doubleParam);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         string quantitySetName = string.Empty;
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-         {
-            quantitySetName = "Qto_RampFlightBaseQuantities";
-         }
-
-         PropertyUtil.CreateAndRelateBaseQuantities(file, exporterIFC, rampFlightHnd, quantityHnds, quantitySetName);
+         string quantitySetNameToUse = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? null : quantitySetName;
+         PropertyUtil.CreateAndRelateBaseQuantities(file, exporterIFC, rampFlightHnd, quantityHnds, quantitySetNameToUse);
       }
 
       private static void CreateQuantitySetLanding(ExporterIFC exporterIFC, IFCFile file, IFCAnyHandle rampLandingHnd, Element element, (Solid body, Face topFace) geometry, int flightIndex)
       {
-         HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
-         double area = geometry.topFace.Area;
-         if (!MathUtil.IsAlmostZero(area))
+         string quantitySetName = "Qto_SlabBaseQuantities";
+         PropertySetupType propertySetup = PropertySetupType.IfcBaseQuantities;
+         if (PropertyUtil.IsPropertySetExcluded(propertySetup, quantitySetName))
+            return;
+
+         HashSet<IFCAnyHandle> quantityHnds = new();
+         double dblVal = 0.0;
+
+         // NetArea
+         string quantityName = "NetArea";
+         IFCPropertyMappingInfo info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            area = UnitUtil.ScaleArea(area);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "NetArea", null, null, area);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               double area = geometry.topFace.Area;
+               if (!MathUtil.IsAlmostZero(area))
+               {
+                  dblVal = UnitUtil.ScaleArea(area);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         double volume = geometry.body.Volume;
-         if (!MathUtil.IsAlmostZero(volume))
+         // NetVolume
+         quantityName = "NetVolume";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            volume = UnitUtil.ScaleVolume(volume);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "NetVolume", null, null, volume);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Volume, out dblVal);
+
+            if (!valueFound)
+            {
+               double volume = geometry.body.Volume;
+               if (!MathUtil.IsAlmostZero(volume))
+               {
+                  dblVal = UnitUtil.ScaleVolume(volume);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         IList<CurveLoop> curveLoops = geometry.topFace.GetEdgesAsCurveLoops();
-         double perimeter = curveLoops[0].GetExactLength();
-         if (!MathUtil.IsAlmostZero(perimeter))
+         // Perimeter
+         quantityName = "Perimeter";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            perimeter = UnitUtil.ScaleLength(perimeter);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Perimeter", null, null, perimeter);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
+            {
+               IList<CurveLoop> curveLoops = geometry.topFace.GetEdgesAsCurveLoops();
+               double perimeter = curveLoops[0].GetExactLength();
+               if (!MathUtil.IsAlmostZero(perimeter))
+               {
+                  dblVal = UnitUtil.ScaleLength(perimeter);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
          // For the rest of quantities, we cannot determine the quantities for freeform Landing and therefore it will rely on parameters
-         double doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyLength (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyLength", out doubleParam) != null)
+
+         // Length
+         quantityName = "Length";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            doubleParam = UnitUtil.ScaleLength(doubleParam);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Length", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyLength (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyLength", out doubleParam) != null)
+               {
+                  dblVal = UnitUtil.ScaleLength(doubleParam);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyWidth (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyWidth", out doubleParam) != null)
+         // Width
+         quantityName = "Width";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            doubleParam = UnitUtil.ScaleLength(doubleParam);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Width", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyWidth (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyWidth", out doubleParam) != null)
+               {
+                  dblVal = UnitUtil.ScaleLength(doubleParam);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyDepth (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyDepth", out doubleParam) != null)
+         // Depth
+         quantityName = "Depth";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            doubleParam = UnitUtil.ScaleLength(doubleParam);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Depth", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyDepth (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyDepth", out doubleParam) != null)
+               {
+                  dblVal = UnitUtil.ScaleLength(doubleParam);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossArea (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossArea", out doubleParam) != null)
+         // GrossArea
+         quantityName = "GrossArea";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            doubleParam = UnitUtil.ScaleArea(doubleParam);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "GrossArea", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossArea (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossArea", out doubleParam) != null)
+               {
+                  dblVal = UnitUtil.ScaleArea(doubleParam);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossVolume (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossVolume", out doubleParam) != null)
+         // GrossVolume
+         quantityName = "GrossVolume";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            doubleParam = UnitUtil.ScaleVolume(doubleParam);
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "GrossVolume", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Volume, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossVolume (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossVolume", out doubleParam) != null)
+               {
+                  dblVal = UnitUtil.ScaleVolume(doubleParam);
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossWeight (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossWeight", out doubleParam) != null)
+         // GrossWeight
+         quantityName = "GrossWeight";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "GrossWeight", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossWeight (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyGrossWeight", out doubleParam) != null)
+               {
+                  dblVal = doubleParam;
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         doubleParam = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyNetWeight (" + flightIndex.ToString() + ")", out doubleParam) != null
-            || ParameterUtil.GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyNetWeight", out doubleParam) != null)
+         // NetWeight
+         quantityName = "NetWeight";
+         info = PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "NetWeight", null, null, doubleParam);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = (info == null) ? false :
+               PropertyUtil.GetQuantityDoubleValueFromParameter(element, info.RevitPropertyName,
+               (BuiltInParameter)info.RevitPropertyId.Value, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
+            {
+               double doubleParam = 0.0;
+               if (GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyNetWeight (" + flightIndex.ToString() + ")", out doubleParam) != null
+                  || GetDoubleValueFromElement(element, "IfcRampLanding.IfcQtyNetWeight", out doubleParam) != null)
+               {
+                  dblVal = doubleParam;
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         string quantitySetName = string.Empty;
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-         {
-            quantitySetName = "Qto_SlabBaseQuantities";
-         }
-
-         PropertyUtil.CreateAndRelateBaseQuantities(file, exporterIFC, rampLandingHnd, quantityHnds, quantitySetName);
+         string quantitySetNameToUse = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? null : quantitySetName;
+         PropertyUtil.CreateAndRelateBaseQuantities(file, exporterIFC, rampLandingHnd, quantityHnds, quantitySetNameToUse);
       }
 
    }

@@ -87,28 +87,53 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       private void InitParameterMappingUI()
       {
-         IFCExportOptions exportOptions = new()
+         if (!OptionsUtil.UseLegacyParameterMapping())
          {
-            FamilyMappingFile = "IFCParameterMapping"
-         };
+            PropertySets.Visibility = System.Windows.Visibility.Collapsed;
+            classificationButton.Visibility = System.Windows.Visibility.Hidden;
+            checkBoxExportSpecificSchedules.Visibility = System.Windows.Visibility.Hidden;
+            checkboxUseTypePropertiesInInstacePSets.Visibility = System.Windows.Visibility.Hidden;
 
-         IFCExportOptions temporaryOptions = new();
-         temporaryOptions.Assign(exportOptions);
-
-         if (temporaryOptions.FamilyMappingFile.CompareTo("IFCNewParameterMapping") != 0)
-         {
-            // Parent window has NoResize resize mode, extend width here
-            this.Width -= 100;
-
-            // Update right margin for listBoxConfigurations to fit new width
-            Thickness listBoxConfigurationsMargin = listBoxConfigurations.Margin;
-            listBoxConfigurationsMargin.Right -= 100;
-            listBoxConfigurations.Margin = listBoxConfigurationsMargin;
-
-            // Update width for ParameterMapping tab when it is visible similar to General tab width
-            ParameterMapping.Width = 0;
-            ParameterMapping.Visibility = System.Windows.Visibility.Hidden;
+            // TODO: Revisit layout adjustments once legacy mapping support is removed.
+            UpdateMargin(checkboxExportUserDefinedPset, 29);
+            UpdateMargin(userDefinedPropertySetFileName, 50);
+            UpdateMargin(buttonBrowse, 50);
          }
+         else
+         {
+            PropertySets.Visibility = System.Windows.Visibility.Visible;
+            labelPropertyMappingSetups.Visibility = System.Windows.Visibility.Hidden;
+            comboBoxPropertyMappingSetups.Visibility = System.Windows.Visibility.Hidden;
+            buttonPropertyMappingSetups.Visibility = System.Windows.Visibility.Hidden;
+
+            // Adjust layout to account for hidden parameter mapping controls in legacy mode.
+            double topMarginValue = 31;
+            UpdateMargin(labelFileType, topMarginValue);
+            UpdateMargin(comboboxFileType, topMarginValue);
+            UpdateMargin(labelPhaseToExport, topMarginValue);
+            UpdateMargin(comboboxActivePhase, topMarginValue);
+            UpdateMargin(labelSpaceBoundaries, topMarginValue);
+            UpdateMargin(comboboxSpaceBoundaries, topMarginValue);
+            UpdateMargin(labelFacilityType, topMarginValue);
+            UpdateMargin(comboBoxFacilityType, topMarginValue);
+            UpdateMargin(labelFacilityPredefinedType, topMarginValue);
+            UpdateMargin(comboBoxFacilityPredefinedType, topMarginValue);
+            UpdateMargin(checkboxSplitWalls, topMarginValue);
+
+            // TODO: Rename classification_Button to classificationButton when legacy UI is retired.
+            classification_Button.Visibility = System.Windows.Visibility.Hidden;
+         }
+      }
+
+      /// <summary>
+      /// Change Top value for Margin
+      /// </summary>
+      /// <param name="currentConfigName">The current selected configuration</param>
+      private void UpdateMargin(FrameworkElement userControl, double topMarginValue)
+      {
+         Thickness controlMargin = userControl.Margin;
+         controlMargin.Top -= topMarginValue;
+         userControl.Margin = controlMargin;
       }
 
       /// <summary>
@@ -218,7 +243,10 @@ namespace BIM.IFC.Export.UI
 
       private void InitComboBoxCategoryMapping(Document document)
       {
-         string originalSelectedItem = (string) comboBoxCategoryMapping.SelectedItem;
+         string originalSelectedItem = GetSelectedConfiguration()?.CategoryMapping;
+         if (string.IsNullOrEmpty(originalSelectedItem))
+            originalSelectedItem = (string)comboBoxCategoryMapping.SelectedItem;
+
          comboBoxCategoryMapping.SelectedItem = null;
          comboBoxCategoryMapping.Items.Clear();
 
@@ -235,6 +263,33 @@ namespace BIM.IFC.Export.UI
 
          comboBoxCategoryMapping.SelectedItem = originalSelectedItem != null && comboBoxCategoryMapping.Items.Contains(originalSelectedItem) ?
             originalSelectedItem : Properties.Resources.InSessionConfiguration;
+      }
+
+      private void UpdateComboBoxPropertyMappingSetups(Document document, IFCExportConfiguration configuration)
+      {
+         comboBoxPropertyMappingSetups.Items.Clear();
+         if (configuration.IsBuiltIn)
+         {
+            comboBoxCategoryMapping.IsEnabled = false;
+            comboBoxPropertyMappingSetups.Items.Add(Properties.Resources.IFCDefaultSetup);
+            string propertyMapping = Properties.Resources.IFCDefaultSetup;
+            comboBoxPropertyMappingSetups.SelectedItem = propertyMapping;
+         }
+         else
+         {
+            comboBoxPropertyMappingSetups.Items.Clear();
+            comboBoxPropertyMappingSetups.Items.Add(Properties.Resources.InSessionConfiguration);
+
+            IList<string> mappingList = IFCParameterTemplate.ListNames(document);
+            foreach (string mappingName in mappingList ?? Enumerable.Empty<string>())
+            {
+               comboBoxPropertyMappingSetups.Items.Add(mappingName);
+            }
+
+            string selectedSetup = configuration.PropertyMapping;
+            comboBoxPropertyMappingSetups.SelectedItem = selectedSetup != null && comboBoxPropertyMappingSetups.Items.Contains(selectedSetup) ?
+               selectedSetup : Properties.Resources.InSessionConfiguration;
+         }
       }
 
       /// <summary>
@@ -254,7 +309,8 @@ namespace BIM.IFC.Export.UI
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC2x3FM));
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4RV));
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4DTV));
-            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4x3));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4x3RV));
+            comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFC4x3DTV));
             comboboxIfcType.Items.Add(new IFCVersionAttributes(IFCVersion.IFCSG));
 
             // "Hidden" switch to enable the general IFC4 export that does not use any MVD restriction
@@ -284,10 +340,10 @@ namespace BIM.IFC.Export.UI
          if (!comboboxActivePhase.HasItems)
          {
             PhaseArray phaseArray = document.Phases; 
-            comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId));  // Default.
+            comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId, IFCCommandOverrideApplication.TheDocument));  // Default.
             foreach (Phase phase in phaseArray)
             {
-               comboboxActivePhase.Items.Add(new IFCPhaseAttributes(phase.Id));
+               comboboxActivePhase.Items.Add(new IFCPhaseAttributes(phase.Id, IFCCommandOverrideApplication.TheDocument));
             }
          }
 
@@ -351,7 +407,7 @@ namespace BIM.IFC.Export.UI
                configuration.ActivePhaseId = ElementId.InvalidElementId.Value;
          }
 
-         if (!IFCPhaseAttributes.Validate(configuration.ActivePhaseId))
+         if (!IFCPhaseAttributes.Validate(configuration.ActivePhaseId, IFCCommandOverrideApplication.TheDocument))
             configuration.ActivePhaseId = ElementId.InvalidElementId.Value;
 
          foreach (IFCPhaseAttributes attribute in comboboxActivePhase.Items.Cast<IFCPhaseAttributes>())
@@ -433,14 +489,18 @@ namespace BIM.IFC.Export.UI
          string categoryMapping = configuration.CategoryMapping ?? Properties.Resources.InSessionConfiguration;
          comboBoxCategoryMapping.SelectedItem = categoryMapping;
 
+         UpdateComboBoxPropertyMappingSetups(IFCExport.TheDocument, configuration);
+        
          UpdatePhaseAttributes(configuration);
-
+         checkboxIFCCommonPropertySets.IsChecked = configuration.ExportIFCCommonPropertySets;
+         checkboxInternalPropertySets.IsChecked = configuration.ExportInternalRevitPropertySets;
          checkboxExportBaseQuantities.IsChecked = configuration.ExportBaseQuantities;
+         checkboxExportMaterialPsets.IsChecked = configuration.ExportMaterialPsets;
+         checkboxExportSchedulesAsPsets.IsChecked = configuration.ExportSchedulesAsPsets;
+         checkboxExportUserDefinedPset.IsChecked = configuration.ExportUserDefinedPsets;
          checkboxSplitWalls.IsChecked = configuration.SplitWallsAndColumns;
          checkbox2dElements.IsChecked = configuration.Export2DElements;
          checkboxExportCeilingGrids.IsChecked = configuration.ExportCeilingGrids;
-         checkboxInternalPropertySets.IsChecked = configuration.ExportInternalRevitPropertySets;
-         checkboxIFCCommonPropertySets.IsChecked = configuration.ExportIFCCommonPropertySets;
          checkboxVisibleElementsCurrView.IsChecked = configuration.VisibleElementsOfCurrentView;
          checkBoxUse2DRoomVolumes.IsChecked = configuration.Use2DRoomBoundaryForVolume;
          checkBoxFamilyAndTypeName.IsChecked = configuration.UseFamilyAndTypeNameForReference;
@@ -448,10 +508,7 @@ namespace BIM.IFC.Export.UI
          checkBoxUseActiveViewGeometry.IsChecked = configuration.UseActiveViewGeometry;
          checkboxExportBoundingBox.IsChecked = configuration.ExportBoundingBox;
          checkboxExportSolidModelRep.IsChecked = configuration.ExportSolidModelRep;
-         checkboxExportMaterialPsets.IsChecked = configuration.ExportMaterialPsets;
-         checkboxExportSchedulesAsPsets.IsChecked = configuration.ExportSchedulesAsPsets;
          checkBoxExportSpecificSchedules.IsChecked = configuration.ExportSpecificSchedules;
-         checkboxExportUserDefinedPset.IsChecked = configuration.ExportUserDefinedPsets;
          userDefinedPropertySetFileName.Text = configuration.ExportUserDefinedPsetsFileName;
          checkboxUseTypePropertiesInInstacePSets.IsChecked = configuration.UseTypePropertiesInInstacePSets;
          checkboxIncludeIfcSiteElevation.IsChecked = configuration.IncludeSiteElevation;
@@ -530,12 +587,8 @@ namespace BIM.IFC.Export.UI
                                                                 checkbox_OwnerHistoryLastModified,
                                                                 checkbox_ExportBarsInUniformSetsAsSeparateIFCEntities,
                                                                 comboBoxCategoryMapping,
-                                                                buttonCategoryMapping,
-                                                                checkboxIFCCommonPropertySetsMapping,
-                                                                checkboxRevitPropertySetsMapping,
-                                                                checkboxBaseQuantitiesMapping,
-                                                                checkboxMaterialPropertySetsMapping,
-                                                                checkboxSchedulesMapping
+                                                                comboBoxPropertyMappingSetups,
+                                                                buttonCategoryMapping
             };
 
          foreach (UIElement element in configurationElements)
@@ -561,8 +614,9 @@ namespace BIM.IFC.Export.UI
             || (configuration.IFCVersion == IFCVersion.IFC2x3CV2)
             || (configuration.IFCVersion == IFCVersion.IFC4RV)
             || (configuration.IFCVersion == IFCVersion.IFC4DTV)
-            || (configuration.IFCVersion == IFCVersion.IFC4)
-            || (configuration.IFCVersion == IFCVersion.IFC4x3))
+            || (configuration.IFCVersion == IFCVersion.IFC4x3)
+            || (configuration.IFCVersion == IFCVersion.IFC4x3RV)
+            || (configuration.IFCVersion == IFCVersion.IFC4x3DTV))
          {
             checkboxIncludeSteelElements.IsChecked = configuration.IncludeSteelElements;
             checkboxIncludeSteelElements.IsEnabled = true;
@@ -1062,22 +1116,6 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportBaseQuantities = GetCheckbuttonChecked(checkBox);
          }
-
-         SynchronizeCheckboxes(checkBox, checkboxExportBaseQuantities, checkboxBaseQuantitiesMapping);
-      }
-
-      // Temporary duplication of the checkbox logic to keep the two checkboxes in sync.
-      // Duplicating checkboxes willbe removed when the UI is finished.
-      private void SynchronizeCheckboxes(CheckBox sender, CheckBox checkBox1, CheckBox checkBox2)
-      {
-         if (sender == checkBox1)
-         {
-            checkBox2.IsChecked = checkBox1.IsChecked;
-            return;
-         }
-
-         if (sender == checkBox2)
-            checkBox1.IsChecked = checkBox2.IsChecked;
       }
 
       /// <summary>
@@ -1123,8 +1161,6 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportInternalRevitPropertySets = GetCheckbuttonChecked(checkBox);
          }
-
-         SynchronizeCheckboxes(checkBox, checkboxInternalPropertySets, checkboxRevitPropertySetsMapping);
       }
 
       /// <summary>
@@ -1140,8 +1176,6 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportIFCCommonPropertySets = GetCheckbuttonChecked(checkBox);
          }
-
-         SynchronizeCheckboxes(checkBox, checkboxIFCCommonPropertySets, checkboxIFCCommonPropertySetsMapping);
       }
 
       /// <summary>
@@ -1428,8 +1462,6 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportMaterialPsets = GetCheckbuttonChecked(checkBox);
          }
-
-         SynchronizeCheckboxes(checkBox, checkboxExportMaterialPsets, checkboxMaterialPropertySetsMapping);
       }
 
       /// <summary>
@@ -1445,8 +1477,6 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportSchedulesAsPsets = GetCheckbuttonChecked(checkBox);
          }
-
-         SynchronizeCheckboxes(checkBox, checkboxExportSchedulesAsPsets, checkboxSchedulesMapping);
       }
 
       /// <summary>
@@ -1670,14 +1700,32 @@ namespace BIM.IFC.Export.UI
 
       private void buttonCategoryMapping_Click(object sender, RoutedEventArgs e)
       {
-         IFCCategoryMapping categoryMapping = new IFCCategoryMapping()
-         {
-            Owner = this
-         };
+         ShowCategoryMappingDialog();
+      }
+
+      private void ShowCategoryMappingDialog()
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         IFCCategoryMapping categoryMapping = new(owner: this, configuration);
          categoryMapping.ShowDialog();
 
          // Refresh the category mapping pulldown in case we deleted an option.
          InitComboBoxCategoryMapping(IFCExport.TheDocument);
+      }
+
+      private void ShowPropertyMappingDialog()
+      {
+         IFCExportConfiguration configuration = GetSelectedConfiguration();
+         IFCPropertyMapping propertyMapping = new(owner: this, configuration);
+         propertyMapping.ShowDialog();
+
+         // Refresh the property mapping pulldown in case we deleted an option.
+         UpdateComboBoxPropertyMappingSetups(IFCExport.TheDocument, configuration);
+      }
+
+      private void buttonPropertyMappingSetups_Click(object sender, RoutedEventArgs e)
+      {
+         ShowPropertyMappingDialog();
       }
 
       private void buttonClassification_Click(object sender, RoutedEventArgs e)
@@ -1829,16 +1877,48 @@ namespace BIM.IFC.Export.UI
             }
          }
       }
-      
+
+      private void comboBoxPropertyMappingSetups_SelectionChanged(object sender, SelectionChangedEventArgs e)
+      {
+         if (comboBoxPropertyMappingSetups.SelectedValue != null)
+         {
+            Document doc = IFCExport.TheDocument;
+            IFCExportConfiguration configuration = GetSelectedConfiguration();
+            string propertyMappingSetupName = (string)comboBoxPropertyMappingSetups.SelectedItem;
+
+            try
+            {
+               if (!string.IsNullOrWhiteSpace(propertyMappingSetupName) &&
+                  IFCParameterTemplate.FindByName(doc, propertyMappingSetupName) != null)
+               {
+                  configuration.PropertyMapping = propertyMappingSetupName;
+               }
+               else
+               {
+                  configuration.PropertyMapping = null;
+               }
+            }
+            catch
+            {
+               configuration.PropertyMapping = null;
+            }
+         }
+      }
       private void UpdateExchangeRequirement(IFCExportConfiguration configuration)
       {
-         if (IFCExchangeRequirements.ExchangeRequirements.ContainsKey(configuration.IFCVersion))
+         if (IFCExchangeRequirements.ExchangeRequirements.TryGetValue(configuration.IFCVersion, out IList<KnownERNames> erList) &&
+            (erList?.Count > 0)) 
          {
+            if (configuration.ExchangeRequirement == KnownERNames.NotDefined)
+            {
+               configuration.ExchangeRequirement = erList.First();
+            }
             comboBoxExchangeRequirement.ItemsSource = IFCExchangeRequirements.ExchangeRequirementListForUI(configuration.IFCVersion);
             comboBoxExchangeRequirement.SelectedItem = configuration.ExchangeRequirement.ToFullLabel();
          }
          else
          {
+            configuration.ExchangeRequirement = KnownERNames.NotDefined;
             comboBoxExchangeRequirement.ItemsSource = null;
             comboBoxExchangeRequirement.SelectedItem = null;
          }
@@ -1940,7 +2020,7 @@ namespace BIM.IFC.Export.UI
       private void button_ResetConfigurations_Click(object sender, RoutedEventArgs e)
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
-         m_configurationsMap = new IFCExportConfigurationsMap();
+         m_configurationsMap = new IFCExportConfigurationsMap(IFCCommandOverrideApplication.TheDocument);
          if (listBoxConfigurations.HasItems)
             listBoxConfigurations.Items.Clear();
          IFCExport.LastSelectedConfig.Clear();
@@ -2015,9 +2095,9 @@ namespace BIM.IFC.Export.UI
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
 
-         EntityTree entityTree = new EntityTree(configuration.IFCVersion, 
-            configuration.ExcludeFilter, desc: "", singleNodeSelection: false,
-            EntityTree.SelectionStrategyType.Exclusion, synchronizeSelectionWithType: true)
+         EntityTree entityTree = new(configuration.IFCVersion, configuration.ExcludeFilter, 
+            desc: "", singleNodeSelection: false, EntityTree.SelectionStrategyType.Exclusion,
+            synchronizeSelectionWithType: true, propagatePreselection: false)
          {
             Owner = this,
             Title = Properties.Resources.IFCEntitySelection
@@ -2036,24 +2116,6 @@ namespace BIM.IFC.Export.UI
          {
             configuration.ExportLinkedFiles = attributes.ExportAs;
          }
-      }
-
-      private void buttonDefaultPropertyMappingSetup_Click(object sender, RoutedEventArgs e)
-      {
-         IFCPropertyMapping defaultPropertyMapping = new()
-         {
-            Owner = this
-         };
-         defaultPropertyMapping.ShowDialog();
-      }
-
-      private void buttonUserDefinedPropertyMappingSetup_Click(object sender, RoutedEventArgs e)
-      {
-         IFCUserDefinedPropertyMapping userDefinedPropertyMapping = new()
-         {
-            Owner = this
-         };
-         userDefinedPropertyMapping.ShowDialog();
       }
    }
 }

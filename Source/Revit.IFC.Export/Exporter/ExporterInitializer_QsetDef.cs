@@ -654,31 +654,13 @@ namespace Revit.IFC.Export.Exporter
             qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
 
          }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_BeamBaseQuantities"))
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_BeamBaseQuantities"))
          {
-            qtoSetBeamBaseQuantities.Name = "BaseQuantities";
-
             qtoSetBeamBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBeam);
-            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.NominalLength", "NominalLength");
+            ifcPSE.PropertyName = "NominalLength";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalLengthCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
@@ -699,10 +681,10 @@ namespace Revit.IFC.Export.Exporter
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.GrossSurfaceArea", "GrossSurfaceArea");
-            ifcPSE.PropertyName = "GrossSurfaceArea";
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.TotalSurfaceArea", "TotalSurfaceArea");
+            ifcPSE.PropertyName = "TotalSurfaceArea";
             ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossSurfaceAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalSurfaceAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
@@ -719,6 +701,92 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "NetVolume";
             ifcPSE.QuantityType = QuantityType.Volume;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.GrossWeight", "GrossWeight");
+            ifcPSE.PropertyName = "GrossWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.NetWeight", "NetWeight");
+            ifcPSE.PropertyName = "NetWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+         }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_BeamBaseQuantities"))
+         {
+            qtoSetBeamBaseQuantities.Name = "BaseQuantities";
+
+            qtoSetBeamBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBeam);
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.NominalLength", "NominalLength");
+            ifcPSE.PropertyName = "NominalLength";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalLengthCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.CrossSectionArea", "CrossSectionArea");
+            ifcPSE.PropertyName = "CrossSectionArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.CrossSectionAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.OuterSurfaceArea", "OuterSurfaceArea");
+            ifcPSE.PropertyName = "OuterSurfaceArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OuterSurfaceAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.TotalSurfaceArea", "TotalSurfaceArea");
+            ifcPSE.PropertyName = "TotalSurfaceArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalSurfaceAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.GrossVolume", "GrossVolume");
+            ifcPSE.PropertyName = "GrossVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.NetVolume", "NetVolume");
+            ifcPSE.PropertyName = "NetVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.GrossWeight", "GrossWeight");
+            ifcPSE.PropertyName = "GrossWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.NetWeight", "NetWeight");
+            ifcPSE.PropertyName = "NetWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBeamBaseQuantities.AddEntry(ifcPSE);
@@ -1020,15 +1088,21 @@ namespace Revit.IFC.Export.Exporter
             qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
 
          }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_BuildingBaseQuantities"))
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_BuildingBaseQuantities"))
          {
-            qtoSetBuildingBaseQuantities.Name = "BaseQuantities";
-
             qtoSetBuildingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBuilding);
-            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.TotalHeight", "TotalHeight");
+            ifcPSE.PropertyName = "TotalHeight";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalHeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.SiteCoverage", "SiteCoverage");
+            ifcPSE.PropertyName = "SiteCoverage";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.SiteCoverageCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
@@ -1037,6 +1111,76 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "GrossFloorArea";
             ifcPSE.QuantityType = QuantityType.Area;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossFloorAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.NetFloorArea", "NetFloorArea");
+            ifcPSE.PropertyName = "NetFloorArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetFloorAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.GrossVolume", "GrossVolume");
+            ifcPSE.PropertyName = "GrossVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
+
+         }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_BuildingBaseQuantities"))
+         {
+            qtoSetBuildingBaseQuantities.Name = "BaseQuantities";
+
+            qtoSetBuildingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBuilding);
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.NominalHeight", "NominalHeight");
+            ifcPSE.PropertyName = "NominalHeight";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalHeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.NominalArea", "NominalArea");
+            ifcPSE.PropertyName = "NominalArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.GrossFloorArea", "GrossFloorArea");
+            ifcPSE.PropertyName = "GrossFloorArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossFloorAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.NetFloorArea", "NetFloorArea");
+            ifcPSE.PropertyName = "NetFloorArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetFloorAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.GrossVolume", "GrossVolume");
+            ifcPSE.PropertyName = "GrossVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.NetVolume", "NetVolume");
+            ifcPSE.PropertyName = "NetVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
@@ -1254,31 +1398,51 @@ namespace Revit.IFC.Export.Exporter
             qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
 
          }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_BuildingStoreyBaseQuantities"))
+         {
+            qtoSetBuildingStoreyBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBuildingStorey);
+            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.TotalHeight", "TotalHeight");
+            ifcPSE.PropertyName = "TotalHeight";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalHeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.SiteCoverage", "SiteCoverage");
+            ifcPSE.PropertyName = "SiteCoverage";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.SiteCoverageCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.NetFloorArea", "NetFloorArea");
+            ifcPSE.PropertyName = "NetFloorArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetFloorAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.GrossVolume", "GrossVolume");
+            ifcPSE.PropertyName = "GrossVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
+
+         }
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_BuildingStoreyBaseQuantities"))
          {
             qtoSetBuildingStoreyBaseQuantities.Name = "BaseQuantities";
 
             qtoSetBuildingStoreyBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBuildingStorey);
-            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.GrossHeight", "GrossHeight");
-            ifcPSE.PropertyName = "GrossHeight";
+            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.NominalHeight", "NominalHeight");
+            ifcPSE.PropertyName = "NominalHeight";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossHeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.NetHeight", "NetHeight");
-            ifcPSE.PropertyName = "NetHeight";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetHeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.GrossPerimeter", "GrossPerimeter");
-            ifcPSE.PropertyName = "GrossPerimeter";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossPerimeterCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalHeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
@@ -1295,6 +1459,22 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "NetFloorArea";
             ifcPSE.QuantityType = QuantityType.Area;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetFloorAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.GrossVolume", "GrossVolume");
+            ifcPSE.PropertyName = "GrossVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_BuildingStoreyBaseQuantities.NetVolume", "NetVolume");
+            ifcPSE.PropertyName = "NetVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBuildingStoreyBaseQuantities.AddEntry(ifcPSE);
@@ -1376,20 +1556,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Gross Weight");
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCableCarrierFittingBaseQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_CableCarrierFittingBaseQuantities"))
-         {
-            qtoSetCableCarrierFittingBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetCableCarrierFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableCarrierFitting);
-            ifcPSE = new QuantityEntry("Qto_CableCarrierFittingBaseQuantities.GrossWeight", "GrossWeight");
-            ifcPSE.PropertyName = "GrossWeight";
-            ifcPSE.QuantityType = QuantityType.Mass;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
@@ -1483,44 +1649,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.QuantityType = QuantityType.Area;
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Outer Surface Area");
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OuterSurfaceAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCableCarrierSegmentBaseQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_CableCarrierSegmentBaseQuantities"))
-         {
-            qtoSetCableCarrierSegmentBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetCableCarrierSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
-            ifcPSE = new QuantityEntry("Qto_CableCarrierSegmentBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCableCarrierSegmentBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_CableCarrierSegmentBaseQuantities.CrossSectionArea", "CrossSectionArea");
-            ifcPSE.PropertyName = "CrossSectionArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.CrossSectionAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCableCarrierSegmentBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_CableCarrierSegmentBaseQuantities.OuterSurfaceArea", "OuterSurfaceArea");
-            ifcPSE.PropertyName = "OuterSurfaceArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OuterSurfaceAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCableCarrierSegmentBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_CableCarrierSegmentBaseQuantities.GrossWeight", "GrossWeight");
-            ifcPSE.PropertyName = "GrossWeight";
-            ifcPSE.QuantityType = QuantityType.Mass;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetCableCarrierSegmentBaseQuantities.AddEntry(ifcPSE);
@@ -1654,44 +1782,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.QuantityType = QuantityType.Area;
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Outer Surface Area");
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OuterSurfaceAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCableSegmentBaseQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_CableSegmentBaseQuantities"))
-         {
-            qtoSetCableSegmentBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetCableSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableSegment);
-            ifcPSE = new QuantityEntry("Qto_CableSegmentBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCableSegmentBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_CableSegmentBaseQuantities.CrossSectionArea", "CrossSectionArea");
-            ifcPSE.PropertyName = "CrossSectionArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.CrossSectionAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCableSegmentBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_CableSegmentBaseQuantities.OuterSurfaceArea", "OuterSurfaceArea");
-            ifcPSE.PropertyName = "OuterSurfaceArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OuterSurfaceAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCableSegmentBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_CableSegmentBaseQuantities.GrossWeight", "GrossWeight");
-            ifcPSE.PropertyName = "GrossWeight";
-            ifcPSE.QuantityType = QuantityType.Mass;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetCableSegmentBaseQuantities.AddEntry(ifcPSE);
@@ -2016,31 +2106,13 @@ namespace Revit.IFC.Export.Exporter
             qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
 
          }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_ColumnBaseQuantities"))
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_ColumnBaseQuantities"))
          {
-            qtoSetColumnBaseQuantities.Name = "BaseQuantities";
-
             qtoSetColumnBaseQuantities.EntityTypes.Add(IFCEntityType.IfcColumn);
-            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.NominalLength", "NominalLength");
+            ifcPSE.PropertyName = "NominalLength";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalLengthCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
@@ -2061,10 +2133,10 @@ namespace Revit.IFC.Export.Exporter
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.GrossSurfaceArea", "GrossSurfaceArea");
-            ifcPSE.PropertyName = "GrossSurfaceArea";
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.TotalSurfaceArea", "TotalSurfaceArea");
+            ifcPSE.PropertyName = "TotalSurfaceArea";
             ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossSurfaceAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalSurfaceAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
@@ -2081,6 +2153,92 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "NetVolume";
             ifcPSE.QuantityType = QuantityType.Volume;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.GrossWeight", "GrossWeight");
+            ifcPSE.PropertyName = "GrossWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.NetWeight", "NetWeight");
+            ifcPSE.PropertyName = "NetWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+         }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_ColumnBaseQuantities"))
+         {
+            qtoSetColumnBaseQuantities.Name = "BaseQuantities";
+
+            qtoSetColumnBaseQuantities.EntityTypes.Add(IFCEntityType.IfcColumn);
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.NominalLength", "NominalLength");
+            ifcPSE.PropertyName = "NominalLength";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalLengthCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.CrossSectionArea", "CrossSectionArea");
+            ifcPSE.PropertyName = "CrossSectionArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.CrossSectionAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.OuterSurfaceArea", "OuterSurfaceArea");
+            ifcPSE.PropertyName = "OuterSurfaceArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OuterSurfaceAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.TotalSurfaceArea", "TotalSurfaceArea");
+            ifcPSE.PropertyName = "TotalSurfaceArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalSurfaceAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.GrossVolume", "GrossVolume");
+            ifcPSE.PropertyName = "GrossVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.NetVolume", "NetVolume");
+            ifcPSE.PropertyName = "NetVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.GrossWeight", "GrossWeight");
+            ifcPSE.PropertyName = "GrossWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.NetWeight", "NetWeight");
+            ifcPSE.PropertyName = "NetWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetColumnBaseQuantities.AddEntry(ifcPSE);
@@ -2666,15 +2824,35 @@ namespace Revit.IFC.Export.Exporter
             qtoSetCoveringBaseQuantities.AddEntry(ifcPSE);
 
          }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_CoveringBaseQuantities"))
+         {
+            qtoSetCoveringBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCovering);
+            ifcPSE = new QuantityEntry("Qto_CoveringBaseQuantities.CoveredArea", "CoveredArea");
+            ifcPSE.PropertyName = "CoveredArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.CoveredAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetCoveringBaseQuantities.AddEntry(ifcPSE);
+
+         }
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_CoveringBaseQuantities"))
          {
             qtoSetCoveringBaseQuantities.Name = "BaseQuantities";
 
             qtoSetCoveringBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCovering);
-            ifcPSE = new QuantityEntry("Qto_CoveringBaseQuantities.GrossCeilingArea", "GrossCeilingArea");
-            ifcPSE.PropertyName = "GrossCeilingArea";
+            ifcPSE = new QuantityEntry("Qto_CoveringBaseQuantities.GrossArea", "GrossArea");
+            ifcPSE.PropertyName = "GrossArea";
             ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossCeilingAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetCoveringBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_CoveringBaseQuantities.NetArea", "NetArea");
+            ifcPSE.PropertyName = "NetArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetCoveringBaseQuantities.AddEntry(ifcPSE);
@@ -2794,36 +2972,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Net Side Area");
             ifcPSE.AddLocalizedParameterName(LanguageType.Japanese, "正味側面面積");
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetSideAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCurtainWallQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_CurtainWallQuantities"))
-         {
-            qtoSetCurtainWallQuantities.Name = "BaseQuantities";
-
-            qtoSetCurtainWallQuantities.EntityTypes.Add(IFCEntityType.IfcCurtainWall);
-            ifcPSE = new QuantityEntry("Qto_CurtainWallQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCurtainWallQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_CurtainWallQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetCurtainWallQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_CurtainWallQuantities.GrossSideArea", "GrossSideArea");
-            ifcPSE.PropertyName = "GrossSideArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossSideAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetCurtainWallQuantities.AddEntry(ifcPSE);
@@ -3105,36 +3253,6 @@ namespace Revit.IFC.Export.Exporter
             qtoSetDoorBaseQuantities.AddEntry(ifcPSE);
 
          }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_DoorBaseQuantities"))
-         {
-            qtoSetDoorBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetDoorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDoor);
-            ifcPSE = new QuantityEntry("Qto_DoorBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetDoorBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_DoorBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetDoorBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_DoorBaseQuantities.Area", "Area");
-            ifcPSE.PropertyName = "Area";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetDoorBaseQuantities.AddEntry(ifcPSE);
-
-         }
          if (ifcPSE != null)
          {
             quantitySets.Add(qtoSetDoorBaseQuantities);
@@ -3238,52 +3356,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Gross Weight");
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetDuctFittingBaseQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_DuctFittingBaseQuantities"))
-         {
-            qtoSetDuctFittingBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetDuctFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDuctFitting);
-            ifcPSE = new QuantityEntry("Qto_DuctFittingBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetDuctFittingBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_DuctFittingBaseQuantities.GrossCrossSectionArea", "GrossCrossSectionArea");
-            ifcPSE.PropertyName = "GrossCrossSectionArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossCrossSectionAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetDuctFittingBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_DuctFittingBaseQuantities.NetCrossSectionArea", "NetCrossSectionArea");
-            ifcPSE.PropertyName = "NetCrossSectionArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetCrossSectionAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetDuctFittingBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_DuctFittingBaseQuantities.OuterSurfaceArea", "OuterSurfaceArea");
-            ifcPSE.PropertyName = "OuterSurfaceArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OuterSurfaceAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetDuctFittingBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_DuctFittingBaseQuantities.GrossWeight", "GrossWeight");
-            ifcPSE.PropertyName = "GrossWeight";
-            ifcPSE.QuantityType = QuantityType.Mass;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
@@ -3599,20 +3671,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Gross Weight");
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetElectricApplianceBaseQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_ElectricApplianceBaseQuantities"))
-         {
-            qtoSetElectricApplianceBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetElectricApplianceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricAppliance);
-            ifcPSE = new QuantityEntry("Qto_ElectricApplianceBaseQuantities.GrossWeight", "GrossWeight");
-            ifcPSE.PropertyName = "GrossWeight";
-            ifcPSE.QuantityType = QuantityType.Mass;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
@@ -5078,31 +5136,13 @@ namespace Revit.IFC.Export.Exporter
             qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
 
          }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_MemberBaseQuantities"))
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_MemberBaseQuantities"))
          {
-            qtoSetMemberBaseQuantities.Name = "BaseQuantities";
-
             qtoSetMemberBaseQuantities.EntityTypes.Add(IFCEntityType.IfcMember);
-            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.NominalLength", "NominalLength");
+            ifcPSE.PropertyName = "NominalLength";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalLengthCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
@@ -5123,10 +5163,10 @@ namespace Revit.IFC.Export.Exporter
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.GrossSurfaceArea", "GrossSurfaceArea");
-            ifcPSE.PropertyName = "GrossSurfaceArea";
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.TotalSurfaceArea", "TotalSurfaceArea");
+            ifcPSE.PropertyName = "TotalSurfaceArea";
             ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossSurfaceAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalSurfaceAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
@@ -5143,6 +5183,92 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "NetVolume";
             ifcPSE.QuantityType = QuantityType.Volume;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.GrossWeight", "GrossWeight");
+            ifcPSE.PropertyName = "GrossWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.NetWeight", "NetWeight");
+            ifcPSE.PropertyName = "NetWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+         }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_MemberBaseQuantities"))
+         {
+            qtoSetMemberBaseQuantities.Name = "BaseQuantities";
+
+            qtoSetMemberBaseQuantities.EntityTypes.Add(IFCEntityType.IfcMember);
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.NominalLength", "NominalLength");
+            ifcPSE.PropertyName = "NominalLength";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalLengthCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.CrossSectionArea", "CrossSectionArea");
+            ifcPSE.PropertyName = "CrossSectionArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.CrossSectionAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.OuterSurfaceArea", "OuterSurfaceArea");
+            ifcPSE.PropertyName = "OuterSurfaceArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OuterSurfaceAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.TotalSurfaceArea", "TotalSurfaceArea");
+            ifcPSE.PropertyName = "TotalSurfaceArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalSurfaceAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.GrossVolume", "GrossVolume");
+            ifcPSE.PropertyName = "GrossVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.NetVolume", "NetVolume");
+            ifcPSE.PropertyName = "NetVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.GrossWeight", "GrossWeight");
+            ifcPSE.PropertyName = "GrossWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.NetWeight", "NetWeight");
+            ifcPSE.PropertyName = "NetWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetMemberBaseQuantities.AddEntry(ifcPSE);
@@ -5307,39 +5433,35 @@ namespace Revit.IFC.Export.Exporter
             qtoSetOpeningElementBaseQuantities.AddEntry(ifcPSE);
 
          }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_OpeningElementBaseQuantities"))
+         {
+            qtoSetOpeningElementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcOpeningElement);
+            ifcPSE = new QuantityEntry("Qto_OpeningElementBaseQuantities.OpeningArea", "OpeningArea");
+            ifcPSE.PropertyName = "OpeningArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OpeningAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetOpeningElementBaseQuantities.AddEntry(ifcPSE);
+
+         }
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_OpeningElementBaseQuantities"))
          {
             qtoSetOpeningElementBaseQuantities.Name = "BaseQuantities";
 
             qtoSetOpeningElementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcOpeningElement);
-            ifcPSE = new QuantityEntry("Qto_OpeningElementBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetOpeningElementBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_OpeningElementBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetOpeningElementBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_OpeningElementBaseQuantities.Area", "Area");
-            ifcPSE.PropertyName = "Area";
+            ifcPSE = new QuantityEntry("Qto_OpeningElementBaseQuantities.NominalArea", "NominalArea");
+            ifcPSE.PropertyName = "NominalArea";
             ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetOpeningElementBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_OpeningElementBaseQuantities.Volume", "Volume");
-            ifcPSE.PropertyName = "Volume";
+            ifcPSE = new QuantityEntry("Qto_OpeningElementBaseQuantities.NominalVolume", "NominalVolume");
+            ifcPSE.PropertyName = "NominalVolume";
             ifcPSE.QuantityType = QuantityType.Volume;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.VolumeCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalVolumeCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetOpeningElementBaseQuantities.AddEntry(ifcPSE);
@@ -5652,76 +5774,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.QuantityType = QuantityType.Mass;
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Net Weight");
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPileBaseQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_PileBaseQuantities"))
-         {
-            qtoSetPileBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetPileBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPile);
-            ifcPSE = new QuantityEntry("Qto_PileBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPileBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_PileBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPileBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_PileBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPileBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_PileBaseQuantities.CrossSectionArea", "CrossSectionArea");
-            ifcPSE.PropertyName = "CrossSectionArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.CrossSectionAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPileBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_PileBaseQuantities.OuterSurfaceArea", "OuterSurfaceArea");
-            ifcPSE.PropertyName = "OuterSurfaceArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.OuterSurfaceAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPileBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_PileBaseQuantities.GrossSurfaceArea", "GrossSurfaceArea");
-            ifcPSE.PropertyName = "GrossSurfaceArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossSurfaceAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPileBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_PileBaseQuantities.GrossVolume", "GrossVolume");
-            ifcPSE.PropertyName = "GrossVolume";
-            ifcPSE.QuantityType = QuantityType.Volume;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPileBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_PileBaseQuantities.NetVolume", "NetVolume");
-            ifcPSE.PropertyName = "NetVolume";
-            ifcPSE.QuantityType = QuantityType.Volume;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetPileBaseQuantities.AddEntry(ifcPSE);
@@ -6155,28 +6207,6 @@ namespace Revit.IFC.Export.Exporter
             qtoSetPlateBaseQuantities.AddEntry(ifcPSE);
 
          }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_PlateBaseQuantities"))
-         {
-            qtoSetPlateBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetPlateBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPlate);
-            ifcPSE = new QuantityEntry("Qto_PlateBaseQuantities.GrossVolume", "GrossVolume");
-            ifcPSE.PropertyName = "GrossVolume";
-            ifcPSE.QuantityType = QuantityType.Volume;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPlateBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_PlateBaseQuantities.NetVolume", "NetVolume");
-            ifcPSE.PropertyName = "NetVolume";
-            ifcPSE.QuantityType = QuantityType.Volume;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetPlateBaseQuantities.AddEntry(ifcPSE);
-
-         }
          if (ifcPSE != null)
          {
             quantitySets.Add(qtoSetPlateBaseQuantities);
@@ -6231,6 +6261,28 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.AddLocalizedParameterName(LanguageType.German, "Volumen");
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Volume");
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.VolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetProjectionElementBaseQuantities.AddEntry(ifcPSE);
+
+         }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_ProjectionElementBaseQuantities"))
+         {
+            qtoSetProjectionElementBaseQuantities.Name = "BaseQuantities";
+
+            qtoSetProjectionElementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcProjectionElement);
+            ifcPSE = new QuantityEntry("Qto_ProjectionElementBaseQuantities.NominalArea", "NominalArea");
+            ifcPSE.PropertyName = "NominalArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetProjectionElementBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_ProjectionElementBaseQuantities.NominalVolume", "NominalVolume");
+            ifcPSE.PropertyName = "NominalVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalVolumeCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetProjectionElementBaseQuantities.AddEntry(ifcPSE);
@@ -6445,20 +6497,6 @@ namespace Revit.IFC.Export.Exporter
             qtoSetRailingBaseQuantities.AddEntry(ifcPSE);
 
          }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_RailingBaseQuantities"))
-         {
-            qtoSetRailingBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetRailingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRailing);
-            ifcPSE = new QuantityEntry("Qto_RailingBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetRailingBaseQuantities.AddEntry(ifcPSE);
-
-         }
          if (ifcPSE != null)
          {
             quantitySets.Add(qtoSetRailingBaseQuantities);
@@ -6586,20 +6624,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.AddLocalizedParameterName(LanguageType.German, "Nettovolumen");
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Net Volume");
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetRampFlightBaseQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_RampFlightBaseQuantities"))
-         {
-            qtoSetRampFlightBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetRampFlightBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRampFlight);
-            ifcPSE = new QuantityEntry("Qto_RampFlightBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetRampFlightBaseQuantities.AddEntry(ifcPSE);
@@ -6813,23 +6837,27 @@ namespace Revit.IFC.Export.Exporter
             qtoSetRoofBaseQuantities.AddEntry(ifcPSE);
 
          }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_RoofBaseQuantities"))
+         {
+            qtoSetRoofBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRoof);
+            ifcPSE = new QuantityEntry("Qto_RoofBaseQuantities.TotalSurfaceArea", "TotalSurfaceArea");
+            ifcPSE.PropertyName = "TotalSurfaceArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalSurfaceAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetRoofBaseQuantities.AddEntry(ifcPSE);
+
+         }
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_RoofBaseQuantities"))
          {
             qtoSetRoofBaseQuantities.Name = "BaseQuantities";
 
             qtoSetRoofBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRoof);
-            ifcPSE = new QuantityEntry("Qto_RoofBaseQuantities.GrossArea", "GrossArea");
-            ifcPSE.PropertyName = "GrossArea";
+            ifcPSE = new QuantityEntry("Qto_RoofBaseQuantities.TotalSurfaceArea", "TotalSurfaceArea");
+            ifcPSE.PropertyName = "TotalSurfaceArea";
             ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetRoofBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_RoofBaseQuantities.NetArea", "NetArea");
-            ifcPSE.PropertyName = "NetArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.TotalSurfaceAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetRoofBaseQuantities.AddEntry(ifcPSE);
@@ -7056,23 +7084,43 @@ namespace Revit.IFC.Export.Exporter
             qtoSetSiteBaseQuantities.AddEntry(ifcPSE);
 
          }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_SiteBaseQuantities"))
+         {
+            qtoSetSiteBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSite);
+            ifcPSE = new QuantityEntry("Qto_SiteBaseQuantities.SitePerimeter", "SitePerimeter");
+            ifcPSE.PropertyName = "SitePerimeter";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.SitePerimeterCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSiteBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SiteBaseQuantities.SiteArea", "SiteArea");
+            ifcPSE.PropertyName = "SiteArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.SiteAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSiteBaseQuantities.AddEntry(ifcPSE);
+
+         }
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_SiteBaseQuantities"))
          {
             qtoSetSiteBaseQuantities.Name = "BaseQuantities";
 
             qtoSetSiteBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSite);
-            ifcPSE = new QuantityEntry("Qto_SiteBaseQuantities.GrossPerimeter", "GrossPerimeter");
-            ifcPSE.PropertyName = "GrossPerimeter";
+            ifcPSE = new QuantityEntry("Qto_SiteBaseQuantities.NominalPerimeter", "NominalPerimeter");
+            ifcPSE.PropertyName = "NominalPerimeter";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossPerimeterCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalPerimeterCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSiteBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_SiteBaseQuantities.GrossArea", "GrossArea");
-            ifcPSE.PropertyName = "GrossArea";
+            ifcPSE = new QuantityEntry("Qto_SiteBaseQuantities.NominalArea", "NominalArea");
+            ifcPSE.PropertyName = "NominalArea";
             ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSiteBaseQuantities.AddEntry(ifcPSE);
@@ -7290,15 +7338,67 @@ namespace Revit.IFC.Export.Exporter
             qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
 
          }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_SlabBaseQuantities"))
+         {
+            qtoSetSlabBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSlab);
+            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.Perimeter", "Perimeter");
+            ifcPSE.PropertyName = "Perimeter";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.PerimeterCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.SurfaceArea", "SurfaceArea");
+            ifcPSE.PropertyName = "SurfaceArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.SurfaceAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.GrossVolume", "GrossVolume");
+            ifcPSE.PropertyName = "GrossVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.NetVolume", "NetVolume");
+            ifcPSE.PropertyName = "NetVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.GrossWeight", "GrossWeight");
+            ifcPSE.PropertyName = "GrossWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.NetWeight", "NetWeight");
+            ifcPSE.PropertyName = "NetWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
+
+         }
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_SlabBaseQuantities"))
          {
             qtoSetSlabBaseQuantities.Name = "BaseQuantities";
 
             qtoSetSlabBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSlab);
-            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
+            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.NominalWidth", "NominalWidth");
+            ifcPSE.PropertyName = "NominalWidth";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalWidthCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
@@ -7339,6 +7439,22 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "NetVolume";
             ifcPSE.QuantityType = QuantityType.Volume;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.GrossWeight", "GrossWeight");
+            ifcPSE.PropertyName = "GrossWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossWeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.NetWeight", "NetWeight");
+            ifcPSE.PropertyName = "NetWeight";
+            ifcPSE.QuantityType = QuantityType.Mass;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWeightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSlabBaseQuantities.AddEntry(ifcPSE);
@@ -7717,11 +7833,95 @@ namespace Revit.IFC.Export.Exporter
             qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
 
          }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_SpaceBaseQuantities"))
+         {
+            qtoSetSpaceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSpace);
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.AverageHeight", "AverageHeight");
+            ifcPSE.PropertyName = "AverageHeight";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AverageHeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.AverageClearHeight", "AverageClearHeight");
+            ifcPSE.PropertyName = "AverageClearHeight";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AverageClearHeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.AverageGrossHeight", "AverageGrossHeight");
+            ifcPSE.PropertyName = "AverageGrossHeight";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AverageGrossHeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.Perimeter", "Perimeter");
+            ifcPSE.PropertyName = "Perimeter";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.PerimeterCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.Area", "Area");
+            ifcPSE.PropertyName = "Area";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.Volume", "Volume");
+            ifcPSE.PropertyName = "Volume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.VolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
+         }
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_SpaceBaseQuantities"))
          {
             qtoSetSpaceBaseQuantities.Name = "BaseQuantities";
 
             qtoSetSpaceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSpace);
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.NominalHeight", "NominalHeight");
+            ifcPSE.PropertyName = "NominalHeight";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalHeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.ClearHeight", "ClearHeight");
+            ifcPSE.PropertyName = "ClearHeight";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.ClearHeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.GrossPerimeter", "GrossPerimeter");
+            ifcPSE.PropertyName = "GrossPerimeter";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossPerimeterCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.NetPerimeter", "NetPerimeter");
+            ifcPSE.PropertyName = "NetPerimeter";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetPerimeterCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
+
             ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.GrossFloorArea", "GrossFloorArea");
             ifcPSE.PropertyName = "GrossFloorArea";
             ifcPSE.QuantityType = QuantityType.Area;
@@ -7738,14 +7938,6 @@ namespace Revit.IFC.Export.Exporter
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.NetCeilingArea", "NetCeilingArea");
-            ifcPSE.PropertyName = "NetCeilingArea";
-            ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetCeilingAreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
-
             ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.GrossCeilingArea", "GrossCeilingArea");
             ifcPSE.PropertyName = "GrossCeilingArea";
             ifcPSE.QuantityType = QuantityType.Area;
@@ -7754,10 +7946,10 @@ namespace Revit.IFC.Export.Exporter
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.NetWallArea", "NetWallArea");
-            ifcPSE.PropertyName = "NetWallArea";
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.NetCeilingArea", "NetCeilingArea");
+            ifcPSE.PropertyName = "NetCeilingArea";
             ifcPSE.QuantityType = QuantityType.Area;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWallAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetCeilingAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
@@ -7770,34 +7962,10 @@ namespace Revit.IFC.Export.Exporter
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.FinishCeilingHeight", "FinishCeilingHeight");
-            ifcPSE.PropertyName = "FinishCeilingHeight";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.FinishCeilingHeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.NetPerimeter", "NetPerimeter");
-            ifcPSE.PropertyName = "NetPerimeter";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetPerimeterCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.GrossPerimeter", "GrossPerimeter");
-            ifcPSE.PropertyName = "GrossPerimeter";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossPerimeterCalculator");
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.NetWallArea", "NetWallArea");
+            ifcPSE.PropertyName = "NetWallArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetWallAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
@@ -7810,10 +7978,10 @@ namespace Revit.IFC.Export.Exporter
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.FinishFloorHeight", "FinishFloorHeight");
-            ifcPSE.PropertyName = "FinishFloorHeight";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.FinishFloorHeightCalculator");
+            ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.NetVolume", "NetVolume");
+            ifcPSE.PropertyName = "NetVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetSpaceBaseQuantities.AddEntry(ifcPSE);
@@ -8051,20 +8219,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.AddLocalizedParameterName(LanguageType.German, "Nettovolumen");
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Net Volume");
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetStairFlightBaseQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_StairFlightBaseQuantities"))
-         {
-            qtoSetStairFlightBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetStairFlightBaseQuantities.EntityTypes.Add(IFCEntityType.IfcStairFlight);
-            ifcPSE = new QuantityEntry("Qto_StairFlightBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetStairFlightBaseQuantities.AddEntry(ifcPSE);
@@ -8818,32 +8972,125 @@ namespace Revit.IFC.Export.Exporter
             qtoSetWallBaseQuantities.AddEntry(ifcPSE);
 
          }
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_WallBaseQuantities"))
+         {
+            qtoSetWallBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWall);
+            qtoSetWallBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWallStandardCase);
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NominalLength", "NominalLength");
+            ifcPSE.PropertyName = "NominalLength";
+            ifcPSE.QuantityType = QuantityType.PositiveLength;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalLengthCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.GrossFootprintArea", "GrossFootprintArea");
+            ifcPSE.PropertyName = "GrossFootprintArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossFootprintAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NetFootprintArea", "NetFootprintArea");
+            ifcPSE.PropertyName = "NetFootprintArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetFootprintAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.GrossSideAreaLeft", "GrossSideAreaLeft");
+            ifcPSE.PropertyName = "GrossSideAreaLeft";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossSideAreaLeftCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NetSideAreaLeft", "NetSideAreaLeft");
+            ifcPSE.PropertyName = "NetSideAreaLeft";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetSideAreaLeftCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.GrossSideAreaRight", "GrossSideAreaRight");
+            ifcPSE.PropertyName = "GrossSideAreaRight";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossSideAreaRightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NetSideAreaRight", "NetSideAreaRight");
+            ifcPSE.PropertyName = "NetSideAreaRight";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetSideAreaRightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.GrossVolume", "GrossVolume");
+            ifcPSE.PropertyName = "GrossVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NetVolume", "NetVolume");
+            ifcPSE.PropertyName = "NetVolume";
+            ifcPSE.QuantityType = QuantityType.Volume;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetVolumeCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+         }
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_WallBaseQuantities"))
          {
             qtoSetWallBaseQuantities.Name = "BaseQuantities";
 
             qtoSetWallBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWall);
             qtoSetWallBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWallStandardCase);
-            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.Length", "Length");
-            ifcPSE.PropertyName = "Length";
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NominalLength", "NominalLength");
+            ifcPSE.PropertyName = "NominalLength";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.LengthCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalLengthCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetWallBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NominalWidth", "NominalWidth");
+            ifcPSE.PropertyName = "NominalWidth";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalWidthCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetWallBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NominalHeight", "NominalHeight");
+            ifcPSE.PropertyName = "NominalHeight";
             ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NominalHeightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.GrossFootprintArea", "GrossFootprintArea");
+            ifcPSE.PropertyName = "GrossFootprintArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossFootprintAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NetFootprintArea", "NetFootprintArea");
+            ifcPSE.PropertyName = "NetFootprintArea";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetFootprintAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetWallBaseQuantities.AddEntry(ifcPSE);
@@ -8860,6 +9107,38 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.PropertyName = "NetSideArea";
             ifcPSE.QuantityType = QuantityType.Area;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetSideAreaCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.GrossSideAreaLeft", "GrossSideAreaLeft");
+            ifcPSE.PropertyName = "GrossSideAreaLeft";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossSideAreaLeftCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NetSideAreaLeft", "NetSideAreaLeft");
+            ifcPSE.PropertyName = "NetSideAreaLeft";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetSideAreaLeftCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.GrossSideAreaRight", "GrossSideAreaRight");
+            ifcPSE.PropertyName = "GrossSideAreaRight";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossSideAreaRightCalculator");
+            if (calcType != null)
+               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
+            qtoSetWallBaseQuantities.AddEntry(ifcPSE);
+
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NetSideAreaRight", "NetSideAreaRight");
+            ifcPSE.PropertyName = "NetSideAreaRight";
+            ifcPSE.QuantityType = QuantityType.Area;
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetSideAreaRightCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetWallBaseQuantities.AddEntry(ifcPSE);
@@ -9016,36 +9295,6 @@ namespace Revit.IFC.Export.Exporter
             ifcPSE.AddLocalizedParameterName(LanguageType.German, "Fläche");
             ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Area");
             ifcPSE.AddLocalizedParameterName(LanguageType.Japanese, "面積");
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AreaCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetWindowBaseQuantities.AddEntry(ifcPSE);
-
-         }
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_WindowBaseQuantities"))
-         {
-            qtoSetWindowBaseQuantities.Name = "BaseQuantities";
-
-            qtoSetWindowBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWindow);
-            ifcPSE = new QuantityEntry("Qto_WindowBaseQuantities.Height", "Height");
-            ifcPSE.PropertyName = "Height";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.HeightCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetWindowBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_WindowBaseQuantities.Width", "Width");
-            ifcPSE.PropertyName = "Width";
-            ifcPSE.QuantityType = QuantityType.PositiveLength;
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.WidthCalculator");
-            if (calcType != null)
-               ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
-            qtoSetWindowBaseQuantities.AddEntry(ifcPSE);
-
-            ifcPSE = new QuantityEntry("Qto_WindowBaseQuantities.Area", "Area");
-            ifcPSE.PropertyName = "Area";
-            ifcPSE.QuantityType = QuantityType.Area;
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});

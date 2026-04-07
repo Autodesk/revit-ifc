@@ -45,8 +45,31 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// The entries stored in this property set description.
       /// </summary>
+      public IList<AttributeEntry> Entries { get { return m_Entries.Values.ToList(); } }
+      /// <summary>
+      /// The entries stored in this property set description.
+      /// </summary>
       public void AddEntry(AttributeEntry entry)
       {
+         PropertySetupType propertyMappingSetup = PropertySetupType.UserDefinedPropertySets;
+
+         IFCPropertyMappingInfo mappedRevitParameter = GetMappedRevitParameterForDescription(propertyMappingSetup, entry.PropertyName);
+         if (mappedRevitParameter != null) 
+         {
+            entry.IsExcluded = !mappedRevitParameter.ExportFlag;
+
+            ElementId parameterId = mappedRevitParameter.RevitPropertyId;
+            string parameterName = mappedRevitParameter.RevitPropertyName;
+            if (ParameterUtils.IsBuiltInParameter(parameterId))
+            {
+               entry.SetRevitBuiltInParameter((BuiltInParameter)parameterId.Value);
+            }
+            else if (!string.IsNullOrEmpty(parameterName))
+            {
+               entry.SetRevitParameterName(parameterName);
+            }
+         }
+         entry.UpdateEntry();
          m_Entries[new Tuple<PropertyType, string>(entry.PropertyType, entry.PropertyName)] = entry;
       }
 
@@ -55,6 +78,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          AttributeEntry result = null;
          m_Entries.TryGetValue(new Tuple<PropertyType, string>(propertyType, name), out result);
          return result;
+      }
+
+      /// <summary>
+      /// Remove an entry from the attributes map.
+      /// </summary>
+      /// <param name="entry">The entry to remove.</param>
+      public bool RemoveEntry(AttributeEntry entry)
+      {
+         return Entries.Remove(entry);
       }
    }
 }

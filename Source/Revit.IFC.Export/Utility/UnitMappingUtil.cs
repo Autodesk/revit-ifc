@@ -4,6 +4,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Toolkit;
+using Revit.IFC.Export.Exporter.PropertySet;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -733,6 +734,8 @@ namespace Revit.IFC.Export.Utility
          { UnitTypeId.Kilograms,    Tuple.Create<IFCSIUnitName, IFCSIPrefix?, IFCUnit>(IFCSIUnitName.Gram, IFCSIPrefix.Kilo, IFCUnit.MassUnit) },
          { UnitTypeId.Seconds,      Tuple.Create<IFCSIUnitName, IFCSIPrefix?, IFCUnit>(IFCSIUnitName.Second, null, IFCUnit.TimeUnit) },
          { UnitTypeId.Amperes,      Tuple.Create<IFCSIUnitName, IFCSIPrefix?, IFCUnit>(IFCSIUnitName.Ampere, null, IFCUnit.ElectricCurrentUnit) },
+         { UnitTypeId.Kiloamperes,  Tuple.Create<IFCSIUnitName, IFCSIPrefix?, IFCUnit>(IFCSIUnitName.Ampere, IFCSIPrefix.Kilo, IFCUnit.ElectricCurrentUnit) },
+         { UnitTypeId.Milliamperes, Tuple.Create<IFCSIUnitName, IFCSIPrefix?, IFCUnit>(IFCSIUnitName.Ampere, IFCSIPrefix.Milli, IFCUnit.ElectricCurrentUnit) },
          { UnitTypeId.Kelvin,       Tuple.Create<IFCSIUnitName, IFCSIPrefix?, IFCUnit>(IFCSIUnitName.Kelvin, null, IFCUnit.ThermoDynamicTemperatureUnit) },
          { UnitTypeId.Candelas,     Tuple.Create<IFCSIUnitName, IFCSIPrefix?, IFCUnit>(IFCSIUnitName.Candela, null, IFCUnit.LuminousIntensityUnit) },
          { UnitTypeId.Radians,      Tuple.Create<IFCSIUnitName, IFCSIPrefix?, IFCUnit>(IFCSIUnitName.Radian, null, IFCUnit.PlaneAngleUnit) },
@@ -759,7 +762,8 @@ namespace Revit.IFC.Export.Utility
          },
          { SpecTypeId.Current, new SIAttributes(IFCUnit.ElectricCurrentUnit, new Dictionary<ForgeTypeId, SIUnitInfo>()
             {
-               { UnitTypeId.Amperes, new SIUnitInfo(IFCSIUnitName.Ampere, null, true) }
+               { UnitTypeId.Amperes, new SIUnitInfo(IFCSIUnitName.Ampere, null, true) },
+               { UnitTypeId.Kiloamperes, new SIUnitInfo(IFCSIUnitName.Ampere, IFCSIPrefix.Kilo, true) }
             } )
          },
          { SpecTypeId.LuminousIntensity, new SIAttributes(IFCUnit.LuminousIntensityUnit, new Dictionary<ForgeTypeId, SIUnitInfo>()
@@ -785,7 +789,7 @@ namespace Revit.IFC.Export.Utility
             {
                { UnitTypeId.SquareMeters, new SIUnitInfo(IFCSIUnitName.Square_Metre, null, false) },
                { UnitTypeId.SquareCentimeters, new SIUnitInfo(IFCSIUnitName.Square_Metre, IFCSIPrefix.Centi, false) },
-               { UnitTypeId.Millimeters, new SIUnitInfo(IFCSIUnitName.Square_Metre, IFCSIPrefix.Milli, false) }
+               { UnitTypeId.SquareMillimeters, new SIUnitInfo(IFCSIUnitName.Square_Metre, IFCSIPrefix.Milli, false) }
             } )
          },
          { SpecTypeId.Volume, new SIAttributes(IFCUnit.VolumeUnit, new Dictionary<ForgeTypeId, SIUnitInfo>()
@@ -816,12 +820,17 @@ namespace Revit.IFC.Export.Utility
          },
          { SpecTypeId.ElectricalPotential, new SIAttributes(IFCUnit.ElectricVoltageUnit, new Dictionary<ForgeTypeId, SIUnitInfo>()
             {
-               { UnitTypeId.Volts, new SIUnitInfo(IFCSIUnitName.Volt, null, true) }
+               { UnitTypeId.Volts, new SIUnitInfo(IFCSIUnitName.Volt, null, true) },
+               { UnitTypeId.Kilovolts, new SIUnitInfo(IFCSIUnitName.Volt, IFCSIPrefix.Kilo, true) },
+               { UnitTypeId.Millivolts, new SIUnitInfo(IFCSIUnitName.Volt, IFCSIPrefix.Milli, true) },
             } )
          },
          { SpecTypeId.HvacPower, new SIAttributes(IFCUnit.PowerUnit, new Dictionary<ForgeTypeId, SIUnitInfo>()
             {
-               { UnitTypeId.Watts, new SIUnitInfo(IFCSIUnitName.Watt, null, true) }
+               { UnitTypeId.Watts, new SIUnitInfo(IFCSIUnitName.Watt, null, true) },
+               { UnitTypeId.Kilowatts, new SIUnitInfo(IFCSIUnitName.Watt, IFCSIPrefix.Kilo, true) },
+               { UnitTypeId.VoltAmperes, new SIUnitInfo(IFCSIUnitName.Watt, null, true) },
+               { UnitTypeId.KilovoltAmperes, new SIUnitInfo(IFCSIUnitName.Watt, IFCSIPrefix.Kilo, true) },
             } )
          },
          { SpecTypeId.Illuminance, new SIAttributes(IFCUnit.IlluminanceUnit, new Dictionary<ForgeTypeId, SIUnitInfo>()
@@ -836,7 +845,9 @@ namespace Revit.IFC.Export.Utility
          },
          { SpecTypeId.Energy, new SIAttributes(IFCUnit.EnergyUnit, new Dictionary<ForgeTypeId, SIUnitInfo>()
             {
-               { UnitTypeId.Joules, new SIUnitInfo(IFCSIUnitName.Joule, null, true) }
+               { UnitTypeId.Joules, new SIUnitInfo(IFCSIUnitName.Joule, null, true) },
+               { UnitTypeId.Kilojoules, new SIUnitInfo(IFCSIUnitName.Joule, IFCSIPrefix.Kilo, true) },
+               { UnitTypeId.Gigajoules, new SIUnitInfo(IFCSIUnitName.Joule, IFCSIPrefix.Giga, true) },
             } )
          },
          { SpecTypeId.HvacPressure, new SIAttributes(IFCUnit.PressureUnit, new Dictionary<ForgeTypeId, SIUnitInfo>()
@@ -1362,6 +1373,176 @@ namespace Revit.IFC.Export.Utility
          { "IfcWarpingConstantMeasure", SpecTypeId.WarpingConstant },
       };
       #endregion
+
+
+      /// <summary>
+      /// Get Revit data type mapped to the ifc proeprty type.
+      /// </summary>
+      /// <returns> True if the mapping is found. </returns>
+      public static bool GetRevitDataTypeFromIfcPropertyType(PropertyType propertyType,
+         out StorageType storageType, out HashSet<ForgeTypeId> dataTypes)
+      {
+         storageType = StorageType.None;
+         dataTypes = null;
+
+         if (!IfcPropertyTypeToRevitDataType.TryGetValue(propertyType, out var revitDataType))
+            return false; 
+
+         storageType = revitDataType.storageType;
+         dataTypes = revitDataType.dataTypes;
+
+         return true;
+      }
+
+      /// <summary>
+      /// Get Revit data type mapped to the ifc quantity type.
+      /// </summary>
+      /// <returns> True if the mapping is found. </returns>
+      public static bool GetRevitDataTypeFromIfcQuantityType(QuantityType quantityType,
+         out StorageType storageType, out HashSet<ForgeTypeId> dataTypes)
+      {
+         storageType = StorageType.None;
+         dataTypes = null;
+
+         PropertyType? propertyTypeEquivalent = null;
+
+         switch (quantityType)
+         {
+            case QuantityType.Area: propertyTypeEquivalent = PropertyType.Area; break;
+            case QuantityType.Count: propertyTypeEquivalent = PropertyType.Count; break;
+            case QuantityType.Length: propertyTypeEquivalent = PropertyType.Length; break;
+            case QuantityType.Mass: propertyTypeEquivalent = PropertyType.Mass; break;
+            case QuantityType.PositiveLength: propertyTypeEquivalent = PropertyType.PositiveLength; break;
+            case QuantityType.Real: propertyTypeEquivalent = PropertyType.Real; break;
+            case QuantityType.Time: propertyTypeEquivalent = PropertyType.Time; break;
+            case QuantityType.Volume: propertyTypeEquivalent = PropertyType.Volume; break;
+            case QuantityType.Weight: propertyTypeEquivalent = PropertyType.Mass; break;
+         }
+
+         if (!propertyTypeEquivalent.HasValue)
+            return false;
+
+         return GetRevitDataTypeFromIfcPropertyType(propertyTypeEquivalent.Value, out storageType, out dataTypes);
+      }
+
+      /// <summary>
+      /// The dictionary contains the ifc property type to Revit parameter storage and data types mappings
+      /// </summary>
+      private static readonly Dictionary<PropertyType, (StorageType storageType, HashSet<ForgeTypeId> dataTypes)> IfcPropertyTypeToRevitDataType = new()
+      {
+         { PropertyType.Boolean, (StorageType.Integer, [SpecTypeId.Boolean.YesNo]) },
+         { PropertyType.Logical, (StorageType.Integer, [SpecTypeId.Boolean.YesNo]) },
+
+         { PropertyType.Count, (StorageType.Integer, [SpecTypeId.Int.Integer, SpecTypeId.Int.NumberOfPoles]) },
+         { PropertyType.Integer, (StorageType.Integer, [SpecTypeId.Int.Integer, SpecTypeId.Int.NumberOfPoles]) },
+
+         { PropertyType.Acceleration, (StorageType.Double, [SpecTypeId.Acceleration]) },
+         { PropertyType.AirFlowDensity, (StorageType.Double, [SpecTypeId.AirFlowDensity]) },
+         { PropertyType.AirFlowDividedByCoolingLoad, (StorageType.Double, [SpecTypeId.AirFlowDividedByCoolingLoad]) },
+         { PropertyType.AirFlowDividedByVolume, (StorageType.Double, [SpecTypeId.AirFlowDividedByVolume]) },
+         { PropertyType.AngularVelocity, (StorageType.Double, [SpecTypeId.Pulsation]) },
+         { PropertyType.ApparentPowerDensity, (StorageType.Double, [SpecTypeId.ApparentPowerDensity]) },
+         { PropertyType.Area, (StorageType.Double, [SpecTypeId.Area, SpecTypeId.CrossSection, SpecTypeId.ReinforcementArea, SpecTypeId.SectionArea]) },
+         { PropertyType.AreaDensity, (StorageType.Double, [SpecTypeId.MassPerUnitArea]) },
+         { PropertyType.AreaDividedByCoolingLoad, (StorageType.Double, [SpecTypeId.AreaDividedByCoolingLoad]) },
+         { PropertyType.AreaDividedByHeatingLoad, (StorageType.Double, [SpecTypeId.AreaDividedByHeatingLoad]) },
+         { PropertyType.AreaSpringCoefficient, (StorageType.Double, [SpecTypeId.AreaSpringCoefficient]) },
+         { PropertyType.ColorTemperature, (StorageType.Double, [SpecTypeId.ColorTemperature]) },
+         { PropertyType.CoolingLoadDividedByArea, (StorageType.Double, [SpecTypeId.CoolingLoadDividedByArea]) },
+         { PropertyType.CoolingLoadDividedByVolume, (StorageType.Double, [SpecTypeId.CoolingLoadDividedByVolume]) },
+         { PropertyType.CostPerArea, (StorageType.Double, [SpecTypeId.CostPerArea]) },
+         { PropertyType.CostRateEnergy, (StorageType.Double, [SpecTypeId.CostRateEnergy]) },
+         { PropertyType.CostRatePower, (StorageType.Double, [SpecTypeId.CostRatePower]) },
+         { PropertyType.Currency, (StorageType.Double, [SpecTypeId.Currency]) },
+         { PropertyType.DynamicViscosity, (StorageType.Double, [SpecTypeId.HvacViscosity, SpecTypeId.PipingViscosity]) },
+         { PropertyType.ElectricalEfficacy, (StorageType.Double, [SpecTypeId.Efficacy]) },
+         { PropertyType.ElectricalPowerDensity, (StorageType.Double, [SpecTypeId.ElectricalPowerDensity]) },
+         { PropertyType.ElectricalResistivity, (StorageType.Double, [SpecTypeId.ElectricalResistivity]) },
+         { PropertyType.ElectricCurrent, (StorageType.Double, [SpecTypeId.Current]) },
+         { PropertyType.ElectricVoltage, (StorageType.Double, [SpecTypeId.ElectricalPotential]) },
+         { PropertyType.Energy, (StorageType.Double, [SpecTypeId.Energy, SpecTypeId.HvacEnergy]) },
+         { PropertyType.FlowPerPower, (StorageType.Double, [SpecTypeId.FlowPerPower]) },
+         { PropertyType.Force, (StorageType.Double, [SpecTypeId.Force, SpecTypeId.Weight]) },
+         { PropertyType.Frequency, (StorageType.Double, [SpecTypeId.ElectricalFrequency, SpecTypeId.StructuralFrequency]) },
+         { PropertyType.FrictionLoss, (StorageType.Double, [SpecTypeId.HvacFriction]) },
+         { PropertyType.HeatCapacityPerArea, (StorageType.Double, [SpecTypeId.HeatCapacityPerArea]) },
+         { PropertyType.HeatFluxDensity, (StorageType.Double, [SpecTypeId.HvacPowerDensity]) },
+         { PropertyType.HeatingLoadDividedByArea, (StorageType.Double, [SpecTypeId.HeatingLoadDividedByArea]) },
+         { PropertyType.HeatingLoadDividedByVolume, (StorageType.Double, [SpecTypeId.HeatingLoadDividedByVolume]) },
+         { PropertyType.HeatingValue, (StorageType.Double, [SpecTypeId.SpecificHeatOfVaporization]) },
+         { PropertyType.Illuminance, (StorageType.Double, [SpecTypeId.Illuminance]) },
+         { PropertyType.IonConcentration, (StorageType.Double, [SpecTypeId.PipingDensity]) },
+         { PropertyType.IsothermalMoistureCapacity, (StorageType.Double, [SpecTypeId.IsothermalMoistureCapacity]) },
+         { PropertyType.Length, (StorageType.Double, [SpecTypeId.BarDiameter, SpecTypeId.CrackWidth, SpecTypeId.Displacement,
+            SpecTypeId.Distance, SpecTypeId.CableTraySize, SpecTypeId.ConduitSize, SpecTypeId.Length, SpecTypeId.DuctInsulationThickness,
+            SpecTypeId.DuctLiningThickness, SpecTypeId.DuctSize, SpecTypeId.HvacRoughness, SpecTypeId.PipeDimension,
+            SpecTypeId.PipeInsulationThickness, SpecTypeId.PipeSize, SpecTypeId.PipingRoughness, SpecTypeId.ReinforcementCover,
+            SpecTypeId.ReinforcementLength, SpecTypeId.ReinforcementSpacing, SpecTypeId.SectionDimension, SpecTypeId.SectionProperty,
+            SpecTypeId.WireDiameter, SpecTypeId.SurfaceAreaPerUnitLength]) },
+         { PropertyType.LinearForce, (StorageType.Double, [SpecTypeId.LinearForce, SpecTypeId.WeightPerUnitLength]) },
+         { PropertyType.LinearMoment, (StorageType.Double, [SpecTypeId.LinearMoment]) },
+         { PropertyType.LinearStiffness, (StorageType.Double, [SpecTypeId.PointSpringCoefficient]) },
+         { PropertyType.LinearVelocity, (StorageType.Double, [SpecTypeId.HvacVelocity, SpecTypeId.PipingVelocity, SpecTypeId.StructuralVelocity, SpecTypeId.Speed]) },
+         { PropertyType.LineSpringCoefficient, (StorageType.Double, [SpecTypeId.LineSpringCoefficient]) },
+         { PropertyType.Luminance, (StorageType.Double, [SpecTypeId.Luminance]) },
+         { PropertyType.LuminousFlux, (StorageType.Double, [SpecTypeId.LuminousFlux]) },
+         { PropertyType.LuminousIntensity, (StorageType.Double, [SpecTypeId.LuminousIntensity]) },
+         { PropertyType.Mass, (StorageType.Double, [SpecTypeId.Mass, SpecTypeId.PipingMass]) },
+         { PropertyType.MassDensity, (StorageType.Double, [SpecTypeId.MassDensity, SpecTypeId.HvacDensity]) },
+         { PropertyType.MassFlowRate, (StorageType.Double, [SpecTypeId.PipingMassPerTime, SpecTypeId.HvacMassPerTime]) },
+         { PropertyType.MassPerLength, (StorageType.Double, [SpecTypeId.MassPerUnitLength, SpecTypeId.PipeMassPerUnitLength]) },
+         { PropertyType.MassPerUnitArea, (StorageType.Double, [SpecTypeId.MassPerUnitArea]) },
+         { PropertyType.ModulusOfElasticity, (StorageType.Double, [SpecTypeId.HvacPressure, SpecTypeId.PipingPressure, SpecTypeId.Stress]) },
+         { PropertyType.MoistureDiffusivity, (StorageType.Double, [SpecTypeId.Diffusivity]) },
+         { PropertyType.MomentOfInertia, (StorageType.Double, [SpecTypeId.MomentOfInertia]) },
+         { PropertyType.NormalisedRatio, (StorageType.Double, [SpecTypeId.Number]) },
+         { PropertyType.Numeric, (StorageType.Double, [SpecTypeId.Number]) },
+         { PropertyType.PipingFriction, (StorageType.Double, [SpecTypeId.PipingFriction]) },
+         { PropertyType.PlanarForce, (StorageType.Double, [SpecTypeId.AreaForce]) },
+         { PropertyType.PlaneAngle, (StorageType.Double, [SpecTypeId.Angle, SpecTypeId.Rotation, SpecTypeId.RotationAngle]) },
+         { PropertyType.PositiveLength, (StorageType.Double, [SpecTypeId.BarDiameter, SpecTypeId.CrackWidth, SpecTypeId.Displacement,
+            SpecTypeId.Distance, SpecTypeId.CableTraySize, SpecTypeId.ConduitSize, SpecTypeId.Length, SpecTypeId.DuctInsulationThickness,
+            SpecTypeId.DuctLiningThickness, SpecTypeId.DuctSize, SpecTypeId.HvacRoughness, SpecTypeId.PipeDimension,
+            SpecTypeId.PipeInsulationThickness, SpecTypeId.PipeSize, SpecTypeId.PipingRoughness, SpecTypeId.ReinforcementCover,
+            SpecTypeId.ReinforcementLength, SpecTypeId.ReinforcementSpacing, SpecTypeId.SectionDimension, SpecTypeId.SectionProperty,
+            SpecTypeId.WireDiameter, SpecTypeId.SurfaceAreaPerUnitLength]) },
+         { PropertyType.PositivePlaneAngle, (StorageType.Double, [SpecTypeId.Angle, SpecTypeId.Rotation, SpecTypeId.RotationAngle]) },
+         { PropertyType.PositiveRatio, (StorageType.Double, [SpecTypeId.Number]) },
+         { PropertyType.Power, (StorageType.Double, [SpecTypeId.ApparentPower, SpecTypeId.ElectricalPower, SpecTypeId.Wattage, SpecTypeId.CoolingLoad, SpecTypeId.HeatGain, SpecTypeId.HeatingLoad, SpecTypeId.HvacPower ]) },
+         { PropertyType.PowerPerFlow, (StorageType.Double, [SpecTypeId.PowerPerFlow]) },
+         { PropertyType.PowerPerLength, (StorageType.Double, [SpecTypeId.PowerPerLength]) },
+         { PropertyType.Pressure, (StorageType.Double, [SpecTypeId.HvacPressure, SpecTypeId.PipingPressure, SpecTypeId.Stress]) },
+         { PropertyType.Ratio, (StorageType.Double, [SpecTypeId.Number]) },
+         { PropertyType.Real, (StorageType.Double, [SpecTypeId.Number]) },
+         { PropertyType.ReinforcementAreaPerUnitLength, (StorageType.Double, [SpecTypeId.ReinforcementAreaPerUnitLength]) },
+         { PropertyType.RotationalFrequency, (StorageType.Double, [SpecTypeId.AngularSpeed]) },
+         { PropertyType.RotationalLineSpringCoefficient, (StorageType.Double, [SpecTypeId.RotationalLineSpringCoefficient]) },
+         { PropertyType.RotationalPointSpringCoefficient, (StorageType.Double, [SpecTypeId.RotationalPointSpringCoefficient]) },
+         { PropertyType.SoundPower, (StorageType.Double, [SpecTypeId.ApparentPower, SpecTypeId.ElectricalPower, SpecTypeId.Wattage, SpecTypeId.CoolingLoad]) },
+         { PropertyType.SoundPressure, (StorageType.Double, [SpecTypeId.HvacPressure, SpecTypeId.PipingPressure, SpecTypeId.Stress]) },
+         { PropertyType.SpecificHeatCapacity, (StorageType.Double, [SpecTypeId.SpecificHeat]) },
+         { PropertyType.ThermalConductivity, (StorageType.Double, [SpecTypeId.ThermalConductivity]) },
+         { PropertyType.ThermalExpansionCoefficient, (StorageType.Double, [SpecTypeId.ThermalExpansionCoefficient]) },
+         { PropertyType.ThermalGradientCoefficientForMoistureCapacity, (StorageType.Double, [SpecTypeId.ThermalGradientCoefficientForMoistureCapacity]) },
+         { PropertyType.ThermalMass, (StorageType.Double, [SpecTypeId.ThermalMass]) },
+         { PropertyType.ThermalResistance, (StorageType.Double, [SpecTypeId.ThermalResistance]) },
+         { PropertyType.ThermalTransmittance, (StorageType.Double, [SpecTypeId.HeatTransferCoefficient]) },
+         { PropertyType.ThermodynamicTemperature, (StorageType.Double, [SpecTypeId.ElectricalTemperature, SpecTypeId.HvacTemperature, SpecTypeId.PipingTemperature]) },
+         { PropertyType.Time, (StorageType.Double, [SpecTypeId.Time, SpecTypeId.Period]) },
+         { PropertyType.Torque, (StorageType.Double, [SpecTypeId.Moment]) },
+         { PropertyType.UnitWeight, (StorageType.Double, [SpecTypeId.UnitWeight]) },
+         { PropertyType.VaporPermeability, (StorageType.Double, [SpecTypeId.Permeability]) },
+         { PropertyType.Volume, (StorageType.Double, [SpecTypeId.PipingVolume, SpecTypeId.ReinforcementVolume, SpecTypeId.SectionModulus, SpecTypeId.Volume]) },
+         { PropertyType.VolumetricFlowRate, (StorageType.Double, [SpecTypeId.AirFlow, SpecTypeId.Flow]) },
+         { PropertyType.WarpingConstant, (StorageType.Double, [SpecTypeId.WarpingConstant]) },
+
+         { PropertyType.ClassificationReference, (StorageType.String, []) }, // empty DataTypes allow any data type of the specified StorageType
+         { PropertyType.Identifier, (StorageType.String, []) },
+         { PropertyType.Label, (StorageType.String, []) },
+         { PropertyType.Text, (StorageType.String, []) },
+         { PropertyType.URIReference, (StorageType.String, []) },
+      };
+
 
    }
 }

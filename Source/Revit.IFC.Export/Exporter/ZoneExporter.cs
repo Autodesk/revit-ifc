@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Analysis;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.DB.Mechanical;
 using Revit.IFC.Common.Utility;
@@ -42,7 +43,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="element">The element.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
-      public static void ExportZone(ExporterIFC exporterIFC, Zone element,
+      public static void ExportZone(ExporterIFC exporterIFC, GenericZone element,
           ProductWrapper productWrapper)
       {
          if (element == null)
@@ -55,13 +56,9 @@ namespace Revit.IFC.Export.Exporter
 
          HashSet<IFCAnyHandle> spaceHnds = new HashSet<IFCAnyHandle>();
 
-         SpaceSet spaces = element.Spaces;
-         foreach (Space space in spaces)
+         foreach (ElementId spaceId in element.GetSpaceIds())
          {
-            if (space == null)
-               continue;
-
-            IFCAnyHandle spaceHnd = ExporterCacheManager.SpaceInfoCache.FindSpaceHandle(space.Id);
+            IFCAnyHandle spaceHnd = ExporterCacheManager.SpaceInfoCache.FindSpaceHandle(spaceId);
             if (!IFCAnyHandleUtil.IsNullOrHasNoValue(spaceHnd))
                spaceHnds.Add(spaceHnd);
          }
@@ -77,7 +74,7 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
             string name = NamingUtil.GetNameOverride(element, NamingUtil.GetIFCName(element));
             string description = NamingUtil.GetDescriptionOverride(element, null);
-            string objectType = NamingUtil.GetObjectTypeOverride(element, NamingUtil.GetFamilyAndTypeName(element));
+            string objectType = NamingUtil.GetDefaultObjectType(element);
             string longName = NamingUtil.GetLongNameOverride(element, null);
 
             IFCAnyHandle zoneHnd = IFCInstanceExporter.CreateZone(file, guid, ownerHistory, name, description, objectType, longName);

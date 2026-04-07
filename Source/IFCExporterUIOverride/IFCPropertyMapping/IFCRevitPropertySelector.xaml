@@ -1,0 +1,100 @@
+﻿<auiw:ChildWindow x:Class="BIM.IFC.Export.UI.IFCRevitPropertySelector"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:auiw="clr-namespace:Autodesk.UI.Windows;assembly=Autodesk.UI.Windows"
+        xmlns:p="clr-namespace:BIM.IFC.Export.UI.Properties"
+        xmlns:local="clr-namespace:BIM.IFC.Export.UI"
+        xmlns:weave="clr-namespace:Autodesk.Weave.Wpf.ElementProperties;assembly=Autodesk.Weave.Wpf"
+        xmlns:weave_d="clr-namespace:Autodesk.Weave.Wpf.ElementProperties.DesignTime;assembly=Autodesk.Weave.Wpf"
+        xmlns:ctrl="clr-namespace:Autodesk.Weave.Wpf.Controls;assembly=Autodesk.Weave.Wpf"
+        weave:FrameworkElementProperties.ApplyWeaveStyles="True"
+        weave_d:FrameworkElementProperties.DesignTimeWeaveTheme="WeaveLightGray"
+        Height="500" Width="350" MinHeight="200" MinWidth="200"
+        Title="{x:Static p:Resources.Properties}" Closing="PropertySelectorWindow_Closing">
+   <Grid Margin="0,10,0,0">
+      <Grid.RowDefinitions>
+         <RowDefinition Height="Auto"/>
+         <RowDefinition Height="Auto"/>
+         <RowDefinition Height="Auto"/>
+         <RowDefinition Height="*"/>
+         <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+         <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <Grid.Resources>
+         <local:ListBoxIndexConverter x:Key="ListBoxIndexConverter"/>
+      </Grid.Resources>
+
+      <TextBlock Text="{x:Static p:Resources.SelectCategory}" 
+                 Grid.Row="0"
+                 weave:TextBlockProperties.Variant="BodyBold"/>
+
+      <Grid Grid.Row="1">
+         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+         </Grid.ColumnDefinitions>
+         <TextBlock Text="{x:Static p:Resources.Category}" 
+                    weave:TextBlockProperties.Variant="CaptionRegular"  
+                    VerticalAlignment="Center"/>
+         <ComboBox x:Name="comboBox_Category"
+                   Grid.Column="1"
+                   HorizontalAlignment="Stretch"
+                   SelectedValue="{Binding Path=SelectedCategory}"
+                   SelectionChanged="comboBox_Category_SelectionChanged"/>
+      </Grid>
+       
+       <StackPanel Grid.Row="2" Orientation="Horizontal">
+         <ctrl:IconButton x:Name="button_PropertyFilter" IconName="FilterS" />
+         <StackPanel>
+            <ComboBox x:Name="comboBox_PropertyFilter" weave:ComboBoxProperties.Variant="Line"
+                      ItemsSource="{Binding ParametersFilter, Mode=TwoWay}" DisplayMemberPath="Name"
+                      SelectionChanged ="comboBox_PropertyFilter_SelectionChanged"/>
+         </StackPanel>
+      </StackPanel>
+       
+      <ListBox x:Name="listBox_Parameters"
+               Grid.Row="3"
+               ItemsSource="{Binding SelectedItem.Items, ElementName=comboBox_PropertyFilter}"
+               MinHeight="100"
+               VirtualizingStackPanel.IsVirtualizing="False">
+         <ListBox.ItemTemplate>
+            <DataTemplate>
+               <RadioButton x:Name="radioButton_Parameter"
+                            GroupName="radioList"
+                            IsChecked="{Binding IsChecked}"
+                            Checked="radioButton_Parameter_Checked"
+                            AutomationProperties.AutomationId="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, 
+                                   StringFormat=radioButton_Parameter_{0}, 
+                                   Converter={StaticResource ListBoxIndexConverter} }">
+                  <TextBlock Text="{Binding Name}" />
+               </RadioButton>
+            </DataTemplate>
+         </ListBox.ItemTemplate>
+      </ListBox>
+
+      <StackPanel 
+         Orientation="Horizontal" 
+         Grid.Row="4" HorizontalAlignment="Right" 
+         weave:PanelProperties.Spacing="S">
+         <Button x:Name="button_Ok" 
+                 Content="{x:Static p:Resources.OK}" 
+                 HorizontalAlignment="Left" 
+                 weave:ButtonProperties.Variant="Solid" 
+                 IsDefault="True"
+                 Click="button_Ok_Click"/>
+         <Button x:Name="button_Cancel" 
+                 Content="{x:Static p:Resources.Cancel}" 
+                 HorizontalAlignment="Left" 
+                 weave:ButtonProperties.Variant="Outline"
+                 IsCancel="True"
+                 Click="button_Cancel_Click" Margin="0,0,7,0"/>
+      </StackPanel>
+
+
+   </Grid>
+</auiw:ChildWindow>

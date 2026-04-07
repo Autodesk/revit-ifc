@@ -1,25 +1,32 @@
 ﻿using Autodesk.Revit.DB;
-using System;
-using System.Collections.Generic;
+using Autodesk.Windows;
+using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Exporter.PropertySet;
-using System.Linq;
-using static BIM.IFC.Export.UI.IFCMaterialPropertyUtil;
-using System.Reflection;
+using Revit.IFC.Export.Utility;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Runtime.CompilerServices;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
+using UIFramework;
 
 namespace BIM.IFC.Export.UI
 {
    /// <summary>
    /// This class is used for extraction, holding mapping information and writing it to a mapping template.
    /// </summary>
-   public class IFCPropertyMappingModel
+   public class IFCPropertyMappingModel : INotifyPropertyChanged
    {
       /// <summary>
       /// Represents the types of property mapping.
       /// IfcToRevit - IFC property info is readonly and unique, Revit property info is arbitrary (e.g. IFCCommonPropertySets).
-      /// RevitToIfc - Revit property info is readonly and unique, Revit property info is arbitrary (e.g. IFCCommonPropertySets).
+      /// RevitToIfc - Revit property info is readonly and unique, IFC propertyproperty info is arbitrary (e.g. RevitPropertySets).
       /// </summary>
       public enum MappingType
       {
@@ -28,240 +35,142 @@ namespace BIM.IFC.Export.UI
       }
 
       /// <summary>
-      /// The model data. 
+      /// The IFC Common property set cache.
       /// </summary>
-      public Dictionary<IFCPropertySetups.PropertySetup, Dictionary<string, PSetMappingInfo>> SetupInfos { get; set; } = new();
+      private static Dictionary<IFCVersion, IList<IList<PropertySetDescription>>> IfcCommonPropertySetCache { get; set; } = new();
+
+      /// <summary>
+      /// The Base Quantities cache.
+      /// </summary>
+      private static Dictionary<IFCVersion, IList<IList<QuantityDescription>>> BaseQuantitiesCache { get; set; } = new();
 
       /// <summary>
       /// The built-in Revit parameters cache.
       /// </summary>
-      private static Dictionary<KeyValuePair<ForgeTypeId, string>, ForgeTypeId> AllBuiltInParamertersCache { get; set; }
+      private static SortedDictionary<string, List<(ElementId parameterId, (string parameterName, string dataTypeName))>> BuiltInParametersCache { get; set; }
+
+      /// <summary>
+      /// The all Revit parameters cache.
+      /// </summary>
+      private static SortedDictionary<string, List<(ElementId parameterId, (string parameterName, string dataTypeName))>> AllParametersCache { get; set; }
+
+      /// <summary>
+      /// The non built-in Revit parameters cache.
+      /// </summary>
+      private static SortedDictionary<string, List<(string, string)>> NonBuiltInParametersCache { get; set; }
+
+      /// <summary>
+      /// The built-in parameter tooltip cache.
+      /// </summary>
+      private static Dictionary<ElementId, string> ParameterTooltipsCache { get; set; }
 
       /// <summary>
       /// The hardcoded Property Setup to Mapping type matching
       /// </summary>
-      static readonly Dictionary<IFCPropertySetups.PropertySetup, MappingType> SetupMappingTypes = new()
+      static readonly Dictionary<PropertySetupType, MappingType> SetupMappingTypes = new()
       {
-         { IFCPropertySetups.PropertySetup.IFCCommonPropertySets, MappingType.IfcToRevit },
-         { IFCPropertySetups.PropertySetup.RevitPropertySets, MappingType.RevitToIfc },
-         { IFCPropertySetups.PropertySetup.BaseQuantities, MappingType.IfcToRevit },
-         { IFCPropertySetups.PropertySetup.MaterialPropertySets, MappingType.RevitToIfc },
-         { IFCPropertySetups.PropertySetup.Schedules, MappingType.RevitToIfc }
+         { PropertySetupType.IfcCommonPropertySets, MappingType.IfcToRevit },
+         { PropertySetupType.RevitElementParameters, MappingType.RevitToIfc },
+         { PropertySetupType.IfcBaseQuantities, MappingType.IfcToRevit },
+         { PropertySetupType.RevitMaterialParameters, MappingType.RevitToIfc },
+         { PropertySetupType.RevitSchedules, MappingType.RevitToIfc },
+         { PropertySetupType.UserDefinedPropertySets, MappingType.IfcToRevit }
       };
+
+      public event PropertyChangedEventHandler PropertyChanged;
+      protected void OnPropertyChanged([CallerMemberName] string name = null)
+      {
+         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+      }
 
       /// <summary>
       /// Get mapping type of a property setup.
       /// </summary>
-      public static MappingType GetMappingType(IFCPropertySetups.PropertySetup propertySetup)
+      public static MappingType GetMappingType(PropertySetupType propertySetup)
       {
-         if (!SetupMappingTypes.ContainsKey(propertySetup))
-         {
-            throw new ArgumentException("Unexpected property setup type.", "propertySetup");
-         }
-         return SetupMappingTypes[propertySetup];
+         if (SetupMappingTypes.ContainsKey(propertySetup))
+            return SetupMappingTypes[propertySetup];
+
+         return MappingType.IfcToRevit;
       }
 
-      /// <summary>
-      /// Initialize the property setup with default mappings and apply the template mapping to it.
-      /// </summary>
-      public void InitializeSetupIfNeeded(IFCPropertySetups.PropertySetup propertySetup, IFCVersion ifcVersion, IFCParameterTemplate parameterTemplate)
+      private static IList<IList<PropertySetDescription>> GetOrCreateCachedIfcCommonPropertySets(IFCVersion ifcVersion)
       {
-         if (SetupInfos.TryGetValue(propertySetup, out Dictionary<string, PSetMappingInfo> setupInfo) && setupInfo != null)
-            return;
+         if (IfcCommonPropertySetCache.TryGetValue(ifcVersion, out IList<IList<PropertySetDescription>> allPropertySets))
+            return allPropertySets;
 
-         Initialize(propertySetup, ifcVersion);
-         ApplyTemplate(propertySetup, parameterTemplate);
-      }
-
-      /// <summary>
-      /// Save the property mappings of a property setup to a template
-      /// </summary>
-      public bool WriteToTemplate(IFCPropertySetups.PropertySetup propertySetup, IFCParameterTemplate parameterTemplate)
-      {
-         if (parameterTemplate == null)
-            return false;
-
-         if (!SetupInfos.TryGetValue(propertySetup, out Dictionary<string, PSetMappingInfo> setupInfo) || setupInfo == null)
-            return false;
-
-         bool result = false;
-         PropertySetupType propertySetupType = IFCPropertySetups.ToPropertySetupType(propertySetup);
-         parameterTemplate.ClearPropertySets(propertySetupType);
-
-         foreach (PSetMappingInfo psetInfo in setupInfo.Values)
-         {
-            string psetName = psetInfo.Name;
-            if (string.IsNullOrEmpty(psetName))
-               continue;
-
-            List<PropertyMappingInfo> propertyInfos = psetInfo.PropertyInfos;
-            if (propertyInfos == null)
-               continue;
-
-            bool isExportingPset = psetInfo.ExportFlag;
-
-            List<IFCPropertyMappingInfo> modifiedPropertyMappings = new();
-            foreach (var propertyInfo in propertyInfos)
-            {
-               if (propertyInfo.IsDefault())
-                  continue;
-
-               modifiedPropertyMappings.Add(new IFCPropertyMappingInfo
-               {
-                  ExportFlag = propertyInfo.ExportFlag,
-                  IFCPropertyName = propertyInfo.IFCPropertyName,
-                  RevitPropertyId = propertyInfo.RevitPropertyId,
-                  RevitPropertyName = propertyInfo.RevitPropertyName
-               });
-            }
-
-            if (!isExportingPset || modifiedPropertyMappings.Count > 0)
-            {
-               parameterTemplate.AddPropertySet(propertySetupType, isExportingPset, psetName);
-
-               foreach (var propertyMapping in modifiedPropertyMappings)
-               {
-                  if (!IFCPropertyMappingInfo.IsValidMappingInfo(propertyMapping))
-                     continue;
-
-                  parameterTemplate.AddPropertyMappingInfo(propertySetupType, psetName, propertyMapping);
-               }
-               result = true;
-            }
-         }
-
-         return result;
-      }
-
-      /// <summary>
-      /// Get the property set mappings of a property setup.
-      /// </summary>
-      public List<PSetMappingInfo> GetPropertySetList(IFCPropertySetups.PropertySetup propertySetup)
-      {
-         if (!SetupInfos.TryGetValue(propertySetup, out Dictionary<string, PSetMappingInfo> setupInfo) || setupInfo == null)
-            return [];
-
-         return [.. setupInfo.Values];
-      }
-
-      /// <summary>
-      /// Whether the model contains the property set mapping info for a property setup.
-      /// </summary>
-      public bool ContainsPropertySet(IFCPropertySetups.PropertySetup propertySetup, string psetName)
-      {
-         if (!SetupInfos.TryGetValue(propertySetup, out Dictionary<string, PSetMappingInfo> setupInfo) || setupInfo == null)
-            return false;
-
-         if (!setupInfo.TryGetValue(psetName, out PSetMappingInfo modelPSetInfo) || modelPSetInfo == null)
-            return false;
-
-         return true;
-      }
-
-      /// <summary>
-      /// Whether the model contains the property set mapping info for a property setup.
-      /// </summary>
-      public List<PropertyMappingInfo> GetPropertyList(IFCPropertySetups.PropertySetup propertySetup, string psetName)
-      {
-         if (!SetupInfos.TryGetValue(propertySetup, out Dictionary<string, PSetMappingInfo> setupInfo) || setupInfo == null)
-            return [];
-
-         if (!setupInfo.TryGetValue(psetName, out PSetMappingInfo modelPSetInfo) || modelPSetInfo == null)
-            return [];
-
-         return modelPSetInfo.PropertyInfos;
-      }
-
-      private void Initialize(IFCPropertySetups.PropertySetup propertySetup, IFCVersion ifcVersion)
-      {
-         if (!SetupInfos.TryGetValue(propertySetup, out Dictionary<string, PSetMappingInfo> setupInfo) || setupInfo == null)
-         {
-            setupInfo = new();
-            SetupInfos[propertySetup] = setupInfo;
-         }
-
-         switch (propertySetup)
-         {
-            case IFCPropertySetups.PropertySetup.IFCCommonPropertySets:
-               {
-                  InitializeIFCCommonPropertySets(setupInfo, ifcVersion);
-                  break;
-               }
-            case IFCPropertySetups.PropertySetup.RevitPropertySets:
-               {
-                  InitializeRevitPropertySetsList(setupInfo);
-                  break;
-               }
-            case IFCPropertySetups.PropertySetup.BaseQuantities:
-               {
-                  InitializeBaseQuantities(setupInfo, ifcVersion);
-                  break;
-               }
-            case IFCPropertySetups.PropertySetup.MaterialPropertySets:
-               {
-                  InitializeMaterialPropertySets(setupInfo);
-                  break;
-               }
-            case IFCPropertySetups.PropertySetup.Schedules:
-               {
-                  InitializeSchedules(setupInfo);
-                  break;
-               }
-            default:
-               break;
-
-         }
-      }
-
-      private void ApplyTemplate(IFCPropertySetups.PropertySetup propertySetup, IFCParameterTemplate parameterTemplate)
-      {
-         if (!SetupInfos.TryGetValue(propertySetup, out Dictionary<string, PSetMappingInfo> setupInfo) || setupInfo == null)
-            return;
-
-         PropertySetupType propertySetupType = IFCPropertySetups.ToPropertySetupType(propertySetup);
-
-         IList<string> templatePSetNames = parameterTemplate.GetPropertySetNames(propertySetupType, PropertySelectionType.All);
-
-         foreach (string templatePSetName in templatePSetNames)
-         {
-            if (!setupInfo.TryGetValue(templatePSetName, out PSetMappingInfo modelPSetInfo) || modelPSetInfo == null)
-               continue;
-
-            modelPSetInfo.ExportFlag = parameterTemplate.IsExportingPropertySet(propertySetupType, templatePSetName);
-
-            IList<IFCPropertyMappingInfo> templatePropertyInfos =
-               parameterTemplate.GetPropertyMappingInfos(propertySetupType, templatePSetName, PropertySelectionType.All);
-
-            foreach (IFCPropertyMappingInfo info in templatePropertyInfos)
-            {
-               bool exportFlag = info.ExportFlag;
-               string ifcPropertyName = info.IFCPropertyName;
-               string revitPropertyName = info.RevitPropertyName;
-               ElementId revitPropertyId = info.RevitPropertyId;
-
-               if (!modelPSetInfo.TryGetProperty(ifcPropertyName, revitPropertyId, revitPropertyName, out PropertyMappingInfo modelPropertyInfo) || modelPropertyInfo == null)
-                  continue;
-
-               modelPropertyInfo.OverwriteMappingValues(exportFlag, ifcPropertyName, revitPropertyId, revitPropertyName);
-            }
-         }
-      }
-
-      private void InitializeIFCCommonPropertySets(Dictionary<string, PSetMappingInfo> setupInfo, IFCVersion ifcVersion)
-      {
-         if (setupInfo == null)
-            return;
-
-         setupInfo.Clear();
-         List<IList<PropertySetDescription>> allPropertySets = new();
+         allPropertySets = new List<IList<PropertySetDescription>>();
          ExporterInitializer.PopulateIFCCommonPropertySets(ifcVersion, allPropertySets);
+         IfcCommonPropertySetCache[ifcVersion] = allPropertySets;
 
+         return allPropertySets;
+      }
+
+      public static PropertySetDescription GetCachedIfcCommonPSetDescription(string psetName, IFCVersion ifcVersion)
+      {
+         IList<IList<PropertySetDescription>> allPropertySets = GetOrCreateCachedIfcCommonPropertySets(ifcVersion);
+
+         if (allPropertySets == null)
+            return null;
+
+         foreach (var psetList in allPropertySets)
+         {
+            foreach (var psetDescription in psetList)
+            {
+               if (psetDescription.Name == psetName)
+                  return psetDescription;
+            }
+         }
+
+         return null;
+      }
+
+      private static IList<IList<QuantityDescription>> GetOrCreateCachedBaseQuantities(IFCVersion ifcVersion)
+      {
+         if (BaseQuantitiesCache.TryGetValue(ifcVersion, out IList<IList<QuantityDescription>> allQuantitySets))
+            return allQuantitySets;
+
+         allQuantitySets = new List<IList<QuantityDescription>>();
+         ExporterInitializer.PopulateBaseQuantitiesPropertySets(ifcVersion, allQuantitySets);
+         BaseQuantitiesCache[ifcVersion] = allQuantitySets;
+
+         return allQuantitySets;
+      }
+
+      public static QuantityDescription GetCachedBaseQuantityDescription(string psetName, IFCVersion ifcVersion)
+      {
+         IList<IList<QuantityDescription>> allQuantitySets = GetOrCreateCachedBaseQuantities(ifcVersion);
+
+         if (allQuantitySets == null)
+            return null;
+
+         foreach (var quantitiesList in allQuantitySets)
+         {
+            foreach (var quantitiyDescription in quantitiesList)
+            {
+               if (quantitiyDescription.Name == psetName)
+                  return quantitiyDescription;
+            }
+         }
+
+         return null;
+      }
+
+      public SetupMappingInfo InitializeIFCCommonPropertySets(IFCVersion ifcVersion)
+      {
+         PropertySetupType propertySetup = PropertySetupType.IfcCommonPropertySets;
+
+         SetupMappingInfo setupInfo = new()
+         {
+            SetupName = GetPropertySetupName(propertySetup),
+            PropertySetup = propertySetup,
+            IfcVersion = ifcVersion
+         };
+
+         IList<IList<PropertySetDescription>> allPropertySets = GetOrCreateCachedIfcCommonPropertySets(ifcVersion);
          if ((allPropertySets?.Count ?? 0) == 0 || allPropertySets[0] == null)
-            return;
+            return setupInfo;
 
-         IFCPropertySetups.PropertySetup propertySetup = IFCPropertySetups.PropertySetup.IFCCommonPropertySets;
-
-         // TODO: what about [ind] > 0 ?
          foreach (var setDescription in allPropertySets[0])
          {
             if ((setDescription?.Entries?.Count ?? 0) == 0)
@@ -271,81 +180,54 @@ namespace BIM.IFC.Export.UI
             List<PropertyMappingInfo> propertyInfos = new();
             foreach (var entry in setDescription.Entries)
             {
-               propertyInfos.Add(new PropertyMappingInfo(entry.PropertyName, string.Empty, ElementId.InvalidElementId, propertySetup));
+               propertyInfos.Add(new PropertyMappingInfo(entry.PropertyName, string.Empty, ElementId.InvalidElementId, propertySetup,
+                  entry.PropertyType.ToString()));
             }
 
-            setupInfo.TryAdd(setName, new PSetMappingInfo(setName, propertySetup, propertyInfos));
+            setupInfo.PSetMappingInfos.Add(new PSetMappingInfo(setName, propertySetup, propertyInfos, setupInfo));
          }
+         return setupInfo;
       }
 
-      private void InitializeRevitPropertySetsList(Dictionary<string, PSetMappingInfo> setupInfo)
+      public SetupMappingInfo InitializeRevitPropertySetsList()
       {
-         if (setupInfo == null)
-            return;
+         PropertySetupType propertySetup = PropertySetupType.RevitElementParameters;
 
-         setupInfo.Clear();
-
-         Dictionary<KeyValuePair<ForgeTypeId, string>, ForgeTypeId> allParamDict = GetAllBuiltInParameters()?.Concat(GetAllNonBuiltInParameters())?.ToDictionary();
-         if (allParamDict == null)
-            return;
-
-         Dictionary<KeyValuePair<string, ForgeTypeId>, List<KeyValuePair<ForgeTypeId, string>>> GroupedParameters = new();
-
-         foreach (var paramKeyValue in allParamDict)
+         SetupMappingInfo setupInfo = new()
          {
-            ForgeTypeId groupTypeId = paramKeyValue.Value;
-            if (groupTypeId == null || groupTypeId.Empty())
-               continue;
+            SetupName = GetPropertySetupName(propertySetup),
+            PropertySetup = propertySetup,
+         };
 
-            string groupName = LabelUtils.GetLabelForGroup(groupTypeId);
-            if (string.IsNullOrEmpty(groupName))
-               continue;
+         SortedDictionary<string, List<(ElementId parameterId, (string parameterName, string dataType))>> allParameters = GetGroupedRevitParameters();
 
-            KeyValuePair<string, ForgeTypeId> groupKeyValue = new(groupName, groupTypeId);
-
-            if (GroupedParameters.ContainsKey(groupKeyValue))
-               GroupedParameters[groupKeyValue].Add(paramKeyValue.Key);
-            else
-            {
-               List<KeyValuePair<ForgeTypeId, string>> paramTypeIds = new() { paramKeyValue.Key };
-               GroupedParameters.Add(groupKeyValue, paramTypeIds);
-            }
+         foreach (var group in allParameters)
+         {
+            List<PropertyMappingInfo> propertyInfos = group.Value
+               .Select(param => new PropertyMappingInfo(string.Empty, param.Item2.parameterName, param.parameterId, propertySetup,
+               param.Item2.dataType))
+               .ToList();
+            setupInfo.PSetMappingInfos.Add(new PSetMappingInfo(group.Key, propertySetup, propertyInfos, setupInfo));
          }
 
-         IFCPropertySetups.PropertySetup propertySetup = IFCPropertySetups.PropertySetup.RevitPropertySets;
-
-         foreach (var groupedParameter in GroupedParameters)
-         {
-            KeyValuePair<string, ForgeTypeId> paramGroup = groupedParameter.Key;
-            if ((groupedParameter.Value?.Count ?? 0) == 0)
-               continue;
-
-            string groupName = paramGroup.Key;
-            List<PropertyMappingInfo> propertyInfos = new();
-            foreach (var param in groupedParameter.Value)
-            {
-               // TODO: Write Revit parameter ID
-               propertyInfos.Add(new PropertyMappingInfo(string.Empty, param.Value, ElementId.InvalidElementId, propertySetup));
-            }
-            setupInfo.TryAdd(groupName, new PSetMappingInfo(groupName, propertySetup, propertyInfos));
-         }
+         return setupInfo;
       }
 
-      private void InitializeBaseQuantities(Dictionary<string, PSetMappingInfo> setupInfo, IFCVersion ifcVersion)
+      public SetupMappingInfo InitializeBaseQuantities(IFCVersion ifcVersion)
       {
-         if (setupInfo == null)
-            return;
+         PropertySetupType propertySetup = PropertySetupType.IfcBaseQuantities;
 
-         setupInfo.Clear();
-         List<IList<QuantityDescription>> allQuantitySets = new();
-         ExporterInitializer.PopulateBaseQuantitiesPropertySets(ifcVersion, allQuantitySets);
+         SetupMappingInfo setupInfo = new()
+         {
+            SetupName = GetPropertySetupName(propertySetup),
+            PropertySetup = propertySetup,
+            IfcVersion = ifcVersion
+         };
 
+         IList<IList<QuantityDescription>> allQuantitySets = GetOrCreateCachedBaseQuantities(ifcVersion);
          if ((allQuantitySets?.Count ?? 0) == 0 || allQuantitySets[0] == null)
-            return;
+            return setupInfo;
 
-         IFCPropertySetups.PropertySetup propertySetup = IFCPropertySetups.PropertySetup.BaseQuantities;
-
-         // TODO: what about [ind] > 0 ?
          foreach (var setDescription in allQuantitySets[0])
          {
             if ((setDescription?.Entries?.Count ?? 0) == 0)
@@ -355,129 +237,291 @@ namespace BIM.IFC.Export.UI
             List<PropertyMappingInfo> propertyInfos = new();
             foreach (var entry in setDescription.Entries)
             {
-               propertyInfos.Add(new PropertyMappingInfo(entry.PropertyName, string.Empty, ElementId.InvalidElementId, propertySetup));
+               propertyInfos.Add(new PropertyMappingInfo(entry.PropertyName, string.Empty, ElementId.InvalidElementId, propertySetup,
+                  entry.QuantityType.ToString()));
             }
-            setupInfo.TryAdd(setName, new PSetMappingInfo(setName, propertySetup, propertyInfos));
+            setupInfo.PSetMappingInfos.Add(new PSetMappingInfo(setName, propertySetup, propertyInfos, setupInfo));
          }
+
+         return setupInfo;
       }
 
-      private void InitializeMaterialPropertySets(Dictionary<string, PSetMappingInfo> setupInfo)
+      public SetupMappingInfo InitializeMaterialPropertySets()
       {
-         if (setupInfo == null)
-            return;
+         PropertySetupType propertySetup = PropertySetupType.RevitMaterialParameters;
 
-         setupInfo.Clear();
-
-         IFCPropertySetups.PropertySetup propertySetup = IFCPropertySetups.PropertySetup.MaterialPropertySets;
-
-         List<Element> containedElements = new List<Element>();
-         FilteredElementCollector elementsInDocumentCollector = new FilteredElementCollector(IFCCommandOverrideApplication.TheDocument).WhereElementIsNotElementType();
-         foreach (Element containedElement in elementsInDocumentCollector)
+         SetupMappingInfo setupInfo = new()
          {
-            if (containedElement.Category != null && containedElement.Category.HasMaterialQuantities)
-               containedElements.Add(containedElement);
-         }
+            SetupName = GetPropertySetupName(propertySetup),
+            PropertySetup = propertySetup,
+         };
 
-         // Collection of parameters without duplicates
-         HashSet<KeyValuePair<ForgeTypeId, string>> identityParams = new();
-         HashSet<KeyValuePair<ForgeTypeId, string>> structParams = new();
-         HashSet<KeyValuePair<ForgeTypeId, string>> thermalParams = new();
+         Dictionary<string, List<(BuiltInParameter parameterId, string parameterName, string dataType)>> allParameters =
+            MaterialPropertiesUtil.GetGroupedMaterialParameters(IFCCommandOverrideApplication.TheDocument);
 
-         foreach (Element containedElement in containedElements)
+         if (allParameters == null)
+            return setupInfo;
+
+         foreach (var group in allParameters)
          {
-            ICollection<ElementId> matIds = containedElement.GetMaterialIds(false);
-            if (matIds == null || matIds.Count == 0)
-               continue;
-
-            foreach (ElementId matId in matIds)
+            Dictionary<BuiltInParameter, (string parameterName, string dataType)> sortedParameters = new();
+            foreach ((BuiltInParameter parameterId, string parameterName, string dataType) parameterInfo in group.Value)
             {
-               if (matId == ElementId.InvalidElementId)
-                  continue;
-
-               Material material = IFCCommandOverrideApplication.TheDocument.GetElement(matId) as Material;
-               if (material == null)
-                  continue;
-
-               CollectIdentityParameters(material, identityParams);
-               CollectStructuralParameters(material, structParams);
-               CollectThermalParameters(material, thermalParams);
+               if (sortedParameters.TryGetValue(parameterInfo.parameterId, out var parameterValue))
+               {
+                  // If there are duplicate built-in parameters, keep the one with data type.
+                  if (string.IsNullOrEmpty(parameterValue.dataType) && !string.IsNullOrEmpty(parameterInfo.dataType))
+                     sortedParameters[parameterInfo.parameterId] = (parameterInfo.parameterName, parameterInfo.dataType);
+               }
+               else
+               {
+                  sortedParameters[parameterInfo.parameterId] = (parameterInfo.parameterName, parameterInfo.dataType);
+               }
             }
+
+            List<PropertyMappingInfo> propertyInfos = sortedParameters
+               .Select(param => new PropertyMappingInfo(string.Empty, param.Value.parameterName, new ElementId(param.Key), propertySetup,
+               param.Value.dataType))
+               .ToList();
+            setupInfo.PSetMappingInfos.Add(new PSetMappingInfo(group.Key, propertySetup, propertyInfos, setupInfo));
          }
 
-         // Add group of Identity material properties.
-         List<PropertyMappingInfo> propertyInfos = GetMaterialPropertyMappingInfo(identityParams);
-         string setName = MaterialParamTypesEnum.Identity.ToString();
-         setupInfo.TryAdd(setName, new PSetMappingInfo(setName, propertySetup, propertyInfos));
-
-         // Add group of Physical (Structural) material properties.
-         propertyInfos = GetMaterialPropertyMappingInfo(structParams);
-         setName = MaterialParamTypesEnum.Physical.ToString();
-         setupInfo.TryAdd(setName, new PSetMappingInfo(setName, propertySetup, propertyInfos));
-
-         // Add group of Thermal material properties.
-         propertyInfos = GetMaterialPropertyMappingInfo(thermalParams);
-         setName = MaterialParamTypesEnum.Thermal.ToString();
-         setupInfo.TryAdd(setName, new PSetMappingInfo(setName, propertySetup, propertyInfos));
+         return setupInfo;
       }
 
-      private void InitializeSchedules(Dictionary<string, PSetMappingInfo> setupInfo)
+      public SetupMappingInfo InitializeSchedules()
       {
-         if (setupInfo == null)
-            return;
-
-         setupInfo.Clear();
-
-         List<IList<PropertySetDescription>> allSchedules = new();
-         ExporterInitializer.PopulateCustomPropertySets(IFCCommandOverrideApplication.TheDocument, allSchedules);
-
-         if ((allSchedules?.Count ?? 0) == 0 || allSchedules[0] == null)
-            return;
-
-         IFCPropertySetups.PropertySetup propertySetup = IFCPropertySetups.PropertySetup.Schedules;
-
-         foreach (var setDescription in allSchedules[0])
+         Document document = IFCCommandOverrideApplication.TheDocument;
+         PropertySetupType propertySetup = PropertySetupType.RevitSchedules;
+         SetupMappingInfo setupInfo = new()
          {
-            if ((setDescription?.Entries?.Count ?? 0) == 0)
+            SetupName = GetPropertySetupName(propertySetup),
+            PropertySetup = propertySetup,
+         };
+
+         List<(string, ScheduleDefinition)> collectedSchedules = ExporterUtil.CollectSchedules(IFCCommandOverrideApplication.TheDocument);
+         if ((collectedSchedules?.Count ?? 0) == 0)
+            return setupInfo;
+
+         foreach ((string scheduleName, ScheduleDefinition scheduleDefinition) in collectedSchedules)
+         {
+            if (string.IsNullOrWhiteSpace(scheduleName) || scheduleDefinition == null)
                continue;
 
-            string psetName = setDescription.Name;
+            int fieldCount = scheduleDefinition.GetFieldCount();
+            if (fieldCount == 0)
+               continue;
+
+            List<PropertyMappingInfo> propertyInfos = [];
+            HashSet<ElementId> processedScheduleIds = new();
+
+            for (int ii = 0; ii < fieldCount; ii++)
+            {
+               ScheduleField field = scheduleDefinition.GetField(ii);
+               if (!ExporterInitializer.IsSupportedScheduleField(field))
+                  continue;
+
+               string propertyName = field.ColumnHeading;
+               if (string.IsNullOrEmpty(propertyName))
+                  continue;
+
+               string typeString = string.Empty;
+               ElementId parameterId = field.ParameterId;
+
+               switch (field.FieldType)
+               {
+                  case ScheduleFieldType.CombinedParameter:
+                     {
+                        typeString = "Text";
+                        break;
+                     }
+                  default:
+                     {
+                        if (parameterId == ElementId.InvalidElementId)
+                           continue;
+
+                        if (processedScheduleIds.Contains(parameterId))
+                           continue;
+
+                        InternalDefinition paramDefinition = null;
+                        if (ParameterUtils.IsBuiltInParameter(parameterId))
+                        {
+                           ForgeTypeId paramTypeId = ParameterUtils.GetParameterTypeId((BuiltInParameter)parameterId.Value);
+                           if (paramTypeId?.Empty() ?? true)
+                              continue;
+
+                           paramDefinition = ParameterUtils.GetDefinition(paramTypeId);
+
+                        }
+                        else
+                        {
+                           Element element = document.GetElement(new ElementId(parameterId.Value));
+                           if (element is not ParameterElement paramElement)
+                              continue;
+
+                           paramDefinition = paramElement?.GetDefinition();
+                        }
+
+                        ForgeTypeId dataTypeId = paramDefinition?.GetDataType();
+                        if ((dataTypeId?.Empty() ?? true) == false)
+                           typeString = LabelUtils.GetLabelForSpec(dataTypeId);
+
+                        processedScheduleIds.Add(parameterId);
+                        break;
+                     }
+               }
+
+               propertyInfos.Add(new PropertyMappingInfo(string.Empty, propertyName, parameterId,
+                  propertySetup, typeString));
+            }
+
+            if (propertyInfos.Count > 0)
+               setupInfo.PSetMappingInfos.Add(new PSetMappingInfo(scheduleName, propertySetup, propertyInfos, setupInfo));
+         }
+         
+         return setupInfo;
+      }
+
+      public SetupMappingInfo InitializeUserDefinedPropertySets()
+      {
+         PropertySetupType propertySetup = PropertySetupType.UserDefinedPropertySets;
+
+         SetupMappingInfo setupInfo = new()
+         {
+            SetupName = GetPropertySetupName(propertySetup),
+            PropertySetup = propertySetup,
+         };
+
+         Document document = IFCCommandOverrideApplication.TheDocument;
+
+         IList<string> propertySetNames = IFCUserDefinedPropertySet.ListPropertySetNames(document);
+         if ((propertySetNames?.Count ?? 0) == 0)
+            return setupInfo;
+
+         foreach (var psetName in propertySetNames)
+         {
+            IFCUserDefinedPropertySet userDefinedPSet = IFCUserDefinedPropertySet.FindPropertySetByName(document, psetName);
+            if (userDefinedPSet == null)
+               continue;
+
+            IList<IFCUserDefinedProperty> properties = userDefinedPSet.GetProperties();
+            if ((properties?.Count ?? 0) == 0)
+               continue;
+
             List<PropertyMappingInfo> propertyInfos = new();
-            foreach (var entry in setDescription.Entries)
+
+            foreach (var property in properties)
             {
-               propertyInfos.Add(new PropertyMappingInfo(string.Empty, entry.PropertyName, ElementId.InvalidElementId, propertySetup));
+               if (property == null)
+                  continue;
+
+               string propertyName = property.IFCPropertyName;
+               if (string.IsNullOrEmpty(propertyName))
+                  continue;
+
+               string revitPropertyName = property.RevitPropertyName ?? string.Empty;
+               ElementId revitPropertyId = property.RevitPropertyId ?? ElementId.InvalidElementId;
+
+               propertyInfos.Add(new PropertyMappingInfo(propertyName, revitPropertyName, revitPropertyId, propertySetup, property.DataType));
             }
-            setupInfo.TryAdd(psetName, new PSetMappingInfo(psetName, propertySetup, propertyInfos));
+
+            setupInfo.PSetMappingInfos.Add(new PSetMappingInfo(psetName, propertySetup, propertyInfos, setupInfo));
          }
+
+         return setupInfo;
       }
 
-      private static Dictionary<KeyValuePair<ForgeTypeId, string>, ForgeTypeId> GetAllBuiltInParameters()
+
+      public static SortedDictionary<string, List<(ElementId parameterId, (string parameterName, string dataTypeName))>> GetGroupedRevitParameters()
       {
-         if (AllBuiltInParamertersCache == null)
+         if (AllParametersCache != null)
+            return AllParametersCache;
+
+         AllParametersCache = GetBuiltInParameters();
+         SortedDictionary<string, List<(string parameterName, string dataTypeName)>> nonBuiltInParameters = GetNonBuiltInParameters();
+
+         foreach (var group in nonBuiltInParameters)
          {
-            AllBuiltInParamertersCache = new Dictionary<KeyValuePair<ForgeTypeId, string>, ForgeTypeId>();
-
-            foreach (ForgeTypeId paramTypeId in ParameterUtils.GetAllBuiltInParameters())
+            string groupName = group.Key;
+            var parametersToAdd = group.Value.Select(x => (ElementId.InvalidElementId, x)).ToList();
+            if (AllParametersCache.ContainsKey(groupName))
             {
-               if (paramTypeId == null || paramTypeId.Empty())
-                  continue;
-
-               ForgeTypeId groupTypeId = ParameterUtils.GetBuiltInParameterGroupTypeId(paramTypeId);
-               if (groupTypeId == null || groupTypeId.Empty())
-                  continue;
-
-               string paramName = LabelUtils.GetLabelForBuiltInParameter(paramTypeId);
-               if (string.IsNullOrEmpty(paramName))
-                  continue;
-
-               AllBuiltInParamertersCache.Add(new KeyValuePair<ForgeTypeId, string>(paramTypeId, paramName), groupTypeId);
+               AllParametersCache[groupName] = AllParametersCache[groupName].Union(parametersToAdd).ToList();
+            }
+            else
+            {
+               AllParametersCache.Add(groupName, parametersToAdd);
             }
          }
-         return AllBuiltInParamertersCache;
+
+         // Sort parameter list
+         foreach (var group in AllParametersCache)
+         {
+            group.Value.Sort((a, b) =>
+            {
+               int namesCmp = string.Compare(a.Item2.parameterName, b.Item2.parameterName, false);
+               return namesCmp != 0 ? namesCmp : a.parameterId.Value.CompareTo(b.parameterId.Value);
+            });
+         }
+
+         return AllParametersCache;
       }
 
-      private static Dictionary<KeyValuePair<ForgeTypeId, string>, ForgeTypeId> GetAllNonBuiltInParameters()
+      public static SortedDictionary<string, List<(ElementId parameterId, (string parameterName, string dataTypeName))>> GetBuiltInParameters()
       {
-         Dictionary<KeyValuePair<ForgeTypeId, string>, ForgeTypeId> paramDict = new Dictionary<KeyValuePair<ForgeTypeId, string>, ForgeTypeId>();
+         if (BuiltInParametersCache != null)
+            return BuiltInParametersCache;
+
+         BuiltInParametersCache = new();
+
+         foreach (ForgeTypeId paramTypeId in ParameterUtils.GetAllBuiltInParameters())
+         {
+            if (paramTypeId?.Empty() ?? true)
+               continue;
+
+            string paramName = LabelUtils.GetLabelForBuiltInParameter(paramTypeId);
+            if (string.IsNullOrEmpty(paramName))
+               continue;
+
+            ElementId paramId = new(ParameterUtils.GetBuiltInParameter(paramTypeId));
+            if (paramId.Equals(ElementId.InvalidElementId))
+               continue;
+
+            InternalDefinition paramDefinition = ParameterUtils.GetDefinition(paramTypeId);
+            if (paramDefinition == null)
+               continue;
+
+            string dataTypeName = string.Empty;
+            ForgeTypeId dataTypeId = paramDefinition.GetDataType();
+            if (!dataTypeId?.Empty() ?? false)
+               dataTypeName = LabelUtils.GetLabelForSpec(dataTypeId);
+
+            ForgeTypeId groupTypeId = ParameterUtils.GetBuiltInParameterGroupTypeId(paramTypeId);
+            if (groupTypeId == null)
+               continue;
+
+            string groupName = LabelUtils.GetLabelForGroup(groupTypeId);
+            if (string.IsNullOrEmpty(groupName))
+               continue;
+
+            BuiltInParametersCache.TryGetValue(groupName, out var parameterList);
+            if (parameterList == null)
+            {
+               parameterList = new();
+               BuiltInParametersCache.Add(groupName, parameterList);
+            }
+            parameterList.Add((paramId, (paramName, dataTypeName)));
+         }
+
+         return BuiltInParametersCache;
+      }
+
+      public static SortedDictionary<string, List<(string, string)>> GetNonBuiltInParameters()
+      {
+         if (NonBuiltInParametersCache != null)
+            return NonBuiltInParametersCache;
+
+         NonBuiltInParametersCache = new();
 
          FilteredElementCollector collectorParam = new FilteredElementCollector(IFCCommandOverrideApplication.TheDocument);
          FilteredElementCollector parameterFilter = collectorParam.OfClass(typeof(ParameterElement));
@@ -497,78 +541,290 @@ namespace BIM.IFC.Export.UI
             if (paramDefinition == null)
                continue;
 
-            ForgeTypeId groupTypeId = paramDefinition.GetGroupTypeId();
-            if (groupTypeId == null || groupTypeId.Empty())
+            string dataTypeName = string.Empty;
+            ForgeTypeId dataTypeId = paramDefinition.GetDataType();
+            if ((dataTypeId?.Empty() ?? true) == false)
+               dataTypeName = LabelUtils.GetLabelForSpec(dataTypeId);
+
+            ForgeTypeId groupTypeId = paramDefinition?.GetGroupTypeId();
+            if (groupTypeId?.Empty() ?? true)
                continue;
 
-            ForgeTypeId paramTypeId = paramDefinition.GetParameterTypeId();
-            if (paramTypeId == null || paramTypeId.Empty())
+            string groupName = LabelUtils.GetLabelForGroup(groupTypeId);
+            if (string.IsNullOrEmpty(groupName))
                continue;
 
             string paramName = paramDefinition.Name;
             if (string.IsNullOrEmpty(paramName))
                continue;
 
-            paramDict.Add(new KeyValuePair<ForgeTypeId, string>(paramTypeId, paramName), groupTypeId);
+            NonBuiltInParametersCache.TryGetValue(groupName, out var parameterList);
+            if (parameterList == null)
+            {
+               parameterList = new();
+               NonBuiltInParametersCache.Add(groupName, parameterList);
+            }
+            parameterList.Add((paramName, dataTypeName));
          }
-         return paramDict;
+
+         return NonBuiltInParametersCache;
       }
 
-      public void ResetAll(IFCPropertySetups.PropertySetup propertySetup, string name)
+      /// <summary>
+      /// Clear the cache of data that can be changed between dialog openings.
+      /// </summary>
+      public void ClearCache()
       {
-         if (!SetupInfos.TryGetValue(propertySetup, out Dictionary<string, PSetMappingInfo> setupInfo) || setupInfo == null || string.IsNullOrEmpty(name))
-            return;
+         NonBuiltInParametersCache = null;
+         AllParametersCache = null;
+         ParameterTooltipsCache = null;
+      }
 
-         if (!setupInfo.TryGetValue(name, out PSetMappingInfo psetMappingInfo))
-            return;
 
-         if (psetMappingInfo == null)
-            return;
+      /// <summary>
+      /// Gets tooltip text for a parameter by its ElementId.
+      /// </summary>
+      public static string GetParameterTooltip(ElementId paramId, string parameterName)
+      {
+         if (paramId == ElementId.InvalidElementId)
+            return parameterName;
 
-         List<PropertyMappingInfo> propertyMappingInfos = psetMappingInfo.PropertyInfos;
-         if (propertyMappingInfos == null)
-            return;
+         if (ParameterTooltipsCache == null)
+            ParameterTooltipsCache = new Dictionary<ElementId, string>();
 
-         psetMappingInfo.ExportFlag = true;
+         if (ParameterTooltipsCache.TryGetValue(paramId, out string cachedTooltip))
+            return cachedTooltip;
 
-         foreach (var mappingInfo in propertyMappingInfos)
-            mappingInfo.ResetToDefault();
+         string tooltipText = GetTooltipFromParameterId(paramId.Value);
+         if (string.IsNullOrEmpty(tooltipText))
+            tooltipText = parameterName;
+
+         ParameterTooltipsCache[paramId] = tooltipText;
+
+         return tooltipText;
+      }
+
+
+      public static string ExtractTextFromTooltip(RibbonToolTip tooltip)
+      {
+         if (tooltip?.Content == null)
+            return string.Empty;
+
+         if (tooltip.Content is TextBlock directTextBlock)
+         {
+            return directTextBlock.Text;
+         }
+
+         if (tooltip.Content is StackPanel stackPanel)
+         {
+            var textBlocks = FindTextBlocks(stackPanel);
+            return string.Join(" ", textBlocks.Select(tb => tb.Text).Where(text => !string.IsNullOrEmpty(text)));
+         }
+
+         return string.Empty;
+      }
+
+      /// <summary>
+      /// Helper method to recursively find TextBlocks in a DependencyObject.
+      /// </summary>
+      private static List<TextBlock> FindTextBlocks(DependencyObject parent)
+      {
+         List<TextBlock> textBlocks = new();
+
+         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+         {
+            var child = VisualTreeHelper.GetChild(parent, i);
+
+            if (child is TextBlock textBlock)
+            {
+               textBlocks.Add(textBlock);
+            }
+         }
+
+         return textBlocks;
+      }
+
+      /// <summary>
+      /// Gets tooltip text from a parameter id using Revit's built-in tooltip system.
+      /// </summary>
+      public static string GetTooltipFromParameterId(long paramId)
+      {
+         if (!Enum.IsDefined(typeof(BuiltInParameter), paramId))
+            return string.Empty;
+
+         string builtInName = Enum.GetName(typeof(BuiltInParameter), paramId) ?? string.Empty;
+         RibbonToolTip tooltip = RvtTooltip.LoadToolTip(builtInName);
+         return ExtractTextFromTooltip(tooltip);
+      }
+
+      private static string GetPropertySetupName(PropertySetupType propertySetup)
+      {
+         switch (propertySetup)
+         {
+            case PropertySetupType.IfcCommonPropertySets:
+               return Resources.IFCCommonPropertySets;
+            case PropertySetupType.RevitElementParameters:
+               return Resources.RevitPropertySets;
+            case PropertySetupType.IfcBaseQuantities:
+               return Resources.BaseQuantities;
+            case PropertySetupType.RevitMaterialParameters:
+               return Resources.MaterialPropertySets;
+            case PropertySetupType.RevitSchedules:
+               return Resources.Schedules;
+            case PropertySetupType.UserDefinedPropertySets:
+               return Resources.UserDefinedPropertySets;
+            default:
+               return string.Empty;
+         }
       }
    }
 
+   /// <summary>
+   /// Property Setup mapping information
+   /// </summary>
+   public class SetupMappingInfo : INotifyPropertyChanged
+   {
+      /// <summary>
+      /// The localized name of the property setup.
+      /// </summary>
+      public string SetupName { get; set; } = String.Empty;
+
+      /// <summary>
+      /// The property setup type.
+      /// </summary>
+      public PropertySetupType PropertySetup { get; set; } = new();
+      /// <summary>
+      /// The IFC version of the property setup.
+      /// </summary>
+      public IFCVersion IfcVersion { get; set; } = IFCVersion.Default;
+
+      /// <summary>
+      /// List of property set mapping information.
+      /// </summary>
+      public List<PSetMappingInfo> PSetMappingInfos { get; set; } = new();
+
+      /// <summary>
+      /// Flag to determine if a property setup is exported or not.
+      /// </summary>
+      private bool? m_ExportSetup = true;
+      public bool? ExportSetup
+      {
+         get { return m_ExportSetup; }
+         set
+         {
+            if (m_ExportSetup != value)
+            {
+               m_ExportSetup = value;
+               OnPropertyChanged();
+               if (value != null && !ParentUpdateInProgress)
+               {
+                  UpdateChildren(value.Value);
+               }
+            }
+         }
+      }
+
+      // Flags to avoid recursive calls when updating children and parent checkboxes
+      public static bool ChildrenUpdateInProgress { get; private set; } = false;
+      public static bool ParentUpdateInProgress { get; private set; } = false;
+
+      private void UpdateChildren(bool value)
+      {
+         ChildrenUpdateInProgress = true;
+         foreach (var child in PSetMappingInfos)
+         {
+            child.ExportFlag = value;
+         }
+         ChildrenUpdateInProgress = false;
+      }
+
+      public void UpdateParent()
+      {
+         if ((PSetMappingInfos?.Count ?? 0) == 0)
+            return;
+
+         ParentUpdateInProgress = true;
+         bool? newParentState = PSetMappingInfos[0].ExportFlag;
+         foreach (var psetInfo in PSetMappingInfos)
+         {
+            if (newParentState != psetInfo.ExportFlag)
+            {
+               newParentState = null;
+               break;
+            }
+         }
+         ExportSetup = newParentState;
+         ParentUpdateInProgress = false;
+      }
+
+      public ICollectionView PropertySetCollection => CollectionViewSource.GetDefaultView(PSetMappingInfos);
+
+      public event PropertyChangedEventHandler PropertyChanged;
+      protected void OnPropertyChanged([CallerMemberName] string name = null)
+      {
+         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+      }
+   }
 
    /// <summary>
    /// Property Set mapping information
    /// </summary>
    public class PSetMappingInfo : INotifyPropertyChanged
    {
-      public PSetMappingInfo(string name, IFCPropertySetups.PropertySetup propertySetup, List<PropertyMappingInfo> propertiesInfo)
-      {
-         Name = name;
-         Type = IFCPropertyMappingModel.GetMappingType(propertySetup);
-         PropertyInfos = propertiesInfo;
-      }
-
+      /// <summary>
+      /// The name of the property set.
+      /// </summary>
       public string Name { get; set; }
-
-      private bool m_ExportFlag = true;
 
       /// <summary>
       /// Flag to determine if a property set is exported or not.
       /// </summary>
+      private bool m_ExportFlag = true;
       public bool ExportFlag
       {
          get { return m_ExportFlag; }
          set
          {
-            m_ExportFlag = value;
-            OnPropertyChanged();
+            if (m_ExportFlag != value)
+            {
+               m_ExportFlag = value;
+               OnPropertyChanged();
+               if (!SetupMappingInfo.ChildrenUpdateInProgress)
+                  ParentSetup?.UpdateParent();
+            }
          }
       }
 
-      public List<string> ApplicableEntities { get; set; }
+      /// <summary>
+      /// List of property mapping information.
+      /// </summary>
       public List<PropertyMappingInfo> PropertyInfos { get; set; }
+
+      /// <summary>
+      /// The mapping type of the property set.
+      /// </summary>
       public IFCPropertyMappingModel.MappingType Type { get; set; }
+
+      /// <summary>
+      /// The parent property setup mapping information.
+      /// </summary>
+      public SetupMappingInfo ParentSetup { get; set; }
+
+      public string AutomationId { get; set; }
+
+      public PSetMappingInfo(string name, PropertySetupType propertySetup, List<PropertyMappingInfo> propertyInfos, SetupMappingInfo parentSetup)
+      {
+         Name = name;
+         Type = IFCPropertyMappingModel.GetMappingType(propertySetup);
+         PropertyInfos = propertyInfos;
+         ParentSetup = parentSetup;
+         AutomationId = "checkBox_PSet_" + (int)propertySetup + @"\" + name;
+      }
+
+      public bool TryGetProperty(IFCPropertyMappingInfo templatePropertyInfo, out PropertyMappingInfo modelPropertyInfo)
+      {
+         return TryGetProperty(templatePropertyInfo.IFCPropertyName, templatePropertyInfo.RevitPropertyId, templatePropertyInfo.RevitPropertyName, out modelPropertyInfo);
+      }
 
       public bool TryGetProperty(string ifcPropertyName, ElementId revitPropertyId, string revitPropertyName, out PropertyMappingInfo modelPropertyInfo)
       {
@@ -579,6 +835,34 @@ namespace BIM.IFC.Export.UI
          Func<PropertyMappingInfo, bool> keyComparator = PropertyMappingInfo.GetPropertyMappingKeyComparator(Type, ifcPropertyName, revitPropertyId, revitPropertyName);
          modelPropertyInfo = PropertyInfos.FirstOrDefault(keyComparator);
          return modelPropertyInfo != null;
+      }
+      public void ResetToDefault()
+      {
+         ExportFlag = true;
+
+         if ((PropertyInfos?.Count ?? 0) == 0)
+            return;
+
+         foreach (var mappingInfo in PropertyInfos)
+            mappingInfo.ResetToDefault();
+      }
+
+      // Converts IfcBeam.BaseQuantities to Qto_BeamBaseQuantities
+      public static string ConvertQuantitySetNameFrom2x3(string quantitySet2x3Name)
+      {
+         string pattern = @"Ifc(\w+)\.BaseQuantities";
+         string replacement = @"Qto_$1BaseQuantities";
+
+         return Regex.Replace(quantitySet2x3Name, pattern, replacement);
+      }
+
+      // Converts Qto_BeamBaseQuantities to IfcBeam.BaseQuantities
+      public static string ConvertQuantitySetNameTo2x3(string quantitySetName)
+      {
+         string pattern = @"Qto_(\w+)BaseQuantities";
+         string replacement = @"Ifc$1.BaseQuantities";
+
+         return Regex.Replace(quantitySetName, pattern, replacement);
       }
 
       public event PropertyChangedEventHandler PropertyChanged;
@@ -595,23 +879,15 @@ namespace BIM.IFC.Export.UI
    /// </summary>
    public class PropertyMappingInfo : INotifyPropertyChanged
    {
-      public PropertyMappingInfo(IFCPropertySetups.PropertySetup propertySetup)
-      {
-         Type = IFCPropertyMappingModel.GetMappingType(propertySetup);
-      }
-      public PropertyMappingInfo(string ifcPropertyName, string revitPropertyName, ElementId revitPropertyId, IFCPropertySetups.PropertySetup propertySetup)
-      {
-         IFCPropertyName = ifcPropertyName;
-         RevitPropertyName = revitPropertyName;
-         RevitPropertyId = revitPropertyId;
-         Type = IFCPropertyMappingModel.GetMappingType(propertySetup);
-      }
-
-      private bool m_ExportFlag = true;
+      /// <summary>
+      /// The default IFC property name for the mapping.
+      /// </summary>
+      private readonly string _defaultIfcPropertyName;
 
       /// <summary>
       /// Flag to determine if a PropertyMappingInfo is exported or not.
       /// </summary>
+      private bool m_ExportFlag = true;
       public bool ExportFlag
       {
          get { return m_ExportFlag; }
@@ -622,6 +898,9 @@ namespace BIM.IFC.Export.UI
          }
       }
 
+      /// <summary>
+      /// The IFC property name.
+      /// </summary>
       private string m_IFCPropertyName = null;
       public string IFCPropertyName
       {
@@ -633,6 +912,9 @@ namespace BIM.IFC.Export.UI
          }
       }
 
+      /// <summary>
+      /// The Revit property name.
+      /// </summary>
       private string m_RevitPropertyName = null;
       public string RevitPropertyName
       {
@@ -644,6 +926,9 @@ namespace BIM.IFC.Export.UI
          }
       }
 
+      /// <summary>
+      /// The Revit property id.
+      /// </summary>
       private ElementId m_RevitPropertyId = ElementId.InvalidElementId;
       public ElementId RevitPropertyId
       {
@@ -655,32 +940,52 @@ namespace BIM.IFC.Export.UI
          }
       }
 
+      /// <summary>
+      /// The property data type.
+      /// </summary>
+      public string PropertyDataType { get; set; } = string.Empty;
+
+      /// <summary>
+      /// The property mapping type.
+      /// </summary>
       public IFCPropertyMappingModel.MappingType Type { get; set; }
+
+      public PropertyMappingInfo(string ifcPropertyName, string revitPropertyName, ElementId revitPropertyId, PropertySetupType propertySetup, string propertyDataType)
+      {
+         string cleanedIfcPropertyName = ifcPropertyName ?? string.Empty;
+         string cleanedRevitPropertyName = revitPropertyName ?? string.Empty;
+
+         Type = IFCPropertyMappingModel.GetMappingType(propertySetup);
+
+         RevitPropertyName = cleanedRevitPropertyName;
+         RevitPropertyId = revitPropertyId;
+         PropertyDataType = propertyDataType ?? string.Empty;
+
+         if (Type == IFCPropertyMappingModel.MappingType.RevitToIfc)
+         {
+            _defaultIfcPropertyName = cleanedRevitPropertyName;
+            IFCPropertyName = string.IsNullOrEmpty(cleanedIfcPropertyName) ? _defaultIfcPropertyName : cleanedIfcPropertyName;
+         }
+         else
+         {
+            _defaultIfcPropertyName = cleanedIfcPropertyName;
+            IFCPropertyName = cleanedIfcPropertyName;
+         }
+      }
+
+      public void Assign(IFCPropertyMappingInfo templatePropertyInfo)
+      {
+         IFCPropertyName = templatePropertyInfo.IFCPropertyName;
+         RevitPropertyName = templatePropertyInfo.RevitPropertyName;
+         RevitPropertyId = templatePropertyInfo.RevitPropertyId;
+         ExportFlag = templatePropertyInfo.ExportFlag;
+      }
 
       public static Func<PropertyMappingInfo, bool> GetPropertyMappingKeyComparator(IFCPropertyMappingModel.MappingType mappingType, string ifcPropertyName, ElementId revitPropertyId, string revitPropertyName)
       {
          return (mappingType == IFCPropertyMappingModel.MappingType.IfcToRevit) ?
             (x => x.IFCPropertyName == ifcPropertyName) :
             (x => x.RevitPropertyId == revitPropertyId && x.RevitPropertyName == revitPropertyName);
-      }
-
-      public bool OverwriteMappingValues(bool exportFlag, string ifcPropertyName, ElementId revitPropertyId, string revitPropertyName)
-      {
-         Func<PropertyMappingInfo, bool> keyComparator = GetPropertyMappingKeyComparator(Type, ifcPropertyName, revitPropertyId, revitPropertyName);
-         if (!keyComparator(this))
-            return false;
-
-         ExportFlag = exportFlag;
-         if (Type == IFCPropertyMappingModel.MappingType.IfcToRevit)
-         {
-            IFCPropertyName = ifcPropertyName;
-         }
-         else
-         {
-            RevitPropertyId = revitPropertyId;
-            RevitPropertyName = revitPropertyName;
-         }
-         return true;
       }
 
       /// <summary>
@@ -699,7 +1004,7 @@ namespace BIM.IFC.Export.UI
          }
          else
          {
-            if (!string.IsNullOrEmpty(IFCPropertyName))
+            if (!string.Equals(IFCPropertyName ?? string.Empty, _defaultIfcPropertyName ?? string.Empty, StringComparison.Ordinal))
                return false;
          }
          return true;
@@ -719,7 +1024,7 @@ namespace BIM.IFC.Export.UI
             RevitPropertyId = ElementId.InvalidElementId;
          }
          else
-            IFCPropertyName = string.Empty;
+            IFCPropertyName = _defaultIfcPropertyName ?? string.Empty;
       }
 
       public event PropertyChangedEventHandler PropertyChanged;

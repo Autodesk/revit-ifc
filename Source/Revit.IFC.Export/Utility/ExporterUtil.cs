@@ -51,6 +51,11 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class ExporterUtil
    {
+      private static Dictionary<BuiltInCategory, ExportIFCCategoryInfo> sExtendedCategoryMap = new()
+      {
+         { BuiltInCategory.OST_ProjectInformation, new ExportIFCCategoryInfo(true, "IfcBuilding", "", "", "") }
+      };
+
       private static ProjectPosition GetSafeProjectPosition(Document doc)
       {
          ProjectLocation projLoc = ExporterCacheManager.SelectedSiteProjectLocation;
@@ -300,30 +305,26 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Creates IfcDirection object.
       /// </summary>
-      /// <param name="file">
-      /// The IFC file.
-      /// </param>
-      /// <param name="direction">
-      /// The direction.
-      /// </param>
-      /// <returns>
-      /// The handle.
-      /// </returns>
-      public static IFCAnyHandle CreateDirection(IFCFile file, XYZ direction)
+      /// <param name="file">The IFC file.</param>
+      /// <param name="direction">The direction.</param>
+      /// <returns>The handle.</returns>
+      public static IFCAnyHandle CreateDirection(IFCFile file, XYZ direction, GeometryUtil.Dimension dim)
       {
-         List<double> measure = new() { direction.X, direction.Y, direction.Z };
+         List<double> measure = (dim == GeometryUtil.Dimension.Dim2D) ? 
+            [ direction.X, direction.Y ] :
+            [direction.X, direction.Y, direction.Z];
          return CreateDirection(file, measure);
       }
 
       /// <summary>
-      /// Creates IfcVector object.
-      /// </summary>
-      /// <param name="file">The IFC file.</param>
-      /// <param name="directionXYZ">The XYZ value represention the vector direction.</param>
-      /// <returns>The IfcVector handle.</returns>
+       /// Creates IfcVector object.
+       /// </summary>
+       /// <param name="file">The IFC file.</param>
+       /// <param name="directionXYZ">The XYZ value represention the vector direction.</param>
+       /// <returns>The IfcVector handle.</returns>
       public static IFCAnyHandle CreateVector(IFCFile file, XYZ directionXYZ, double length)
       {
-         IFCAnyHandle direction = CreateDirection(file, directionXYZ);
+         IFCAnyHandle direction = CreateDirection(file, directionXYZ, GeometryUtil.Dimension.Dim3D);
          return IFCInstanceExporter.CreateVector(file, direction, length);
       }
 
@@ -408,6 +409,37 @@ namespace Revit.IFC.Export.Utility
          IFCAnyHandle pointHandle = IFCInstanceExporter.CreateCartesianPoint(file, cleanMeasure);
 
          return pointHandle;
+      }
+
+      /// <summary>
+      /// Creates an IfcAxis2Placement2D object.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="location">The origin. If null, it will use the global origin handle.</param>
+      /// <param name="refDirection">The X direction.</param>
+      /// <returns>the handle.</returns>
+      public static IFCAnyHandle CreateAxis2Placement2D(IFCFile file, XYZ location, XYZ refDirection)
+      {
+         IFCAnyHandle locationHandle = null;
+         if (location != null)
+         {
+            List<double> measure = [location.X, location.Y];
+            locationHandle = CreateCartesianPoint(file, measure);
+         }
+         else
+         {
+            locationHandle = ExporterCacheManager.Global2DOriginHandle;
+         }
+
+
+         IFCAnyHandle refDirectionHandle = null;
+         if (refDirection != null && !MathUtil.IsAlmostEqual(refDirection[0], 1.0))
+         {
+            List<double> measure = [refDirection.X, refDirection.Y];
+            refDirectionHandle = CreateDirection(file, measure);
+         }
+
+         return IFCInstanceExporter.CreateAxis2Placement2D(file, locationHandle, refDirectionHandle);
       }
 
       /// <summary>
@@ -546,9 +578,9 @@ namespace Revit.IFC.Export.Utility
       /// </returns>
       public static IFCAnyHandle CreateMappedItemFromTransform(IFCFile file, IFCAnyHandle repMap, Transform transform)
       {
-         IFCAnyHandle axis1 = CreateDirection(file, transform.BasisX);
-         IFCAnyHandle axis2 = CreateDirection(file, transform.BasisY);
-         IFCAnyHandle axis3 = CreateDirection(file, transform.BasisZ);
+         IFCAnyHandle axis1 = CreateDirection(file, transform.BasisX, GeometryUtil.Dimension.Dim3D);
+         IFCAnyHandle axis2 = CreateDirection(file, transform.BasisY, GeometryUtil.Dimension.Dim3D);
+         IFCAnyHandle axis3 = CreateDirection(file, transform.BasisZ, GeometryUtil.Dimension.Dim3D);
          IFCAnyHandle origin = CreateCartesianPoint(file, transform.Origin);
          double scale = 1.0;
          IFCAnyHandle mappingTarget =
@@ -648,10 +680,10 @@ namespace Revit.IFC.Export.Utility
       /// The method is similar to ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform
       /// but it uses API that doesn't fix vectors direction 
       /// </remarks>
-      public static Transform GetRelativePlacementOffsetTransformWithoutDirFix(ExporterIFC exporterIFC, IFCAnyHandle originalPlacement, IFCAnyHandle newPlacement)
+      public static Transform GetRelativePlacementOffsetTransform(ExporterIFC exporterIFC, IFCAnyHandle originalPlacement, IFCAnyHandle newPlacement)
       {
-         Transform originalTrf = ExporterIFCUtils.GetUnscaledTransformWithoutFixOfDirection(exporterIFC, originalPlacement);
-         Transform newTrf = ExporterIFCUtils.GetUnscaledTransformWithoutFixOfDirection(exporterIFC, newPlacement);
+         Transform originalTrf = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, originalPlacement);
+         Transform newTrf = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, newPlacement);
 
          Transform resultTrf = new Transform(Transform.Identity);
          
@@ -743,6 +775,26 @@ namespace Revit.IFC.Export.Utility
          CustomSubCategoryId customSubCategoryId = WallFunctionToCustomSubCategoryId(wallFunction);
          info = ExporterCacheManager.CategoryMappingTemplate.GetMappingInfoById(ExporterCacheManager.Document, categoryId, customSubCategoryId);
          return !(info?.IsDefault() ?? true);
+      }
+
+      /// <summary>
+      /// Get the mapping information for a particular category.
+      /// </summary>
+      /// <param name="category">The category.</param>
+      /// <param name="info">The mapping information for the category if it exists.</param>
+      /// <returns></returns>
+      public static bool GetCategoryInfoById(Category category, out ExportIFCCategoryInfo exportInfo)
+      {
+         exportInfo = null;
+
+         if(category == null)
+            return false;
+
+         ElementId elementId = category.Parent?.Id ?? ElementId.InvalidElementId;
+         if (elementId != ElementId.InvalidElementId)
+            return ExporterUtil.GetCategoryInfoById(elementId, null, out exportInfo);
+         else
+            return sExtendedCategoryMap.TryGetValue(category.BuiltInCategory, out exportInfo);
       }
 
       /// <summary>
@@ -1768,10 +1820,10 @@ namespace Revit.IFC.Export.Utility
 
                IFCExportBodyParams ifcParams = productWrapper.FindExtrusionCreationParameters(prodHnd);
 
+               bool exportingHostModel = ExportingHostModel();
                foreach (PropertySetDescription currDesc in currPsetsToCreate)
                {
-                  // Last conditional check: if the property set comes from a ViewSchedule, check if the element is in the schedule.
-                  if ((currDesc.ViewScheduleId != ElementId.InvalidElementId) &&
+                  if (exportingHostModel && currDesc.ViewScheduleId != ElementId.InvalidElementId &&
                      (!ExporterCacheManager.ViewScheduleElementCache[currDesc.ViewScheduleId].Contains(elementToUse.Id)))
                      continue;
 
@@ -2170,6 +2222,43 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Override the IFC entity type for fabrication straights and fittings.
+      /// </summary>
+      /// <param name="element"></param>
+      /// <param name="originalExportInfoPair"></param>
+      /// <returns>The new IFCExportInfoPair if successfully updated, or the original value.</returns>
+      private static IFCExportInfoPair OverrideExportTypeForFabricationParts(Element element, IFCExportInfoPair originalExportInfoPair)
+      {
+         if ((!originalExportInfoPair.IsUnKnown) &&
+            (originalExportInfoPair.ExportInstance != IFCEntityType.IfcBuildingElementProxy) &&
+            (originalExportInfoPair.ExportType != IFCEntityType.IfcBuildingElementProxyType))
+            return originalExportInfoPair;
+
+         FabricationPart fabPart = element as FabricationPart;
+         if (fabPart == null)
+            return originalExportInfoPair;
+
+         string enumTypeValue = originalExportInfoPair.PredefinedType;
+         ElementId fabCategory = CategoryUtil.GetSafeCategoryId(fabPart);
+         if (fabPart.IsAStraight())
+         {
+            if (fabCategory == new ElementId(BuiltInCategory.OST_FabricationDuctwork))
+               return new IFCExportInfoPair(IFCEntityType.IfcDuctSegment, enumTypeValue);
+            else if (fabCategory == new ElementId(BuiltInCategory.OST_FabricationPipework))
+               return new IFCExportInfoPair(IFCEntityType.IfcPipeSegment, enumTypeValue);
+         }
+         else
+         {
+            // For now, we treat all non-straight fabrication parts as fittings.
+            if (fabCategory == new ElementId(BuiltInCategory.OST_FabricationDuctwork))
+               return new IFCExportInfoPair(IFCEntityType.IfcDuctFitting, enumTypeValue);
+            else if (fabCategory == new ElementId(BuiltInCategory.OST_FabricationPipework))
+               return new IFCExportInfoPair(IFCEntityType.IfcPipeFitting, enumTypeValue);
+         }
+         return originalExportInfoPair;
+      }
+
+      /// <summary>
       /// Gets export type for an element in pair information of the IfcEntity and its type.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
@@ -2195,8 +2284,9 @@ namespace Revit.IFC.Export.Utility
          // 6. Check at a pre-defined mapping from Revit category to IFC entity and pre-defined type.
          // 7. Check whether the intended Entity type is inside the export exclusion set.
          // 8. Check whether we override IfcBuildingElementProxy/Unknown values with structural known values.
-         // 9. Check to see if we should override the ValidatedPredefinedType from IFC_EXPORT_PREDEFINEDTYPE*.
-         // 10. Handle IfcSite (always set it to something else).
+         // 9. Check whether we should override the IFC entity type based on fabrication part information.
+         // 10. Check to see if we should override the ValidatedPredefinedType from IFC_EXPORT_PREDEFINEDTYPE*.
+         // 11. Handle IfcSite (always set it to something else).
 
          // Steps start below.
 
@@ -2267,7 +2357,13 @@ namespace Revit.IFC.Export.Utility
          if (!isExportTypeDefinedInParameters)
             exportType = OverrideExportTypeForStructuralFamilies(element, exportType);
 
-         // 9. Check to see if we should override the ValidatedPredefinedType from
+         // 9. Check whether we should override IFC entity type based on fabrication part information.
+         if (!isExportTypeDefinedInParameters)
+         {
+            exportType = OverrideExportTypeForFabricationParts(element, exportType);
+         }
+
+         // 10. Check to see if we should override the ValidatedPredefinedType from
          // IFC_EXPORT_PREDEFINEDTYPE*.
          string pdefFromParam = GetExportTypeFromTypeParameter(element, null);
          if (!string.IsNullOrEmpty(pdefFromParam))
@@ -2282,7 +2378,7 @@ namespace Revit.IFC.Export.Utility
          if (string.IsNullOrEmpty(enumTypeValue))
             enumTypeValue = "NOTDEFINED";
 
-         // 10. Handle sites if needed.
+         // 11. Handle sites if needed.
          if ((exportType.ExportInstance == IFCEntityType.IfcSite) && ExporterCacheManager.SiteExportInfo.IsSiteExported())
          {
             exportType = OverrideExportTypeForSites(element, exportType);
@@ -2657,14 +2753,14 @@ namespace Revit.IFC.Export.Utility
          IFCAnyHandle outerBound = IFCInstanceExporter.CreatePolyline(file, polyLinePts);
 
          IFCAnyHandle origHnd = CreateCartesianPoint(file, newOuterLoopPoints[0]);
-         IFCAnyHandle refHnd = CreateDirection(file, firstDir);
-         IFCAnyHandle dirHnd = CreateDirection(file, norm);
+         IFCAnyHandle refHnd = CreateDirection(file, firstDir, GeometryUtil.Dimension.Dim3D);
+         IFCAnyHandle dirHnd = CreateDirection(file, norm, GeometryUtil.Dimension.Dim3D);
 
          IFCAnyHandle positionHnd = IFCInstanceExporter.CreateAxis2Placement3D(file, origHnd, dirHnd, refHnd);
          IFCAnyHandle basisPlane = IFCInstanceExporter.CreatePlane(file, positionHnd);
 
-         // We only assign innerBounds if we create any.  We expect innerBounds to be null if there aren't any created.
-         ISet<IFCAnyHandle> innerBounds = null;
+         // Inner bounds isn't optional.
+         HashSet<IFCAnyHandle> innerBounds = new();
          if (innerLoopPoints != null)
          {
             int innerSz = innerLoopPoints.Count;
@@ -2701,8 +2797,6 @@ namespace Revit.IFC.Export.Utility
                polyLinePts = CreateCartesianPointList(file, projVecData);
                IFCAnyHandle polyLine = IFCInstanceExporter.CreatePolyline(file, polyLinePts);
 
-               if (innerBounds == null)
-                  innerBounds = new HashSet<IFCAnyHandle>();
                innerBounds.Add(polyLine);
             }
          }
@@ -3269,6 +3363,39 @@ namespace Revit.IFC.Export.Utility
          return ExporterCacheManager.ExportOptionsCache.UseActiveViewGeometry ?
             ExporterCacheManager.ExportOptionsCache.ActiveView :
             element.Document.GetElement(element.OwnerViewId) as View;
+      }
+
+      /// <summary>
+      /// Collect schedules from the document.
+      /// </summary>
+      public static List<(string, ScheduleDefinition)> CollectSchedules(Document document)
+      {
+         List<(string, ScheduleDefinition)> collectedSchedules = new();
+         if (document == null)
+            return collectedSchedules;
+
+         FilteredElementCollector viewScheduleElementCollector = new(document);
+         ElementFilter viewScheduleElementFilter = new ElementClassFilter(typeof(ViewSchedule));
+         viewScheduleElementCollector.WherePasses(viewScheduleElementFilter);
+         List<ViewSchedule> filteredSchedules = viewScheduleElementCollector.Cast<ViewSchedule>().ToList();
+
+         foreach (ViewSchedule schedule in filteredSchedules)
+         {
+            if (schedule.IsTemplate)
+               continue;
+
+            ScheduleDefinition definition = schedule.Definition;
+            if (definition == null)
+               continue;
+
+            int fieldCount = definition.GetFieldCount();
+            if (fieldCount == 0)
+               continue;
+
+            collectedSchedules.Add((schedule.Name, definition));
+         }
+
+         return collectedSchedules;
       }
    }
 }

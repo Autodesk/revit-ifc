@@ -884,7 +884,7 @@ namespace Revit.IFC.Export.Utility
          XYZ relZ = XYZ.BasisZ;
          XYZ relX = XYZ.BasisX;
 
-         Transform openingTrf = ExporterIFCUtils.GetUnscaledTransformWithoutFixOfDirection(exporterIFC, hostObjPlacementHnd);
+         Transform openingTrf = ExporterIFCUtils.GetUnscaledTransform(exporterIFC, hostObjPlacementHnd);
          openingTrf = openingTrf.Inverse;
 
          // Create a copy of the opening loop that will be expressed in the local coordinate system relative to the wall

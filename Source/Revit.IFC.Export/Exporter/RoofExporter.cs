@@ -149,15 +149,14 @@ namespace Revit.IFC.Export.Exporter
                      if (exportSlab)
                      {
                         string slabGUID = GUIDUtil.CreateSubElementGUID(roof, (int)IFCRoofSubElements.RoofSlabStart);
-                        IFCAnyHandle slabLocalPlacementHnd = ExporterUtil.CopyLocalPlacement(file, localPlacement);
                         string slabName = IFCAnyHandleUtil.GetStringAttribute(roofHnd, "Name") + ":1";
 
                         IFCAnyHandle slabHnd = IFCInstanceExporter.CreateSlab(exporterIFC, roof, slabGUID, ownerHistory,
-                           slabLocalPlacementHnd, prodRep, slabRoofPredefinedType);
+                           ecData.GetLocalPlacement(), prodRep, slabRoofPredefinedType);
                         IFCAnyHandleUtil.OverrideNameAttribute(slabHnd, slabName);
 
                         OpeningUtil.CreateOpeningsIfNecessary(slabHnd, roof, ecData, offsetTransform,
-                            exporterIFC, slabLocalPlacementHnd, placementSetter, productWrapper);
+                            exporterIFC, ecData.GetLocalPlacement(), placementSetter, productWrapper);
 
                         ExporterUtil.RelateObject(exporterIFC, roofHnd, slabHnd);
                         IFCExportInfoPair slabRoofExportType = new IFCExportInfoPair(IFCEntityType.IfcSlab, slabRoofPredefinedType);
@@ -251,7 +250,7 @@ namespace Revit.IFC.Export.Exporter
                else
                {
                   roofHnd = ExportRoofOrFloorAsContainer(exporterIFC, roof,
-                      geometryElement, productWrapper);
+                      geometryElement, productWrapper, roofExportType);
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(roofHnd))
                   {
                      roofHnd = ExportRoof(exporterIFC, roof, ref geometryElement, productWrapper);
@@ -275,11 +274,12 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="element">The roof or floor element.</param>
       /// <param name="geometry">The geometry of the element.</param>
       /// <param name="productWrapper">The product wrapper.</param>
+      /// <param name="roofExportType">The export intent for the element.</param>
       /// <returns>The roof handle.</returns>
       /// <remarks>For floors, if there is only one component, return null, as we do not want to 
       /// create a container.</remarks>
       public static IFCAnyHandle ExportRoofOrFloorAsContainer(ExporterIFC exporterIFC, 
-         Element element, GeometryElement geometry, ProductWrapper productWrapper)
+         Element element, GeometryElement geometry, ProductWrapper productWrapper, IFCExportInfoPair roofExportType)
       {
          IFCFile file = exporterIFC.GetFile();
 
@@ -289,7 +289,6 @@ namespace Revit.IFC.Export.Exporter
          if (!elementIsRoof && !elementIsFloor)
             return null;
 
-         IFCExportInfoPair roofExportType = ExporterUtil.GetProductExportType(element, out _);
          if (roofExportType.IsUnKnown)
          {
             IFCEntityType elementClassTypeEnum = 
@@ -444,7 +443,6 @@ namespace Revit.IFC.Export.Exporter
                                  IList<MaterialLayerSetInfo.MaterialInfo> materialIds = reverseMaterialList ?
                                     layersetInfo.MaterialIds.Reverse<MaterialLayerSetInfo.MaterialInfo>().ToList() : layersetInfo.MaterialIds;
 
-                                 double offsetDirection = extrusionDir.DotProduct(plane.Normal) > MathUtil.Eps() ? 1.0 : -1.0;
                                  foreach (MaterialLayerSetInfo.MaterialInfo matLayerInfo in materialIds)
                                  {
                                     double itemExtrDepth = matLayerInfo.Width;
@@ -461,7 +459,7 @@ namespace Revit.IFC.Export.Exporter
                                     bodyItems.Add(itemShapeRep);
                                     matLayerNames.Add(matLayerInfo.LayerName);
 
-                                    XYZ offset = new XYZ(0, 0, itemExtrDepth * offsetDirection);   // offset is calculated as extent in the direction of extrusion
+                                    XYZ offset = new XYZ(0, 0, itemExtrDepth * extrusionDir.Z);   // offset is calculated as extent in the direction of extrusion
                                     lcs.Origin += offset;
                                  }
                               }

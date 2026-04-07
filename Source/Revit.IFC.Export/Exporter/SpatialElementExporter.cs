@@ -383,13 +383,11 @@ namespace Revit.IFC.Export.Exporter
                IFCFile file = exporterIFC.GetFile();
                using (IFCTransaction transaction = new IFCTransaction(file))
                {
+                  EnergyDataSettings.GetEnergyDataSettings(document).AnalysisType = AnalysisMode.RoomsOrSpaces;
 
-                  EnergyAnalysisDetailModelOptions options = new EnergyAnalysisDetailModelOptions();
-                  options.Tier = EnergyAnalysisDetailModelTier.SecondLevelBoundaries; //2nd level space boundaries
-                  options.SimplifyCurtainSystems = true;
                   try
                   {
-                     model = EnergyAnalysisDetailModel.Create(document, options);
+                     model = EnergyAnalysisDetailModel.Create(document);
                   }
                   catch (System.Exception)
                   {
@@ -775,6 +773,23 @@ namespace Revit.IFC.Export.Exporter
          return true;
       }
 
+      private static IFCAnyHandle CreateGenericSpaceType(IFCFile file, IFCExportInfoPair exportInfo)
+      {
+         // Can't search for null.
+         string typeKey = exportInfo.PredefinedType ?? "NOTDEFINED";
+         if (!ExporterCacheManager.SpaceTypeCache.TryGetValue(typeKey, out IFCAnyHandle type))
+         {
+            string guidKey = "IfcSpaceType: " + typeKey;
+            GUIDUtil.GUIDString guidString = new(guidKey, GUIDUtil.GUIDString.KeyType.Hash);
+            string guid = GUIDUtil.GenerateIFCGuidFrom(guidString);
+            type = IFCInstanceExporter.CreateSpaceType(file, null, guid, null, null, typeKey);
+            IFCAnyHandleUtil.SetAttribute(type, "Name", typeKey);
+            ExporterCacheManager.SpaceTypeCache.Add(typeKey, type);
+         }
+
+         return type;
+      }
+
       /// <summary>
       /// Creates COBIESpaceClassifications.
       /// </summary>
@@ -1009,10 +1024,14 @@ namespace Revit.IFC.Export.Exporter
                }
 
                if (ParameterUtil.GetDoubleValueFromElement(spatialElement, BuiltInParameter.ROOM_AREA, out dArea) != null)
-               dArea = UnitUtil.ScaleArea(dArea);
+                  dArea = UnitUtil.ScaleArea(dArea);
 
                extraParams.ScaledHeight = scaledRoomHeight;
                extraParams.ScaledArea = dArea;
+
+               double outerPerimeter = ExtrusionExporter.ComputeOuterPerimeterOfCurveLoops(curveLoops);
+               if (outerPerimeter > 0.0)
+                  extraParams.ScaledOuterPerimeter = UnitUtil.ScaleLength(outerPerimeter);
 
                if (exportInfo.ExportInstance == IFCEntityType.IfcSpace)
                {
@@ -1034,11 +1053,25 @@ namespace Revit.IFC.Export.Exporter
                      ExporterCacheManager.OwnerHistoryHandle, extraParams.GetLocalPlacement(), repHnd);
                }
 
-               if (exportInfo.ExportType != IFCEntityType.UnKnown)
+               IFCAnyHandle type = null;
+               switch (exportInfo.ExportType)
                {
-                  IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(spatialElement, exportInfo, file, productWrapper);
+                  case IFCEntityType.IfcSpace:
+                  case IFCEntityType.IfcSpaceType:
+                     type = CreateGenericSpaceType(file, exportInfo);
+                     break;
+                  case IFCEntityType.UnKnown:
+                     break;
+                  default:
+                     type = ExporterUtil.CreateGenericTypeFromElement(spatialElement, exportInfo, file, productWrapper);
+                     break;
+               }
+
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(type))
+               {
                   ExporterCacheManager.TypeRelationsCache.Add(type, spaceHnd);
                }
+
                transaction2.Commit();
             }
 

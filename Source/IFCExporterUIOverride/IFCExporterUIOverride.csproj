@@ -1,4 +1,4 @@
-﻿<Project Sdk="">
+<Project Sdk="">
   <PropertyGroup>
     <AddinGUID>6DC299D6-F746-47BE-AE93-F00DDC714257</AddinGUID>
     <AddinType>LT</AddinType>
@@ -11,6 +11,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <IncludePackageReferencesDuringMarkupCompilation>false</IncludePackageReferencesDuringMarkupCompilation>
     <EmbedUntrackedSources>false</EmbedUntrackedSources>
+    <NotACoreAssembly>True</NotACoreAssembly>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DefineConstants>IFC_OPENSOURCE</DefineConstants>
@@ -102,7 +103,7 @@
     <PostBuildEvent>
 $(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dll $(AddinGUID)
 </PostBuildEvent>
-    <BaseOutputPath>C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2026.bundle\Contents\2026</BaseOutputPath>
+    <BaseOutputPath>C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2027.bundle\Contents\2027</BaseOutputPath>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -142,13 +143,13 @@ $(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dl
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Autodesk.UI.Windows">
-      <HintPath>..\..\..\API\2026\Autodesk.UI.Windows.dll</HintPath>
+      <HintPath>..\..\..\API\2027\Autodesk.UI.Windows.dll</HintPath>
     </Reference>
     <Reference Include="Autodesk.Weave.Wpf">
-      <HintPath>..\..\..\API\2026\Autodesk.Weave.Wpf.dll</HintPath>
+      <HintPath>..\..\..\API\2027\Autodesk.Weave.Wpf.dll</HintPath>
     </Reference>
     <Reference Include="UserInterfaceUtility">
-      <HintPath>..\..\..\API\2026\UserInterfaceUtility.dll</HintPath>
+      <HintPath>..\..\..\API\2027\UserInterfaceUtility.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

@@ -348,10 +348,8 @@ namespace Revit.IFC.Import.Utility
 
       /// <summary>
       /// Handles special cases for DirectShape "Creation".
-      /// Current special cases:
-      /// 1. Structural Column -- duplicates all DirectShapes and referenced DirectShapeTypes, using a new Category (Structural Column).
-      /// 2. Creates a Container Element for sub-Elements.  This doesn't create a new Element.  It just populates a DirectShape Element with sub-Element Geometry.
-      ///    empty
+      /// Only current special case is for Structural Columns.  This method may need to recategorize Columns as Structural Columns.
+      /// Only needed if AnyCAD does not process Property Sets.
       /// </summary>
       /// <param name="objectDefinition">Entity that may exhibit special-case behavior.</param>
       /// <param name="hybridElementId">The element id of the existing DirectShape.</param>
@@ -364,13 +362,15 @@ namespace Revit.IFC.Import.Utility
             return;
          }
 
-         // Special Case: columns that should be structural columns.
-         if (IFCCategoryUtil.IsSpecialColumnCase(objectDefinition))
+         // If AnyCAD processing Property Sets, then Structural Columns are already categorized successfully.
+         if (Importer.TheOptions.HybridImportOptions?.HybridPropertySets ?? false)
          {
-            if (objectDefinition is IFCProduct architecturalColumn)
-            {
-               UpdateStructuralColumnDirectShape(architecturalColumn, hybridElementId);
-            }
+            return;
+         }
+
+         if (objectDefinition is IFCProduct architecturalColumn)
+         {
+            UpdateStructuralColumnDirectShape(architecturalColumn, hybridElementId);
          }
       }
 
@@ -718,28 +718,20 @@ namespace Revit.IFC.Import.Utility
       /// </summary>
       /// <param name="ifcProduct">IFCProduct to edit.</param>
       /// <param name="hybridElementId">The associated element id.</param> 
-      /// <returns>The list of created geometries.</returns>
-      public IList<GeometryObject> HandleHybridProductCreation(IFCProduct ifcProduct, ElementId hybridElementId)
+      public void HandleHybridProductCreation(IFCProduct ifcProduct, ElementId hybridElementId)
       {
-         IList<GeometryObject> createdGeometries = new List<GeometryObject>();
-
          if (Importer.TheOptions.HybridImportOptions == null || (ifcProduct == null) || (hybridElementId == ElementId.InvalidElementId))
-         {
-            return createdGeometries;
-         }
+            return;
 
          // Get DirectShape to "Create".  It's already created, so Revit is not really creating it here.
          DirectShape directShape = IfcDocument.GetElement(hybridElementId) as DirectShape;
          if (directShape == null)
-         {
-            return createdGeometries;
-         }
+            return;
 
          // Handle Special Cases:
          // 1.  Possible Category Change for Structural Columns.  This requires a whole new DirectShape/DirectShapeType tree creation.
          // 2.  Containers for IfcRelAggregates (e.g., IfcWall & IfcBuildingElementParts).
          Importer.TheHybridInfo.UpdateElementForSpecialCases(ifcProduct, hybridElementId);
-         return createdGeometries;
       }
 
       /// <summary>

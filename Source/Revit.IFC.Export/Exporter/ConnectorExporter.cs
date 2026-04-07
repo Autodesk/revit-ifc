@@ -47,6 +47,7 @@ namespace Revit.IFC.Export.Exporter
 
       private static IDictionary<string, IList<Toolkit.IFC4.IFCDistributionSystem>> m_SystemClassificationToIFC;
 
+      private static bool ExportPorts = true;
       /// <summary>
       /// Exports a connector instance. Almost verbatim exmaple from Revit 2012 API for Connector Class
       /// Works only for HVAC and Piping for now
@@ -54,6 +55,8 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       public static void Export(ExporterIFC exporterIFC)
       {
+         ExportPorts = !ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(IFCEntityType.IfcDistributionPort);
+
          foreach (ConnectorSet connectorSet in ExporterCacheManager.MEPCache.MEPConnectors)
          {
             Export(exporterIFC, connectorSet);
@@ -130,33 +133,38 @@ namespace Revit.IFC.Export.Exporter
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(hostElementIFCHandle))
                   return;
 
-               IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : (flowDirection == FlowDirectionType.Out ? IFCFlowDirection.Source : IFCFlowDirection.Sink);
-               string guid = GUIDUtil.GenerateIFCGuidFrom(
-                  GUIDUtil.CreateGUIDString(hostElement,
-                  IFCEntityType.IfcDistributionPort.ToString() + " Connector: " + connector.Id.ToString()));
-
-               IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, hostElementIFCHandle, flowDir);
-               IFCFile ifcFile = exporterIFC.GetFile();
-               IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
-               IFCAnyHandle port = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid,
-                  ownerHistory, localPlacement, null, flowDir);
-               string portType = "Flow";   // Assigned as Port.Description
-               ExporterCacheManager.MEPCache.CacheConnectorHandle(connector, port);
-               SetDistributionPortAttributes(port, connector, portType, hostElement.Id, ref flowDir);
-
-               // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
-               // The following code collects the ports that are nested to the object to be assigned later
-               if (isIFC4AndAbove)
+               IFCAnyHandle portHnd = null;
+               if (ExportPorts)
                {
-                  AddNestedMembership(hostElementIFCHandle, port);
-               }
-               else
-               {
-                  // Attach the port to the element
-                  string relGuid = GUIDUtil.GenerateIFCGuidFrom(
-                     GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelConnectsPortToElement, connector.Id.ToString(), port));
-                  string connectionName = hostElement.Id + "|" + guid;
-                  IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, relGuid, ownerHistory, connectionName, portType, port, hostElementIFCHandle);
+                  IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : (flowDirection == FlowDirectionType.Out ? IFCFlowDirection.Source : IFCFlowDirection.Sink);
+                  string guid = GUIDUtil.GenerateIFCGuidFrom(
+                     GUIDUtil.CreateGUIDString(hostElement,
+                     IFCEntityType.IfcDistributionPort.ToString() + " Connector: " + connector.Id.ToString()));
+
+                  IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, hostElementIFCHandle, flowDir);
+                  IFCFile ifcFile = exporterIFC.GetFile();
+                  IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
+                  portHnd = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, guid,
+                     ownerHistory, localPlacement, null, flowDir);
+                  string portType = "Flow";   // Assigned as Port.Description
+                  ExporterCacheManager.MEPCache.CacheConnectorHandle(connector, portHnd);
+                  SetDistributionPortAttributes(portHnd, connector, portType, hostElement.Id, ref flowDir);
+
+
+                  // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+                  // The following code collects the ports that are nested to the object to be assigned later
+                  if (isIFC4AndAbove)
+                  {
+                     AddNestedMembership(hostElementIFCHandle, portHnd);
+                  }
+                  else
+                  {
+                     // Attach the port to the element
+                     string relGuid = GUIDUtil.GenerateIFCGuidFrom(
+                        GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelConnectsPortToElement, connector.Id.ToString(), portHnd));
+                     string connectionName = hostElement.Id + "|" + guid;
+                     IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, relGuid, ownerHistory, connectionName, portType, portHnd, hostElementIFCHandle);
+                  }
                }
 
                HashSet<MEPSystem> systemList = new HashSet<MEPSystem>();
@@ -176,7 +184,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      ExporterCacheManager.SystemsCache.AddElectricalSystem(system.Id);
                      ExporterCacheManager.SystemsCache.AddHandleToElectricalSystem(system.Id, hostElementIFCHandle);
-                     ExporterCacheManager.SystemsCache.AddHandleToElectricalSystem(system.Id, port);
+                     ExporterCacheManager.SystemsCache.AddHandleToElectricalSystem(system.Id, portHnd);
                   }
                }
                else
@@ -184,7 +192,7 @@ namespace Revit.IFC.Export.Exporter
                   foreach (MEPSystem system in systemList)
                   {
                      ExporterCacheManager.SystemsCache.AddHandleToBuiltInSystem(system, hostElementIFCHandle);
-                     ExporterCacheManager.SystemsCache.AddHandleToBuiltInSystem(system, port);
+                     ExporterCacheManager.SystemsCache.AddHandleToBuiltInSystem(system, portHnd);
                   }
                }
             }
@@ -362,77 +370,81 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle portOut = null;
          IFCAnyHandle portIn = null;
 
-         // Note: the GUIDs below are stable under the assumption that there is only one distribution
-         // port from element A to element B.  Also, note that we don't need the "real" GUIDs for these
-         // elements, just stable ones.
-         string inGuid = ExportUtils.GetExportId(inElement.Document, inElement.Id).ToString();
-         string outGuid = ExportUtils.GetExportId(outElement.Document, outElement.Id).ToString();
-
-         string portInGuid = null;
-         string portOutGuid = null;
-
-         // ----------------------- In Port ----------------------
+         if (ExportPorts)
          {
-            portInGuid = GUIDUtil.GenerateIFCGuidFrom(
-               GUIDUtil.CreateGUIDString("InPort" + connector.Id, inElement, outElement));
-            IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : IFCFlowDirection.Sink;
 
-            IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, inElementIFCHandle, flowDir);            
+            // Note: the GUIDs below are stable under the assumption that there is only one distribution
+            // port from element A to element B.  Also, note that we don't need the "real" GUIDs for these
+            // elements, just stable ones.
+            string inGuid = ExportUtils.GetExportId(inElement.Document, inElement.Id).ToString();
+            string outGuid = ExportUtils.GetExportId(outElement.Document, outElement.Id).ToString();
 
-            portIn = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, portInGuid, ownerHistory, localPlacement, null, flowDir);
-            string portType = "Flow";   // Assigned as Port.Description
-            ExporterCacheManager.MEPCache.CacheConnectorHandle(connector, portIn);
-            SetDistributionPortAttributes(portIn, connector, portType, inElement.Id, ref flowDir);
+            string portInGuid = null;
+            string portOutGuid = null;
 
-            // Attach the port to the element
-            string guid = GUIDUtil.GenerateIFCGuidFrom(
-               GUIDUtil.CreateGUIDString("InPortRelConnects" + connector.Id, inElement, outElement));
-            string connectionName = inElement.Id + "|" + guid;
+            // ----------------------- In Port ----------------------
+            {
+               portInGuid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString("InPort" + connector.Id, inElement, outElement));
+               IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : IFCFlowDirection.Sink;
 
-            // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
-            // The following code collects the ports that are nested to the object to be assigned later
-            if (isIFC4AndAbove)
-               AddNestedMembership(inElementIFCHandle, portIn);
-            else
-               IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portIn, inElementIFCHandle);
-         }
+               IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connector, inElementIFCHandle, flowDir);
 
-         // ----------------------- Out Port----------------------
-         {
-            portOutGuid = GUIDUtil.GenerateIFCGuidFrom(
-               GUIDUtil.CreateGUIDString("OutPort" + connector.Id, outElement, inElement));
-            IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : IFCFlowDirection.Source;
+               portIn = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, portInGuid, ownerHistory, localPlacement, null, flowDir);
+               string portType = "Flow";   // Assigned as Port.Description
+               ExporterCacheManager.MEPCache.CacheConnectorHandle(connector, portIn);
+               SetDistributionPortAttributes(portIn, connector, portType, inElement.Id, ref flowDir);
 
-            IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connected, outElementIFCHandle, flowDir);
+               // Attach the port to the element
+               string guid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString("InPortRelConnects" + connector.Id, inElement, outElement));
+               string connectionName = inElement.Id + "|" + guid;
 
-            portOut = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, portOutGuid, ownerHistory, localPlacement, null, flowDir);
-            string portType = "Flow";   // Assigned as Port.Description
-            ExporterCacheManager.MEPCache.CacheConnectorHandle(connected, portOut);
-            SetDistributionPortAttributes(portOut, connected, portType, outElement.Id, ref flowDir);
+               // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+               // The following code collects the ports that are nested to the object to be assigned later
+               if (isIFC4AndAbove)
+                  AddNestedMembership(inElementIFCHandle, portIn);
+               else
+                  IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portIn, inElementIFCHandle);
+            }
 
-            // Attach the port to the element
-            string guid = GUIDUtil.GenerateIFCGuidFrom(
-               GUIDUtil.CreateGUIDString("OutPortRelConnects" + connector.Id.ToString(), outElement, inElement));
-            string connectionName = outElement.Id + "|" + guid;
+            // ----------------------- Out Port----------------------
+            {
+               portOutGuid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString("OutPort" + connector.Id, outElement, inElement));
+               IFCFlowDirection flowDir = (isBiDirectional) ? IFCFlowDirection.SourceAndSink : IFCFlowDirection.Source;
 
-            // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
-            // The following code collects the ports that are nested to the object to be assigned later
-            if (isIFC4AndAbove)
-               AddNestedMembership(outElementIFCHandle, portOut);
-            else
-               IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portOut, outElementIFCHandle);
-         }
+               IFCAnyHandle localPlacement = CreateLocalPlacementForConnector(exporterIFC, connected, outElementIFCHandle, flowDir);
 
-         //  ----------------------- Out Port -> In Port ----------------------
-         if (portOut != null && portIn != null)
-         {
-            IFCAnyHandle realizingElement = null;
-            string connectionName = portInGuid + "|" + portOutGuid;
-            string connectionType = "Flow";   // Assigned as Description
-            string guid = GUIDUtil.GenerateIFCGuidFrom(
-               GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelConnectsPorts, portIn, portOut));
-            IFCInstanceExporter.CreateRelConnectsPorts(ifcFile, guid, ownerHistory, connectionName, connectionType, portIn, portOut, realizingElement);
-            AddConnectionInternal(inElement.Id, outElement.Id);
+               portOut = IFCInstanceExporter.CreateDistributionPort(exporterIFC, null, portOutGuid, ownerHistory, localPlacement, null, flowDir);
+               string portType = "Flow";   // Assigned as Port.Description
+               ExporterCacheManager.MEPCache.CacheConnectorHandle(connected, portOut);
+               SetDistributionPortAttributes(portOut, connected, portType, outElement.Id, ref flowDir);
+
+               // Attach the port to the element
+               string guid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString("OutPortRelConnects" + connector.Id.ToString(), outElement, inElement));
+               string connectionName = outElement.Id + "|" + guid;
+
+               // Port connection is changed in IFC4 to use IfcRelNests for static connection. IfcRelConnectsPortToElement is used for a dynamic connection and it is restricted to IfcDistributionElement
+               // The following code collects the ports that are nested to the object to be assigned later
+               if (isIFC4AndAbove)
+                  AddNestedMembership(outElementIFCHandle, portOut);
+               else
+                  IFCInstanceExporter.CreateRelConnectsPortToElement(ifcFile, guid, ownerHistory, connectionName, portType, portOut, outElementIFCHandle);
+            }
+
+            //  ----------------------- Out Port -> In Port ----------------------
+            if (portOut != null && portIn != null)
+            {
+               IFCAnyHandle realizingElement = null;
+               string connectionName = portInGuid + "|" + portOutGuid;
+               string connectionType = "Flow";   // Assigned as Description
+               string guid = GUIDUtil.GenerateIFCGuidFrom(
+                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelConnectsPorts, portIn, portOut));
+               IFCInstanceExporter.CreateRelConnectsPorts(ifcFile, guid, ownerHistory, connectionName, connectionType, portIn, portOut, realizingElement);
+               AddConnectionInternal(inElement.Id, outElement.Id);
+            }
          }
 
          // Add the handles to the connector system.

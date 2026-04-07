@@ -49,6 +49,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>True if the operation succeed, false otherwise.</returns>
       public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
+         // Check the parameter override.
+         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyArea") != null)
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
+            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+               return true;
+         }
+
          double height = 0.0;
          double width = 0.0;
 
@@ -82,14 +90,6 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                m_Area = UnitUtil.ScaleArea(height * width);
                return true;
             }
-         }
-
-         // If no value from the above, consider the parameter override
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyArea") != null)
-         {
-            m_Area = UnitUtil.ScaleArea(m_Area);
-            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-               return true;
          }
 
          // Work for Space element or other element that has extrusion

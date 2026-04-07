@@ -451,8 +451,10 @@ namespace Revit.IFC.Import.Data
                ElementId hybridDirectShapeElementId = IFCImportHybridInfo.GetHybridMapInformation(Id);
                if (IFCImportHybridInfo.IsValidElementId(hybridDirectShapeElementId))
                {
-                  CreatedGeometry = Importer.TheHybridInfo.HandleHybridProductCreation(this, hybridDirectShapeElementId);
+                  Importer.TheHybridInfo.HandleHybridProductCreation(this, hybridDirectShapeElementId);
+
                   CreatedElementId = hybridDirectShapeElementId;
+                  CreatedGeometry = new List<GeometryObject>();
                }
                else
                {

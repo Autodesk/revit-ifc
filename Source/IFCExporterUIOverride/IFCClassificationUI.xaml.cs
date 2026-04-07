@@ -18,11 +18,11 @@
 
 using Autodesk.UI.Windows;
 using Revit.IFC.Common.Extensions;
+using Revit.IFC.Export.Utility;
 using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-
 
 namespace BIM.IFC.Export.UI
 {

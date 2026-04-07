@@ -76,6 +76,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
             return true;
 
+         // HOST_AREA_COMPUTED is incorrect in case of not in-place families.
+         // Do not export 'Net Area' quantity.
+         if (element is FamilyInstance familyInstance && !IsInPlace(familyInstance))
+            return false;
+         
          ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED, out m_Area);
          m_Area = UnitUtil.ScaleArea(m_Area);
          if (m_Area > MathUtil.Eps() * MathUtil.Eps())
@@ -93,6 +98,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       public override double GetDoubleValue()
       {
          return m_Area;
+      }
+
+      private bool IsInPlace(FamilyInstance familyInstance)
+      {
+         return familyInstance?.Symbol?.Family?.IsInPlace ?? false;
       }
    }
 }
