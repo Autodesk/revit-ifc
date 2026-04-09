@@ -16,7 +16,7 @@
         Title="{x:Static p:Resources.ManageIFCExportMappingSettings}"
         SaveWindowSettings="True"
         Height="559" Width="947" MinHeight="283" MinWidth="730"
-        Closing="ChildWindow_Closing">
+        Closing="ChildWindow_Closing" PreviewKeyDown="ChildWindow_PreviewKeyDown">
    <Grid weave:PanelProperties.Spacing="S">
 
       <Grid.Resources>
@@ -61,45 +61,45 @@
       </Grid.ColumnDefinitions>
       <Grid Grid.Column="0">
          <DockPanel>
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,4">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,10,0,4">
                <TextBlock Text="{x:Static p:Resources.ExportMappingTemplates}" weave:TextBlockProperties.Variant="BodyBold"/>
             </StackPanel>
             <StackPanel Name="stackPanel_buttons" Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,4,0,4">
-               <Button Name="button_Add" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="AddS" Click="button_Add_Click">
+               <ctrl:IconButton Name="button_Add" IconName="AddS" Click="button_Add_Click">
                   <Button.ToolTip>
                      <ToolTip Content="{x:Static p:Resources.CreateNewTemplateTooltip}" Placement="Top"/>
                   </Button.ToolTip>
-               </Button>
-               <Button Name="button_Import" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="ImportS" Click="button_Import_Click">
+               </ctrl:IconButton>
+               <ctrl:IconButton Name="button_Import" IconName="ImportS" Click="button_Import_Click">
                   <Button.ToolTip>
                      <ToolTip Content="{x:Static p:Resources.ImportTemplateTooltip}" Placement="Top"/>
                   </Button.ToolTip>
-               </Button>
-               <Button Name="button_Copy" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="CopyS" Click="button_Copy_Click">
+               </ctrl:IconButton>
+               <ctrl:IconButton Name="button_Copy" IconName="CopyS" Click="button_Copy_Click">
                   <Button.ToolTip>
                      <ToolTip Content="{x:Static p:Resources.CopyTemplateTooltip}" Placement="Top"/>
                   </Button.ToolTip>
-               </Button>
-               <Button Name="button_Save" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="SaveS" Click="button_Save_Click">
+               </ctrl:IconButton>
+               <ctrl:IconButton Name="button_Save" IconName="SaveS" Click="button_Save_Click">
                   <Button.ToolTip>
                      <ToolTip Content="{x:Static p:Resources.SaveTemplateTooltip}" Placement="Top"/>
                   </Button.ToolTip>
-               </Button>
-               <Button Name="button_Export" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="ExportMoveS" Click="button_Export_Click">
+               </ctrl:IconButton>
+               <ctrl:IconButton Name="button_Export" IconName="ExportMoveS" Click="button_Export_Click">
                   <Button.ToolTip>
                      <ToolTip Content="{x:Static p:Resources.ExportTemplateTooltip}" Placement="Top"/>
                   </Button.ToolTip>
-               </Button>
-               <Button Name="button_Rename" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="RenameS" Click="button_Rename_Click">
+               </ctrl:IconButton>
+               <ctrl:IconButton Name="button_Rename" IconName="RenameS" Click="button_Rename_Click">
                   <Button.ToolTip>
                      <ToolTip Content="{x:Static p:Resources.RenameTemplateTooltip}" Placement="Top"/>
                   </Button.ToolTip>
-               </Button>
-               <Button Name="button_Delete" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="TrashS" Click="button_Delete_Click">
+               </ctrl:IconButton>
+               <ctrl:IconButton Name="button_Delete" IconName="TrashS" Click="button_Delete_Click">
                   <Button.ToolTip>
                      <ToolTip Content="{x:Static p:Resources.DeleteTemplateTooltip}" Placement="Top"/>
                   </Button.ToolTip>
-               </Button>
+               </ctrl:IconButton>
             </StackPanel>
             <ListBox Name="listBox_MappingTemplates" ItemContainerStyle="{StaticResource ListBoxItemStyle}" 
                      Width="{Binding ActualWidth, ElementName=stackPanel_buttons}" ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -116,15 +116,15 @@
 
       <Grid Grid.Column="1">
          <DockPanel>
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,4">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,10,0,4">
                <TextBlock Text="{x:Static p:Resources.TemplateSettings}" weave:TextBlockProperties.Variant="BodyBold"/>
             </StackPanel>
             <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Margin="0,4,0,4">
-               <TextBox Name="textBox_Search" Width="335" weave:TextBoxProperties.Variant="BoxSearch" TextChanged="textBox_Search_TextChanged" VerticalAlignment="Center"/>
+               <ctrl:Search Name="textBox_Search" HintText="{x:Static p:Resources.Search}" Width="335" TextChanged="textBox_Search_TextChanged" VerticalAlignment="Center"/>
                <Button Name="button_ResetAll" HorizontalAlignment="Right" VerticalContentAlignment="Center" weave:ButtonProperties.Variant="Flat" Click="button_ResetAll_Click" VerticalAlignment="Center">
                   <StackPanel Orientation="Horizontal" Width="Auto" VerticalAlignment="Center">
                      <Image Source="../icons/data-refresh.png" Width="Auto" HorizontalAlignment="Stretch"/>
-                     <Label Name="label_ResetAll" Content="{x:Static p:Resources.ResetAll}" Margin="4,0,0,0" HorizontalAlignment="Right"/>
+                     <Label Name="label_ResetAll" Content="{x:Static p:Resources.ResetAll}" Margin="4,0,0,0" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                   </StackPanel>
                   <Button.ToolTip>
                      <ToolTip Content="{x:Static p:Resources.ResetToDefault}" Placement="Left"/>
@@ -261,11 +261,11 @@
                                  <Label Name="IFCClass" Content="{Binding MappingInfo.IfcClass, Converter={StaticResource IFCClassNameConverter}}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                               </Border>
                               <Border Grid.Column="1">
-                                 <Button Name="button_IFCClass" Click="EntityPicker" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="MoreS" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                 <ctrl:IconButton Name="button_IFCClass" Click="EntityPicker" IconName="MoreS" HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <Button.ToolTip>
                                        <ToolTip Content="{x:Static p:Resources.MoreTooltip}" Placement="Bottom"/>
                                     </Button.ToolTip>
-                                 </Button>
+                                 </ctrl:IconButton>
                               </Border>
                            </Grid>
                         </DataTemplate>
@@ -285,11 +285,11 @@
                                  <Label Name="PredefinedType" Content="{Binding MappingInfo.PredefinedType}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                               </Border>
                               <Border Grid.Column="1">
-                                 <Button Name="button_PredefinedType" Click="EntityPicker" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="MoreS" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                 <ctrl:IconButton Name="button_PredefinedType" Click="EntityPicker" IconName="MoreS" HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <Button.ToolTip>
                                        <ToolTip Content="{x:Static p:Resources.MoreTooltip}" Placement="Bottom"/>
                                     </Button.ToolTip>
-                                 </Button>
+                                 </ctrl:IconButton>
                               </Border>
                            </Grid>
                         </DataTemplate>
@@ -307,11 +307,11 @@
                   <DataGridTemplateColumn Header="{x:Static p:Resources.Reset}" IsReadOnly="True">
                      <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                           <Button Name="button_Reset" weave:ButtonProperties.Variant="SquareIcon" weave:ButtonProperties.IconName="DataRefreshS" Click="button_Reset_Click" HorizontalAlignment="Center" VerticalAlignment="Center">
+                           <ctrl:IconButton Name="button_Reset" IconName="DataRefreshS" Click="button_Reset_Click" HorizontalAlignment="Center" VerticalAlignment="Center">
                               <Button.ToolTip>
                                  <ToolTip Content="{x:Static p:Resources.ResetRowToDefault}" Placement="Bottom"/>
                               </Button.ToolTip>
-                           </Button>
+                           </ctrl:IconButton>
                         </DataTemplate>
                      </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>
@@ -322,7 +322,7 @@
       </Grid>
 
       <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center">
-         <ctrl:WeaveIcon RegularIcon="Info" VerticalAlignment="Top" Margin="0,0,5,0"/>
+         <ctrl:WeaveIcon IconName="InfoS" VerticalAlignment="Top" Margin="0,0,5,0"/>
          <TextBlock Name="textBlock_Help" HorizontalAlignment="Left" >
          <Hyperlink Click="OnHelpClick">
             <Run Name="run_Help" Text="{x:Static p:Resources.CategoryMappingHelp}" x:Uid="LearnMoreHyperlink"/>
@@ -332,8 +332,8 @@
 
 
       <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" weave:PanelProperties.Spacing="S">
-         <Button x:Name="button_Ok" Content="{x:Static p:Resources.OK}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Solid" Click="button_Ok_Click"/>
-         <Button x:Name="button_Cancel" Content="{x:Static p:Resources.Cancel}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Outline" Click="button_Cancel_Click" Margin="0,0,7,0"/>
+         <Button x:Name="button_Ok" Content="{x:Static p:Resources.OK}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Solid" Click="button_Ok_Click" IsDefault="True"/>
+         <Button x:Name="button_Cancel" Content="{x:Static p:Resources.Cancel}" HorizontalAlignment="Left" weave:ButtonProperties.Variant="Outline" Click="button_Cancel_Click" Margin="0,0,7,0" IsCancel="True"/>
       </StackPanel>
 
    </Grid>

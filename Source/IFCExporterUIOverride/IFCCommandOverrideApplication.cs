@@ -34,7 +34,6 @@ using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Utility;
 using Autodesk.Revit.DB.ExternalService;
 
-
 using View = Autodesk.Revit.DB.View;
 
 using System.Windows.Forms;
@@ -62,6 +61,7 @@ namespace BIM.IFC.Export.UI
       {
          // Clean up
          m_ifcCommandBinding.Executed -= OnIFCExport;
+         
          return Result.Succeeded;
       }
 
@@ -72,8 +72,6 @@ namespace BIM.IFC.Export.UI
       /// <returns>The result (typically Succeeded).</returns>
       public Result OnStartup(UIControlledApplication application)
       {
-         TryLoadCommonAssembly();
-
          // Register execution override
          RevitCommandId commandId = RevitCommandId.LookupCommandId("ID_EXPORT_IFC");
          try
@@ -110,38 +108,6 @@ namespace BIM.IFC.Export.UI
          }
       }
 
-      /// <summary>
-      /// Try to load the Revit.IFC.Common assembly from the folder of current executing assembly of UI. If it is loaded, or doesn't exist, do nothing.
-      /// </summary>
-      private void TryLoadCommonAssembly()
-      {
-         string commonAssemblyName = @"Revit.IFC.Common";  // The common assembly name, no localization 
-         string commonAssemblyStr = commonAssemblyName + ".dll"; // The common assembly, no localization 
-
-         Assembly executingAssembly = Assembly.GetExecutingAssembly();
-         if (executingAssembly == null)
-            return;
-
-         // If the common assembly is loaded in current domain, skip loading.
-         foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-         {
-            if (assembly.GetName().Name == commonAssemblyName)
-               return;
-         }
-
-         string currentAssemblyDir = Path.GetDirectoryName(executingAssembly.Location);
-         // Skip loading if the assembly doesn't exist in the specified path.
-         String dllPath = Path.Combine(currentAssemblyDir, commonAssemblyStr);
-         if (File.Exists(dllPath))
-         {
-            // Load the assembly from the specified path. 					
-            Assembly assembly = Assembly.LoadFrom(dllPath);
-            if (assembly == null)
-            {
-               throw new FileLoadException(String.Format("Failed to load {0} from {1}.", commonAssemblyStr, currentAssemblyDir));
-            }
-         }
-      }
       #endregion
 
       public static bool PotentiallyUpdatedConfigurations { get; set; }
@@ -196,6 +162,23 @@ namespace BIM.IFC.Export.UI
          {
             // Prepare basic objects
             UIApplication uiApp = sender as UIApplication;
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            if (uiApp.IsViewerModeActive)
+            {
+               using (Autodesk.Revit.UI.TaskDialog taskDialog = new Autodesk.Revit.UI.TaskDialog(Properties.Resources.String_Revit_CurrentLicenseStatusTitle))
+               {
+                  taskDialog.MainInstruction = string.Format(Properties.Resources.String_Revit_CurrentLicenseStatus_MainInstruction,
+                     uiApp.Application.VersionName, uiApp.Application.VersionBuild, uiApp.Application.VersionName);
+                  taskDialog.MainIcon = Autodesk.Revit.UI.TaskDialogIcon.TaskDialogIconWarning;
+                  taskDialog.TitleAutoPrefix = false;
+                  taskDialog.MainContent = Properties.Resources.String_Revit_CurrentLicenseStatus_MainContent;
+                  TaskDialogResult result = taskDialog.Show();
+                  return;
+               }
+            }
+#pragma warning restore CS0618 // Type or member is obsolete
+
             UIDocument uiDoc = uiApp.ActiveUIDocument;
             Document activeDoc = uiDoc.Document;
 
@@ -203,10 +186,10 @@ namespace BIM.IFC.Export.UI
 
             // Note that when exporting multiple documents, we are still going to use the configurations from the
             // active document.  
-            IFCExportConfigurationsMap configurationsMap = new IFCExportConfigurationsMap();
+            IFCExportConfigurationsMap configurationsMap = new IFCExportConfigurationsMap(TheDocument);
             configurationsMap.AddOrReplace(IFCExportConfiguration.GetInSession());
             configurationsMap.AddBuiltInConfigurations();
-            configurationsMap.AddSavedConfigurations();
+            configurationsMap.AddSavedConfigurations(IFCExport.LastSelectedConfig);
 
             String mruSelection = null;
             if (m_mruConfiguration != null && configurationsMap.HasName(m_mruConfiguration))
@@ -303,7 +286,7 @@ namespace BIM.IFC.Export.UI
 
                   ElementId activeViewId = GenerateActiveViewIdFromDocument(document);
                   selectedConfig.ActiveViewId = selectedConfig.UseActiveViewGeometry ? activeViewId : ElementId.InvalidElementId;
-                  selectedConfig.UpdateOptions(exportOptions, activeViewId);
+                  selectedConfig.UpdateOptions(document, exportOptions, activeViewId, !OptionsUtil.UseLegacyParameterMapping());
 
                   IDictionary<ElementId, string> linkGUIDsCache =
                      new Dictionary<ElementId, string>();

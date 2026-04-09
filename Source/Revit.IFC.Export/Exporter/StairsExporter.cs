@@ -483,13 +483,17 @@ namespace Revit.IFC.Export.Exporter
                if (null != baseLevel)
                {
                   offsetList.Add(0.0); // base level should always be the 1st.
-                  double original = baseLevel.Elevation;
+                  double original = baseLevel.ProjectElevation;
                   foreach (var levelId in placementLevelIds)
                   {
                      if (levelId != baseLevel.Id)
                      {
-                        double elevationOffset = (doc.GetElement(levelId) as Level).Elevation - original;
-                        offsetList.Add(elevationOffset);
+                        Level placementLevel = doc.GetElement(levelId) as Level;
+                        if (placementLevel != null)
+                        {
+                           double elevationOffset = placementLevel.ProjectElevation - original;
+                           offsetList.Add(elevationOffset);
+                        }
                      }
                   }
                }
@@ -1188,8 +1192,6 @@ namespace Revit.IFC.Export.Exporter
 
                using (IFCExportBodyParams ifcECData = new IFCExportBodyParams())
                {
-                  ifcECData.SetLocalPlacement(placementSetter.LocalPlacement);
-
                   double defaultHeight = GetDefaultHeightForLegacyStair(legacyStair.Document);
                   double stairHeight = GetStairsHeightForLegacyStair(legacyStair, defaultHeight);
                   int numFlights = GetNumFlightsForLegacyStair(legacyStair, defaultHeight);
@@ -1240,7 +1242,7 @@ namespace Revit.IFC.Export.Exporter
 
                      IList<GeometryObject> geometriesOfARun = geometriesOfRuns[ii];
                      BodyData bodyData = BodyExporter.ExportBody(exporterIFC, legacyStair, categoryId, ElementId.InvalidElementId, geometriesOfARun,
-                         bodyExporterOptions, null);
+                         bodyExporterOptions, ifcECData);
 
                      IFCAnyHandle bodyRep = bodyData.RepresentationHnd;
                      if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
@@ -1287,7 +1289,7 @@ namespace Revit.IFC.Export.Exporter
                             flightLocalPlacement, flightRep, ifcType);
                         flightHnds.Add(flightHnd);
                         IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcRampFlight, ifcType);
-                        productWrapper.AddElement(null, flightHnd, placementSetter.LevelInfo, null, false, exportInfo);
+                        productWrapper.AddElement(null, flightHnd, placementSetter.LevelInfo, ifcECData, false, exportInfo);
                      }
                      else
                      {
@@ -1334,6 +1336,8 @@ namespace Revit.IFC.Export.Exporter
                         flightHnds.Add(flightHnd);
                      }
                   }
+
+                  ifcECData.SetLocalPlacement(placementSetter.LocalPlacement);
 
                   IList<IList<GeometryObject>> geometriesOfLandings = legacyStairOrRamp.GetLandingGeometries();
                   for (int ii = 0; ii < geometriesOfLandings.Count; ii++)

@@ -357,13 +357,12 @@ namespace Revit.IFC.Export.Utility
       public static string GetObjectTypeOverride(Element element, string originalValue)
       {
          string objectTypeOverride = "IfcObjectType";
-         string overrideValue = GetOverrideStringValue(element, objectTypeOverride, originalValue);
+         string overrideValue = GetOverrideStringValue(element, objectTypeOverride, null);
 
          // For backward compatibility where the old parameter name may still be use (ObjectTypeOverride), handle it also if the above returns nothing
-         if (string.IsNullOrEmpty(overrideValue)
-            || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
+         if (string.IsNullOrEmpty(overrideValue))
          {
-            overrideValue = GetOverrideStringValue(element, "ObjectTypeOverride", originalValue);
+            overrideValue = GetOverrideStringValue(element, "ObjectTypeOverride", null);
          }
 
          // The following is a special treatment for ObjectType. If IfcObjectType is not set, or carrying the original value, 
@@ -372,8 +371,7 @@ namespace Revit.IFC.Export.Utility
          //   such as IfcExportType="USERDEFINED" set in the Type which necessitates ObjectType in the instance to be set to
          //   the appropriate value
          Element typeOrSymbol = null;
-         if (string.IsNullOrEmpty(overrideValue)
-            || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
+         if (string.IsNullOrEmpty(overrideValue))
          {
             typeOrSymbol = element.Document.GetElement(element.GetTypeId()) as ElementType;
             if (typeOrSymbol == null)
@@ -386,12 +384,11 @@ namespace Revit.IFC.Export.Utility
             if (typeOrSymbol != null)
             {
                objectTypeOverride = "IfcObjectType[Type]";
-               overrideValue = GetOverrideStringValue(typeOrSymbol, objectTypeOverride, originalValue);
+               overrideValue = GetOverrideStringValue(typeOrSymbol, objectTypeOverride, null);
             }
          }
 
-         if (string.IsNullOrEmpty(overrideValue)
-            || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
+         if (string.IsNullOrEmpty(overrideValue))
          {
             Document document = element.Document;
             ElementId categoryId = element?.Category?.Id ?? ElementId.InvalidElementId;
@@ -404,10 +401,25 @@ namespace Revit.IFC.Export.Utility
             }
          }
 
-         //GetOverrideStringValue will return the override value from the parameter specified, otherwise it will return the originalValue
-         return overrideValue;
+         if (!string.IsNullOrEmpty(overrideValue))
+         {
+            return overrideValue;
+         }
+
+         return originalValue;
       }
 
+      public static string GetDefaultObjectType(Element element)
+      {
+         string objectType = GetObjectTypeOverride(element, null);
+         if (!string.IsNullOrEmpty(objectType))
+         {
+            return objectType;
+         }
+
+         return GetFamilyAndTypeName(element);
+      }
+      
       /// <summary>
       /// Get ObjectType override
       /// </summary>
@@ -467,23 +479,40 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">the element (should be the Type)</param>
       /// <param name="originalValue">the original value</param>
       /// <returns>the string that contains the ElementType attribute value</returns>
-      public static string GetElementTypeOverride(Element element, string originalValue)
+      private static string GetElementTypeOverrideBase(Element element, string baseParamName, string originalValue)
       {
-         if (element == null)
-            return null;
-
-         string nameOverride = "IfcElementType";
+         string nameOverride = baseParamName;
          string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
          if (element is ElementType || element is FamilySymbol)
          {
             if (string.IsNullOrEmpty(overrideValue)
                || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
             {
-               nameOverride = "IfcElementType[Type]";
+               nameOverride = baseParamName + "[Type]";
                overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
             }
          }
          return overrideValue;
+      }
+
+      /// <summary>
+      /// Get ElementType attribute override
+      /// </summary>
+      /// <param name="element">the element (should be the Type)</param>
+      /// <param name="originalValue">the original value</param>
+      /// <returns>the string that contains the ElementType attribute value</returns>
+      public static string GetElementTypeOverride(Element element, string originalValue)
+      {
+         if (element == null)
+            return null;
+
+         string overrideValue = GetElementTypeOverrideBase(element, "IfcElementType", null);
+         if (!string.IsNullOrEmpty(overrideValue))
+         {
+            return overrideValue;
+         }
+         
+         return GetElementTypeOverrideBase(element, "IfcObjectType", originalValue);
       }
 
       /// <summary>
@@ -599,9 +628,6 @@ namespace Revit.IFC.Export.Utility
          if (elementType != null)
          {
             typeMarkParam = elementType.get_Parameter(BuiltInParameter.ALL_MODEL_TYPE_MARK);
-            // if NULL, try WINDOW_TYPE_ID which also has the same parameter name "Mark"
-            if (typeMarkParam == null)
-               typeMarkParam = elementType.get_Parameter(BuiltInParameter.WINDOW_TYPE_ID);
          }
 
          string typeMarkValue = typeMarkParam?.AsString();
@@ -694,6 +720,11 @@ namespace Revit.IFC.Export.Utility
          if (element == null)
             return null;
 
+         // This maintains the same behavior as the previous export.
+         FamilySymbol familySymbol = (element as FamilyInstance)?.Symbol;
+         if (familySymbol != null)
+            return familySymbol.Name;
+
          ElementType elementType = (element as ElementType) ?? 
             (element.Document.GetElement(element.GetTypeId()) as ElementType);
 
@@ -722,14 +753,11 @@ namespace Revit.IFC.Export.Utility
       public static string CreateIFCObjectName(ExporterIFC exporterIFC, Element element)
       {
          // This maintains the same behavior as the previous export.
-         if (element is FamilyInstance)
-         {
-            FamilySymbol familySymbol = (element as FamilyInstance).Symbol;
-            if (familySymbol != null)
-               return familySymbol.Name;
-         }
-
-         ElementId typeId = element != null ? element.GetTypeId() : ElementId.InvalidElementId;
+         FamilySymbol familySymbol = (element as FamilyInstance)?.Symbol;
+         if (familySymbol != null)
+            return familySymbol.Name;
+         
+         ElementId typeId = element?.GetTypeId() ?? ElementId.InvalidElementId;
 
          string objectName = GetFamilyAndTypeName(element);
          if (typeId != ElementId.InvalidElementId)

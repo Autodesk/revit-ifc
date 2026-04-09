@@ -26,31 +26,33 @@
          <Label Name="label_PropertySet" 
                 Content="{x:Static p:Resources.PropertySet}" 
                 weave:LabelProperties.Variant="Top"/>
-         <Grid>
+         <Grid HorizontalAlignment="Stretch">
             <TextBox Name="textBox_PropertySet" 
                   weave:TextBoxProperties.Variant="Box" 
-                  Padding="0,0,20,0"
+                  Padding="0,0,24,0"
+                  MinWidth="80"
+                  HorizontalAlignment="Stretch"
                   weave:TextBoxProperties.HintText="{x:Static p:Resources.Value}"/>
-            <Button Name ="button_PropertySetClean" 
-                    weave:ButtonProperties.Variant="SquareIcon" 
-                    weave:ButtonProperties.IconName="CloseSUI" 
-                    HorizontalAlignment="Right" 
-                    Click="button_PropertySetClean_Click"/>
+            <ctrl:IconButton Name ="button_PropertySetClean" 
+                             IconName="CloseSUI" 
+                             HorizontalAlignment="Right" 
+                             Click="button_PropertySetClean_Click"/>
          </Grid>
          
          <Label Name="label_Parameter" 
                 Content="{x:Static p:Resources.Parameter}" 
                 weave:LabelProperties.Variant="Top"/>
-         <Grid>
+         <Grid HorizontalAlignment="Stretch">
             <TextBox Name="textBox_Parameter" 
                      weave:TextBoxProperties.Variant="Box" 
-                     Padding="0,0,20,0"
+                     Padding="0,0,24,0"
+                     MinWidth="80"
+                     HorizontalAlignment="Stretch"
                      weave:TextBoxProperties.HintText="{x:Static p:Resources.Value}"/>
-            <Button Name ="button_ParamaterClean" 
-                    weave:ButtonProperties.Variant="SquareIcon" 
-                    weave:ButtonProperties.IconName="CloseSUI" 
-                    HorizontalAlignment="Right" 
-                    Click="button_ParamaterClean_Click"/>
+            <ctrl:IconButton Name ="button_ParamaterClean" 
+                             IconName="CloseSUI" 
+                             HorizontalAlignment="Right" 
+                             Click="button_ParamaterClean_Click"/>
          </Grid>
       </StackPanel>
 

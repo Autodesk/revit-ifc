@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
@@ -227,18 +228,17 @@ namespace Revit.IFC.Export.Exporter
          if (MathUtil.IsAlmostZero(xLen) || MathUtil.IsAlmostZero(yLen))
             return null;
 
-         IList<double> middlePt = new List<double>();
-         middlePt.Add((polylinePts[0].U + polylinePts[2].U) / 2);
-         middlePt.Add((polylinePts[0].V + polylinePts[2].V) / 2);
+         List<double> middlePt = [
+            (polylinePts[0].U + polylinePts[2].U) / 2,
+            (polylinePts[0].V + polylinePts[2].V) / 2
+         ];
          IFCAnyHandle location = IFCInstanceExporter.CreateCartesianPoint(file, middlePt);
 
          xLenVec = xLenVec.Normalize();
-         IList<double> measure = new List<double>();
-         measure.Add(xLenVec.U);
-         measure.Add(xLenVec.V);
+         List<double> measure = [ xLenVec.U, xLenVec.V];
          IFCAnyHandle refDirectionOpt = ExporterUtil.CreateDirection(file, measure);
 
-         IFCAnyHandle positionHnd = IFCInstanceExporter.CreateAxis2Placement2D(file, location, null, refDirectionOpt);
+         IFCAnyHandle positionHnd = IFCInstanceExporter.CreateAxis2Placement2D(file, location, refDirectionOpt);
 
          IFCAnyHandle rectangularProfileDef = IFCInstanceExporter.CreateRectangleProfileDef(file, IFCProfileType.Area, profileName, positionHnd, xLen, yLen);
          return rectangularProfileDef;
@@ -380,7 +380,7 @@ namespace Revit.IFC.Export.Exporter
             IList<double> refDir = new List<double>() { 1.0, 0.0 };
             IFCAnyHandle refDirectionOpt = ExporterUtil.CreateDirection(file, refDir);
 
-            IFCAnyHandle defPosition = IFCInstanceExporter.CreateAxis2Placement2D(file, location, null, refDirectionOpt);
+            IFCAnyHandle defPosition = IFCInstanceExporter.CreateAxis2Placement2D(file, location, refDirectionOpt);
 
             if (MathUtil.IsAlmostZero(innerRadius))
             {
@@ -684,7 +684,7 @@ namespace Revit.IFC.Export.Exporter
 
          IFCAnyHandle refDirectionOpt = ExporterUtil.CreateDirection(file, refDir);
 
-         IFCAnyHandle positionHnd = IFCInstanceExporter.CreateAxis2Placement2D(file, location, null, refDirectionOpt);
+         IFCAnyHandle positionHnd = IFCInstanceExporter.CreateAxis2Placement2D(file, location, refDirectionOpt);
 
          return IFCInstanceExporter.CreateIShapeProfileDef(file, IFCProfileType.Area, profileName, positionHnd,
              overallWidth, overallDepth, webThickness, flangeThickness, filletRadius);
@@ -892,6 +892,66 @@ namespace Revit.IFC.Export.Exporter
          return modifiedLoops;
       }
 
+      private static void CloseAlmostClosedCurveLoops(IList<CurveLoop> curveLoops)
+      {
+         for (int ii = 0; ii < curveLoops.Count; ii++)
+         {
+            curveLoops[ii] = CloseAlmostClosedCurveLoop(curveLoops[ii]);
+         }
+      }
+
+      /// <summary>
+      /// Closes an almost closed curve loop by replacing the first and last segments with a single line.
+      /// </summary>
+      /// <param name="curveLoop">The curve loop to close.</param>
+      /// <returns>A new closed curve loop, or the original loop if it doesn't meet the criteria.</returns>
+      private static CurveLoop CloseAlmostClosedCurveLoop(CurveLoop curveLoop)
+      {
+         if (curveLoop.IsOpen() || curveLoop.Count() < 3)
+            return curveLoop;
+
+         Application app = ExporterCacheManager.Document.Application;
+
+         IList<Curve> curves = new List<Curve>();
+         foreach (Curve curve in curveLoop)
+         {
+            curves.Add(curve);
+         }
+
+         if (!(curves[0] is Line firstLine) || !(curves[curves.Count - 1] is Line lastLine))
+            return curveLoop;
+
+         XYZ firstPoint = firstLine.GetEndPoint(0);
+         XYZ lastPoint = lastLine.GetEndPoint(1);
+
+         // Check if the distance between first and last points is within acceptable tolerance range
+         double distance = firstPoint.DistanceTo(lastPoint);
+         if (distance < app.VertexTolerance || distance > app.ShortCurveTolerance)
+            return curveLoop;
+
+         try
+         {
+            CurveLoop newCurveLoop = new CurveLoop();
+
+            XYZ firstLineEnd = firstLine.GetEndPoint(1);
+            XYZ lastLineBeg = lastLine.GetEndPoint(0);
+            Line newLine = Line.CreateBound(lastLineBeg, firstLineEnd);
+
+            for (int i = 1; i < curves.Count - 1; i++)
+            {
+               newCurveLoop.Append(curves[i]);
+            }
+
+            newCurveLoop.Append(newLine);
+
+            return newCurveLoop;
+         }
+         catch
+         {
+            return curveLoop;
+         }
+      }
+
       /// <summary>
       /// Creates an extruded solid from a collection of curve loops and a thickness.
       /// </summary>
@@ -931,6 +991,8 @@ namespace Revit.IFC.Export.Exporter
          double slantFactor = Math.Abs(planeZDir.DotProduct(extrDirVec));
          if (MathUtil.IsAlmostZero(slantFactor))
             return extrudedSolidHnd;
+
+         CloseAlmostClosedCurveLoops(origCurveLoops);
 
          // Reduce the number of line segments in the curveloops from highly tessellated polylines, if applicable.
          curveLoops = CoarsenCurveLoops(origCurveLoops);
@@ -1003,8 +1065,8 @@ namespace Revit.IFC.Export.Exporter
             else
             {
                sweptArea = CreateRectangleProfileDefIfPossible(exporterIFC, profileName, curveLoops[0], lcs, sweptDirection);
-               if (sweptArea == null) sweptArea = CreateCircleBasedProfileDefIfPossible(exporterIFC, profileName, curveLoops[0], lcs, sweptDirection);
-               if (sweptArea == null) sweptArea = CreateIShapeProfileDefIfPossible(exporterIFC, profileName, curveLoops[0], lcs, sweptDirection);
+               sweptArea ??= CreateCircleBasedProfileDefIfPossible(exporterIFC, profileName, curveLoops[0], lcs, sweptDirection);
+               sweptArea ??= CreateIShapeProfileDefIfPossible(exporterIFC, profileName, curveLoops[0], lcs, sweptDirection);
             }
          }
          else if (curveLoops.Count == 2)
@@ -1901,7 +1963,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle surfaceAxis = ExporterUtil.CreateAxis(file, orig, null, null);
          // The XY plane of extrusionLCS contains the baseCurve and its normal defines extrusion direction.
          // The surfaceAxis is always default, so the direction must also be default XYZ.BasisZ
-         IFCAnyHandle direction = ExporterUtil.CreateDirection(file, XYZ.BasisZ);
+         IFCAnyHandle direction = ExporterUtil.CreateDirection(file, XYZ.BasisZ, GeometryUtil.Dimension.Dim3D);
 
          return IFCInstanceExporter.CreateSurfaceOfLinearExtrusion(file, sweptCurve, surfaceAxis, direction, scaledExtrusionSize);
       }

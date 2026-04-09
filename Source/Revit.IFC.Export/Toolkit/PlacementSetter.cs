@@ -69,7 +69,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The placement setter.</returns>
       public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem)
       {
-         return new PlacementSetter(exporterIFC, elem, null, null, LevelUtil.GetBaseLevelIdForElement(elem));
+         return new PlacementSetter(exporterIFC, elem, null, null, LevelUtil.GetBaseLevelIdForElement(elem), true);
       }
 
       /// <summary>
@@ -82,7 +82,7 @@ namespace Revit.IFC.Export.Toolkit
       /// Optional, can be <see langword="null"/>.</param>
       public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf)
       {
-         return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, LevelUtil.GetBaseLevelIdForElement(elem));
+         return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, LevelUtil.GetBaseLevelIdForElement(elem), true);
       }
 
       /// <summary>
@@ -101,6 +101,21 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Creates a placement setter that only pushes a transform without creating an IFC local placement.
+      /// </summary>
+      /// <param name="exporterIFC">The IFC exporter object.</param>
+      /// <param name="transform">The transform to push to the exporter's transform stack.</param>
+      /// <returns>A new placement setter instance that will pop the transform when disposed.</returns>
+      /// <remarks>
+      /// This method is useful when you need to temporarily modify the coordinate system
+      /// without generating an IFC local placement handle.
+      /// </remarks>
+      public static PlacementSetter Create(ExporterIFC exporterIFC, Transform transform)
+      {
+         return new PlacementSetter(exporterIFC, transform);
+      }
+
+      /// <summary>
       ///    Creates a new placement setter instance for the given element with the ability to specific overridden transformations
       ///    and level id.
       /// </summary>
@@ -111,9 +126,11 @@ namespace Revit.IFC.Export.Toolkit
       /// Optional, can be <see langword="null"/>.</param>
       /// <param name="overrideLevelId">The level id to reference.  This is intended for use when splitting walls and columns by level.</param>
       /// <param name="containerOverrideHnd">The handle to the level to reference.</param>
-      public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf, ElementId overrideLevelId, IFCAnyHandle containerOverrideHnd)
+      public static PlacementSetter Create(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, 
+         Transform orientationTrf, ElementId overrideLevelId, IFCAnyHandle containerOverrideHnd)
       {
          // Call a different PlacementSetter if the containment is overridden to the Site or the Building
+         bool allowOverride = true;
          if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && containerOverrideHnd != null)
          {
             if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, IFCEntityType.IfcSite)
@@ -132,8 +149,32 @@ namespace Revit.IFC.Export.Toolkit
          {
             overrideLevelId = LevelUtil.GetBaseLevelIdForElement(elem);
          }
+         else
+         {
+            allowOverride = false;
+         }
 
-         return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, overrideLevelId);
+         return new PlacementSetter(exporterIFC, elem, instanceOffsetTrf, orientationTrf, overrideLevelId, allowOverride);
+      }
+
+      /// <summary>
+      /// Constructs a simple placement setter that only pushes a transform without taking into account the level transform.
+      /// </summary>
+      /// <param name="exporterIFC">The IFC exporter object.</param>
+      /// <param name="transform">The transform to push to the exporter's transform stack.</param>
+      /// <remarks>
+      /// This constructor creates a minimal PlacementSetter that only manages a transform.
+      /// It does not create or manage any IFC entities.
+      /// The transform will be popped from the stack when the PlacementSetter is disposed.
+      /// </remarks>
+      public PlacementSetter(ExporterIFC exporterIFC, Transform transform)
+      {
+         LocalPlacement = null;
+         Offset = 0.0;
+         LevelId = ElementId.InvalidElementId;
+         LevelInfo = null;
+         ExporterIFC = exporterIFC;
+         ExporterIFC.PushTransform(transform);
       }
 
       /// <summary>
@@ -142,13 +183,230 @@ namespace Revit.IFC.Export.Toolkit
       /// </summary>
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="element">The element.</param>
-      /// <param name="instanceOffsetTrf">The offset transformation for the instance of a type.  Optional, can be <see langword="null"/>.</param>
+      /// <param name="familyTrf">The offset transformation for the instance of a type.  Optional, can be <see langword="null"/>.</param>
       /// <param name="orientationTrf">The orientation transformation for the local coordinates being used to export the element.
       /// Optional, can be <see langword="null"/>.</param>
-      /// <param name="overrideLevelId">The level id to reference.</param>
-      public PlacementSetter(ExporterIFC exporterIFC, Element elem, Transform instanceOffsetTrf, Transform orientationTrf, ElementId overrideLevelId)
+      /// <param name="baseLevelId">The level id to reference.</param>
+      /// <param name="allowOverride">If set to true, allow shared parameters to override the base level id.</param>
+      public PlacementSetter(ExporterIFC exporterIFC, Element elem, Transform familyTrf, 
+         Transform orientationTrf, ElementId baseLevelId, bool allowOverride)
       {
-         commonInit(exporterIFC, elem, instanceOffsetTrf, orientationTrf, overrideLevelId);
+         ExporterIFC = exporterIFC;
+
+         ElementId overrideLevelId = null;
+
+         // If allowOverride is true and the base level id is set, then we will override it here.
+         if (!allowOverride || baseLevelId == null || 
+            !ExporterCacheManager.LevelInfoCache.LevelParameterOverride.TryGetValue(baseLevelId, out overrideLevelId))
+         {
+            overrideLevelId = baseLevelId;
+         }
+         overrideLevelId ??= ElementId.InvalidElementId;
+
+         Document doc = elem.Document;
+         Element hostElem = elem;
+         ElementId elemId = elem.Id;
+         ElementId newLevelId = overrideLevelId;
+
+         bool useOverrideOrigin = false;
+         XYZ overrideOrigin = XYZ.Zero;
+
+         IDictionary<ElementId, IFCLevelInfo> levelInfos = ExporterCacheManager.LevelInfoCache.LevelsById;
+
+         if (overrideLevelId == ElementId.InvalidElementId)
+         {
+            if (familyTrf == null)
+            {
+               // Override for CurveElems -- base level calculation on origin of sketch Plane.
+               if (elem is CurveElement)
+               {
+                  SketchPlane sketchPlane = (elem as CurveElement).SketchPlane;
+                  if (sketchPlane != null)
+                  {
+                     useOverrideOrigin = true;
+                     overrideOrigin = sketchPlane.GetPlane().Origin;
+                  }
+               }
+               else
+               {
+                  ElementId hostElemId = ElementId.InvalidElementId;
+                  // a bit of a hack.  If we have a railing, we want it to have the same level base as its host Stair (because of
+                  // the way the stairs place railings and stair flights together).
+                  if (elem is Railing)
+                  {
+                     hostElemId = (elem as Railing).HostId;
+                  }
+                  else if (elem.Category.Id.Value == (long)BuiltInCategory.OST_Assemblies)
+                  {
+                     hostElemId = elem.AssemblyInstanceId;
+                  }
+
+                  if (hostElemId != ElementId.InvalidElementId)
+                  {
+                     hostElem = doc.GetElement(hostElemId);
+                  }
+
+                  newLevelId = hostElem != null ? hostElem.LevelId : ElementId.InvalidElementId;
+               }
+            }
+
+            // todo: store.
+            double bottomHeight = double.MaxValue;
+            ElementId bottomLevelId = ElementId.InvalidElementId;
+            if ((newLevelId == ElementId.InvalidElementId) || orientationTrf != null)
+            {
+               // if we have a trf, it might geometrically push the instance to a new level.  Check that case.
+               // actually, we should ALWAYS check the bbox vs the settings
+               newLevelId = ElementId.InvalidElementId;
+               XYZ originToUse = XYZ.Zero;
+               bool originIsValid = useOverrideOrigin;
+
+               if (useOverrideOrigin)
+               {
+                  originToUse = overrideOrigin;
+               }
+               else
+               {
+                  BoundingBoxXYZ bbox = elem.get_BoundingBox(null);
+                  if (bbox != null)
+                  {
+                     originToUse = bbox.Min;
+                     originIsValid = true;
+                  }
+                  else if (hostElem.Id != elemId)
+                  {
+                     bbox = hostElem.get_BoundingBox(null);
+                     if (bbox != null)
+                     {
+                        originToUse = bbox.Min;
+                        originIsValid = true;
+                     }
+                  }
+               }
+
+
+               // The original heuristic here was that the origin determined the level containment based on exact location:
+               // if the Z of the origin was higher than the current level but lower than the next level, it was contained
+               // on that level.
+               // However, in some places (e.g. Germany), the containment is thought to start just below the level, because floors
+               // are placed before the level, not above.  So we have made a small modification so that anything within
+               // 10cm of the 'next' level is on that level.
+
+               double levelExtension = LevelUtil.LevelExtension;
+               foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
+               {
+                  // the cache contains levels from all the exported documents
+                  // if the export is performed for a linked document, filter the levels that are not from this document
+                  if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
+                  {
+                     Element levelElem = doc.GetElement(levelInfoPair.Key);
+                     if (levelElem == null || !(levelElem is Level))
+                        continue;
+                  }
+
+                  IFCLevelInfo levelInfo = levelInfoPair.Value;
+                  double startHeight = levelInfo.Elevation - levelExtension;
+                  double height = levelInfo.DistanceToNextLevel;
+                  bool useHeight = !MathUtil.IsAlmostZero(height);
+                  double endHeight = startHeight + height;
+
+                  if (originIsValid && ((originToUse[2] > (startHeight - MathUtil.Eps())) && (!useHeight || originToUse[2] < (endHeight - MathUtil.Eps()))))
+                  {
+                     newLevelId = levelInfoPair.Key;
+                  }
+
+                  if (startHeight < (bottomHeight + MathUtil.Eps()))
+                  {
+                     bottomLevelId = levelInfoPair.Key;
+                     bottomHeight = startHeight;
+                  }
+               }
+            }
+
+            if (newLevelId == ElementId.InvalidElementId)
+               newLevelId = bottomLevelId;
+
+            // Finally, override the level if needed.
+            // Note that if there is an override level, we will always use that instead.
+            if (ExporterCacheManager.LevelInfoCache.LevelParameterOverride.TryGetValue(newLevelId, out ElementId parameterOverrideLevelId))
+            {
+               newLevelId = parameterOverrideLevelId;
+            }
+         }
+
+         LevelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(newLevelId);
+         if (LevelInfo == null)
+         {
+            foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
+            {
+               // the cache contains levels from all the exported documents
+               // if the export is performed for a linked document, filter the levels that are not from this document
+               if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
+               {
+                  Element levelElem = doc.GetElement(levelInfoPair.Key);
+                  if (levelElem == null || !(levelElem is Level))
+                     continue;
+               }
+               LevelInfo = levelInfoPair.Value;
+               break;
+            }
+         }
+
+         double elevation = LevelInfo?.Elevation ?? 0.0;
+         IFCAnyHandle levelPlacement = LevelInfo?.GetLocalPlacement();
+
+         IFCFile file = exporterIFC.GetFile();
+
+         Transform trf = Transform.Identity;
+
+         if (familyTrf != null)
+         {
+            XYZ origin, xDir, yDir, zDir;
+
+            xDir = familyTrf.BasisX; yDir = familyTrf.BasisY; zDir = familyTrf.BasisZ;
+
+            Transform origOffsetTrf = Transform.Identity;
+            XYZ negLevelOrigin = new XYZ(0, 0, -elevation);
+            origOffsetTrf.Origin = negLevelOrigin;
+
+            Transform newTrf = origOffsetTrf * familyTrf;
+
+            origin = newTrf.Origin;
+
+            trf.BasisX = xDir; trf.BasisY = yDir; trf.BasisZ = zDir;
+            trf = trf.Inverse;
+
+            origin = UnitUtil.ScaleLength(origin);
+            LocalPlacement = ExporterUtil.CreateLocalPlacement(file, levelPlacement, origin, zDir, xDir);
+         }
+         else if (orientationTrf != null)
+         {
+            XYZ origin, xDir, yDir, zDir;
+
+            xDir = orientationTrf.BasisX; yDir = orientationTrf.BasisY; zDir = orientationTrf.BasisZ; origin = orientationTrf.Origin;
+
+            XYZ levelOrigin = new XYZ(0, 0, elevation);
+            origin = origin - levelOrigin;
+
+            trf.BasisX = xDir; trf.BasisY = yDir; trf.BasisZ = zDir; trf.Origin = origin;
+            trf = trf.Inverse;
+
+            origin = UnitUtil.ScaleLength(origin);
+            LocalPlacement = ExporterUtil.CreateLocalPlacement(file, levelPlacement, origin, zDir, xDir);
+         }
+         else
+         {
+            LocalPlacement = ExporterUtil.CreateLocalPlacement(file, levelPlacement, null, null, null);
+         }
+
+         Transform origOffsetTrf2 = Transform.Identity;
+         XYZ negLevelOrigin2 = new XYZ(0, 0, -elevation);
+         origOffsetTrf2.Origin = negLevelOrigin2;
+         Transform newTrf2 = trf * origOffsetTrf2;
+
+         ExporterIFC.PushTransform(newTrf2);
+         Offset = elevation;
+         LevelId = newLevelId;
       }
 
       /// <summary>
@@ -393,227 +651,6 @@ namespace Revit.IFC.Export.Toolkit
          }
 
          return null;
-      }
-
-      /// <summary>
-      /// Attempt to determine the local placement of the element based on the element type and initial input.
-      /// </summary>
-      /// <param name="exporterIFC">The ExporterIFC class.</param>
-      /// <param name="elem">The element being exported.</param>
-      /// <param name="familyTrf">The optional family transform.</param>
-      /// <param name="orientationTrf">The optional orientation of the element based on IFC standards or agreements.</param>
-      /// <param name="overrideLevelId">The optional level to place the element, to be used instead of heuristics.</param>
-      private void commonInit(ExporterIFC exporterIFC, Element elem, Transform familyTrf, Transform orientationTrf, ElementId overrideLevelId)
-      {
-         ExporterIFC = exporterIFC;
-
-         // Convert null value to InvalidElementId.
-         overrideLevelId ??= ElementId.InvalidElementId;
-
-         Document doc = elem.Document;
-         Element hostElem = elem;
-         ElementId elemId = elem.Id;
-         ElementId newLevelId = overrideLevelId;
-
-         bool useOverrideOrigin = false;
-         XYZ overrideOrigin = XYZ.Zero;
-
-         IDictionary<ElementId, IFCLevelInfo> levelInfos = ExporterCacheManager.LevelInfoCache.LevelsById;
-
-         if (overrideLevelId == ElementId.InvalidElementId)
-         {
-            if (familyTrf == null)
-            {
-               // Override for CurveElems -- base level calculation on origin of sketch Plane.
-               if (elem is CurveElement)
-               {
-                  SketchPlane sketchPlane = (elem as CurveElement).SketchPlane;
-                  if (sketchPlane != null)
-                  {
-                     useOverrideOrigin = true;
-                     overrideOrigin = sketchPlane.GetPlane().Origin;
-                  }
-               }
-               else
-               {
-                  ElementId hostElemId = ElementId.InvalidElementId;
-                  // a bit of a hack.  If we have a railing, we want it to have the same level base as its host Stair (because of
-                  // the way the stairs place railings and stair flights together).
-                  if (elem is Railing)
-                  {
-                     hostElemId = (elem as Railing).HostId;
-                  }
-                  else if (elem.Category.Id.Value == (long)BuiltInCategory.OST_Assemblies)
-                  {
-                     hostElemId = elem.AssemblyInstanceId;
-                  }
-
-                  if (hostElemId != ElementId.InvalidElementId)
-                  {
-                     hostElem = doc.GetElement(hostElemId);
-                  }
-
-                  newLevelId = hostElem != null ? hostElem.LevelId : ElementId.InvalidElementId;
-               }
-            }
-
-            // todo: store.
-            double bottomHeight = double.MaxValue;
-            ElementId bottomLevelId = ElementId.InvalidElementId;
-            if ((newLevelId == ElementId.InvalidElementId) || orientationTrf != null)
-            {
-               // if we have a trf, it might geometrically push the instance to a new level.  Check that case.
-               // actually, we should ALWAYS check the bbox vs the settings
-               newLevelId = ElementId.InvalidElementId;
-               XYZ originToUse = XYZ.Zero;
-               bool originIsValid = useOverrideOrigin;
-
-               if (useOverrideOrigin)
-               {
-                  originToUse = overrideOrigin;
-               }
-               else
-               {
-                  BoundingBoxXYZ bbox = elem.get_BoundingBox(null);
-                  if (bbox != null)
-                  {
-                     originToUse = bbox.Min;
-                     originIsValid = true;
-                  }
-                  else if (hostElem.Id != elemId)
-                  {
-                     bbox = hostElem.get_BoundingBox(null);
-                     if (bbox != null)
-                     {
-                        originToUse = bbox.Min;
-                        originIsValid = true;
-                     }
-                  }
-               }
-
-
-               // The original heuristic here was that the origin determined the level containment based on exact location:
-               // if the Z of the origin was higher than the current level but lower than the next level, it was contained
-               // on that level.
-               // However, in some places (e.g. Germany), the containment is thought to start just below the level, because floors
-               // are placed before the level, not above.  So we have made a small modification so that anything within
-               // 10cm of the 'next' level is on that level.
-
-               double levelExtension = LevelUtil.LevelExtension;
-               foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
-               {
-                  // the cache contains levels from all the exported documents
-                  // if the export is performed for a linked document, filter the levels that are not from this document
-                  if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
-                  {
-                     Element levelElem = doc.GetElement(levelInfoPair.Key);
-                     if (levelElem == null || !(levelElem is Level))
-                        continue;
-                  }
-
-                  IFCLevelInfo levelInfo = levelInfoPair.Value;
-                  double startHeight = levelInfo.Elevation - levelExtension;
-                  double height = levelInfo.DistanceToNextLevel;
-                  bool useHeight = !MathUtil.IsAlmostZero(height);
-                  double endHeight = startHeight + height;
-
-                  if (originIsValid && ((originToUse[2] > (startHeight - MathUtil.Eps())) && (!useHeight || originToUse[2] < (endHeight - MathUtil.Eps()))))
-                  {
-                     newLevelId = levelInfoPair.Key;
-                  }
-
-                  if (startHeight < (bottomHeight + MathUtil.Eps()))
-                  {
-                     bottomLevelId = levelInfoPair.Key;
-                     bottomHeight = startHeight;
-                  }
-               }
-            }
-
-            if (newLevelId == ElementId.InvalidElementId)
-               newLevelId = bottomLevelId;
-
-            // Finally, override the level if needed.
-            // Note that if there is an override level, we will always use that instead.
-            if (ExporterCacheManager.LevelInfoCache.LevelParameterOverride.TryGetValue(newLevelId, out ElementId parameterOverrideLevelId))
-            {
-               newLevelId = parameterOverrideLevelId;
-            }
-         }
-
-         LevelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(newLevelId);
-         if (LevelInfo == null)
-         {
-            foreach (KeyValuePair<ElementId, IFCLevelInfo> levelInfoPair in levelInfos)
-            {
-               // the cache contains levels from all the exported documents
-               // if the export is performed for a linked document, filter the levels that are not from this document
-               if (ExporterCacheManager.ExportOptionsCache.ExportLinkedFileAs != LinkedFileExportAs.DontExport)
-               {
-                  Element levelElem = doc.GetElement(levelInfoPair.Key);
-                  if (levelElem == null || !(levelElem is Level))
-                     continue;
-               }
-               LevelInfo = levelInfoPair.Value;
-               break;
-            }
-         }
-
-         double elevation = LevelInfo?.Elevation ?? 0.0;
-         IFCAnyHandle levelPlacement = LevelInfo?.GetLocalPlacement();
-
-         IFCFile file = exporterIFC.GetFile();
-
-         Transform trf = Transform.Identity;
-
-         if (familyTrf != null)
-         {
-            XYZ origin, xDir, yDir, zDir;
-
-            xDir = familyTrf.BasisX; yDir = familyTrf.BasisY; zDir = familyTrf.BasisZ;
-
-            Transform origOffsetTrf = Transform.Identity;
-            XYZ negLevelOrigin = new XYZ(0, 0, -elevation);
-            origOffsetTrf.Origin = negLevelOrigin;
-
-            Transform newTrf = origOffsetTrf * familyTrf;
-
-            origin = newTrf.Origin;
-
-            trf.BasisX = xDir; trf.BasisY = yDir; trf.BasisZ = zDir;
-            trf = trf.Inverse;
-
-            origin = UnitUtil.ScaleLength(origin);
-            LocalPlacement = ExporterUtil.CreateLocalPlacement(file, levelPlacement, origin, zDir, xDir);
-         }
-         else if (orientationTrf != null)
-         {
-            XYZ origin, xDir, yDir, zDir;
-
-            xDir = orientationTrf.BasisX; yDir = orientationTrf.BasisY; zDir = orientationTrf.BasisZ; origin = orientationTrf.Origin;
-
-            XYZ levelOrigin = new XYZ(0, 0, elevation);
-            origin = origin - levelOrigin;
-
-            trf.BasisX = xDir; trf.BasisY = yDir; trf.BasisZ = zDir; trf.Origin = origin;
-            trf = trf.Inverse;
-
-            origin = UnitUtil.ScaleLength(origin);
-            LocalPlacement = ExporterUtil.CreateLocalPlacement(file, levelPlacement, origin, zDir, xDir);
-         }
-         else
-         {
-            LocalPlacement = ExporterUtil.CreateLocalPlacement(file, levelPlacement, null, null, null);
-         }
-
-         Transform origOffsetTrf2 = Transform.Identity;
-         XYZ negLevelOrigin2 = new XYZ(0, 0, -elevation);
-         origOffsetTrf2.Origin = negLevelOrigin2;
-         Transform newTrf2 = trf * origOffsetTrf2;
-
-         ExporterIFC.PushTransform(newTrf2);
-         Offset = elevation;
-         LevelId = newLevelId;
       }
 
       #region IDisposable Members

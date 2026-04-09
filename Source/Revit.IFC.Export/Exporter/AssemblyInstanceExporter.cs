@@ -73,7 +73,7 @@ namespace Revit.IFC.Export.Exporter
             {
                string name = NamingUtil.GetNameOverride(element, NamingUtil.GetIFCName(element));
                string description = NamingUtil.GetDescriptionOverride(element, null);
-               string objectType = NamingUtil.GetObjectTypeOverride(element, NamingUtil.GetFamilyAndTypeName(element));
+               string objectType = NamingUtil.GetDefaultObjectType(element);
                assemblyInstanceHnd = IFCInstanceExporter.CreateSystem(file, guid, ownerHistory, name, description, objectType);
 
                HashSet<IFCAnyHandle> relatedBuildings = new() { ExporterCacheManager.BuildingHandle };
@@ -153,7 +153,7 @@ namespace Revit.IFC.Export.Exporter
                continue;
             }
 
-            Transform relTrf = ExporterUtil.GetRelativePlacementOffsetTransformWithoutDirFix(exporterIFC, assemblyPlacement, elementPlacement);
+            Transform relTrf = ExporterUtil.GetRelativePlacementOffsetTransform(exporterIFC, assemblyPlacement, elementPlacement);
             Transform inverseTrf = relTrf.Inverse;
 
             IFCFile file = exporterIFC.GetFile();

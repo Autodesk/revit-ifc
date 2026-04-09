@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+using AddInLoader;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Analysis;
@@ -227,7 +228,7 @@ namespace Revit.IFC.Export.Exporter
                   {
                      Transform linkTrf = rvtLinkInstance.GetTransform();
                      ExporterCacheManager.Clear(false);
-                     ExportLinkedDocument(exporterIFC, rvtLinkInstance.Id, linkedDocument, 
+                     ExportLinkedDocument(exporterIFC, rvtLinkInstance.Id, linkedDocument,
                         linkInfo.Value, linkTrf);
                   }
                }
@@ -298,14 +299,7 @@ namespace Revit.IFC.Export.Exporter
          {
             try
             {
-               //Firstly, looking for SteelConnections assembly in addin folder.
-               string dllPath = Assembly.GetExecutingAssembly().Location;
-               Assembly assembly;
-               if (File.Exists(Path.GetDirectoryName(dllPath) + @"\Autodesk.SteelConnections.ASIFC.dll"))
-                  assembly = Assembly.LoadFrom(Path.GetDirectoryName(dllPath) + @"\Autodesk.SteelConnections.ASIFC.dll");
-               else
-                  assembly = Assembly.LoadFrom(Path.Combine(AppContext.BaseDirectory, @"Addins\SteelConnections\Autodesk.SteelConnections.ASIFC.dll"));
-
+               var assembly = AddInLoadContext.ResolvePublicAssembly(new AssemblyName("Autodesk.SteelConnections.ASIFC"));
                if (assembly != null)
                {
                   Type type = assembly.GetType("Autodesk.SteelConnections.ASIFC.ASExporter");
@@ -321,7 +315,6 @@ namespace Revit.IFC.Export.Exporter
             { }
          }
       }
-
 
       /// <summary>
       /// Checks if a spatial element is contained inside a section box, if the box exists.
@@ -582,7 +575,7 @@ namespace Revit.IFC.Export.Exporter
                   ExporterCacheManager.TemporaryPartsCache.CollectTemporaryPartInfo(exporterIFC, geomElemClone, part);
 
                   if (ExporterCacheManager.TemporaryPartsCache.TemporaryPartPresentationLayer == null)
-                     ExporterCacheManager.TemporaryPartsCache.TemporaryPartPresentationLayer = 
+                     ExporterCacheManager.TemporaryPartsCache.TemporaryPartPresentationLayer =
                         exporterIFC.GetLayerNameForPresentationLayer(part, CategoryUtil.GetSafeCategoryId(part)) ?? "";
 
                   partGeometries.Add(geomElemClone);
@@ -725,7 +718,7 @@ namespace Revit.IFC.Export.Exporter
       {
          HashSet<ElementId> nonEmptyGroups = new(); // all non-empty groups are exported
          Dictionary<ElementId, bool> emptyGroups = new(); // <group id, exportFlag> some empty groups are exported
-         
+
          foreach (ElementId groupId in ExporterCacheManager.GroupCache.Keys)
          {
             if (ExporterCacheManager.GroupCache.IsEmptyGroup(groupId))
@@ -947,6 +940,52 @@ namespace Revit.IFC.Export.Exporter
          FailureMessage fm = new FailureMessage(BuiltInFailures.ExportFailures.IFCGenericExportWarning);
          fm.SetFailingElement(element.Id);
          document.PostFailure(fm);
+      }
+
+      /// <summary>
+      /// Take all the cached Delayed Warnings created during export and writes them to the journal.
+      /// </summary>
+      private void HandleDelayedExportWarnings()
+      {
+         Document document = ExporterCacheManager.Document;
+         IList<string> delayedWarnings = ExporterCacheManager.DelayedWarnings;
+         if ((document == null) || ((delayedWarnings?.Count ?? 0) == 0))
+            return;
+
+         bool warnOnReservedPropertySet = false;
+         bool warnOnNewProperty = false;
+         string warningMessage = string.Empty;
+         foreach (string warning in delayedWarnings)
+         {
+            if (string.IsNullOrWhiteSpace(warning))
+               continue;
+
+            document.Application.WriteJournalComment(warning, true);
+
+            if (string.IsNullOrWhiteSpace(UserDefinedPropertySetValidator.ReservedString))
+               continue;
+
+            if (warning.Contains(UserDefinedPropertySetValidator.ReservedString))
+            {
+               warnOnReservedPropertySet = true;
+            }
+            else
+            {
+               warnOnNewProperty = true;
+            }
+         }
+
+         if (warnOnReservedPropertySet)
+         {
+            FailureMessage fm = new FailureMessage(BuiltInFailures.ExportFailures.UserDefinedPropertySetReserved);
+            document.PostFailure(fm);
+         }
+
+         if (warnOnNewProperty)
+         {
+            FailureMessage fm = new FailureMessage(BuiltInFailures.ExportFailures.CannotAddPropertyToReservedPropertySet);
+            document.PostFailure(fm);
+         }
       }
 
       /// <summary>
@@ -1226,15 +1265,25 @@ namespace Revit.IFC.Export.Exporter
                   WallSweep wallSweep = element as WallSweep;
                   WallSweepExporter.Export(exporterIFC, wallSweep, geomElem, productWrapper);
                }
-               else if (element is Zone)
+               else if (element is GenericZone)
                {
                   if (ExporterCacheManager.ZoneCache.Contains(element.Id))
-                     ZoneExporter.ExportZone(exporterIFC, element as Zone, productWrapper);
+                     ZoneExporter.ExportZone(exporterIFC, element as GenericZone, productWrapper);
                   else
                   {
                      ExporterCacheManager.ZoneCache.Add(element.Id);
                      shouldPreserveParameterCache = true;
                   }
+               }
+               else if (element is FabricationPartInsulationLining)
+               {
+                  FabricationPartInsulationLining fabInsulationOrLining = element as FabricationPartInsulationLining;
+                  FabricationPartExporter.ExportFabricationInsulationOrLining(exporterIFC, fabInsulationOrLining, geomElem, productWrapper);
+               }
+               else if (element is FabricationPart)
+               {
+                  FabricationPart fabricationPart = element as FabricationPart;
+                  FabricationPartExporter.ExportFabricationPart(exporterIFC, fabricationPart, geomElem, productWrapper);
                }
                else
                {
@@ -1252,18 +1301,17 @@ namespace Revit.IFC.Export.Exporter
                   // We would then in addition have specialized functions that would convert specific Revit elements to specific IFC instances where extra information
                   // could be gathered from the element.
                   bool exported = false;
-                  bool elementIsFabricationPart = element is FabricationPart;
                   if (IsMEPType(element, exportType))
                   {
                      exported = GenericMEPExporter.Export(exporterIFC, element, geomElem, exportType, ifcEnumType, productWrapper);
                   }
-                  else if (!elementIsFabricationPart && ExportAsProxy(element, exportType))
+                  else if (ExportAsProxy(element, exportType))
                   {
                      // Note that we currently export FaceWalls as proxies, and that FaceWalls are HostObjects, so we need
                      // to have this check before the (element is HostObject check.
                      exported = ProxyElementExporter.Export(exporterIFC, element, geomElem, productWrapper, exportType);
                   }
-                  else if (elementIsFabricationPart || (element is HostObject) || (element is DirectShape) || (element is MassLevelData))
+                  else if ((element is HostObject) || (element is DirectShape) || (element is MassLevelData))
                   {
                      exported = GenericElementExporter.ExportElement(exporterIFC, element, geomElem, productWrapper);
                   }
@@ -2479,6 +2527,9 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle units = IFCInstanceExporter.CreateUnitAssignment(file, UnitMappingUtil.GetUnitsToAssign());
             ExporterCacheManager.ProjectHandle.SetAttribute("UnitsInContext", units);
 
+            // Handle any delayed warnings.
+            HandleDelayedExportWarnings();
+
             // Potentially modify elements with GUID values.
             if (ExporterCacheManager.GUIDsToStoreCache.Count > 0 &&
                ExporterUtil.ExportingHostModel())
@@ -2624,11 +2675,11 @@ namespace Revit.IFC.Export.Exporter
             else if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
             {
                if (ExporterCacheManager.ExportOptionsCache.FileVersion == IFCVersion.IFCSG)
-                  descriptions.Add("ViewDefinition [ReferenceView_V1.2, IFC-SG]");
+                  descriptions.Add("ViewDefinition [ReferenceView_V1.2, IFC+SG]");
                else
                   descriptions.Add("ViewDefinition [ReferenceView_V1.2]");
             }
-            else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView)
+            else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView || ExporterCacheManager.ExportOptionsCache.ExportAs4x3DesignTransferView)
             {
                descriptions.Add("ViewDefinition [DesignTransferView_V1.0]");   // Tentative name as the standard is not yet fuly released
             }
@@ -2831,7 +2882,8 @@ namespace Revit.IFC.Export.Exporter
          string productIdentifier = "Revit";
 
          IFCAnyHandle developer = IFCInstanceExporter.CreateOrganization(file, null, productFullName, null, null, null);
-         IFCAnyHandle application = IFCInstanceExporter.CreateApplication(file, developer, productVersion, productFullName, productIdentifier);
+         IFCAnyHandle application = IFCInstanceExporter.CreateApplication(file, developer, productVersion, 
+            productFullName, productIdentifier);
          return application;
       }
 
@@ -3099,13 +3151,20 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The IFC exporter object.</param>
       /// <param name="doc">The document provides the owner information.</param>
       /// <param name="application">The handle of IFC file to create the owner history.</param>
-      private void CreateProject(ExporterIFC exporterIFC, Document doc, IFCAnyHandle application)
+      private void CreateProject(ExporterIFC exporterIFC, Document doc, IFCAnyHandle owningApplication)
       {
-         string familyName;
-         string givenName;
-         List<string> middleNames;
-         List<string> prefixTitles;
-         List<string> suffixTitles;
+         // For IfcPerson.
+         string familyName = null;
+         string givenName = null;
+         List<string> middleNames = null;
+         List<string> prefixTitles = null;
+         List<string> suffixTitles = null;
+         List<IFCAnyHandle> telecomAddresses = null;
+
+         // For IfcOrganization.
+         string organizationName = null;
+         string organizationDescription = null;
+         List<IFCAnyHandle> organizationAddresses = null;
 
          string author = string.Empty;
          bool hasPotentialLastUser = false;
@@ -3134,37 +3193,28 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
          int creationDate = (int)GetCreationDate(doc);
          IFCAnyHandle ownerHistory = null;
-         IFCAnyHandle person = null;
-         IFCAnyHandle organization = null;
-         IFCAnyHandle owningUser = null;
-
+         
          COBieCompanyInfo cobieCompInfo = ExporterCacheManager.ExportOptionsCache.COBieCompanyInfo;
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3COBIE24DesignDeliverable && cobieCompInfo != null)
          {
-            IFCAnyHandle postalAddress = IFCInstanceExporter.CreatePostalAddress(file, null, null, null, null, new List<string>() { cobieCompInfo.StreetAddress },
-               null, cobieCompInfo.City, cobieCompInfo.State_Region, cobieCompInfo.PostalCode, cobieCompInfo.Country);
-            IFCAnyHandle telecomAddress = IFCInstanceExporter.CreateTelecomAddress(file, null, null, null, new List<string>() { cobieCompInfo.CompanyPhone },
-               null, null, new List<string>() { cobieCompInfo.CompanyEmail }, null);
+            IFCAnyHandle postalAddress = IFCInstanceExporter.CreatePostalAddress(file, null, null, null, null, 
+               [ cobieCompInfo.StreetAddress ], null, cobieCompInfo.City, cobieCompInfo.State_Region, 
+               cobieCompInfo.PostalCode, cobieCompInfo.Country);
+            IFCAnyHandle telecomAddress = IFCInstanceExporter.CreateTelecomAddress(file, null, null, null, 
+               [ cobieCompInfo.CompanyPhone ], null, null, [ cobieCompInfo.CompanyEmail ], null);
 
-            organization = IFCInstanceExporter.CreateOrganization(file, null, cobieCompInfo.CompanyName, null,
-                null, new List<IFCAnyHandle>() { postalAddress, telecomAddress });
-            person = IFCInstanceExporter.CreatePerson(file, null, null, null, null, null, null, null, null);
+            organizationName = cobieCompInfo.CompanyName;
+            organizationAddresses = [ postalAddress, telecomAddress ];
          }
          else if (!ExporterCacheManager.ExportOptionsCache.ExportGeometryOnly)
          {
-            List<IFCAnyHandle> telecomAddresses = null;
             IFCAnyHandle telecomAddress = GetTelecomAddressFromExtStorage(file);
             if (telecomAddress != null)
             {
                telecomAddresses = [ telecomAddress ];
             }
 
-            person = IFCInstanceExporter.CreatePerson(file, null, familyName, givenName, middleNames,
-                prefixTitles, suffixTitles, null, telecomAddresses);
-
-            string organizationName = null;
-            string organizationDescription = null;
             if (projectInfo != null)
             {
                try
@@ -3176,14 +3226,14 @@ namespace Revit.IFC.Export.Exporter
                {
                }
             }
-
-            organization = IFCInstanceExporter.CreateOrganization(file, null, organizationName, organizationDescription, null, null);
          }
 
-         if (person != null || organization != null)
-         {
-            owningUser = IFCInstanceExporter.CreatePersonAndOrganization(file, person, organization, null);
-         }
+         IFCAnyHandle person = IFCInstanceExporter.CreatePerson(file, null, familyName, givenName, middleNames,
+            prefixTitles, suffixTitles, null, telecomAddresses);
+         IFCAnyHandle organization = IFCInstanceExporter.CreateOrganization(file, null, organizationName, 
+            organizationDescription, null, organizationAddresses);
+
+         IFCAnyHandle owningUser = IFCInstanceExporter.CreatePersonAndOrganization(file, person, organization, null);
 
          // TODO: Fix regression tests whose line numbers change as a result of missing handles.
          // Change to if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
@@ -3192,7 +3242,7 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle lastModifyingUser = hasPotentialLastUser && ExporterCacheManager.ExportOptionsCache.OwnerHistoryLastModified
                ? owningUser : null;
 
-            ownerHistory = IFCInstanceExporter.CreateOwnerHistory(file, owningUser, application, null,
+            ownerHistory = IFCInstanceExporter.CreateOwnerHistory(file, owningUser, owningApplication, null,
             IFCChangeAction.NoChange, null, lastModifyingUser, null, creationDate);
 
             exporterIFC.SetOwnerHistoryHandle(ownerHistory);    // For use by native code only.
@@ -3376,9 +3426,14 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>true if address is to be created for the building</returns>
       static public bool NeedToCreateAddressForBuilding(Document document)
       {
-         IFCAddress savedAddress = new IFCAddress();
-         IFCAddressItem savedAddressItem;
-         if (savedAddress.GetSavedAddress(document, out savedAddressItem) == true)
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3)
+         {
+            // Deprecated in IFC4.3.
+            return false;
+         }
+
+         IFCAddress savedAddress = new();
+         if (savedAddress.GetSavedAddress(document, out IFCAddressItem savedAddressItem) == true)
          {
             // Return the selection checkbox regardless whether it has data. It will be checked before the creaton of the postal address later
             return savedAddressItem.AssignAddressToBuilding;
@@ -3650,8 +3705,8 @@ namespace Revit.IFC.Export.Exporter
             if (levelInfo == null)
                continue;
 
-            Element level = document.GetElement(levelId);
-
+            Level level = document.GetElement(levelId) as Level;
+            
             levelInfoMapping.TransferOrphanedLevelInfo(levelId);
             int nextLevelIdx = ii + 1;
 
@@ -3662,18 +3717,22 @@ namespace Revit.IFC.Export.Exporter
             HashSet<IFCAnyHandle> relatedProducts = productsAndElements.Item1;
             HashSet<IFCAnyHandle> relatedElements = productsAndElements.Item2;
 
-            using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, false))
+            // Only add properties for the actual level associated with the building storey.
+            if (LevelUtil.IsBuildingStory(level))
             {
-               IFCAnyHandle buildingStoreyHandle = levelInfo.GetBuildingStorey();
-               if (!buildingStories.Contains(buildingStoreyHandle))
+               using (ProductWrapper productWrapper = ProductWrapper.Create(exporterIFC, false))
                {
-                  buildingStories.Add(buildingStoreyHandle);
-                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcBuildingStorey);
+                  IFCAnyHandle buildingStoreyHandle = levelInfo.GetBuildingStorey();
+                  if (!buildingStories.Contains(buildingStoreyHandle))
+                  {
+                     buildingStories.Add(buildingStoreyHandle);
+                     IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcBuildingStorey);
 
-                  // Add Property set, quantities and classification of Building Storey also to IFC
-                  productWrapper.AddElement(level, buildingStoreyHandle, levelInfo, null, false, exportInfo);
+                     // Add Property set, quantities and classification of Building Storey also to IFC
+                     productWrapper.AddElement(level, buildingStoreyHandle, levelInfo, null, false, exportInfo);
 
-                  ExporterUtil.ExportRelatedProperties(exporterIFC, level, productWrapper);
+                     ExporterUtil.ExportRelatedProperties(exporterIFC, level, productWrapper);
+                  }
                }
             }
 

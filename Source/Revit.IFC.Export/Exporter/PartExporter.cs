@@ -207,17 +207,9 @@ namespace Revit.IFC.Export.Exporter
             return;
          }
 
-         ElementId overrideLevelId = null;
-         if (part.LevelId == ElementId.InvalidElementId)
-         {
-            // If part's level is not associated, try to get the host's level with the same category.
-            Element hostElement = FindRootParent(part, part.OriginalCategoryId);
-            overrideLevelId = hostElement?.LevelId ?? ElementId.InvalidElementId;
-         }
-
          IFCExtrusionAxes ifcExtrusionAxes = GetDefaultExtrusionAxesForPart(part);
          ExportPart(exporterIFC, partElement, productWrapper, null, null, null, ifcExtrusionAxes, null,
-            overrideLevelId, PartExportMode.Standard, setMaterialNameToPartName: false);
+            null, PartExportMode.Standard, setMaterialNameToPartName: false);
       }
 
       /// <summary>
@@ -243,21 +235,8 @@ namespace Revit.IFC.Export.Exporter
          bool isWallOrColumn = isWall || isColumn;
          IFCExtrusionAxes ifcExtrusionAxes = GetDefaultExtrusionAxesForPart(part);
 
-         Element hostElement = null;
-         ElementId overrideLevelId = null;
-
          // Find the host element of the part.
-         hostElement = FindRootParent(part, part.OriginalCategoryId);
-
-         // If part's level is not associated, try to get the host's level with the same category.
-         if (part.LevelId != null && part.LevelId != ElementId.InvalidElementId)
-         {
-            overrideLevelId = part.LevelId;
-         }
-         else if (hostElement != null)
-         {
-            overrideLevelId = hostElement.LevelId;
-         }
+         Element hostElement = FindRootParent(part);
 
          // Split parts with original category is wall or column and the option wall or column is split by level is checked, and then export; 
          // otherwise, export separate parts normally.
@@ -270,21 +249,23 @@ namespace Revit.IFC.Export.Exporter
             LevelUtil.CreateSplitLevelRangesForElement(exportInfo, part, out levels, out ranges);
             if (ranges.Count == 0)
             {
-               PartExporter.ExportPart(exporterIFC, partElement, productWrapper, null, null, null, ifcExtrusionAxes, hostElement,
-                  overrideLevelId, PartExportMode.AsBuildingElement, setMaterialNameToPartName: false);
+               ExportPart(exporterIFC, partElement, productWrapper, null, null, null, ifcExtrusionAxes, hostElement,
+                  null, PartExportMode.AsBuildingElement, setMaterialNameToPartName: false);
             }
             else
             {
                for (int ii = 0; ii < ranges.Count; ii++)
                {
-                  PartExporter.ExportPart(exporterIFC, partElement, productWrapper, null, null, ranges[ii], ifcExtrusionAxes,
+                  ExportPart(exporterIFC, partElement, productWrapper, null, null, ranges[ii], ifcExtrusionAxes,
                      hostElement, levels[ii], PartExportMode.AsBuildingElement, setMaterialNameToPartName: false);
                }
             }
          }
          else
-            PartExporter.ExportPart(exporterIFC, partElement, productWrapper, null, null, null, ifcExtrusionAxes, hostElement,
-               overrideLevelId, PartExportMode.AsBuildingElement, setMaterialNameToPartName: false);
+         {
+            ExportPart(exporterIFC, partElement, productWrapper, null, null, null, ifcExtrusionAxes, hostElement,
+               null, PartExportMode.AsBuildingElement, setMaterialNameToPartName: false);
+         }
       }
 
       private static IFCAnyHandle ExportPartCommon(ExporterIFC exporterIFC, Element partElement,
@@ -357,18 +338,7 @@ namespace Revit.IFC.Export.Exporter
          }
          Document document = elementToUse.Document;
 
-         ElementId partExportLevelId = (overrideLevelId != null) ? overrideLevelId : null;
-
-         if (!isDummyPart && partExportLevelId == null && standaloneExport)
-            partExportLevelId = part.LevelId;
-
-         if (partExportLevelId == null || partExportLevelId == ElementId.InvalidElementId)
-         {
-            ElementId hostCategoryId = CategoryUtil.GetSafeCategoryId(hostElement);
-            if (hostElement != null && ((part?.OriginalCategoryId ?? hostCategoryId) != hostCategoryId))
-               return null;
-            partExportLevelId = hostElement?.LevelId;
-         }
+         ElementId partExportLevelId = overrideLevelId ?? LevelUtil.GetBaseLevelIdForElement(elementToUse);
 
          GeometryElement geometryElement = dummyPartGeometry;
          if (!isDummyPart)
@@ -407,13 +377,8 @@ namespace Revit.IFC.Export.Exporter
 
                   IFCAnyHandle overrideContainerHnd = null;
                   ElementId overrideContainerId = ParameterUtil.OverrideContainmentParameter(part, out overrideContainerHnd);
-                  if (overrideContainerId != ElementId.InvalidElementId &&
-                     (partExportLevelId == null || partExportLevelId == ElementId.InvalidElementId))
-                  {
-                     partExportLevelId = overrideContainerId;
-                  }
-
-                  partPlacementSetter = PlacementSetter.Create(exporterIFC, elementToUse, null, orientationTrf, partExportLevelId, overrideContainerHnd);
+                  
+                  partPlacementSetter = PlacementSetter.Create(exporterIFC, elementToUse, null, orientationTrf, overrideContainerId, overrideContainerHnd);
                   partPlacement = partPlacementSetter.LocalPlacement;
                }
                else
@@ -424,10 +389,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle hostHandle = ExporterCacheManager.ElementToHandleCache.Find(hostElement.Id);
                   if (!IFCAnyHandleUtil.IsNullOrHasNoValue(hostHandle))
                   {
-                     if (originalPlacement == null)
-                     {
-                        originalPlacement = IFCAnyHandleUtil.GetObjectPlacement(hostHandle);
-                     }
+                     originalPlacement ??= IFCAnyHandleUtil.GetObjectPlacement(hostHandle);
                      hostTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(originalPlacement, true);
 
                      geometryElement = SolidMeshGeometryInfo.GetTransformedGeometry(geometryElement, hostTrf.Inverse,
@@ -438,7 +400,7 @@ namespace Revit.IFC.Export.Exporter
                   //   the placement for the part needs to be inversed
                   if (hostElement is FamilyInstance)
                   {
-                     partPlacementSetter = PlacementSetter.Create(exporterIFC, elementToUse, hostTrf.Inverse, Transform.Identity, partExportLevelId, null);
+                     partPlacementSetter = PlacementSetter.Create(exporterIFC, hostTrf.Inverse);
                   }
                   partPlacement = ExporterUtil.CreateLocalPlacement(file, originalPlacement, null);
                }
@@ -498,8 +460,7 @@ namespace Revit.IFC.Export.Exporter
                      List<IFCAnyHandle> representations = [bodyRep];
 
                      IFCAnyHandle boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, Transform.Identity);
-                     if (boundingBoxRep != null)
-                        representations.Add(boundingBoxRep);
+                     representations.AddIfNotNull(boundingBoxRep);
 
                      IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(file, null, null, representations);
 
@@ -1503,10 +1464,15 @@ namespace Revit.IFC.Export.Exporter
       /// Find the root element for a part with its original category. 
       /// </summary>
       /// <param name="part">The part element.</param>
-      /// <param name="originalCategoryId">The category id to find the root element.</param>
       /// <returns>The root element that makes the part; returns null if fail to find the root parent.</returns>
-      private static Element FindRootParent(Part part, ElementId originalCategoryId)
+      public static Element FindRootParent(Part part)
       {
+         if (part == null)
+         {
+            return null;
+         }
+
+         ElementId originalCategoryId = part.OriginalCategoryId;
          Element hostElement = null;
 
          foreach (LinkElementId linkElementId in part.GetSourceElementIds())
@@ -1536,7 +1502,7 @@ namespace Revit.IFC.Export.Exporter
             if (parentElement is Part)
             {
                Part parentPart = parentElement as Part;
-               hostElement = FindRootParent(parentPart, originalCategoryId);
+               hostElement = FindRootParent(parentPart);
                if (hostElement != null)
                   return hostElement;
             }

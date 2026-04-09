@@ -39,6 +39,11 @@ namespace Revit.IFC.Export.Utility
       private bool? ExportInternalRevitOverride { get; set; } = null;
 
       /// <summary>
+      /// The table that contains information on which Revit parameters to export, and to which IFC properties.
+      /// </summary>
+      public string ParameterMappingTemplateName { get; set; } = null;
+
+      /// <summary>
       /// Whether or not to include RevitPropertySets
       /// </summary>
       public bool ExportInternalRevit
@@ -116,32 +121,64 @@ namespace Revit.IFC.Export.Utility
       {
          IDictionary<string, string> options = exporterIFC.GetOptions();
 
-         // TODO: Have more than one.
-         IFCParameterTemplate parameterTemplate = IFCParameterTemplate.GetOrCreateInSessionTemplate(document);
-
          PropertySetOptions propertySetOptions = new();
 
          propertySetOptions.m_ExportInternalRevit = !(OptionsUtil.ExportAs2x3CoordinationView2(version) ||
             OptionsUtil.ExportAs2x3COBIE24DesignDeliverable(version));
 
-         // "Revit property sets" override
-         propertySetOptions.ExportInternalRevitOverride = parameterTemplate.ExportRevitElementParameters;
+         string templateName = propertySetOptions.ParameterMappingTemplateName =
+            OptionsUtil.GetNamedStringOption(options, "PropertyMapping");
 
-         // "ExportIFCCommonPropertySets"
-         propertySetOptions.ExportIFCCommon = parameterTemplate.ExportIFCCommonPropertySets;
+         if (string.IsNullOrEmpty(templateName))
+         {
+            // "ExportIFCCommonPropertySets"
+            propertySetOptions.ExportIFCCommon =
+               OptionsUtil.GetNamedBooleanOption(options, "ExportIFCCommonPropertySets").GetValueOrDefault(false);
 
-         // "ExportMaterialPsets"
-         propertySetOptions.ExportMaterialPsets = parameterTemplate.ExportRevitMaterialParameters;
+            // "Revit property sets" override
+            propertySetOptions.ExportInternalRevitOverride =
+               OptionsUtil.GetNamedBooleanOption(options, "ExportInternalRevitPropertySets");
 
-         // "ExportSchedulesAsPsets"
-         propertySetOptions.ExportSchedulesAsPsets = parameterTemplate.ExportRevitSchedules;
+            // "ExportBaseQuantities"
+            propertySetOptions.ExportIFCBaseQuantities =
+               OptionsUtil.GetNamedBooleanOption(options, "ExportBaseQuantities").GetValueOrDefault(false);
 
-         // ExportBaseQuantities
-         propertySetOptions.ExportIFCBaseQuantities = parameterTemplate.ExportIFCBaseQuantities;
+            // "ExportMaterialPsets"
+            propertySetOptions.ExportMaterialPsets =
+               OptionsUtil.GetNamedBooleanOption(options, "ExportMaterialPsets").GetValueOrDefault(false);
 
-         // "ExportUserDefinedPsets"
-         propertySetOptions.ExportUserDefinedPsets = 
-            OptionsUtil.GetNamedBooleanOption(options, "ExportUserDefinedPsets").GetValueOrDefault(false);
+            // "ExportSchedulesAsPsets"
+            propertySetOptions.ExportSchedulesAsPsets =
+               OptionsUtil.GetNamedBooleanOption(options, "ExportSchedulesAsPsets").GetValueOrDefault(false);
+
+            // "ExportUserDefinedPsets"
+            propertySetOptions.ExportUserDefinedPsets =
+               OptionsUtil.GetNamedBooleanOption(options, "ExportUserDefinedPsets").GetValueOrDefault(false);
+         }
+         else
+         {
+            IFCParameterTemplate parameterTemplate = IsInSessionTemplateName(document, templateName) ?
+               IFCParameterTemplate.GetOrCreateInSessionTemplate(document) :
+               IFCParameterTemplate.FindByName(document, templateName);
+
+            // "ExportIFCCommonPropertySets"
+            propertySetOptions.ExportIFCCommon = parameterTemplate?.ExportIFCCommonPropertySets ?? false;
+
+            // "Revit property sets" override
+            propertySetOptions.ExportInternalRevitOverride = parameterTemplate?.ExportRevitElementParameters;
+
+            // ExportBaseQuantities
+            propertySetOptions.ExportIFCBaseQuantities = parameterTemplate?.ExportIFCBaseQuantities ?? false;
+
+            // "ExportMaterialPsets"
+            propertySetOptions.ExportMaterialPsets = parameterTemplate?.ExportRevitMaterialParameters ?? false;
+
+            // "ExportSchedulesAsPsets"
+            propertySetOptions.ExportSchedulesAsPsets = parameterTemplate?.ExportRevitSchedules ?? false;
+
+            // "ExportUserDefinedPsets"
+            propertySetOptions.ExportUserDefinedPsets = parameterTemplate?.ExportUserDefinedPropertySets ?? false;
+         }
 
          // "UseTypePropertiesInInstacePSets"
          propertySetOptions.UseTypePropertiesInInstacePSets =
@@ -155,6 +192,20 @@ namespace Revit.IFC.Export.Utility
             OptionsUtil.GetNamedBooleanOption(options, "ExportSpecificSchedules").GetValueOrDefault(false);
 
          return propertySetOptions;
+      }
+
+      /// <summary>
+      /// Determines if the given template name refers to the in-session parameter mapping template.
+      /// </summary>
+      /// <param name="templateName">The template name to check.</param>
+      /// <returns>True if the template name is the in-session template; otherwise, false.</returns>
+      private static bool IsInSessionTemplateName(Document document, string templateName)
+      {
+         string inSessionTemplateName = IFCParameterTemplate.GetOrCreateInSessionTemplate(document)?.Name;
+         if (string.IsNullOrEmpty(inSessionTemplateName))
+            return false;
+
+         return string.Equals(templateName, inSessionTemplateName, StringComparison.Ordinal);
       }
    }
 }

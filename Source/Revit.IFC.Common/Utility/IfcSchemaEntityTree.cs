@@ -21,7 +21,7 @@ namespace Revit.IFC.Common.Utility
       /// The IFC Entity Dictionary
       /// </summary>
       public IDictionary<string, IfcSchemaEntityNode> IfcEntityDict { get; private set; } = new Dictionary<string, IfcSchemaEntityNode>(StringComparer.OrdinalIgnoreCase);
-      
+
       /// <summary>
       /// The Predefined Type enumeration Dictionary
       /// </summary>
@@ -199,11 +199,57 @@ namespace Revit.IFC.Common.Utility
          { Ifc2x2Schema, new HashSet<string>(){ "IfcBuilding", "IfcBuildingStorey" } }
       };
 
-      static IDictionary<string, IfcSchemaEntityTree> IFCSchemaDict { get; set; } = 
+      static IDictionary<string, Dictionary<string, HashSet<string>>> DeprecatedPredefinedType = new Dictionary<string, Dictionary<string, HashSet<string>>>()
+      {
+         {
+            Ifc4x3Schema,
+            new Dictionary<string, HashSet<string>>()
+            {
+               { "IfcBuildingElementProxy", new HashSet<string>()
+                  { "COMPLEX", "ELEMENT", "PARTIAL" }
+               },
+               { "IfcBuildingElementProxyType", new HashSet<string>()
+                  { "COMPLEX", "ELEMENT", "PARTIAL" }
+               },
+               { "IfcCableCarrierFitting", new HashSet<string>()
+                  { "CROSS", "REDUCER", "TEE" }
+               },
+               { "IfcCableCarrierFittingType", new HashSet<string>()
+                  { "CROSS", "REDUCER", "TEE" }
+               },
+               { "IfcFireSuppressionTerminal", new HashSet<string>()
+                  { "SPRINKLERDEFLECTOR" }
+               },
+               { "IfcFireSuppressionTerminalType", new HashSet<string>()
+                  { "SPRINKLERDEFLECTOR" }
+               },
+               { "IfcFooting", new HashSet<string>()
+                  { "CAISSON_FOUNDATION" }
+               },
+               { "IfcFootingType", new HashSet<string>()
+                  { "CAISSON_FOUNDATION" }
+               },
+               { "IfcGeographicElement", new HashSet<string>()
+                  { "SOIL_BORING_POINT" }
+               },
+               { "IfcGeographicElementType", new HashSet<string>()
+                  { "SOIL_BORING_POINT" }
+               },
+               { "IfcWall", new HashSet<string>()
+                  { "POLYGONAL", "STANDARD" }
+               },
+               { "IfcWallType", new HashSet<string>()
+                  { "POLYGONAL", "STANDARD" }
+               },
+            }
+         }
+      };
+
+      static IDictionary<string, IfcSchemaEntityTree> IFCSchemaDict { get; set; } =
          new Dictionary<string, IfcSchemaEntityTree>();
-      
+
       static IDictionary<string, IFCEntityTrie> IFCSchemaTries { get; set; }
-      
+
       static IDictionary<string, IDictionary<string, IList<string>>> IFCEntityPredefTypeDict = new Dictionary<string, IDictionary<string, IList<string>>>();
 
       /// <summary>
@@ -235,6 +281,8 @@ namespace Revit.IFC.Common.Utility
                schemaFile = Ifc4RV;
                break;
             case IFCVersion.IFC4x3:
+            case IFCVersion.IFC4x3RV:
+            case IFCVersion.IFC4x3DTV:
                schemaFile = Ifc4x3Schema;
                break;
             default:
@@ -242,6 +290,26 @@ namespace Revit.IFC.Common.Utility
                break;
          }
          return schemaFile;
+      }
+
+      /// <summary>
+      /// Return the moat general IFCVersion associated with an IFC schema name.
+      /// </summary>
+      /// <param name="ifcFileVersion">IFCVersion</param>
+      /// <returns>the standardized IFC schema name</returns>
+      static public IFCVersion VersionName(string schemaName)
+      {
+         if (string.Compare(schemaName, Ifc4x3Schema, true) == 0)
+            return IFCVersion.IFC4x3;
+         if (string.Compare(schemaName, Ifc4RV, true) == 0)
+            return IFCVersion.IFC4RV;
+         if (string.Compare(schemaName, Ifc4Schema, true) == 0)
+            return IFCVersion.IFC4;
+         if (string.Compare(schemaName, Ifc2x3Schema, true) == 0)
+            return IFCVersion.IFC2x3;
+         if (string.Compare(schemaName, Ifc2x2Schema, true) == 0)
+            return IFCVersion.IFC2x2;
+         return IFCVersion.Default;
       }
 
       /// <summary>
@@ -430,20 +498,20 @@ namespace Revit.IFC.Common.Utility
 
          return instanceName + "Type";
       }
-      
+
       /// <summary>
-       /// Find a Non ABS supertype entity from the input type name
-       /// </summary>
-       /// <param name="context">the IFC schema context</param>
-       /// <param name="typeName">the type name</param>
-       /// <returns>the non-abs supertype instance node</returns>
+      /// Find a Non ABS supertype entity from the input type name
+      /// </summary>
+      /// <param name="context">the IFC schema context</param>
+      /// <param name="typeName">the type name</param>
+      /// <returns>the non-abs supertype instance node</returns>
       static public IfcSchemaEntityNode FindNonAbsInstanceSuperType(string context, string typeName)
       {
          IfcSchemaEntityTree ifcEntitySchemaTree = GetEntityDictFor(context);
          IfcSchemaEntityNode res = null;
 
          // Note: Implementer's agreement #CV-2x3-166 changes IfcSpaceHeaterType from IfcEnergyConversionDevice to IfcFlowTerminal.
-         if (context.Equals(Ifc2x3Schema,StringComparison.InvariantCultureIgnoreCase)
+         if (context.Equals(Ifc2x3Schema, StringComparison.InvariantCultureIgnoreCase)
              && typeName.Equals("IfcSpaceHeaterType", StringComparison.InvariantCultureIgnoreCase))
          {
             res = ifcEntitySchemaTree.Find("IfcFlowTerminal");
@@ -453,12 +521,12 @@ namespace Revit.IFC.Common.Utility
          }
 
 
-         bool schemaOlderThanIFC4 = context.Equals(Ifc2x3Schema, StringComparison.InvariantCultureIgnoreCase) 
+         bool schemaOlderThanIFC4 = context.Equals(Ifc2x3Schema, StringComparison.InvariantCultureIgnoreCase)
             || context.Equals(Ifc2x2Schema, StringComparison.InvariantCultureIgnoreCase);
 
-         string theTypeName = typeName.EndsWith("Type", StringComparison.CurrentCultureIgnoreCase) ? 
-            typeName : GetTypeNameFromInstanceName(typeName, schemaOlderThanIFC4); 
-         
+         string theTypeName = typeName.EndsWith("Type", StringComparison.CurrentCultureIgnoreCase) ?
+            typeName : GetTypeNameFromInstanceName(typeName, schemaOlderThanIFC4);
+
          IfcSchemaEntityNode entNode = ifcEntitySchemaTree.Find(theTypeName);
          if (entNode != null)
          {
@@ -739,6 +807,29 @@ namespace Revit.IFC.Common.Utility
          if (DeprecatedOrUnsupportedDict.ContainsKey(schemaName))
          {
             return DeprecatedOrUnsupportedDict[schemaName].Contains(entityName);
+         }
+
+         return false;
+      }
+
+      /// <summary>
+      /// Checks whether the specified predefined type of an entity is marked as deprecated 
+      /// for the given schema.
+      /// </summary>
+      /// <param name="schemaName">The name of the schema.</param>
+      /// <param name="entityName">The name of the entity.</param>
+      /// <param name="predefinedTypeName">The predefined type to check.</param>
+      /// <returns>
+      /// <c>true</c> if the specified predefined type is deprecated in the given schema; otherwise, <c>false</c>.
+      /// </returns>
+      public static bool IsDeprecatedPredefinedType(string schemaName, string entityName, string predefinedTypeName)
+      {
+         if (DeprecatedPredefinedType.TryGetValue(schemaName, out var entities))
+         {
+            if (entities.TryGetValue(entityName, out var predefinedTypes))
+            {
+               return predefinedTypes.Contains(predefinedTypeName);
+            }
          }
 
          return false;

@@ -95,6 +95,61 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
+      /// This will traverse all PropertySetDescriptions and filter PropertySetDiscriptions accordingly:
+      /// If a PropertySetDescription has more than one entity associated with it, then it may apply to both Instance and Type entities.
+      /// If a PropertySetDescription has only one entity associated with it, then it cannot apply to both Instance and Type entities.
+      /// This is to reduce the amount of noise in the InstanceAndTypePSetIndices list.
+      /// </summary>
+      /// <param name="propertySetListLists">List of list of PropertySetDescrptions to parse..</param>
+      /// <param name="multipleEntityPropertySetListLists">List of list of PropertySetDescriptions that have multiple entities assigned.</param>
+      /// <param name="singleEntityPropertySetListLists">List of list of PropertySetDescriptions that have only one entity assigned.</param>
+      public static void FilterPropertySets(IList<IList<PropertySetDescription>> propertySetListLists,
+         out IList<IList<PropertySetDescription>> multipleEntityPropertySetListLists,
+         out IList<IList<PropertySetDescription>> singleEntityPropertySetListLists)
+      {
+         multipleEntityPropertySetListLists = null;
+         singleEntityPropertySetListLists = null;
+         if (propertySetListLists == null)
+            return;
+
+         multipleEntityPropertySetListLists = new List<IList<PropertySetDescription>>();
+         singleEntityPropertySetListLists = new List<IList<PropertySetDescription>>();
+         if (propertySetListLists.Count == 0)
+            return;
+
+         foreach (IList<PropertySetDescription> pSetList in propertySetListLists)
+         {
+            IList<PropertySetDescription> multipleEntityPropertySetList = new List<PropertySetDescription>();
+            IList<PropertySetDescription> singleEntityPropertySetList = new List<PropertySetDescription>();
+
+            foreach (PropertySetDescription pSetDesc in pSetList)
+            {
+               int numEntities = pSetDesc?.EntityTypes?.Count ?? 0;
+               if (numEntities == 0)
+                  continue;
+
+               if (numEntities == 1)
+               {
+                  string entity = pSetDesc.EntityTypes.FirstOrDefault().ToString();
+                  if (string.IsNullOrWhiteSpace(entity))
+                     continue;
+
+                  if (entity.EndsWith("Type"))
+                  {
+                     singleEntityPropertySetList.Add(pSetDesc);
+                     continue;
+                  }
+               }
+
+               multipleEntityPropertySetList.Add(pSetDesc);
+            }
+
+            multipleEntityPropertySetListLists.Add(multipleEntityPropertySetList);
+            singleEntityPropertySetListLists.Add(singleEntityPropertySetList);
+         }            
+      }
+
+      /// <summary>
       /// Initializes property sets.
       /// </summary>
       public static void InitPropertySets()
@@ -103,25 +158,48 @@ namespace Revit.IFC.Export.Exporter
 
          // Some properties, particularly the common properties, apply to both instance
          // and type parameters.  It's actually probably a little more complicated than
-         // this, but this preserves current behavioe.
+         // this, but this preserves current behavior.
          // TODO: Don't have this extra level which can easily be out of sync and is
          // potentially too generic.
          IList<int> instanceAndTypePsetIndices = new List<int>();
+
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportIFCCommon)
          {
-            instanceAndTypePsetIndices.Add(cache.PropertySets.Count);
-            InitCommonPropertySets(cache.PropertySets);
-            cache.PropertySets = FilterNotExportingPropertySets(cache.PropertySets);
+            IList<IList<PropertySetDescription>> allCommonPropertySets = new List<IList<PropertySetDescription>>();
+
+            // Even though this populates a List<List<PropertySetDescription>>, in this instance the outer loop should have only one entry.
+            // This is by design, to have a uniform pattern with all the other Init methods.
+            // But in the case where the outer loop contains more than one entry, process that correctly as well.
+            InitCommonPropertySets(allCommonPropertySets);
+            ExcludeNotExportingPropertySets(allCommonPropertySets.LastOrDefault(), PropertySetupType.IfcCommonPropertySets);
+            ExcludeNotExportingProperties(allCommonPropertySets.LastOrDefault());
+
+            IList<IList<PropertySetDescription>> multipleEntityPropertySetListLists = null;
+            IList<IList<PropertySetDescription>> singleEntiyPropertySetListLists = null;
+            FilterPropertySets(allCommonPropertySets, out multipleEntityPropertySetListLists, out singleEntiyPropertySetListLists);
+
+            foreach (IList<PropertySetDescription> psetDescList in multipleEntityPropertySetListLists)
+            {
+               instanceAndTypePsetIndices.Add(cache.PropertySets.Count);
+               cache.PropertySets.Add(psetDescList);
+            }
 
             instanceAndTypePsetIndices.Add(cache.PropertySets.Count);
             InitExtraCommonPropertySets(cache.PropertySets);
-            
+
             InitPreDefinedPropertySets(cache.PreDefinedPropertySets);
+
+            // These property sets should not be pointed to by the instanceAndTypePsetIndicies array.
+            foreach (IList<PropertySetDescription> psetDescList in singleEntiyPropertySetListLists)
+            {
+               cache.PropertySets.Add(psetDescList);
+            }
          }
 
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportSchedulesAsPsets)
          {
             InitCustomPropertySets(ExporterCacheManager.Document, cache.PropertySets);
+            ExcludeNotExportingPropertySets(cache.PropertySets.LastOrDefault(), PropertySetupType.RevitSchedules);
          }
 
          if (ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportUserDefinedPsets)
@@ -138,26 +216,104 @@ namespace Revit.IFC.Export.Exporter
          cache.InstanceAndTypePsetIndices = instanceAndTypePsetIndices;
       }
 
-      private static IList<IList<PropertySetDescription>> FilterNotExportingPropertySets(IList<IList<PropertySetDescription>> PropertySets)
-      {
-         IList<IList<PropertySetDescription>> tempPropertySets = new List<IList<PropertySetDescription>>();
+      private static void ExcludeNotExportingPropertySets(IList<PropertySetDescription> propertySets, PropertySetupType propertySetup)
+      {  
          IFCParameterTemplate parameterTemplate = ExporterCacheManager.ParameterMappingTemplate;
          if (parameterTemplate == null)
-            return PropertySets;
+            return;
 
-         IList<string> nonExportingPropertySets = parameterTemplate.GetPropertySetNames(PropertySetupType.IfcCommonPropertySets, PropertySelectionType.NonExporting);
-         if (nonExportingPropertySets == null || nonExportingPropertySets.Count == 0)
-            return PropertySets;
+         IList<string> nonExportingPropertySets = parameterTemplate.GetPropertySetNames(propertySetup, PropertySelectionType.NonExporting);
+         if ((nonExportingPropertySets?.Count ?? 0) == 0)
+            return;
 
-         foreach (List<PropertySetDescription> propertySetList in PropertySets)
+         var setsToExclude = propertySets.Where(set => nonExportingPropertySets.Contains(set?.Name, StringComparer.InvariantCultureIgnoreCase)).ToList();
+         foreach (var setToExclude in setsToExclude)
+            propertySets.Remove(setToExclude);
+      }
+
+      private static void ExcludeNotExportingProperties(IList<PropertySetDescription> propertySets)
+      {
+         if ((propertySets?.Count ?? 0) == 0)
+            return;
+      
+         foreach (var propertySet in propertySets)
          {
-            List<PropertySetDescription> notExportingPropertySetList = propertySetList.Where(
-               propertySet => nonExportingPropertySets.Contains(propertySet?.Name, StringComparer.InvariantCultureIgnoreCase))?.ToList();
-            
-            List<PropertySetDescription> notMatching = propertySetList.Except(notExportingPropertySetList)?.ToList();
-            tempPropertySets.Add(notMatching);
+            var propertiesToExclude = propertySet.Entries.Where(entry => entry.IsExcluded).ToList();
+            foreach (var propertyToExclude in propertiesToExclude)
+               propertySet.RemoveEntry(propertyToExclude);
          }
-         return tempPropertySets;        
+      }
+
+      private static void ExcludeNotExportingQuantitySets(IList<IList<QuantityDescription>> quantitiesToExport)
+      {
+         IFCParameterTemplate parameterTemplate = ExporterCacheManager.ParameterMappingTemplate;
+         if (parameterTemplate == null)
+            return;
+
+         IList<string> nonExportingQuantitySets = parameterTemplate.GetPropertySetNames(PropertySetupType.IfcBaseQuantities, PropertySelectionType.NonExporting);
+         if (nonExportingQuantitySets == null || nonExportingQuantitySets.Count == 0)
+            return;
+
+
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         {
+            List<string> nonExportingQuantitySetsTypes = nonExportingQuantitySets
+               .Select(name => name.Replace("Qto_", "Ifc"))
+               .Select(name => name.Replace("BaseQuantities", "")).ToList();
+
+            foreach (var quantitySetList in quantitiesToExport)
+            {
+               var setsToExclude = quantitySetList.Where(set => nonExportingQuantitySetsTypes.Contains(set?.EntityTypes.First().ToString(), StringComparer.InvariantCultureIgnoreCase)).ToList();
+               foreach (var setToExclude in setsToExclude)
+                  quantitySetList.Remove(setToExclude);
+            }
+         }
+         else
+         {
+            foreach (var quantitySetList in quantitiesToExport)
+            {
+               var setsToExclude = quantitySetList.Where(set => nonExportingQuantitySets.Contains(set?.Name, StringComparer.InvariantCultureIgnoreCase)).ToList();
+               foreach (var setToExclude in setsToExclude)
+                  quantitySetList.Remove(setToExclude);
+            }
+         }
+      }
+
+      private static void ExcludeNotExportingQuantities(IList<IList<QuantityDescription>> quantitiesToExport)
+      {
+         if ((quantitiesToExport?.Count ?? 0) == 0)
+            return;
+
+         foreach (var quantitySets in quantitiesToExport)
+         {
+            ExcludeNotExportingQuantities(quantitySets);
+         }
+      }
+
+      private static void ExcludeNotExportingQuantities(IList<QuantityDescription> quantitySets)
+      {
+         if ((quantitySets?.Count ?? 0) == 0)
+            return;
+
+         foreach (var quantitySet in quantitySets)
+         {
+            var quantitiesToExclude = quantitySet.Entries.Where(entry => entry.IsExcluded).ToList();
+            foreach (var quantityToExclude in quantitiesToExclude)
+               quantitySet.RemoveEntry(quantityToExclude);
+         }
+      }
+
+      private static void ExcludeNotExportingAttributes()
+      {        
+         if ((ExporterCacheManager.AttributeCache.AttributeSets?.Count ?? 0) == 0)
+            return;
+
+         foreach (var attributeSetDescription in ExporterCacheManager.AttributeCache.AttributeSets)
+         {
+            var attributesToExclude = attributeSetDescription.Entries.Where(entry => entry.IsExcluded).ToList();
+            foreach (var attributeToExclude in attributesToExclude)
+               attributeSetDescription.RemoveEntry(attributeToExclude);
+         }
       }
 
       /// <summary>
@@ -179,7 +335,7 @@ namespace Revit.IFC.Export.Exporter
          InitCommonPropertySets(allPsetOrQtoSets);
       }
 
-      // <summary>
+      /// <summary>
       /// Populates common property sets depending on IFC Schema.
       /// </summary>
       /// <param name="fileVersion">The IFC file version.</param>
@@ -216,6 +372,9 @@ namespace Revit.IFC.Export.Exporter
                quantitiesToExport = InitQtoSets;
             else
                quantitiesToExport += InitQtoSets;
+
+            quantitiesToExport += ExcludeNotExportingQuantitySets;
+            quantitiesToExport += ExcludeNotExportingQuantities;
          }
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE)
@@ -243,19 +402,34 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Initialize user-defined property sets (from external file)
+      /// Initialize user-defined property and quantity sets
       /// </summary>
       /// <param name="propertySets">List of Psets</param>
-      /// <param name="fileVersion">file version - (not used)</param>
       private static void InitUserDefinedPropertySets(IList<IList<PropertySetDescription>> propertySets)
+      {         
+         IList<PropertySetDescription> userDefinedPropertySets = null;
+         IList<QuantityDescription> quantityDescriptions = null;
+
+         if (!OptionsUtil.UseLegacyParameterMapping())
+            CollectUserDefinedDescriptionsFromDocument(out userDefinedPropertySets, out quantityDescriptions);
+         else
+            CollectUserDefinedDescriptionsFromTxt(out userDefinedPropertySets, out quantityDescriptions);
+
+         propertySets.Add(userDefinedPropertySets);
+
+         if (quantityDescriptions.Count > 0)
+            ExporterCacheManager.ParameterCache.Quantities.Add(quantityDescriptions);
+      }
+
+      private static void CollectUserDefinedDescriptionsFromTxt(out IList<PropertySetDescription> userDefinedPropertySets, 
+         out IList<QuantityDescription> quantityDescriptions)
       {
-         Document document = ExporterCacheManager.Document;
-         IList<PropertySetDescription> userDefinedPropertySets = new List<PropertySetDescription>();
-         IList<QuantityDescription> quantityDescriptions = new List<QuantityDescription>();
+         userDefinedPropertySets = new List<PropertySetDescription>();
+         quantityDescriptions = new List<QuantityDescription>();
 
          // get the Pset definitions (using the same file as PropertyMap)
-         IEnumerable<UserDefinedPropertySet> userDefinedPsetDefs = PropertyMap.LoadUserDefinedPset();
          bool exportPre4 = (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || ExporterCacheManager.ExportOptionsCache.ExportAs2x3);
+         IEnumerable<UserDefinedPropertySet> userDefinedPsetDefs = PropertyMap.LoadUserDefinedPset();
 
          // Loop through each definition and add the Pset entries into Cache
          foreach (UserDefinedPropertySet propertySet in userDefinedPsetDefs)
@@ -293,7 +467,7 @@ namespace Revit.IFC.Export.Exporter
 
                   QuantityType quantityType = property.FirstIfcPropertyTypeOrDefault(QuantityType.Real);
                   IList<QuantityEntryMap> entryMap = property.GetEntryMap((name, parameter) => new QuantityEntryMap(name, parameter));
-                  QuantityEntry quantityEntry = new QuantityEntry(property.Name, entryMap) { QuantityType = quantityType };
+                  QuantityEntry quantityEntry = new(quantityType, property.Name, entryMap);
                   quantityDescription.AddEntry(quantityEntry);
                }
             }
@@ -302,10 +476,14 @@ namespace Revit.IFC.Export.Exporter
                PropertySetDescription userDefinedPropertySet = new PropertySetDescription();
                userDefinedPropertySet.AddTypePropertiesToInstance = ExporterCacheManager.ExportOptionsCache.PropertySetOptions.UseTypePropertiesInInstacePSets;
                description = userDefinedPropertySet;
-               foreach(UserDefinedProperty property in propertySet.Properties)
+               foreach (UserDefinedProperty property in propertySet.Properties)
                {
+                  PropertyValueType valueType = property.IfcPropertyValueType;
                   PropertyType primaryType = property.FirstIfcPropertyTypeOrDefault(PropertyType.Text); // force default to Text/string if the type does not match with any correct datatype
                   PropertyType secondaryType = property.GetIfcPropertyAtOrDefault(1, PropertyType.Text);
+                  if (valueType == PropertyValueType.TableValue)
+                     (primaryType, secondaryType) = (secondaryType, primaryType);
+
                   IList<PropertySetEntryMap> entryMap = property.GetEntryMap((name, parameter) => new PropertySetEntryMap(name, parameter));
                   if (entryMap.Count > 0)
                   {
@@ -331,70 +509,267 @@ namespace Revit.IFC.Export.Exporter
             description.Name = propertySet.Name;
             description.DescriptionOfSet = string.Empty;
 
-            foreach (string elem in propertySet.IfcEntities)
+            HashSet<IFCEntityType> entityTypes = GetIfcEntityTypesFromStrings(propertySet.IfcEntities, exportPre4);
+            foreach (IFCEntityType entityType in entityTypes)
             {
-               if (Enum.TryParse(elem, out IFCEntityType ifcEntity))
-               {
-                  bool usedCompatibleType = false;
+               description.EntityTypes.Add(entityType);
+            }
+         }
+      }
 
-                  if (exportPre4)
+      private static void CollectUserDefinedDescriptionsFromDocument(out IList<PropertySetDescription> userDefinedPropertySets,
+         out IList<QuantityDescription> userDefinedQuantitySets)
+      {
+         userDefinedPropertySets = new List<PropertySetDescription>();
+         userDefinedQuantitySets = new List<QuantityDescription>();
+         Document document = ExporterCacheManager.Document;
+         bool exportPre4 = (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 || ExporterCacheManager.ExportOptionsCache.ExportAs2x3);
+
+         IList<string> propertySetNames = IFCUserDefinedPropertySet.ListPropertySetNames(document);
+         foreach (string psetName in propertySetNames)
+         {
+            if (PropertyUtil.IsPropertySetExcluded(PropertySetupType.UserDefinedPropertySets, psetName))
+               continue;
+
+            IFCUserDefinedPropertySet userDefinedSet = IFCUserDefinedPropertySet.FindPropertySetByName(document, psetName);
+            if (userDefinedSet == null)
+               continue;
+
+            Description description = null;
+
+            switch (userDefinedSet.PropertySetType)
+            {
+               case IFCUserDefinedPropertySetType.QuantitySet:
                   {
-                     IFCEntityType originalEntity = ifcEntity;
-                     IFCCompatibilityType.CheckCompatibleType(originalEntity, out ifcEntity);
-                     usedCompatibleType = (originalEntity != ifcEntity);
+                     description = CreateAndAddQuantitySetDescription(userDefinedSet, ref userDefinedQuantitySets);
+                     break;
                   }
-
-                  description.EntityTypes.Add(ifcEntity);
-
-                  // This is intended mostly as a workaround in IFC2x3 for IfcElementType.  Not all elements have an associated type (e.g. IfcRoof),
-                  // but we still want to be able to export type property sets for that element.  So we will manually add these extra types here without
-                  // forcing the user to guess.  If this causes issues, we may come up with a different design.
-                  if (!usedCompatibleType)
+                  case IFCUserDefinedPropertySetType.IFCAttributeSet:
                   {
-                     ISet<IFCEntityType> relatedEntities = GetListOfRelatedEntities(ifcEntity);
-                     if (relatedEntities != null)
-                     {
-                        description.EntityTypes.UnionWith(relatedEntities);
-                     }
+                     description = CreateAndAddAttributeSetDescription(userDefinedSet);
+                     break;
+                  }
+                  default:
+                  {
+                     description = CreateAndAddPropertySetDescription(userDefinedSet, ref userDefinedPropertySets);
+                     break;
+                  }
+            }
+
+            if (description == null)
+               continue;
+
+            description.Name = psetName;
+            description.DescriptionOfSet = string.Empty;
+
+            var applicableEntities = userDefinedSet.GetApplicableEntities();
+            description.EntityTypes.UnionWith(GetIfcEntityTypesFromStrings(applicableEntities, exportPre4));
+         }
+
+         ExcludeNotExportingProperties(userDefinedPropertySets);
+         ExcludeNotExportingQuantities(userDefinedQuantitySets);
+         ExcludeNotExportingAttributes();
+      }
+
+      private static PropertySetDescription CreateAndAddPropertySetDescription(IFCUserDefinedPropertySet propertySet,
+         ref IList<PropertySetDescription> propertyDescriptions)
+      {
+         PropertySetDescription propertyDescription = new()
+         {
+            Name = propertySet.Name,
+            IsUserDefined = true,
+            AddTypePropertiesToInstance = true
+         };
+
+         foreach (IFCUserDefinedProperty property in propertySet.GetProperties())
+         {
+            if (property == null)
+               continue;
+
+            string ifcPropertyName = property.IFCPropertyName;
+            string revitParameterName = property.RevitPropertyName;            
+            ElementId revitParameterId = property.RevitPropertyId;
+            if (string.IsNullOrEmpty(revitParameterName) && revitParameterId == ElementId.InvalidElementId)
+               revitParameterName = ifcPropertyName;
+
+            BuiltInParameter revitBuiltInParameter = ParameterUtils.IsBuiltInParameter(revitParameterId) ?
+               (BuiltInParameter)revitParameterId.Value : BuiltInParameter.INVALID;
+
+            PropertyValueType valueType = property.PropertyType switch
+            {
+               IFCUserDefinedPropertyType.Single => PropertyValueType.SingleValue,
+               IFCUserDefinedPropertyType.Bounded => PropertyValueType.BoundedValue,
+               IFCUserDefinedPropertyType.List => PropertyValueType.ListValue,
+               IFCUserDefinedPropertyType.Table => PropertyValueType.TableValue,
+               _ => PropertyValueType.SingleValue
+            };
+
+            if (!Enum.TryParse(property.DataType, out PropertyType primaryType))
+               primaryType = PropertyType.Text;
+
+            if (!Enum.TryParse(property.DataTypeDefined, out PropertyType secondaryType))
+               secondaryType = PropertyType.Text;
+
+            if (valueType == PropertyValueType.TableValue)
+               (primaryType, secondaryType) = (secondaryType, primaryType);
+
+            IList<PropertySetEntryMap> entryMap = [new(revitParameterName, revitBuiltInParameter)];
+            PropertySetEntry propertySetEntry = new(primaryType, ifcPropertyName, entryMap)
+            {
+               PropertyArgumentType = secondaryType,
+               PropertyValueType = valueType
+            };
+
+            propertyDescription.AddEntry(propertySetEntry);
+         }
+
+         propertyDescriptions.Add(propertyDescription);
+
+         return propertyDescription;
+      }
+
+      private static QuantityDescription CreateAndAddQuantitySetDescription(IFCUserDefinedPropertySet quantitySet,
+         ref IList<QuantityDescription> quantityDescriptions)
+      {
+         if (quantitySet == null || (quantitySet.PropertySetType != IFCUserDefinedPropertySetType.QuantitySet))
+            return null;
+
+         QuantityDescription quantityDescription = new()
+         {
+            Name = quantitySet.Name,
+            IsUserDefined = true
+         };
+
+         foreach (IFCUserDefinedProperty property in quantitySet.GetProperties())
+         {
+            if (property == null)
+               continue;
+
+            string ifcQuantityName = property.IFCPropertyName;
+            string revitParameterName = property.RevitPropertyName;
+            ElementId revitParameterId = property.RevitPropertyId;
+            BuiltInParameter revitBuiltInParameter = ParameterUtils.IsBuiltInParameter(revitParameterId) ?
+               (BuiltInParameter)revitParameterId.Value : BuiltInParameter.INVALID;
+
+            IFCPropertyMappingInfo mappingInfo = PropertyUtil.GetParameterMappingInfoFromCache(PropertySetupType.UserDefinedPropertySets,
+               quantitySet.Name, ElementId.InvalidElementId, ifcQuantityName);
+            if ((mappingInfo?.ExportFlag ?? true) == false)
+               continue;
+
+            if (!Enum.TryParse(property.DataType, out QuantityType quantityType))
+            {
+               // force default to Real if the type does not match with any correct datatype
+               quantityType = QuantityType.Real;
+            }
+
+            IList<QuantityEntryMap> entryMap = [new(revitParameterName, revitBuiltInParameter)];
+            QuantityEntry quantityEntry = new(quantityType, ifcQuantityName, entryMap);
+
+            quantityDescription.AddEntry(quantityEntry);
+         }
+
+         quantityDescriptions.Add(quantityDescription);
+
+         return quantityDescription;
+      }
+
+      private static AttributeSetDescription CreateAndAddAttributeSetDescription(IFCUserDefinedPropertySet propertySet)
+      {
+         if (propertySet == null || (propertySet.PropertySetType != IFCUserDefinedPropertySetType.IFCAttributeSet))
+            return null;
+
+         AttributeSetDescription attributeSetDescription = new()
+         {
+            Name = propertySet.Name,
+         };
+
+         foreach (IFCUserDefinedProperty property in propertySet.GetProperties())
+         {
+            if (property == null)
+               continue;
+
+            string ifcAttributeName = property.IFCPropertyName;
+            string revitParameterName = property.RevitPropertyName;
+            ElementId revitParameterId = property.RevitPropertyId;
+            BuiltInParameter revitBuiltInParameter = ParameterUtils.IsBuiltInParameter(revitParameterId) ?
+               (BuiltInParameter)revitParameterId.Value : BuiltInParameter.INVALID;
+
+            IFCPropertyMappingInfo mappingInfo = PropertyUtil.GetParameterMappingInfoFromCache(PropertySetupType.UserDefinedPropertySets,
+               propertySet.Name, ElementId.InvalidElementId, ifcAttributeName);
+            if ((mappingInfo?.ExportFlag ?? true) == false)
+               continue;
+            
+            if (!Enum.TryParse(property.DataType, out PropertyType propertyType))
+            {
+               // force default to Text if the type does not match with any correct datatype
+               propertyType = PropertyType.Text;
+            }
+            
+            List<AttributeEntryMap> entryMap = [new(revitParameterName, revitBuiltInParameter)];
+            AttributeEntry attributeEntry = new(ifcAttributeName, propertyType, entryMap);
+            
+            attributeSetDescription.AddEntry(attributeEntry);
+         }
+         ExporterCacheManager.AttributeCache.AddAttributeSet(attributeSetDescription);
+
+         return attributeSetDescription;
+      }
+
+      public static HashSet<IFCEntityType> GetIfcEntityTypesFromStrings(IList<string> entityStrings, bool exportPre4)
+      {
+         HashSet<IFCEntityType> entityTypes = new();
+         if ((entityStrings?.Count ?? 0) == 0)
+            return entityTypes;
+
+         foreach (string elem in entityStrings)
+         {
+            if (Enum.TryParse(elem, true, out IFCEntityType ifcEntity))
+            {
+               bool usedCompatibleType = false;
+
+               if (exportPre4)
+               {
+                  IFCEntityType originalEntity = ifcEntity;
+                  IFCCompatibilityType.CheckCompatibleType(originalEntity, out ifcEntity);
+                  usedCompatibleType = (originalEntity != ifcEntity);
+               }
+
+               entityTypes.Add(ifcEntity);
+
+               // This is intended mostly as a workaround in IFC2x3 for IfcElementType.  Not all elements have an associated type (e.g. IfcRoof),
+               // but we still want to be able to export type property sets for that element.  So we will manually add these extra types here without
+               // forcing the user to guess.  If this causes issues, we may come up with a different design.
+               if (!usedCompatibleType)
+               {
+                  ISet<IFCEntityType> relatedEntities = GetListOfRelatedEntities(ifcEntity);
+                  if (relatedEntities != null)
+                  {
+                     entityTypes.UnionWith(relatedEntities);
                   }
                }
             }
-
          }
-
-         propertySets.Add(userDefinedPropertySets);
-         if (quantityDescriptions.Count > 0)
-            ExporterCacheManager.ParameterCache.Quantities.Add(quantityDescriptions);
+         return entityTypes;
       }
 
-      private static bool IsSupportedFieldType(ScheduleFieldType fieldType)
+      public static bool IsSupportedScheduleField(ScheduleField field)
       {
+         if (field == null)
+            return false;
+
+         ScheduleFieldType fieldType = field.FieldType;
+
          return (fieldType == ScheduleFieldType.Instance ||
             fieldType == ScheduleFieldType.ElementType ||
             fieldType == ScheduleFieldType.CombinedParameter);
-      }
-
-
-      public static void PopulateCustomPropertySets(Document document, IList<IList<PropertySetDescription>> propertySets)
-      {
-         ExporterCacheManager.Document = document;
-         InitCustomPropertySets(document, propertySets);
-
-         // Remove all empty schedules without properties for IFC Parameter Mapping
-         foreach (List<PropertySetDescription> propertySet in propertySets)
-         {
-            if (propertySet == null)
-               continue;
-
-            propertySet.RemoveAll(x => x.Entries?.Count == 0);
-         }
       }
 
       /// <summary>
       /// Initializes custom property sets from schedules.
       /// </summary>
       /// <param name="propertySets">List to store property sets.</param>
-      /// <param name="fileVersion">The IFC file version.</param>
+      /// <param name="propertySets">The list of lists of property sets.</param>
+      /// <param name="ignoreMappingTemplate">Whether to add property if it's excluded in mapping template</param>
       private static void InitCustomPropertySets(Document document, IList<IList<PropertySetDescription>> propertySets)
       {
          IList<PropertySetDescription> customPropertySets = new List<PropertySetDescription>();
@@ -435,7 +810,7 @@ namespace Revit.IFC.Export.Exporter
             if (exportSchedule.GetValueOrDefault(IFCExportElement.Yes) == IFCExportElement.No)
                continue;
 
-            PropertySetDescription customPSet = new PropertySetDescription();
+            PropertySetDescription customPSet = new();
 
             string scheduleName = NamingUtil.GetNameOverride(schedule, schedule.Name);
             if (string.IsNullOrWhiteSpace(scheduleName))
@@ -450,6 +825,7 @@ namespace Revit.IFC.Export.Exporter
                continue;
 
             // The schedule will be responsible for determining which elements to actually export.
+            // Note that this currently only works for schedules in the host document.
             customPSet.ViewScheduleId = schedule.Id;
             customPSet.EntityTypes.Add(IFCEntityType.IfcProduct);
 
@@ -457,8 +833,8 @@ namespace Revit.IFC.Export.Exporter
             if (fieldCount == 0)
                continue;
 
-            HashSet<ElementId> containedElementIds = new HashSet<ElementId>();
-            FilteredElementCollector elementsInViewScheduleCollector = new FilteredElementCollector(document, schedule.Id);
+            HashSet<ElementId> containedElementIds = new();
+            FilteredElementCollector elementsInViewScheduleCollector = new(document, schedule.Id);
             foreach (Element containedElement in elementsInViewScheduleCollector)
             {
                containedElementIds.Add(containedElement.Id);
@@ -473,16 +849,24 @@ namespace Revit.IFC.Export.Exporter
             for (int ii = 0; ii < fieldCount; ii++)
             {
                ScheduleField field = definition.GetField(ii);
-
-               ScheduleFieldType fieldType = field.FieldType;
-               if (field.IsHidden || !IsSupportedFieldType(fieldType))
+               if (!IsSupportedScheduleField(field))
                   continue;
+
+               string propertyName = field.ColumnHeading;
+
+               // Process parameter mapping info
+               IFCPropertyMappingInfo mappingInfo = PropertyUtil.GetParameterMappingInfoFromCache(PropertySetupType.RevitSchedules, scheduleName, field.ParameterId, propertyName);
+               if ((mappingInfo?.ExportFlag ?? true) == false)
+                  continue;
+
+               propertyName = string.IsNullOrEmpty(mappingInfo?.IFCPropertyName) ? propertyName : mappingInfo?.IFCPropertyName;
+
 
                // Check if it is a combined parameter.  If so, calculate the formula later 
                // as necessary.
                PropertySetEntry ifcPSE = null;
 
-               switch (fieldType)
+               switch (field.FieldType)
                {
                   case ScheduleFieldType.CombinedParameter:
                      {
@@ -508,7 +892,7 @@ namespace Revit.IFC.Export.Exporter
                         {
                            Parameter containedElementParameter = null;
 
-                           if (fieldType == ScheduleFieldType.Instance)
+                           if (field.FieldType == ScheduleFieldType.Instance)
                               containedElementParameter = containedElement.get_Parameter(asBuiltInParameterId);
 
                            // shared parameters can return ScheduleFieldType.Instance, even if they are type parameters, so take a look.
@@ -542,7 +926,7 @@ namespace Revit.IFC.Export.Exporter
 
                if (ifcPSE != null)
                {
-                  ifcPSE.PropertyName = field.ColumnHeading;
+                  ifcPSE.PropertyName = propertyName;
                   customPSet.AddEntry(ifcPSE);
                }
             }
@@ -553,7 +937,7 @@ namespace Revit.IFC.Export.Exporter
          propertySets.Add(customPropertySets);
       }
 
-#region COBie propertysets
+      #region COBie propertysets
       /// <summary>
       /// Initializes COBIE property sets.
       /// </summary>
@@ -728,35 +1112,35 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="cobieQuantities">List to store quantities.</param>
       private static void InitCOBIESpaceQuantities(IList<QuantityDescription> cobieQuantities)
       {
-         QuantityDescription ifcCOBIEQuantity = new QuantityDescription();
+         QuantityDescription ifcCOBIEQuantity = new();
          ifcCOBIEQuantity.Name = "BaseQuantities";
          ifcCOBIEQuantity.EntityTypes.Add(IFCEntityType.IfcSpace);
 
-         QuantityEntry ifcQE = new QuantityEntry("Height");
+         QuantityEntry ifcQE = new("Height");
          ifcQE.MethodOfMeasurement = "length measured in geometry";
          ifcQE.QuantityType = QuantityType.PositiveLength;
          ifcQE.PropertyCalculator = HeightCalculator.Instance;
          ifcCOBIEQuantity.AddEntry(ifcQE);
 
-         ifcQE = new QuantityEntry("GrossPerimeter");
+         ifcQE = new("GrossPerimeter");
          ifcQE.MethodOfMeasurement = "length measured in geometry";
          ifcQE.QuantityType = QuantityType.PositiveLength;
-         ifcQE.PropertyCalculator = PerimeterCalculator.Instance;
+         ifcQE.PropertyCalculator = GrossPerimeterCalculator.Instance;
          ifcCOBIEQuantity.AddEntry(ifcQE);
 
-         ifcQE = new QuantityEntry("GrossFloorArea");
+         ifcQE = new("GrossFloorArea");
          ifcQE.MethodOfMeasurement = "area measured in geometry";
          ifcQE.QuantityType = QuantityType.Area;
          ifcQE.PropertyCalculator = AreaCalculator.Instance;
          ifcCOBIEQuantity.AddEntry(ifcQE);
 
-         ifcQE = new QuantityEntry("NetFloorArea");
+         ifcQE = new("NetFloorArea");
          ifcQE.MethodOfMeasurement = "area measured in geometry";
          ifcQE.QuantityType = QuantityType.Area;
          ifcQE.PropertyCalculator = AreaCalculator.Instance;
          ifcCOBIEQuantity.AddEntry(ifcQE);
 
-         ifcQE = new QuantityEntry("GrossVolume");
+         ifcQE = new("GrossVolume");
          ifcQE.MethodOfMeasurement = "volume measured in geometry";
          ifcQE.QuantityType = QuantityType.Volume;
          ifcQE.PropertyCalculator = VolumeCalculator.Instance;

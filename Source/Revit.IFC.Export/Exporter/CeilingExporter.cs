@@ -114,8 +114,12 @@ namespace Revit.IFC.Export.Exporter
                      BodyExporterOptions bodyExporterOptions = new(true, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                      if (!exportByComponents)
                      {
+                        //When elements are part of an assembly, their relative positions to other assembly components must be preserved exactly.
+                        //Applying offset transformations could misalign components within the assembly.
+                        bool allowOffsetTransform = !ExporterUtil.IsContainedInAssembly(element);
+
                         prodRep = RepresentationUtil.CreateAppropriateProductDefinitionShape(exporterIFC, element,
-                            categoryId, geomElem, bodyExporterOptions, null, ecData, true);
+                            categoryId, geomElem, bodyExporterOptions, null, ecData, allowOffsetTransform);
                         if (IFCAnyHandleUtil.IsNullOrHasNoValue(prodRep))
                         {
                            ecData.ClearOpenings();
@@ -165,7 +169,7 @@ namespace Revit.IFC.Export.Exporter
                            Curve transformedCeilingGrid = 
                               localPlacementOffset != null ? ceilingGrid.CreateTransformed(localPlacementOffset) : ceilingGrid;
                            repItems.AddIfNotNull(GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC,
-                              transformedCeilingGrid, false, null, GeometryUtil.TrimCurvePreference.UsePolyLineOrTrim, null));
+                              transformedCeilingGrid, false, null, GeometryUtil.TrimCurvePreference.UsePolyLineOrTrim));
                         }
                      }
 
@@ -182,6 +186,8 @@ namespace Revit.IFC.Export.Exporter
 
                   IFCAnyHandle covering = IFCInstanceExporter.CreateCovering(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
                       setter.LocalPlacement, prodRep, coveringType);
+
+                  ExporterCacheManager.ElementToHandleCache.Register(element.Id, covering);
 
                   if (exportParts)
                   {

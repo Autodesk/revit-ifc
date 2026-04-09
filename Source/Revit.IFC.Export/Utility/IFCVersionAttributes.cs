@@ -19,7 +19,7 @@
 
 using Autodesk.Revit.DB;
 
-namespace BIM.IFC.Export.UI
+namespace Revit.IFC.Export.Utility
 {
    /// <summary>
    /// Represents the choices available for the file version during IFC export.

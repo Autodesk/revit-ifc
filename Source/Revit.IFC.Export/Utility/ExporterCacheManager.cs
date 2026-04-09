@@ -34,6 +34,7 @@ namespace Revit.IFC.Export.Utility
 {
    // Alias to make it easier to deal with ExportInfoCache.
    using ExportTypeInfo = Tuple<IFCExportInfoPair, string, ExportTypeOverrideHelper>;
+   using ParameterMappingKey = Tuple<PropertySetupType, string, ElementId, string>;
 
    /// <summary>
    /// Manages caches necessary for IFC export.
@@ -154,6 +155,11 @@ namespace Revit.IFC.Export.Utility
       public static Document Document { get; set; } = null;
 
       /// <summary>
+      /// Cache contains warnings that may have occurred outside a transaction, but will be posted within a transaction (at the end of export).
+      /// </summary>
+      public static List<String> DelayedWarnings { get; private set; } = new();
+
+      /// <summary>
       /// The cache containing the openings that need to be created for doors and windows.
       /// </summary>
       public static DoorWindowDelayedOpeningCreatorCache DoorWindowDelayedOpeningCreatorCache { get; private set; } = new();
@@ -232,6 +238,8 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public static TypeObjectsCache FamilySymbolToTypeInfoCache { get; private set; } = new();
 
+      private static IFCAnyHandle m_Global2DOriginHandle = null;
+      
       private static IFCAnyHandle m_Global3DOriginHandle = null;
 
       /// <summary>
@@ -358,6 +366,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public static IFCAnyHandle OwnerHistoryHandle { get; set; } = null;
 
+      
       /// <summary>
       /// The ParameterCache object.
       /// </summary>
@@ -400,6 +409,11 @@ namespace Revit.IFC.Export.Utility
       public static PropertyInfoCache PropertyInfoCache { get; private set; } = new();
 
       /// <summary>
+      /// Cache for property mappings.
+      /// </summary>
+      public static Dictionary<ParameterMappingKey, IFCPropertyMappingInfo> PropertyMappingCache { get; private set; } = new();
+
+      /// <summary>
       /// The common property sets to be exported for an entity type, regardless of Object Type.
       /// </summary>
       public static Dictionary<PropertySetKey, IList<PropertySetDescription>> PropertySetsForTypeCache { get; private set; } = new();
@@ -439,6 +453,12 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public static SpaceOccupantInfoCache SpaceOccupantInfoCache { get; private set; } = new();
 
+      /// <summary>
+      /// The SpaceTypeCache object.  Used for space elements in Revit with no type.
+      /// </summary>
+      /// <remarks>The key is the predefined type of the IfcSpaceType.</remarks>
+      public static Dictionary<string, IFCAnyHandle> SpaceTypeCache { get; private set; } = new();
+      
       /// <summary>
       /// The StairRampContainerInfoCache object.
       /// </summary>
@@ -568,22 +588,22 @@ namespace Revit.IFC.Export.Utility
             {
                try
                {
-                  string name = ExportOptionsCache.ParameterMappingTemplateName;
-                  if (name != null)
-                  {
-                     Document document = ExportOptionsCache.HostDocument ?? Document;
-                     if (document != null)
-                     {
-                        m_ParameterMappingTemplate = IFCParameterTemplate.FindByName(document, name);
-                     }
-                  }
+                  string templateName = ExportOptionsCache.PropertySetOptions?.ParameterMappingTemplateName;
+                  if (string.IsNullOrEmpty(templateName))
+                     return null; 
+                  
+                  Document document = ExportOptionsCache.HostDocument ?? Document;
+                  if (document != null)
+                     m_ParameterMappingTemplate = IFCParameterTemplate.FindByName(document, templateName);
+                  
                }
                catch
                {
                   m_ParameterMappingTemplate = null;
                }
 
-               m_ParameterMappingTemplate ??= IFCParameterTemplate.GetOrCreateInSessionTemplate(Document);
+               if (Document != null && m_ParameterMappingTemplate == null)
+                  m_ParameterMappingTemplate = IFCParameterTemplate.GetOrCreateInSessionTemplate(Document);
             }
 
             return m_ParameterMappingTemplate;
@@ -594,7 +614,6 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            // TODO: this isn't really correct if we are exporting multiple documents.
             if (m_CategoryMappingTemplate == null)
             {
                try
@@ -602,10 +621,10 @@ namespace Revit.IFC.Export.Utility
                   string name = ExportOptionsCache.CategoryMappingTemplateName;
                   if (name != null)
                   {
-                     Document document = ExportOptionsCache.HostDocument ?? Document;
-                     if (document != null)
+                     Document documentToUse = ExportOptionsCache.HostDocument ?? Document;
+                     if (documentToUse != null)
                      {
-                        m_CategoryMappingTemplate = IFCCategoryTemplate.FindByName(document, name);
+                        m_CategoryMappingTemplate = IFCCategoryTemplate.FindByName(documentToUse, name);
                      }
                   }
                }
@@ -614,8 +633,14 @@ namespace Revit.IFC.Export.Utility
                   m_CategoryMappingTemplate = null;
                }
 
+               bool getFromLink = (m_CategoryMappingTemplate == null);
                m_CategoryMappingTemplate ??= IFCCategoryTemplate.GetOrCreateInSessionTemplate(Document);
-               m_CategoryMappingTemplate?.UpdateCategoryList(Document);
+               if (ExportOptionsCache.HostDocument == null || getFromLink)
+               {
+                  // TODO: This routine currently doesn't work will if the mapping template and the Document we are
+                  // updating the category list from are from different documents.  We need to fix that.
+                  m_CategoryMappingTemplate?.UpdateCategoryList(Document);
+               }
             }
 
             return m_CategoryMappingTemplate;
@@ -793,6 +818,17 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// A local copy of the internal IfcCartesianPoint for the global 2D origin.
+      public static IFCAnyHandle Global2DOriginHandle
+      {
+         get
+         {
+            m_Global2DOriginHandle ??= ExporterIFCUtils.GetGlobal2DOriginHandle();
+            return m_Global2DOriginHandle;
+         }
+      }
+      
+      /// <summary>
       /// A local copy of the internal IfcCartesianPoint for the global origin.
       public static IFCAnyHandle Global3DOriginHandle
       {
@@ -814,9 +850,11 @@ namespace Revit.IFC.Export.Utility
             CertifiedEntitiesAndPsetsCache = new IFCCertifiedEntitiesAndPSets(); // No Clear() for this, just remake.
             ExporterIFC = null;
             ExportOptionsCache = new();    // This will need to be re-initialized before use.
+            m_Global2DOriginHandle = null;
             m_Global3DOriginHandle = null;
             Context2DHandles.Clear();
             Context3DHandles.Clear();
+            DelayedWarnings = new();
             GUIDCache.Clear();
             OwnerHistoryHandle = null;
             ParameterCache.Clear();
@@ -889,6 +927,7 @@ namespace Revit.IFC.Export.Utility
          PresentationLayerSetCache.Clear();
          PresentationStyleAssignmentCache.Clear();
          PropertyInfoCache.Clear();
+         PropertyMappingCache.Clear();
          m_PropertyMapCache = null;
          PropertySetsForTypeCache.Clear();
          PreDefinedPropertySetsForTypeCache.Clear();
@@ -898,6 +937,7 @@ namespace Revit.IFC.Export.Utility
          SpaceBoundaryCache.Clear();
          SpaceInfoCache.Clear();
          SpaceOccupantInfoCache.Clear();
+         SpaceTypeCache.Clear();
          StairRampContainerInfoCache.Clear();
          SystemsCache.Clear();
          TemporaryPartsCache.Clear();

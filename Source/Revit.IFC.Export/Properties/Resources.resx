@@ -117,11 +117,20 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BridgeArched" xml:space="preserve">
+    <value>Arched (ARCHED)</value>
+  </data>
   <data name="ConicalFaceProfileCurve" xml:space="preserve">
     <value>Conical Face Profile Curve</value>
   </data>
   <data name="IFCExportComplete" xml:space="preserve">
     <value>IFC Export Complete</value>
+  </data>
+  <data name="IFCExportWarningCannotAddPropertyToReservedPropertySet" xml:space="preserve">
+    <value>Cannot add new Property {0} to Reserved Property Set {1}.</value>
+  </data>
+  <data name="IFCExportWarningCannotAddUserDefinedPropertySet" xml:space="preserve">
+    <value>User-defined Property Set {0} contains reserved string {1}. Extending property set name to {2}.</value>
   </data>
   <data name="IFCProcessingAreaSchemes" xml:space="preserve">
     <value>IFC Export: Processing Area Schemes: {0} of {1} (Area Scheme ID: {2})</value>
@@ -161,5 +170,185 @@
   </data>
   <data name="Shape" xml:space="preserve">
     <value>Shape</value>
+  </data>
+  <data name="BridgeCableStayed" xml:space="preserve">
+    <value>Cable Stayed (CABLESTAYED)</value>
+  </data>
+  <data name="BridgeCantilever" xml:space="preserve">
+    <value>Cantilever (CANTILEVER)</value>
+  </data>
+  <data name="BridgeCulvert" xml:space="preserve">
+    <value>Culvert (CULVERT)</value>
+  </data>
+  <data name="BridgeFramework" xml:space="preserve">
+    <value>Framework (FRAMEWORK)</value>
+  </data>
+  <data name="BridgeGirder" xml:space="preserve">
+    <value>Girder (GIRDER)</value>
+  </data>
+  <data name="BridgeSuspension" xml:space="preserve">
+    <value>Suspension (SUSPENSION)</value>
+  </data>
+  <data name="BridgeTruss" xml:space="preserve">
+    <value>Truss (TRUSS)</value>
+  </data>
+  <data name="DefaultPhase" xml:space="preserve">
+    <value>Default phase to export</value>
+  </data>
+  <data name="DeleteOldConfiguration" xml:space="preserve">
+    <value>Delete old configuration</value>
+  </data>
+  <data name="DeleteOldSetups" xml:space="preserve">
+    <value>Delete old IFC export setups</value>
+  </data>
+  <data name="ER_Architecture" xml:space="preserve">
+    <value>Architectural Reference Exchange</value>
+  </data>
+  <data name="ER_ArchitectureShort" xml:space="preserve">
+    <value>Architecture</value>
+  </data>
+  <data name="ER_BuildingService" xml:space="preserve">
+    <value>MEP Reference Exchange</value>
+  </data>
+  <data name="ER_BuildingServiceShort" xml:space="preserve">
+    <value>BuildingService</value>
+  </data>
+  <data name="ER_Structural" xml:space="preserve">
+    <value>Structural Reference Exchange</value>
+  </data>
+  <data name="ER_StructuralShort" xml:space="preserve">
+    <value>Structural</value>
+  </data>
+  <data name="FacilityBridge" xml:space="preserve">
+    <value>Bridge (IfcBridge)</value>
+  </data>
+  <data name="FacilityBuilding" xml:space="preserve">
+    <value>Building (IfcBuilding)</value>
+  </data>
+  <data name="FacilityMarineFacility" xml:space="preserve">
+    <value>Marine Facility (IfcMarineFacility)</value>
+  </data>
+  <data name="FacilityRailway" xml:space="preserve">
+    <value>Railway (IfcRailway)</value>
+  </data>
+  <data name="FacilityRoad" xml:space="preserve">
+    <value>Road (IfcRoad)</value>
+  </data>
+  <data name="IFC2x3FM" xml:space="preserve">
+    <value>IFC2x3 COBie 2.4 Design Deliverable View</value>
+  </data>
+  <data name="IFC4" xml:space="preserve">
+    <value>IFC4 for General Use</value>
+  </data>
+  <data name="IFC4DTV" xml:space="preserve">
+    <value>IFC4 Design Transfer View [Unofficial]</value>
+  </data>
+  <data name="IFC4RV" xml:space="preserve">
+    <value>IFC4 Reference View</value>
+  </data>
+  <data name="IFC4x3DTV" xml:space="preserve">
+    <value>IFC4.3 Design Transfer View [Unofficial]</value>
+  </data>
+  <data name="IFC4x3RV" xml:space="preserve">
+    <value>IFC4.3 Reference View</value>
+  </data>
+  <data name="IFCMVD2x3CV2" xml:space="preserve">
+    <value>IFC 2x3 Coordination View 2.0</value>
+  </data>
+  <data name="IFCMVDFMHandOver" xml:space="preserve">
+    <value>IFC 2x3 Basic FM Handover View</value>
+  </data>
+  <data name="IFCMVDGSA" xml:space="preserve">
+    <value>IFC 2x3 GSA Concept Design BIM 2010</value>
+  </data>
+  <data name="IFCSG" xml:space="preserve">
+    <value>IFC+SG Regulatory Requirements View</value>
+  </data>
+  <data name="IFCVersion2x2" xml:space="preserve">
+    <value>IFC 2x2 Coordination View</value>
+  </data>
+  <data name="IFCVersion2x3" xml:space="preserve">
+    <value>IFC 2x3 Coordination View</value>
+  </data>
+  <data name="IFCVersion4x3" xml:space="preserve">
+    <value>IFC4x3</value>
+  </data>
+  <data name="IFCVersionUnrecognized" xml:space="preserve">
+    <value>Unrecognized IFC version</value>
+  </data>
+  <data name="InSessionConfiguration" xml:space="preserve">
+    <value>&lt;In-Session Setup&gt;</value>
+  </data>
+  <data name="MarineFacilityBarrierBeach" xml:space="preserve">
+    <value>Barrier Beach (BARRIERBEACH)</value>
+  </data>
+  <data name="MarineFacilityBreakwater" xml:space="preserve">
+    <value>Breakwater (BREAKWATER)</value>
+  </data>
+  <data name="MarineFacilityCanal" xml:space="preserve">
+    <value>Canal (CANAL)</value>
+  </data>
+  <data name="MarineFacilityDryDock" xml:space="preserve">
+    <value>Dry Dock (DRYDOCK)</value>
+  </data>
+  <data name="MarineFacilityFloatingDock" xml:space="preserve">
+    <value>Floating Dock (FLOATINGDOCK)</value>
+  </data>
+  <data name="MarineFacilityHydrolift" xml:space="preserve">
+    <value>Hydrolift (HYDROLIFT)</value>
+  </data>
+  <data name="MarineFacilityJetty" xml:space="preserve">
+    <value>Jetty (JETTY)</value>
+  </data>
+  <data name="MarineFacilityLaunchRecovery" xml:space="preserve">
+    <value>Launch Recovery Facility (LAUNCHRECOVERYFACILITY)</value>
+  </data>
+  <data name="MarineFacilityMarineDefense" xml:space="preserve">
+    <value>Marine Defense (MARINEDEFENCE)</value>
+  </data>
+  <data name="MarineFacilityNavigationalChannel" xml:space="preserve">
+    <value>Navigational Channel (NAVIGATIONALCHANNEL)</value>
+  </data>
+  <data name="MarineFacilityPort" xml:space="preserve">
+    <value>Port (PORT)</value>
+  </data>
+  <data name="MarineFacilityQuay" xml:space="preserve">
+    <value>Quay (QUAY)</value>
+  </data>
+  <data name="MarineFacilityRevetment" xml:space="preserve">
+    <value>Revetment (REVETMENT)</value>
+  </data>
+  <data name="MarineFacilityShipLift" xml:space="preserve">
+    <value>Shiplift (SHIPLIFT)</value>
+  </data>
+  <data name="MarineFacilityShipLock" xml:space="preserve">
+    <value>Ship Lock (SHIPLOCK)</value>
+  </data>
+  <data name="MarineFacilityShipyard" xml:space="preserve">
+    <value>Shipyard (SHIPYARD)</value>
+  </data>
+  <data name="MarineFacilitySlipway" xml:space="preserve">
+    <value>Slipway (SLIPWAY)</value>
+  </data>
+  <data name="MarineFacilityWaterway" xml:space="preserve">
+    <value>Waterway (WATERWAY)</value>
+  </data>
+  <data name="MarineFacilityWaterwayShiplift" xml:space="preserve">
+    <value>Waterway Shiplift (WATERWAYSHIPLIFT)</value>
+  </data>
+  <data name="NotDefined" xml:space="preserve">
+    <value>Not Defined</value>
+  </data>
+  <data name="SaveConfigurationChanges" xml:space="preserve">
+    <value>Save changes to IFC export configuration</value>
+  </data>
+  <data name="Setup" xml:space="preserve">
+    <value>Setup</value>
+  </data>
+  <data name="UpdateExportSetups" xml:space="preserve">
+    <value>Update IFC export setups</value>
+  </data>
+  <data name="UserDefined" xml:space="preserve">
+    <value>User Defined</value>
   </data>
 </root>

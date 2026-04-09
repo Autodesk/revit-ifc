@@ -17,6 +17,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Utility;
+using Revit.IFC.Common.Enums;
+
 namespace Revit.IFC.Export.Utility
 {
    /// <summary>
@@ -24,5 +28,24 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class MaterialRelationsCache : BaseRelationsCache
    {
+      /// <summary>
+      /// Determines whether the object to be added to RelatedObjects is a subtraction element or not.
+      /// </summary>
+      /// <param name="relatedObject">Object to be examined.</param>
+      /// <returns>True if Related Object is valid, false otherwise.</returns>
+      public override bool IsValidRelatedObject(IFCAnyHandle relatedObject)
+      {
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         {
+            if (IFCAnyHandleUtil.IsSubTypeOf(relatedObject, IFCEntityType.IfcFeatureElementSubtraction))
+               return false;
+         }
+
+         if (IFCAnyHandleUtil.IsSubTypeOf(relatedObject, IFCEntityType.IfcOpeningElement) || 
+             IFCAnyHandleUtil.IsSubTypeOf(relatedObject, IFCEntityType.IfcVirtualElement))
+            return false;
+
+         return !IFCAnyHandleUtil.IsNullOrHasNoValue(relatedObject);
+      }
    }
 }

@@ -65,6 +65,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
 
       }
+
       /// <summary>
       /// Process to create element quantity.
       /// </summary>
@@ -78,13 +79,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
              Element element, ElementType elementType, QuantityEntry parentEntry)
       {
          bool useProperty = (!String.IsNullOrEmpty(RevitParameterName)) || (RevitBuiltInParameter != BuiltInParameter.INVALID);
-         
+
          bool success = false;
          object val = 0;
          if (useProperty)
          {
-            double dblVal = 0.0;
-
             if (parentEntry.QuantityType is QuantityType.Count)
             {
                int? intValPar = null;
@@ -97,37 +96,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             }
             else
             {
-               success = (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, RevitParameterName, out dblVal) != null);
-               if (!success && RevitBuiltInParameter != BuiltInParameter.INVALID)
-                  success = (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, RevitBuiltInParameter, out dblVal) != null);
-               if (success)
+               if (PropertyUtil.GetQuantityDoubleValueFromParameter(element, RevitParameterName, RevitBuiltInParameter, parentEntry.QuantityType, out double dblVal))
                   val = dblVal;
             }
-
-            if (success) // factor in the scale factor for all the parameters depending of the data type to get the correct value
-            {
-               switch (parentEntry.QuantityType)
-               {
-                  case QuantityType.PositiveLength:
-                  case QuantityType.Length:
-                     val = UnitUtil.ScaleLength((double)val);
-                     break;
-                  case QuantityType.Area:
-                     val = UnitUtil.ScaleArea((double)val);
-                     break;
-                  case QuantityType.Volume:
-                     val = UnitUtil.ScaleVolume((double)val);
-                     break;
-                  case QuantityType.Count:
-                     break;
-                  case QuantityType.Time:
-                     break;
-                  default:
-                     break;
-               }
-            }
          }
-
+         
          if (PropertyCalculator != null && !success)
          {
             success = PropertyCalculator.Calculate(exporterIFC, extrusionCreationData, element, elementType, this);

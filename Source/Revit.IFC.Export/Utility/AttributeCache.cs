@@ -37,6 +37,11 @@ namespace Revit.IFC.Export.Utility
       private List<AttributeSetDescription> m_AttributeSets;
 
       /// <summary>
+      /// List of Attribute Maps.
+      /// </summary>
+      public List<AttributeSetDescription> AttributeSets { get { return m_AttributeSets; } }
+
+      /// <summary>
       /// Constructs a default AttributeCache object.
       /// </summary>
       public AttributeCache()

@@ -32,6 +32,8 @@ using static Revit.IFC.Export.Utility.ParameterUtil;
 
 namespace Revit.IFC.Export.Exporter.PropertySet
 {
+   using ParameterMappingKey = Tuple<PropertySetupType, string, ElementId, string>;
+
    /// <summary>
    /// Provides static methods to create varies IFC properties.
    /// </summary>
@@ -45,7 +47,80 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          IFCEntityType.IfcRoof,
          IFCEntityType.IfcStair
       };
-      
+
+      /// <summary>
+      /// Maps IFC4 quantity names to their corresponding names in pre-IFC4 versions (IFC2x2 and IFC2x3)
+      /// </summary>
+      private static Dictionary<IFCVersion, Dictionary<(string, string), string>> PreIFC4QuantityNamesMap = new()
+      {
+         { IFCVersion.IFC2x2, 
+            new() { 
+               { ("Qto_BeamBaseQuantities", "Length"), "NominalLength" },
+               { ("Qto_BeamBaseQuantities", "GrossSurfaceArea"), "TotalSurfaceArea" },
+               { ("Qto_BeamBaseQuantities", "CrossSectionArea"), "CrossSectionArea" },
+               { ("Qto_BeamBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_BeamBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_BeamBaseQuantities", "OuterSurfaceArea"), "OuterSurfaceArea" },
+               { ("Qto_ColumnBaseQuantities", "Length"), "NominalLength" },
+               { ("Qto_ColumnBaseQuantities", "GrossSurfaceArea"), "TotalSurfaceArea" },
+               { ("Qto_ColumnBaseQuantities", "CrossSectionArea"), "CrossSectionArea" },
+               { ("Qto_ColumnBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_ColumnBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_ColumnBaseQuantities", "OuterSurfaceArea"), "OuterSurfaceArea" },
+               { ("Qto_MemberBaseQuantities", "Length"), "NominalLength" },
+               { ("Qto_MemberBaseQuantities", "GrossSurfaceArea"), "TotalSurfaceArea" },
+               { ("Qto_MemberBaseQuantities", "CrossSectionArea"), "CrossSectionArea" },
+               { ("Qto_MemberBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_MemberBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_MemberBaseQuantities", "OuterSurfaceArea"), "OuterSurfaceArea" },
+               { ("Qto_OpeningElementBaseQuantities", "Area"), "OpeningArea" },
+               { ("Qto_SlabBaseQuantities", "GrossArea"), "SurfaceArea" },
+               { ("Qto_SlabBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_SlabBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_WallBaseQuantities", "Length"), "NominalLength" },
+               { ("Qto_WallBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_WallBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_WallBaseQuantities", "GrossFootprintArea"), "GrossFootprintArea" }
+            }
+         },
+         { IFCVersion.IFC2x3,
+            new() {
+               { ("Qto_BeamBaseQuantities", "Length"), "NominalLength" },
+               { ("Qto_BeamBaseQuantities", "GrossSurfaceArea"), "TotalSurfaceArea" },
+               { ("Qto_BeamBaseQuantities", "CrossSectionArea"), "CrossSectionArea" },
+               { ("Qto_BeamBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_BeamBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_BeamBaseQuantities", "OuterSurfaceArea"), "OuterSurfaceArea" },
+               { ("Qto_ColumnBaseQuantities", "Length"), "NominalLength" },
+               { ("Qto_ColumnBaseQuantities", "GrossSurfaceArea"), "TotalSurfaceArea" },
+               { ("Qto_ColumnBaseQuantities", "CrossSectionArea"), "CrossSectionArea" },
+               { ("Qto_ColumnBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_ColumnBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_ColumnBaseQuantities", "OuterSurfaceArea"), "OuterSurfaceArea" },
+               { ("Qto_MemberBaseQuantities", "Length"), "NominalLength" },
+               { ("Qto_MemberBaseQuantities", "GrossSurfaceArea"), "TotalSurfaceArea" },
+               { ("Qto_MemberBaseQuantities", "CrossSectionArea"), "CrossSectionArea" },
+               { ("Qto_MemberBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_MemberBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_MemberBaseQuantities", "OuterSurfaceArea"), "OuterSurfaceArea" },
+               { ("Qto_OpeningElementBaseQuantities", "Area"), "NominalArea" },
+               { ("Qto_OpeningElementBaseQuantities", "Volume"), "NominalVolume" },
+               { ("Qto_SlabBaseQuantities", "GrossArea"), "GrossArea" },
+               { ("Qto_SlabBaseQuantities", "NetArea"), "NetArea" },
+               { ("Qto_SlabBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_SlabBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_WallBaseQuantities", "Length"), "NominalLength" },
+               { ("Qto_WallBaseQuantities", "Width"), "NominalWidth" },
+               { ("Qto_WallBaseQuantities", "Height"), "NominalHeight" },
+               { ("Qto_WallBaseQuantities", "GrossSideArea"), "GrossSideArea" },
+               { ("Qto_WallBaseQuantities", "NetSideArea"), "NetSideArea" },
+               { ("Qto_WallBaseQuantities", "GrossVolume"), "GrossVolume" },
+               { ("Qto_WallBaseQuantities", "NetVolume"), "NetVolume" },
+               { ("Qto_WallBaseQuantities", "GrossFootprintArea"), "GrossFootprintArea" }
+            }
+         }
+      };
+
       /// <summary>
       /// Get a list of IFC entities that have no related type before IFC4
       /// </summary>
@@ -151,7 +226,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="valueType">The value type of the property.</param>
       /// <param name="propertyEnumerationType">The type of enumeration, if appropriate.</param>
       /// <returns>The created property handle.</returns>
-      public static IFCAnyHandle CreateLabelProperty(IFCFile file, PropertyDescription propertyDescription, string value, 
+      public static IFCAnyHandle CreateLabelProperty(IFCFile file, PropertyDescription propertyDescription, string value,
          PropertyValueType valueType, Type propertyEnumerationType)
       {
          switch (valueType)
@@ -189,7 +264,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                }
             case PropertyValueType.SingleValue:
                {
-                  return IFCInstanceExporter.CreatePropertySingleValue(file, propertyDescription, 
+                  return IFCInstanceExporter.CreatePropertySingleValue(file, propertyDescription,
                      IFCDataUtil.CreateAsLabel(value), null);
                }
             case PropertyValueType.ListValue:
@@ -310,7 +385,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="cacheAllStrings">Whether to cache all strings (true), or only the empty string (false).</param>
       /// <param name="propertyEnumerationType">The type of the enum, null if valueType isn't EnumeratedValue.</param>
       /// <returns>The created property handle.</returns>
-      public static IFCAnyHandle CreateLabelPropertyFromCache(IFCFile file, ElementId parameterId, 
+      public static IFCAnyHandle CreateLabelPropertyFromCache(IFCFile file, ElementId parameterId,
          PropertyDescription propertyDescription, string value, PropertyValueType valueType, bool cacheAllStrings,
          Type propertyEnumerationType)
       {
@@ -782,7 +857,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="valueType">The value type of the property.</param>
       /// <param name="propertyEnumerationType">The type of the enum, null if valueType isn't EnumeratedValue.</param>
       /// <returns>The created property handle.</returns>
-      public static IFCAnyHandle CreateLabelPropertyFromElement(IFCFile file, Element elem, string revitParameterName, 
+      public static IFCAnyHandle CreateLabelPropertyFromElement(IFCFile file, Element elem, string revitParameterName,
          PropertyDescription propertyDescription, PropertyValueType valueType, Type propertyEnumerationType)
       {
          if (elem == null)
@@ -1052,6 +1127,61 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
+      /// Gets the appropriate quantity name for pre-IFC4 versions based on the export version and quantity set.
+      /// </summary>
+      /// <param name="ifcVersion">The IFC version being exported to.</param>
+      /// <param name="quantitySetName">The IFC quantity set name.</param>
+      /// <param name="ifc4QuantityName">The IFC4 quantity name to map.</param>
+      /// <returns>The mapped quantity name for the specified IFC version, or the original name if exporting to IFC4+.</returns>
+      public static string GetPreIfc4QuantityNameIfNeeded(string quantitySetName, string ifc4QuantityName)
+      {
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            return ifc4QuantityName;
+
+         IFCVersion mapVersion = IFCVersion.Default;
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+            mapVersion = IFCVersion.IFC2x2;
+         else if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3)
+            mapVersion = IFCVersion.IFC2x3;
+         else
+            return null;
+
+         if (!PreIFC4QuantityNamesMap.TryGetValue(mapVersion, out var versionMap))
+            return null;
+
+         var key = (quantitySetName, ifc4QuantityName);
+         if (versionMap.TryGetValue(key, out var mappedName))
+            return mappedName;
+
+         return null;
+      }
+
+      /// <summary>
+      /// Retrieves a double value from a Revit element's parameter for IFC quantity export.
+      /// Uses custom parameter mappings if provided, otherwise defaults to "{quantitySetName}.{quantityName}" format.
+      /// </summary>
+      /// <param name="element">The Revit element to extract the parameter value from.</param>
+      /// <param name="quantitySetName">The IFC quantity set name.</param>
+      /// <param name="quantityName">The specific quantity name.</param>
+      /// <param name="mappingInfo">Optional custom parameter mapping information.</param>
+      /// <param name="quantityType">The quantity type for proper unit scaling.</param>
+      /// <param name="value">The extracted and scaled parameter value.</param>
+      /// <returns>True if a valid parameter value was found; false otherwise.</returns>
+      public static bool GetQuantityDoubleValueFromMappedOrDefaultParameter(Element element, string quantitySetName,
+         string quantityName, IFCPropertyMappingInfo mappingInfo, QuantityType quantityType, out double value)
+      {
+         string parameterName = (mappingInfo != null) ? 
+            mappingInfo.RevitPropertyName :
+            string.Format("{0}.{1}", quantitySetName, quantityName);
+
+         BuiltInParameter paraemterId = (mappingInfo != null) ? 
+            (BuiltInParameter)mappingInfo.RevitPropertyId.Value : 
+            BuiltInParameter.INVALID;
+
+         return GetQuantityDoubleValueFromParameter(element, parameterName, paraemterId, quantityType, out value);
+      }
+
+      /// <summary>
       /// Creates the shared beam and column QTO values.  
       /// </summary>
       /// <remarks>
@@ -1071,8 +1201,22 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (!ExporterCacheManager.ExportIFCBaseQuantities() || (ExporterCacheManager.ExportOptionsCache.ExportAsCOBIE))
             return;
 
+         string quantitySetName = string.Empty;
+         if (IFCAnyHandleUtil.IsSubTypeOf(elemHandle, IFCEntityType.IfcColumn))
+            quantitySetName = "Qto_ColumnBaseQuantities";
+         else if (IFCAnyHandleUtil.IsSubTypeOf(elemHandle, IFCEntityType.IfcBeam))
+            quantitySetName = "Qto_BeamBaseQuantities";
+         else if (IFCAnyHandleUtil.IsSubTypeOf(elemHandle, IFCEntityType.IfcMember))
+            quantitySetName = "Qto_MemberBaseQuantities";
+
+         string revitPropertyName = string.Empty;
+
+         PropertySetupType propertySetup = PropertySetupType.IfcBaseQuantities;
+         if (IsPropertySetExcluded(propertySetup, quantitySetName))
+            return;
+
          IFCFile file = exporterIFC.GetFile();
-         HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
+         HashSet<IFCAnyHandle> quantityHnds = new();
          double scaledLength = typeInfo.extraParams.ScaledLength;
          //According to investigation of current code the passed in typeInfo contains grossArea
          double scaledGrossArea = typeInfo.extraParams.ScaledArea;
@@ -1080,95 +1224,191 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          double scaledOuterPerimeter = typeInfo.extraParams.ScaledOuterPerimeter;
          double scaledInnerPerimeter = typeInfo.extraParams.ScaledInnerPerimeter;
          double outSurfaceArea = 0.0;
+         double dblVal = 0.0;
 
-         if (scaledLength > MathUtil.Eps())
+         // Length     
+         string quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "Length");
+         IFCPropertyMappingInfo info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Length", null, null, scaledLength);
-            quantityHnds.Add(quantityHnd);
-         }
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(element, quantitySetName, quantityName,
+               info, QuantityType.Length, out dblVal);
 
-         if (MathUtil.AreaIsAlmostZero(crossSectionArea))
-         {
-            if (element != null)
+            if (!valueFound)
             {
-               ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.HOST_AREA_COMPUTED, out crossSectionArea);
-               crossSectionArea = UnitUtil.ScaleArea(crossSectionArea);
-            }
-         }
-
-         if (!MathUtil.AreaIsAlmostZero(crossSectionArea))
-         {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "CrossSectionArea", null, null, crossSectionArea);
-            quantityHnds.Add(quantityHnd);
-         }
-
-         if (!MathUtil.AreaIsAlmostZero(scaledGrossArea) && !MathUtil.IsAlmostZero(scaledLength) && !MathUtil.IsAlmostZero(scaledOuterPerimeter))
-         {
-            double scaledPerimeter = scaledOuterPerimeter + scaledInnerPerimeter;
-            //According to the IFC documentation, OuterSurfaceArea does not include the end caps area, only Length * Perimeter
-            outSurfaceArea = UnitUtil.ScaleArea(UnitUtil.UnscaleLength(scaledLength) * UnitUtil.UnscaleLength(scaledPerimeter));
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "OuterSurfaceArea", null, null, outSurfaceArea);
-            quantityHnds.Add(quantityHnd);
-         }
-
-         // Compute GrossSurfaceArea if both CrossSectionAre and OuterSurfaceArea cannot be determined separately
-         if (MathUtil.AreaIsAlmostZero(crossSectionArea) && MathUtil.AreaIsAlmostZero(outSurfaceArea))
-         {
-            double scaledPerimeter = scaledOuterPerimeter + scaledInnerPerimeter;
-            double grossSurfaceArea = scaledGrossArea * 2 + UnitUtil.ScaleArea(UnitUtil.UnscaleLength(scaledLength) * UnitUtil.UnscaleLength(scaledPerimeter));
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "GrossSurfaceArea", null, null, grossSurfaceArea);
-            quantityHnds.Add(quantityHnd);
-         }
-
-         double grossVolume = UnitUtil.ScaleVolume(UnitUtil.UnscaleLength(scaledLength) * UnitUtil.UnscaleArea(scaledGrossArea));
-         double netVolume = 0.0;
-         if (element != null)
-         {
-            // If we are splitting columns, we will look at the actual geometry used when exporting this segment
-            // of the column, but only if we have the geomObjects passed in.
-            if (geomObjects != null && ExporterCacheManager.ExportOptionsCache.WallAndColumnSplitting)
-            {
-               foreach (GeometryObject geomObj in geomObjects)
+               if (scaledLength > MathUtil.Eps())
                {
-                  // We don't suport calculating the volume of Meshes at this time.
-                  if (geomObj is Mesh)
-                  {
-                     netVolume = 0.0;
-                     break;
-                  }
-
-                  if (geomObj is Solid)
-                     netVolume += (geomObj as Solid).Volume;
+                  dblVal = scaledLength;
+                  valueFound = true;
                }
             }
-            else
-               ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.HOST_VOLUME_COMPUTED, out netVolume);
-            netVolume = UnitUtil.ScaleVolume(netVolume);
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         if (!MathUtil.VolumeIsAlmostZero(grossVolume))
+         // CrossSectionArea         
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "CrossSectionArea");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "GrossVolume", null, null, grossVolume);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(element, quantitySetName, quantityName,
+               info, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               if (MathUtil.AreaIsAlmostZero(crossSectionArea) && element != null)
+               {
+                  GetDoubleValueFromElement(element, BuiltInParameter.HOST_AREA_COMPUTED, out crossSectionArea);
+                  crossSectionArea = UnitUtil.ScaleArea(crossSectionArea);
+               }
+
+               if (!MathUtil.AreaIsAlmostZero(crossSectionArea))
+               {
+                  dblVal = crossSectionArea;
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         if (!MathUtil.VolumeIsAlmostZero(netVolume))
+         // OuterSurfaceArea
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "OuterSurfaceArea");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "NetVolume", null, null, netVolume);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(element, quantitySetName, quantityName,
+               info, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               if (!MathUtil.AreaIsAlmostZero(scaledGrossArea) && !MathUtil.IsAlmostZero(scaledLength) && !MathUtil.IsAlmostZero(scaledOuterPerimeter))
+               {
+                  double scaledPerimeter = scaledOuterPerimeter + scaledInnerPerimeter;
+                  //According to the IFC documentation, OuterSurfaceArea does not include the end caps area, only Length * Perimeter
+                  dblVal = UnitUtil.ScaleArea(UnitUtil.UnscaleLength(scaledLength) * UnitUtil.UnscaleLength(scaledPerimeter));
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         string quantitySetName = string.Empty;
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         // GrossSurfaceArea
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "GrossSurfaceArea");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            if (IFCAnyHandleUtil.IsSubTypeOf(elemHandle, IFCEntityType.IfcColumn))
-               quantitySetName = "Qto_ColumnBaseQuantities";
-            if (IFCAnyHandleUtil.IsSubTypeOf(elemHandle, IFCEntityType.IfcBeam))
-               quantitySetName = "Qto_BeamBaseQuantities";
-            if (IFCAnyHandleUtil.IsSubTypeOf(elemHandle, IFCEntityType.IfcMember))
-               quantitySetName = "Qto_MemberBaseQuantities";
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(element, quantitySetName, quantityName,
+               info, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               if (MathUtil.AreaIsAlmostZero(crossSectionArea) && MathUtil.AreaIsAlmostZero(outSurfaceArea))
+               {
+                  double scaledPerimeter = scaledOuterPerimeter + scaledInnerPerimeter;
+                  dblVal = scaledGrossArea * 2 + UnitUtil.ScaleArea(UnitUtil.UnscaleLength(scaledLength) * UnitUtil.UnscaleLength(scaledPerimeter));
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
-         CreateAndRelateBaseQuantities(file, exporterIFC, elemHandle, quantityHnds, quantitySetName);
+
+         // GrossVolume
+         quantityName = "GrossVolume";
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (info?.ExportFlag ?? true)
+         {
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(element, quantitySetName, quantityName,
+               info, QuantityType.Volume, out dblVal);
+
+            if (!valueFound)
+            {
+               double grossVolume = UnitUtil.ScaleVolume(UnitUtil.UnscaleLength(scaledLength) * UnitUtil.UnscaleArea(scaledGrossArea));
+               if (!MathUtil.VolumeIsAlmostZero(grossVolume))
+               {
+                  dblVal = grossVolume;
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
+         }
+
+         // NetVolume
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "NetVolume");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
+         {
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(element, quantitySetName, quantityName,
+               info, QuantityType.Volume, out dblVal);
+
+            if (!valueFound)
+            {
+               double netVolume = 0.0;
+               if (element != null)
+               {
+                  // If we are splitting columns, we will look at the actual geometry used when exporting this segment
+                  // of the column, but only if we have the geomObjects passed in.
+                  if (geomObjects != null && ExporterCacheManager.ExportOptionsCache.WallAndColumnSplitting)
+                  {
+                     foreach (GeometryObject geomObj in geomObjects)
+                     {
+                        // We don't suport calculating the volume of Meshes at this time.
+                        if (geomObj is Mesh)
+                        {
+                           netVolume = 0.0;
+                           break;
+                        }
+
+                        if (geomObj is Solid)
+                           netVolume += (geomObj as Solid).Volume;
+                     }
+                  }
+                  else
+                  {
+                     GetDoubleValueFromElement(element, BuiltInParameter.HOST_VOLUME_COMPUTED, out netVolume);
+                  }
+                  netVolume = UnitUtil.ScaleVolume(netVolume);
+
+                  if (!MathUtil.VolumeIsAlmostZero(netVolume))
+                  {
+                     dblVal = netVolume;
+                     valueFound = true;
+                  }
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
+         }
+
+         string quantitySetNameToUse = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? null : quantitySetName;
+         CreateAndRelateBaseQuantities(file, exporterIFC, elemHandle, quantityHnds, quantitySetNameToUse);
       }
 
       /// <summary>
@@ -1198,32 +1438,95 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="extraParams">The extrusion creation data.</param>
       public static void CreateOpeningQuantities(ExporterIFC exporterIFC, IFCAnyHandle openingElement, IFCExportBodyParams extraParams)
       {
+         CreateOpeningQuantities(exporterIFC, openingElement, 
+            extraParams.ScaledLength, extraParams.ScaledHeight, extraParams.ScaledWidth, extraParams.ScaledArea);
+      }
+
+      /// <summary>
+      /// Creates the opening quantities and adds them to the export.
+      /// </summary>
+      /// <param name="exporterIFC">The exporter.</param>
+      /// <param name="openingElement">The opening element handle.</param>
+      public static void CreateOpeningQuantities(ExporterIFC exporterIFC, IFCAnyHandle openingElement, 
+         double depth, double height, double width, double area)
+      {
+         string quantitySetName = "Qto_OpeningElementBaseQuantities";
+         PropertySetupType propertySetup = PropertySetupType.IfcBaseQuantities;
+         if (IsPropertySetExcluded(propertySetup, quantitySetName))
+            return;
+
          IFCFile file = exporterIFC.GetFile();
-         HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
-         if (extraParams.ScaledLength > MathUtil.Eps())
+         HashSet<IFCAnyHandle> quantityHnds = new();
+
+         // Depth
+         string quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "Depth");
+         IFCPropertyMappingInfo info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Depth", null, null, extraParams.ScaledLength);
-            quantityHnds.Add(quantityHnd);
+            if (depth > MathUtil.Eps())
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, depth);
+               quantityHnds.Add(quantityHnd);
+            }
          }
-         if (extraParams.ScaledHeight > MathUtil.Eps())
+         
+         if (height > MathUtil.Eps())
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Height", null, null, extraParams.ScaledHeight);
-            quantityHnds.Add(quantityHnd);
-            quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Width", null, null, extraParams.ScaledWidth);
-            quantityHnds.Add(quantityHnd);
-         }
-         else if (extraParams.ScaledArea > MathUtil.Eps())
-         {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "Area", null, null, extraParams.ScaledArea);
-            quantityHnds.Add(quantityHnd);
+            // Height
+            quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "Height");
+            info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+            if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, height);
+               quantityHnds.Add(quantityHnd);
+            }
+
+            // Width
+            quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "Width");
+            info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+            if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, width);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         string quantitySetName = string.Empty;
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+         // Area
+         bool exportArea = true;
+         if (area < MathUtil.Eps())
          {
-            quantitySetName = "Qto_OpeningElementBaseQuantities";
+            if (height > MathUtil.Eps() && width > MathUtil.Eps())
+               area = height * width;
+            else
+               exportArea = false;
          }
-         CreateAndRelateBaseQuantities(file, exporterIFC, openingElement, quantityHnds, quantitySetName);
+         
+         if (exportArea)
+         {
+            quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "Area");
+            info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+            if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, area);
+               quantityHnds.Add(quantityHnd);
+            }
+         }
+
+         // Volume
+         double volume = area * depth;
+         if (volume > MathUtil.Eps())
+         {
+            quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "Volume");
+            info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+            if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, quantityName, null, null, volume);
+               quantityHnds.Add(quantityHnd);
+            }
+         }
+
+         string quantitySetNameToUse = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? null : quantitySetName;
+         CreateAndRelateBaseQuantities(file, exporterIFC, openingElement, quantityHnds, quantitySetNameToUse);
       }
 
       /// <summary>
@@ -1278,6 +1581,44 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             ExporterCacheManager.BaseQuantitiesCache.Add(slabHnd, quantityHnds);
          }
       }
+
+      /// <summary>
+      /// Determines whether the given parameter requires scaling.
+      /// </summary>
+      /// <param name="param">The parameter to check.</param>
+      /// <returns>True if the parameter requires scaling; otherwise, false.</returns>
+      public static bool IsParameterScalingRequired(Parameter param)
+      {
+         // Exclude parameters that are of type SpecTypeId.Number.
+         if (ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
+            return false;
+
+         // The built-in "TotalWattage" parameter is stored as a string in Revit, likely in the current units, and does not require additional scaling.
+         if (param.Id.Value == (long)BuiltInParameter.LIGHTING_FIXTURE_WATTAGE)
+            return false;
+
+         return true;
+      }
+
+      /// <summary>
+      /// Checks whether the property set is excluded from export.
+      /// </summary>
+      /// <param name="propertySetupType">The property setup type.</param>
+      /// <param name="psetName">The property set name.</param>
+      /// <returns>True is the property set is exists in mapping template and unchecked.</returns>
+      public static bool IsPropertySetExcluded(PropertySetupType propertySetupType, string psetName)
+      {
+         if (string.IsNullOrEmpty(psetName))
+            return false;
+
+         IFCParameterTemplate parameterTemplate = ExporterCacheManager.ParameterMappingTemplate;
+         if (parameterTemplate == null)
+            return false;
+
+         return parameterTemplate.IsPropertySetAMemberOfTemplate(propertySetupType, psetName) &&
+            !parameterTemplate.IsExportingPropertySet(propertySetupType, psetName);
+      }
+
       /// <summary>
       /// Creates the wall base quantities and adds them to the export.
       /// </summary>
@@ -1297,53 +1638,129 @@ namespace Revit.IFC.Export.Exporter.PropertySet
           double scaledLength, double scaledDepth, double scaledFootPrintArea,
           IFCExportBodyParams extrusionData, HashSet<IFCAnyHandle> widthAsComplexQty = null)
       {
-         IFCFile file = exporterIFC.GetFile();
-         HashSet<IFCAnyHandle> quantityHnds = new HashSet<IFCAnyHandle>();
-         if (scaledDepth > MathUtil.Eps())
-         {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Height", null, null, scaledDepth);
-            quantityHnds.Add(quantityHnd);
-         }
+         string quantitySetName = "Qto_WallBaseQuantities";
+         PropertySetupType propertySetup = PropertySetupType.IfcBaseQuantities;
+         if (IsPropertySetExcluded(propertySetup, quantitySetName))
+            return;
 
-         if (!MathUtil.IsAlmostZero(scaledLength))
+         double dblVal = 0.0;
+         IFCFile file = exporterIFC.GetFile();
+         HashSet<IFCAnyHandle> quantityHnds = new();
+
+         // Height
+         string quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "Height");
+         IFCPropertyMappingInfo info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Length", null, null, scaledLength);
-            quantityHnds.Add(quantityHnd);
-         }
-         else if (wallElement.Location != null)
-         {
-            Curve wallAxis = (wallElement.Location as LocationCurve).Curve;
-            if (wallAxis != null)
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(wallElement, quantitySetName, quantityName,
+               info, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
             {
-               double axisLength = UnitUtil.ScaleLength(wallAxis.Length);
-               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Length", null, null, axisLength);
+               if (scaledDepth > MathUtil.Eps())
+               {
+                  dblVal = scaledDepth;
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
                quantityHnds.Add(quantityHnd);
             }
          }
 
-
-         double scaledWidth = 0.0;
-         if (wallElement != null)
+         // Length
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "Length");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            scaledWidth = UnitUtil.ScaleLength(wallElement.Width);
-            if (!MathUtil.IsAlmostZero(scaledWidth))
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(wallElement, quantitySetName, quantityName,
+               info, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
             {
-               if ((widthAsComplexQty?.Count ?? 0) == 0)
+               if (!MathUtil.IsAlmostZero(scaledLength))
                {
-                  IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, "Width", null, null, scaledWidth);
-                  quantityHnds.Add(quantityHnd);
+                  dblVal = scaledLength;
+                  valueFound = true;
                }
-               else
+               else if (wallElement.Location != null)
                {
-                  quantityHnds.UnionWith(widthAsComplexQty);
+                  Curve wallAxis = (wallElement.Location as LocationCurve).Curve;
+                  if (wallAxis != null)
+                  {
+                     dblVal = UnitUtil.ScaleLength(wallAxis.Length);
+                     valueFound = true;
+                  }
                }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
             }
          }
 
-         if (!MathUtil.IsAlmostZero(scaledFootPrintArea))
+         // Width
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "Width");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "GrossFootprintArea", null, null, scaledFootPrintArea);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(wallElement, quantitySetName, quantityName,
+               info, QuantityType.Length, out dblVal);
+
+            if (!valueFound)
+            {
+               if (wallElement != null)
+               {
+                  double width = UnitUtil.ScaleLength(wallElement.Width);
+                  if (!MathUtil.IsAlmostZero(width))
+                  {
+                     if ((widthAsComplexQty?.Count ?? 0) == 0)
+                     {
+                        dblVal = width;
+                        valueFound = true;
+                     }
+                     else
+                     {
+                        quantityHnds.UnionWith(widthAsComplexQty);
+                     }
+                  }
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityLength(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
+         }
+
+         // GrossFootprintArea
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "GrossFootprintArea");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
+         {
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(wallElement, quantitySetName, quantityName,
+               info, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               if (!MathUtil.IsAlmostZero(scaledFootPrintArea))
+               {
+                  dblVal = scaledFootPrintArea;
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
          double netArea = 0;
@@ -1374,12 +1791,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                               List<Face> sideFaces = wallSide.Value.Item1;
                               sideFaces.Add(face);
                               double sumArea = wallSide.Value.Item2 + faceArea;
-                              wallSides[wallSide.Key] = ( sideFaces, sumArea);
+                              wallSides[wallSide.Key] = (sideFaces, sumArea);
                               faceAdded = true;
                               break;
                            }
                         }
-                        if(!faceAdded)
+                        if (!faceAdded)
                         {
                            wallSides.Add(faceNormal, (new List<Face> { face }, face.Area));
                         }
@@ -1421,38 +1838,106 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          grossArea = UnitUtil.ScaleArea(grossArea);
          volume = UnitUtil.ScaleVolume(volume);
 
-         if (scaledDepth > MathUtil.Eps() && !MathUtil.IsAlmostZero(scaledWidth) && !MathUtil.IsAlmostZero(grossArea))
+         double scaledWidth = (wallElement != null) ? UnitUtil.ScaleLength(wallElement.Width) : 0.0;
+
+         // GrossVolume
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "GrossVolume");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            double grossVolume = UnitUtil.ScaleVolume(UnitUtil.UnscaleLength(scaledWidth) * UnitUtil.UnscaleArea(grossArea));
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "GrossVolume", null, null, grossVolume);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(wallElement, quantitySetName, quantityName,
+               info, QuantityType.Volume, out dblVal);
+
+            if (!valueFound)
+            {
+               if (scaledDepth > MathUtil.Eps() && !MathUtil.IsAlmostZero(scaledWidth) && !MathUtil.IsAlmostZero(grossArea))
+               {
+                  dblVal = UnitUtil.ScaleVolume(UnitUtil.UnscaleLength(scaledWidth) * UnitUtil.UnscaleArea(grossArea));
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         if (!MathUtil.IsAlmostZero(grossArea))
+         // GrossSideArea
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "GrossSideArea");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "GrossSideArea", null, null, grossArea);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(wallElement, quantitySetName, quantityName,
+               info, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               if (!MathUtil.IsAlmostZero(grossArea))
+               {
+                  dblVal = UnitUtil.ScaleVolume(UnitUtil.UnscaleLength(scaledWidth) * UnitUtil.UnscaleArea(grossArea));
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         if (!MathUtil.IsAlmostZero(netArea))
+         // NetSideArea
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "NetSideArea");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, "NetSideArea", null, null, netArea);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(wallElement, quantitySetName, quantityName,
+               info, QuantityType.Area, out dblVal);
+
+            if (!valueFound)
+            {
+               if (!MathUtil.IsAlmostZero(netArea))
+               {
+                  dblVal = netArea;
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityArea(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         if (!MathUtil.IsAlmostZero(volume))
+         // NetVolume
+         quantityName = GetPreIfc4QuantityNameIfNeeded(quantitySetName, "NetVolume");
+         info = GetParameterMappingInfoFromCache(propertySetup, quantitySetName, ElementId.InvalidElementId, quantityName);
+         if (!string.IsNullOrEmpty(quantityName) && (info?.ExportFlag ?? true))
          {
-            IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, "NetVolume", null, null, volume);
-            quantityHnds.Add(quantityHnd);
+            bool valueFound = GetQuantityDoubleValueFromMappedOrDefaultParameter(wallElement, quantitySetName, quantityName,
+               info, QuantityType.Volume, out dblVal);
+
+            if (!valueFound)
+            {
+               if (!MathUtil.IsAlmostZero(volume))
+               {
+                  dblVal = volume;
+                  valueFound = true;
+               }
+            }
+
+            if (valueFound)
+            {
+               IFCAnyHandle quantityHnd = IFCInstanceExporter.CreateQuantityVolume(file, quantityName, null, null, dblVal);
+               quantityHnds.Add(quantityHnd);
+            }
          }
 
-         string quantitySetName = string.Empty;
-         if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-         {
-            quantitySetName = "Qto_WallBaseQuantities";
-         }
-
-         CreateAndRelateBaseQuantities(file, exporterIFC, wallHnd, quantityHnds, quantitySetName);
+         string quantitySetNameToUse = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? null : quantitySetName;
+         CreateAndRelateBaseQuantities(file, exporterIFC, wallHnd, quantityHnds, quantitySetNameToUse);
       }
 
       /// <summary>
@@ -1652,14 +2137,25 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          SortedDictionary<string, (string, HashSet<IFCAnyHandle>)> propertySets = new();
 
          IDictionary<string, ParameterElementCache> parameterElementCache =
-             ParameterUtil.GetNonIFCParametersForElement(element.Id);
+            ParameterUtil.GetParametersForElement(element.Id);
+
          if (parameterElementCache == null)
             return null;
-
+         
          foreach (KeyValuePair<string, ParameterElementCache> parameterElementGroup in parameterElementCache)
          {
             ForgeTypeId parameterGroup = new ForgeTypeId(parameterElementGroup.Key);
             string groupName = LabelUtils.GetLabelForGroup(parameterGroup);
+
+            IFCParameterTemplate parameterTemplate = ExporterCacheManager.ParameterMappingTemplate;
+
+            // Skip property groups excluded from export
+            if (parameterTemplate != null &&
+                parameterTemplate.IsPropertySetAMemberOfTemplate(PropertySetupType.RevitElementParameters, groupName) &&
+               !parameterTemplate.IsExportingPropertySet(PropertySetupType.RevitElementParameters, groupName))
+            {
+               continue;
+            }
 
             // We are only going to append the "(Type)" suffix if we aren't also exporting the corresponding entity type.
             // In general, we'd like to always export them entity type, regardles of whether it holds any geometry or not - it can hold
@@ -1669,12 +2165,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             // There was a suggestion in SourceForge that we could "merge" the instance/type property sets in the cases where we aren't
             // creating an entity type, and in the cases where two properties had the same name, use the instance over type.
             // However, given our intention to generally export all types, this seems like a lot of work for diminishing returns.
+            string groupNameToExport = groupName;
             if (element is ElementType &&
               !ExporterCacheManager.ElementTypeToHandleCache.IsRegistered(element as ElementType))
-               groupName += Properties.Resources.PropertySetTypeSuffix;
+               groupNameToExport += Properties.Resources.PropertySetTypeSuffix;
 
-            HashSet<IFCAnyHandle> currPropertiesForGroup = new HashSet<IFCAnyHandle>();
-            propertySets[parameterElementGroup.Key] = (groupName, currPropertiesForGroup);
+            HashSet<IFCAnyHandle> currPropertiesForGroup = new();
+            propertySets[parameterElementGroup.Key] = (groupNameToExport, currPropertiesForGroup);
 
             foreach (Parameter parameter in parameterElementGroup.Value.ParameterCache.Values)
             {
@@ -1686,65 +2183,118 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   continue;
 
                string parameterName = parameterDefinition.Name;
-               string parameterDescription = parameter.Id.Value >= 0L ? parameter.Description : null;
-               PropertyDescription propertyDescription =
-                  new PropertyDescription(parameterName, parameterDescription);
 
-               switch (parameter.StorageType)
-               {
-                  case StorageType.None:
-                     break;
-                  case StorageType.Integer:
-                     {
-                        int value = parameter.AsInteger();
-                        string valueAsString = parameter.AsValueString();
+               IFCPropertyMappingInfo mappingInfo = GetParameterMappingInfoFromCache(PropertySetupType.RevitElementParameters, groupName, parameter.Id, parameterName);
+               if ((mappingInfo?.ExportFlag ?? true) == false)
+                  continue;
 
-                        // YesNo or actual integer?
-                        if (parameterDefinition.GetDataType() == SpecTypeId.Boolean.YesNo)
-                        {
-                           currPropertiesForGroup.Add(CreateBooleanPropertyFromCache(file, propertyDescription, value != 0, PropertyValueType.SingleValue));
-                        }
-                        else if (parameterDefinition.GetDataType().Empty() && (valueAsString != null))
-                        {
-                           // This is probably an internal enumerated type that should be exported as a string.
-                           currPropertiesForGroup.Add(CreateIdentifierPropertyFromCache(file, propertyDescription, valueAsString, PropertyValueType.SingleValue));
-                        }
-                        else
-                        {
-                           currPropertiesForGroup.Add(CreateIntegerPropertyFromCache(file, propertyDescription, value, PropertyValueType.SingleValue));
-                        }
-                        break;
-                     }
-                  case StorageType.Double:
-                     {
-                        double value = parameter.AsDouble();
-                        IFCAnyHandle propertyHandle = CreateRealPropertyBasedOnParameterType(file, parameter, propertyDescription, value, PropertyValueType.SingleValue);
+               if (!string.IsNullOrEmpty(mappingInfo?.IFCPropertyName))
+                  parameterName = mappingInfo.IFCPropertyName;
 
-                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(propertyHandle))
-                           currPropertiesForGroup.Add(propertyHandle);
-                        break;
-                     }
-                  case StorageType.String:
-                     {
-                        string value = parameter.AsString();
-                        if (!string.IsNullOrEmpty(value))
-                           currPropertiesForGroup.Add(CreateTextPropertyFromCache(file, propertyDescription, value, PropertyValueType.SingleValue));
-                        break;
-                     }
-                  case StorageType.ElementId:
-                     {
-                        if (parameter.AsElementId() != ElementId.InvalidElementId)
-                        {
-                           string valueString = parameter.AsValueString();
-                           currPropertiesForGroup.Add(CreateLabelPropertyFromCache(file, parameter.Id, propertyDescription, valueString, PropertyValueType.SingleValue, true, null));
-                        }
-                        break;
-                     }
-               }
+               IFCAnyHandle propertyHnd = CreatePropertyByParameterStorageType(file, parameter, parameterName);
+               if (propertyHnd != null)
+                  currPropertiesForGroup.Add(propertyHnd);
             }
          }
 
          return propertySets;
+      }
+
+
+      /// <summary>
+      /// Creates a property handle for a parameter based on its storage type.
+      /// </summary>
+      /// <param name="file">The file.</param>
+      /// <param name="parameter">The parameter.</param>
+      /// <param name="propertyName">The property name.</param>
+      /// <returns>The property handle.</returns>
+      public static IFCAnyHandle CreatePropertyByParameterStorageType(IFCFile file, Parameter parameter, string propertyName)
+      {
+         Definition parameterDefinition = parameter?.Definition;
+         if (parameterDefinition == null)
+            return null;
+
+         IFCAnyHandle propertyHnd = null;
+
+         string parameterDescription = parameter.Id.Value >= 0L ? parameter.Description : null;
+         PropertyDescription propertyDescription = new(propertyName, parameterDescription);
+
+         switch (parameter.StorageType)
+         {
+            case StorageType.None:
+               break;
+            case StorageType.Integer:
+               {
+                  int value = parameter.AsInteger();
+                  string valueAsString = parameter.AsValueString();
+
+                  // YesNo or actual integer?
+                  if (parameterDefinition.GetDataType() == SpecTypeId.Boolean.YesNo)
+                  {
+                     propertyHnd = CreateBooleanPropertyFromCache(file, propertyDescription, value != 0, PropertyValueType.SingleValue);
+                  }
+                  else if (parameterDefinition.GetDataType().Empty() && (valueAsString != null))
+                  {
+                     // This is probably an internal enumerated type that should be exported as a string.
+                     propertyHnd = CreateIdentifierPropertyFromCache(file, propertyDescription, valueAsString, PropertyValueType.SingleValue);
+                  }
+                  else
+                  {
+                     propertyHnd = CreateIntegerPropertyFromCache(file, propertyDescription, value, PropertyValueType.SingleValue);
+                  }
+                  break;
+               }
+            case StorageType.Double:
+               {
+                  double value = parameter.AsDouble();
+                  propertyHnd = CreateRealPropertyBasedOnParameterType(file, parameter, propertyDescription, value, PropertyValueType.SingleValue);
+                  break;
+               }
+            case StorageType.String:
+               {
+                  string value = parameter.AsString();
+                  if (!string.IsNullOrEmpty(value))
+                     propertyHnd = CreateTextPropertyFromCache(file, propertyDescription, value, PropertyValueType.SingleValue);
+                  break;
+               }
+            case StorageType.ElementId:
+               {
+                  if (parameter.AsElementId() != ElementId.InvalidElementId)
+                  {
+                     string valueString = parameter.AsValueString();
+                     propertyHnd = CreateLabelPropertyFromCache(file, parameter.Id, propertyDescription, valueString, PropertyValueType.SingleValue, true, null);
+                  }
+                  break;
+               }
+         }
+
+         return propertyHnd;
+      }
+
+      /// <summary>
+      /// Gets parameter mapping information from cache.
+      /// </summary>
+      /// <param name="propertySetup">The property setup.</param>
+      /// <param name="groupName">The parameter group name.</param>
+      /// <param name="parameterId">The parameter id.</param>
+      /// <param name="parameterName">parameter name.</param>
+      /// <returns>The parameter mapping info.</returns>
+      public static IFCPropertyMappingInfo GetParameterMappingInfoFromCache(PropertySetupType propertySetup, string groupName, ElementId parameterId, string parameterName)
+      {
+         IFCParameterTemplate parameterTemplate = ExporterCacheManager.ParameterMappingTemplate;
+         if (parameterTemplate == null)
+            return null;
+
+         ParameterMappingKey mappingKey = new(propertySetup, groupName, parameterId, parameterName);
+         if (ExporterCacheManager.PropertyMappingCache.TryGetValue(mappingKey, out IFCPropertyMappingInfo mappingInfo))
+            return mappingInfo;
+         
+         mappingInfo = (parameterId < ElementId.InvalidElementId || string.IsNullOrEmpty(parameterName)) ?
+            parameterTemplate.FindPropertyMappingInfo(propertySetup, groupName, parameterId)
+            : parameterTemplate.FindPropertyMappingInfo(propertySetup, groupName, parameterName);
+
+         ExporterCacheManager.PropertyMappingCache[mappingKey] = mappingInfo;
+         return mappingInfo;
       }
 
       /// <summary>
@@ -1811,59 +2361,65 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          IFCAnyHandle propertyHandle = null;
 
+         // NOTE: For cases where multiple Revit parameterTypes map to one IFC unit system, we take the 
+         // display units of only one of the types, regardless of the fact that they could all have different 
+         // display units.  To allow for each Revit parameter type to have its separate display units, we
+         // would have to keep track of "secondary" units so that (1) they weren't part of IfcUnitAssignment and
+         // (2) we would assign the unit to the IfcProperty.  We would also have to make this not work for
+         // at least IFC4RV, since specifying the unit of an IfcProperty is disallowed.
          if (parameterType == SpecTypeId.Acceleration)
          {
-            double scaledValue = UnitUtil.ScaleAcceleration(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Acceleration, propertyValue);
             propertyHandle = CreateAccelerationPropertyFromCache(file, propertyDescription,
                 new List<double?>() { scaledValue }, valueType, null);
          }
          else if (parameterType == SpecTypeId.Energy ||
             parameterType == SpecTypeId.HvacEnergy)
          {
-            double scaledValue = UnitUtil.ScaleEnergy(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Energy, propertyValue);
             propertyHandle = CreateEnergyPropertyFromCache(file, propertyDescription,
                 new List<double?>() { scaledValue }, valueType, null);
          }
          else if (parameterType == SpecTypeId.LinearMoment)
          {
-            double scaledValue = UnitUtil.ScaleLinearMoment(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.LinearMoment, propertyValue);
             propertyHandle = CreateLinearMomentPropertyFromCache(file, propertyDescription,
                 new List<double?>() { scaledValue }, valueType, null);
          }
          else if (parameterType == SpecTypeId.MassPerUnitLength ||
             parameterType == SpecTypeId.PipeMassPerUnitLength)
          {
-            double scaledValue = UnitUtil.ScaleMassPerLength(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.MassPerUnitLength, propertyValue);
             propertyHandle = CreateMassPerLengthPropertyFromCache(file, propertyDescription,
                 new List<double?>() { scaledValue }, valueType, null);
          }
          else if (parameterType == SpecTypeId.Moment)
          {
-            double scaledValue = UnitUtil.ScaleTorque(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Moment, propertyValue);
             propertyHandle = CreateTorquePropertyFromCache(file, propertyDescription,
                 new List<double?>() { scaledValue }, valueType, null);
          }
          else if (parameterType == SpecTypeId.PointSpringCoefficient)
          {
-            double scaledValue = UnitUtil.ScaleLinearStiffness(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.PointSpringCoefficient, propertyValue);
             propertyHandle = CreateLinearStiffnessPropertyFromCache(file, propertyDescription,
                 new List<double?>() { scaledValue }, valueType, null);
          }
          else if (parameterType == SpecTypeId.Pulsation)
          {
-            double scaledValue = UnitUtil.ScaleAngularVelocity(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.Pulsation, propertyValue);
             propertyHandle = CreateAngularVelocityPropertyFromCache(file, propertyDescription,
                 new List<double?>() { scaledValue }, valueType, null);
          }
          else if (parameterType == SpecTypeId.ThermalResistance)
          {
-            double scaledValue = UnitUtil.ScaleThermalResistance(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.ThermalResistance, propertyValue);
             propertyHandle = CreateThermalResistancePropertyFromCache(file, propertyDescription,
                 new List<double?>() { scaledValue }, valueType, null);
          }
          else if (parameterType == SpecTypeId.WarpingConstant)
          {
-            double scaledValue = UnitUtil.ScaleWarpingConstant(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.WarpingConstant, propertyValue);
             propertyHandle = CreateWarpingConstantPropertyFromCache(file, propertyDescription,
                 new List<double?>() { scaledValue }, valueType, null);
          }
@@ -1936,7 +2492,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             parameterType == SpecTypeId.HeatingLoad ||
             parameterType == SpecTypeId.HvacPower)
          {
-            double scaledValue = UnitUtil.ScalePower(propertyValue);
+            double scaledValue = UnitUtil.ScaleDouble(SpecTypeId.HvacPower, propertyValue);
             propertyHandle = CreatePowerPropertyFromCache(file, propertyDescription,
                   new List<double?>() { scaledValue }, valueType, null);
          }
@@ -2401,9 +2957,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             foreach (PropertySetDescription currDesc in currPsetsToCreate)
             {
                // Last conditional check: if the property set comes from a ViewSchedule, check if the element is in the schedule.
-               if (currDesc.ViewScheduleId != ElementId.InvalidElementId)
+               if (currDesc.ViewScheduleId != ElementId.InvalidElementId && ExporterUtil.ExportingHostModel())
+               {
                   if (!ExporterCacheManager.ViewScheduleElementCache[currDesc.ViewScheduleId].Contains(typeId))
                      continue;
+               }
 
                ElementOrConnector elementOrConnector = new ElementOrConnector(elementType);
                ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementOrConnector, elementType, prodTypeHnd);
@@ -2428,6 +2986,35 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
             transaction.Commit();
          }
+      }
+
+      public static bool GetQuantityDoubleValueFromParameter(Element element, string revitParameterName,
+         BuiltInParameter revitBuiltInParameter, QuantityType quantityType, out double value)
+      {
+         if (GetDoubleValueFromElementOrSymbol(element, revitParameterName, revitBuiltInParameter, out value) == null)
+            return false;
+
+         switch (quantityType)
+         {
+            case QuantityType.PositiveLength:
+            case QuantityType.Length:
+               value = UnitUtil.ScaleLength(value);
+               break;
+            case QuantityType.Area:
+               value = UnitUtil.ScaleArea(value);
+               break;
+            case QuantityType.Volume:
+               value = UnitUtil.ScaleVolume(value);
+               break;
+            case QuantityType.Count:
+               break;
+            case QuantityType.Time:
+               break;
+            default:
+               break;
+         }
+
+         return true;
       }
 
       public static IList<double?> GetDoubleValuesFromParameterByType(Element elem, string revitParameterName, ForgeTypeId specTypeId, PropertyValueType valueType)
@@ -2475,8 +3062,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          Parameter param = ParameterUtil.GetDoubleValueFromElement(elem, revitParameterName, out propertyValue);
          if (param != null)
          {
-            if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number) &&
-               param.StorageType != StorageType.String) //The built-in parameter corresponding to "TotalWattage" is a string value in Revit that is likely going to be in the current units, and doesn't need to be scaled twice.
+            if (IsParameterScalingRequired(param)) 
             {
                propertyValue = UnitUtil.ScaleDouble(specTypeId, propertyValue);
             }
@@ -5328,14 +5914,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          double value = 0.0;
          if (values.ElementAt(0) != null && valueType == PropertyValueType.SingleValue && string.IsNullOrEmpty(unitTypeKey))
          {
-            bool isLengthProeprty = (propertyType == PropertyType.Length);
+            bool isLengthProperty = (propertyType == PropertyType.Length);
             value = values.ElementAt(0).Value;
 
-            double? adjustedValue = (isLengthProeprty) ? CanCacheDouble(UnitUtil.UnscaleLength(value)) : CanCacheDouble(value);
+            double? adjustedValue = isLengthProperty ? CanCacheDouble(UnitUtil.UnscaleLength(value)) : CanCacheDouble(value);
             canCache = adjustedValue.HasValue;
             if (canCache)
             {
-               value = (isLengthProeprty) ? UnitUtil.UnscaleLength(adjustedValue.GetValueOrDefault()) : adjustedValue.GetValueOrDefault();
+               value = isLengthProperty ? UnitUtil.ScaleLength(adjustedValue.GetValueOrDefault()) : adjustedValue.GetValueOrDefault();
                values[0] = value;
             }
          }
@@ -5344,7 +5930,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          string propertyName = propertyDescription.Name;
          if (canCache)
          {
-            propertyHandle = ExporterCacheManager.PropertyInfoCache.GetDoubleChache(propertyType).Find(propertyName, value);
+            propertyHandle = ExporterCacheManager.PropertyInfoCache.GetDoubleCache(propertyType).Find(propertyName, value);
             if (propertyHandle != null)
                return propertyHandle;
          }
@@ -5353,7 +5939,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
          if (canCache && !IFCAnyHandleUtil.IsNullOrHasNoValue(propertyHandle))
          {
-            ExporterCacheManager.PropertyInfoCache.GetDoubleChache(propertyType).Add(propertyName, value, propertyHandle);
+            ExporterCacheManager.PropertyInfoCache.GetDoubleCache(propertyType).Add(propertyName, value, propertyHandle);
          }
 
          return propertyHandle;

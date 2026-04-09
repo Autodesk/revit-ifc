@@ -449,10 +449,12 @@ namespace Revit.IFC.Export.Exporter
          , new ElementId(BuiltInCategory.OST_DuctCurves)
          , new ElementId(BuiltInCategory.OST_DuctFitting)
          , new ElementId(BuiltInCategory.OST_FlexDuctCurves)
+         , new ElementId(BuiltInCategory.OST_FabricationDuctwork)
          , new ElementId(BuiltInCategory.OST_FlexPipeCurves)
          , new ElementId(BuiltInCategory.OST_PipeAccessory)
          , new ElementId(BuiltInCategory.OST_PipeCurves)
          , new ElementId(BuiltInCategory.OST_PipeFitting)
+         , new ElementId(BuiltInCategory.OST_FabricationPipework)
       };
 
       private static readonly HashSet<ElementId> s_LinedOnlySet = new HashSet<ElementId>()
@@ -461,6 +463,7 @@ namespace Revit.IFC.Export.Exporter
          , new ElementId(BuiltInCategory.OST_DuctCurves)
          , new ElementId(BuiltInCategory.OST_DuctFitting)
          , new ElementId(BuiltInCategory.OST_FlexDuctCurves)
+         , new ElementId(BuiltInCategory.OST_FabricationDuctwork)
       };
 
       private static bool CanHaveInsulationOrLining(IFCExportInfoPair exportType, ElementId categoryId)
@@ -705,11 +708,22 @@ namespace Revit.IFC.Export.Exporter
                      // Get a profile name. 
                      string profileName = NamingUtil.GetProfileName(familySymbol);
 
-                     StructuralMemberAxisInfo axisInfo = StructuralMemberExporter.GetStructuralMemberAxisTransform(exportGeometryElement);
+                     // Regardless of whether we are using the instance or type geometry, we will look at the instance for a hint
+                     // to find transform information.
+                     StructuralMemberAxisInfo axisInfo = StructuralMemberExporter.GetStructuralMemberAxisTransform(familyInstance);
                      if (axisInfo != null)
                      {
-                        orig = axisInfo.LCSAsTransform.Origin;
-                        extrudeDirection = axisInfo.AxisDirection;
+                        if (useInstanceGeometry)
+                        {
+                           orig = axisInfo.LCSAsTransform.Origin;
+                           extrudeDirection = axisInfo.AxisDirection;
+                        }
+                        else
+                        {
+                           Transform inverseTransform = trf.Inverse;
+                           orig = inverseTransform.OfPoint(axisInfo.LCSAsTransform.Origin);
+                           extrudeDirection = inverseTransform.OfVector(axisInfo.AxisDirection);
+                        }
 
                         extraParams.CustomAxis = extrudeDirection;
                         extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXY;
@@ -717,20 +731,25 @@ namespace Revit.IFC.Export.Exporter
                         if (solids.Count > 0)
                         {
                            FootPrintInfo footprintInfo = null;
-                           // The "extrudeDirection" passed in is in global coordinates if it represents
-                           // a custom axis, while the geometry is in either the FamilyInstance or 
-                           // FamilySymbol coordinate system, depending on the useInstanceGeometry
-                           // flag.  If we aren't using instance geometry, convert the extrusion direction
-                           // and base plane to be in the symbol/geometry space.
-                           XYZ extrusionDirectionToUse = (useInstanceGeometry || !extraParams.HasCustomAxis) ?
-                              extrudeDirection : trf.Inverse.OfVector(extrudeDirection);
-                           Plane basePlaneToUse = GeometryUtil.CreatePlaneByNormalAtOrigin(extrusionDirectionToUse);
+                           Plane basePlaneToUse = GeometryUtil.CreatePlaneByNormalAtOrigin(extrudeDirection);
 
                            GenerateAdditionalInfo addInfo = GenerateAdditionalInfo.GenerateBody | GenerateAdditionalInfo.GenerateProfileDef;
                            ExtrusionExporter.ExtraClippingData extraClippingData = null;
-                           IFCAnyHandle bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
-                                 categoryId, false, solids, basePlaneToUse, orig, extrusionDirectionToUse, null, out extraClippingData,
+                           IFCAnyHandle bodyRepresentation = null;
+                           if (extraParams.CustomAxis != null)
+                           {
+                              extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryCustom;
+                              bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
+                                 categoryId, false, solids, basePlaneToUse, orig, extrudeDirection, null, out extraClippingData, 
                                  out footprintInfo, out materialAndProfile, out extrusionData, addInfo, profileName: profileName);
+                           }
+                           if (bodyRepresentation == null)
+                           {
+                              extraParams.PossibleExtrusionAxes = IFCExtrusionAxes.TryXY;
+                              bodyRepresentation = ExtrusionExporter.CreateExtrusionWithClipping(exporterIFC, exportGeometryElement,
+                                 categoryId, false, solids, basePlaneToUse, orig, extrudeDirection, null, out extraClippingData,
+                                 out footprintInfo, out materialAndProfile, out extrusionData, addInfo, profileName: profileName);
+                           }
                            if (extrusionData != null)
                            {
                               extraParams.Slope = extrusionData.Slope;

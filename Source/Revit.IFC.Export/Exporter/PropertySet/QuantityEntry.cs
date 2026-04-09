@@ -94,10 +94,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
       }
 
-      public QuantityEntry(string propertyName, IEnumerable<QuantityEntryMap> entries)
+      public QuantityEntry(QuantityType quantityType, string propertyName, IEnumerable<QuantityEntryMap> entries)
            : base(propertyName, entries)
       {
-
+         QuantityType = quantityType;
       }
 
       /// <summary>

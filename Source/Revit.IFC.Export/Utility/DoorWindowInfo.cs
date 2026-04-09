@@ -208,15 +208,15 @@ namespace Revit.IFC.Export.Utility
 
          Transform doorWindowTrf = ExporterIFCUtils.GetTransformForDoorOrWindow(currElem, famSymbol, FlippedX, FlippedY);
 
-         IList<Curve> origArcs = GeometryUtil.Get2DArcOrLineFromSymbol(currElem, allCurveType:false, inclArc:true);
-         if (origArcs == null || (origArcs.Count == 0))
+         IList<Curve> origArcs = GeometryUtil.Get2DArcOrLineFromSymbol(currElem, allCurveType: false, inclArc: true);
+         if ((origArcs?.Count ?? 0) == 0)
             return "NOTDEFINED";
 
          BoundingBoxXYZ doorBB = GetBoundingBoxFromSolids(currElem);
 
          // Translate curtain door origin to have proper 2D arc position
          Wall wall = HostObject as Wall;
-         if (wall != null && wall.WallType.Kind == WallKind.Curtain)
+         if ((wall?.WallType.Kind ?? WallKind.Unknown) == WallKind.Curtain)
          {
             Transform offsetOrigTrf = Transform.CreateTranslation(-XYZ.BasisX * doorBB.Min.X);
             doorWindowTrf = offsetOrigTrf.Multiply(doorWindowTrf);
@@ -242,14 +242,16 @@ namespace Revit.IFC.Export.Utility
             zmin = bbMax.Z;
             zmax = bbMin.Z;
          }
-         bbMin = new XYZ(xmin - tolForArcCenter, ymin - tolForArcCenter, zmin - tolForArcCenter);
-         bbMax = new XYZ(xmax + tolForArcCenter, ymax + tolForArcCenter, zmax + tolForArcCenter);
+         bbMin = new(xmin - tolForArcCenter, ymin - tolForArcCenter, zmin - tolForArcCenter);
+         bbMax = new(xmax + tolForArcCenter, ymax + tolForArcCenter, zmax + tolForArcCenter);
 
-         IList<XYZ> arcCenterLocations = new List<XYZ>();
-         SortedSet<double> arcRadii = new SortedSet<double>();
+         List<XYZ> arcCenterLocations = new();
+         SortedSet<double> arcRadii = new();
+
+         double angleTolerance = currElem.Document.Application.AngleTolerance * 180.0 / Math.PI;
 
          foreach (Arc arc in origArcs)
-            {
+         {
             Arc trfArc = arc.CreateTransformed(doorWindowTrf) as Arc;
 
             // Filter only Arcs that is on XY plane and at the Z=0 of the Door/Window transform
@@ -261,30 +263,33 @@ namespace Revit.IFC.Export.Utility
                continue;
 
             if (!trfArc.IsBound)
+            {
                fullCircleCount++;
+            }
             else
-         {
-               double angleOffOfXY = 0;
+            {
                XYZ v1 = CorrectNearlyZeroValueToZero((trfArc.GetEndPoint(0) - trfArc.Center).Normalize());
                XYZ v2 = CorrectNearlyZeroValueToZero((trfArc.GetEndPoint(1) - trfArc.Center).Normalize());
-               angleOffOfXY = MathUtil.SafeAcos(v1.DotProduct(v2));
+               double angleOffOfXYInRadians = MathUtil.SafeAcos(v1.DotProduct(v2));
+               double absAngleOffOfXYInDegress = Math.Abs(angleOffOfXYInRadians * 180.0 / Math.PI);
+               bool alignedToX = MathUtil.IsAlmostEqual(Math.Abs(v1.X), 1.0, allowance) || MathUtil.IsAlmostEqual(Math.Abs(v2.X), 1.0, allowance);
 
-               if ((Math.Abs(angleOffOfXY) > (60.0 / 180.0) * Math.PI && Math.Abs(angleOffOfXY) < (240.0 / 180.0) * Math.PI)
-                        && ((v1.Y > 0.0 && v2.Y < 0.0) || (v1.Y < 0.0 && v2.Y > 0.0)))    // Consider the opening swing between -30 to +30 up to -120 to +120 degree, where Y axes must be at the opposite sides
-            {
+               if (absAngleOffOfXYInDegress is >= 60.0 and <= 240.0 && Math.Sign(v1.Y) != Math.Sign(v2.Y) &&
+                  (!alignedToX || absAngleOffOfXYInDegress >= 90.0 + angleTolerance))
+               {
+                  // Consider the opening swing between -30 to +30 up to -120 to +120 degree,
+                  // where Y axes must be at the opposite sides.
+                  // If it is alignedToX, we don't consider this a "half circle" unless we are significantly
+                  // above 90 degrees.
                   if (trfArc.Center.X >= -tolForArcCenter && trfArc.Center.X <= tolForArcCenter)
                      leftHalfCircleCount++;
                   else
                      rightHalfCircleCount++;
-            }
-               else if ((Math.Abs(angleOffOfXY) > (30.0/180.0) * Math.PI && Math.Abs(angleOffOfXY) < (170.0/180.0)*Math.PI)
-                        &&  (MathUtil.IsAlmostEqual(Math.Abs(v1.X), 1.0, allowance) || MathUtil.IsAlmostEqual(Math.Abs(v2.X),1.0, allowance)))    // Consider the opening swing between 30 to 170 degree, beginning at X axis
-         {
-                  XYZ yDir;
-                  if (MathUtil.IsAlmostEqual(Math.Abs(v1.Y), Math.Abs(Math.Sin(angleOffOfXY)), 0.01))
-                     yDir = v1;
-                  else
-                     yDir = v2;
+               }
+               else if (absAngleOffOfXYInDegress is >= 30.0 and <= 170.0 && alignedToX)
+               {
+                  // Consider the opening swing between 30 to 170 degree, beginning at X axis
+                  XYZ yDir = MathUtil.IsAlmostEqual(Math.Abs(v1.Y), Math.Abs(Math.Sin(angleOffOfXYInRadians)), 0.01) ? v1 : v2;
 
                   // if the Normal is pointing to -Z, it is flipped. Flip the Y if it is
                   if (MathUtil.IsAlmostEqual(trfArc.Normal.Z, -1.0))
@@ -300,9 +305,9 @@ namespace Revit.IFC.Export.Utility
                         leftNegYArcCount++;
                      else
                         continue;
-                           }
+                  }
                   else
-                           {
+                  {
                      // on the RIGHT
                      if ((yDir.Y > 0.0 && trfArc.YDirection.Y > 0.0) || (yDir.Y < 0.0 && trfArc.YDirection.Y < 0.0))
                         rightPosYArcCount++;
@@ -310,39 +315,41 @@ namespace Revit.IFC.Export.Utility
                         rightNegYArcCount++;
                      else
                         continue;
-                           }
-                        }
+                  }
+               }
                else
+               {
                   continue;
+               }
 
                // Collect all distinct Arc Center if it is counted as the door opening, to ensure that for cases that there are more than 2 leafs, it is not worngly labelled
                bool foundExisting = false;
                foreach (XYZ existingCenter in arcCenterLocations)
-                        {
+               {
                   if ((trfArc.Center.X > existingCenter.X - tolForArcCenter) && (trfArc.Center.X <= existingCenter.X + tolForArcCenter)
                      && (trfArc.Center.Y > existingCenter.Y - tolForArcCenter) && (trfArc.Center.Y <= existingCenter.Y + tolForArcCenter))
                   {
                      foundExisting = true;
                      break;
-                        }
-                     }
+                  }
+               }
                if (!foundExisting)
                {
                   arcCenterLocations.Add(trfArc.Center);
                   arcRadii.Add(trfArc.Radius);
-                  }
                }
             }
+         }
 
          // When only full circle(s) exists
-         if (fullCircleCount > 0 
+         if (fullCircleCount > 0
                && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftPosYArcCount == 0 && leftNegYArcCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
             return "REVOLVING";
 
          // There are more than 2 arc centers, no IFC Door operation type fits this, return NOTDEFINED
          if (arcCenterLocations.Count > 2)
             return "NOTDEFINED";
-         
+
          // When half circle arc(s) exists
          if (leftHalfCircleCount > 0 && fullCircleCount == 0)
          {
@@ -369,13 +376,9 @@ namespace Revit.IFC.Export.Utility
             // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
             if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
             {
-               if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-                  return "NOTDEFINED";
-               else
-                  return "SWING_FIXED_LEFT";
+               return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? "NOTDEFINED" : "SWING_FIXED_LEFT";
             }
-            else
-               return "SINGLE_SWING_LEFT";
+            return "SINGLE_SWING_LEFT";
          }
 
          if (rightPosYArcCount > 0
@@ -384,21 +387,17 @@ namespace Revit.IFC.Export.Utility
             // if the arc is less than 50%of the boundingbox, treat this to be a door with partially fixed panel
             if (arcRadii.Max < (bbMax.X - bbMin.X) * 0.5)
             {
-               if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-                  return "NOTDEFINED";
-               else
-                  return "SWING_FIXED_RIGHT";
+               return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? "NOTDEFINED" : "SWING_FIXED_RIGHT";
             }
-            else
-               return "SINGLE_SWING_RIGHT";
+            return "SINGLE_SWING_RIGHT";
          }
 
-         if (leftPosYArcCount > 0 && leftNegYArcCount > 0 
+         if (leftPosYArcCount > 0 && leftNegYArcCount > 0
                && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && rightPosYArcCount == 0 && rightNegYArcCount == 0)
             return "DOUBLE_SWING_LEFT";
 
-         if (rightPosYArcCount > 0 && rightNegYArcCount > 0 
-               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && leftPosYArcCount == 0 )
+         if (rightPosYArcCount > 0 && rightNegYArcCount > 0
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 && leftNegYArcCount == 0 && leftPosYArcCount == 0)
             return "DOUBLE_SWING_RIGHT";
 
          if (leftPosYArcCount > 0 && rightPosYArcCount > 0
@@ -406,7 +405,7 @@ namespace Revit.IFC.Export.Utility
             return "DOUBLE_DOOR_SINGLE_SWING";
 
          if (leftPosYArcCount > 0 && rightPosYArcCount > 0 && leftNegYArcCount > 0 && rightNegYArcCount > 0
-               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0 )
+               && fullCircleCount == 0 && rightHalfCircleCount == 0 && leftHalfCircleCount == 0)
             return "DOUBLE_DOOR_DOUBLE_SWING";
 
          if (leftPosYArcCount > 0 && rightNegYArcCount > 0

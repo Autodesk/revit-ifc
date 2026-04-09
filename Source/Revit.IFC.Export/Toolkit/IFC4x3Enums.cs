@@ -22,9 +22,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-// THIS IS A PLACEHOLDER.
-// This is a copy of IFC4 with the IfcDoorTypeOperation enum manually fixed.
-
 namespace Revit.IFC.Export.Toolkit.IFC4x3
 {
    public enum IFCActionRequestType
@@ -40,40 +37,40 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCActionSourceType
    {
-      DEAD_LOAD_G,
-      COMPLETION_G1,
-      LIVE_LOAD_Q,
-      SNOW_S,
-      WIND_W,
-      PRESTRESSING_P,
-      SETTLEMENT_U,
-      TEMPERATURE_T,
-      EARTHQUAKE_E,
-      FIRE,
-      IMPULSE,
-      IMPACT,
-      TRANSPORT,
-      ERECTION,
-      PROPPING,
-      SYSTEM_IMPERFECTION,
-      SHRINKAGE,
-      CREEP,
-      LACK_OF_FIT,
-      BUOYANCY,
-      ICE,
-      CURRENT,
-      WAVE,
-      RAIN,
       BRAKES,
+      BUOYANCY,
+      COMPLETION_G1,
+      CREEP,
+      CURRENT,
+      DEAD_LOAD_G,
+      EARTHQUAKE_E,
+      ERECTION,
+      FIRE,
+      ICE,
+      IMPACT,
+      IMPULSE,
+      LACK_OF_FIT,
+      LIVE_LOAD_Q,
+      PRESTRESSING_P,
+      PROPPING,
+      RAIN,
+      SETTLEMENT_U,
+      SHRINKAGE,
+      SNOW_S,
+      SYSTEM_IMPERFECTION,
+      TEMPERATURE_T,
+      TRANSPORT,
+      WAVE,
+      WIND_W,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCActionType
    {
+      EXTRAORDINARY_A,
       PERMANENT_G,
       VARIABLE_Q,
-      EXTRAORDINARY_A,
       USERDEFINED,
       NOTDEFINED
    }
@@ -91,10 +88,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCAddressType
    {
+      DISTRIBUTIONPOINT,
+      HOME,
       OFFICE,
       SITE,
-      HOME,
-      DISTRIBUTIONPOINT,
       USERDEFINED
    }
 
@@ -122,12 +119,12 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       FIXEDPLATECOUNTERFLOWEXCHANGER,
       FIXEDPLATECROSSFLOWEXCHANGER,
       FIXEDPLATEPARALLELFLOWEXCHANGER,
+      HEATPIPE,
       ROTARYWHEEL,
       RUNAROUNDCOILLOOP,
-      HEATPIPE,
-      TWINTOWERENTHALPYRECOVERYLOOPS,
-      THERMOSIPHONSEALEDTUBEHEATEXCHANGERS,
       THERMOSIPHONCOILTYPEHEATEXCHANGERS,
+      THERMOSIPHONSEALEDTUBEHEATEXCHANGERS,
+      TWINTOWERENTHALPYRECOVERYLOOPS,
       USERDEFINED,
       NOTDEFINED
    }
@@ -146,11 +143,49 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       NOTDEFINED
    }
 
+   public enum IFCAlignmentCantSegmentType
+   {
+      BLOSSCURVE,
+      CONSTANTCANT,
+      COSINECURVE,
+      HELMERTCURVE,
+      LINEARTRANSITION,
+      SINECURVE,
+      VIENNESEBEND
+   }
+
+   public enum IFCAlignmentHorizontalSegmentType
+   {
+      BLOSSCURVE,
+      CIRCULARARC,
+      CLOTHOID,
+      COSINECURVE,
+      CUBIC,
+      HELMERTCURVE,
+      LINE,
+      SINECURVE,
+      VIENNESEBEND
+   }
+
+   public enum IFCAlignmentType
+   {
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   public enum IFCAlignmentVerticalSegmentType
+   {
+      CIRCULARARC,
+      CLOTHOID,
+      CONSTANTGRADIENT,
+      PARABOLICARC
+   }
+
    public enum IFCAnalysisModelType
    {
       IN_PLANE_LOADING_2D,
-      OUT_PLANE_LOADING_2D,
       LOADING_3D,
+      OUT_PLANE_LOADING_2D,
       USERDEFINED,
       NOTDEFINED
    }
@@ -158,24 +193,24 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCAnalysisTheoryType
    {
       FIRST_ORDER_THEORY,
+      FULL_NONLINEAR_THEORY,
       SECOND_ORDER_THEORY,
       THIRD_ORDER_THEORY,
-      FULL_NONLINEAR_THEORY,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCAnnotationType
    {
-      ASBUILTAREA,
-      ASBUILTLINE,
-      ASBUILTPOINT,
-      ASSUMEDAREA,
-      ASSUMEDLINE,
-      ASSUMEDPOINT,
-      NON_PHYSICAL_SIGNAL,
-      SUPERELEVATIONEVENT,
-      WIDTHEVENT,
+      CONTOURLINE,
+      DIMENSION,
+      ISOBAR,
+      ISOLUX,
+      ISOTHERM,
+      LEADER,
+      SURVEY,
+      SYMBOL,
+      TEXT,
       USERDEFINED,
       NOTDEFINED
    }
@@ -184,14 +219,15 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       ADD,
       DIVIDE,
+      MODULO,
       MULTIPLY,
       SUBTRACT
    }
 
    public enum IFCAssemblyPlace
    {
-      SITE,
       FACTORY,
+      SITE,
       NOTDEFINED
    }
 
@@ -210,36 +246,6 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       SWITCHER,
       TELEPHONE,
       TUNER,
-      USERDEFINED,
-      NOTDEFINED
-   }
-
-   public enum IFCBridgeType
-   {
-      ARCHED,
-      CABLE_STAYED,
-      CANTILEVER,
-      CULVERT,
-      FRAMEWORK,
-      GIRDER,
-      SUSPENSION,
-      TRUSS,
-      USERDEFINED,
-      NOTDEFINED
-   }
-
-   public enum IFCBridgePartType
-   {
-      ABUTMENT,
-      DECK,
-      DECK_SEGMENT,
-      FOUNDATION,
-      PIER,
-      PIER_SEGMENT,
-      PYLON,
-      SUBSTRUCTURE,
-      SUPERSTRUCTURE,
-      SURFACESTRUCTURE,
       USERDEFINED,
       NOTDEFINED
    }
@@ -264,7 +270,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       RULED_SURF,
       SPHERICAL_SURF,
       SURF_OF_LINEAR_EXTRUSION,
-      SURF_OF_REVOLUTION, 
+      SURF_OF_REVOLUTION,
       TOROIDAL_SURF,
       UNSPECIFIED
    }
@@ -279,7 +285,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       HATSTONE,
       HOLLOWCORE,
       JOIST,
-      LINTEL, 
+      LINTEL,
       PIERCAP,
       SPANDREL,
       T_BEAM,
@@ -293,9 +299,9 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       DISK,
       ELASTOMERIC,
       GUIDE,
-      POT, 
+      POT,
       ROCKER,
-      ROLLER, 
+      ROLLER,
       SPHERICAL,
       USERDEFINED,
       NOTDEFINED
@@ -303,31 +309,61 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCBenchmark
    {
+      EQUALTO,
       GREATERTHAN,
       GREATERTHANOREQUALTO,
-      LESSTHAN, 
-      LESSTHANOREQUALTO,
-      EQUALTO,
-      NOTEQUALTO,
-      INCLUDES,
-      NOTINCLUDES,
       INCLUDEDIN,
-      NOTINCLUDEDIN
+      INCLUDES,
+      LESSTHAN,
+      LESSTHANOREQUALTO,
+      NOTEQUALTO,
+      NOTINCLUDEDIN,
+      NOTINCLUDES
    }
 
    public enum IFCBoilerType
    {
-      WATER,
       STEAM,
+      WATER,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCBooleanOperator
    {
-      UNION,
+      DIFFERENCE,
       INTERSECTION,
-      DIFFERENCE
+      UNION
+   }
+
+   public enum IFCBridgePartType
+   {
+      ABUTMENT,
+      DECK,
+      DECK_SEGMENT,
+      FOUNDATION,
+      PIER,
+      PIER_SEGMENT,
+      PYLON,
+      SUBSTRUCTURE,
+      SUPERSTRUCTURE,
+      SURFACESTRUCTURE,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   public enum IFCBridgeType
+   {
+      ARCHED,
+      CABLE_STAYED,
+      CANTILEVER,
+      CULVERT,
+      FRAMEWORK,
+      GIRDER,
+      SUSPENSION,
+      TRUSS,
+      USERDEFINED,
+      NOTDEFINED
    }
 
    public enum IFCBuildingElementPartType
@@ -336,7 +372,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       ARMOURUNIT,
       INSULATION,
       PRECASTPANEL,
-      SAFETYCAGE, 
+      SAFETYCAGE,
       USERDEFINED,
       NOTDEFINED
    }
@@ -352,13 +388,32 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       NOTDEFINED
    }
 
-   public enum IFCBuildingSystem
+   public enum IFCBuildingSystemType
    {
       FENESTRATION,
       FOUNDATION,
       LOADBEARING,
       OUTERSHELL,
-      SHADING, 
+      SHADING,
+      TRANSPORT,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   public enum IFCBuiltSystemType
+   {
+      EROSIONPREVENTION,
+      FENESTRATION,
+      FOUNDATION,
+      LOADBEARING,
+      MOORING,
+      OUTERSHELL,
+      PRESTRESSING,
+      RAILWAYLINE,
+      RAILWAYTRACK,
+      REINFORCING,
+      SHADING,
+      TRACKCIRCUIT,
       TRANSPORT,
       USERDEFINED,
       NOTDEFINED
@@ -374,12 +429,12 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       BEND,
       CONNECTOR,
-      CROSS, 
+      CROSS,
       JUNCTION,
       REDUCER,
-      TEE, 
+      TEE,
       TRANSITION,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -389,9 +444,9 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CABLELADDERSEGMENT,
       CABLETRAYSEGMENT,
       CABLETRUNKINGSEGMENT,
-      CATENARYWIRE, 
+      CATENARYWIRE,
       CONDUITSEGMENT,
-      DROPPER, 
+      DROPPER,
       USERDEFINED,
       NOTDEFINED
    }
@@ -400,10 +455,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       CONNECTOR,
       ENTRY,
-      EXIT, 
+      EXIT,
       FANOUT,
       JUNCTION,
-      TRANSITION, 
+      TRANSITION,
       USERDEFINED,
       NOTDEFINED
    }
@@ -416,7 +471,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CONTACTWIRESEGMENT,
       CORESEGMENT,
       FIBERSEGMENT,
-      FIBERTUBE, 
+      FIBERTUBE,
       OPTICALCABLESEGMENT,
       STITCHWIRE,
       WIREPAIRSEGMENT,
@@ -434,19 +489,19 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCChangeAction
    {
-      NOCHANGE,
-      MODIFIED,
       ADDED,
       DELETED,
+      MODIFIED,
+      NOCHANGE,
       NOTDEFINED
    }
 
    public enum IFCChillerType
    {
       AIRCOOLED,
-      WATERCOOLED,
       HEATRECOVERY,
-      USERDEFINED, 
+      WATERCOOLED,
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -461,7 +516,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       DXCOOLINGCOIL,
       ELECTRICHEATINGCOIL,
       GASHEATINGCOIL,
-      HYDRONICCOIL, 
+      HYDRONICCOIL,
       STEAMHEATINGCOIL,
       WATERCOOLINGCOIL,
       WATERHEATINGCOIL,
@@ -476,7 +531,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       PIERSTEM_SEGMENT,
       PILASTER,
       STANDCOLUMN,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -488,24 +543,25 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       FAX,
       GATEWAY,
       INTELLIGENTPERIPHERAL,
-      IPNETWORKEQUIPMENT, 
+      IPNETWORKEQUIPMENT,
       LINESIDEELECTRONICUNIT,
-      MODEM, NETWORKAPPLIANCE,
-      NETWORKBRIDGE, 
-      NETWORKHUB, 
+      MODEM,
+      NETWORKAPPLIANCE,
+      NETWORKBRIDGE,
+      NETWORKHUB,
       OPTICALLINETERMINAL,
       OPTICALNETWORKUNIT,
-      PRINTER, 
+      PRINTER,
       RADIOBLOCKCENTER,
-      REPEATER, 
-      ROUTER, 
+      REPEATER,
+      ROUTER,
       SCANNER,
       TELECOMMAND,
       TELEPHONYEXCHANGE,
       TRANSITIONCOMPONENT,
-      TRANSPONDER, 
+      TRANSPONDER,
       TRANSPORTEQUIPMENT,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -520,12 +576,12 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       BOOSTER,
       DYNAMIC,
       HERMETIC,
-      OPENTYPE, 
+      OPENTYPE,
       RECIPROCATING,
       ROLLINGPISTON,
-      ROTARY, 
+      ROTARY,
       ROTARYVANE,
-      SCROLL, 
+      SCROLL,
       SEMIHERMETIC,
       SINGLESCREW,
       SINGLESTAGE,
@@ -545,23 +601,23 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       WATERCOOLEDSHELLCOIL,
       WATERCOOLEDSHELLTUBE,
       WATERCOOLEDTUBEINTUBE,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCConnectionType
    {
+      ATEND,
       ATPATH,
       ATSTART,
-      ATEND,
       NOTDEFINED
    }
 
    public enum IFCConstraint
    {
-      HARD,
-      SOFT, 
       ADVISORY,
+      HARD,
+      SOFT,
       USERDEFINED,
       NOTDEFINED
    }
@@ -571,12 +627,12 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       DEMOLISHING,
       EARTHMOVING,
       ERECTING,
-      HEATING, 
-      LIGHTING, 
+      HEATING,
+      LIGHTING,
       PAVING,
       PUMPING,
       TRANSPORTING,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -585,12 +641,12 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       AGGREGATES,
       CONCRETE,
       DRYWALL,
-      FUEL, 
-      GYPSUM, 
-      MASONRY, 
+      FUEL,
+      GYPSUM,
+      MASONRY,
       METAL,
       PLASTIC,
-      WOOD, 
+      WOOD,
       USERDEFINED,
       NOTDEFINED
    }
@@ -610,16 +666,16 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       PROGRAMMABLE,
       PROPORTIONAL,
       TWOPOSITION,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCConveyorSegmentType
    {
       BELTCONVEYOR,
-      BUCKETCONVEYOR, 
-      CHUTECONVEYOR, 
-      SCREWCONVEYOR, 
+      BUCKETCONVEYOR,
+      CHUTECONVEYOR,
+      SCREWCONVEYOR,
       USERDEFINED,
       NOTDEFINED
    }
@@ -636,19 +692,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       MECHANICALFORCEDDRAFT,
       MECHANICALINDUCEDDRAFT,
-      NATURALDRAFT, 
-      USERDEFINED,
-      NOTDEFINED
-   }
-
-   public enum IFCCourseType
-   {
-      ARMOUR,
-      BALLASTBED,
-      CORE,
-      FILTER,
-      PAVEMENT, 
-      PROTECTION,
+      NATURALDRAFT,
       USERDEFINED,
       NOTDEFINED
    }
@@ -664,10 +708,22 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       BUDGET,
       COSTPLAN,
       ESTIMATE,
-      TENDER,
       PRICEDBILLOFQUANTITIES,
-      UNPRICEDBILLOFQUANTITIES,
       SCHEDULEOFRATES,
+      TENDER,
+      UNPRICEDBILLOFQUANTITIES,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   public enum IFCCourseType
+   {
+      ARMOUR,
+      BALLASTBED,
+      CORE,
+      FILTER,
+      PAVEMENT,
+      PROTECTION,
       USERDEFINED,
       NOTDEFINED
    }
@@ -675,15 +731,15 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCCoveringType
    {
       CEILING,
-      CLADDING, 
-      COPING, 
-      FLOORING, 
+      CLADDING,
+      COPING,
+      FLOORING,
       INSULATION,
       MEMBRANE,
       MOLDING,
       ROOFING,
       SKIRTINGBOARD,
-      SLEEVING, 
+      SLEEVING,
       TOPPING,
       WRAPPING,
       USERDEFINED,
@@ -698,6 +754,12 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       NOTDEFINED
    }
 
+   public enum IFCCurtainWallType
+   {
+      USERDEFINED,
+      NOTDEFINED
+   }
+
    public enum IFCCurveInterpolation
    {
       LINEAR,
@@ -706,24 +768,18 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       NOTDEFINED
    }
 
-   public enum IFCCurtainWallType
-   {
-      USERDEFINED,
-      NOTDEFINED
-   }
-
    public enum IFCDamperType
    {
       BACKDRAFTDAMPER,
       BALANCINGDAMPER,
-      BLASTDAMPER, 
+      BLASTDAMPER,
       CONTROLDAMPER,
-      FIREDAMPER, 
+      FIREDAMPER,
       FIRESMOKEDAMPER,
-      FUMEHOODEXHAUST, 
-      GRAVITYDAMPER, 
+      FUMEHOODEXHAUST,
+      GRAVITYDAMPER,
       GRAVITYRELIEFDAMPER,
-      RELIEFDAMPER, 
+      RELIEFDAMPER,
       SMOKEDAMPER,
       USERDEFINED,
       NOTDEFINED
@@ -732,8 +788,8 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCDataOrigin
    {
       MEASURED,
-      PREDICTED, 
-      SIMULATED, 
+      PREDICTED,
+      SIMULATED,
       USERDEFINED,
       NOTDEFINED
    }
@@ -742,7 +798,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       ACCELERATIONUNIT,
       ANGULARVELOCITYUNIT,
-      AREADENSITYUNIT, 
+      AREADENSITYUNIT,
       COMPOUNDPLANEANGLEUNIT,
       CURVATUREUNIT,
       DYNAMICVISCOSITYUNIT,
@@ -751,24 +807,24 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       INTEGERCOUNTRATEUNIT,
       IONCONCENTRATIONUNIT,
       ISOTHERMALMOISTURECAPACITYUNIT,
-      KINEMATICVISCOSITYUNIT, 
-      LINEARFORCEUNIT, 
+      KINEMATICVISCOSITYUNIT,
+      LINEARFORCEUNIT,
       LINEARMOMENTUNIT,
       LINEARSTIFFNESSUNIT,
       LINEARVELOCITYUNIT,
       LUMINOUSINTENSITYDISTRIBUTIONUNIT,
       MASSDENSITYUNIT,
-      MASSFLOWRATEUNIT, 
-      MASSPERLENGTHUNIT, 
-      MODULUSOFELASTICITYUNIT, 
+      MASSFLOWRATEUNIT,
+      MASSPERLENGTHUNIT,
+      MODULUSOFELASTICITYUNIT,
       MODULUSOFLINEARSUBGRADEREACTIONUNIT,
       MODULUSOFROTATIONALSUBGRADEREACTIONUNIT,
       MODULUSOFSUBGRADEREACTIONUNIT,
       MOISTUREDIFFUSIVITYUNIT,
-      MOLECULARWEIGHTUNIT, 
+      MOLECULARWEIGHTUNIT,
       MOMENTOFINERTIAUNIT,
       PHUNIT,
-      PLANARFORCEUNIT, 
+      PLANARFORCEUNIT,
       ROTATIONALFREQUENCYUNIT,
       ROTATIONALMASSUNIT,
       ROTATIONALSTIFFNESSUNIT,
@@ -780,36 +836,36 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       SOUNDPRESSURELEVELUNIT,
       SOUNDPRESSUREUNIT,
       SPECIFICHEATCAPACITYUNIT,
-      TEMPERATUREGRADIENTUNIT, 
+      TEMPERATUREGRADIENTUNIT,
       TEMPERATURERATEOFCHANGEUNIT,
       THERMALADMITTANCEUNIT,
       THERMALCONDUCTANCEUNIT,
-      THERMALEXPANSIONCOEFFICIENTUNIT, 
+      THERMALEXPANSIONCOEFFICIENTUNIT,
       THERMALRESISTANCEUNIT,
       THERMALTRANSMITTANCEUNIT,
-      TORQUEUNIT, 
+      TORQUEUNIT,
       VAPORPERMEABILITYUNIT,
       VOLUMETRICFLOWRATEUNIT,
-      WARPINGCONSTANTUNIT, 
-      WARPINGMOMENTUNIT, 
+      WARPINGCONSTANTUNIT,
+      WARPINGMOMENTUNIT,
       USERDEFINED
    }
 
    public enum IFCDirectionSense
    {
-      POSITIVE, 
-      NEGATIVE
+      NEGATIVE,
+      POSITIVE
    }
 
    public enum IFCDiscreteAccessoryType
    {
       ANCHORPLATE,
       BIRDPROTECTION,
-      BRACKET, 
+      BRACKET,
       CABLEARRANGER,
       ELASTIC_CUSHION,
       EXPANSION_JOINT_DEVICE,
-      FILLER, 
+      FILLER,
       FLASHING,
       INSULATOR,
       LOCK,
@@ -817,10 +873,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       POINTMACHINEMOUNTINGDEVICE,
       POINT_MACHINE_LOCKING_DEVICE,
       RAILBRACE,
-      RAILPAD, 
+      RAILPAD,
       RAIL_LUBRICATION,
       RAIL_MECHANICAL_EQUIPMENT,
-      SHOE, 
+      SHOE,
       SLIDINGCHAIR,
       SOUNDABSORPTION,
       TENSIONINGEQUIPMENT,
@@ -833,10 +889,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CONSUMERUNIT,
       DISPATCHINGBOARD,
       DISTRIBUTIONBOARD,
-      DISTRIBUTIONFRAME, 
-      MOTORCONTROLCENTRE, 
+      DISTRIBUTIONFRAME,
+      MOTORCONTROLCENTRE,
       SWITCHBOARD,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -845,11 +901,11 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       FORMEDDUCT,
       INSPECTIONCHAMBER,
       INSPECTIONPIT,
-      MANHOLE, 
+      MANHOLE,
       METERCHAMBER,
       SUMP,
       TRENCH,
-      VALVECHAMBER, 
+      VALVECHAMBER,
       USERDEFINED,
       NOTDEFINED
    }
@@ -858,24 +914,25 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       CABLE,
       CABLECARRIER,
-      DUCT, 
+      DUCT,
       PIPE,
-      USERDEFINED, 
+      WIRELESS,
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCDistributionSystem
    {
       AIRCONDITIONING,
-      AUDIOVISUAL, 
+      AUDIOVISUAL,
       CATENARY_SYSTEM,
-      CHEMICAL, 
+      CHEMICAL,
       CHILLEDWATER,
       COMMUNICATION,
       COMPRESSEDAIR,
       CONDENSERWATER,
       CONTROL,
-      CONVEYING, 
+      CONVEYING,
       DATA,
       DISPOSAL,
       DOMESTICCOLDWATER,
@@ -893,23 +950,23 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       HEATING,
       LIGHTING,
       LIGHTNINGPROTECTION,
-      MOBILENETWORK, 
+      MOBILENETWORK,
       MONITORINGSYSTEM,
       MUNICIPALSOLIDWASTE,
-      OIL, 
+      OIL,
       OPERATIONAL,
       OPERATIONALTELEPHONYSYSTEM,
       OVERHEAD_CONTACTLINE_SYSTEM,
       POWERGENERATION,
       RAINWATER,
-      REFRIGERATION, 
+      REFRIGERATION,
       RETURN_CIRCUIT,
       SECURITY,
-      SEWAGE, 
+      SEWAGE,
       SIGNAL,
       STORMWATER,
-      TELEPHONE, 
-      TV, 
+      TELEPHONE,
+      TV,
       VACUUM,
       VENT,
       VENTILATION,
@@ -921,10 +978,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCDocumentConfidentiality
    {
+      CONFIDENTIAL,
+      PERSONAL,
       PUBLIC,
       RESTRICTED,
-      CONFIDENTIAL,
-      PERSONAL, 
       USERDEFINED,
       NOTDEFINED
    }
@@ -932,21 +989,21 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCDocumentStatus
    {
       DRAFT,
-      FINALDRAFT,
       FINAL,
+      FINALDRAFT,
       REVISION,
       NOTDEFINED
    }
 
    public enum IFCDoorPanelOperation
    {
-      SWINGING,
       DOUBLE_ACTING,
-      SLIDING,
-      FOLDING, 
+      FIXEDPANEL,
+      FOLDING,
       REVOLVING,
-      ROLLINGUP, 
-      FIXEDPANEL, 
+      ROLLINGUP,
+      SLIDING,
+      SWINGING,
       USERDEFINED,
       NOTDEFINED
    }
@@ -959,46 +1016,11 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       NOTDEFINED
    }
 
-   public enum IFCDoorStyleConstruction
-   {
-      ALUMINIUM,
-      HIGH_GRADE_STEEL, 
-      STEEL, 
-      WOOD, 
-      ALUMINIUM_WOOD,
-      ALUMINIUM_PLASTIC,
-      PLASTIC,
-      USERDEFINED,
-      NOTDEFINED
-   }
-
-   public enum IFCDoorStyleOperation
-   {
-      SINGLE_SWING_LEFT,
-      SINGLE_SWING_RIGHT,
-      DOUBLE_DOOR_SINGLE_SWING,
-      DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT,
-      DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT,
-      DOUBLE_SWING_LEFT,
-      DOUBLE_SWING_RIGHT,
-      DOUBLE_DOOR_DOUBLE_SWING,
-      SLIDING_TO_LEFT, 
-      SLIDING_TO_RIGHT,
-      DOUBLE_DOOR_SLIDING,
-      FOLDING_TO_LEFT, 
-      FOLDING_TO_RIGHT,
-      DOUBLE_DOOR_FOLDING, 
-      REVOLVING, 
-      ROLLINGUP, 
-      USERDEFINED,
-      NOTDEFINED
-   }
-
    public enum IFCDoorType
    {
       BOOM_BARRIER,
-      DOOR, 
-      GATE, 
+      DOOR,
+      GATE,
       TRAPDOOR,
       TURNSTILE,
       USERDEFINED,
@@ -1038,28 +1060,43 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       BEND,
       CONNECTOR,
-      ENTRY, 
-      EXIT, 
+      ENTRY,
+      EXIT,
       JUNCTION,
-      OBSTRUCTION, 
-      TRANSITION, 
+      OBSTRUCTION,
+      TRANSITION,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCDuctSegmentType
    {
-      RIGIDSEGMENT,
       FLEXIBLESEGMENT,
+      RIGIDSEGMENT,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCDuctSilencerType
    {
-      FLATOVAL, 
+      FLATOVAL,
       RECTANGULAR,
-      ROUND, 
+      ROUND,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   public enum IFCEarthworksCutType
+   {
+      BASE_EXCAVATION,
+      CUT,
+      DREDGING,
+      EXCAVATION,
+      OVEREXCAVATION,
+      PAVEMENTMILLING,
+      STEPEXCAVATION,
+      TOPSOILREMOVAL,
+      TRENCH,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1067,12 +1104,12 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCEarthworksFillType
    {
       BACKFILL,
-      COUNTERWEIGHT, 
+      COUNTERWEIGHT,
       EMBANKMENT,
       SLOPEFILL,
       SUBGRADE,
       SUBGRADEBED,
-      TRANSITIONSECTION, 
+      TRANSITIONSECTION,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1084,12 +1121,12 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       FREESTANDINGELECTRICHEATER,
       FREESTANDINGFAN,
       FREESTANDINGWATERCOOLER,
-      FREESTANDINGWATERHEATER, 
+      FREESTANDINGWATERHEATER,
       FREEZER,
       FRIDGE_FREEZER,
       HANDDRYER,
       KITCHENMACHINE,
-      MICROWAVE, 
+      MICROWAVE,
       PHOTOCOPIER,
       REFRIGERATOR,
       TUMBLEDRYER,
@@ -1102,10 +1139,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCElectricDistributionBoardType
    {
       CONSUMERUNIT,
-      DISTRIBUTIONBOARD, 
+      DISTRIBUTIONBOARD,
       MOTORCONTROLCENTRE,
-      SWITCHBOARD, 
-      USERDEFINED, 
+      SWITCHBOARD,
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1114,26 +1151,26 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       BATTERY,
       CAPACITOR,
       CAPACITORBANK,
-      COMPENSATOR, 
+      COMPENSATOR,
       HARMONICFILTER,
-      INDUCTOR, 
+      INDUCTOR,
       INDUCTORBANK,
       RECHARGER,
-      UPS, 
+      UPS,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCElectricFlowTreatmentDeviceType
    {
-      ELECTRONICFILTER, 
+      ELECTRONICFILTER,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCElectricGeneratorType
    {
-      CHP, 
+      CHP,
       ENGINEGENERATOR,
       STANDALONE,
       USERDEFINED,
@@ -1146,8 +1183,8 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       INDUCTION,
       POLYPHASE,
       RELUCTANCESYNCHRONOUS,
-      SYNCHRONOUS, 
-      USERDEFINED, 
+      SYNCHRONOUS,
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1155,7 +1192,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       RELAY,
       TIMECLOCK,
-      TIMEDELAY, 
+      TIMEDELAY,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1167,30 +1204,30 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       ARCH,
       BEAM_GRID,
       BRACED_FRAME,
-      CROSS_BRACING, 
+      CROSS_BRACING,
       DECK,
       DILATATIONPANEL,
       ENTRANCEWORKS,
-      GIRDER, 
+      GIRDER,
       GRID,
-      MAST, 
-      PIER, 
+      MAST,
+      PIER,
       PYLON,
       RAIL_MECHANICAL_EQUIPMENT_ASSEMBLY,
-      REINFORCEMENT_UNIT, 
+      REINFORCEMENT_UNIT,
       RIGID_FRAME,
-      SHELTER, 
-      SIGNALASSEMBLY, 
-      SLAB_FIELD, 
+      SHELTER,
+      SIGNALASSEMBLY,
+      SLAB_FIELD,
       SUMPBUSTER,
       SUPPORTINGASSEMBLY,
       SUSPENSIONASSEMBLY,
-      TRACKPANEL, 
+      TRACKPANEL,
       TRACTION_SWITCHING_ASSEMBLY,
-      TRAFFIC_CALMING_DEVICE, 
-      TRUSS, 
+      TRAFFIC_CALMING_DEVICE,
+      TRUSS,
       TURNOUTPANEL,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1204,7 +1241,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCEngineType
    {
       EXTERNALCOMBUSTION,
-      INTERNALCOMBUSTION, 
+      INTERNALCOMBUSTION,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1216,10 +1253,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       DIRECTEVAPORATIVERANDOMMEDIAAIRCOOLER,
       DIRECTEVAPORATIVERIGIDMEDIAAIRCOOLER,
       DIRECTEVAPORATIVESLINGERSPACKAGEDAIRCOOLER,
-      INDIRECTDIRECTCOMBINATION, 
+      INDIRECTDIRECTCOMBINATION,
       INDIRECTEVAPORATIVECOOLINGTOWERORCOILCOOLER,
       INDIRECTEVAPORATIVEPACKAGEAIRCOOLER,
-      INDIRECTEVAPORATIVEWETCOIL, 
+      INDIRECTEVAPORATIVEWETCOIL,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1228,29 +1265,29 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       DIRECTEXPANSION,
       DIRECTEXPANSIONBRAZEDPLATE,
-      DIRECTEXPANSIONSHELLANDTUBE, 
+      DIRECTEXPANSIONSHELLANDTUBE,
       DIRECTEXPANSIONTUBEINTUBE,
-      FLOODEDSHELLANDTUBE, 
-      SHELLANDCOIL, 
+      FLOODEDSHELLANDTUBE,
+      SHELLANDCOIL,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCEventTriggerType
    {
-      EVENTRULE, 
+      EVENTCOMPLEX,
       EVENTMESSAGE,
-      EVENTTIME, 
-      EVENTCOMPLEX, 
-      USERDEFINED, 
+      EVENTRULE,
+      EVENTTIME,
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCEventType
    {
-      STARTEVENT,
-      ENDEVENT, 
+      ENDEVENT,
       INTERMEDIATEEVENT,
+      STARTEVENT,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1259,10 +1296,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       EXTERNAL,
       EXTERNAL_EARTH,
+      EXTERNAL_FIRE,
       EXTERNAL_WATER,
-      EXTERNAL_FIRE, 
-      USERDEFINED, 
-      NOTDEFIEND
+      USERDEFINED,
+      NOTDEFINED
    }
 
    public enum IFCFacilityPartCommonType
@@ -1271,10 +1308,20 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       BELOWGROUND,
       JUNCTION,
       LEVELCROSSING,
-      SEGMENT, 
+      SEGMENT,
       SUBSTRUCTURE,
       SUPERSTRUCTURE,
-      TERMINAL, 
+      TERMINAL,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   public enum IFCFacilityUsage
+   {
+      LATERAL,
+      LONGITUDINAL,
+      REGION,
+      VERTICAL,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1288,13 +1335,13 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       PROPELLORAXIAL,
       TUBEAXIAL,
       VANEAXIAL,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCFastenerType
    {
-      GLUE, 
+      GLUE,
       MORTAR,
       WELD,
       USERDEFINED,
@@ -1303,11 +1350,11 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCFilterType
    {
-      AIRPARTICLEFILTER, 
+      AIRPARTICLEFILTER,
       COMPRESSEDAIRFILTER,
-      ODORFILTER, 
+      ODORFILTER,
       OILFILTER,
-      STRAINER, 
+      STRAINER,
       WATERFILTER,
       USERDEFINED,
       NOTDEFINED
@@ -1315,36 +1362,36 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCFireSuppressionTerminalType
    {
-      BREECHINGINLET, 
-      FIREHYDRANT, 
-      FIREMONITOR, 
-      HOSEREEL, 
+      BREECHINGINLET,
+      FIREHYDRANT,
+      FIREMONITOR,
+      HOSEREEL,
       SPRINKLER,
       SPRINKLERDEFLECTOR,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCFlowDirection
    {
-      SOURCE,
       SINK,
+      SOURCE,
       SOURCEANDSINK,
       NOTDEFINED
    }
 
    public enum IFCFlowInstrumentType
    {
-      AMMETER, 
-      COMBINED, 
+      AMMETER,
+      COMBINED,
       FREQUENCYMETER,
-      PHASEANGLEMETER, 
+      PHASEANGLEMETER,
       POWERFACTORMETER,
       PRESSUREGAUGE,
       THERMOMETER,
       VOLTMETER,
       VOLTMETER_PEAK,
-      VOLTMETER_RMS, 
+      VOLTMETER_RMS,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1352,7 +1399,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCFlowMeterType
    {
       ENERGYMETER,
-      GASMETER, 
+      GASMETER,
       OILMETER,
       WATERMETER,
       USERDEFINED,
@@ -1362,7 +1409,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCFootingType
    {
       CAISSON_FOUNDATION,
-      FOOTING_BEAM, 
+      FOOTING_BEAM,
       PAD_FOOTING,
       PILE_CAP,
       STRIP_FOOTING,
@@ -1374,11 +1421,11 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       BED,
       CHAIR,
-      DESK, 
+      DESK,
       FILECABINET,
-      SHELF, 
-      SOFA, 
-      TABLE, 
+      SHELF,
+      SOFA,
+      TABLE,
       TECHNICALCABINET,
       USERDEFINED,
       NOTDEFINED
@@ -1387,81 +1434,81 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCGeographicElementType
    {
       SOIL_BORING_POINT,
-      TERRAIN, 
+      TERRAIN,
       VEGETATION,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   public enum IFCGeometricProjection
+   {
+      ELEVATION_VIEW,
+      GRAPH_VIEW,
+      MODEL_VIEW,
+      PLAN_VIEW,
+      REFLECTED_PLAN_VIEW,
+      SECTION_VIEW,
+      SKETCH_VIEW,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCGeotechnicalStratumType
    {
-      SOLID, 
-      VOID, 
-      WATER, 
-      USERDEFINED, 
-      NOTDEFINED
-   }
-
-   public enum IFCGeometricProjection
-   {
-      GRAPH_VIEW,
-      SKETCH_VIEW,
-      MODEL_VIEW, 
-      PLAN_VIEW,
-      REFLECTED_PLAN_VIEW, 
-      SECTION_VIEW,
-      ELEVATION_VIEW,
-      USERDEFINED, 
+      SOLID,
+      VOID,
+      WATER,
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCGlobalOrLocal
    {
-      GLOBAL_COORDS, 
+      GLOBAL_COORDS,
       LOCAL_COORDS
    }
 
    public enum IFCGridType
    {
-      RECTANGULAR,
+      IRREGULAR,
       RADIAL,
-      TRIANGULAR, 
-      IRREGULAR, 
+      RECTANGULAR,
+      TRIANGULAR,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCHeatExchangerType
    {
-      PLATE, 
+      PLATE,
       SHELLANDTUBE,
-      TURNOUTHEATING, 
+      TURNOUTHEATING,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCHumidifierType
    {
-      ADIABATICAIRWASHER, 
+      ADIABATICAIRWASHER,
       ADIABATICATOMIZING,
       ADIABATICCOMPRESSEDAIRNOZZLE,
-      ADIABATICPAN, 
+      ADIABATICPAN,
       ADIABATICRIGIDMEDIA,
       ADIABATICULTRASONIC,
       ADIABATICWETTEDELEMENT,
       ASSISTEDBUTANE,
       ASSISTEDELECTRIC,
       ASSISTEDNATURALGAS,
-      ASSISTEDPROPANE, 
-      ASSISTEDSTEAM, 
-      STEAMINJECTION, 
-      USERDEFINED, 
+      ASSISTEDPROPANE,
+      ASSISTEDSTEAM,
+      STEAMINJECTION,
+      USERDEFINED,
       NOTDEFINED
    }
-   
+
    public enum IFCImpactProtectionDeviceType
    {
-      BUMPER, 
+      BUMPER,
       CRASHCUSHION,
       DAMPINGSYSTEM,
       FENDER,
@@ -1471,8 +1518,8 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCInterceptorType
    {
-      CYCLONIC, 
-      GREASE, 
+      CYCLONIC,
+      GREASE,
       OIL,
       PETROL,
       USERDEFINED,
@@ -1481,28 +1528,28 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCInternalOrExternal
    {
-      INTERNAL, 
-      EXTERNAL, 
+      EXTERNAL,
       EXTERNAL_EARTH,
+      EXTERNAL_FIRE,
       EXTERNAL_WATER,
-      EXTERNAL_FIRE, 
+      INTERNAL,
       NOTDEFINED
    }
 
    public enum IFCInventoryType
    {
       ASSETINVENTORY,
-      SPACEINVENTORY,
       FURNITUREINVENTORY,
-      USERDEFINED, 
+      SPACEINVENTORY,
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCJunctionBoxType
    {
-      DATA, 
+      DATA,
       POWER,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1530,10 +1577,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       ELECTRIC,
       FINISHING,
       FLOORING,
-      GENERAL, 
+      GENERAL,
       HVAC,
       LANDSCAPING,
-      MASONRY, 
+      MASONRY,
       PAINTING,
       PAVING,
       PLUMBING,
@@ -1549,20 +1596,20 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       COMPACTFLUORESCENT,
       FLUORESCENT,
-      HALOGEN, 
+      HALOGEN,
       HIGHPRESSUREMERCURY,
-      HIGHPRESSURESODIUM, 
-      LED, 
+      HIGHPRESSURESODIUM,
+      LED,
       METALHALIDE,
-      OLED, 
-      TUNGSTENFILAMENT, 
+      OLED,
+      TUNGSTENFILAMENT,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCLayerSetDirection
    {
-      AXIS1, 
+      AXIS1,
       AXIS2,
       AXIS3
    }
@@ -1578,13 +1625,13 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCLightEmissionSource
    {
       COMPACTFLUORESCENT,
-      FLUORESCENT, 
+      FLUORESCENT,
       HIGHPRESSUREMERCURY,
       HIGHPRESSURESODIUM,
       LIGHTEMITTINGDIODE,
       LOWPRESSURESODIUM,
       LOWVOLTAGEHALOGEN,
-      MAINVOLTAGEHALOGEN, 
+      MAINVOLTAGEHALOGEN,
       METALHALIDE,
       TUNGSTENFILAMENT,
       NOTDEFINED
@@ -1594,7 +1641,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       DIRECTIONSOURCE,
       POINTSOURCE,
-      SECURITYLIGHTING, 
+      SECURITYLIGHTING,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1603,26 +1650,26 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       HOSEREEL,
       LOADINGARM,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCLoadGroupType
    {
-      LOAD_GROUP, 
       LOAD_CASE,
       LOAD_COMBINATION,
-      USERDEFINED, 
+      LOAD_GROUP,
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCLogicalOperator
    {
-      LOGICALAND, 
-      LOGICALOR,
-      LOGICALXOR, 
+      LOGICALAND,
       LOGICALNOTAND,
-      LOGICALNOTOR
+      LOGICALNOTOR,
+      LOGICALOR,
+      LOGICALXOR
    }
 
    public enum IFCMarineFacilityType
@@ -1630,21 +1677,21 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       BARRIERBEACH,
       BREAKWATER,
       CANAL,
-      DRYDOCK, 
+      DRYDOCK,
       FLOATINGDOCK,
       HYDROLIFT,
       JETTY,
-      LAUNCHRECOVERY, 
+      LAUNCHRECOVERY,
       MARINEDEFENCE,
       NAVIGATIONALCHANNEL,
       PORT,
       QUAY,
       REVETMENT,
-      SHIPLIFT, 
-      SHIPLOCK, 
+      SHIPLIFT,
+      SHIPLOCK,
       SHIPYARD,
       SLIPWAY,
-      WATERWAY, 
+      WATERWAY,
       WATERWAYSHIPLIFT,
       USERDEFINED,
       NOTDEFINED
@@ -1652,11 +1699,11 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCMarinePartType
    {
-      ABOVEWATERLINE, 
-      ANCHORAGE, 
+      ABOVEWATERLINE,
+      ANCHORAGE,
       APPROACHCHANNEL,
       BELOWWATERLINE,
-      BERTHINGSTRUCTURE, 
+      BERTHINGSTRUCTURE,
       CHAMBER,
       CILL_LEVEL,
       COPELEVEL,
@@ -1667,16 +1714,16 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       HIGHWATERLINE,
       LANDFIELD,
       LEEWARDSIDE,
-      LOWWATERLINE, 
-      MANUFACTURING, 
-      NAVIGATIONALAREA, 
-      PROTECTION, 
+      LOWWATERLINE,
+      MANUFACTURING,
+      NAVIGATIONALAREA,
+      PROTECTION,
       SHIPTRANSFER,
       STORAGEAREA,
-      VEHICLESERVICING, 
+      VEHICLESERVICING,
       WATERFIELD,
-      WEATHERSIDE, 
-      USERDEFINED, 
+      WEATHERSIDE,
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1685,17 +1732,17 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       ANCHORBOLT,
       BOLT,
       CHAIN,
-      COUPLER, 
-      DOWEL, 
-      NAIL, 
+      COUPLER,
+      DOWEL,
+      NAIL,
       NAILPLATE,
       RAILFASTENING,
-      RAILJOINT, 
+      RAILJOINT,
       RIVET,
       ROPE,
       SCREW,
       SHEARCONNECTOR,
-      STAPLE, 
+      STAPLE,
       STUDSHEARCONNECTOR,
       USERDEFINED,
       NOTDEFINED
@@ -1703,35 +1750,35 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCMedicalDeviceType
    {
-      AIRSTATION, 
+      AIRSTATION,
       FEEDAIRUNIT,
       OXYGENGENERATOR,
-      OXYGENPLANT, 
-      VACUUMSTATION, 
-      USERDEFINED, 
+      OXYGENPLANT,
+      VACUUMSTATION,
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCMemberType
    {
-      ARCH_SEGMENT, 
+      ARCH_SEGMENT,
       BRACE,
-      CHORD, 
-      COLLAR, 
-      MEMBER, 
+      CHORD,
+      COLLAR,
+      MEMBER,
       MULLION,
-      PLATE, 
+      PLATE,
       POST,
       PURLIN,
       RAFTER,
       STAY_CABLE,
       STIFFENING_RIB,
-      STRINGER, 
+      STRINGER,
       STRUCTURALCABLE,
-      STRUT, 
-      STUD, 
+      STRUT,
+      STUD,
       SUSPENDER,
-      SUSPENSION_CABLE, 
+      SUSPENSION_CABLE,
       TIEBAR,
       USERDEFINED,
       NOTDEFINED
@@ -1751,7 +1798,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       REMOTERADIOUNIT,
       REMOTEUNIT,
       SERVICE_GPRS_SUPPORT_NODE,
-      SUBSCRIBERSERVER, 
+      SUBSCRIBERSERVER,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1761,7 +1808,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       BOLLARD,
       LINETENSIONER,
       MAGNETICDEVICE,
-      MOORINGHOOKS, 
+      MOORINGHOOKS,
       VACUUMDEVICE,
       USERDEFINED,
       NOTDEFINED
@@ -1769,7 +1816,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCMotorConnectionType
    {
-      BELTDRIVE, 
+      BELTDRIVE,
       COUPLING,
       DIRECTDRIVE,
       USERDEFINED,
@@ -1784,36 +1831,20 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       NOTDEFINED
    }
 
-   public enum IFCNullStyle
-   { NULL }
-
-
-   public enum IFCObjectType
-   {
-      PRODUCT, 
-      PROCESS,
-      CONTROL,
-      RESOURCE, 
-      ACTOR,
-      GROUP, 
-      PROJECT, 
-      NOTDEFINED
-   }
-
    public enum IFCObjective
    {
       CODECOMPLIANCE,
-      CODEWAIVER, 
+      CODEWAIVER,
       DESIGNINTENT,
-      EXTERNAL, 
+      EXTERNAL,
       HEALTHANDSAFETY,
       MERGECONFLICT,
-      MODELVIEW, 
+      MODELVIEW,
       PARAMETER,
       REQUIREMENT,
       SPECIFICATION,
-      TRIGGERCONDITION, 
-      USERDEFINED, 
+      TRIGGERCONDITION,
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1822,9 +1853,9 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       ASSIGNEE,
       ASSIGNOR,
       LESSEE,
-      LESSOR, 
+      LESSOR,
       LETTINGAGENT,
-      OWNER, 
+      OWNER,
       TENANT,
       USERDEFINED,
       NOTDEFINED
@@ -1834,7 +1865,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       OPENING,
       RECESS,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1845,7 +1876,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       DATAOUTLET,
       POWEROUTLET,
       TELEPHONEOUTLET,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1868,7 +1899,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       GRILL,
       LOUVER,
       SCREEN,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1891,10 +1922,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCPileConstruction
    {
       CAST_IN_PLACE,
-      COMPOSITE, 
+      COMPOSITE,
       PRECAST_CONCRETE,
-      PREFAB_STEEL, 
-      USERDEFINED, 
+      PREFAB_STEEL,
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -1905,7 +1936,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       DRIVEN,
       FRICTION,
       JETGROUTING,
-      SUPPORT, 
+      SUPPORT,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1915,10 +1946,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       BEND,
       CONNECTOR,
       ENTRY,
-      EXIT, 
+      EXIT,
       JUNCTION,
       OBSTRUCTION,
-      TRANSITION, 
+      TRANSITION,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1927,9 +1958,9 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       CULVERT,
       FLEXIBLESEGMENT,
-      GUTTER, 
+      GUTTER,
       RIGIDSEGMENT,
-      SPOOL, 
+      SPOOL,
       USERDEFINED,
       NOTDEFINED
    }
@@ -1941,12 +1972,19 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CURTAIN_PANEL,
       FLANGE_PLATE,
       GUSSET_PLATE,
-      SHEET, 
+      SHEET,
       SPLICE_PLATE,
       STIFFENER_PLATE,
-      WEB_PLATE, 
+      WEB_PLATE,
       USERDEFINED,
       NOTDEFINED
+   }
+
+   public enum IFCPreferredSurfaceCurveRepresentation
+   {
+      CURVE3D,
+      PCURVE_S1,
+      PCURVE_S2
    }
 
    public enum IFCProcedureType
@@ -1964,42 +2002,46 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCProfileType
    {
-      CURVE,
-      AREA
+      AREA,
+      CURVE
    }
 
    public enum IFCProjectOrderType
    {
       CHANGEORDER,
       MAINTENANCEWORKORDER,
-      MOVEORDER, 
+      MOVEORDER,
       PURCHASEORDER,
-      WORKORDER, 
+      WORKORDER,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCProjectedOrTrueLength
    {
-      PROJECTED_LENGTH, 
+      PROJECTED_LENGTH,
       TRUE_LENGTH
    }
 
    public enum IFCProjectionElementType
    {
+      BLISTER,
+      DEVIATOR,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCPropertySetTemplateType
    {
+      PSET_MATERIALDRIVEN,
+      PSET_OCCURRENCEDRIVEN,
+      PSET_PERFORMANCEDRIVEN,
+      PSET_PROFILEDRIVEN,
       PSET_TYPEDRIVENONLY,
       PSET_TYPEDRIVENOVERRIDE,
-      PSET_OCCURRENCEDRIVEN, 
-      PSET_PERFORMANCEDRIVEN,
+      QTO_OCCURRENCEDRIVEN,
       QTO_TYPEDRIVENONLY,
       QTO_TYPEDRIVENOVERRIDE,
-      QTO_OCCURRENCEDRIVEN,
       NOTDEFINED
    }
 
@@ -2009,7 +2051,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       ELECTRONIC,
       RESIDUALCURRENT,
       THERMAL,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -2017,13 +2059,13 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       ANTI_ARCING_DEVICE,
       CIRCUITBREAKER,
-      EARTHINGSWITCH, 
+      EARTHINGSWITCH,
       EARTHLEAKAGECIRCUITBREAKER,
       FUSEDISCONNECTOR,
       RESIDUALCURRENTCIRCUITBREAKER,
       RESIDUALCURRENTSWITCH,
-      SPARKGAP, 
-      VARISTOR, 
+      SPARKGAP,
+      VARISTOR,
       VOLTAGELIMITER,
       USERDEFINED,
       NOTDEFINED
@@ -2038,7 +2080,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       SUMPPUMP,
       VERTICALINLINE,
       VERTICALTURBINE,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -2054,26 +2096,27 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       NOTDEFINED
    }
 
-   public enum IFCRailwayPartType
+   public enum IFCRailingType
    {
-      DILATATIONSUPERSTRUCTURE,
-      LINESIDESTRUCTURE,
-      LINESIDESTRUCTUREPART,
-      PLAINTRACKSUPERSTRUCTURE,
-      SUPERSTRUCTURE,
-      TRACKSTRUCTURE,
-      TRACKSTRUCTUREPART,
-      TURNOUTSUPERSTRUCTURE,
+      BALUSTRADE,
+      FENCE,
+      GUARDRAIL,
+      HANDRAIL,
       USERDEFINED,
       NOTDEFINED
    }
 
-   public enum IFCRailingType
+   public enum IFCRailwayPartType
    {
-      BALUSTRADE, 
-      FENCE,
-      GUARDRAIL,
-      HANDRAIL,
+      ABOVETRACK,
+      DILATIONTRACK,
+      LINESIDE,
+      LINESIDEPART,
+      PLAINTRACK,
+      SUBSTRUCTURE,
+      TRACK,
+      TRACKPART,
+      TURNOUTTRACK,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2106,19 +2149,19 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCRecurrenceType
    {
-      DAILY, 
-      WEEKLY,
-      MONTHLY_BY_DAY_OF_MONTH,
-      MONTHLY_BY_POSITION, 
       BY_DAY_COUNT,
       BY_WEEKDAY_COUNT,
+      DAILY,
+      MONTHLY_BY_DAY_OF_MONTH,
+      MONTHLY_BY_POSITION,
+      WEEKLY,
       YEARLY_BY_DAY_OF_MONTH,
       YEARLY_BY_POSITION
    }
 
    public enum IFCReferentType
    {
-      BOUNDARY, 
+      BOUNDARY,
       INTERSECTION,
       KILOPOINT,
       LANDMARK,
@@ -2126,6 +2169,8 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       POSITION,
       REFERENCEMARKER,
       STATION,
+      SUPERELEVATIONEVENT,
+      WIDTHEVENT,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2139,21 +2184,34 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       METAL,
       MIRROR,
       PHONG,
+      PHYSICAL,
       PLASTIC,
       STRAUSS,
       NOTDEFINED
    }
 
+   public enum IFCReinforcedSoilType
+   {
+      DYNAMICALLYCOMPACTED,
+      GROUTED,
+      REPLACED,
+      ROLLERCOMPACTED,
+      SURCHARGEPRELOADED,
+      VERTICALLYDRAINED,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
    public enum IFCReinforcingBarRole
    {
-      MAIN,
-      SHEAR,
-      LIGATURE,
-      STUD, 
-      PUNCHING,
-      EDGE, 
-      RING,
       ANCHORING,
+      EDGE,
+      LIGATURE,
+      MAIN,
+      PUNCHING,
+      RING,
+      SHEAR,
+      STUD,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2173,18 +2231,13 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       PUNCHING,
       RING,
       SHEAR,
+      SPACEBAR,
       STUD,
-      USERDEFINED, 
-      NOTDEFINED
-   }
-
-   public enum IFCReinforcingMeshType
-   {
       USERDEFINED,
       NOTDEFINED
    }
 
-   public enum IFCRoadType
+   public enum IFCReinforcingMeshType
    {
       USERDEFINED,
       NOTDEFINED
@@ -2197,53 +2250,59 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CARRIAGEWAY,
       CENTRALISLAND,
       CENTRALRESERVE,
-      HARDSHOULDER, 
+      HARDSHOULDER,
       INTERSECTION,
       LAYBY,
       PARKINGBAY,
-      PASSINGBAY, 
+      PASSINGBAY,
       PEDESTRIAN_CROSSING,
-      RAILWAYCROSSING, 
+      RAILWAYCROSSING,
       REFUGEISLAND,
       ROADSEGMENT,
-      ROADSIDE, 
+      ROADSIDE,
       ROADSIDEPART,
       ROADWAYPLATEAU,
-      ROUNDABOUT, 
+      ROUNDABOUT,
       SHOULDER,
       SIDEWALK,
-      SOFTSHOULDER, 
-      TOLLPLAZA, 
+      SOFTSHOULDER,
+      TOLLPLAZA,
       TRAFFICISLAND,
       TRAFFICLANE,
-      USERDEFINED, 
+      USERDEFINED,
+      NOTDEFINED
+   }
+
+   public enum IFCRoadType
+   {
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCRole
    {
-      SUPPLIER,
-      MANUFACTURER,
-      CONTRACTOR,
-      SUBCONTRACTOR, 
       ARCHITECT,
-      STRUCTURALENGINEER,
-      COSTENGINEER,
-      CLIENT, 
-      BUILDINGOWNER,
       BUILDINGOPERATOR,
-      MECHANICALENGINEER,
-      ELECTRICALENGINEER,
-      PROJECTMANAGER,
-      FACILITIESMANAGER,
+      BUILDINGOWNER,
       CIVILENGINEER,
+      CLIENT,
       COMMISSIONINGENGINEER,
-      ENGINEER, 
-      OWNER, 
+      CONSTRUCTIONMANAGER,
       CONSULTANT,
-      CONSTRUCTIONMANAGER, 
+      CONTRACTOR,
+      COSTENGINEER,
+      ELECTRICALENGINEER,
+      ENGINEER,
+      FACILITIESMANAGER,
       FIELDCONSTRUCTIONMANAGER,
-      RESELLER, 
+      MANUFACTURER,
+      MECHANICALENGINEER,
+      OWNER,
+      PROJECTMANAGER,
+      RESELLER,
+      STRUCTURALENGINEER,
+      SUBCONTRACTOR,
+      SUPPLIER,
       USERDEFINED
    }
 
@@ -2255,8 +2314,8 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       FLAT_ROOF,
       FREEFORM,
       GABLE_ROOF,
-      GAMBREL_ROOF, 
-      HIPPED_GABLE_ROOF, 
+      GAMBREL_ROOF,
+      HIPPED_GABLE_ROOF,
       HIP_ROOF,
       MANSARD_ROOF,
       PAVILION_ROOF,
@@ -2272,13 +2331,13 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CENTI,
       DECA,
       DECI,
-      EXA, 
+      EXA,
       FEMTO,
       GIGA,
       HECTO,
       KILO,
       MEGA,
-      MICRO, 
+      MICRO,
       MILLI,
       NANO,
       PETA,
@@ -2294,17 +2353,17 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       COULOMB,
       CUBIC_METRE,
       DEGREE_CELSIUS,
-      FARAD, 
+      FARAD,
       GRAM,
       GRAY,
       HENRY,
       HERTZ,
-      JOULE, 
+      JOULE,
       KELVIN,
       LUMEN,
       LUX,
       METRE,
-      MOLE, 
+      MOLE,
       NEWTON,
       OHM,
       PASCAL,
@@ -2328,7 +2387,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       SANITARYFOUNTAIN,
       SHOWER,
       SINK,
-      TOILETPAN, 
+      TOILETPAN,
       URINAL,
       WASHHANDBASIN,
       WCSEAT,
@@ -2338,8 +2397,8 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCSectionType
    {
-      UNIFORM,
-      TAPERED
+      TAPERED,
+      UNIFORM
    }
 
    public enum IFCSensorType
@@ -2347,7 +2406,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CO2SENSOR,
       CONDUCTANCESENSOR,
       CONTACTSENSOR,
-      COSENSOR, 
+      COSENSOR,
       EARTHQUAKESENSOR,
       FIRESENSOR,
       FLOWSENSOR,
@@ -2356,36 +2415,36 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       GASSENSOR,
       HEATSENSOR,
       HUMIDITYSENSOR,
-      IDENTIFIERSENSOR, 
+      IDENTIFIERSENSOR,
       IONCONCENTRATIONSENSOR,
-      LEVELSENSOR, 
+      LEVELSENSOR,
       LIGHTSENSOR,
       MOISTURESENSOR,
       MOVEMENTSENSOR,
-      OBSTACLESENSOR, 
-      PHSENSOR, 
+      OBSTACLESENSOR,
+      PHSENSOR,
       PRESSURESENSOR,
       RADIATIONSENSOR,
-      RADIOACTIVITYSENSOR, 
-      RAINSENSOR, 
+      RADIOACTIVITYSENSOR,
+      RAINSENSOR,
       SMOKESENSOR,
       SNOWDEPTHSENSOR,
       SOUNDSENSOR,
       TEMPERATURESENSOR,
       TRAINSENSOR,
       TURNOUTCLOSURESENSOR,
-      WHEELSENSOR, 
-      WINDSENSOR, 
+      WHEELSENSOR,
+      WINDSENSOR,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCSequence
    {
-      START_START,
-      START_FINISH,
-      FINISH_START, 
       FINISH_FINISH,
+      FINISH_START,
+      START_FINISH,
+      START_START,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2393,8 +2452,8 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCShadingDeviceType
    {
       AWNING,
-      JALOUSIE, 
-      SHUTTER, 
+      JALOUSIE,
+      SHUTTER,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2419,32 +2478,33 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCSimplePropertyTemplateType
    {
-      P_SINGLEVALUE,
-      P_ENUMERATEDVALUE,
       P_BOUNDEDVALUE,
+      P_ENUMERATEDVALUE,
       P_LISTVALUE,
-      P_TABLEVALUE,
       P_REFERENCEVALUE,
-      Q_LENGTH,
-      Q_AREA, 
-      Q_VOLUME,
+      P_SINGLEVALUE,
+      P_TABLEVALUE,
+      Q_AREA,
       Q_COUNT,
-      Q_WEIGHT,
-      Q_TIME
+      Q_LENGTH,
+      Q_NUMBER,
+      Q_TIME,
+      Q_VOLUME,
+      Q_WEIGHT
    }
 
    public enum IFCSlabType
    {
       APPROACH_SLAB,
       BASESLAB,
-      FLOOR, 
+      FLOOR,
       LANDING,
       PAVING,
       ROOF,
       SIDEWALK,
       TRACKSLAB,
       WEARING,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
@@ -2475,18 +2535,18 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       USERDEFINED,
       NOTDEFINED
    }
-  
+
    public enum IFCSpatialZoneType
    {
-      CONSTRUCTION, 
+      CONSTRUCTION,
       FIRESAFETY,
       INTERFERENCE,
       LIGHTING,
       OCCUPANCY,
       RESERVATION,
-      SECURITY, 
+      SECURITY,
       THERMAL,
-      TRANSPORT, 
+      TRANSPORT,
       VENTILATION,
       USERDEFINED,
       NOTDEFINED
@@ -2505,7 +2565,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       CURVED,
       FREEFORM,
-      SPIRAL, 
+      SPIRAL,
       STRAIGHT,
       WINDER,
       USERDEFINED,
@@ -2517,60 +2577,60 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CURVED_RUN_STAIR,
       DOUBLE_RETURN_STAIR,
       HALF_TURN_STAIR,
-      HALF_WINDING_STAIR, 
+      HALF_WINDING_STAIR,
       LADDER,
-      QUARTER_TURN_STAIR, 
-      QUARTER_WINDING_STAIR, 
+      QUARTER_TURN_STAIR,
+      QUARTER_WINDING_STAIR,
       SPIRAL_STAIR,
       STRAIGHT_RUN_STAIR,
       THREE_QUARTER_TURN_STAIR,
-      THREE_QUARTER_WINDING_STAIR, 
-      TWO_CURVED_RUN_STAIR, 
+      THREE_QUARTER_WINDING_STAIR,
+      TWO_CURVED_RUN_STAIR,
       TWO_QUARTER_TURN_STAIR,
       TWO_QUARTER_WINDING_STAIR,
       TWO_STRAIGHT_RUN_STAIR,
-      USERDEFINED, 
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCState
    {
-      READWRITE,
+      LOCKED,
       READONLY,
-      LOCKED, 
-      READWRITELOCKED,
-      READONLYLOCKED
+      READONLYLOCKED,
+      READWRITE,
+      READWRITELOCKED
    }
 
    public enum IFCStructuralCurveActivityType
    {
       CONST,
-      LINEAR,
-      POLYGONAL,
-      EQUIDISTANT, 
-      SINUS, 
-      PARABOLA,
       DISCRETE,
+      EQUIDISTANT,
+      LINEAR,
+      PARABOLA,
+      POLYGONAL,
+      SINUS,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCStructuralCurveMemberType
    {
-      RIGID_JOINED_MEMBER,
-      PIN_JOINED_MEMBER,
       CABLE,
-      TENSION_MEMBER,
       COMPRESSION_MEMBER,
-      USERDEFINED, 
+      PIN_JOINED_MEMBER,
+      RIGID_JOINED_MEMBER,
+      TENSION_MEMBER,
+      USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCStructuralSurfaceActivityType
    {
-      CONST,
       BILINEAR,
-      DISCRETE, 
+      CONST,
+      DISCRETE,
       ISOCONTOUR,
       USERDEFINED,
       NOTDEFINED
@@ -2580,7 +2640,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       BENDING_ELEMENT,
       MEMBRANE_ELEMENT,
-      SHELL, 
+      SHELL,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2595,8 +2655,16 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCSurfaceFeatureType
    {
+      DEFECT,
+      HATCHMARKING,
+      LINEMARKING,
       MARK,
-      TAG, 
+      NONSKIDSURFACING,
+      PAVEMENTSURFACEMARKING,
+      RUMBLESTRIP,
+      SYMBOLMARKING,
+      TAG,
+      TRANSVERSERUMBLESTRIP,
       TREATMENT,
       USERDEFINED,
       NOTDEFINED
@@ -2614,14 +2682,14 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CONTACTOR,
       DIMMERSWITCH,
       EMERGENCYSTOP,
-      KEYPAD, 
+      KEYPAD,
       MOMENTARYSWITCH,
       RELAY,
       SELECTORSWITCH,
       STARTER,
-      START_AND_STOP_EQUIPMENT, 
+      START_AND_STOP_EQUIPMENT,
       SWITCHDISCONNECTOR,
-      TOGGLESWITCH, 
+      TOGGLESWITCH,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2641,7 +2709,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       BREAKPRESSURE,
       EXPANSION,
       FEEDANDEXPANSION,
-      OILRETENTIONTRAY, 
+      OILRETENTIONTRAY,
       PRESSUREVESSEL,
       STORAGE,
       VESSEL,
@@ -2652,7 +2720,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCTaskDuration
    {
       ELAPSEDTIME,
-      WORKTIME, 
+      WORKTIME,
       NOTDEFINED
    }
 
@@ -2663,21 +2731,21 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CALIBRATION,
       CONSTRUCTION,
       DEMOLITION,
-      DISMANTLE, 
+      DISMANTLE,
       DISPOSAL,
       EMERGENCY,
       INSPECTION,
       INSTALLATION,
       LOGISTIC,
       MAINTENANCE,
-      MOVE, 
+      MOVE,
       OPERATION,
-      REMOVAL, 
+      REMOVAL,
       RENOVATION,
       SAFETY,
       SHUTDOWN,
       STARTUP,
-      TESTING, 
+      TESTING,
       TROUBLESHOOTING,
       USERDEFINED,
       NOTDEFINED
@@ -2698,18 +2766,37 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       DIABOLO,
       DUCT,
       GROUTING_DUCT,
-      TRUMPET, 
+      TRUMPET,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCTendonType
    {
-      BAR, 
+      BAR,
       COATED,
       STRAND,
       WIRE,
       USERDEFINED,
+      NOTDEFINED
+   }
+
+   public enum IFCTextPath
+   {
+      DOWN,
+      LEFT,
+      RIGHT,
+      UP
+   }
+
+   public enum IFCTimeSeriesDataType
+   {
+      CONTINUOUS,
+      DISCRETE,
+      DISCRETEBINARY,
+      PIECEWISEBINARY,
+      PIECEWISECONSTANT,
+      PIECEWISECONTINUOUS,
       NOTDEFINED
    }
 
@@ -2722,27 +2809,8 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       SLEEPER,
       SPEEDREGULATOR,
       TRACKENDOFALIGNMENT,
-      VEHICLESTOP, 
+      VEHICLESTOP,
       USERDEFINED,
-      NOTDEFINED
-   }
-
-   public enum IFCTextPath
-   {
-      DOWN, 
-      LEFT,
-      RIGHT,
-      UP
-   }
-
-   public enum IFCTimeSeriesDataType
-   {
-      CONTINUOUS,
-      DISCRETE,
-      DISCRETEBINARY, 
-      PIECEWISEBINARY,
-      PIECEWISECONSTANT, 
-      PIECEWISECONTINUOUS,
       NOTDEFINED
    }
 
@@ -2752,7 +2820,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       COMBINED,
       CURRENT,
       FREQUENCY,
-      INVERTER, 
+      INVERTER,
       RECTIFIER,
       VOLTAGE,
       USERDEFINED,
@@ -2772,9 +2840,9 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       CRANEWAY,
       ELEVATOR,
       ESCALATOR,
-      HAULINGGEAR, 
+      HAULINGGEAR,
       LIFTINGGEAR,
-      MOVINGWALKWAY, 
+      MOVINGWALKWAY,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2782,7 +2850,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCTrimmingPreference
    {
       CARTESIAN,
-      PARAMETER, 
+      PARAMETER,
       UNSPECIFIED
    }
 
@@ -2805,8 +2873,8 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       ELECTRICCURRENTUNIT,
       ELECTRICRESISTANCEUNIT,
       ELECTRICVOLTAGEUNIT,
-      ENERGYUNIT, 
-      FORCEUNIT, 
+      ENERGYUNIT,
+      FORCEUNIT,
       FREQUENCYUNIT,
       ILLUMINANCEUNIT,
       INDUCTANCEUNIT,
@@ -2815,10 +2883,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       LUMINOUSINTENSITYUNIT,
       MAGNETICFLUXDENSITYUNIT,
       MAGNETICFLUXUNIT,
-      MASSUNIT, 
-      PLANEANGLEUNIT, 
-      POWERUNIT, 
-      PRESSUREUNIT, 
+      MASSUNIT,
+      PLANEANGLEUNIT,
+      POWERUNIT,
+      PRESSUREUNIT,
       RADIOACTIVITYUNIT,
       SOLIDANGLEUNIT,
       THERMODYNAMICTEMPERATUREUNIT,
@@ -2831,10 +2899,10 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       ALARMPANEL,
       BASESTATIONCONTROLLER,
-      COMBINED, 
+      COMBINED,
       CONTROLPANEL,
       GASDETECTIONPANEL,
-      HUMIDISTAT, 
+      HUMIDISTAT,
       INDICATORPANEL,
       MIMICPANEL,
       THERMOSTAT,
@@ -2857,23 +2925,23 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    public enum IFCValveType
    {
       AIRRELEASE,
-      ANTIVACUUM, 
+      ANTIVACUUM,
       CHANGEOVER,
-      CHECK, 
+      CHECK,
       COMMISSIONING,
       DIVERTING,
       DOUBLECHECK,
       DOUBLEREGULATING,
       DRAWOFFCOCK,
       FAUCET,
-      FLUSHING, 
+      FLUSHING,
       GASCOCK,
       GASTAP,
       ISOLATING,
       MIXING,
       PRESSUREREDUCING,
       PRESSURERELIEF,
-      REGULATING, 
+      REGULATING,
       SAFETYCUTOFF,
       STEAMTRAP,
       STOPCOCK,
@@ -2901,7 +2969,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       FRICTION,
       RUBBER,
       SHEAR_YIELD,
-      VISCOUS, 
+      VISCOUS,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2915,14 +2983,23 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
       NOTDEFINED
    }
 
+   public enum IFCVirtualElementType
+   {
+      BOUNDARY,
+      CLEARANCE,
+      PROVISIONFORVOID,
+      USERDEFINED,
+      NOTDEFINED
+   }
+
    public enum IFCVoidingFeatureType
    {
+      CHAMFER,
       CUTOUT,
-      NOTCH,
+      EDGE,
       HOLE,
       MITER,
-      CHAMFER, 
-      EDGE, 
+      NOTCH,
       USERDEFINED,
       NOTDEFINED
    }
@@ -2948,67 +3025,40 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       FLOORTRAP,
       FLOORWASTE,
-      GULLYSUMP, 
+      GULLYSUMP,
       GULLYTRAP,
       ROOFDRAIN,
       WASTEDISPOSALUNIT,
-      WASTETRAP, 
+      WASTETRAP,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCWindowPanelOperation
    {
-      SIDEHUNGRIGHTHAND,
-      SIDEHUNGLEFTHAND,
-      TILTANDTURNRIGHTHAND,
-      TILTANDTURNLEFTHAND, 
-      TOPHUNG,
       BOTTOMHUNG,
-      PIVOTHORIZONTAL,
-      PIVOTVERTICAL,
-      SLIDINGHORIZONTAL,
-      SLIDINGVERTICAL,
-      REMOVABLECASEMENT,
       FIXEDCASEMENT,
       OTHEROPERATION,
+      PIVOTHORIZONTAL,
+      PIVOTVERTICAL,
+      REMOVABLECASEMENT,
+      SIDEHUNGLEFTHAND,
+      SIDEHUNGRIGHTHAND,
+      SLIDINGHORIZONTAL,
+      SLIDINGVERTICAL,
+      TILTANDTURNLEFTHAND,
+      TILTANDTURNRIGHTHAND,
+      TOPHUNG,
       NOTDEFINED
    }
 
    public enum IFCWindowPanelPosition
    {
+      BOTTOM,
       LEFT,
       MIDDLE,
       RIGHT,
-      BOTTOM,
       TOP,
-      NOTDEFINED
-   }
-
-   public enum IFCWindowStyleConstruction
-   {
-      ALUMINIUM,
-      HIGH_GRADE_STEEL,
-      STEEL,
-      WOOD,
-      ALUMINIUM_WOOD,
-      PLASTIC,
-      OTHER_CONSTRUCTION,
-      NOTDEFINED
-   }
-
-   public enum IFCWindowStyleOperation
-   {
-      SINGLE_PANEL,
-      DOUBLE_PANEL_VERTICAL,
-      DOUBLE_PANEL_HORIZONTAL,
-      TRIPLE_PANEL_VERTICAL,
-      TRIPLE_PANEL_BOTTOM, 
-      TRIPLE_PANEL_TOP,
-      TRIPLE_PANEL_LEFT,
-      TRIPLE_PANEL_RIGHT,
-      TRIPLE_PANEL_HORIZONTAL,
-      USERDEFINED,
       NOTDEFINED
    }
 
@@ -3023,24 +3073,24 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
 
    public enum IFCWindowTypePartitioning
    {
-      SINGLE_PANEL,
-      DOUBLE_PANEL_VERTICAL,
       DOUBLE_PANEL_HORIZONTAL,
-      TRIPLE_PANEL_VERTICAL,
+      DOUBLE_PANEL_VERTICAL,
+      SINGLE_PANEL,
       TRIPLE_PANEL_BOTTOM,
-      TRIPLE_PANEL_TOP, 
-      TRIPLE_PANEL_LEFT,
-      TRIPLE_PANEL_RIGHT, 
       TRIPLE_PANEL_HORIZONTAL,
+      TRIPLE_PANEL_LEFT,
+      TRIPLE_PANEL_RIGHT,
+      TRIPLE_PANEL_TOP,
+      TRIPLE_PANEL_VERTICAL,
       USERDEFINED,
       NOTDEFINED
    }
 
    public enum IFCWorkCalendarType
    {
-      FIRSTSHIFT, 
+      FIRSTSHIFT,
       SECONDSHIFT,
-      THIRDSHIFT, 
+      THIRDSHIFT,
       USERDEFINED,
       NOTDEFINED
    }
@@ -3058,7 +3108,7 @@ namespace Revit.IFC.Export.Toolkit.IFC4x3
    {
       ACTUAL,
       BASELINE,
-      PLANNED, 
+      PLANNED,
       USERDEFINED,
       NOTDEFINED
    }

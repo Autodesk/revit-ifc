@@ -106,36 +106,6 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Converts a power value in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledPower">The power value in Revit internal units.</param>
-      /// <returns>The power in IFC units.</returns>
-      static public double ScalePower(double unscaledPower)
-      {
-         return ScaleDouble(SpecTypeId.HvacPower, unscaledPower);
-      }
-
-      /// <summary>
-      /// Converts a sound power value in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledPower">The power value in Revit internal units.</param>
-      /// <returns>The power in IFC units.</returns>
-      static public double ScaleSoundPower(double unscaledPower)
-      {
-         return ScaleDouble(SpecTypeId.Wattage, unscaledPower);
-      }
-
-      /// <summary>
-      /// Converts a sound pressure value in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledPressure">The pressure value in Revit internal units.</param>
-      /// <returns>The pressure in IFC units.</returns>
-      static public double ScaleSoundPressure(double unscaledPressure)
-      {
-         return ScaleDouble(SpecTypeId.HvacPressure, unscaledPressure);
-      }
-
-      /// <summary>
       /// Converts a thermal transmittance value in Revit internal units to IFC units.
       /// </summary>
       /// <param name="unscaledThermalTransmittance">The thermal transmittance value in Revit internal units.</param>
@@ -153,96 +123,6 @@ namespace Revit.IFC.Export.Utility
       static public double ScaleArea(double unscaledArea)
       {
          return ScaleDouble(SpecTypeId.Area, unscaledArea);
-      }
-
-      /// <summary>
-      /// Converts an area in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledAcceleration">The area in Revit internal units.</param>
-      /// <returns>The area in IFC units.</returns>
-      static public double ScaleAcceleration(double unscaledAcceleration)
-      {
-         return ScaleDouble(SpecTypeId.Acceleration, unscaledAcceleration);
-      }
-
-      /// <summary>
-      /// Converts an area in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledEnergy">The area in Revit internal units.</param>
-      /// <returns>The area in IFC units.</returns>
-      static public double ScaleEnergy(double unscaledEnergy)
-      {
-         return ScaleDouble(SpecTypeId.Energy, unscaledEnergy);
-      }
-
-      /// <summary>
-      /// Converts an area in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledLinearMoment">The area in Revit internal units.</param>
-      /// <returns>The area in IFC units.</returns>
-      static public double ScaleLinearMoment(double unscaledLinearMoment)
-      {
-         return ScaleDouble(SpecTypeId.LinearMoment, unscaledLinearMoment);
-      }
-
-      /// <summary>
-      /// Converts an area in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledMassPerLength">The area in Revit internal units.</param>
-      /// <returns>The area in IFC units.</returns>
-      static public double ScaleMassPerLength(double unscaledMassPerLength)
-      {
-         return ScaleDouble(SpecTypeId.MassPerUnitLength, unscaledMassPerLength);
-      }
-
-      /// <summary>
-      /// Converts an area in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledTorque">The area in Revit internal units.</param>
-      /// <returns>The area in IFC units.</returns>
-      static public double ScaleTorque(double unscaledTorque)
-      {
-         return ScaleDouble(SpecTypeId.Moment, unscaledTorque);
-      }
-
-      /// <summary>
-      /// Converts an area in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledLinearStiffness">The area in Revit internal units.</param>
-      /// <returns>The area in IFC units.</returns>
-      static public double ScaleLinearStiffness(double unscaledLinearStiffness)
-      {
-         return ScaleDouble(SpecTypeId.PointSpringCoefficient, unscaledLinearStiffness);
-      }
-
-      /// <summary>
-      /// Converts an area in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledAngularVelocity">The area in Revit internal units.</param>
-      /// <returns>The area in IFC units.</returns>
-      static public double ScaleAngularVelocity(double unscaledAngularVelocity)
-      {
-         return ScaleDouble(SpecTypeId.Pulsation, unscaledAngularVelocity);
-      }
-
-      /// <summary>
-      /// Converts an area in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledThermalResistance">The area in Revit internal units.</param>
-      /// <returns>The area in IFC units.</returns>
-      static public double ScaleThermalResistance(double unscaledThermalResistance)
-      {
-         return ScaleDouble(SpecTypeId.ThermalResistance, unscaledThermalResistance);
-      }
-
-      /// <summary>
-      /// Converts an area in Revit internal units to IFC units.
-      /// </summary>
-      /// <param name="unscaledWarpingConstant">The area in Revit internal units.</param>
-      /// <returns>The area in IFC units.</returns>
-      static public double ScaleWarpingConstant(double unscaledWarpingConstant)
-      {
-         return ScaleDouble(SpecTypeId.WarpingConstant, unscaledWarpingConstant);
       }
 
       /// <summary>

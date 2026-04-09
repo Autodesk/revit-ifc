@@ -65,7 +65,7 @@ namespace Revit.IFC.Export.Utility
       /// The list of quantities.
       /// </summary>
       public IList<IList<QuantityDescription>> Quantities 
-         { get; private set; } = new List<IList<QuantityDescription>>();
+         { get; set; } = new List<IList<QuantityDescription>>();
 
       public void Clear()
       {

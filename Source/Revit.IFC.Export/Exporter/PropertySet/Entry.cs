@@ -58,6 +58,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// </remarks>
       public bool IsElementTypeProperty { get; set; } = true;
 
+      /// <summary>
+      /// True if the property is excluded from export in the Parameter Mapping dialog
+      /// </summary>
+      public bool IsExcluded { get; set; } = false;
+
       public List<T> Entries { get; set; } = new List<T>();
 
       /// <summary>

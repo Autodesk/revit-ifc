@@ -305,9 +305,6 @@ namespace Revit.IFC.Export.Utility
          cache.ExportBoundingBoxOverride = null;
          cache.IncludeSiteElevation = false;
 
-         // NOTE: This is only in-session setup so far.
-         cache.ParameterMappingTemplateName = OptionsUtil.GetNamedStringOption(options, "ParameterMapping");
-
          cache.PropertySetOptions = PropertySetOptions.Create(exporterIFC, document, cache.FileVersion);
 
          string use2DRoomBoundary = Environment.GetEnvironmentVariable("Use2DRoomBoundaryForRoomVolumeCalculationOnIFCExport");
@@ -819,6 +816,17 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Identifies if the schema and MVD used is the IFC 4.3 Design Transfer View.
+      /// </summary>
+      public bool ExportAs4x3DesignTransferView
+      {
+         get
+         {
+            return OptionsUtil.ExportAs4x3DesignTransferView(FileVersion);
+         }
+      }
+
+      /// <summary>
       /// Identifies if the schema and MVD used is the IFC 4.3 Reference View.
       /// </summary>
       public bool ExportAs4x3ReferenceView
@@ -1094,11 +1102,6 @@ namespace Revit.IFC.Export.Utility
       /// The table that contains Revit class to IFC entity mappings.
       /// </summary>
       public string CategoryMappingTemplateName { get; set; } = null;
-
-      /// <summary>
-      /// The table that contains information on which Revit parameters to export, and to which IFC properties.
-      /// </summary>
-      public string ParameterMappingTemplateName { get; set; } = null;
 
       private IList<Tuple<string, Transform>> LinkInstanceInfos { get; } = new List<Tuple<string, Transform>>();
 

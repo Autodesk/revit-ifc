@@ -1,4 +1,4 @@
-﻿<Project Sdk="">
+<Project Sdk="">
   <PropertyGroup>
     <RootNamespace>RevitIFCTools</RootNamespace>
     <AssemblyName>RevitIFCTools</AssemblyName>
@@ -40,7 +40,7 @@
    </ItemGroup>
    <ItemGroup>
      <Reference Include="RevitAPI">
-       <HintPath>..\..\..\API\2026\RevitAPI.dll</HintPath>
+       <HintPath>..\..\..\API\2027\RevitAPI.dll</HintPath>
      </Reference>
    </ItemGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.targets" />

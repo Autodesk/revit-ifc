@@ -75,7 +75,7 @@ namespace Revit.IFC.Export.Exporter
             bool found = currentTypeInfo.IsValid();
             if (!found)
             {
-               string typeObjectType = NamingUtil.CreateIFCObjectName(exporterIFC, familySymbol);
+               string typeObjectType = NamingUtil.GetDefaultObjectType(familySymbol);
 
                HashSet<IFCAnyHandle> propertySetsOpt = new();
 
@@ -131,9 +131,9 @@ namespace Revit.IFC.Export.Exporter
                }
                else
                {
-                  IFCAnyHandle axis1 = ExporterUtil.CreateDirection(file, trf.BasisX);
-                  IFCAnyHandle axis2 = ExporterUtil.CreateDirection(file, trf.BasisY);
-                  IFCAnyHandle axis3 = ExporterUtil.CreateDirection(file, trf.BasisZ);
+                  IFCAnyHandle axis1 = ExporterUtil.CreateDirection(file, trf.BasisX, GeometryUtil.Dimension.Dim3D);
+                  IFCAnyHandle axis2 = ExporterUtil.CreateDirection(file, trf.BasisY, GeometryUtil.Dimension.Dim3D);
+                  IFCAnyHandle axis3 = ExporterUtil.CreateDirection(file, trf.BasisZ, GeometryUtil.Dimension.Dim3D);
                   IFCAnyHandle origin = ExporterUtil.CreateCartesianPoint(file, UnitUtil.ScaleLength(trf.Origin));
                   double scale = 1.0;
                   IFCAnyHandle mappingTarget = IFCInstanceExporter.CreateCartesianTransformationOperator3D(file, axis1, axis2, origin, scale, axis3);

@@ -25,10 +25,9 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Autodesk.Revit.DB.ExtensibleStorage;
 using Revit.IFC.Common.Enums;
-using Revit.IFC.Export.Utility;
 using Newtonsoft.Json;
 
-namespace BIM.IFC.Export.UI
+namespace Revit.IFC.Export.Utility
 {
    /// <summary>
    /// The map to store BuiltIn and Saved configurations.
@@ -36,6 +35,12 @@ namespace BIM.IFC.Export.UI
    public class IFCExportConfigurationsMap
    {
       private Dictionary<String, IFCExportConfiguration> m_configurations = new Dictionary<String, IFCExportConfiguration>();
+
+      /// <summary>
+      /// The document associated with this configuration map.
+      /// Must be set before calling methods that access document data.
+      /// </summary>
+      public Document Document { get; set; } = null;
 
       private Schema m_OldSchema = null;
       private static Guid s_OldSchemaId = new Guid("A1E672E5-AC88-4933-A019-F9068402CFA7");
@@ -55,11 +60,21 @@ namespace BIM.IFC.Export.UI
       }
 
       /// <summary>
+      /// Constructs a default map with a document.
+      /// </summary>
+      /// <param name="document">The Revit document.</param>
+      public IFCExportConfigurationsMap(Document document)
+      {
+         Document = document;
+      }
+
+      /// <summary>
       /// Constructs a new map as a copy of an existing one.
       /// </summary>
       /// <param name="map">The specific map to copy.</param>
       public IFCExportConfigurationsMap(IFCExportConfigurationsMap map)
       {
+         Document = map.Document;
          // Deep copy
          foreach (IFCExportConfiguration value in map.Values)
          {
@@ -89,12 +104,13 @@ namespace BIM.IFC.Export.UI
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
             exchangeRequirement:KnownERNames.BuildingService));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
             exchangeRequirement:KnownERNames.Architecture));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
             exchangeRequirement:KnownERNames.Structural));
-         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
             exchangeRequirement:KnownERNames.BuildingService));
+         AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3DTV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFCSG, 1, true, true, false, false, false, true, false, false, true, false, linkedFileExportAs, includeSteelElements: true));
       }
 
@@ -120,7 +136,8 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// Adds the saved configuration from document to the map.
       /// </summary>
-      public void AddSavedConfigurations()
+      /// <param name="lastSelectedConfigs">Optional dictionary of last selected configurations to add.</param>
+      public void AddSavedConfigurations(IDictionary<string, IFCExportConfiguration> lastSelectedConfigs)
       {
          try
          {
@@ -148,6 +165,7 @@ namespace BIM.IFC.Export.UI
                      configuration.ExportCeilingGrids = configEntity.Get<bool>(s_setupExportCeilingGrids);
                      configuration.ExportInternalRevitPropertySets = configEntity.Get<bool>(s_setupExportRevitProps);
                      configuration.CategoryMapping = configEntity.Get<string>(s_categoryMapping);
+                     configuration.PropertyMapping = configEntity.Get<string>(s_propertyMapping);
                      Field fieldIFCCommonPropertySets = m_OldSchema.GetField(s_setupExportIFCCommonProperty);
                      if (fieldIFCCommonPropertySets != null)
                         configuration.ExportIFCCommonPropertySets = configEntity.Get<bool>(s_setupExportIFCCommonProperty);
@@ -325,6 +343,8 @@ namespace BIM.IFC.Export.UI
                         configuration.TessellationLevelOfDetail = double.Parse(configMap[s_setupTessellationLevelOfDetail]);
                      if (configMap.ContainsKey(s_categoryMapping))
                         configuration.CategoryMapping = configMap[s_categoryMapping];
+                     if (configMap.ContainsKey(s_propertyMapping))
+                        configuration.PropertyMapping = configMap[s_propertyMapping];
                      if (configMap.ContainsKey(s_setupSitePlacement))
                      {
                         SiteTransformBasis siteTrfBasis = SiteTransformBasis.Shared;
@@ -368,16 +388,16 @@ namespace BIM.IFC.Export.UI
                      catch (Exception)
                      {
                         // don't skip all configurations if an exception occurs for one
-                        IFCCommandOverrideApplication.TheDocument.Application.WriteJournalComment("IFC error: Cannot read IFCExportConfigurationMap schema", true);
+                        Document?.Application?.WriteJournalComment("IFC error: Cannot read IFCExportConfigurationMap schema", true);
                      }
                   }
                }
             }
 
             // Add the last selected configurations if any
-            if (IFCExport.LastSelectedConfig != null && IFCExport.LastSelectedConfig.Count > 0)
+            if (lastSelectedConfigs != null && lastSelectedConfigs.Count > 0)
             {
-               foreach (KeyValuePair<string, IFCExportConfiguration> lastSelConfig in IFCExport.LastSelectedConfig)
+               foreach (KeyValuePair<string, IFCExportConfiguration> lastSelConfig in lastSelectedConfigs)
                {
                   AddOrReplace(lastSelConfig.Value);
                }
@@ -436,6 +456,8 @@ namespace BIM.IFC.Export.UI
       private const string s_ownerHistoryLastModified = "OwnerHistoryLastModified";
       private const string s_exportBarsInUniformRebarSetsAsSeparateIFCEntities = "ExportBarsInUniformRebarSetsAsSeparateIFCEntities";
       private const string s_categoryMapping = "CategoryMapping";
+      private const string s_propertyMapping = "PropertyMapping";
+      
       // Used for COBie 2.4
       private const string s_includeSteelElements = "IncludeSteelElements";
       // Geo Reference info
@@ -446,11 +468,24 @@ namespace BIM.IFC.Export.UI
       private const string s_geoRefGeodeticDatum = "GeoRefGeodeticDatum";
       private const string s_geoRefMapUnit = "GeoRefMapUnit";
 
+
       /// <summary>
       /// Updates the setups to save into the document.
       /// </summary>
       public void UpdateSavedConfigurations(IFCExportConfigurationsMap initialConfigs)
       {
+         DeleteOldSchemas();
+         WriteSavedConfigurations(initialConfigs, createTransaction: true);
+      }
+
+      /// <summary>
+      /// Removes the setups info from outdated schema.
+      /// </summary>
+      private void DeleteOldSchemas()
+      {
+         if (Document == null)
+            return;
+
          // delete the old schema and the DataStorage.
          if (m_OldSchema == null)
          {
@@ -461,8 +496,8 @@ namespace BIM.IFC.Export.UI
             IList<DataStorage> oldSavedConfigurations = GetSavedConfigurations(m_OldSchema);
             if (oldSavedConfigurations.Count > 0)
             {
-               Transaction deleteTransaction = new Transaction(IFCCommandOverrideApplication.TheDocument,
-                   Properties.Resources.DeleteOldSetups);
+               Transaction deleteTransaction = new(Document,
+                  Properties.Resources.DeleteOldSetups);
                try
                {
                   deleteTransaction.Start(Properties.Resources.DeleteOldConfiguration);
@@ -471,7 +506,7 @@ namespace BIM.IFC.Export.UI
                   {
                      dataStorageToDelete.Add(dataStorage.Id);
                   }
-                  IFCCommandOverrideApplication.TheDocument.Delete(dataStorageToDelete);
+                  Document.Delete(dataStorageToDelete);
                   deleteTransaction.Commit();
                }
                catch (System.Exception)
@@ -492,8 +527,8 @@ namespace BIM.IFC.Export.UI
             IList<DataStorage> oldSavedConfigurations = GetSavedConfigurations(m_mapSchema);
             if (oldSavedConfigurations.Count > 0)
             {
-               Transaction deleteTransaction = new Transaction(IFCCommandOverrideApplication.TheDocument,
-                   Properties.Resources.DeleteOldSetups);
+               Transaction deleteTransaction = new(Document,
+                  Properties.Resources.DeleteOldSetups);
                try
                {
                   deleteTransaction.Start(Properties.Resources.DeleteOldConfiguration);
@@ -502,7 +537,7 @@ namespace BIM.IFC.Export.UI
                   {
                      dataStorageToDelete.Add(dataStorage.Id);
                   }
-                  IFCCommandOverrideApplication.TheDocument.Delete(dataStorageToDelete);
+                  Document.Delete(dataStorageToDelete);
                   deleteTransaction.Commit();
                }
                catch (System.Exception)
@@ -512,6 +547,15 @@ namespace BIM.IFC.Export.UI
                }
             }
          }
+      }
+
+      /// <summary>
+      /// Saves the setups into the document using the latest schema.
+      /// </summary>
+      public void WriteSavedConfigurations(IFCExportConfigurationsMap initialConfigs, bool createTransaction)
+      {
+         if (Document == null)
+            return;
 
          // update the configurations to new map schema.
          if (m_jsonSchema == null)
@@ -556,10 +600,11 @@ namespace BIM.IFC.Export.UI
          }
 
          // Overwrite all saved configs with the new list
-         Transaction transaction = new Transaction(IFCCommandOverrideApplication.TheDocument, Properties.Resources.UpdateExportSetups);
+         Transaction transaction = createTransaction ? new(Document,
+            Properties.Resources.UpdateExportSetups) : null;
          try
          {
-            transaction.Start(Properties.Resources.SaveConfigurationChanges);
+            transaction?.Start(Properties.Resources.SaveConfigurationChanges);
             IList<DataStorage> savedConfigurations = GetSavedConfigurations(m_jsonSchema);
             int savedConfigurationCount = savedConfigurations.Count<DataStorage>();
             int savedConfigurationIndex = 0;
@@ -568,20 +613,20 @@ namespace BIM.IFC.Export.UI
                DataStorage configStorage;
                if (savedConfigurationIndex >= savedConfigurationCount)
                {
-                  configStorage = DataStorage.Create(IFCCommandOverrideApplication.TheDocument);
+                  configStorage = DataStorage.Create(Document);
                }
                else
                {
                   configStorage = savedConfigurations[savedConfigurationIndex];
                   savedConfigurationIndex++;
                }
-               
+
                Entity mapEntity = new Entity(m_jsonSchema);
                string configData = configuration.SerializeConfigToJson();
                mapEntity.Set<string>(s_configMapField, configData);
                configStorage.SetEntity(mapEntity);
             }
-            
+
             List<ElementId> elementsToDelete = new List<ElementId>();
             for (; savedConfigurationIndex < savedConfigurationCount; savedConfigurationIndex++)
             {
@@ -589,14 +634,14 @@ namespace BIM.IFC.Export.UI
                elementsToDelete.Add(configStorage.Id);
             }
             if (elementsToDelete.Count > 0)
-               IFCCommandOverrideApplication.TheDocument.Delete(elementsToDelete);
-            
-            transaction.Commit();
+               Document.Delete(elementsToDelete);
+
+            transaction?.Commit();
          }
          catch (System.Exception)
          {
-            if (transaction.HasStarted())
-               transaction.RollBack();
+            if (transaction?.HasStarted() ?? false)
+               transaction?.RollBack();
          }
       }
 
@@ -606,7 +651,10 @@ namespace BIM.IFC.Export.UI
       /// <returns>The saved configurations.</returns>
       private IList<DataStorage> GetSavedConfigurations(Schema schema)
       {
-         FilteredElementCollector collector = new FilteredElementCollector(IFCCommandOverrideApplication.TheDocument);
+         if (Document == null)
+            return new List<DataStorage>();
+
+         FilteredElementCollector collector = new FilteredElementCollector(Document);
          collector.OfClass(typeof(DataStorage));
          Func<DataStorage, bool> hasTargetData = ds => (ds.GetEntity(schema) != null && ds.GetEntity(schema).IsValid());
 

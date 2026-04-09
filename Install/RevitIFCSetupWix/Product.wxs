@@ -2,8 +2,8 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="1A9C2C21-2641-42D2-0000-992E73C12600" Name="Revit IFC 2026" Language="1033" Version="26.4.1.0" Manufacturer="Autodesk" UpgradeCode="1A9C2C21-26B8-42D2-0000-992E73C11B3F">
-      <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+   <Product Id="1A9C2C21-2701-42D2-0000-992E73C12700" Name="Revit IFC 2027" Language="1033" Version="27.0.1.0" Manufacturer="Autodesk" UpgradeCode="1A9C2C21-27B8-42D2-0000-992E73C11B3F">
+      <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
       <MediaTemplate EmbedCab="yes"/>
@@ -19,7 +19,7 @@
       <WixVariable Id="WixUIDefUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\DefaultUserDefinedParameterSets.txt"></WixVariable>
       <WixVariable Id="WixUICOBieUserDefTxt" Value="$(var.ProjectDir)..\Program Files to Install\IFC2x3 Extended FM HandOver View.txt"></WixVariable>
 
-      <Feature Id="ProductFeature" Title="Revit IFC 2026" Level="1" ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id="ProductFeature" Title="Revit IFC 2027" Level="1" ConfigurableDirectory='INSTALLDIR'>
          <ComponentGroupRef Id="ProductComponents" />
          <ComponentGroupRef Id="ProductResourceComponents" />
          <ComponentGroupRef Id="ProductFRFiles" />
@@ -29,6 +29,7 @@
             <ComponentGroupRef Id="AddinComponentsLT"/>
          <?else?>
             <ComponentGroupRef Id="ProductContents" />
+            <ComponentGroupRef Id="AddinManifest" />
          <?endif?>
       </Feature>
       <Feature Id="ProductDocumentation" Title="Revit IFC Documentation" Level="1000" ConfigurableDirectory='INSTALLRESOURCE'>
@@ -44,23 +45,23 @@
       <Fragment>
          <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFilesFolder">
-               <Directory Id="INSTALLDIR" Name="Revit IFC 2026">
+               <Directory Id="INSTALLDIR" Name="Revit IFC 2027">
                   <Directory Id="INSTALLRESOURCE" Name="Resource" />
                   <Directory Id="INSTALLFRUI" Name="fr" />
                   <Directory Id="INSTALLDEUI" Name="de" />
                </Directory>
             </Directory>
 
-            <Directory Id="CommonAppDataFolder" Name="MyAppDataFolder">
+            <Directory Id="ProgramFiles64Folder">
                <Directory Id="DIR_ADSK" Name="Autodesk">
                   <Directory Id="DIR_REVIT" Name="Revit">
                      <Directory Id="DIR_ADDINS" Name="Addins">
-                        <Directory Id="DIR_Addins" Name="2026"/>
+                        <Directory Id="DIR_Addins" Name="2027"/>
                      </Directory>
                   </Directory>
                   <Directory Id="DIR_REVIT_LT" Name="RevitLT">
                      <Directory Id="DIR_ADDINS_LT" Name="Addins">
-                        <Directory Id="DIR_Addins_LT" Name="2026"/>
+                        <Directory Id="DIR_Addins_LT" Name="2027"/>
                      </Directory>
                   </Directory>
                </Directory>
@@ -73,14 +74,23 @@
             <Directory Id="CommonAppDataFolder" Name="MyAppDataFolder">
                <Directory Id="DIR_ADSK" Name="Autodesk">
                   <Directory Id="DIR_PLUGINS" Name="ApplicationPlugins">
-                     <Directory Id="DIR_PACKAGE" Name="IFC 2026.bundle">
+                     <Directory Id="DIR_PACKAGE" Name="IFC 2027.bundle">
                         <Directory Id="DIR_Contents" Name="Contents">
-                          <Directory Id="INSTALLDIR" Name="2026">
+                          <Directory Id="INSTALLDIR" Name="2027">
                             <Directory Id="INSTALLRESOURCE" Name="Resource" />
                             <Directory Id="INSTALLFRUI" Name="fr" />
                             <Directory Id="INSTALLDEUI" Name="de" />
                           </Directory>
                         </Directory>
+                     </Directory>
+                  </Directory>
+               </Directory>
+            </Directory>
+            <Directory Id="ProgramFiles64Folder">
+               <Directory Id="DIR_ADSK_PF" Name="Autodesk">
+                  <Directory Id="DIR_REVIT_PF" Name="Revit">
+                     <Directory Id="DIR_ADDINS_PF" Name="Addins">
+                        <Directory Id="DIR_Addins_2027" Name="2027"/>
                      </Directory>
                   </Directory>
                </Directory>
@@ -186,11 +196,6 @@
 		 <Component Id = "COMP_IFCSG_UserDefinedPsets" Guid="292936D3-1C6E-47A5-8593-D9278E546811">
           <File Id="FILE_IFCSG_UserDefinedPsets" Name="IFC-SG Property Mapping Export.txt" Source="$(var.ProjectDir)..\Program Files to Install\IFC-SG Property Mapping Export.txt" KeyPath="yes" />
        </Component>
-         <?ifndef ForNavisworks2019?>
-            <Component Id = "COMP_IFC_Addin_manifest" Guid="EC8783CA-DAE8-4233-B714-BB16B5BDBAC3">
-             <File Id ="FILE_Export_manifest" Name="Revit.IFC.addin" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.addin" KeyPath="yes" />
-            </Component>
-         <?endif?>
       </ComponentGroup>
       
       <?ifndef ForNavisworks2019?>
@@ -198,6 +203,33 @@
            <Component Id = "COMP_CONTENTS" Guid="A7ED8317-C069-477E-967F-02432B181AAE">
              <File Id ="FILE_CONTENTS" Name="PackageContents.xml" Source="$(var.ProjectDir)..\Program Files to Install\bundle\PackageContents.xml" KeyPath="yes" />
            </Component>
+         </ComponentGroup>
+
+         <ComponentGroup Id="AddinManifest" Directory="DIR_Addins_2027">
+            <Component Id = "COMP_IFC_Addin_manifest" Guid="EC8783CA-DAE8-4233-B714-BB16B5BDBAC3" Win64="yes">
+               <File Id ="FILE_Export_manifest" Name="Revit.IFC.addin" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.addin" KeyPath="yes" />
+               <util:XmlFile Id="SetKeyUI"
+                  Action="setValue"
+                  ElementPath="RevitAddIns/AddIn[\[]position()=1[\]]/Assembly"
+                  Value="[INSTALLDIR]IFCExporterUIOverride.dll"
+                  File="[DIR_Addins_2027]Revit.IFC.addin"
+                  SelectionLanguage="XPath"
+                  Sequence="1" />
+               <util:XmlFile Id="SetKeyExport"
+                  Action="setValue"
+                  ElementPath="RevitAddIns/AddIn[\[]position()=2[\]]/Assembly"
+                  Value="[INSTALLDIR]Revit.IFC.Export.dll"
+                  File="[DIR_Addins_2027]Revit.IFC.addin"
+                  SelectionLanguage="XPath"
+                  Sequence="1" />
+               <util:XmlFile Id="SetKeyImport"
+                  Action="setValue"
+                  ElementPath="RevitAddIns/AddIn[\[]position()=3[\]]/Assembly"
+                  Value="[INSTALLDIR]Revit.IFC.Import.dll"
+                  File="[DIR_Addins_2027]Revit.IFC.addin"
+                  SelectionLanguage="XPath"
+                  Sequence="1" />
+            </Component>
          </ComponentGroup>
       <?endif?>
 

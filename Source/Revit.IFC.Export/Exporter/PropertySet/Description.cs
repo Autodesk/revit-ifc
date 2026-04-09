@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
@@ -46,7 +47,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public string DescriptionOfSet { get; set; } = null;
 
       /// <summary>
-      /// The element id of the ViewSchedule that generatd this description.
+      /// The document and element id of the ViewSchedule that generated this description.
       /// </summary>
       public ElementId ViewScheduleId { get; set; } = ElementId.InvalidElementId;
 
@@ -182,5 +183,33 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          return string.IsNullOrEmpty(ObjectType) ? false : 
             string.Equals(ObjectType, objectType, StringComparison.InvariantCultureIgnoreCase);
       }
+
+      /// <summary>
+      /// Find mapping information for property of this description.
+      /// </summary>
+      /// <param name="propertySetup">The property setup type.</param>
+      /// <param name="propertyName">The property name.</param>
+      /// <returns>The mapping info.</returns>
+      protected IFCPropertyMappingInfo GetMappedRevitParameterForDescription(PropertySetupType propertySetup, string propertyName)
+      {
+         string psetName = GetCorrectedPropertySetName(propertySetup);
+         return PropertyUtil.GetParameterMappingInfoFromCache(propertySetup, psetName, ElementId.InvalidElementId, propertyName);
+      }
+
+      private string GetCorrectedPropertySetName(PropertySetupType propertySetupType)
+      {
+         if (propertySetupType != PropertySetupType.IfcBaseQuantities || Name != "BaseQuantities")
+            return Name;
+         
+         if (!EntityTypes.Any())
+            return Name;
+
+         string entityName = EntityTypes.First().ToString();
+         if (string.IsNullOrEmpty(entityName) || !entityName.StartsWith("Ifc"))
+            return Name;
+
+         return "Qto_" + entityName.Substring(3) + Name;
+      }
+
    }
 }

@@ -280,8 +280,7 @@ namespace Revit.IFC.Export.Utility
             openingIndex++;
 
             Element openingElem = element.Document.GetElement(openingData.OpeningElementId);
-            if (openingElem == null)
-               openingElem = element;
+            openingElem ??= element;
 
             bool currentWallIsHost = false;
             FamilyInstance openingFInst = openingElem as FamilyInstance;
@@ -432,7 +431,7 @@ namespace Revit.IFC.Export.Utility
 
          IFCAnyHandle openingPlacement = extrusionCreationData.GetLocalPlacement();
          IFCAnyHandle hostObjPlacementHnd = IFCAnyHandleUtil.GetObjectPlacement(hostObjHnd);
-         Transform relTransform = ExporterUtil.GetRelativePlacementOffsetTransformWithoutDirFix(exporterIFC, openingPlacement, hostObjPlacementHnd);
+         Transform relTransform = ExporterUtil.GetRelativePlacementOffsetTransform(exporterIFC, openingPlacement, hostObjPlacementHnd);
 
          openingPlacement = ExporterUtil.CreateLocalPlacement(file, hostObjPlacementHnd,
              relTransform.Origin, relTransform.BasisZ, relTransform.BasisX);

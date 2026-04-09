@@ -19,12 +19,11 @@
 using Autodesk.Revit.DB;
 using Autodesk.UI.Windows;
 using Revit.IFC.Common.Extensions;
+using Revit.IFC.Export.Utility;
 using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-
-
 
 namespace BIM.IFC.Export.UI
 {

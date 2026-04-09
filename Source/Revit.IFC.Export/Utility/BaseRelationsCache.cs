@@ -59,6 +59,9 @@ namespace Revit.IFC.Export.Utility
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle) || IFCAnyHandleUtil.IsNullOrHasNoValue(product))
             return;
 
+         if (!IsValidRelatedObject(handle))
+            return;
+
          if (Cache.ContainsKey(handle))
          {
             Cache[handle].Add(product);
@@ -80,6 +83,13 @@ namespace Revit.IFC.Export.Utility
       {
          return Cache.TryGetValue(handle, out values);
       }
+
+      /// <summary>
+      /// Indicates if the related object is valid.  At this level, just do a simple null check.  Subclasses may have tighter restrictions.
+      /// </summary>
+      /// <param name="relatedObject">Object to check.</param>
+      /// <returns>True if relatedObject is valid, False otherwise.</returns>
+      public virtual bool IsValidRelatedObject(IFCAnyHandle relatedObject) => !IFCAnyHandleUtil.IsNullOrHasNoValue(relatedObject);
 
       /// <summary>
       /// To clean the set of reference objects from the cache in case of some 

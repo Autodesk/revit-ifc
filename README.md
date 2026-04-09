@@ -19,13 +19,13 @@ Links to multilingual versions of the Revit IFC Manual V2.0 can be found here: [
 ### Building the Solution
 1. **Open the Solution**
    - Launch Visual Studio and open `Revit.IFC.sln`.
-   - Ensure you are using the correct branch for your Revit version (e.g., `Release_25.x.x` for Revit 2025).
+   - Ensure you are using the correct branch for your Revit version (e.g., `Release_27.x.x` for Revit 2027).
 
 2. **Update Revit Library References**
    - Set the correct paths for Revit DLL references based on your environment.
    - The default Revit installation path is typically:
      ```
-     C:\Program Files\Autodesk\Revit 2025
+     C:\Program Files\Autodesk\Revit 2027
      ```
 
 3. **Restore NuGet Packages**
@@ -48,7 +48,7 @@ Links to multilingual versions of the Revit IFC Manual V2.0 can be found here: [
    - Build the solution in the `Debug` configuration.  
    - Copy the resulting DLLs to the add-in folder. The default path is typically:  
      ```
-     C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2025.bundle\Contents\2025
+     C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2027.bundle\Contents\2027
      ```
 
 3. **Launch Revit**  

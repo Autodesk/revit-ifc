@@ -79,6 +79,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Add property set.
+        /// </summary>
+        public static string AddPropertySet {
+            get {
+                return ResourceManager.GetString("AddPropertySet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Project Address....
         /// </summary>
         public static string Address {
@@ -124,6 +133,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Add Row.
+        /// </summary>
+        public static string AddRow {
+            get {
+                return ResourceManager.GetString("AddRow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Advanced.
         /// </summary>
         public static string Advanced {
@@ -147,6 +165,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string AngleTrueNorth {
             get {
                 return ResourceManager.GetString("AngleTrueNorth", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Applicable Entities.
+        /// </summary>
+        public static string ApplicableEntities {
+            get {
+                return ResourceManager.GetString("ApplicableEntities", resourceCulture);
             }
         }
         
@@ -363,6 +390,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string Cancel {
             get {
                 return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Category.
+        /// </summary>
+        public static string Category {
+            get {
+                return ResourceManager.GetString("Category", resourceCulture);
             }
         }
         
@@ -610,11 +646,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Data Type.
+        /// </summary>
+        public static string DataType {
+            get {
+                return ResourceManager.GetString("DataType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Default ({0}).
         /// </summary>
         public static string Default {
             get {
                 return ResourceManager.GetString("Default", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select.
+        /// </summary>
+        public static string DefaultCategoryFilterTxt {
+            get {
+                return ResourceManager.GetString("DefaultCategoryFilterTxt", resourceCulture);
             }
         }
         
@@ -628,6 +682,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &lt;default&gt;.
+        /// </summary>
+        public static string DefaultMapping {
+            get {
+                return ResourceManager.GetString("DefaultMapping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Default phase to export.
         /// </summary>
         public static string DefaultPhase {
@@ -637,11 +700,11 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Default Property Mapping Setups.
+        ///   Looks up a localized string similar to Defined Data Type.
         /// </summary>
-        public static string DefaultPropertyMappingSetups {
+        public static string DefinedDataType {
             get {
-                return ResourceManager.GetString("DefaultPropertyMappingSetups", resourceCulture);
+                return ResourceManager.GetString("DefinedDataType", resourceCulture);
             }
         }
         
@@ -687,6 +750,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string DeleteTemplateTooltip {
             get {
                 return ResourceManager.GetString("DeleteTemplateTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deprecated.
+        /// </summary>
+        public static string DeprecatedMark {
+            get {
+                return ResourceManager.GetString("DeprecatedMark", resourceCulture);
             }
         }
         
@@ -813,6 +885,51 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string Ellipses {
             get {
                 return ResourceManager.GetString("Ellipses", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There are no materials in this project..
+        /// </summary>
+        public static string EmptyStateMaterialInfo {
+            get {
+                return ResourceManager.GetString("EmptyStateMaterialInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Add one or more materials to use this option..
+        /// </summary>
+        public static string EmptyStateMaterialPsets {
+            get {
+                return ResourceManager.GetString("EmptyStateMaterialPsets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select a property set from one of the setups to choose mapping settings..
+        /// </summary>
+        public static string EmptyStatePropertySet {
+            get {
+                return ResourceManager.GetString("EmptyStatePropertySet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There are no schedules in this project..
+        /// </summary>
+        public static string EmptyStateScheduleInfo {
+            get {
+                return ResourceManager.GetString("EmptyStateScheduleInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Add one or more schedules to use this option..
+        /// </summary>
+        public static string EmptyStateSchedulePsets {
+            get {
+                return ResourceManager.GetString("EmptyStateSchedulePsets", resourceCulture);
             }
         }
         
@@ -1042,6 +1159,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Export IFC User - defined Property Sets.
+        /// </summary>
+        public static string ExportIFCUserDefinedMappingDialogName {
+            get {
+                return ResourceManager.GetString("ExportIFCUserDefinedMappingDialogName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export internal Revit property sets.
         /// </summary>
         public static string ExportInternalRevitPropertySets {
@@ -1096,11 +1222,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Export property set.
+        ///   Looks up a localized string similar to Export IFC Property Mapping.
         /// </summary>
-        public static string ExportPropertySetTooltip {
+        public static string ExportPropertyMappingDialogName {
             get {
-                return ResourceManager.GetString("ExportPropertySetTooltip", resourceCulture);
+                return ResourceManager.GetString("ExportPropertyMappingDialogName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC Property Mapping Files (*.txt)|*.txt.
+        /// </summary>
+        public static string ExportPropertyMappingFilter {
+            get {
+                return ResourceManager.GetString("ExportPropertyMappingFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export property sets.
+        /// </summary>
+        public static string ExportPropertySetsTooltip {
+            get {
+                return ResourceManager.GetString("ExportPropertySetsTooltip", resourceCulture);
             }
         }
         
@@ -1357,6 +1501,51 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to All properties.
+        /// </summary>
+        public static string FilterAllProperties {
+            get {
+                return ResourceManager.GetString("FilterAllProperties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Built-in properties.
+        /// </summary>
+        public static string FilterBuiltinProperties {
+            get {
+                return ResourceManager.GetString("FilterBuiltinProperties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Filter by category.
+        /// </summary>
+        public static string FilterByCategory {
+            get {
+                return ResourceManager.GetString("FilterByCategory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Instance properties.
+        /// </summary>
+        public static string FilterInstanceProperties {
+            get {
+                return ResourceManager.GetString("FilterInstanceProperties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type properties.
+        /// </summary>
+        public static string FilterTypeProperties {
+            get {
+                return ResourceManager.GetString("FilterTypeProperties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to General.
         /// </summary>
         public static string General {
@@ -1483,11 +1672,20 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IFC4 Schema Entities.
+        ///   Looks up a localized string similar to IFC4.3 Design Transfer View [Unofficial].
         /// </summary>
-        public static string IFC4SchemaEntities {
+        public static string IFC4x3DTV {
             get {
-                return ResourceManager.GetString("IFC4SchemaEntities", resourceCulture);
+                return ResourceManager.GetString("IFC4x3DTV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC4.3 Reference View.
+        /// </summary>
+        public static string IFC4x3RV {
+            get {
+                return ResourceManager.GetString("IFC4x3RV", resourceCulture);
             }
         }
         
@@ -1497,6 +1695,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCAssignments {
             get {
                 return ResourceManager.GetString("IFCAssignments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC Attributes.
+        /// </summary>
+        public static string IFCAttributes {
+            get {
+                return ResourceManager.GetString("IFCAttributes", resourceCulture);
             }
         }
         
@@ -1519,29 +1726,74 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Copy Property Template.
+        /// </summary>
+        public static string IFCCopyPropertyTemplate {
+            get {
+                return ResourceManager.GetString("IFCCopyPropertyTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Copy.
         /// </summary>
-        public static string IFCCopyCategoryTemplate {
+        public static string IFCCopyTemplate {
             get {
-                return ResourceManager.GetString("IFCCopyCategoryTemplate", resourceCulture);
+                return ResourceManager.GetString("IFCCopyTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create duplicate.
+        /// </summary>
+        public static string IFCCreateDuplicate {
+            get {
+                return ResourceManager.GetString("IFCCreateDuplicate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create New Property Set.
+        /// </summary>
+        public static string IFCCreateNewPropertySet {
+            get {
+                return ResourceManager.GetString("IFCCreateNewPropertySet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create New Template.
+        /// </summary>
+        public static string IFCCreateNewTemplate {
+            get {
+                return ResourceManager.GetString("IFCCreateNewTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &lt;Default&gt;.
+        /// </summary>
+        public static string IFCDefaultSetup {
+            get {
+                return ResourceManager.GetString("IFCDefaultSetup", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Delete.
         /// </summary>
-        public static string IFCDeleteCategoryTemplate {
+        public static string IFCDeleteTemplate {
             get {
-                return ResourceManager.GetString("IFCDeleteCategoryTemplate", resourceCulture);
+                return ResourceManager.GetString("IFCDeleteTemplate", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Delete {0} ?.
         /// </summary>
-        public static string IFCDeleteCategoryTemplateMessage {
+        public static string IFCDeleteTemplateMessage {
             get {
-                return ResourceManager.GetString("IFCDeleteCategoryTemplateMessage", resourceCulture);
+                return ResourceManager.GetString("IFCDeleteTemplateMessage", resourceCulture);
             }
         }
         
@@ -1600,6 +1852,33 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cannot add new Property {0} to Reserved Property Set {1}..
+        /// </summary>
+        public static string IFCExportWarningCannotAddPropertyToReservedPropertySet {
+            get {
+                return ResourceManager.GetString("IFCExportWarningCannotAddPropertyToReservedPropertySet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User-defined Property Set {0} contains reserved string {1}.  Extending property set name to {2}..
+        /// </summary>
+        public static string IFCExportWarningCannotAddUserDefinedPropertySet {
+            get {
+                return ResourceManager.GetString("IFCExportWarningCannotAddUserDefinedPropertySet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot modify Property {0} in Reserved Property Set {1}..
+        /// </summary>
+        public static string IFCExportWarningCannotModifyPropertySetProperty {
+            get {
+                return ResourceManager.GetString("IFCExportWarningCannotModifyPropertySetProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to ifc.
         /// </summary>
         public static string IFCExt {
@@ -1623,6 +1902,24 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCInvalidCategoryMappingFile {
             get {
                 return ResourceManager.GetString("IFCInvalidCategoryMappingFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Attempting to load an invalid template..
+        /// </summary>
+        public static string IFCInvalidPropertyMappingFile {
+            get {
+                return ResourceManager.GetString("IFCInvalidPropertyMappingFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This is not a valid property mapping file..
+        /// </summary>
+        public static string IFCInvalidUserDefinedMappingFile {
+            get {
+                return ResourceManager.GetString("IFCInvalidUserDefinedMappingFile", resourceCulture);
             }
         }
         
@@ -1681,11 +1978,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to New Property Set.
+        /// </summary>
+        public static string IFCNewPropertySet {
+            get {
+                return ResourceManager.GetString("IFCNewPropertySet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to New Settings Template.
         /// </summary>
-        public static string IFCNewCategoryTemplate {
+        public static string IFCNewTemplate {
             get {
-                return ResourceManager.GetString("IFCNewCategoryTemplate", resourceCulture);
+                return ResourceManager.GetString("IFCNewTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Notification.
+        /// </summary>
+        public static string IFCNotificationMessageBox {
+            get {
+                return ResourceManager.GetString("IFCNotificationMessageBox", resourceCulture);
             }
         }
         
@@ -1710,9 +2025,9 @@ namespace BIM.IFC.Export.UI.Properties {
         /// <summary>
         ///   Looks up a localized string similar to Rename.
         /// </summary>
-        public static string IFCRenameCategoryTemplate {
+        public static string IFCRenameTemplate {
             get {
-                return ResourceManager.GetString("IFCRenameCategoryTemplate", resourceCulture);
+                return ResourceManager.GetString("IFCRenameTemplate", resourceCulture);
             }
         }
         
@@ -1744,7 +2059,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IFC-SG Regulatory Requirements View.
+        ///   Looks up a localized string similar to IFC+SG Regulatory Requirements View.
         /// </summary>
         public static string IFCSG {
             get {
@@ -1758,6 +2073,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string IFCUnknown {
             get {
                 return ResourceManager.GetString("IFCUnknown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IFC User-defined property sets files (*.txt)|*.txt.
+        /// </summary>
+        public static string IFCUserDefinedPropertySetsFilter {
+            get {
+                return ResourceManager.GetString("IFCUserDefinedPropertySetsFilter", resourceCulture);
             }
         }
         
@@ -1789,7 +2113,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IFC4x3 Reference View.
+        ///   Looks up a localized string similar to IFC4x3.
         /// </summary>
         public static string IFCVersion4x3 {
             get {
@@ -1915,11 +2239,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Import property set.
+        ///   Looks up a localized string similar to Import IFC User-defined Property Sets.
         /// </summary>
-        public static string ImportPropertySetTooltip {
+        public static string ImportIFCUserDefinedMappingDialogName {
             get {
-                return ResourceManager.GetString("ImportPropertySetTooltip", resourceCulture);
+                return ResourceManager.GetString("ImportIFCUserDefinedMappingDialogName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import IFC Property Mapping.
+        /// </summary>
+        public static string ImportPropertyMappingDialogName {
+            get {
+                return ResourceManager.GetString("ImportPropertyMappingDialogName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import property sets.
+        /// </summary>
+        public static string ImportPropertySetsTooltip {
+            get {
+                return ResourceManager.GetString("ImportPropertySetsTooltip", resourceCulture);
             }
         }
         
@@ -2365,6 +2707,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Modify IFC property mapping template.
+        /// </summary>
+        public static string ModifyIFCPropertyMapping {
+            get {
+                return ResourceManager.GetString("ModifyIFCPropertyMapping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Modify setup ....
         /// </summary>
         public static string ModifySetup {
@@ -2581,11 +2932,20 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This is a help link.
+        ///   Looks up a localized string similar to How do I modify IFC export parameter mapping settings?.
         /// </summary>
         public static string ParameterMappingHelp {
             get {
                 return ResourceManager.GetString("ParameterMappingHelp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameter Mapping Settings.
+        /// </summary>
+        public static string ParameterMappingSettings {
+            get {
+                return ResourceManager.GetString("ParameterMappingSettings", resourceCulture);
             }
         }
         
@@ -2752,6 +3112,24 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Properties.
+        /// </summary>
+        public static string Properties {
+            get {
+                return ResourceManager.GetString("Properties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Property Mapping.
+        /// </summary>
+        public static string PropertyMapping {
+            get {
+                return ResourceManager.GetString("PropertyMapping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Property Set.
         /// </summary>
         public static string PropertySet {
@@ -2766,6 +3144,33 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string PropertySetDetails {
             get {
                 return ResourceManager.GetString("PropertySetDetails", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter valid property set name..
+        /// </summary>
+        public static string PropertySetInvalidNameTooltip {
+            get {
+                return ResourceManager.GetString("PropertySetInvalidNameTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Property Set name.
+        /// </summary>
+        public static string PropertySetName {
+            get {
+                return ResourceManager.GetString("PropertySetName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter unique property set name..
+        /// </summary>
+        public static string PropertySetNameTooltip {
+            get {
+                return ResourceManager.GetString("PropertySetNameTooltip", resourceCulture);
             }
         }
         
@@ -2941,6 +3346,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Property Type.
+        /// </summary>
+        public static string PropertyType {
+            get {
+                return ResourceManager.GetString("PropertyType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Purpose.
         /// </summary>
         public static string Purpose {
@@ -2950,11 +3364,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Quantity Set.
+        /// </summary>
+        public static string QuantitySet {
+            get {
+                return ResourceManager.GetString("QuantitySet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Remove.
         /// </summary>
         public static string Remove {
             get {
                 return ResourceManager.GetString("Remove", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove Row.
+        /// </summary>
+        public static string RemoveRow {
+            get {
+                return ResourceManager.GetString("RemoveRow", resourceCulture);
             }
         }
         
@@ -2986,6 +3418,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Rename property set.
+        /// </summary>
+        public static string RenamePropertySetTooltip {
+            get {
+                return ResourceManager.GetString("RenamePropertySetTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Rename the selected setup..
         /// </summary>
         public static string RenameSelectedSetup {
@@ -3013,6 +3454,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Property set names cannot start with any uppercase or lowercase variation of &apos;pset&apos;..
+        /// </summary>
+        public static string ReservedPropertySetTooltip {
+            get {
+                return ResourceManager.GetString("ReservedPropertySetTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Reset.
         /// </summary>
         public static string Reset {
@@ -3027,6 +3477,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string ResetAll {
             get {
                 return ResourceManager.GetString("ResetAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset applicable entities.
+        /// </summary>
+        public static string ResetApplicableEntities {
+            get {
+                return ResourceManager.GetString("ResetApplicableEntities", resourceCulture);
             }
         }
         
@@ -3139,6 +3598,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Save changes to property set..
+        /// </summary>
+        public static string SavePropertySetTooltip {
+            get {
+                return ResourceManager.GetString("SavePropertySetTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Save Setup &amp;amp; Close.
         /// </summary>
         public static string SaveSetupAndClose {
@@ -3175,6 +3643,24 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Select applicable entities.
+        /// </summary>
+        public static string SelectApplicableEntities {
+            get {
+                return ResourceManager.GetString("SelectApplicableEntities", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select a category to filter the properties list..
+        /// </summary>
+        public static string SelectCategory {
+            get {
+                return ResourceManager.GetString("SelectCategory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Selected categories will be exported.
         /// </summary>
         public static string SelectedCheckboxTooltip {
@@ -3189,6 +3675,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string SelectedPropertiesCheckboxTooltip {
             get {
                 return ResourceManager.GetString("SelectedPropertiesCheckboxTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selected property set will be exported.
+        /// </summary>
+        public static string SelectedPropertySetCheckboxTooltip {
+            get {
+                return ResourceManager.GetString("SelectedPropertySetCheckboxTooltip", resourceCulture);
             }
         }
         
@@ -3400,6 +3895,36 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Viewer mode allows all functionality of Revit, except the following: save or save as in all cases; exporting or publishing modified projects; exporting or publishing any projects to a format containing model data that can be modified; or printing projects after changes are made..
+        /// </summary>
+        public static string String_Revit_CurrentLicenseStatus_MainContent {
+            get {
+                return ResourceManager.GetString("String_Revit_CurrentLicenseStatus_MainContent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}
+        ///Build: {1}
+        ///
+        ///{0} is in viewer mode..
+        /// </summary>
+        public static string String_Revit_CurrentLicenseStatus_MainInstruction {
+            get {
+                return ResourceManager.GetString("String_Revit_CurrentLicenseStatus_MainInstruction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Revit Current License Status.
+        /// </summary>
+        public static string String_Revit_CurrentLicenseStatusTitle {
+            get {
+                return ResourceManager.GetString("String_Revit_CurrentLicenseStatusTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Template name.
         /// </summary>
         public static string TemplateName {
@@ -3409,11 +3934,29 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enter valid template name..
+        /// </summary>
+        public static string TemplateNameInvalidTooltip {
+            get {
+                return ResourceManager.GetString("TemplateNameInvalidTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enter unique template name..
         /// </summary>
         public static string TemplateNameTooltip {
             get {
                 return ResourceManager.GetString("TemplateNameTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to selections.
+        /// </summary>
+        public static string TemplateSelections {
+            get {
+                return ResourceManager.GetString("TemplateSelections", resourceCulture);
             }
         }
         
@@ -3450,6 +3993,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string TriangulationOnlyTooltip {
             get {
                 return ResourceManager.GetString("TriangulationOnlyTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type to filter.
+        /// </summary>
+        public static string TypeToFilter {
+            get {
+                return ResourceManager.GetString("TypeToFilter", resourceCulture);
             }
         }
         
@@ -3571,7 +4123,7 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This is a help link.
+        ///   Looks up a localized string similar to How do I Manage User-Defined Property Sets?.
         /// </summary>
         public static string UserDefinedHelp {
             get {
@@ -3598,11 +4150,20 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to User-defined Property Mapping Setups.
+        ///   Looks up a localized string similar to User-defined Property Mapping.
         /// </summary>
-        public static string UserDefinedPropertyMappingSetups {
+        public static string UserDefinedPropertyMapping {
             get {
-                return ResourceManager.GetString("UserDefinedPropertyMappingSetups", resourceCulture);
+                return ResourceManager.GetString("UserDefinedPropertyMapping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User Defined Property Sets.
+        /// </summary>
+        public static string UserDefinedPropertySets {
+            get {
+                return ResourceManager.GetString("UserDefinedPropertySets", resourceCulture);
             }
         }
         

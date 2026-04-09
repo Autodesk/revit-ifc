@@ -28,6 +28,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
+using System.Windows.Forms;
 
 
 
@@ -216,7 +217,7 @@ namespace Revit.IFC.Export.Exporter
                foreach (DelayedProductWrapper delayedProductWrapper in relatedToAssembly.Value)
                {
                   IFCAnyHandle currentRebarHandle = delayedProductWrapper.ElementHandle;
-                  productWrapper.AddElement(delayedProductWrapper.RebarElement, currentRebarHandle, 
+                  productWrapper.AddElement(delayedProductWrapper.RebarElement, currentRebarHandle,
                      delayedProductWrapper.LevelInfo, null, attachToLevel, delayedProductWrapper.ExportInfo);
                   createdRebarHandles.Add(currentRebarHandle);
                }
@@ -238,7 +239,14 @@ namespace Revit.IFC.Export.Exporter
             // We will update the GUID of the one created IfcReinforcingElement to be the element GUID.
             // This will allow the IfcGUID parameter to be use/set if appropriate.
             if (createdRebars.Count == 1 && guid != null)
-               ExporterUtil.SetGlobalId(createdRebars.ElementAt(0).ElementHandle, guid, element);
+            {
+               IFCAnyHandle rebarHandle = createdRebars.ElementAt(0).ElementHandle;
+               string originalGUID = IFCAnyHandleUtil.GetStringAttribute(rebarHandle, "GlobalId");
+               if (string.Compare(originalGUID, guid, false) != 0)
+               {
+                  ExporterUtil.SetGlobalId(rebarHandle, guid, element);
+               }
+            }
          }
       }
    

@@ -26,12 +26,17 @@ namespace BIM.IFC.Export.UI
 
       private IFCEntityTrie m_EntityTrie = null;
 
-      private string CurrentIFCVersion { get; set; } = null;
+      public string CurrentIFCVersion { get; private set; } = null;
 
       private HashSet<string> PreselectedSet { get; set; } = null;
-      
+
+      /// <summary>
+      /// Indicates whether preselection should be propagated to child nodes.
+      /// </summary>
+      private bool PropagatePreselection { get; set; } = false;
+
       private TreeViewItem PrevSelEntityItem { get; set; } = null;
-      
+
       private string TreeSelectionDesc { get; set; } = null;
 
       /// <summary>
@@ -80,7 +85,7 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       private static ISet<string> AllowedCategoriesForIfcAnnotation = new HashSet<string>();
 
-      private static string VersionForSession { get; set; } = IfcSchemaEntityTree.SchemaName(IFCVersion.IFC4x3);
+      private static string VersionForSession { get; set; } = IfcSchemaEntityTree.SchemaName(IFCVersion.IFC4x3RV);
 
       private static void InitAllowedCategoryIdsForIfcAnnotation()
       {
@@ -135,7 +140,7 @@ namespace BIM.IFC.Export.UI
       /// <param name="preSelectEntity">Pre-select the entities</param>
       /// <param name="showTypeNodeOnly">Option to show IfcTypeObject tree only</param>
       /// <param name="byCategory">Show the "By Category" checkbox if not null, and set value appropriately.</param>
-      public EntityTree(IList<ElementId> elementIds, bool showTypeNodeOnly, string preSelectEntity, string preSelectPdef, 
+      public EntityTree(IList<ElementId> elementIds, bool showTypeNodeOnly, string preSelectEntity, string preSelectPdef,
          bool? byCategory)
       {
          AllowIfcAnnotation = true;
@@ -177,7 +182,7 @@ namespace BIM.IFC.Export.UI
 
          Document document = IFCCommandOverrideApplication.TheDocument;
          AllowIfcAnnotation = IsIfcAnnotationAllowedForCategory(document, mappingInfo.CategoryName);
-         
+
          if (parentNode != null)
          {
             byCategory = string.IsNullOrEmpty(mappingInfo.IfcClass);
@@ -203,11 +208,13 @@ namespace BIM.IFC.Export.UI
       /// <param name="singleNodeSelection">true if the tree is used for a single node selection</param>
       /// <param name="selectionStrategy">the selection strategy</param>
       /// <param name="synchronizeSelectionWithType">pre-select the predefined type</param>
-      public EntityTree(IFCVersion ifcVersion, string preselectFilter, string desc, 
-         bool singleNodeSelection, SelectionStrategyType selectionStrategy, bool synchronizeSelectionWithType)
+      /// <param name="propagatePreselection">initial selection of a node selects all its children</param>
+      public EntityTree(IFCVersion? ifcVersion, string preselectFilter, string desc, bool singleNodeSelection,
+         SelectionStrategyType selectionStrategy, bool synchronizeSelectionWithType, bool propagatePreselection)
       {
-         CurrentIFCVersion = IfcSchemaEntityTree.SchemaName(ifcVersion);
+         CurrentIFCVersion = ifcVersion.HasValue ? IfcSchemaEntityTree.SchemaName(ifcVersion.Value) : string.Empty;
          PreselectedSet = FillSetFromList(preselectFilter);
+         PropagatePreselection = propagatePreselection;
          SingleNodeSelection = singleNodeSelection;
          TreeSelectionDesc = desc;
          ShowTypeNodeOnly = false;
@@ -269,7 +276,7 @@ namespace BIM.IFC.Export.UI
          PreSelectItem(preSelectEntity, preSelectPDef);
          IfcSchemaEntityTree.GenerateEntityTrie(ref m_EntityTrie);
       }
-      
+
       /// <summary>
       /// Pre-select the Entity (and Predefined Type) if they are set by the server (only valid for single selection mode)
       /// </summary>
@@ -321,7 +328,7 @@ namespace BIM.IFC.Export.UI
          return !CheckBox_ByCategory.IsChecked.GetValueOrDefault(false);
       }
 
-      private (TreeViewItem, IfcSchemaEntityNode) AddTreeViewItem(bool add, string name, 
+      private (TreeViewItem, IfcSchemaEntityNode) AddTreeViewItem(bool add, string name,
          IfcSchemaEntityTree ifcEntityTree, bool recurse)
       {
          if (!add)
@@ -379,11 +386,11 @@ namespace BIM.IFC.Export.UI
                TreeViewItemDict.Clear();
 
                AddTreeViewItem(!ShowTypeNodeOnly, "IfcProduct", ifcEntityTree, true);
-               AddTreeViewItem(true,"IfcTypeProduct", ifcEntityTree, true);
+               AddTreeViewItem(true, "IfcTypeProduct", ifcEntityTree, true);
 
                TreeViewItem groupHeader;
                IfcSchemaEntityNode ifcGroupNode;
-               (groupHeader, ifcGroupNode)= AddTreeViewItem(!ShowTypeNodeOnly, "IfcGroup", ifcEntityTree, false);
+               (groupHeader, ifcGroupNode) = AddTreeViewItem(!ShowTypeNodeOnly, "IfcGroup", ifcEntityTree, false);
 
                if (groupHeader != null && ifcGroupNode != null)
                {
@@ -407,13 +414,14 @@ namespace BIM.IFC.Export.UI
                   groupNodeItem.IsChecked = DefaultCheckedState;
                   if (SingleNodeSelection)
                      groupNodeItem.IsChecked = false;
+
                   if (PreselectedSet.Contains(groupNode.Name))
                      groupNodeItem.IsChecked = !DefaultCheckedState;     // remember the earlier choice
 
                   groupNodeItem.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
                   groupNodeItem.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
 
-                  groupHeader.Items.Add(GetNode(ifcGroupNode, groupNode, PreselectedSet));
+                  groupHeader.Items.Add(GetNode(ifcGroupNode, groupNode, PreselectedSet));//, forcePreselection));
                }
             }
             else
@@ -463,7 +471,7 @@ namespace BIM.IFC.Export.UI
          foreach (IfcSchemaEntityNode ifcNodeChild in ifcNode.GetChildren())
          {
             string ifcClassName = ifcNodeChild.Name;
-            
+
             // Skip deprecated entity
             if (IfcSchemaEntityTree.IsDeprecatedOrUnsupported(CurrentIFCVersion, ifcClassName))
             {
@@ -507,14 +515,20 @@ namespace BIM.IFC.Export.UI
                m_EntityTrie.AddIFCEntityToDict(ifcNodeChild.Name);
 
                ToggleButton childNodeItem;
-               childNodeItem = new CheckBox();
-               childNodeItem.Name = ifcNodeChild.Name;
-               childNodeItem.Content = ifcNodeChild.Name;
-               childNodeItem.FontWeight = FontWeights.Normal;
-               childNodeItem.IsChecked = DefaultCheckedState;
-               if (preselectedSet.Contains(ifcNodeChild.Name))
-                  childNodeItem.IsChecked = !DefaultCheckedState;     // remember the earlier choice
-
+               childNodeItem = new CheckBox
+               {
+                  Name = ifcNodeChild.Name,
+                  Content = ifcNodeChild.Name,
+                  FontWeight = FontWeights.Normal,
+                  IsChecked = DefaultCheckedState
+               };
+                              
+               if (preselectedSet.Contains(ifcNodeChild.Name) ||
+                  PropagatePreselection && IsNodeInNonDefaultCheckedState(thisNode))
+               {
+                  childNodeItem.IsChecked = !DefaultCheckedState;
+               }
+               
                childNodeItem.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
                childNodeItem.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
                childNode.Header = childNodeItem;
@@ -525,6 +539,13 @@ namespace BIM.IFC.Export.UI
             thisNode.Items.Add(childNode);
          }
          return thisNode;
+      }
+
+      bool IsNodeInNonDefaultCheckedState(TreeViewItem node)
+      {
+         var toggleButton = node?.Header as ToggleButton;
+         bool isChecked = toggleButton?.IsChecked ?? DefaultCheckedState;
+         return isChecked != DefaultCheckedState;
       }
 
       void TreeViewItem_HandleChecked(object sender, RoutedEventArgs eventArgs)
@@ -730,6 +751,55 @@ namespace BIM.IFC.Export.UI
          return filteredElemList;
       }
 
+      public string GetSelectedEntityParents()
+      {
+         string filteredElemList = string.Empty;
+         if (!DialogResult.HasValue || DialogResult.Value == false)
+            return filteredElemList;
+
+         foreach (TreeViewItem tvChld in TreeView.Items)
+         {
+            (string str, bool bl) = GetSelectedEntityParents(tvChld, true);
+            filteredElemList += str;
+         }
+
+         if (filteredElemList.EndsWith(";"))
+            filteredElemList = filteredElemList.Remove(filteredElemList.Length - 1);
+         return filteredElemList;
+      }
+
+      (string, bool) GetSelectedEntityParents(TreeViewItem tvItem, bool isChecked)
+      {
+         bool allChildrenChecked = true;
+         string filteredElemList = string.Empty;
+         ToggleButton cbElem = tvItem.Header as ToggleButton;
+
+         bool isLeaf = tvItem.Items.Count == 0;
+
+         if (isLeaf)
+         {
+            allChildrenChecked = false;
+            if (cbElem != null && cbElem.IsChecked.HasValue && cbElem.IsChecked.Value == isChecked)
+            {
+               filteredElemList += cbElem.Name + ";";
+               allChildrenChecked = true;
+            }
+         }
+         else
+         {
+            foreach (TreeViewItem tvChld in tvItem.Items)
+            {
+               (string str, bool bl) = GetSelectedEntityParents(tvChld, isChecked);
+               filteredElemList += str;
+
+               if (allChildrenChecked && !bl)
+                  allChildrenChecked = false;
+            }
+         }
+
+         return (allChildrenChecked) ? (cbElem.Name + ";", true) : (filteredElemList, false);
+      }
+
       string GetSelectedEntity(TreeViewItem tvItem, bool isChecked)
       {
          string filteredElemList = string.Empty;
@@ -866,11 +936,18 @@ namespace BIM.IFC.Export.UI
 
             foreach (string predefItem in predefinedTypeList)
             {
+               string deprecated = string.Empty;
+               // Mark deprecated predifined types as such.
+               if (IfcSchemaEntityTree.IsDeprecatedPredefinedType(CurrentIFCVersion, ifcEntitySelected, predefItem))
+               {
+                  deprecated = string.Format(" ({0})", Properties.Resources.DeprecatedMark);
+               }
+
                TreeViewItem childNode = new TreeViewItem();
                RadioButton childNodeItem = new RadioButton();
                childNode.Name = predefItem;
                childNodeItem.Name = predefItem;
-               childNodeItem.Content = predefItem;
+               childNodeItem.Content = predefItem + deprecated;
                childNodeItem.Checked += new RoutedEventHandler(PredefSelected_Checked);
                childNodeItem.Unchecked += new RoutedEventHandler(PredefSelected_Unchecked);
                childNode.Header = childNodeItem;

@@ -2,6 +2,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.UI.Windows;
 using BIM.IFC.Export.UI.Properties;
+using Revit.IFC.Export.Utility;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -13,6 +14,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows;
 using System;
+using System.Windows.Input;
 
 namespace BIM.IFC.Export.UI
 {
@@ -142,11 +144,19 @@ namespace BIM.IFC.Export.UI
          PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
       }
 
+      /// <summary>
+      /// The IFC Export Configuration
+      /// </summary>
+      private IFCExportConfiguration _ifcExportConfiguration = new();
+
       private TransactionGroup groupTransaction;
       private Transaction templateTransaction;
 
-      public IFCCategoryMapping()
+      public IFCCategoryMapping(Window owner, IFCExportConfiguration configuration)
       {
+         Owner = owner;
+         _ifcExportConfiguration = configuration;
+
          Initialize();
       }
 
@@ -166,11 +176,24 @@ namespace BIM.IFC.Export.UI
 
          textBox_Search.Focus();
 
-         IFCCategoryTemplate currentTemplateName = 
-            IFCCategoryTemplate.GetActiveTemplate(IFCCommandOverrideApplication.TheDocument) ??
-            IFCCategoryTemplate.GetOrCreateInSessionTemplate(IFCCommandOverrideApplication.TheDocument);
+         IFCCategoryTemplate currentTemplate = GetMappingTemplateFromConfiguration(IFCCommandOverrideApplication.TheDocument, _ifcExportConfiguration);
+         InitializeTemplateList(currentTemplate?.Name);
+      }
 
-         InitializeTemplateList(currentTemplateName?.Name);
+      private static IFCCategoryTemplate GetMappingTemplateFromConfiguration(Document doc, IFCExportConfiguration configuration)
+      {
+         if (configuration == null || doc == null)
+            return null;
+
+         IFCCategoryTemplate currentTemplate = null;
+
+         string configurationTemplateName = configuration.CategoryMapping;
+         if (!string.IsNullOrEmpty(configurationTemplateName))
+            currentTemplate = IFCCategoryTemplate.FindByName(doc, configurationTemplateName);
+
+         currentTemplate ??= IFCCategoryTemplate.GetOrCreateInSessionTemplate(doc);
+
+         return currentTemplate;
       }
 
       /// <summary>
@@ -319,7 +342,7 @@ namespace BIM.IFC.Export.UI
       /// </summary>
       static IList<string> GetAllTemplateNames()
       {
-         IList<string> templateNames = IFCParameterTemplate.ListNames(IFCCommandOverrideApplication.TheDocument) ?? new List<string>();
+         IList<string> templateNames = IFCCategoryTemplate.ListNames(IFCCommandOverrideApplication.TheDocument) ?? new List<string>();
          templateNames.Add(GetInSessionTemplateName());
 
          return templateNames;
@@ -364,7 +387,7 @@ namespace BIM.IFC.Export.UI
       {
          templateName = templateName?.TrimStart()?.TrimEnd();
          return (!(string.IsNullOrWhiteSpace(templateName)
-            || (existingNames?.Contains(templateName) ?? false)))
+            || (existingNames?.Contains(templateName, System.StringComparer.OrdinalIgnoreCase) ?? false)))
             && IFCCategoryTemplate.IsValidName(IFCCommandOverrideApplication.TheDocument, templateName);
       }
 
@@ -453,8 +476,10 @@ namespace BIM.IFC.Export.UI
 
       private void button_Add_Click(object sender, RoutedEventArgs e)
       {
-         IFCCategoryTemplateData data = new IFCCategoryTemplateData(Properties.Resources.NewTemplateDefaultName, IFCCategoryTemplate.ListNames(IFCCommandOverrideApplication.TheDocument));
-         IFCNewCategoryTemplate settingsTemplateDialog = new IFCNewCategoryTemplate(data);
+         IFCTemplateData data = new(Properties.Resources.NewTemplateDefaultName, 
+            IFCCategoryTemplate.ListNames(IFCCommandOverrideApplication.TheDocument), 
+            isCategoryMapping: true, IFCTemplateData.DialogTypeEnum.Template);
+         IFCNewTemplate settingsTemplateDialog = new(data);
          settingsTemplateDialog.Owner = this;
          bool? ret = settingsTemplateDialog.ShowDialog();
          if (ret.HasValue && ret.Value == true)
@@ -597,16 +622,13 @@ namespace BIM.IFC.Export.UI
 
       private void button_Save_Click(object sender, RoutedEventArgs e)
       {
-         UpdateTemplateFromGrid();
-
-         CommitTransactionGroup();
+         SaveDialogChanges();
          StartTransactionGroup();
       }
 
       private void button_Ok_Click(object sender, RoutedEventArgs e)
       {
-         UpdateTemplateFromGrid();
-         CommitTransactionGroup();
+         SaveDialogChanges();
          Close();
       }
 
@@ -642,10 +664,26 @@ namespace BIM.IFC.Export.UI
             groupTransaction.RollBack();
       }
 
+      private void SaveDialogChanges()
+      {
+         UpdateTemplateFromGrid();
+         _ifcExportConfiguration.CategoryMapping = (string)listBox_MappingTemplates.SelectedItem;
+         CommitTransactionGroup();
+      }
+
       private void button_Cancel_Click(object sender, RoutedEventArgs e)
       {
          DiscardTransactionsGroup();
          Close();
+      }
+
+      private void ChildWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+      {
+         if (e.Key == Key.Escape)
+         {
+            e.Handled = true;
+            button_Cancel_Click(button_Cancel, new RoutedEventArgs());
+         }
       }
 
       private void ChildWindow_Closing(object sender, CancelEventArgs e)
@@ -750,12 +788,8 @@ namespace BIM.IFC.Export.UI
          if (openDialog.Show() == ItemSelectionDialogResult.Confirmed)
          {
             // TODO: Support cloud paths.
-            ModelPath modelPath = openDialog.GetSelectedModelPath();
-            string fileName = ModelPathUtils.ConvertModelPathToUserVisiblePath(modelPath);
-            string fileNameOnly = Path.GetFileNameWithoutExtension(fileName);
-
-            IFCCategoryTemplateData data = new IFCCategoryTemplateData(fileNameOnly, GetAllTemplateNames());
-            string uniqueTemplateName = data.MakeUniqueTemplateName();
+            string fileName = ModelPathUtils.ConvertModelPathToUserVisiblePath(openDialog.GetSelectedModelPath());
+            string uniqueTemplateName = IFCPropertyMapping.GetUniqueNameFromFile(fileName, isCategoryMapping: true);
             if (string.IsNullOrWhiteSpace(uniqueTemplateName))
                return;
 
@@ -795,10 +829,11 @@ namespace BIM.IFC.Export.UI
 
          UpdateTemplateFromGrid();
 
-         IFCCategoryTemplateData data = new IFCCategoryTemplateData(currentTemplate.Name, GetAllTemplateNames());
-         data.MakeUniqueTemplateName();
+         IFCTemplateData data = new(currentTemplate.Name, GetAllTemplateNames(), 
+            isCategoryMapping: true, IFCTemplateData.DialogTypeEnum.Template);
+         data.MakeUniqueName();
 
-         IFCCopyCategoryTemplate copyTemplateDialog = new IFCCopyCategoryTemplate(data)
+         IFCCopyTemplate copyTemplateDialog = new IFCCopyTemplate(data)
          {
             Owner = this
          };
@@ -828,9 +863,10 @@ namespace BIM.IFC.Export.UI
             return;
 
          string previousName = currentTemplate.Name;
-         IFCCategoryTemplateData data = new IFCCategoryTemplateData(previousName, IFCCategoryTemplate.ListNames(IFCExport.TheDocument));
+         IFCTemplateData data = new(previousName, IFCCategoryTemplate.ListNames(IFCExport.TheDocument),
+            isCategoryMapping: true, IFCTemplateData.DialogTypeEnum.Template);
 
-         IFCRenameCategoryTemplate renameTemplateDialog = new IFCRenameCategoryTemplate(data);
+         IFCRenameTemplate renameTemplateDialog = new(data);
          renameTemplateDialog.Owner = this;
          bool? ret = renameTemplateDialog.ShowDialog();
          if (ret.HasValue && ret.Value && !string.IsNullOrWhiteSpace(renameTemplateDialog.Data.NewName))
@@ -973,8 +1009,8 @@ namespace BIM.IFC.Export.UI
          IFCCategoryTemplate currentTemplate = GetCurrentTemplate();
          if (currentTemplate == null)
             return;
-         
-         IFCDeleteCategoryTemplate deleteTemplateDialog = new IFCDeleteCategoryTemplate(currentTemplate.Name);
+
+         IFCDeleteTemplate deleteTemplateDialog = new IFCDeleteTemplate(currentTemplate.Name);
          deleteTemplateDialog.Owner = this;
          bool? ret = deleteTemplateDialog.ShowDialog();
          if (ret.HasValue && ret.Value == true)

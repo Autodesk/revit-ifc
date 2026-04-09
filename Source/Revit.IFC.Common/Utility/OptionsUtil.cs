@@ -32,6 +32,26 @@ namespace Revit.IFC.Common.Utility
    /// </summary>
    public class OptionsUtil
    {
+      private const string LegacyParameterMappingFileName = "IFCParameterMapping";
+      private const string NewParameterMappingFileName = "IFCNewParameterMapping";
+
+      /// <summary>
+      /// Determines whether legacy parameter mapping should be used based on the current debug mode.
+      /// </summary>
+      public static bool UseLegacyParameterMapping()
+      {
+         IFCExportOptions exportOptions = new()
+         {
+            FamilyMappingFile = LegacyParameterMappingFileName
+         };
+
+         IFCExportOptions assignedOptions = new();
+         assignedOptions.Assign(exportOptions);
+
+         return !string.Equals(assignedOptions.FamilyMappingFile, NewParameterMappingFileName,
+            StringComparison.InvariantCultureIgnoreCase);
+      }
+
       /// <summary>
       /// Utility for processing a Boolean option from the options collection.
       /// </summary>
@@ -262,7 +282,18 @@ namespace Revit.IFC.Common.Utility
       /// <returns></returns>
       public static bool ExportAs4x3(IFCVersion fileVersion)
       {
-         return (fileVersion == IFCVersion.IFC4x3);
+         return (fileVersion == IFCVersion.IFC4x3) 
+            || (fileVersion == IFCVersion.IFC4x3RV) 
+            || (fileVersion == IFCVersion.IFC4x3DTV);
+      }
+
+      /// <summary>
+      /// Identifies if the schema and MVD used is the IFC 4.3 Design Transfer View.
+      /// </summary>
+      /// <param name="fileVersion">The file version</param>
+      public static bool ExportAs4x3DesignTransferView(IFCVersion fileVersion)
+      {
+         return (fileVersion == IFCVersion.IFC4x3DTV);
       }
 
       /// <summary>
@@ -271,7 +302,7 @@ namespace Revit.IFC.Common.Utility
       /// <param name="fileVersion">The file version</param>
       public static bool ExportAs4x3ReferenceView(IFCVersion fileVersion)
       {
-         return (fileVersion == IFCVersion.IFC4x3);
+         return (fileVersion == IFCVersion.IFC4x3RV);
       }
 
       /// <summary>
