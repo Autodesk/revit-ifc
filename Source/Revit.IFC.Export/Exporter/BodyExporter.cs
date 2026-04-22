@@ -4233,7 +4233,7 @@ namespace Revit.IFC.Export.Exporter
 
                BodyData brepBodyData = ExportBodyAsBRep(exporterIFC, geometryList, exportAsBRep, bodyItems, element, categoryId, overrideMaterialId,
                   contextOfItems, eps, options, bodyData, instanceGeometry:instanceGeometry);
-               if (brepBodyData == null)
+               if (brepBodyData?.RepresentationHnd == null)
                   tr.RollBack();
                else
                {

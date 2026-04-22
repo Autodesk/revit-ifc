@@ -17,8 +17,8 @@ using System.Runtime.Versioning;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("27.0.1.0")]
-[assembly: AssemblyFileVersion("27.0.1.0")]
+[assembly: AssemblyVersion("27.0.1.1")]
+[assembly: AssemblyFileVersion("27.0.1.1")]
 
 #endif
 

@@ -506,7 +506,7 @@ namespace BIM.IFC.Export.UI
                Id = parameterId,
                ParameterType = ParameterType.Builtin,
                StorageType = document.GetTypeOfStorage(forgeTypeId),
-               DataType = null
+               DataType = forgeTypeId
             });
          }
 
@@ -523,18 +523,13 @@ namespace BIM.IFC.Export.UI
             if (!binding.Categories?.Contains(category) ?? true)
                continue;
 
-            // The parameter exists in the document, but it hasn't been bound yet.
-            ForgeTypeId paramTypeId = definition.GetParameterTypeId();
-            if (paramTypeId?.Empty() ?? true)
-               continue;
-
             applicableParameters.Add(new RevitParameterData()
             {
                Name = definition.Name,
                Id = definition.Id,
                ParameterType = (binding is TypeBinding) ? ParameterType.Type : ParameterType.Instance,
-               StorageType = document.GetTypeOfStorage(paramTypeId),
-               DataType = definition.GetDataType()
+               DataType = definition.GetDataType(),
+               StorageType = StorageType.None
             });
          }
 
