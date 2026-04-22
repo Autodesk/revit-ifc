@@ -50,6 +50,8 @@ body:
       label: IFC for Revit Addon Version
       description: What version of the IFC for Revit addon are you using?
       options: 
+        - 27.0.1.1
+        - 27.0.1
         - 26.4.1
         - 26.4.0
         - 26.1.0
