@@ -13,7 +13,7 @@
     <DebugType>full</DebugType>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>1668;NU1903</NoWarn>
+    <NoWarn>1668</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <Optimize>false</Optimize>
@@ -28,7 +28,7 @@
      <ThirdPartyConfig>x64\Debug</ThirdPartyConfig>   
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Platform)' == 'x64' ">
-    <NoWarn>$(NoWarn);1607</NoWarn>
+    <NoWarn>1607</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(SolutionDir)VSProps\Revit.Common.Sdk.targets</MSBuildAllProjects>
