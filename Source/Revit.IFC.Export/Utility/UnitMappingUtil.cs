@@ -915,7 +915,7 @@ namespace Revit.IFC.Export.Utility
                Tuple.Create(UnitTypeId.Meters, 4) } )
             } } )
          },
-         { SpecTypeId.HeatTransferCoefficient, new DerivedAttributes(IFCDerivedUnitEnum.ThermalTransmittanceUnit, null, new Dictionary<ForgeTypeId, DerivedInfo>() {
+         { SpecTypeId.ThermalTransmittance, new DerivedAttributes(IFCDerivedUnitEnum.ThermalTransmittanceUnit, null, new Dictionary<ForgeTypeId, DerivedInfo>() {
             { UnitTypeId.WattsPerSquareMeterKelvin, new DerivedInfo(null, true, new List<Tuple<ForgeTypeId, int>>() {
                Tuple.Create(UnitTypeId.Kilograms, 1),
                Tuple.Create(UnitTypeId.Kelvin, -1),
@@ -1364,7 +1364,7 @@ namespace Revit.IFC.Export.Utility
          { "IfcThermalConductivityMeasure", SpecTypeId.ThermalConductivity },
          { "IfcThermalExpansionCoefficientMeasure", SpecTypeId.ThermalExpansionCoefficient },
          { "IfcThermalResistanceMeasure", SpecTypeId.ThermalResistance },
-         { "IfcThermalTransmittanceMeasure", SpecTypeId.HeatTransferCoefficient },
+         { "IfcThermalTransmittanceMeasure", SpecTypeId.ThermalTransmittance },
          { "IfcThermodynamicTemperatureMeasure", SpecTypeId.HvacTemperature },
          { "IfcTimeMeasure", SpecTypeId.Time },
          { "IfcTorqueMeasure", SpecTypeId.Moment },
@@ -1526,7 +1526,7 @@ namespace Revit.IFC.Export.Utility
          { PropertyType.ThermalGradientCoefficientForMoistureCapacity, (StorageType.Double, [SpecTypeId.ThermalGradientCoefficientForMoistureCapacity]) },
          { PropertyType.ThermalMass, (StorageType.Double, [SpecTypeId.ThermalMass]) },
          { PropertyType.ThermalResistance, (StorageType.Double, [SpecTypeId.ThermalResistance]) },
-         { PropertyType.ThermalTransmittance, (StorageType.Double, [SpecTypeId.HeatTransferCoefficient]) },
+         { PropertyType.ThermalTransmittance, (StorageType.Double, [SpecTypeId.ThermalTransmittance]) },
          { PropertyType.ThermodynamicTemperature, (StorageType.Double, [SpecTypeId.ElectricalTemperature, SpecTypeId.HvacTemperature, SpecTypeId.PipingTemperature]) },
          { PropertyType.Time, (StorageType.Double, [SpecTypeId.Time, SpecTypeId.Period]) },
          { PropertyType.Torque, (StorageType.Double, [SpecTypeId.Moment]) },

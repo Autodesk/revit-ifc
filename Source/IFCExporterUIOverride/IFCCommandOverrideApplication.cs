@@ -164,19 +164,19 @@ namespace BIM.IFC.Export.UI
             UIApplication uiApp = sender as UIApplication;
 
 #pragma warning disable CS0618 // Type or member is obsolete
-            if (uiApp.IsViewerModeActive)
-            {
-               using (Autodesk.Revit.UI.TaskDialog taskDialog = new Autodesk.Revit.UI.TaskDialog(Properties.Resources.String_Revit_CurrentLicenseStatusTitle))
-               {
-                  taskDialog.MainInstruction = string.Format(Properties.Resources.String_Revit_CurrentLicenseStatus_MainInstruction,
-                     uiApp.Application.VersionName, uiApp.Application.VersionBuild, uiApp.Application.VersionName);
-                  taskDialog.MainIcon = Autodesk.Revit.UI.TaskDialogIcon.TaskDialogIconWarning;
-                  taskDialog.TitleAutoPrefix = false;
-                  taskDialog.MainContent = Properties.Resources.String_Revit_CurrentLicenseStatus_MainContent;
-                  TaskDialogResult result = taskDialog.Show();
-                  return;
-               }
-            }
+            //if (uiApp.IsViewerModeActive)
+            //{
+            //   using (Autodesk.Revit.UI.TaskDialog taskDialog = new Autodesk.Revit.UI.TaskDialog(Properties.Resources.String_Revit_CurrentLicenseStatusTitle))
+            //   {
+            //      taskDialog.MainInstruction = string.Format(Properties.Resources.String_Revit_CurrentLicenseStatus_MainInstruction,
+            //         uiApp.Application.VersionName, uiApp.Application.VersionBuild, uiApp.Application.VersionName);
+            //      taskDialog.MainIcon = Autodesk.Revit.UI.TaskDialogIcon.TaskDialogIconWarning;
+            //      taskDialog.TitleAutoPrefix = false;
+            //      taskDialog.MainContent = Properties.Resources.String_Revit_CurrentLicenseStatus_MainContent;
+            //      TaskDialogResult result = taskDialog.Show();
+            //      return;
+            //   }
+            //}
 #pragma warning restore CS0618 // Type or member is obsolete
 
             UIDocument uiDoc = uiApp.ActiveUIDocument;

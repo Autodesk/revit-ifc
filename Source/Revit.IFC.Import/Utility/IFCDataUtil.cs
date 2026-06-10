@@ -91,7 +91,7 @@ namespace Revit.IFC.Import.Utility
          m_MeasureCache["IfcTimeStamp"] = SpecTypeId.Number;  // No unit type for time in Revit.
          m_MeasureCache["IfcThermalConductivityMeasure"] = SpecTypeId.ThermalConductivity; 
          m_MeasureCache["IfcThermalExpansionCoefficientMeasure"] = SpecTypeId.ThermalExpansionCoefficient;
-         m_MeasureCache["IfcThermalTransmittanceMeasure"] = SpecTypeId.HeatTransferCoefficient;
+         m_MeasureCache["IfcThermalTransmittanceMeasure"] = SpecTypeId.ThermalTransmittance;
          m_MeasureCache["IfcThermalResistanceMeasure"] = SpecTypeId.ThermalResistance;
          m_MeasureCache["IfcThermodynamicTemperatureMeasure"] = SpecTypeId.HvacTemperature;
          m_MeasureCache["IfcTorqueMeasure"] = SpecTypeId.Moment;
