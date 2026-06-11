@@ -65,7 +65,7 @@ namespace RevitIFCTools
             var applicableData = ExtractApplicableClassesAndTypes(htmlContent);
             pset.ApplicableClasses = applicableData.Classes;
             pset.ApplicableType = applicableData.ApplicableType;
-            pset.PredefinedType = applicableData.PredefinedType;
+            pset.PredefinedTypes = applicableData.PredefinedTypes;
             
             // Extract properties
             pset.properties = ExtractProperties(htmlContent, htmlFile.DirectoryName, psetOrQtoSet);
@@ -140,11 +140,10 @@ namespace RevitIFCTools
       /// <summary>
       /// Extract applicable classes and predefined types
       /// </summary>
-      private (List<string> Classes, string ApplicableType, string PredefinedType) ExtractApplicableClassesAndTypes(string htmlContent)
+      private (List<string> Classes, string ApplicableType, IList<string> PredefinedTypes) ExtractApplicableClassesAndTypes(string htmlContent)
       {
          var classes = new List<string>();
          string applicableType = null;
-         string predefinedType = null;
          
          // Find applicable entities section
          var section = ExtractSection(htmlContent, "Applicable entities");
@@ -162,28 +161,25 @@ namespace RevitIFCTools
          foreach (Match match in matches)
          {
             string className = match.Groups[2].Value; // IfcWall, IfcCableSegment
-            allClassNames.Add(className);
+            if (!allClassNames.Contains(className))
+               allClassNames.Add(className);
             
             if (match.Groups[3].Success)
             {
-               predefinedTypes.Add(match.Groups[3].Value); // CORESEGMENT
+               string predefType = match.Groups[3].Value;
+               if (!predefinedTypes.Contains(predefType))
+                  predefinedTypes.Add(predefType);
             }
          }
          
          classes = allClassNames;
          
-         // Set ApplicableType and PredefinedType (following XML parser logic)
          if (allClassNames.Count > 0)
          {
-            applicableType = allClassNames[0]; // Use only the first class name, ignore others
+            applicableType = allClassNames[0];
          }
          
-         if (predefinedTypes.Count > 0)
-         {
-            predefinedType = predefinedTypes.LastOrDefault();
-         }
-         
-         return (classes, applicableType, predefinedType);
+         return (classes, applicableType, predefinedTypes);
       }
 
       /// <summary>
