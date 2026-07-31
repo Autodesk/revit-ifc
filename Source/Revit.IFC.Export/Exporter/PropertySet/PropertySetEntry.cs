@@ -1010,7 +1010,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   {
                      propertyType = PropertyType.ThermodynamicTemperature;
                   }
-                  else if (type == SpecTypeId.HeatTransferCoefficient)
+                  else if (type == SpecTypeId.ThermalTransmittance)
                   {
                      propertyType = PropertyType.ThermalTransmittance;
                   }

@@ -112,7 +112,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The thermal transmittance in IFC units.</returns>
       static public double ScaleThermalTransmittance(double unscaledThermalTransmittance)
       {
-         return ScaleDouble(SpecTypeId.HeatTransferCoefficient, unscaledThermalTransmittance);
+         return ScaleDouble(SpecTypeId.ThermalTransmittance, unscaledThermalTransmittance);
       }
 
       /// <summary>

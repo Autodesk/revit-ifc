@@ -2546,7 +2546,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             propertyHandle = CreateThermodynamicTemperaturePropertyFromCache(file, propertyDescription,
                   new List<double?>() { scaledValue }, valueType, null);
          }
-         else if (parameterType == SpecTypeId.HeatTransferCoefficient)
+         else if (parameterType == SpecTypeId.ThermalTransmittance)
          {
             double scaledValue = UnitUtil.ScaleThermalTransmittance(propertyValue);
             propertyHandle = CreateThermalTransmittancePropertyFromCache(file, propertyDescription,
@@ -5737,12 +5737,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       public static IFCAnyHandle CreateThermalTransmittancePropertyFromElement(IFCFile file, Element elem, string revitParameterName,
           PropertyDescription propertyDescription, PropertyValueType valueType)
       {
-         IList<double?> doubleValues = GetDoubleValuesFromParameterByType(elem, revitParameterName, SpecTypeId.HeatTransferCoefficient, valueType);
+         IList<double?> doubleValues = GetDoubleValuesFromParameterByType(elem, revitParameterName, SpecTypeId.ThermalTransmittance, valueType);
          IFCAnyHandle property = CreateThermalTransmittancePropertyFromCache(file, propertyDescription, doubleValues, valueType, null);
 
          if (property == null)
          {
-            doubleValues = GetDoubleValuesFromParameterByType(elem, propertyDescription.Name, SpecTypeId.HeatTransferCoefficient, valueType);
+            doubleValues = GetDoubleValuesFromParameterByType(elem, propertyDescription.Name, SpecTypeId.ThermalTransmittance, valueType);
             property = CreateThermalTransmittancePropertyFromCache(file, propertyDescription, doubleValues, valueType, null);
          }
 

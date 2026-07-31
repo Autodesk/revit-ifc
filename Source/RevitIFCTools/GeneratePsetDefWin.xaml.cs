@@ -107,7 +107,7 @@ namespace RevitIFCTools
          try
          {
             var psdFolders = GetPsdOrLexicalFolders(textBox_PSDSourceDir.Text);
-            
+
             var qtoFolders = new DirectoryInfo(textBox_PSDSourceDir.Text).GetDirectories("qto", SearchOption.AllDirectories);
             var combinedFolders = psdFolders.Concat(qtoFolders);
 
@@ -226,7 +226,7 @@ namespace RevitIFCTools
             string errorMessage = $"Error during processing: {ex.Message}";
             logF?.WriteLine($"\r\n*** ERROR: {errorMessage}");
             logF?.WriteLine($"Stack trace: {ex.StackTrace}");
-            
+
             textBox_OutputMsg.Text = errorMessage;
             System.Windows.MessageBox.Show(errorMessage, "Processing Error", MessageBoxButton.OK, MessageBoxImage.Error);
          }
@@ -239,7 +239,7 @@ namespace RevitIFCTools
          }
       }
 
-      void WriteRevitSharedParam(StreamWriter stSharedPar, IDictionary<string, SharedParameterDef> existingParDict, 
+      void WriteRevitSharedParam(StreamWriter stSharedPar, IDictionary<string, SharedParameterDef> existingParDict,
          IDictionary<string, int> groupParamDict, bool isType, out IList<string> deferredParList)
       {
          // Now write shared parameter definitions from the Dict to destination file
@@ -348,7 +348,7 @@ namespace RevitIFCTools
          }
       }
 
-      int WriteGeneratedCode(StreamWriter outF, ProcessPsetDefinition procPsetDef, string penumFileName, string whichCat, 
+      int WriteGeneratedCode(StreamWriter outF, ProcessPsetDefinition procPsetDef, string penumFileName, string whichCat,
          IDictionary<string, int> paramGroupDict, int offset)
       {
          // Header section of the generated code
@@ -592,8 +592,8 @@ namespace RevitIFCTools
                   }
                   if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.ApplicableType))
                      outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
-                  if (!string.IsNullOrEmpty(vspecPDef.PropertySetDef.PredefinedType))
-                     outF.WriteLine("            {0}.PredefinedType = \"{1}\";", varName, vspecPDef.PropertySetDef.PredefinedType);
+                  foreach (string predefinedType in vspecPDef.PropertySetDef.PredefinedTypes)
+                     outF.WriteLine("            {0}.PredefinedTypes.Add(\"{1}\");", varName, predefinedType);
                }
 
                // Process each property
@@ -632,7 +632,7 @@ namespace RevitIFCTools
          outF.Close();
          return groupId;
       }
-      
+
 
       private void button_Cancel_Click(object sender, RoutedEventArgs e)
       {
@@ -689,7 +689,10 @@ namespace RevitIFCTools
          var psdFolders = new List<DirectoryInfo>();
          var sourceDir = new DirectoryInfo(sourceDirectoryPath);
 
-         foreach (DirectoryInfo firstLevelSubfolder in sourceDir.GetDirectories())
+         var firstLevelSubfolders = sourceDir.GetDirectories()
+            .OrderBy(d => GetSchemaFolderSortIndex(d.Name))
+            .ThenBy(d => d.Name, StringComparer.OrdinalIgnoreCase);
+         foreach (DirectoryInfo firstLevelSubfolder in firstLevelSubfolders)
          {
             DirectoryInfo psdDir = firstLevelSubfolder.GetDirectories("psd").FirstOrDefault();
             if (psdDir != null)
