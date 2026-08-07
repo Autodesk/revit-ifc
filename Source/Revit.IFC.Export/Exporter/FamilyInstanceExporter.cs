@@ -607,9 +607,16 @@ namespace Revit.IFC.Export.Exporter
          bool flipped = doorWindowInfo?.FlippedSymbol ?? false;
          ElementId overrideMaterialId = ExporterUtil.GetSingleMaterial(familyInstance);
 
+         // The material of a shared symbol may be resolved from the instance, e.g. from the
+         // MEP system type for fittings.  Include it in the key so that instances with
+         // different resolved materials don't reuse a type styled with another instance's
+         // material.
+         ElementId keyMaterialId = (overrideMaterialId != ElementId.InvalidElementId) ?
+            overrideMaterialId : BodyExporter.GetBestMaterialIdFromParameter(familyInstance);
+
          bool containedInAssembly = ExporterUtil.IsContainedInAssembly(familyInstance);
          var typeKey = new TypeObjectKey(originalFamilySymbol.Id,
-            overrideLevelId, flipped, exportType, overrideMaterialId, containedInAssembly);
+            overrideLevelId, flipped, exportType, keyMaterialId, containedInAssembly);
 
          FamilyTypeInfo currentTypeInfo = 
             ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);

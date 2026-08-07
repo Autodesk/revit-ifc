@@ -337,7 +337,13 @@ namespace Revit.IFC.Export.Exporter
             categoryValue == (long)BuiltInCategory.OST_Walls;
       }
 
-      private static ElementId GetBestMaterialIdFromParameter(Element element)
+      /// <summary>
+      /// Gets the best material id from the element parameters, including the material of
+      /// the MEP system type for duct and pipe elements.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <returns>The material id, or InvalidElementId if not found.</returns>
+      public static ElementId GetBestMaterialIdFromParameter(Element element)
       {
          if (element == null)
          {
@@ -4086,7 +4092,7 @@ namespace Revit.IFC.Export.Exporter
 
                               if (bodyItems.AddIfNotNull(sweptHandle))
                               {
-                                 ElementId matId = exporterIFC.GetMaterialIdForCurrentExportState();
+                                 ElementId matId = SetBestMaterialIdInExporter(solid, element, overrideMaterialId, exporterIFC);
                                  materialIdsForExtrusions.Add(matId);
                                  GraphicsStyle style = document.GetElement(solid.GraphicsStyleId) as GraphicsStyle;
                                  bodyData.AddRepresentationItemInfo(document, style, matId, sweptHandle);
